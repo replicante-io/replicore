@@ -1,0 +1,4 @@
+*.swp
+
+docs/specs/_book/
+node_modules/

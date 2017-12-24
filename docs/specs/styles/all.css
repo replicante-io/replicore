@@ -1,0 +1,50 @@
+/*** Fix alerts plugin border and scope ***/
+blockquote.info {
+    border-top: 1px solid;
+    border-right: 1px solid;
+    border-bottom: 1px solid;
+
+    background: #eff5ff;
+    border-color: #42acf3;
+    color: #444;
+}
+blockquote.info strong {
+    color: #42acf3;
+}
+blockquote.warning {
+    border-top: 1px solid;
+    border-right: 1px solid;
+    border-bottom: 1px solid;
+
+    background: #fcf8f2;
+    border-color: rgb(240, 173, 78);
+    color: #444;
+}
+blockquote.warning strong {
+    color: #f0ad4e;
+}
+blockquote.danger {
+    border-top: 1px solid;
+    border-right: 1px solid;
+    border-bottom: 1px solid;
+
+    background: #fdf7f7;
+    border-color: #d9534f;
+    color: #444;
+}
+blockquote.danger strong {
+    color: #d9534f;
+}
+blockquote.success {
+    border-top: 1px solid;
+    border-right: 1px solid;
+    border-bottom: 1px solid;
+
+    background: #f3f8f3;
+    border-color: #50af51;
+    color: #444;
+}
+blockquote.success strong {
+    color: #50af51;
+}
+/*** End(Fix alerts plugin border and scope) ***/

@@ -1,0 +1,18 @@
+{
+  "title": "??? - Protocol and Model Specifications",
+  "description": "Definition of the Datastore model and the agent protocol",
+  "gitbook": "3.2.3",
+
+  "plugins": [
+    "-sharing",
+    "alerts"
+  ],
+
+  "styles": {
+    "website": "styles/all.css",
+    "ebook": "styles/all.css",
+    "pdf": "styles/all.css",
+    "mobi": "styles/all.css",
+    "epub": "styles/all.css"
+  }
+}
