@@ -1,38 +1,34 @@
 ## Datastore
-TODO
+A software solution specialised in storing data for other software.
+The term datastore is used to avoid focus on
+details of specific storage models or uses.
 
-https://en.wikipedia.org/wiki/Data_store
+For the context of this project a datastore is more generically defined
+as a software that fullfils the requirements of the [model](model/README.md).
 
 
 ## Model
-TOD
+A conceptual representation of an abstract system that detiles
+and defines all its properties.
 
-https://en.wikipedia.org/wiki/Conceptual_model
+Wikipedia definition: https://en.wikipedia.org/wiki/Conceptual_model
 
 
 ## Node
-TODO
+An instance of the datastore, usually running on
+different (vitual or pythsical) machines.
 
 
 ## Primary
-TODO
-
-
-## Protocol
-TODO
-
-https://en.wikipedia.org/wiki/Communication_protocol
+The node in the cluster that is responsible
+for coordination of a specific shard.
 
 
 ## Secondary
-TODO
+A node in the cluster that is responsible for keeping a copy of a shard.
 
 
 ## Shard
-TODO
-
-
-## State
-TODO
-
-https://en.wikipedia.org/wiki/State_(computer_science)
+A subset of the data in the datastore.
+Each shard is managed and operated on indepently of other.
+Shards usually also fail independently.

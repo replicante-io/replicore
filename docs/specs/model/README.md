@@ -27,6 +27,12 @@ This aims of the model are:
   * To determine what features can be built on top of this standardised layer.
 
 
+## Administration
+The datastore MUST provide the following administration commands:
+
+  * Version information.
+
+
 ## Clustering
 The datastore MUST support clustering by running a
 process on one or more (virtual or physical) machines.
