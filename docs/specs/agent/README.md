@@ -17,7 +17,7 @@ Returns information about the agent itself.
 The following information MUST be included:
 
   * `datastore` information:
-    * `type`: name of datastore managed by the agent.
+    * `name`: name of datastore managed by the agent.
     * `version`: the [SemVer](https://semver.org/) datastore version.
   * `version` information:
     * Version `number`: the [SemVer](https://semver.org/) agent version.
@@ -28,7 +28,7 @@ Example:
 ```json
 {
   "datastore": {
-    "type": "MongoDB",
+    "name": "MongoDB",
     "version": "3.4.5"
   },
   "version": {

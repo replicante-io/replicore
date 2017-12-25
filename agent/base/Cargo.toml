@@ -1,0 +1,27 @@
+[package]
+name = "unamed_agent"
+version = "0.1.0"
+authors = ["Stefano Pogliani <stefano@spogliani.net>"]
+build = "build.rs"
+
+[[bin]]
+name = "unamed-agent-test"
+path = "src/bin/test-agent.rs"
+
+[lib]
+name = "unamed_agent"
+path = "src/lib.rs"
+
+[dependencies]
+iron = "^0.6.0"
+iron-json-response = "^0.6.0"
+router = "^0.6.0"
+serde = "^1.0.25"
+serde_derive = "^1.0.25"
+serde_json = "^1.0.8"
+
+[build-dependencies]
+git2 = "^0.6.10"
+
+[dev-dependencies]
+iron-test = "^0.6.0"
