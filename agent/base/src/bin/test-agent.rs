@@ -2,11 +2,10 @@ extern crate unamed_agent;
 
 use unamed_agent::Agent;
 use unamed_agent::AgentRunner;
-use unamed_agent::AgentVersion;
-use unamed_agent::DatastoreVersion;
-
 use unamed_agent::config::AgentConfig;
 use unamed_agent::config::AgentWebServerConfig;
+use unamed_agent::models::AgentVersion;
+use unamed_agent::models::DatastoreVersion;
 
 
 pub struct TestAgent {}

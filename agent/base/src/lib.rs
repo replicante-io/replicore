@@ -13,11 +13,10 @@
 //! 
 //! use unamed_agent::Agent;
 //! use unamed_agent::AgentRunner;
-//! use unamed_agent::AgentVersion;
-//! use unamed_agent::DatastoreVersion;
-//! 
 //! use unamed_agent::config::AgentConfig;
 //! use unamed_agent::config::AgentWebServerConfig;
+//! use unamed_agent::models::AgentVersion;
+//! use unamed_agent::models::DatastoreVersion;
 //! 
 //! 
 //! pub struct TestAgent {}
@@ -50,8 +49,6 @@
 //! ```
 extern crate iron;
 extern crate iron_json_response;
-#[cfg(test)]
-extern crate iron_test;
 extern crate router;
 
 extern crate serde;
@@ -59,13 +56,18 @@ extern crate serde_json;
 #[macro_use]
 extern crate serde_derive;
 
+#[cfg(test)]
+extern crate iron_test;
+
+
 use std::sync::Arc;
 
 use iron::Iron;
 use router::Router;
 
-pub mod config;
 mod api;
+pub mod config;
+pub mod models;
 
 
 /// Trait to share common agent code and features.
@@ -73,7 +75,7 @@ mod api;
 /// Agents should be implemented as structs that implement `BaseAgent`.
 pub trait Agent {
     /// Fetch the agent and datastore versions.
-    fn datastore_version(&self) -> DatastoreVersion;
+    fn datastore_version(&self) -> self::models::DatastoreVersion;
 }
 
 /// Container type to hold an Agent trait object.
@@ -89,15 +91,15 @@ type AgentContainer = Arc<Box<Agent + Send + Sync>>;
 /// agent will need on top of the `Agent` trait.
 pub struct AgentRunner {
     agent: AgentContainer,
-    conf: config::AgentConfig,
-    version: AgentVersion
+    conf: self::config::AgentConfig,
+    version: self::models::AgentVersion
 }
 
 impl AgentRunner {
     pub fn new(
         agent: Box<Agent + Send + Sync>,
-        conf: config::AgentConfig,
-        version: AgentVersion
+        conf: self::config::AgentConfig,
+        version: self::models::AgentVersion
     ) -> AgentRunner {
         AgentRunner {
             agent: Arc::new(agent),
@@ -121,65 +123,5 @@ impl AgentRunner {
         Iron::new(router)
             .http(conf.bind_address())
             .expect("Unable to start server");
-    }
-}
-
-
-/// Stores agent version details.
-#[derive(Clone, Debug, Serialize)]
-pub struct AgentVersion {
-    checkout: String,
-    number: String,
-    taint: String,
-}
-
-impl AgentVersion {
-    pub fn new(checkout: &str, number: &str, taint: &str) -> AgentVersion {
-        AgentVersion {
-            checkout: String::from(checkout),
-            number: String::from(number),
-            taint: String::from(taint)
-        }
-    }
-}
-
-
-/// Stores datastore version details.
-#[derive(Clone, Debug, Serialize)]
-pub struct DatastoreVersion {
-    name: String,
-    version: String,
-}
-
-impl DatastoreVersion {
-    pub fn new(name: &str, version: &str) -> DatastoreVersion {
-        DatastoreVersion {
-            name: String::from(name),
-            version: String::from(version)
-        }
-    }
-}
-
-
-#[cfg(test)]
-mod tests {
-    use serde_json;
-    use super::AgentVersion;
-    use super::DatastoreVersion;
-
-    #[test]
-    fn agent_version_serialises_to_json() {
-        let version = AgentVersion::new("abc123", "1.2.3", "tainted");
-        let payload = serde_json::to_string(&version).unwrap();
-        let expected = r#"{"checkout":"abc123","number":"1.2.3","taint":"tainted"}"#;
-        assert_eq!(payload, expected);
-    }
-
-    #[test]
-    fn datastore_version_serialises_to_json() {
-        let version = DatastoreVersion::new("DB", "1.2.3");
-        let payload = serde_json::to_string(&version).unwrap();
-        let expected = r#"{"name":"DB","version":"1.2.3"}"#;
-        assert_eq!(payload, expected);
     }
 }

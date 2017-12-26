@@ -6,8 +6,8 @@ use iron_json_response::JsonResponse;
 use iron_json_response::JsonResponseMiddleware;
 
 use super::super::AgentContainer;
-use super::super::AgentVersion;
-use super::super::DatastoreVersion;
+use super::super::models::AgentVersion;
+use super::super::models::DatastoreVersion;
 
 
 /// Handler struct to implement the /api/v1/info endpoint.
@@ -56,8 +56,8 @@ mod tests {
 
     use super::InfoHandler;
     use super::super::super::Agent;
-    use super::super::super::AgentVersion;
-    use super::super::super::DatastoreVersion;
+    use super::super::super::models::AgentVersion;
+    use super::super::super::models::DatastoreVersion;
 
     struct TestAgent {}
     impl Agent for TestAgent {
