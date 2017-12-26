@@ -51,36 +51,66 @@ struct VersionInfo {
 mod tests {
     use std::sync::Arc;
 
+    use iron::IronError;
     use iron::Headers;
     use iron_test::request;
     use iron_test::response;
 
     use super::InfoHandler;
     use super::super::super::Agent;
+    use super::super::super::AgentError;
     use super::super::super::AgentResult;
     use super::super::super::models::AgentVersion;
     use super::super::super::models::DatastoreVersion;
 
-    struct TestAgent {}
+    struct TestAgent {
+        success_version: bool
+    }
+
     impl Agent for TestAgent {
         fn datastore_version(&self) -> AgentResult<DatastoreVersion> {
-            Ok(DatastoreVersion::new("DB", "1.2.3"))
+            if self.success_version {
+                Ok(DatastoreVersion::new("DB", "1.2.3"))
+            } else {
+                Err(AgentError::GenericError(String::from("Testing failure")))
+            }
+        }
+    }
+
+    fn request_get(agent: Box<Agent + Send + Sync>) -> Result<String, IronError> {
+        let handler = InfoHandler::new(
+            Arc::new(agent),
+            AgentVersion::new("dcd", "1.2.3", "tainted")
+        );
+        request::get(
+            "http://localhost:3000/api/v1/index",
+            Headers::new(), &handler
+        )
+        .map(|response| {
+            let body = response::extract_body_to_bytes(response);
+            String::from_utf8(body).unwrap()
+        })
+    }
+
+    #[test]
+    fn info_handler_returns_error() {
+        let result = request_get(Box::new(TestAgent {
+            success_version: false
+        }));
+        assert!(result.is_err());
+        if let Some(result) = result.err() {
+            let body = response::extract_body_to_bytes(result.response);
+            let body = String::from_utf8(body).unwrap();
+            assert_eq!(body, r#"{"error":"Generic error: Testing failure","kind":"GenericError"}"#);
         }
     }
 
     #[test]
     fn info_handler_returns_version() {
-        let handler = InfoHandler::new(
-            Arc::new(Box::new(TestAgent {})),
-            AgentVersion::new("dcd", "1.2.3", "tainted")
-        );
-        let response = request::get(
-            "http://localhost:3000/api/v1/index",
-            Headers::new(), &handler
-        ).unwrap();
-        let result_body = response::extract_body_to_bytes(response);
-        let result_body = String::from_utf8(result_body).unwrap();
+        let result = request_get(Box::new(TestAgent {
+            success_version: true
+        })).unwrap();
         let expected = r#"{"datastore":{"name":"DB","version":"1.2.3"},"version":{"checkout":"dcd","number":"1.2.3","taint":"tainted"}}"#;
-        assert_eq!(result_body, expected);
+        assert_eq!(result, expected);
     }
 }

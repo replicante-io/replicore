@@ -27,6 +27,9 @@ pub enum AgentError {
     /// The datastore returned an error.
     DatastoreError(String),
 
+    /// A generic error message that fits no other variant.
+    GenericError(String),
+
     /// The datastore does not respect the documented model.
     ModelViolation(String),
 }
@@ -55,6 +58,9 @@ impl fmt::Display for AgentError {
             AgentError::DatastoreError(ref msg) => write!(
                 fmt, "Received error from datastore: {}", msg
             ),
+            AgentError::GenericError(ref msg) => write!(
+                fmt, "Generic error: {}", msg
+            ),
             AgentError::ModelViolation(ref msg) => write!(
                 fmt, "The datastore violated the documented model: {}", msg
             ),
@@ -66,11 +72,48 @@ impl Error for AgentError {
     fn description(&self) -> &str {
         match *self {
             AgentError::DatastoreError(_) => "DatastoreError",
+            AgentError::GenericError(_) => "GenericError",
             AgentError::ModelViolation(_) => "ModelViolation",
         }
     }
 
     fn cause(&self) -> Option<&Error> {
         None
+    }
+}
+
+
+#[cfg(test)]
+mod tests {
+    use std::error::Error;
+    use super::AgentError;
+
+    #[test]
+    fn descibe_errors() {
+        let descriptions = vec![
+            (AgentError::DatastoreError(String::from("")), "DatastoreError"),
+            (AgentError::GenericError(String::from("")), "GenericError"),
+            (AgentError::ModelViolation(String::from("")), "ModelViolation"),
+        ];
+        for (error, desc) in descriptions {
+            assert_eq!(error.description(), desc);
+        }
+    }
+
+    #[test]
+    fn format_errors() {
+        let descriptions = vec![(
+            AgentError::DatastoreError(String::from("abc")),
+            "Received error from datastore: abc"
+        ), (
+            AgentError::GenericError(String::from("123")),
+            "Generic error: 123"
+        ), (
+            AgentError::ModelViolation(String::from("£$%")),
+            "The datastore violated the documented model: £$%"
+        )];
+        for (error, msg) in descriptions {
+            assert_eq!(error.to_string(), msg);
+        }
     }
 }
