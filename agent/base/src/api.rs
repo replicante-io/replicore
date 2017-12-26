@@ -5,17 +5,20 @@ use iron::status;
 use iron_json_response::JsonResponse;
 use iron_json_response::JsonResponseMiddleware;
 
-use super::VersionInfo;
+use super::AgentContainer;
+use super::AgentVersion;
+use super::DatastoreVersion;
 
 
 /// Handler struct to implement the /api/v1/info endpoint.
 pub struct InfoHandler {
-    version: VersionInfo
+    agent: AgentContainer,
+    version: AgentVersion
 }
 
 impl InfoHandler {
-    pub fn new(version: VersionInfo) -> Chain {
-        let handler = InfoHandler { version };
+    pub fn new(agent: AgentContainer, version: AgentVersion) -> Chain {
+        let handler = InfoHandler { agent, version };
         let mut chain = Chain::new(handler);
         chain.link_after(JsonResponseMiddleware::new());
         chain
@@ -24,16 +27,29 @@ impl InfoHandler {
 
 impl Handler for InfoHandler {
     fn handle(&self, _: &mut Request) -> IronResult<Response> {
+        let version = VersionInfo {
+            datastore: self.agent.datastore_version(),
+            version: self.version.clone()
+        };
         let mut response = Response::new();
-        response.set_mut(JsonResponse::json(&self.version)).set_mut(status::Ok);
+        response.set_mut(JsonResponse::json(version)).set_mut(status::Ok);
         Ok(response)
     }
+}
+
+
+/// Wrapps the agent and datastore versions for API response.
+#[derive(Serialize)]
+struct VersionInfo {
+    datastore: DatastoreVersion,
+    version: AgentVersion
 }
 
 
 pub fn index(_: &mut Request) -> IronResult<Response> {
     Ok(Response::with((status::Ok, "API endpoints mounted under /api/v1/")))
 }
+
 
 pub fn status(_: &mut Request) -> IronResult<Response> {
     Ok(Response::with((status::Ok, "TODO")))
@@ -42,13 +58,9 @@ pub fn status(_: &mut Request) -> IronResult<Response> {
 
 #[cfg(test)]
 mod tests {
-
     use iron::Headers;
     use iron_test::request;
     use iron_test::response;
-
-    use super::InfoHandler;
-    use super::super::VersionInfo;
 
     #[test]
     fn index_points_to_api() {
@@ -61,12 +73,27 @@ mod tests {
         assert_eq!(result_body, "API endpoints mounted under /api/v1/");
     }
 
+
+    use std::sync::Arc;
+
+    use super::InfoHandler;
+    use super::super::Agent;
+    use super::super::AgentVersion;
+    use super::super::DatastoreVersion;
+
+    struct TestAgent {}
+    impl Agent for TestAgent {
+        fn datastore_version(&self) -> DatastoreVersion {
+            DatastoreVersion::new("DB", "1.2.3")
+        }
+    }
+
     #[test]
     fn info_handler_returns_version() {
-        let handler = InfoHandler::new(VersionInfo::new(
-            "DB", "1.2.3",
-            "dcd", "1.2.3", "tainted"
-        ));
+        let handler = InfoHandler::new(
+            Arc::new(Box::new(TestAgent {})),
+            AgentVersion::new("dcd", "1.2.3", "tainted")
+        );
         let response = request::get(
             "http://localhost:3000/api/v1/index",
             Headers::new(), &handler

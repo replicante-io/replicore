@@ -9,5 +9,6 @@ path = "core/bin/main.rs"
 
 [dependencies]
 unamed_agent = { path = "agent/base" }
+unamed_agent_mongodb = { path = "agent/mongodb" }
 
 [workspace]

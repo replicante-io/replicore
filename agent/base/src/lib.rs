@@ -1,70 +1,68 @@
 //! This package provides interfaces and structs to build <???> agents.
 //!
-//! The package implements a base agent trait to provide common logic
-//! shared across all agent implementation.
+//! The package implements a base `Agent` trait to provide a common interface.
 //!
-//! To create an agent implement the BaseAgent trait for a struct and
-//! then call the run method on the trait:
-//!
+//! To create an agent implement the `Agent` trait for a struct and pass that
+//! struct to `AgentRunner::new` to create a runner.
+//! The `AgentRunner::run` method will then spin up the API server.
 //!
 //! # Examples
 //!
 //! ```
-//! use unamed_agent::BaseAgent;
-//! use unamed_agent::VersionInfo;
-//!
+//! extern crate unamed_agent;
+//! 
+//! use unamed_agent::Agent;
+//! use unamed_agent::AgentRunner;
+//! use unamed_agent::AgentVersion;
+//! use unamed_agent::DatastoreVersion;
+//! 
 //! use unamed_agent::config::AgentConfig;
 //! use unamed_agent::config::AgentWebServerConfig;
-//!
-//! pub struct MyAgent {
-//!     conf: AgentConfig,
-//!     version: VersionInfo
-//! }
-//!
-//! impl MyAgent {
-//!     pub fn new(conf: AgentConfig, version: VersionInfo) -> MyAgent {
-//!         MyAgent {
-//!             conf,
-//!             version
-//!         }
+//! 
+//! 
+//! pub struct TestAgent {}
+//! 
+//! impl TestAgent {
+//!     pub fn new() -> TestAgent {
+//!         TestAgent {}
 //!     }
 //! }
-//!
-//! impl BaseAgent for MyAgent {
-//!     fn agent_version(&self) -> &VersionInfo {
-//!         &self.version
-//!     }
-//!
-//!     fn config(&self) -> &AgentConfig {
-//!         &self.conf
+//! 
+//! impl Agent for TestAgent {
+//!     fn datastore_version(&self) -> DatastoreVersion {
+//!         DatastoreVersion::new("Test DB", "1.2.3")
 //!     }
 //! }
-//!
-//! let conf = AgentConfig::new(AgentWebServerConfig::new("127.0.0.1:8080"));
-//! let version = VersionInfo::new(
-//!     "Test DB", "1.2.3",
-//!     "dcd2b81a60262a78960b4b97ccdc2d6dfd12ac5b", ".1.2.3", "not tainted"
-//! );
-//!
-//! let agent = MyAgent::new(conf, version);
-//! // Running the agent is a blocking operation so it is commented out.
-//! //agent.run();
+//! 
+//! 
+//! fn main() {
+//!     let conf = AgentConfig::new(AgentWebServerConfig::new("127.0.0.1:8080"));
+//!     let runner = AgentRunner::new(
+//!         Box::new(TestAgent::new()),
+//!         conf, AgentVersion::new(
+//!             env!("GIT_BUILD_HASH"), env!("CARGO_PKG_VERSION"),
+//!             env!("GIT_BUILD_TAINT")
+//!         )
+//!     );
+//!     // This will block the process serving requests.
+//!     //runner.run();
+//! }
 //! ```
 extern crate iron;
 extern crate iron_json_response;
+#[cfg(test)]
+extern crate iron_test;
 extern crate router;
 
 extern crate serde;
 extern crate serde_json;
+#[macro_use]
+extern crate serde_derive;
 
-#[macro_use] extern crate serde_derive;
-
-#[cfg(test)] extern crate iron_test;
-
+use std::sync::Arc;
 
 use iron::Iron;
 use router::Router;
-
 
 pub mod config;
 mod api;
@@ -73,23 +71,52 @@ mod api;
 /// Trait to share common agent code and features.
 ///
 /// Agents should be implemented as structs that implement `BaseAgent`.
-pub trait BaseAgent {
+pub trait Agent {
     /// Fetch the agent and datastore versions.
-    fn agent_version(&self) -> &VersionInfo;
+    fn datastore_version(&self) -> DatastoreVersion;
+}
 
-    /// Fetch the agent configuration.
-    fn config(&self) -> &config::AgentConfig;
+/// Container type to hold an Agent trait object.
+///
+/// This type also adds the Send and Sync requirements needed by the
+/// API handlers to hold a reference to an Agent implementation.
+type AgentContainer = Arc<Box<Agent + Send + Sync>>;
+
+
+/// Common implementation for Agents.
+///
+/// This runner implements common logic that every
+/// agent will need on top of the `Agent` trait.
+pub struct AgentRunner {
+    agent: AgentContainer,
+    conf: config::AgentConfig,
+    version: AgentVersion
+}
+
+impl AgentRunner {
+    pub fn new(
+        agent: Box<Agent + Send + Sync>,
+        conf: config::AgentConfig,
+        version: AgentVersion
+    ) -> AgentRunner {
+        AgentRunner {
+            agent: Arc::new(agent),
+            conf, version
+        }
+    }
 
     /// Starts the Agent process and waits for it to terminate.
-    fn run(&self) -> () {
+    pub fn run(&self) -> () {
         let mut router = Router::new();
-        let info = api::InfoHandler::new(self.agent_version().clone());
+        let info = api::InfoHandler::new(
+            Arc::clone(&self.agent), self.version.clone()
+        );
 
         router.get("/", api::index, "index");
         router.get("/api/v1/info", info, "info");
         router.get("/api/v1/status", api::status, "status");
 
-        let conf = self.config().web_server();
+        let conf = self.conf.web_server();
         println!("Listening on {} ...", conf.bind_address());
         Iron::new(router)
             .http(conf.bind_address())
@@ -98,41 +125,37 @@ pub trait BaseAgent {
 }
 
 
-/// Stores agent and datastore versions.
+/// Stores agent version details.
 #[derive(Clone, Debug, Serialize)]
-pub struct VersionInfo {
-    datastore: DatastoreVersion,
-    version: AgentVersion,
-}
-
-#[derive(Clone, Debug, Serialize)]
-struct AgentVersion {
+pub struct AgentVersion {
     checkout: String,
     number: String,
     taint: String,
 }
 
+impl AgentVersion {
+    pub fn new(checkout: &str, number: &str, taint: &str) -> AgentVersion {
+        AgentVersion {
+            checkout: String::from(checkout),
+            number: String::from(number),
+            taint: String::from(taint)
+        }
+    }
+}
+
+
+/// Stores datastore version details.
 #[derive(Clone, Debug, Serialize)]
-struct DatastoreVersion {
+pub struct DatastoreVersion {
     name: String,
     version: String,
 }
 
-impl VersionInfo {
-    pub fn new(
-        datastore_name: &str, datastore_version: &str,
-        agent_checkout: &str, agent_number: &str, agent_taint: &str
-    ) -> VersionInfo {
-        VersionInfo {
-            datastore: DatastoreVersion {
-                name: String::from(datastore_name),
-                version: String::from(datastore_version)
-            },
-            version: AgentVersion {
-                checkout: String::from(agent_checkout),
-                number: String::from(agent_number),
-                taint: String::from(agent_taint)
-            }
+impl DatastoreVersion {
+    pub fn new(name: &str, version: &str) -> DatastoreVersion {
+        DatastoreVersion {
+            name: String::from(name),
+            version: String::from(version)
         }
     }
 }
@@ -141,16 +164,22 @@ impl VersionInfo {
 #[cfg(test)]
 mod tests {
     use serde_json;
-    use super::VersionInfo;
+    use super::AgentVersion;
+    use super::DatastoreVersion;
 
     #[test]
-    fn version_info_serialises_to_json() {
-        let version = VersionInfo::new(
-            "DB", "1.2.3",
-            "dcd", "1.2.3", "tainted"
-        );
+    fn agent_version_serialises_to_json() {
+        let version = AgentVersion::new("abc123", "1.2.3", "tainted");
         let payload = serde_json::to_string(&version).unwrap();
-        let expected = r#"{"datastore":{"name":"DB","version":"1.2.3"},"version":{"checkout":"dcd","number":"1.2.3","taint":"tainted"}}"#;
+        let expected = r#"{"checkout":"abc123","number":"1.2.3","taint":"tainted"}"#;
+        assert_eq!(payload, expected);
+    }
+
+    #[test]
+    fn datastore_version_serialises_to_json() {
+        let version = DatastoreVersion::new("DB", "1.2.3");
+        let payload = serde_json::to_string(&version).unwrap();
+        let expected = r#"{"name":"DB","version":"1.2.3"}"#;
         assert_eq!(payload, expected);
     }
 }

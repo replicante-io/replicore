@@ -1,43 +1,37 @@
 extern crate unamed_agent;
 
-use unamed_agent::BaseAgent;
-use unamed_agent::VersionInfo;
+use unamed_agent::Agent;
+use unamed_agent::AgentRunner;
+use unamed_agent::AgentVersion;
+use unamed_agent::DatastoreVersion;
 
 use unamed_agent::config::AgentConfig;
 use unamed_agent::config::AgentWebServerConfig;
 
 
-pub struct TestAgent {
-    conf: AgentConfig,
-    version: VersionInfo,
-}
+pub struct TestAgent {}
 
 impl TestAgent {
-    pub fn new(conf: AgentConfig, version: VersionInfo) -> TestAgent {
-        TestAgent {
-            conf,
-            version,
-        }
+    pub fn new() -> TestAgent {
+        TestAgent {}
     }
 }
 
-impl BaseAgent for TestAgent {
-    fn agent_version(&self) -> &VersionInfo {
-        &self.version
-    }
-
-    fn config(&self) -> &AgentConfig {
-        &self.conf
+impl Agent for TestAgent {
+    fn datastore_version(&self) -> DatastoreVersion {
+        DatastoreVersion::new("Test DB", "1.2.3")
     }
 }
+
 
 fn main() {
     let conf = AgentConfig::new(AgentWebServerConfig::new("127.0.0.1:8080"));
-    let version = VersionInfo::new(
-        "Test DB", "1.2.3",
-        env!("GIT_BUILD_HASH"), "1.2.3", env!("GIT_BUILD_TAINT")
+    let runner = AgentRunner::new(
+        Box::new(TestAgent::new()),
+        conf, AgentVersion::new(
+            env!("GIT_BUILD_HASH"), env!("CARGO_PKG_VERSION"),
+            env!("GIT_BUILD_TAINT")
+        )
     );
-
-    let agent = TestAgent::new(conf, version);
-    agent.run();
+    runner.run();
 }
