@@ -12,6 +12,7 @@
 //! extern crate unamed_agent;
 //! 
 //! use unamed_agent::Agent;
+//! use unamed_agent::AgentResult;
 //! use unamed_agent::AgentRunner;
 //! use unamed_agent::config::AgentConfig;
 //! use unamed_agent::config::AgentWebServerConfig;
@@ -28,8 +29,8 @@
 //! }
 //! 
 //! impl Agent for TestAgent {
-//!     fn datastore_version(&self) -> DatastoreVersion {
-//!         DatastoreVersion::new("Test DB", "1.2.3")
+//!     fn datastore_version(&self) -> AgentResult<DatastoreVersion> {
+//!         Ok(DatastoreVersion::new("Test DB", "1.2.3"))
 //!     }
 //! }
 //! 
@@ -67,7 +68,13 @@ use router::Router;
 
 mod api;
 pub mod config;
+pub mod error;
 pub mod models;
+
+pub use self::error::AgentError;
+pub use self::error::AgentResult;
+
+use self::models::DatastoreVersion;
 
 
 /// Trait to share common agent code and features.
@@ -75,7 +82,7 @@ pub mod models;
 /// Agents should be implemented as structs that implement `BaseAgent`.
 pub trait Agent {
     /// Fetch the agent and datastore versions.
-    fn datastore_version(&self) -> self::models::DatastoreVersion;
+    fn datastore_version(&self) -> AgentResult<DatastoreVersion>;
 }
 
 /// Container type to hold an Agent trait object.

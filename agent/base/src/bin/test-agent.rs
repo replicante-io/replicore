@@ -1,6 +1,7 @@
 extern crate unamed_agent;
 
 use unamed_agent::Agent;
+use unamed_agent::AgentResult;
 use unamed_agent::AgentRunner;
 use unamed_agent::config::AgentConfig;
 use unamed_agent::config::AgentWebServerConfig;
@@ -17,8 +18,8 @@ impl TestAgent {
 }
 
 impl Agent for TestAgent {
-    fn datastore_version(&self) -> DatastoreVersion {
-        DatastoreVersion::new("Test DB", "1.2.3")
+    fn datastore_version(&self) -> AgentResult<DatastoreVersion> {
+        Ok(DatastoreVersion::new("Test DB", "1.2.3"))
     }
 }
 

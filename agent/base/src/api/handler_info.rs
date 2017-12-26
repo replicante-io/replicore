@@ -27,8 +27,9 @@ impl InfoHandler {
 
 impl Handler for InfoHandler {
     fn handle(&self, _: &mut Request) -> IronResult<Response> {
+        let datastore = self.agent.datastore_version()?;
         let version = VersionInfo {
-            datastore: self.agent.datastore_version(),
+            datastore: datastore,
             version: self.version.clone()
         };
         let mut response = Response::new();
@@ -56,13 +57,14 @@ mod tests {
 
     use super::InfoHandler;
     use super::super::super::Agent;
+    use super::super::super::AgentResult;
     use super::super::super::models::AgentVersion;
     use super::super::super::models::DatastoreVersion;
 
     struct TestAgent {}
     impl Agent for TestAgent {
-        fn datastore_version(&self) -> DatastoreVersion {
-            DatastoreVersion::new("DB", "1.2.3")
+        fn datastore_version(&self) -> AgentResult<DatastoreVersion> {
+            Ok(DatastoreVersion::new("DB", "1.2.3"))
         }
     }
 
