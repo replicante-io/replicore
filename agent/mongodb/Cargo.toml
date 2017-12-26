@@ -1,6 +1,18 @@
 [package]
-name = "mongodb"
+name = "unamed_agent_mongodb"
 version = "0.1.0"
 authors = ["Stefano Pogliani <stefano@spogliani.net>"]
+build = "../base/build.rs"
+
+[[bin]]
+name = "unamed-agent-mongodb-rs"
+path = "src/bin/mongodb/rs/agent.rs"
 
 [dependencies]
+unamed_agent = { path = "../base" }
+
+bson = "^0.10.0"
+mongodb = "^0.3.7"
+
+[build-dependencies]
+git2 = "^0.6.10"
