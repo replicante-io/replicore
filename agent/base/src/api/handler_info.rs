@@ -5,9 +5,9 @@ use iron::status;
 use iron_json_response::JsonResponse;
 use iron_json_response::JsonResponseMiddleware;
 
-use super::AgentContainer;
-use super::AgentVersion;
-use super::DatastoreVersion;
+use super::super::AgentContainer;
+use super::super::AgentVersion;
+use super::super::DatastoreVersion;
 
 
 /// Handler struct to implement the /api/v1/info endpoint.
@@ -46,40 +46,18 @@ struct VersionInfo {
 }
 
 
-pub fn index(_: &mut Request) -> IronResult<Response> {
-    Ok(Response::with((status::Ok, "API endpoints mounted under /api/v1/")))
-}
-
-
-pub fn status(_: &mut Request) -> IronResult<Response> {
-    Ok(Response::with((status::Ok, "TODO")))
-}
-
-
 #[cfg(test)]
 mod tests {
+    use std::sync::Arc;
+
     use iron::Headers;
     use iron_test::request;
     use iron_test::response;
 
-    #[test]
-    fn index_points_to_api() {
-        let response = request::get(
-            "http://localhost:3000/",
-            Headers::new(), &super::index
-        ).unwrap();
-        let result_body = response::extract_body_to_bytes(response);
-        let result_body = String::from_utf8(result_body).unwrap();
-        assert_eq!(result_body, "API endpoints mounted under /api/v1/");
-    }
-
-
-    use std::sync::Arc;
-
     use super::InfoHandler;
-    use super::super::Agent;
-    use super::super::AgentVersion;
-    use super::super::DatastoreVersion;
+    use super::super::super::Agent;
+    use super::super::super::AgentVersion;
+    use super::super::super::DatastoreVersion;
 
     struct TestAgent {}
     impl Agent for TestAgent {
