@@ -1,62 +1,114 @@
-/// Stored the base agent configuration options.
+use std::collections::HashMap;
+use std::convert::From;
+
+use config_crate::Value;
+
+
+/// Stores the base agent configuration options.
 ///
-/// The options are structured in sub-types and this struct
-/// acts as a container for all sub-sections.
-#[derive(Debug)]
+/// Configuration options used by the base agent utilities and structs.
+/// Attributes are public to make it easier to use configuration values
+/// but are not meant to be changed after the configuration is finialised.
+///
+/// New configuration values are created with `AgentConfig::default` and
+/// changing the attributes as desired.
+///
+/// # Examples
+///
+/// ```
+/// extern crate unamed_agent;
+/// use unamed_agent::config::AgentConfig;
+///
+/// fn main() {
+///     let mut agent = AgentConfig::default();
+///     agent.server.bind = String::from("1.2.3.4:5678");
+///
+///     // Ready to use the configuration, make read-only.
+///     let agent = agent;
+/// }
+/// ```
+#[derive(Debug, Deserialize)]
 pub struct AgentConfig {
-    web_server_conf: AgentWebServerConfig,
+    pub server: AgentServerConfig,
 }
 
 impl AgentConfig {
-    pub fn new(
-        web_server_conf: AgentWebServerConfig
-    ) -> AgentConfig {
+    /// Returns an `AgentConfig` filled with default values.
+    ///
+    /// Agent implementations should override defaults with their preferred
+    /// values before loading user settings,
+    ///
+    /// To load user settings, the `AgentConfig` can be converted in a `Value`
+    /// as profided by the rust `config` crate.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// extern crate config as config_crate;
+    /// extern crate unamed_agent;
+    ///
+    /// use config_crate::Config;
+    /// use unamed_agent::config::AgentConfig;
+    ///
+    /// fn main() {
+    ///     let mut default = AgentConfig::default();
+    ///     default.server.bind = String::from("127.0.0.1:80");
+    ///
+    ///     let mut conf = Config::new();
+    ///     conf.set_default("agent.prefix", default);
+    ///     conf.set("agent.prefix.server.bind", "127.0.0.1:1234");
+    ///     assert_eq!(
+    ///         "127.0.0.1:1234",
+    ///         conf.get_str("agent.prefix.server.bind").unwrap()
+    ///     );
+    /// }
+    /// ```
+    pub fn default() -> AgentConfig {
         AgentConfig {
-            web_server_conf
+            server: AgentServerConfig {
+                bind: String::from("127.0.0.1:8000")
+            }
         }
     }
+}
 
-    /// Access the web server configuration options.
-    pub fn web_server(&self) -> &AgentWebServerConfig {
-        &self.web_server_conf
+impl From<AgentConfig> for Value {
+    /// Convert an `AgentConfig` into a `Value` for the `config` crate.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// extern crate config as config_crate;
+    /// extern crate unamed_agent;
+    ///
+    /// use config_crate::Config;
+    /// use unamed_agent::config::AgentConfig;
+    ///
+    /// fn main() {
+    ///     let mut default = AgentConfig::default();
+    ///     default.server.bind = String::from("127.0.0.1:80");
+    ///
+    ///     let mut conf = Config::new();
+    ///     conf.set("agent", default);
+    ///     assert_eq!("127.0.0.1:80", conf.get_str("agent.server.bind").unwrap());
+    /// }
+    /// ```
+    fn from(agent: AgentConfig) -> Value {
+        let mut server: HashMap<String, Value> = HashMap::new();
+        server.insert(
+            String::from("bind"),
+            Value::new(None, agent.server.bind)
+        );
+
+        let mut conf: HashMap<String, Value> = HashMap::new();
+        conf.insert(String::from("server"), Value::new(None, server));
+        Value::new(None, conf)
     }
 }
 
 
 /// Store the web server configuration options.
-#[derive(Debug)]
-pub struct AgentWebServerConfig {
-    bind: String,
-}
-
-impl AgentWebServerConfig {
-    pub fn new(bind: &str) -> AgentWebServerConfig {
-        AgentWebServerConfig {
-            bind: String::from(bind)
-        }
-    }
-
-    /// Access the web server bind address.
-    pub fn bind_address(&self) -> &str {
-        &self.bind
-    }
-}
-
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn access_web_server_config() {
-        let web_conf = AgentWebServerConfig::new("123:456");
-        let conf = AgentConfig::new(web_conf);
-        assert_eq!("123:456", conf.web_server().bind_address());
-    }
-
-    #[test]
-    fn bind_address_is_returned() {
-        let conf = AgentWebServerConfig::new("123:456");
-        assert_eq!("123:456", conf.bind_address());
-    }
+#[derive(Debug, Deserialize)]
+pub struct AgentServerConfig {
+    pub bind: String,
 }

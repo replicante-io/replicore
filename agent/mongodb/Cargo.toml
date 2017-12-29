@@ -12,7 +12,10 @@ path = "src/bin/mongodb/rs/agent.rs"
 unamed_agent = { path = "../base" }
 
 bson = "^0.10.0"
+config = "^0.7.0"
 mongodb = "^0.3.7"
+serde = "^1.0.25"
+serde_derive = "^1.0.25"
 
 [build-dependencies]
 git2 = "^0.6.10"

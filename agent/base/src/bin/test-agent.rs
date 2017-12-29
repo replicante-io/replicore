@@ -4,7 +4,6 @@ use unamed_agent::Agent;
 use unamed_agent::AgentResult;
 use unamed_agent::AgentRunner;
 use unamed_agent::config::AgentConfig;
-use unamed_agent::config::AgentWebServerConfig;
 use unamed_agent::models::AgentVersion;
 use unamed_agent::models::DatastoreVersion;
 
@@ -25,10 +24,10 @@ impl Agent for TestAgent {
 
 
 fn main() {
-    let conf = AgentConfig::new(AgentWebServerConfig::new("127.0.0.1:8080"));
     let runner = AgentRunner::new(
         Box::new(TestAgent::new()),
-        conf, AgentVersion::new(
+        AgentConfig::default(),
+        AgentVersion::new(
             env!("GIT_BUILD_HASH"), env!("CARGO_PKG_VERSION"),
             env!("GIT_BUILD_TAINT")
         )

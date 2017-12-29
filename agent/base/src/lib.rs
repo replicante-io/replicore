@@ -1,4 +1,4 @@
-//! This package provides interfaces and structs to build <???> agents.
+//! This package provides interfaces and structs to build ??? agents.
 //!
 //! The package implements a base `Agent` trait to provide a common interface.
 //!
@@ -15,7 +15,7 @@
 //! use unamed_agent::AgentResult;
 //! use unamed_agent::AgentRunner;
 //! use unamed_agent::config::AgentConfig;
-//! use unamed_agent::config::AgentWebServerConfig;
+//! use unamed_agent::config::AgentServerConfig;
 //! use unamed_agent::models::AgentVersion;
 //! use unamed_agent::models::DatastoreVersion;
 //! 
@@ -36,10 +36,10 @@
 //! 
 //! 
 //! fn main() {
-//!     let conf = AgentConfig::new(AgentWebServerConfig::new("127.0.0.1:8080"));
 //!     let runner = AgentRunner::new(
 //!         Box::new(TestAgent::new()),
-//!         conf, AgentVersion::new(
+//!         AgentConfig::default(),
+//!         AgentVersion::new(
 //!             env!("GIT_BUILD_HASH"), env!("CARGO_PKG_VERSION"),
 //!             env!("GIT_BUILD_TAINT")
 //!         )
@@ -48,6 +48,8 @@
 //!     //runner.run();
 //! }
 //! ```
+extern crate config as config_crate;
+
 extern crate iron;
 extern crate iron_json_response;
 extern crate router;
@@ -125,10 +127,10 @@ impl AgentRunner {
         router.get("/api/v1/info", info, "info");
         router.get("/api/v1/status", api::status, "status");
 
-        let conf = self.conf.web_server();
-        println!("Listening on {} ...", conf.bind_address());
+        let bind = &self.conf.server.bind;
+        println!("Listening on {} ...", bind);
         Iron::new(router)
-            .http(conf.bind_address())
+            .http(bind)
             .expect("Unable to start server");
     }
 }

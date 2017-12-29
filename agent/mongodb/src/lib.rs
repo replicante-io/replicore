@@ -1,6 +1,11 @@
 #[macro_use(bson, doc)]
 extern crate bson;
+extern crate config;
 extern crate mongodb;
+
+extern crate serde;
+#[macro_use]
+extern crate serde_derive;
 
 extern crate unamed_agent;
 
@@ -15,44 +20,51 @@ use unamed_agent::AgentError;
 use unamed_agent::AgentResult;
 use unamed_agent::models::DatastoreVersion;
 
+pub mod settings;
 mod error;
 
+use self::settings::MongoDBSettings;
 
+
+/// Agent dealing with MongoDB 3.x Replica Sets.
 pub struct MongoDBAgent {
-    mongo: Client
+    settings: MongoDBSettings,
 }
 
 impl MongoDBAgent {
-    pub fn new() -> MongoDBAgent {
-        // TODO: load configuration.
-        // TODO: connect to client.
+    pub fn new(settings: MongoDBSettings) -> MongoDBAgent {
         MongoDBAgent {
-            mongo: Client::connect("172.17.0.2", 27017).expect("Failed to connect to MongoDB")
+            settings: settings,
         }
+    }
+}
+
+impl MongoDBAgent {
+    /// Instantiates a client to interact with MongoDB.
+    fn client(&self) -> AgentResult<Client> {
+        let host = &self.settings.host;
+        let port = self.settings.port as u16;
+        Client::connect(host, port).map_err(self::error::to_agent)
     }
 }
 
 impl Agent for MongoDBAgent {
     fn datastore_version(&self) -> AgentResult<DatastoreVersion> {
-        let info = self.mongo.db("test").command(
+        let mongo = self.client()?;
+        let info = mongo.db("test").command(
             doc! {"buildInfo" => 1},
             CommandType::BuildInfo,
             None
-        );
-        match info {
-            Err(error) => Err(self::error::to_agent(error)),
-            Ok(info) => {
-                let version = info.get("version").ok_or(AgentError::ModelViolation(
-                    String::from("Datastore does not expose its version")
-                ))?;
-                if let &Bson::String(ref version) = version {
-                    Ok(DatastoreVersion::new("MongoDB", version))
-                } else {
-                    Err(AgentError::ModelViolation(String::from(
-                        "Unexpeted version type (should be String)"
-                    )))
-                }
-            }
+        ).map_err(self::error::to_agent)?;
+        let version = info.get("version").ok_or(AgentError::ModelViolation(
+            String::from("Unable to determine MongoDB version")
+        ))?;
+        if let &Bson::String(ref version) = version {
+            Ok(DatastoreVersion::new("MongoDB", version))
+        } else {
+            Err(AgentError::ModelViolation(String::from(
+                "Unexpeted version type (should be String)"
+            )))
         }
     }
 }
