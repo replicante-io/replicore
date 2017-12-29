@@ -14,6 +14,7 @@ unamed_agent = { path = "../base" }
 bson = "^0.10.0"
 config = "^0.7.0"
 mongodb = "^0.3.7"
+#mongodb = {path = "../../../../bugs/mongo-rust-driver-prototype"}
 serde = "^1.0.25"
 serde_derive = "^1.0.25"
 

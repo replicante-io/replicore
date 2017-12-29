@@ -28,29 +28,43 @@ use self::settings::MongoDBSettings;
 
 /// Agent dealing with MongoDB 3.x Replica Sets.
 pub struct MongoDBAgent {
+    // The client needs to reference mongo settings inside the agent.
+    // To implement this, the client is stored in an option that is
+    // filled just after the agent is created while in the factory.
+    client: Option<Client>,
     settings: MongoDBSettings,
 }
 
 impl MongoDBAgent {
-    pub fn new(settings: MongoDBSettings) -> MongoDBAgent {
-        MongoDBAgent {
+    pub fn new(settings: MongoDBSettings) -> AgentResult<MongoDBAgent> {
+        let mut agent = MongoDBAgent {
+            client: None,
             settings: settings,
-        }
+        };
+        agent.init_client()?;
+        Ok(agent)
     }
 }
 
 impl MongoDBAgent {
-    /// Instantiates a client to interact with MongoDB.
-    fn client(&self) -> AgentResult<Client> {
+    fn init_client(&mut self) -> AgentResult<()> {
         let host = &self.settings.host;
         let port = self.settings.port as u16;
-        Client::connect(host, port).map_err(self::error::to_agent)
+        let client = Client::connect(host, port)
+            .map_err(self::error::to_agent)?;
+        self.client = Some(client);
+        Ok(())
+    }
+
+    /// Extract the client from the wrapping `Option`.
+    fn client(&self) -> &Client {
+        self.client.as_ref().unwrap()
     }
 }
 
 impl Agent for MongoDBAgent {
     fn datastore_version(&self) -> AgentResult<DatastoreVersion> {
-        let mongo = self.client()?;
+        let mongo = self.client();
         let info = mongo.db("test").command(
             doc! {"buildInfo" => 1},
             CommandType::BuildInfo,
