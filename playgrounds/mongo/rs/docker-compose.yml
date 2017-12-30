@@ -1,0 +1,51 @@
+version: '3'
+
+
+services:
+  node1:
+    command:
+      - 'mongod'
+      - '--replSet'
+      - 'replica-set'
+    image: mongo:3.6
+    hostname: node1
+    volumes:
+      - './data/node1:/data/db'
+
+  node2:
+    command:
+      - 'mongod'
+      - '--replSet'
+      - 'replica-set'
+    depends_on:
+      - node1
+    image: mongo:3.6
+    hostname: node2
+    volumes:
+      - './data/node2:/data/db'
+
+  node3:
+    command:
+      - 'mongod'
+      - '--replSet'
+      - 'replica-set'
+    depends_on:
+      - node1
+      - node2
+    image: mongo:3.6
+    hostname: node3
+    volumes:
+      - './data/node3:/data/db'
+
+  controller:
+    command:
+      - 'bash'
+      - '/files/init.sh'
+    depends_on:
+      - node1
+      - node2
+      - node3
+    image: mongo:3.6
+    hostname: controller
+    volumes:
+      - './:/files'
