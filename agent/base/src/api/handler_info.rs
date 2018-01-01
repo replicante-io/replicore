@@ -10,7 +10,7 @@ use super::super::models::AgentVersion;
 use super::super::models::DatastoreVersion;
 
 
-/// Handler struct to implement the /api/v1/info endpoint.
+/// Handler implementing the /api/v1/info endpoint.
 pub struct InfoHandler {
     agent: AgentContainer,
     version: AgentVersion
@@ -60,8 +60,10 @@ mod tests {
     use super::super::super::Agent;
     use super::super::super::AgentError;
     use super::super::super::AgentResult;
+
     use super::super::super::models::AgentVersion;
     use super::super::super::models::DatastoreVersion;
+    use super::super::super::models::Shard;
 
     struct TestAgent {
         success_version: bool
@@ -74,6 +76,10 @@ mod tests {
             } else {
                 Err(AgentError::GenericError(String::from("Testing failure")))
             }
+        }
+
+        fn shards(&self) -> AgentResult<Vec<Shard>> {
+            Ok(vec![])
         }
     }
 

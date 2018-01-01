@@ -32,6 +32,9 @@ pub enum AgentError {
 
     /// The datastore does not respect the documented model.
     ModelViolation(String),
+
+    /// The datastore did not reply as expected.
+    UnsupportedDatastore(String),
 }
 
 impl From<AgentError> for IronError {
@@ -64,6 +67,9 @@ impl fmt::Display for AgentError {
             AgentError::ModelViolation(ref msg) => write!(
                 fmt, "The datastore violated the documented model: {}", msg
             ),
+            AgentError::UnsupportedDatastore(ref msg) => write!(
+                fmt, "The datastore did not reply as expected: {}", msg
+            ),
         }
     }
 }
@@ -74,6 +80,7 @@ impl Error for AgentError {
             AgentError::DatastoreError(_) => "DatastoreError",
             AgentError::GenericError(_) => "GenericError",
             AgentError::ModelViolation(_) => "ModelViolation",
+            AgentError::UnsupportedDatastore(_) => "UnsupportedDatastore",
         }
     }
 
@@ -94,6 +101,10 @@ mod tests {
             (AgentError::DatastoreError(String::from("")), "DatastoreError"),
             (AgentError::GenericError(String::from("")), "GenericError"),
             (AgentError::ModelViolation(String::from("")), "ModelViolation"),
+            (
+                AgentError::UnsupportedDatastore(String::from("")),
+                "UnsupportedDatastore"
+            ),
         ];
         for (error, desc) in descriptions {
             assert_eq!(error.description(), desc);
@@ -111,6 +122,9 @@ mod tests {
         ), (
             AgentError::ModelViolation(String::from("£$%")),
             "The datastore violated the documented model: £$%"
+        ), (
+            AgentError::UnsupportedDatastore(String::from("abc")),
+            "The datastore did not reply as expected: abc"
         )];
         for (error, msg) in descriptions {
             assert_eq!(error.to_string(), msg);

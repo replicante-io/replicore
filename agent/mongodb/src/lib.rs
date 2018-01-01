@@ -18,10 +18,14 @@ use mongodb::db::ThreadedDatabase;
 use unamed_agent::Agent;
 use unamed_agent::AgentError;
 use unamed_agent::AgentResult;
+
 use unamed_agent::models::DatastoreVersion;
+use unamed_agent::models::Shard;
+use unamed_agent::models::ShardRole;
 
 pub mod settings;
 mod error;
+mod rs_status;
 
 use self::settings::MongoDBSettings;
 
@@ -47,6 +51,7 @@ impl MongoDBAgent {
 }
 
 impl MongoDBAgent {
+    /// Initialises the MongoDB client instance for the agent.
     fn init_client(&mut self) -> AgentResult<()> {
         let host = &self.settings.host;
         let port = self.settings.port as u16;
@@ -80,5 +85,22 @@ impl Agent for MongoDBAgent {
                 "Unexpeted version type (should be String)"
             )))
         }
+    }
+
+    fn shards(&self) -> AgentResult<Vec<Shard>> {
+        let mongo = self.client();
+        let status = mongo.db("admin").command(
+            doc! {"replSetGetStatus" => 1},
+            CommandType::IsMaster,
+            None
+        ).map_err(self::error::to_agent)?;
+        let name = rs_status::name(&status)?;
+        let role = rs_status::role(&status)?;
+        let last_op = rs_status::last_op(&status)?;
+        let lag = match role {
+            ShardRole::Primary => 0,
+            _ => rs_status::lag(&status, last_op)?
+        };
+        Ok(vec![Shard::new(&name, role, lag, last_op)])
     }
 }

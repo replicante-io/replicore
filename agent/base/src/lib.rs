@@ -14,10 +14,12 @@
 //! use unamed_agent::Agent;
 //! use unamed_agent::AgentResult;
 //! use unamed_agent::AgentRunner;
+//!
 //! use unamed_agent::config::AgentConfig;
-//! use unamed_agent::config::AgentServerConfig;
+//!
 //! use unamed_agent::models::AgentVersion;
 //! use unamed_agent::models::DatastoreVersion;
+//! use unamed_agent::models::Shard;
 //! 
 //! 
 //! pub struct TestAgent {}
@@ -31,6 +33,10 @@
 //! impl Agent for TestAgent {
 //!     fn datastore_version(&self) -> AgentResult<DatastoreVersion> {
 //!         Ok(DatastoreVersion::new("Test DB", "1.2.3"))
+//!     }
+//!
+//!     fn shards(&self) -> AgentResult<Vec<Shard>> {
+//!         Ok(vec![])
 //!     }
 //! }
 //! 
@@ -77,14 +83,18 @@ pub use self::error::AgentError;
 pub use self::error::AgentResult;
 
 use self::models::DatastoreVersion;
+use self::models::Shard;
 
 
 /// Trait to share common agent code and features.
 ///
 /// Agents should be implemented as structs that implement `BaseAgent`.
 pub trait Agent {
-    /// Fetch the agent and datastore versions.
+    /// Fetches the datastore version information.
     fn datastore_version(&self) -> AgentResult<DatastoreVersion>;
+
+    /// Fetches all shards and details on the managed datastore node.
+    fn shards(&self) -> AgentResult<Vec<Shard>>;
 }
 
 /// Container type to hold an Agent trait object.
@@ -122,10 +132,11 @@ impl AgentRunner {
         let info = api::InfoHandler::new(
             Arc::clone(&self.agent), self.version.clone()
         );
+        let status = api::StatusHandler::new(Arc::clone(&self.agent));
 
         router.get("/", api::index, "index");
         router.get("/api/v1/info", info, "info");
-        router.get("/api/v1/status", api::status, "status");
+        router.get("/api/v1/status", status, "status");
 
         let bind = &self.conf.server.bind;
         println!("Listening on {} ...", bind);
