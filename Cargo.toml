@@ -1,14 +1,5 @@
-[package]
-name = "unamed"
-version = "0.1.0"
-authors = ["Stefano Pogliani <stefano@spogliani.net>"]
-
-[[bin]]
-name = "unamed-core"
-path = "core/bin/main.rs"
-
-[dependencies]
-unamed_agent = { path = "agent/base" }
-unamed_agent_mongodb = { path = "agent/mongodb" }
-
 [workspace]
+members = [
+    "agent/base",
+    "agent/mongodb"
+]
