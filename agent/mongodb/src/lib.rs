@@ -30,7 +30,7 @@ mod rs_status;
 use self::settings::MongoDBSettings;
 
 
-/// Agent dealing with MongoDB 3.x Replica Sets.
+/// Agent dealing with MongoDB 3.2+ Replica Sets.
 pub struct MongoDBAgent {
     // The client needs to reference mongo settings inside the agent.
     // To implement this, the client is stored in an option that is
