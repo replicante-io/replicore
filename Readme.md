@@ -1,6 +1,6 @@
-Unamed project
-==============
-TODO: find name.
+Replicante
+==========
+A datastore automation system.
 
 
 Organization
@@ -9,11 +9,10 @@ This repo homes the following:
 
   * All the documentation in `docs/`
     * Special mention: agent and datastore specifications in `docs/specs`.
-  * The base rust agent library and the official agents are under `agent/`.
-  * The core system is under `core/`.
   * Docker based playgourds for some datastores are under `playgrounds/`.
 
 
 Playgrounds
 ===========
-TODO: a way to easily get some datastore to play around with and develop agains.
+Playgrounds are docker and docker-compose projects that run distributed
+datastores locally so that replicante can be developed and tested.

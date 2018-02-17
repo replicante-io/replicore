@@ -1,5 +1,6 @@
 [workspace]
 members = [
-    "agent/base",
-    "agent/mongodb"
+    #"agent/discovery",
+    #"agent/state_fetcher",
+    #"storage/state"
 ]
