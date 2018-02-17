@@ -18,7 +18,7 @@ The following information MUST be included:
 
   * `datastore` information:
     * `name`: name of datastore managed by the agent.
-    * `version`: the [SemVer](https://semver.org/) datastore version.
+    * `version`: the datastore version.
   * `version` information:
     * Version `number`: the [SemVer](https://semver.org/) agent version.
     * Version control `checkout`: VCS ID of the code that was build.

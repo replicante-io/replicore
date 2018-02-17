@@ -1,6 +1,25 @@
+[package]
+name = "replicante"
+version = "0.1.0"
+authors = ["Stefano Pogliani <stefano@spogliani.net>"]
+
+description = "Safe DataStore automation"
+documentation = "https://www.replicante.io/docs"
+homepage = "https://www.replicante.io/"
+repository = "https://github.com/replicante-io/replicante"
+readme = "Readme.md"
+keywords = ["automation", "datastore", "operations"]
+license = "MIT"
+
+
+[badges]
+maintenance = { status = "actively-developed" }
+
+
+[dependencies]
+
+
 [workspace]
 members = [
-    #"agent/discovery",
-    #"agent/state_fetcher",
-    #"storage/state"
+  "."
 ]
