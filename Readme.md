@@ -16,3 +16,5 @@ Playgrounds
 ===========
 Playgrounds are docker and docker-compose projects that run distributed
 datastores locally so that replicante can be developed and tested.
+
+They moved to a dedicated repo: https://github.com/replicante-io/playgrounds
