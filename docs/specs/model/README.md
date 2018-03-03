@@ -54,6 +54,13 @@ The datastore MUST provide the following information:
   * For each node, which shards are on the node.
   * For each shard on each node, what the role of the node is
     (i.e, primary for the shard).
+
+Some details about replication require the cluster to be healthy enough to report such data.
+To avoid loosing information about a node because of other nodes in the cluster
+some information is optional but recommend.
+
+The datastore SHOULD provide the following information:
+
   * For each non-primary shard on each node, the replication lag for the node.
     The lag must be at least at the second granularity.
 
