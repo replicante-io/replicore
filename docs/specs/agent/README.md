@@ -17,24 +17,27 @@ Returns information about the agent itself.
 The following information MUST be included:
 
   * `datastore` information:
-    * `name`: name of datastore managed by the agent.
+    * `kind`: datastore software managed by the agent.
     * `version`: the datastore version.
-  * `version` information:
-    * Version `number`: the [SemVer](https://semver.org/) agent version.
-    * Version control `checkout`: VCS ID of the code that was build.
-    * Version control `taint` status: indicates uncommitted changes to the code.
+  * `agent` information:
+    * `version` information:
+      * Version `number`: the [SemVer](https://semver.org/) agent version.
+      * Version control `checkout`: VCS ID of the code that was build.
+      * Version control `taint` status: indicates uncommitted changes to the code.
 
 Example:
 ```json
 {
   "datastore": {
-    "name": "MongoDB",
+    "kind": "MongoDB",
     "version": "3.4.5"
   },
-  "version": {
-    "number": "0.1.0",
-    "checkout": "11a24d9c3940f60e527c571680d64e80e0889abe",
-    "taint": "not tainted"
+  "agent": {
+    "version": {
+      "number": "0.1.0",
+      "checkout": "11a24d9c3940f60e527c571680d64e80e0889abe",
+      "taint": "not tainted"
+    }
   }
 }
 ```
