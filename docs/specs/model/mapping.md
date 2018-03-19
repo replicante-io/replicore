@@ -1,16 +1,17 @@
 # Examples: mapping DBs to the Model
-The table below shows examples of how popular softwares map onto the model.
+The sections below shows examples of how some popular software map onto the datastore model.
 
 
 ## MongoDB Replica Set
 * Administration:
+  * A cluster-unique name for the node: name field from [`replSetGetStatus`](https://docs.mongodb.com/manual/reference/command/replSetGetStatus/).
   * Version information: [`buildInfo`](https://docs.mongodb.com/manual/reference/command/buildInfo/).
 
 * Clustering: `mongod` instances talking to each other.
 
 * Replication:
   * For each node, which shards are on the node: a single shard named after the replica set.
-  * For each shard on each node, what the role of the node is: [`replSetGetStatus`](https://docs.mongodb.com/manual/reference/command/replSetGetStatus/)
+  * For each shard on each node, what the role of the node is: [`replSetGetStatus`](https://docs.mongodb.com/manual/reference/command/replSetGetStatus/).
   * For each non-primary shard on each node, the replication lag for the node: [`replSetGetStatus`](https://docs.mongodb.com/manual/reference/command/replSetGetStatus/).
 
 * Sharding:
@@ -24,6 +25,7 @@ The table below shows examples of how popular softwares map onto the model.
 
 ## MongoDB Sharded
 * Administration:
+  * A cluster-unique name for the node: name field from [`replSetGetStatus`](https://docs.mongodb.com/manual/reference/command/replSetGetStatus/).
   * Version information: [`buildInfo`](https://docs.mongodb.com/manual/reference/command/buildInfo/).
 
 * Clustering:
@@ -50,6 +52,7 @@ TODO: create a docker cluster for tests and check what the API returns.
 Refenrence: https://cdn.rawgit.com/rabbitmq/rabbitmq-management/v3.7.2/priv/www/api/index.html
 
 * Administration:
+  * A cluster-unique name for the node: ???
   * Version information: ???
 
 * Clustering: ???

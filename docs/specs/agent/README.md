@@ -18,6 +18,7 @@ The following information MUST be included:
 
   * `datastore` information:
     * `kind`: datastore software managed by the agent.
+    * `name`: datastore determined, cluster unique, node name.
     * `version`: the datastore version.
   * `agent` information:
     * `version` information:
@@ -30,6 +31,7 @@ Example:
 {
   "datastore": {
     "kind": "MongoDB",
+    "name": "host.domain.com:27017",
     "version": "3.4.5"
   },
   "agent": {

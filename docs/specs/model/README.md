@@ -30,6 +30,7 @@ This aims of the model are:
 ## Administration
 The datastore MUST provide the following administration commands:
 
+  * A cluster-unique name for the node.
   * Version information.
 
 
