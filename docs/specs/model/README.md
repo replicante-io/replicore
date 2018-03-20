@@ -57,8 +57,13 @@ The datastore MUST provide the following information:
     (i.e, primary for the shard).
 
 Some details about replication require the cluster to be healthy enough to report such data.
-To avoid loosing information about a node because of other nodes in the cluster
-some information is optional but recommend.
+Such details may also be expensive to compute or, worse, require connections to non-local nodes.
+
+This information should be provided whenever possible as long as:
+
+  * Computing the information only requires local information
+    (i.e, it does not require connections to other nodes).
+  * The information can be computed relatively efficiently.
 
 The datastore SHOULD provide the following information:
 
