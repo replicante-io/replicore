@@ -1,6 +1,7 @@
+#[macro_use]
+extern crate error_chain;
 extern crate replicante;
 
 
-fn main() {
-    println!("TODO");
-}
+use replicante::run;
+quick_main!(run);
