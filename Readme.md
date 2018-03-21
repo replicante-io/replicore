@@ -9,7 +9,6 @@ This repo homes the following:
 
   * All the documentation in `docs/`
     * Special mention: agent and datastore specifications in `docs/specs`.
-  * Docker based playgourds for some datastores are under `playgrounds/`.
 
 
 Playgrounds
