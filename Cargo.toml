@@ -2,6 +2,7 @@
 name = "replicante"
 version = "0.1.0"
 authors = ["Stefano Pogliani <stefano@spogliani.net>"]
+build = "build.rs"
 
 description = "Safe DataStore automation"
 documentation = "https://www.replicante.io/docs"
@@ -12,14 +13,29 @@ keywords = ["automation", "datastore", "operations"]
 license = "MIT"
 
 
+[[bin]]
+name = "replicante"
+path = "src/main.rs"
+
+
+[lib]
+name = "replicante"
+path = "src/lib.rs"
+
+
 [badges]
 maintenance = { status = "actively-developed" }
 
 
 [dependencies]
+error-chain = "^0.11.0"
 
 
-[workspace]
-members = [
-  "."
-]
+[build-dependencies]
+git2 = "^0.7.0"
+
+
+#[workspace]
+#members = [
+#  "."
+#]

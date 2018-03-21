@@ -1,18 +1,6 @@
-/// TODO: Implement some sub-component collector dealing with the main logic.
-pub struct ReplicanteMain {
-    // TODO
-}
+#[macro_use]
+extern crate error_chain;
 
-impl ReplicanteMain {
-    /// TODO
-    pub fn configure() -> ReplicanteMain {
-        ReplicanteMain {
-            // TODO
-        }
-    }
 
-    /// TODO
-    pub fn run(self) {
-        // TODO
-    }
-}
+pub mod errors;
+pub use self::errors::{Error, ErrorKind, ResultExt, Result};
