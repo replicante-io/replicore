@@ -30,8 +30,7 @@ impl Config {
     /// [`std::fs::File`]: https://doc.rust-lang.org/std/fs/struct.File.html
     pub fn from_file<P: AsRef<Path>>(path: P) -> Result<Config> {
         let config = File::open(path)?;
-        let config = Config::from_reader(config)?;
-        Ok(config)
+        Config::from_reader(config)
     }
 
     /// Loads the configuration from the given [`std::io::Read`].

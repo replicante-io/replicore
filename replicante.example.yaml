@@ -1,0 +1,26 @@
+# The section below is for all logging configuration options.
+logging:
+  # Flush logs asynchronously.
+  # 
+  # Pro:
+  #     Async log flushing is more efficient as logging
+  #     statements are not blocked by the drain.
+  # 
+  # Con:
+  #     If the process crashes logs in the buffer may be lost.
+  #
+  # Recommendation:
+  #     Keep async logging enabled unless replicante is crashing
+  #     and the logs don't have any indications of why.
+  #
+  #     Async logging may also be disabled in testing, debugging,
+  #     or developing environments.
+  async: true
+
+  # The drain to send logs to.
+  # This option also determines the format and destination of logs.
+  #
+  # Available options:
+  #
+  #   * 'Json': prints JSON formatted logs to standard output.
+  drain: Json

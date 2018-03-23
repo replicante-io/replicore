@@ -30,6 +30,10 @@ impl Default for LoggingDrain {
 /// Logging configuration options.
 #[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
 pub struct Config {
+    /// Flush logs asynchronously.
+    #[serde(default = "Config::default_async")]
+    async: bool,
+
     /// The drain to send logs to.
     #[serde(default)]
     drain: LoggingDrain,
@@ -38,9 +42,15 @@ pub struct Config {
 impl Default for Config {
     fn default() -> Config {
         Config {
+            async: true,
             drain: LoggingDrain::default(),
         }
     }
+}
+
+impl Config {
+    /// Default value for `async` used by serde.
+    fn default_async() -> bool { true }
 }
 
 
@@ -48,7 +58,7 @@ impl Default for Config {
 ///
 /// [`Drain`]: slog/trait.Drain.html
 /// [`Logger`]: slog/struct.Logger.html
-fn drain_into_logger<D>(drain: D) -> Logger
+fn into_logger<D>(drain: D) -> Logger
     where D: SendSyncUnwindSafeDrain<Ok = (), Err = Never>,
           D: 'static + SendSyncRefUnwindSafeDrain<Err = Never, Ok = ()>
 {
@@ -57,16 +67,30 @@ fn drain_into_logger<D>(drain: D) -> Logger
     ))
 }
 
+/// Optionally wrap the drain into an [`Async`] drain.
+///
+/// [`Async`]: slog_async/struct.Async.html
+fn config_async<D>(config: Config, drain: D) -> Logger
+    where D: SendSyncUnwindSafeDrain<Ok = (), Err = Never>,
+          D: 'static + SendSyncRefUnwindSafeDrain<Err = Never, Ok = ()>
+{
+    match config.async {
+        true => into_logger(Async::new(drain).build().ignore_res()),
+        false => into_logger(drain),
+    }
+}
+
 
 /// Creates a [`Logger`] based on the given configuration.
 ///
 /// [`Logger`]: slog/struct.Logger.html
 pub fn configure(config: Config) -> Logger {
-    let drain = match config.drain {
-        LoggingDrain::Json => Mutex::new(Json::default(stdout())).map(IgnoreResult::new),
-    };
-    let drain = Async::new(drain).build().ignore_res();
-    drain_into_logger(drain)
+    match config.drain {
+        LoggingDrain::Json => {
+            let drain = Mutex::new(Json::default(stdout())).map(IgnoreResult::new);
+            config_async(config, drain)
+        },
+    }
 }
 
 /// Creates a fixed [`Logger`] to be used until configuration is loaded.
@@ -74,5 +98,5 @@ pub fn configure(config: Config) -> Logger {
 /// [`Logger`]: slog/struct.Logger.html
 pub fn starter() -> Logger {
     let drain = Mutex::new(Json::default(stdout())).map(IgnoreResult::new);
-    drain_into_logger(drain)
+    into_logger(drain)
 }
