@@ -5,15 +5,22 @@ use std::path::Path;
 use serde_yaml;
 
 use super::Result;
+use super::logging::Config as LoggingConfig;
 
 
+/// Replicante configuration options.
 #[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
 pub struct Config {
+    /// Logging configuration.
+    #[serde(default)]
+    pub logging: LoggingConfig,
 }
 
 impl Default for Config {
     fn default() -> Config {
-        Config {}
+        Config {
+            logging: LoggingConfig::default(),
+        }
     }
 }
 
@@ -60,6 +67,4 @@ mod tests {
         let cursor = Cursor::new("{}");
         Config::from_reader(cursor).unwrap();
     }
-
-    // TODO: test default
 }
