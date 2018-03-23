@@ -11,6 +11,8 @@ extern crate serde_yaml;
 #[macro_use]
 extern crate slog;
 extern crate slog_async;
+#[cfg(feature = "journald")]
+extern crate slog_journald;
 extern crate slog_json;
 
 use clap::App;

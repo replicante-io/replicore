@@ -22,16 +22,17 @@ logging:
   #
   # Available options:
   #
-  #   * 'Json': prints JSON formatted logs to standard output.
-  drain: Json
+  #   * 'json': prints JSON formatted logs to standard output.
+  #   * 'journald': if enabled at compile time, sends logs to systemd journal.
+  drain: json
 
   # The minimum logging level.
   #
   # Available options:
   #
-  #   * 'Critical'
-  #   * 'Error'
-  #   * 'Warning'
-  #   * 'Info'
-  #   * 'Debug' (only avaialbe in debug builds)
-  level: Info
+  #   * 'critical'
+  #   * 'error'
+  #   * 'warning'
+  #   * 'info'
+  #   * 'debug' (only avaialbe in debug builds)
+  level: info

@@ -10,13 +10,21 @@ use slog::SendSyncRefUnwindSafeDrain;
 use slog::SendSyncUnwindSafeDrain;
 
 use slog_async::Async;
+#[cfg(feature = "journald")]
+use slog_journald::JournaldDrain;
 use slog_json::Json;
 
 
 /// List of supported logging drains.
 #[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
 pub enum LoggingDrain {
+    /// Log objects to systemd journal (journald).
+    #[cfg(feature = "journald")]
+    #[sede(rename = "journald")]
+    Journald,
+
     /// Log JSON objects to standard output.
+    #[serde(rename = "json")]
     Json,
 }
 
@@ -31,14 +39,23 @@ impl Default for LoggingDrain {
 #[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
 pub enum LoggingLevel {
     /// Critical
+    #[serde(rename = "critical")]
     Critical,
+
     /// Error
+    #[serde(rename = "error")]
     Error,
+
     /// Warning
+    #[serde(rename = "warning")]
     Warning,
+
     /// Info
+    #[serde(rename = "info")]
     Info,
+
     /// Debug
+    #[serde(rename = "debug")]
     Debug,
 }
 
@@ -171,6 +188,8 @@ fn config_level<D>(config: Config, drain: D) -> Logger
 /// [`Logger`]: slog/struct.Logger.html
 pub fn configure(config: Config) -> Logger {
     match config.drain {
+        #[cfg(feature = "journald")]
+        LoggingDrain::Journald => config_level(config, JournaldDrain.ignore_res()),
         LoggingDrain::Json => {
             let drain = Mutex::new(Json::default(stdout())).map(IgnoreResult::new);
             config_level(config, drain)
