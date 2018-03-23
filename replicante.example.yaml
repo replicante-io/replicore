@@ -24,3 +24,14 @@ logging:
   #
   #   * 'Json': prints JSON formatted logs to standard output.
   drain: Json
+
+  # The minimum logging level.
+  #
+  # Available options:
+  #
+  #   * 'Critical'
+  #   * 'Error'
+  #   * 'Warning'
+  #   * 'Info'
+  #   * 'Debug' (only avaialbe in debug builds)
+  level: Info
