@@ -1,4 +1,7 @@
+use std::fs::File;
 use std::io::Read;
+use std::path::Path;
+
 use serde_yaml;
 
 use super::Result;
@@ -15,9 +18,18 @@ impl Default for Config {
 }
 
 impl Config {
+    /// Loads the configuration from the given [`std::fs::File`].
+    ///
+    /// [`std::fs::File`]: https://doc.rust-lang.org/std/fs/struct.File.html
+    pub fn from_file<P: AsRef<Path>>(path: P) -> Result<Config> {
+        let config = File::open(path)?;
+        let config = Config::from_reader(config)?;
+        Ok(config)
+    }
+
     /// Loads the configuration from the given [`std::io::Read`].
     ///
-    /// [`std::io::Read`]: https://doc.rust-lang.org/nightly/std/io/trait.Read.html
+    /// [`std::io::Read`]: https://doc.rust-lang.org/std/io/trait.Read.html
     pub fn from_reader<R: Read>(reader: R) -> Result<Config> {
         let conf = serde_yaml::from_reader(reader)?;
         Ok(conf)
