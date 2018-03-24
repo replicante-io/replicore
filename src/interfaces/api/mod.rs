@@ -30,7 +30,8 @@ pub struct API {
 
 impl API {
     /// Creates a new API interface.
-    pub fn new(config: Config, logger: Logger) -> API {
+    pub fn new(config: Config, logger: &Logger) -> API {
+        let logger = logger.new(o!("module" => "interfaces.api"));
         let mut router = RouterBuilder::new();
         router.get("/", routes::root_index, "index");
         API {
