@@ -26,11 +26,13 @@ use clap::Arg;
 use slog::Logger;
 
 
+mod components;
 mod config;
 mod errors;
 mod interfaces;
 mod logging;
 
+use self::components::Components;
 use self::config::Config;
 use self::interfaces::Interfaces;
 
@@ -53,14 +55,17 @@ pub use self::errors::Result;
 fn initialise_and_run(config: Config, logger: Logger) -> Result<()> {
     info!(logger, "Initialising sub-systems ...");
     let mut interfaces = Interfaces::new(&config, logger.clone())?;
+    let mut components = Components::new(&config, &logger, &mut interfaces)?;
 
     // Initialisation done, run all interfaces and components.
     info!(logger, "Starting sub-systems ...");
     interfaces.run()?;
+    components.run()?;
 
     // Wait for interfaces and components to terminate.
     info!(logger, "Replicante ready");
     interfaces.wait_all()?;
+    components.wait_all()?;
 
     info!(logger, "Replicante stopped gracefully");
     Ok(())
