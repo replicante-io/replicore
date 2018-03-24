@@ -3,6 +3,12 @@ extern crate clap;
 #[macro_use]
 extern crate error_chain;
 
+extern crate iron;
+extern crate iron_json_response;
+extern crate router;
+#[cfg(test)]
+extern crate iron_test;
+
 extern crate serde;
 #[macro_use]
 extern crate serde_derive;
@@ -45,12 +51,18 @@ pub use self::errors::Result;
 /// Interfaces can work in the same way if they need threads but some may just provide
 /// services to other interfaces and/or components.
 fn initialise_and_run(config: Config, logger: Logger) -> Result<()> {
-    debug!(logger, "Initialising interfaces ...");
+    info!(logger, "Initialising sub-systems ...");
     let mut interfaces = Interfaces::new(&config, logger.clone())?;
 
-    // Ready, wait for all threads to exit.
-    info!(logger, "Initialisation complete");
+    // Initialisation done, run all interfaces and components.
+    info!(logger, "Starting sub-systems ...");
     interfaces.run()?;
+
+    // Wait for interfaces and components to terminate.
+    info!(logger, "Replicante ready");
+    interfaces.wait_all()?;
+
+    info!(logger, "Replicante stopped gracefully");
     Ok(())
 }
 

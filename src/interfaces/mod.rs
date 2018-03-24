@@ -4,6 +4,11 @@ use super::Result;
 use super::config::Config;
 
 
+pub mod api;
+
+use self::api::API;
+
+
 /// A container for replicante interfaces.
 ///
 /// This container is useful to:
@@ -15,18 +20,30 @@ use super::config::Config;
 /// [`JoinHandle`]: std/thread/struct.JoinHandle.html
 pub struct Interfaces {
     logger: Logger,
+    api: API,
 }
 
 impl Interfaces {
     /// Creates and configures interfaces.
-    pub fn new(config: &Config, logger: Logger) -> Result<Interfaces> {
-        Ok(Interfaces { logger })
+    pub fn new(_config: &Config, logger: Logger) -> Result<Interfaces> {
+        let api = API::new(logger.clone());
+        Ok(Interfaces {
+            api,
+            logger,
+        })
     }
 
     /// Performs any final configuration and starts background threads.
     ///
     /// For example, the [`ApiInterface`] uses it to wrap the router into a server.
     pub fn run(&mut self) -> Result<()> {
+        self.api.run()?;
+        Ok(())
+    }
+
+    /// Waits for all interfaces to terminate.
+    pub fn wait_all(&mut self) -> Result<()> {
+        self.api.wait()?;
         Ok(())
     }
 }
