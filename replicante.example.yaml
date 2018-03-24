@@ -1,4 +1,13 @@
-# The section below is for all logging configuration options.
+# The section below is for the API server configuration options.
+api:
+  # The interface and port to bind the API server onto.
+  #
+  # By default, only bind to the local interface.
+  # Production environments should place an HTTPS proxy in front of the API.
+  bind: '127.0.0.1:16016'
+
+
+# The section below is for the logging configuration options.
 logging:
   # Flush logs asynchronously.
   # 

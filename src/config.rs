@@ -5,12 +5,19 @@ use std::path::Path;
 use serde_yaml;
 
 use super::Result;
+
+use super::interfaces::api::Config as APIConfig;
 use super::logging::Config as LoggingConfig;
 
 
 /// Replicante configuration options.
 #[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct Config {
+    /// API server configuration.
+    #[serde(default)]
+    pub api: APIConfig,
+
     /// Logging configuration.
     #[serde(default)]
     pub logging: LoggingConfig,
@@ -19,6 +26,7 @@ pub struct Config {
 impl Default for Config {
     fn default() -> Config {
         Config {
+            api: APIConfig::default(),
             logging: LoggingConfig::default(),
         }
     }
@@ -65,5 +73,17 @@ mod tests {
     fn from_reader_ok() {
         let cursor = Cursor::new("{}");
         Config::from_reader(cursor).unwrap();
+    }
+
+    #[test]
+    // NOTE: this cannot validate missing attributes.
+    fn ensure_example_config_matches_default() {
+        let default = Config::default();
+        let example = Config::from_file("replicante.example.yaml")
+            .expect("Cannot open example configuration");
+        assert_eq!(
+            default, example,
+            "Default configuration does not match replicante.example.yaml"
+        );
     }
 }

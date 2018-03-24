@@ -17,6 +17,7 @@ use slog_json::Json;
 
 /// List of supported logging drains.
 #[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub enum LoggingDrain {
     /// Log objects to systemd journal (journald).
     #[cfg(feature = "journald")]
@@ -37,6 +38,7 @@ impl Default for LoggingDrain {
 
 /// Possible logging levels.
 #[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub enum LoggingLevel {
     /// Critical
     #[serde(rename = "critical")]
@@ -80,6 +82,7 @@ impl From<LoggingLevel> for ::slog::Level {
 
 /// Logging configuration options.
 #[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct Config {
     /// Flush logs asynchronously.
     #[serde(default = "Config::default_async")]
@@ -97,7 +100,7 @@ pub struct Config {
 impl Default for Config {
     fn default() -> Config {
         Config {
-            async: true,
+            async: Config::default_async(),
             drain: LoggingDrain::default(),
             level: LoggingLevel::default(),
         }

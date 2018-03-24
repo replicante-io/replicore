@@ -12,14 +12,17 @@ use slog::Logger;
 use super::super::Result;
 
 
+mod config;
 mod router;
 mod routes;
 
+pub use self::config::Config;
 use self::router::RouterBuilder;
 
 
 /// The replicante HTTP API interface.
 pub struct API {
+    config: Config,
     handle: Option<JoinHandle<()>>,
     logger: Logger,
     router: Option<RouterBuilder>,
@@ -27,10 +30,11 @@ pub struct API {
 
 impl API {
     /// Creates a new API interface.
-    pub fn new(logger: Logger) -> API {
+    pub fn new(config: Config, logger: Logger) -> API {
         let mut router = RouterBuilder::new();
         router.get("/", routes::root_index, "index");
         API {
+            config,
             handle: None,
             logger,
             router: Some(router),
@@ -39,7 +43,7 @@ impl API {
 
     /// Creates an Iron server and spawns a thread to serve it.
     pub fn run(&mut self) -> Result<()> {
-        let bind = String::from("127.0.0.1:16016");
+        let bind = self.config.bind.clone();
         let chain = self.router.take().unwrap().build();
         let logger = self.logger.clone();
         self.handle = Some(thread::spawn(move || {
