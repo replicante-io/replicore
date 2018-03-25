@@ -25,9 +25,8 @@ pub struct Interfaces {
 
 impl Interfaces {
     /// Creates and configures interfaces.
-    pub fn new(config: &Config, logger: &Logger) -> Result<Interfaces> {
-        let api = API::new(config.api.clone(), logger);
-        let logger = logger.new(o!("module" => "interfaces"));
+    pub fn new(config: &Config, logger: Logger) -> Result<Interfaces> {
+        let api = API::new(config.api.clone(), logger.clone());
         Ok(Interfaces {
             api,
             logger,

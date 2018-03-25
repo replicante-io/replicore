@@ -54,7 +54,7 @@ pub use self::errors::Result;
 /// services to other interfaces and/or components.
 fn initialise_and_run(config: Config, logger: Logger) -> Result<()> {
     info!(logger, "Initialising sub-systems ...");
-    let mut interfaces = Interfaces::new(&config, &logger)?;
+    let mut interfaces = Interfaces::new(&config, logger.clone())?;
     let mut components = Components::new(&config, &logger, &mut interfaces)?;
 
     // Initialisation done, run all interfaces and components.

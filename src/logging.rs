@@ -5,6 +5,9 @@ use slog::Drain;
 use slog::IgnoreResult;
 use slog::Logger;
 
+use slog::FnValue;
+use slog::Record;
+
 use slog::Never;
 use slog::SendSyncRefUnwindSafeDrain;
 use slog::SendSyncUnwindSafeDrain;
@@ -21,7 +24,7 @@ use slog_json::Json;
 pub enum LoggingDrain {
     /// Log objects to systemd journal (journald).
     #[cfg(feature = "journald")]
-    #[sede(rename = "journald")]
+    #[serde(rename = "journald")]
     Journald,
 
     /// Log JSON objects to standard output.
@@ -194,7 +197,11 @@ pub fn configure(config: Config) -> Logger {
         #[cfg(feature = "journald")]
         LoggingDrain::Journald => config_level(config, JournaldDrain.ignore_res()),
         LoggingDrain::Json => {
-            let drain = Mutex::new(Json::default(stdout())).map(IgnoreResult::new);
+            let drain = Json::new(stdout())
+                .add_default_keys()
+                .add_key_value(o!("module" => FnValue(|rinfo : &Record| rinfo.module())))
+                .build();
+            let drain = Mutex::new(drain).map(IgnoreResult::new);
             config_level(config, drain)
         },
     }
@@ -204,6 +211,10 @@ pub fn configure(config: Config) -> Logger {
 ///
 /// [`Logger`]: slog/struct.Logger.html
 pub fn starter() -> Logger {
-    let drain = Mutex::new(Json::default(stdout())).map(IgnoreResult::new);
+    let drain = Json::new(stdout())
+        .add_default_keys()
+        .add_key_value(o!("module" => FnValue(|rinfo : &Record| rinfo.module())))
+        .build();
+    let drain = Mutex::new(drain).map(IgnoreResult::new);
     into_logger(drain)
 }

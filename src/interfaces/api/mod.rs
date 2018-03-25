@@ -13,10 +13,12 @@ use super::super::Result;
 
 
 mod config;
+mod middleware;
 mod router;
 mod routes;
 
 pub use self::config::Config;
+use self::middleware::RequestLogger;
 use self::router::RouterBuilder;
 
 
@@ -30,10 +32,10 @@ pub struct API {
 
 impl API {
     /// Creates a new API interface.
-    pub fn new(config: Config, logger: &Logger) -> API {
-        let logger = logger.new(o!("module" => "interfaces.api"));
+    pub fn new(config: Config, logger: Logger) -> API {
         let mut router = RouterBuilder::new();
         router.get("/", routes::root_index, "index");
+
         API {
             config,
             handle: None,
@@ -45,8 +47,11 @@ impl API {
     /// Creates an Iron server and spawns a thread to serve it.
     pub fn run(&mut self) -> Result<()> {
         let bind = self.config.bind.clone();
-        let chain = self.router.take().unwrap().build();
         let logger = self.logger.clone();
+
+        let mut chain = self.router.take().unwrap().build();
+        chain.link_after(RequestLogger::new(self.logger.clone()));
+
         self.handle = Some(thread::spawn(move || {
             info!(logger, "Starting API server"; "bind" => bind.clone());
             Iron::new(chain).http(bind).expect("Unable to start API server");
