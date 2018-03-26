@@ -11,18 +11,17 @@ use slog::Logger;
 
 use replicante_util_iron::MetricsHandler;
 use replicante_util_iron::MetricsMiddleware;
+use replicante_util_iron::RequestLogger;
 
 use super::super::Result;
 use super::metrics::Metrics;
 
 
 mod config;
-mod middleware;
 mod router;
 mod routes;
 
 pub use self::config::Config;
-use self::middleware::RequestLogger;
 use self::router::RouterBuilder;
 
 
