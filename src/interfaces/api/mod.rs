@@ -9,7 +9,10 @@ use std::thread::JoinHandle;
 use iron::Iron;
 use slog::Logger;
 
+use replicante_util_iron::MetricsHandler;
+
 use super::super::Result;
+use super::metrics::Metrics;
 
 
 mod config;
@@ -32,9 +35,11 @@ pub struct API {
 
 impl API {
     /// Creates a new API interface.
-    pub fn new(config: Config, logger: Logger) -> API {
+    pub fn new(config: Config, logger: Logger, metrics: &Metrics) -> API {
+        let registry = metrics.registry().clone();
         let mut router = RouterBuilder::new();
         router.get("/", routes::root_index, "index");
+        router.get("/api/v1/metrics", MetricsHandler::new(registry), "metrics");
 
         API {
             config,

@@ -1,4 +1,5 @@
 use prometheus::Registry;
+use prometheus::process_collector::ProcessCollector;
 
 use super::super::Result;
 
@@ -15,6 +16,8 @@ impl Metrics {
     /// Creates a new `Metrics` interface.
     pub fn new() -> Metrics {
         let registry = Registry::new();
+        let process = ProcessCollector::for_self();
+        registry.register(Box::new(process)).expect("Unable to register process metrics");
         Metrics { registry }
     }
 

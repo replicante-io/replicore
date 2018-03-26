@@ -589,7 +589,9 @@ name = "replicante_util_iron"
 version = "0.1.0"
 dependencies = [
  "iron 0.6.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "iron-test 0.6.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "prometheus 0.3.13 (registry+https://github.com/rust-lang/crates.io-index)",
+ "router 0.6.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "slog 2.2.1 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 

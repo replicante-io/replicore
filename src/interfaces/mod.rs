@@ -28,8 +28,8 @@ pub struct Interfaces {
 impl Interfaces {
     /// Creates and configures interfaces.
     pub fn new(config: &Config, logger: Logger) -> Result<Interfaces> {
-        let api = API::new(config.api.clone(), logger);
         let metrics = Metrics::new();
+        let api = API::new(config.api.clone(), logger, &metrics);
         Ok(Interfaces {
             api,
             metrics,
