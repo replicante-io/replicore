@@ -5,8 +5,10 @@ use super::config::Config;
 
 
 pub mod api;
+pub mod metrics;
 
 use self::api::API;
+use self::metrics::Metrics;
 
 
 /// A container for replicante interfaces.
@@ -19,17 +21,18 @@ use self::api::API;
 /// [`Drop`]: std/ops/trait.Drop.html
 /// [`JoinHandle`]: std/thread/struct.JoinHandle.html
 pub struct Interfaces {
-    logger: Logger,
-    api: API,
+    pub api: API,
+    pub metrics: Metrics,
 }
 
 impl Interfaces {
     /// Creates and configures interfaces.
     pub fn new(config: &Config, logger: Logger) -> Result<Interfaces> {
-        let api = API::new(config.api.clone(), logger.clone());
+        let api = API::new(config.api.clone(), logger);
+        let metrics = Metrics::new();
         Ok(Interfaces {
             api,
-            logger,
+            metrics,
         })
     }
 
@@ -38,18 +41,14 @@ impl Interfaces {
     /// For example, the [`ApiInterface`] uses it to wrap the router into a server.
     pub fn run(&mut self) -> Result<()> {
         self.api.run()?;
+        self.metrics.run()?;
         Ok(())
     }
 
     /// Waits for all interfaces to terminate.
     pub fn wait_all(&mut self) -> Result<()> {
         self.api.wait()?;
+        self.metrics.wait()?;
         Ok(())
-    }
-}
-
-impl Drop for Interfaces {
-    fn drop(&mut self) {
-        info!(self.logger, "Shutdown: cleaning up interfaces ...");
     }
 }

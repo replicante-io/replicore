@@ -9,6 +9,10 @@ extern crate router;
 #[cfg(test)]
 extern crate iron_test;
 
+extern crate prometheus;
+
+extern crate replicante_util_iron;
+
 extern crate serde;
 #[macro_use]
 extern crate serde_derive;
