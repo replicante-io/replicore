@@ -45,3 +45,30 @@ logging:
   #   * 'info'
   #   * 'debug' (only avaialbe in debug builds)
   level: info
+
+
+# The section below is for the distributed tracing configuration options.
+tracing:
+  # The distributed tracing backend to integrate with.
+  #
+  # Available options:
+  #
+  #   * 'noop'
+  #   * 'zipkin'
+  backend: noop
+
+  # Any backend-specific option is set in the `options` dictionary.
+  # The available options vary from tracer to tracer and are documented below.
+  #
+  # Zipkin options
+  #options:
+  #  # (required) The service name for this zipkin endpoint.
+  #  service_name: replicante
+  #
+  #  # (required) List of kafka seed hostnames.
+  #  kafka:
+  #    - HOST1:9092
+  #    - HOST2:9092
+  #
+  #  # (optional) The kafka topic to publish spans to.
+  #  topic: zipkin

@@ -12,6 +12,7 @@ extern crate iron_test;
 extern crate prometheus;
 
 extern crate replicante_util_iron;
+extern crate replicante_util_tracing;
 
 extern crate serde;
 #[macro_use]
