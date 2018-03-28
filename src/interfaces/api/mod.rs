@@ -86,4 +86,11 @@ impl API {
         self.handle.take().map(|handle| handle.join());
         Ok(())
     }
+
+    /// Returns an `API` instance usable as a mock.
+    #[cfg(test)]
+    pub fn mock(logger: Logger, metrics: &Metrics) -> API {
+        let config = Config::default();
+        API::new(config, logger, metrics)
+    }
 }

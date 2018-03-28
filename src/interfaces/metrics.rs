@@ -35,4 +35,10 @@ impl Metrics {
     pub fn wait(&self) -> Result<()> {
         Ok(())
     }
+
+    /// Returns a `Metrics` instance usable as a mock.
+    #[cfg(test)]
+    pub fn mock() -> Metrics {
+        Metrics::new()
+    }
 }

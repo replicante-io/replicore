@@ -59,3 +59,51 @@ impl Interfaces {
         Ok(())
     }
 }
+
+
+// *** Implement interfaces mocks for tests *** //
+/// A container for mocks used by interfaces.
+#[cfg(test)]
+pub struct MockInterfaces {
+}
+
+#[cfg(test)]
+impl Interfaces {
+    /// Mock interfaces and wrap them in an `Interfaces` instance.
+    ///
+    /// This method will use a JSON logger to stdout.
+    /// Use `Interfaces::mock_with_logger` to specify the logger.
+    pub fn mock() -> (Interfaces, MockInterfaces) {
+        let logger = super::logging::starter();
+        Interfaces::mock_with_logger(logger)
+    }
+
+    /// Mock interfaces using the given logger and wrap them in an `Interfaces` instance.
+    pub fn mock_with_logger(logger: Logger) -> (Interfaces, MockInterfaces) {
+        let metrics = Metrics::mock();
+        let api = API::mock(logger.clone(), &metrics);
+        let tracing = Tracing::mock();
+
+        // Wrap things up.
+        let mocks = MockInterfaces {};
+        let interfaces = Interfaces {
+            api,
+            metrics,
+            tracing,
+        };
+        (interfaces, mocks)
+    }
+}
+
+
+#[cfg(test)]
+mod tests {
+    use super::Interfaces;
+
+    #[test]
+    fn instantiate_mocks() {
+        let (interfaces, mocks) = Interfaces::mock();
+        drop(interfaces);
+        drop(mocks);
+    }
+}
