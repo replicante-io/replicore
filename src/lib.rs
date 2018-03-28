@@ -9,6 +9,7 @@ extern crate router;
 #[cfg(test)]
 extern crate iron_test;
 
+extern crate opentracingrust;
 extern crate prometheus;
 
 extern crate replicante_util_iron;

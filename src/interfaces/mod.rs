@@ -6,9 +6,11 @@ use super::config::Config;
 
 pub mod api;
 pub mod metrics;
+pub mod tracing;
 
 use self::api::API;
 use self::metrics::Metrics;
+use self::tracing::Tracing;
 
 
 /// A container for replicante interfaces.
@@ -23,16 +25,19 @@ use self::metrics::Metrics;
 pub struct Interfaces {
     pub api: API,
     pub metrics: Metrics,
+    pub tracing: Tracing,
 }
 
 impl Interfaces {
     /// Creates and configures interfaces.
     pub fn new(config: &Config, logger: Logger) -> Result<Interfaces> {
         let metrics = Metrics::new();
-        let api = API::new(config.api.clone(), logger, &metrics);
+        let api = API::new(config.api.clone(), logger.clone(), &metrics);
+        let tracing = Tracing::new(config.tracing.clone(), logger.clone())?;
         Ok(Interfaces {
             api,
             metrics,
+            tracing,
         })
     }
 
@@ -42,6 +47,7 @@ impl Interfaces {
     pub fn run(&mut self) -> Result<()> {
         self.api.run()?;
         self.metrics.run()?;
+        self.tracing.run()?;
         Ok(())
     }
 
@@ -49,6 +55,7 @@ impl Interfaces {
     pub fn wait_all(&mut self) -> Result<()> {
         self.api.wait()?;
         self.metrics.wait()?;
+        self.tracing.wait()?;
         Ok(())
     }
 }
