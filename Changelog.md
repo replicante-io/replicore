@@ -8,3 +8,4 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Added
 - API interface.
 - Initial replicante skeleton
+- Static agent discovery
