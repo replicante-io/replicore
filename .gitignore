@@ -6,6 +6,7 @@ docs/specs/_book/
 node_modules/
 
 replicante.yaml
+conf.d/
 
 # Ingore nested cargo locks but keep the root one.
 **/Cargo.lock
