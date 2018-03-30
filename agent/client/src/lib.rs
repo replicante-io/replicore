@@ -4,7 +4,8 @@ extern crate reqwest;
 
 extern crate replicante_agent_models;
 
-use replicante_agent_models::AgentInfo;
+use replicante_agent_models::NodeInfo;
+use replicante_agent_models::NodeStatus;
 
 
 mod errors;
@@ -23,5 +24,8 @@ pub use self::http::HttpClient;
 /// The `mock` module is useful for tests.
 pub trait Client {
     /// Returns general agent and datastore information.
-    fn info(&self) -> Result<AgentInfo>;
+    fn info(&self) -> Result<NodeInfo>;
+
+    /// Returns status information for the node.
+    fn status(&self) -> Result<NodeStatus>;
 }

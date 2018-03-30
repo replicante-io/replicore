@@ -1,6 +1,7 @@
 use reqwest::Client as ReqwestClient;
 
-use replicante_agent_models::AgentInfo;
+use replicante_agent_models::NodeInfo;
+use replicante_agent_models::NodeStatus;
 
 use super::Client;
 use super::Result;
@@ -8,6 +9,7 @@ use super::ResultExt;
 
 
 static FAIL_INFO_FETCH: &'static str = "Failed to fetch agent info";
+static FAIL_STATUS_FETCH: &'static str = "Failed to fetch agent status";
 
 
 /// Interface to interact with (remote) agents over HTTP.
@@ -17,12 +19,20 @@ pub struct HttpClient {
 }
 
 impl Client for HttpClient {
-    fn info(&self) -> Result<AgentInfo> {
+    fn info(&self) -> Result<NodeInfo> {
         let endpoint = self.endpoint("/api/v1/info");
         let mut request = self.client.get(&endpoint);
         let mut response = request.send().chain_err(|| FAIL_INFO_FETCH)?;
         let info = response.json().chain_err(|| FAIL_INFO_FETCH)?;
         Ok(info)
+    }
+
+    fn status(&self) -> Result<NodeStatus> {
+        let endpoint = self.endpoint("/api/v1/status");
+        let mut request = self.client.get(&endpoint);
+        let mut response = request.send().chain_err(|| FAIL_STATUS_FETCH)?;
+        let status = response.json().chain_err(|| FAIL_STATUS_FETCH)?;
+        Ok(status)
     }
 }
 
