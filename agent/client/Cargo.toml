@@ -18,5 +18,6 @@ maintenance = { status = "actively-developed" }
 
 [dependencies]
 error-chain = "^0.11.0"
+reqwest = "^0.8.5"
 
 replicante_agent_models = { path = "../../common/agent/models" }
