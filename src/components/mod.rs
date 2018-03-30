@@ -5,6 +5,11 @@ use super::Interfaces;
 use super::Result;
 
 
+pub mod discovery;
+
+use self::discovery::DiscoveryComponent as Discovery;
+
+
 /// A container for replicante components.
 ///
 /// This container is useful to:
@@ -15,22 +20,27 @@ use super::Result;
 /// [`Drop`]: std/ops/trait.Drop.html
 /// [`JoinHandle`]: std/thread/struct.JoinHandle.html
 pub struct Components {
+    discovery: Discovery,
 }
 
 impl Components {
     /// Creates and configures components.
-    pub fn new(_config: &Config, _logger: &Logger, _interfaces: &Interfaces) -> Result<Components> {
+    pub fn new(config: &Config, logger: Logger, _interfaces: &Interfaces) -> Result<Components> {
+        let discovery = Discovery::new(config.discovery.clone(), logger);
         Ok(Components {
+            discovery,
         })
     }
 
     /// Performs any final configuration and starts background threads.
     pub fn run(&mut self) -> Result<()> {
+        self.discovery.run()?;
         Ok(())
     }
 
     /// Waits for all interfaces to terminate.
     pub fn wait_all(&mut self) -> Result<()> {
+        self.discovery.wait()?;
         Ok(())
     }
 }

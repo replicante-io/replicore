@@ -6,13 +6,13 @@ extern crate serde_derive;
 extern crate serde_yaml;
 
 
+mod backends;
 mod config;
-mod engines;
 mod errors;
 
+pub use self::backends::Iter;
+pub use self::backends::discover;
 pub use self::config::Config;
-pub use self::engines::Iter;
-pub use self::engines::discover;
 pub use self::errors::*;
 
 

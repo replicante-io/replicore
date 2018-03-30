@@ -5,16 +5,16 @@ use super::config::Config;
 mod file;
 
 
-/// Enumerate supported engine iterators.
-enum Engine {
+/// Enumerate supported backends to access their iterators.
+enum Backend {
     File(self::file::Iter),
 }
 
-impl Iterator for Engine {
+impl Iterator for Backend {
     type Item = Result<Discovery>;
     fn next(&mut self) -> Option<Self::Item> {
         match *self {
-            Engine::File(ref mut iter) => iter.next(),
+            Backend::File(ref mut iter) => iter.next(),
         }
     }
 }
@@ -22,23 +22,23 @@ impl Iterator for Engine {
 
 /// Iterator over the agent discovery process.
 pub struct Iter {
-    active: Option<Engine>,
-    engines: Vec<Engine>,
+    active: Option<Backend>,
+    backends: Vec<Backend>,
 }
 
 impl Iter {
-    /// Returns an iterator that consumes all the given engines.
-    fn new(mut engines: Vec<Engine>) -> Iter {
-        engines.reverse();
+    /// Returns an iterator that consumes all the given backends.
+    fn new(mut backends: Vec<Backend>) -> Iter {
+        backends.reverse();
         Iter {
             active: None,
-            engines
+            backends,
         }
     }
 
-    /// Iterate over the active engine, if any.
+    /// Iterate over the active backend, if any.
     ///
-    /// If the active engine has no more items it is discarded an the method returns `None`.
+    /// If the active backend has no more items it is discarded an the method returns `None`.
     fn next_active(&mut self) -> Option<Result<Discovery>> {
         match self.active.as_mut().unwrap().next() {
             None => {
@@ -49,15 +49,15 @@ impl Iter {
         }
     }
 
-    /// Iterate over the next engine and activate it.
+    /// Iterate over the next backend and activate it.
     ///
-    /// If there is no other engine the method returns `None`.
-    fn next_engine(&mut self) -> Option<Result<Discovery>> {
-        match self.engines.pop() {
+    /// If there is no other backend the method returns `None`.
+    fn next_backend(&mut self) -> Option<Result<Discovery>> {
+        match self.backends.pop() {
             None => None,
-            Some(mut engine) => {
-                let next = engine.next();
-                self.active = Some(engine);
+            Some(mut backend) => {
+                let next = backend.next();
+                self.active = Some(backend);
                 next
             }
         }
@@ -69,11 +69,11 @@ impl Iterator for Iter {
     fn next(&mut self) -> Option<Self::Item> {
         if self.active.is_some() {
             match self.next_active() {
-                None => return self.next_engine(),
+                None => return self.next_backend(),
                 some => return some
             }
         }
-        self.next_engine()
+        self.next_backend()
     }
 }
 
@@ -81,9 +81,9 @@ impl Iterator for Iter {
 /// Starts the agent discover process returning and iterator over results.
 ///
 /// The discovery process is directed by the configuration.
-/// Engines are configured and added to the iterator to be consumed in turn.
+/// Backends are configured and added to the iterator to be consumed in turn.
 ///
-/// Some engines may interact with external systems or the hardware while
+/// Some backends may interact with external systems or the hardware while
 /// iterating over the results of the discovery process.
 /// Because these external systems may fail, the iterator returns a `Result`.
 /// In case of error, the error will be returned and the iterator will attempt
@@ -122,12 +122,12 @@ impl Iterator for Iter {
 /// # }
 /// ```
 pub fn discover(config: Config) -> Result<Iter> {
-    let mut engines: Vec<Engine> = Vec::new();
+    let mut backends: Vec<Backend> = Vec::new();
     for file in config.files {
-        let engine = file::Iter::from_file(file)?;
-        engines.push(Engine::File(engine));
+        let backend = file::Iter::from_file(file)?;
+        backends.push(Backend::File(backend));
     }
-    Ok(Iter::new(engines))
+    Ok(Iter::new(backends))
 }
 
 
@@ -135,8 +135,8 @@ pub fn discover(config: Config) -> Result<Iter> {
 mod tests {
     use std::io::Cursor;
 
+    use super::Backend;
     use super::Discovery;
-    use super::Engine;
     use super::Iter;
     use super::file;
 
@@ -147,10 +147,10 @@ mod tests {
     }
 
     #[test]
-    fn with_engine() {
+    fn with_backend() {
         let cursor = Cursor::new("cluster: c\ntargets: ['a', 'b', 'c']");
-        let engine = file::Iter::from_yaml(cursor).unwrap();
-        let mut iter = Iter::new(vec![Engine::File(engine)]);
+        let backend = file::Iter::from_yaml(cursor).unwrap();
+        let mut iter = Iter::new(vec![Backend::File(backend)]);
         assert_eq!(iter.next().unwrap().unwrap(), Discovery::new("c", "a"));
         assert_eq!(iter.next().unwrap().unwrap(), Discovery::new("c", "b"));
         assert_eq!(iter.next().unwrap().unwrap(), Discovery::new("c", "c"));
@@ -158,12 +158,12 @@ mod tests {
     }
 
     #[test]
-    fn with_two_engine() {
+    fn with_two_backends() {
         let cursor = Cursor::new("cluster: a\ntargets: ['a', 'b', 'c']");
         let cluster_a = file::Iter::from_yaml(cursor).unwrap();
         let cursor = Cursor::new("cluster: b\ntargets: ['d', 'e', 'f']");
         let cluster_b = file::Iter::from_yaml(cursor).unwrap();
-        let mut iter = Iter::new(vec![Engine::File(cluster_a), Engine::File(cluster_b)]);
+        let mut iter = Iter::new(vec![Backend::File(cluster_a), Backend::File(cluster_b)]);
         assert_eq!(iter.next().unwrap().unwrap(), Discovery::new("a", "a"));
         assert_eq!(iter.next().unwrap().unwrap(), Discovery::new("a", "b"));
         assert_eq!(iter.next().unwrap().unwrap(), Discovery::new("a", "c"));

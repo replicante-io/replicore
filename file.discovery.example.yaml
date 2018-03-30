@@ -1,0 +1,8 @@
+# Cluster the targets are a member of.
+cluster: mongodb-rs
+
+# Address of the agents monitoring the nodes in the cluster.
+targets:
+  - 'node1:37017'
+  - 'node2:37017'
+  - 'node3:37017'

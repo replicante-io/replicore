@@ -8,6 +8,7 @@ use replicante_util_tracing::Config as TracingConfig;
 
 use super::Result;
 
+use super::components::discovery::Config as DiscoveryConfig;
 use super::interfaces::api::Config as APIConfig;
 use super::logging::Config as LoggingConfig;
 
@@ -19,6 +20,10 @@ pub struct Config {
     /// API server configuration.
     #[serde(default)]
     pub api: APIConfig,
+
+    /// Agent discovery configuration.
+    #[serde(default)]
+    pub discovery: DiscoveryConfig,
 
     /// Logging configuration.
     #[serde(default)]
@@ -33,6 +38,7 @@ impl Default for Config {
     fn default() -> Config {
         Config {
             api: APIConfig::default(),
+            discovery: DiscoveryConfig::default(),
             logging: LoggingConfig::default(),
             tracing: TracingConfig::default(),
         }

@@ -7,6 +7,32 @@ api:
   bind: '127.0.0.1:16016'
 
 
+# The section below is for agent discovery configuration options.
+#
+# Replicante core uses a pull model to interact with agents.
+# Discovery is the way the agents that should be monitor are found.
+discovery:
+  # Interval (in seconds) to wait after a discovery run before starting another one.
+  interval: 60
+
+  # Discovery backends configuration.
+  #
+  # Backends are a way to support an extensible set of discovery solutions.
+  # Each backend has its own options as described below.
+  #
+  # Available backends are:
+  #
+  #   * `files`: discovers agents from files.
+  backends:
+    # The `files` backend: discovers agents from files.
+    #
+    # The `files` backend can be useful to delegate discovery to unsupported systems.
+    # Examples are configuration managemnet tools (ansible, chef, puppet, ...).
+    #
+    # This is a list of files that are periodically read to perform discovery.
+    files: []
+
+
 # The section below is for the logging configuration options.
 logging:
   # Flush logs asynchronously.

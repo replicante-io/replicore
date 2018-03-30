@@ -12,6 +12,7 @@ extern crate iron_test;
 extern crate opentracingrust;
 extern crate prometheus;
 
+extern crate replicante_agent_discovery;
 extern crate replicante_util_iron;
 extern crate replicante_util_tracing;
 
@@ -61,7 +62,7 @@ pub use self::errors::Result;
 fn initialise_and_run(config: Config, logger: Logger) -> Result<()> {
     info!(logger, "Initialising sub-systems ...");
     let mut interfaces = Interfaces::new(&config, logger.clone())?;
-    let mut components = Components::new(&config, &logger, &interfaces)?;
+    let mut components = Components::new(&config, logger.clone(), &interfaces)?;
 
     // Initialisation done, run all interfaces and components.
     info!(logger, "Starting sub-systems ...");

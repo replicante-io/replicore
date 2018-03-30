@@ -5,6 +5,7 @@ use serde_yaml;
 
 use super::super::Discovery;
 use super::super::Result;
+use super::super::ResultExt;
 
 
 /// Serialization format for file discovery.
@@ -31,7 +32,9 @@ impl Iter {
 
     /// Creates an iterator out of a YAML file.
     pub fn from_file<P: AsRef<Path>>(path: P) -> Result<Iter> {
-        Iter::from_yaml(File::open(path)?)
+        let error_message = format!("Failed to open {:?}", path.as_ref());
+        let file = File::open(path).chain_err(|| error_message)?;
+        Iter::from_yaml(file)
     }
 
     /// Creates an iterator out of a YAML stream.
