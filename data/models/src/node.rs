@@ -3,10 +3,12 @@ use replicante_agent_models::NodeStatus;
 
 
 /// Snapshot view of the state of a node
+///
+/// Nodes are uniquely identified by their `(cluster, name)` attributes.
 #[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
 pub struct Node {
-    info: NodeInfo,
-    status: NodeStatus,
+    pub info: NodeInfo,
+    pub status: NodeStatus,
 }
 
 impl Node {

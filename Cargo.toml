@@ -50,6 +50,7 @@ slog-json = "^2.2.0"
 replicante_agent_client = { path = "agent/client" }
 replicante_agent_discovery = { path = "agent/discovery" }
 replicante_data_models = { path = "data/models" }
+replicante_data_store = { path = "data/store" }
 replicante_util_iron = { path = "common/util/iron" }
 replicante_util_tracing = { path = "common/util/tracing" }
 
