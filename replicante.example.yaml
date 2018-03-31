@@ -38,8 +38,8 @@ logging:
   # Flush logs asynchronously.
   # 
   # Pro:
-  #     Async log flushing is more efficient as logging
-  #     statements are not blocked by the drain.
+  #     Async log flushing is more efficient as logging statements
+  #     are not blocked waiting for the backend to complete.
   # 
   # Con:
   #     If the process crashes logs in the buffer may be lost.
@@ -52,14 +52,22 @@ logging:
   #     or developing environments.
   async: true
 
-  # The drain to send logs to.
-  # This option also determines the format and destination of logs.
-  #
-  # Available options:
-  #
-  #   * 'json': prints JSON formatted logs to standard output.
-  #   * 'journald': if enabled at compile time, sends logs to systemd journal.
-  drain: json
+  # Logging backend configuration options.
+  backend:
+    # The backend to send logs to.
+    # This option also determines the format and destination of logs.
+    #
+    # Available options:
+    #
+    #   * 'json': prints JSON formatted logs to standard output.
+    #   * 'journald': if enabled at compile time, sends logs to systemd journal.
+    name: json
+
+    # Any backend-specific option is set in the `options` dictionary.
+    # The available options vary from backend to backend and are documented below.
+    #
+    # *** None avaliave at this time ***
+    #options:
 
   # The minimum logging level.
   #
@@ -90,7 +98,7 @@ storage:
   backend: mongodb
 
   # Any backend-specific option is set in the `options` dictionary.
-  # The available options vary from database to database and are documented below.
+  # The available options vary from backend to backend and are documented below.
   #
   # MongoDB options
   options:

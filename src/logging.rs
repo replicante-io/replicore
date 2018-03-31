@@ -18,10 +18,10 @@ use slog_journald::JournaldDrain;
 use slog_json::Json;
 
 
-/// List of supported logging drains.
+/// List of supported logging backends.
 #[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
-#[serde(deny_unknown_fields)]
-pub enum LoggingDrain {
+#[serde(tag = "name", content = "options", deny_unknown_fields)]
+pub enum LoggingBackend {
     /// Log objects to systemd journal (journald).
     #[cfg(feature = "journald")]
     #[serde(rename = "journald")]
@@ -32,9 +32,9 @@ pub enum LoggingDrain {
     Json,
 }
 
-impl Default for LoggingDrain {
-    fn default() -> LoggingDrain {
-        LoggingDrain::Json
+impl Default for LoggingBackend {
+    fn default() -> LoggingBackend {
+        LoggingBackend::Json
     }
 }
 
@@ -91,9 +91,9 @@ pub struct Config {
     #[serde(default = "Config::default_async")]
     async: bool,
 
-    /// The drain to send logs to.
+    /// The backend to send logs to.
     #[serde(default)]
-    drain: LoggingDrain,
+    backend: LoggingBackend,
 
     /// The minimum logging level.
     #[serde(default)]
@@ -104,7 +104,7 @@ impl Default for Config {
     fn default() -> Config {
         Config {
             async: Config::default_async(),
-            drain: LoggingDrain::default(),
+            backend: LoggingBackend::default(),
             level: LoggingLevel::default(),
         }
     }
@@ -193,10 +193,10 @@ fn config_level<D>(config: Config, drain: D) -> Logger
 /// [`Drain`]: slog/trait.Drain.html
 /// [`Logger`]: slog/struct.Logger.html
 pub fn configure(config: Config) -> Logger {
-    match config.drain {
+    match config.backend {
         #[cfg(feature = "journald")]
-        LoggingDrain::Journald => config_level(config, JournaldDrain.ignore_res()),
-        LoggingDrain::Json => {
+        LoggingBackend::Journald => config_level(config, JournaldDrain.ignore_res()),
+        LoggingBackend::Json => {
             let drain = Json::new(stdout())
                 .add_default_keys()
                 .add_key_value(o!("module" => FnValue(|rinfo : &Record| rinfo.module())))
