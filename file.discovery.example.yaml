@@ -3,6 +3,6 @@ cluster: mongodb-rs
 
 # Address of the agents monitoring the nodes in the cluster.
 targets:
-  - 'node1:37017'
-  - 'node2:37017'
-  - 'node3:37017'
+  - 'http://node1:37017'
+  - 'http://node2:37017'
+  - 'http://node3:37017'

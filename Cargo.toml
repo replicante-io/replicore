@@ -47,8 +47,8 @@ slog-async = "^2.2.0"
 slog-journald = { version = "^2.0.0", optional = true }
 slog-json = "^2.2.0"
 
-replicante_agent_client = { path = "agent/client" }
 replicante_agent_discovery = { path = "agent/discovery" }
+replicante_agent_fetcher = { path = "agent/fetcher" }
 replicante_util_iron = { path = "common/util/iron" }
 replicante_util_tracing = { path = "common/util/tracing" }
 
