@@ -11,8 +11,11 @@ use replicante_agent_client::HttpClient;
 use replicante_agent_discovery::Config as BackendsConfig;
 use replicante_agent_discovery::Discovery;
 use replicante_agent_discovery::discover;
-use replicante_data_models::Node;
 
+use replicante_data_models::Node;
+use replicante_data_store::Store;
+
+use super::Interfaces;
 use super::Result;
 
 
@@ -49,18 +52,20 @@ pub struct DiscoveryComponent {
     config: BackendsConfig,
     interval: Duration,
     logger: Logger,
+    store: Store,
 
     worker: Option<JoinHandle<()>>,
 }
 
 impl DiscoveryComponent {
     /// Creates a new agent discovery component.
-    pub fn new(config: Config, logger: Logger) -> DiscoveryComponent {
+    pub fn new(config: Config, logger: Logger, interfaces: &Interfaces) -> DiscoveryComponent {
         let interval = Duration::from_secs(config.interval);
         DiscoveryComponent {
             config: config.backends,
             interval,
             logger,
+            store: interfaces.store.clone(),
             worker: None,
         }
     }
@@ -70,7 +75,8 @@ impl DiscoveryComponent {
         let interval = self.interval.clone();
         let worker = DiscoveryWorker::new(
             self.config.clone(),
-            self.logger.clone()
+            self.logger.clone(),
+            self.store.clone(),
         );
 
         info!(self.logger, "Starting Agent Discovery thread");
@@ -101,14 +107,16 @@ impl DiscoveryComponent {
 struct DiscoveryWorker {
     config: BackendsConfig,
     logger: Logger,
+    store: Store,
 }
 
 impl DiscoveryWorker {
     /// Creates a discover worker.
-    pub fn new(config: BackendsConfig, logger: Logger) -> DiscoveryWorker {
+    pub fn new(config: BackendsConfig, logger: Logger, store: Store) -> DiscoveryWorker {
         DiscoveryWorker {
             config,
             logger,
+            store,
         }
     }
 
@@ -137,7 +145,8 @@ impl DiscoveryWorker {
     fn process(&self, discovery: Discovery) -> Result<()> {
         // TODO: replace with useful logic.
         let node = fetch_state(discovery)?;
-        debug!(self.logger, "Discovered agent state: {:?}", node);
+        let old = self.store.persist_node(node.clone())?;
+        debug!(self.logger, "Discovered agent state *** Before: {:?} *** After: {:?}", old, node);
         Ok(())
     }
 }

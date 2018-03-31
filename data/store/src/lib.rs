@@ -8,6 +8,9 @@ extern crate serde;
 #[macro_use]
 extern crate serde_derive;
 
+#[macro_use]
+extern crate slog;
+
 #[cfg(test)]
 extern crate replicante_agent_models;
 extern crate replicante_data_models;
@@ -15,6 +18,7 @@ extern crate replicante_data_models;
 
 use std::sync::Arc;
 
+use slog::Logger;
 use replicante_data_models::Node;
 
 
@@ -22,7 +26,9 @@ mod backend;
 mod config;
 mod errors;
 
-#[cfg(test)]
+// Cargo builds dependencies in debug mode instead of test mode.
+// That means that `cfg(test)` cannot be used if the mock is used outside the crate.
+#[cfg(debug_assertions)]
 pub mod mock;
 
 pub use self::config::Config;
@@ -35,11 +41,12 @@ use self::backend::mongo::MongoStore;
 ///
 /// This interface abstracts every interaction with the persistence layer and
 /// hides implementation details about storage software and data layout.
+#[derive(Clone)]
 pub struct Store(Arc<InnerStore>);
 
 impl Store {
     /// Instantiate a new storage interface.
-    pub fn new(config: Config) -> Result<Store> {
+    pub fn new(config: Config, _logger: Logger) -> Result<Store> {
         let store = match config {
             Config::MongoDB(config) => Arc::new(MongoStore::new(config)?),
         };
@@ -58,7 +65,9 @@ impl Store {
     }
 
     /// Instantiate a `Store` that wraps the given `MockStore`.
-    #[cfg(test)]
+    // Cargo builds dependencies in debug mode instead of test mode.
+    // That means that `cfg(test)` cannot be used if the mock is used outside the crate.
+    #[cfg(debug_assertions)]
     pub fn mock(inner: Arc<self::mock::MockStore>) -> Store {
         Store(inner)
     }

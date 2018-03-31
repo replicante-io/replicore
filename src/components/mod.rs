@@ -25,8 +25,8 @@ pub struct Components {
 
 impl Components {
     /// Creates and configures components.
-    pub fn new(config: &Config, logger: Logger, _interfaces: &Interfaces) -> Result<Components> {
-        let discovery = Discovery::new(config.discovery.clone(), logger);
+    pub fn new(config: &Config, logger: Logger, interfaces: &mut Interfaces) -> Result<Components> {
+        let discovery = Discovery::new(config.discovery.clone(), logger, interfaces);
         Ok(Components {
             discovery,
         })

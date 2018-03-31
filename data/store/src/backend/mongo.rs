@@ -19,6 +19,15 @@ static COLLECTION_NODES: &'static str = "nodes";
 static FAIL_PERSIST_NODE: &'static str = "Failed to persist node";
 
 
+/// MongoDB-backed storage layer.
+///
+/// # Special collection requirements
+///
+///   * `events`: capped collection or TTL indexed.
+///
+/// # Expected indexes
+/// ## `nodes` collection
+///   * Unique index on `(info.agent.cluster, info.agent.name)`
 pub struct MongoStore {
     db: String,
     client: Client,
@@ -33,8 +42,8 @@ impl InnerStore for MongoStore {
             _ => panic!("Node failed to encode as BSON document")
         };
         let filter = doc!{
-            "cluster" => "TODO",
-            "name" => node.info.datastore.name
+            //"info.datastore.cluster" => "TODO",
+            "info.datastore.name" => node.info.datastore.name
         };
         let mut options = FindOneAndUpdateOptions::new();
         options.upsert = Some(true);

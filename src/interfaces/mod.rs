@@ -1,5 +1,7 @@
 use slog::Logger;
 
+use replicante_data_store::Store;
+
 use super::Result;
 use super::config::Config;
 
@@ -25,6 +27,7 @@ use self::tracing::Tracing;
 pub struct Interfaces {
     pub api: API,
     pub metrics: Metrics,
+    pub store: Store,
     pub tracing: Tracing,
 }
 
@@ -33,10 +36,12 @@ impl Interfaces {
     pub fn new(config: &Config, logger: Logger) -> Result<Interfaces> {
         let metrics = Metrics::new();
         let api = API::new(config.api.clone(), logger.clone(), &metrics);
+        let store = Store::new(config.storage.clone(), logger.clone())?;
         let tracing = Tracing::new(config.tracing.clone(), logger.clone())?;
         Ok(Interfaces {
             api,
             metrics,
+            store,
             tracing,
         })
     }
@@ -84,11 +89,16 @@ impl Interfaces {
         let api = API::mock(logger.clone(), &metrics);
         let tracing = Tracing::mock();
 
+        let mock_store = ::replicante_data_store::mock::MockStore::new();
+        let mock_store = ::std::sync::Arc::new(mock_store);
+        let store = Store::mock(mock_store.clone());
+
         // Wrap things up.
         let mocks = MockInterfaces {};
         let interfaces = Interfaces {
             api,
             metrics,
+            store,
             tracing,
         };
         (interfaces, mocks)

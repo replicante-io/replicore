@@ -2,6 +2,7 @@ error_chain! {
     links {
         Client(::replicante_agent_client::Error, ::replicante_agent_client::ErrorKind);
         Discovery(::replicante_agent_discovery::Error, ::replicante_agent_discovery::ErrorKind);
+        Store(::replicante_data_store::Error, ::replicante_data_store::ErrorKind);
         Tracing(::replicante_util_tracing::Error, ::replicante_util_tracing::ErrorKind);
     }
 

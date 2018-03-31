@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Added
 - API interface
 - Agent client crate
+- Docker compose file for development
 - Fetch agent state
-- Node state storage
 - Static agent discovery
+- Storage interface
+- Store node snapshots
