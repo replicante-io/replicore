@@ -6,7 +6,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 ### Added
-- API interface.
+- API interface
 - Agent client crate
-- Initial replicante skeleton
+- Fetch agent state
 - Static agent discovery
