@@ -15,6 +15,7 @@ extern crate prometheus;
 extern crate replicante_agent_client;
 extern crate replicante_agent_discovery;
 extern crate replicante_data_models;
+extern crate replicante_data_store;
 extern crate replicante_util_iron;
 extern crate replicante_util_tracing;
 

@@ -73,6 +73,41 @@ logging:
   level: info
 
 
+# The section below is for the storage configuration options.
+storage:
+  # The database to use for persisten storage.
+  #
+  # DO NOT CHANGE after initial configuration.
+  # This option is to allow users to choose a supported database that best fits
+  # their use and environment.
+  #
+  # To change this option you will need to "Upgrade by rebuild".
+  # See the documentation for more details on this process.
+  #
+  # Available options:
+  #
+  #   * 'mongodb' (recommended)
+  backend: mongodb
+
+  # Any backend-specific option is set in the `options` dictionary.
+  # The available options vary from database to database and are documented below.
+  #
+  # MongoDB options
+  options:
+    # Name of the MongoDB database to use for persistence.
+    #
+    # DO NOT CHANGE after initial configuration.
+    # This option is to allow users to choose a supported database that best fits
+    # their use and environment.
+    #
+    # To change this option you will need to "Upgrade by rebuild".
+    # See the documentation for more details on this process.
+    db: replicante  # (recommended)
+
+    # URI of the MongoDB Replica Set or sharded cluster to connect to.
+    uri: mongodb://localhost:27017/
+
+
 # The section below is for the distributed tracing configuration options.
 tracing:
   # The distributed tracing backend to integrate with.

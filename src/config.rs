@@ -4,6 +4,7 @@ use std::path::Path;
 
 use serde_yaml;
 
+use replicante_data_store::Config as StorageConfig;
 use replicante_util_tracing::Config as TracingConfig;
 
 use super::Result;
@@ -29,6 +30,10 @@ pub struct Config {
     #[serde(default)]
     pub logging: LoggingConfig,
 
+    /// Storage layer configuration.
+    #[serde(default)]
+    pub storage: StorageConfig,
+
     /// Distributed tracing configuration.
     #[serde(default)]
     pub tracing: TracingConfig,
@@ -40,6 +45,7 @@ impl Default for Config {
             api: APIConfig::default(),
             discovery: DiscoveryConfig::default(),
             logging: LoggingConfig::default(),
+            storage: StorageConfig::default(),
             tracing: TracingConfig::default(),
         }
     }
