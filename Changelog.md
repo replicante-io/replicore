@@ -9,4 +9,5 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - API interface
 - Agent client crate
 - Fetch agent state
+- Node state storage
 - Static agent discovery

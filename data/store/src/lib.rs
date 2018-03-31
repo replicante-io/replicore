@@ -1,5 +1,8 @@
 #[macro_use]
+extern crate bson;
+#[macro_use]
 extern crate error_chain;
+extern crate mongodb;
 
 extern crate serde;
 #[macro_use]
@@ -38,9 +41,9 @@ impl Store {
     /// Instantiate a new storage interface.
     pub fn new(config: Config) -> Result<Store> {
         let store = match config {
-            Config::MongoDB(config) => MongoStore::new(config)?,
+            Config::MongoDB(config) => Arc::new(MongoStore::new(config)?),
         };
-        Ok(Store(Arc::new(store)))
+        Ok(Store(store))
     }
 
     /// Persists information about a node.
