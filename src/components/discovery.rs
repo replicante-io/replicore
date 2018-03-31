@@ -6,8 +6,12 @@ use std::time::Duration;
 use error_chain::ChainedError;
 use slog::Logger;
 
+use replicante_agent_client::Client;
+use replicante_agent_client::HttpClient;
 use replicante_agent_discovery::Config as BackendsConfig;
+use replicante_agent_discovery::Discovery;
 use replicante_agent_discovery::discover;
+use replicante_models::Node;
 
 use super::Result;
 
@@ -120,10 +124,30 @@ impl DiscoveryWorker {
                     continue;
                 }
             };
-            // TODO: replace with useful logic.
-            debug!(self.logger, "Found agent: {:?}", agent);
+            if let Err(err) = self.process(agent) {
+                let error = err.display_chain().to_string();
+                error!(self.logger, "Failed to process agent"; "error" => error);
+            }
         }
         debug!(self.logger, "Agents discovery complete");
         Ok(())
     }
+
+    /// Process a discovery result to fetch the node state.
+    fn process(&self, discovery: Discovery) -> Result<()> {
+        // TODO: replace with useful logic.
+        let node = fetch_state(discovery)?;
+        debug!(self.logger, "Discovered agent state: {:?}", node);
+        Ok(())
+    }
+}
+
+
+/*** NOTE: the code below will likely be moved when tasks are introduced  ***/
+/// Converts an agent discovery result into a Node's status.
+fn fetch_state(discovery: Discovery) -> Result<Node> {
+    let client = HttpClient::new(discovery.target().clone())?;
+    let info = client.info()?;
+    let status = client.status()?;
+    Ok(Node::new(info, status))
 }
