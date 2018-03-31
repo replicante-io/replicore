@@ -1033,7 +1033,7 @@ dependencies = [
  "prometheus 0.3.13 (registry+https://github.com/rust-lang/crates.io-index)",
  "replicante_agent_client 0.1.0",
  "replicante_agent_discovery 0.1.0",
- "replicante_models 0.1.0",
+ "replicante_data_models 0.1.0",
  "replicante_util_iron 0.1.0",
  "replicante_util_tracing 0.1.0",
  "router 0.6.0 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -1075,7 +1075,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "replicante_models"
+name = "replicante_data_models"
 version = "0.1.0"
 dependencies = [
  "replicante_agent_client 0.1.0",

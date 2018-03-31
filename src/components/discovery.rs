@@ -11,7 +11,7 @@ use replicante_agent_client::HttpClient;
 use replicante_agent_discovery::Config as BackendsConfig;
 use replicante_agent_discovery::Discovery;
 use replicante_agent_discovery::discover;
-use replicante_models::Node;
+use replicante_data_models::Node;
 
 use super::Result;
 
