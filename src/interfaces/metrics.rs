@@ -1,5 +1,8 @@
 use prometheus::Registry;
 use prometheus::process_collector::ProcessCollector;
+use slog::Logger;
+
+use replicante_agent_client::HttpClient as AgentHttpClient;
 
 use super::super::Result;
 
@@ -14,10 +17,14 @@ pub struct Metrics {
 
 impl Metrics {
     /// Creates a new `Metrics` interface.
-    pub fn new() -> Metrics {
+    pub fn new(logger: &Logger) -> Metrics {
         let registry = Registry::new();
         let process = ProcessCollector::for_self();
         registry.register(Box::new(process)).expect("Unable to register process metrics");
+
+        // Register metrics from other modules.
+        AgentHttpClient::register_metrics(logger, &registry);
+
         Metrics { registry }
     }
 
@@ -38,7 +45,7 @@ impl Metrics {
 
     /// Returns a `Metrics` instance usable as a mock.
     #[cfg(test)]
-    pub fn mock() -> Metrics {
-        Metrics::new()
+    pub fn mock(logger: &Logger) -> Metrics {
+        Metrics::new(logger)
     }
 }

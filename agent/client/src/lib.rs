@@ -1,6 +1,11 @@
 #[macro_use]
 extern crate error_chain;
+#[macro_use]
+extern crate lazy_static;
+extern crate prometheus;
 extern crate reqwest;
+#[macro_use]
+extern crate slog;
 
 extern crate replicante_agent_models;
 

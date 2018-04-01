@@ -1161,8 +1161,11 @@ name = "replicante_agent_client"
 version = "0.1.0"
 dependencies = [
  "error-chain 0.11.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "lazy_static 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "prometheus 0.3.13 (registry+https://github.com/rust-lang/crates.io-index)",
  "replicante_agent_models 0.1.0",
  "reqwest 0.8.5 (registry+https://github.com/rust-lang/crates.io-index)",
+ "slog 2.2.3 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]

@@ -1,4 +1,11 @@
+use prometheus::CounterVec;
+use prometheus::HistogramOpts;
+use prometheus::HistogramVec;
+use prometheus::Opts;
+use prometheus::Registry;
+
 use reqwest::Client as ReqwestClient;
+use slog::Logger;
 
 use replicante_agent_models::NodeInfo;
 use replicante_agent_models::NodeStatus;
@@ -12,6 +19,32 @@ static FAIL_INFO_FETCH: &'static str = "Failed to fetch agent info";
 static FAIL_STATUS_FETCH: &'static str = "Failed to fetch agent status";
 
 
+lazy_static! {
+    /// Counter for agent operations.
+    static ref CLIENT_OPS_COUNT: CounterVec = CounterVec::new(
+        Opts::new("replicante_agentclient_operations", "Number of agent operations issued"),
+        &["endpoint"]
+    ).expect("Failed to create replicante_agentclient_operations counter");
+
+    /// Counter for agent operation errors.
+    static ref CLIENT_OP_ERRORS_COUNT: CounterVec = CounterVec::new(
+        Opts::new("replicante_agentclient_operation_errors", "Number of agent operations failed"),
+        &["endpoint"]
+    ).expect("Failed to create replicante_agentclient_operation_errors counter");
+
+    /// Observe duration of agent operations.
+    static ref CLIENT_OPS_DURATION: HistogramVec = HistogramVec::new(
+        HistogramOpts::new(
+            "replicante_agentclient_operations_duration",
+            "Duration (in seconds) of agent operations"
+        ),
+        &["endpoint"]
+    ).expect("Failed to create CLIENT_OPS_DURATION histogram");
+}
+
+
+
+
 /// Interface to interact with (remote) agents over HTTP.
 pub struct HttpClient {
     client: ReqwestClient,
@@ -20,18 +53,42 @@ pub struct HttpClient {
 
 impl Client for HttpClient {
     fn info(&self) -> Result<NodeInfo> {
+        CLIENT_OPS_COUNT.with_label_values(&["/api/v1/info"]).inc();
+        let _timer = CLIENT_OPS_DURATION.with_label_values(&["/api/v1/info"]).start_timer();
         let endpoint = self.endpoint("/api/v1/info");
         let mut request = self.client.get(&endpoint);
-        let mut response = request.send().chain_err(|| FAIL_INFO_FETCH)?;
-        let info = response.json().chain_err(|| FAIL_INFO_FETCH)?;
+        let mut response = request.send()
+            .map_err(|error| {
+                CLIENT_OP_ERRORS_COUNT.with_label_values(&["/api/v1/info"]).inc();
+                error
+            })
+            .chain_err(|| FAIL_INFO_FETCH)?;
+        let info = response.json()
+            .map_err(|error| {
+                CLIENT_OP_ERRORS_COUNT.with_label_values(&["/api/v1/info"]).inc();
+                error
+            })
+            .chain_err(|| FAIL_INFO_FETCH)?;
         Ok(info)
     }
 
     fn status(&self) -> Result<NodeStatus> {
+        CLIENT_OPS_COUNT.with_label_values(&["/api/v1/status"]).inc();
+        let _timer = CLIENT_OPS_DURATION.with_label_values(&["/api/v1/status"]).start_timer();
         let endpoint = self.endpoint("/api/v1/status");
         let mut request = self.client.get(&endpoint);
-        let mut response = request.send().chain_err(|| FAIL_STATUS_FETCH)?;
-        let status = response.json().chain_err(|| FAIL_STATUS_FETCH)?;
+        let mut response = request.send()
+            .map_err(|error| {
+                CLIENT_OP_ERRORS_COUNT.with_label_values(&["/api/v1/status"]).inc();
+                error
+            })
+            .chain_err(|| FAIL_STATUS_FETCH)?;
+        let status = response.json()
+            .map_err(|error| {
+                CLIENT_OP_ERRORS_COUNT.with_label_values(&["/api/v1/status"]).inc();
+                error
+            })
+            .chain_err(|| FAIL_STATUS_FETCH)?;
         Ok(status)
     }
 }
@@ -48,6 +105,22 @@ impl HttpClient {
             client,
             root_url,
         })
+    }
+
+    /// Attemps to register metrics with the Repositoy.
+    ///
+    /// Metrics that fail to register are logged and ignored.
+    ///
+    /// **This method should be called before using any client**.
+    pub fn register_metrics(logger: &Logger, registry: &Registry) {
+        if let Err(err) = registry.register(Box::new(CLIENT_OPS_COUNT.clone())) {
+            let error = format!("{:?}", err);
+            debug!(logger, "Failed to register CLIENT_OPS_COUNT"; "error" => error);
+        }
+        if let Err(err) = registry.register(Box::new(CLIENT_OPS_DURATION.clone())) {
+            let error = format!("{:?}", err);
+            debug!(logger, "Failed to register CLIENT_OPS_DURATION"; "error" => error);
+        }
     }
 
     /// Utility method to build a full path for an endpoint.

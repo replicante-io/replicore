@@ -34,7 +34,7 @@ pub struct Interfaces {
 impl Interfaces {
     /// Creates and configures interfaces.
     pub fn new(config: &Config, logger: Logger) -> Result<Interfaces> {
-        let metrics = Metrics::new();
+        let metrics = Metrics::new(&logger);
         let api = API::new(config.api.clone(), logger.clone(), &metrics);
         let store = Store::new(config.storage.clone(), logger.clone(), metrics.registry())?;
         let tracing = Tracing::new(config.tracing.clone(), logger.clone())?;
@@ -85,7 +85,7 @@ impl Interfaces {
 
     /// Mock interfaces using the given logger and wrap them in an `Interfaces` instance.
     pub fn mock_with_logger(logger: Logger) -> (Interfaces, MockInterfaces) {
-        let metrics = Metrics::mock();
+        let metrics = Metrics::mock(&logger);
         let api = API::mock(logger.clone(), &metrics);
         let tracing = Tracing::mock();
 
