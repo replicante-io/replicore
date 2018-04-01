@@ -85,7 +85,6 @@ pub struct MongoStore {
 }
 
 impl InnerStore for MongoStore {
-    // TODO: update this method once the agent returns the cluster ID.
     fn persist_node(&self, node: Node) -> Result<Option<Node>> {
         let replacement = bson::to_bson(&node).chain_err(|| FAIL_PERSIST_NODE)?;
         let replacement = match replacement {
@@ -93,8 +92,8 @@ impl InnerStore for MongoStore {
             _ => panic!("Node failed to encode as BSON document")
         };
         let filter = doc!{
-            //"info.datastore.cluster" => "TODO",
-            "info.datastore.name" => node.info.datastore.name
+            "info.datastore.cluster" => node.info.datastore.cluster,
+            "info.datastore.name" => node.info.datastore.name,
         };
         let mut options = FindOneAndUpdateOptions::new();
         options.upsert = Some(true);

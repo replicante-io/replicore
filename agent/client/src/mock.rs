@@ -55,7 +55,7 @@ mod tests {
 
     fn mock_info() -> NodeInfo {
         let agent = AgentInfo::new(AgentVersion::new("a", "b", "c"));
-        let datastore = DatastoreInfo::new("a", "b", "c");
+        let datastore = DatastoreInfo::new("a", "b", "c", "d");
         NodeInfo::new(agent, datastore)
     }
 

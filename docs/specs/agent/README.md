@@ -17,6 +17,7 @@ Returns information about the agent itself.
 The following information MUST be included:
 
   * `datastore` information:
+    * `cluster`: datastore determined cluster name.
     * `kind`: datastore software managed by the agent.
     * `name`: datastore determined, cluster unique, node name.
     * `version`: the datastore version.
@@ -30,6 +31,7 @@ Example:
 ```json
 {
   "datastore": {
+    "cluster": "replica-set-name",
     "kind": "MongoDB",
     "name": "host.domain.com:27017",
     "version": "3.4.5"

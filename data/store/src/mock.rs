@@ -13,9 +13,8 @@ pub struct MockStore {
 }
 
 impl InnerStore for MockStore {
-    // TODO: update this method once the agent returns the cluster ID.
     fn persist_node(&self, node: Node) -> Result<Option<Node>> {
-        let cluster = "TODO".to_string();
+        let cluster = node.info.datastore.cluster.clone();
         let name = node.info.datastore.name.clone();
         let key = (cluster, name);
         let mut nodes = self.nodes.lock().unwrap();
@@ -48,7 +47,7 @@ mod tests {
 
     fn make_node() -> Node {
         let agent = AgentInfo::new(AgentVersion::new("abc123", "1.2.3", "tainted"));
-        let datastore = DatastoreInfo::new("MockDB", "node", "1.2.3");
+        let datastore = DatastoreInfo::new("Cluster", "MockDB", "node", "1.2.3");
         let info = NodeInfo::new(agent, datastore);
         let status = NodeStatus::new(vec![Shard::new("id", ShardRole::Secondary, Some(4), 5)]);
         Node::new(info, status)
@@ -69,7 +68,7 @@ mod tests {
             let old = store.persist_node(node.clone()).unwrap();
             assert!(old.is_none());
             let stored = mock.nodes.lock().expect("Faild to lock")
-                .get(&("TODO".into(), node.info.datastore.name.clone()))
+                .get(&(node.info.datastore.cluster.clone(), node.info.datastore.name.clone()))
                 .map(|n| n.clone()).expect("Node not found");
             assert_eq!(node, stored)
         }

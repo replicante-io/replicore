@@ -33,10 +33,10 @@ mod tests {
 
     #[test]
     fn from_json() {
-        let payload = r#"{"info":{"agent":{"version":{"checkout":"abc123","number":"1.2.3","taint":"tainted"}},"datastore":{"kind":"a","name":"b","version":"c"}},"status":{"shards":[{"id":"id","role":"Secondary","lag":4,"last_op":5}]}}"#;
+        let payload = r#"{"info":{"agent":{"version":{"checkout":"abc123","number":"1.2.3","taint":"tainted"}},"datastore":{"cluster":"a","kind":"b","name":"c","version":"d"}},"status":{"shards":[{"id":"id","role":"Secondary","lag":4,"last_op":5}]}}"#;
         let node: Node = serde_json::from_str(payload).unwrap();
         let agent = AgentInfo::new(AgentVersion::new("abc123", "1.2.3", "tainted"));
-        let datastore = DatastoreInfo::new("a", "b", "c");
+        let datastore = DatastoreInfo::new("a", "b", "c", "d");
         let info = NodeInfo::new(agent, datastore);
         let status = NodeStatus::new(vec![Shard::new("id", ShardRole::Secondary, Some(4), 5)]);
         let expected = Node::new(info, status);
@@ -46,12 +46,12 @@ mod tests {
     #[test]
     fn to_json() {
         let agent = AgentInfo::new(AgentVersion::new("abc123", "1.2.3", "tainted"));
-        let datastore = DatastoreInfo::new("a", "b", "c");
+        let datastore = DatastoreInfo::new("a", "b", "c", "d");
         let info = NodeInfo::new(agent, datastore);
         let status = NodeStatus::new(vec![Shard::new("id", ShardRole::Secondary, Some(4), 5)]);
         let node = Node::new(info, status);
         let payload = serde_json::to_string(&node).unwrap();
-        let expected = r#"{"info":{"agent":{"version":{"checkout":"abc123","number":"1.2.3","taint":"tainted"}},"datastore":{"kind":"a","name":"b","version":"c"}},"status":{"shards":[{"id":"id","role":"Secondary","lag":4,"last_op":5}]}}"#;
+        let expected = r#"{"info":{"agent":{"version":{"checkout":"abc123","number":"1.2.3","taint":"tainted"}},"datastore":{"cluster":"a","kind":"b","name":"c","version":"d"}},"status":{"shards":[{"id":"id","role":"Secondary","lag":4,"last_op":5}]}}"#;
         assert_eq!(payload, expected);
     }
 }

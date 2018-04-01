@@ -5,6 +5,7 @@ The sections below shows examples of how some popular software map onto the data
 ## MongoDB Replica Set
 * Administration:
   * A cluster-unique name for the node: name field from [`replSetGetStatus`](https://docs.mongodb.com/manual/reference/command/replSetGetStatus/).
+  * Cluster name shared by all nodes: name field from [`replSetGetStatus`](https://docs.mongodb.com/manual/reference/command/replSetGetStatus/).
   * Version information: [`buildInfo`](https://docs.mongodb.com/manual/reference/command/buildInfo/).
 
 * Clustering: `mongod` instances talking to each other.
@@ -26,6 +27,7 @@ The sections below shows examples of how some popular software map onto the data
 ## MongoDB Sharded
 * Administration:
   * A cluster-unique name for the node: name field from [`replSetGetStatus`](https://docs.mongodb.com/manual/reference/command/replSetGetStatus/).
+  * Cluster name shared by all nodes: user defined in agents configuration.
   * Version information: [`buildInfo`](https://docs.mongodb.com/manual/reference/command/buildInfo/).
 
 * Clustering:
@@ -53,6 +55,7 @@ Refenrence: https://cdn.rawgit.com/rabbitmq/rabbitmq-management/v3.7.2/priv/www/
 
 * Administration:
   * A cluster-unique name for the node: ???
+  * Cluster name shared by all nodes: user defined in agents configuration.
   * Version information: ???
 
 * Clustering: ???

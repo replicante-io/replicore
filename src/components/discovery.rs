@@ -207,9 +207,13 @@ impl DiscoveryWorker {
     }
 
     /// Process a discovery result to fetch the node state.
+    // TODO: replace with use of tasks (one task per discovery?)
     fn process(&self, discovery: Discovery) -> Result<()> {
-        // TODO: replace with useful logic.
+        let expect_cluster = discovery.cluster().clone();
         let node = fetch_state(discovery)?;
+        if node.info.datastore.cluster != expect_cluster {
+            return Err("Reported cluster does not match expected cluster".into());
+        }
         let old = self.store.persist_node(node.clone())?;
         // TODO: figure out if the node changed.
         debug!(self.logger, "Discovered agent state *** Before: {:?} *** After: {:?}", old, node);

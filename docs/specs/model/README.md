@@ -33,6 +33,10 @@ The datastore MUST provide the following administration commands:
   * A cluster-unique name for the node.
   * Version information.
 
+The datastore MAY provide the following administration commands:
+
+  * Cluster name shared by all nodes.
+
 
 ## Clustering
 The datastore MUST support clustering by running a
