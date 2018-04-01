@@ -4,6 +4,13 @@ use std::thread::sleep;
 use std::time::Duration;
 
 use error_chain::ChainedError;
+
+use prometheus::Counter;
+use prometheus::Histogram;
+use prometheus::HistogramOpts;
+use prometheus::Opts;
+use prometheus::Registry;
+
 use slog::Logger;
 
 use replicante_agent_client::Client;
@@ -17,6 +24,58 @@ use replicante_data_store::Store;
 
 use super::Interfaces;
 use super::Result;
+
+
+lazy_static! {
+    /// Counter for discovery cycles.
+    static ref DISCOVERY_COUNT: Counter = Counter::with_opts(
+        Opts::new("replicante_discovery_loops", "Number of discovery runs started")
+    ).expect("Failed to create DISCOVERY_COUNT counter");
+
+    /// Counter for discovery cycles that fail to fetch agents.
+    static ref DISCOVERY_FETCH_ERRORS_COUNT: Counter = Counter::with_opts(
+        Opts::new("replicante_discovery_fetch_errors", "Number of errors during agent discovery")
+    ).expect("Failed to create DISCOVERY_FETCH_ERRORS_COUNT counter");
+
+    /// Counter for discovery cycles that fail to process agents.
+    static ref DISCOVERY_PROCESS_ERRORS_COUNT: Counter = Counter::with_opts(
+        Opts::new(
+            "replicante_discovery_process_errors",
+            "Number of errors during processing of discovered agents"
+        )
+    ).expect("Failed to create DISCOVERY_PROCESS_ERRORS_COUNT counter");
+
+    /// Observe duration of agent discovery.
+    static ref DISCOVERY_DURATION: Histogram = Histogram::with_opts(
+        HistogramOpts::new(
+            "replicante_discovery_duration",
+            "Duration (in seconds) of agent discovery runs"
+        ).buckets(vec![0.25, 0.5, 1.0, 2.5, 5.0, 10.0, 20.0, 40.0])
+    ).expect("Failed to create DISCOVERY_DURATION histogram");
+}
+
+
+/// Attemps to register metrics with the Repositoy.
+///
+/// Metrics that fail to register are logged and ignored.
+fn register_metrics(logger: &Logger, registry: &Registry) {
+    if let Err(err) = registry.register(Box::new(DISCOVERY_COUNT.clone())) {
+        let error = format!("{:?}", err);
+        debug!(logger, "Failed to register DISCOVERY_COUNT"; "error" => error);
+    }
+    if let Err(err) = registry.register(Box::new(DISCOVERY_FETCH_ERRORS_COUNT.clone())) {
+        let error = format!("{:?}", err);
+        debug!(logger, "Failed to register DISCOVERY_FETCH_ERRORS_COUNT"; "error" => error);
+    }
+    if let Err(err) = registry.register(Box::new(DISCOVERY_PROCESS_ERRORS_COUNT.clone())) {
+        let error = format!("{:?}", err);
+        debug!(logger, "Failed to register DISCOVERY_PROCESS_ERRORS_COUNT"; "error" => error);
+    }
+    if let Err(err) = registry.register(Box::new(DISCOVERY_DURATION.clone())) {
+        let error = format!("{:?}", err);
+        debug!(logger, "Failed to register DISCOVERY_DURATION"; "error" => error);
+    }
+}
 
 
 /// Agent discovery configuration options.
@@ -61,6 +120,7 @@ impl DiscoveryComponent {
     /// Creates a new agent discovery component.
     pub fn new(config: Config, logger: Logger, interfaces: &Interfaces) -> DiscoveryComponent {
         let interval = Duration::from_secs(config.interval);
+        register_metrics(&logger, interfaces.metrics.registry());
         DiscoveryComponent {
             config: config.backends,
             interval,
@@ -83,10 +143,13 @@ impl DiscoveryComponent {
         let logger = self.logger.clone();
         let thread = ThreadBuilder::new().name(String::from("Agent Discovery")).spawn(move || {
             loop {
+                DISCOVERY_COUNT.inc();
+                let timer = DISCOVERY_DURATION.start_timer();
                 if let Err(err) = worker.run() {
                     let error = err.display_chain().to_string();
                     error!(logger, "Agent discovery iteration failed"; "error" => error);
                 }
+                timer.observe_duration();
                 sleep(interval.clone());
             }
         })?;
@@ -129,12 +192,14 @@ impl DiscoveryWorker {
                 Err(err) => {
                     let error = err.display_chain().to_string();
                     error!(self.logger, "Failed to fetch agent"; "error" => error);
+                    DISCOVERY_FETCH_ERRORS_COUNT.inc();
                     continue;
                 }
             };
             if let Err(err) = self.process(agent) {
                 let error = err.display_chain().to_string();
                 error!(self.logger, "Failed to process agent"; "error" => error);
+                DISCOVERY_PROCESS_ERRORS_COUNT.inc();
             }
         }
         debug!(self.logger, "Agents discovery complete");
@@ -146,6 +211,7 @@ impl DiscoveryWorker {
         // TODO: replace with useful logic.
         let node = fetch_state(discovery)?;
         let old = self.store.persist_node(node.clone())?;
+        // TODO: figure out if the node changed.
         debug!(self.logger, "Discovered agent state *** Before: {:?} *** After: {:?}", old, node);
         Ok(())
     }

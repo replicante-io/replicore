@@ -7,6 +7,13 @@ use mongodb::coll::Collection;
 use mongodb::coll::options::FindOneAndUpdateOptions;
 use mongodb::db::ThreadedDatabase;
 
+use prometheus::CounterVec;
+use prometheus::HistogramOpts;
+use prometheus::HistogramVec;
+use prometheus::Opts;
+use prometheus::Registry;
+use slog::Logger;
+
 use replicante_data_models::Node;
 
 use super::super::InnerStore;
@@ -16,7 +23,51 @@ use super::super::config::MongoDBConfig;
 
 
 static COLLECTION_NODES: &'static str = "nodes";
+static FAIL_CLIENT: &'static str = "Failed to configure MongoDB client";
 static FAIL_PERSIST_NODE: &'static str = "Failed to persist node";
+
+
+lazy_static! {
+    /// Counter for MongoDB operations.
+    static ref MONGODB_OPS_COUNT: CounterVec = CounterVec::new(
+        Opts::new("replicante_mongodb_operations", "Number of MongoDB operations issued"),
+        &["operation"]
+    ).expect("Failed to create replicante_mongodb_operations counter");
+
+    /// Counter for MongoDB operation errors.
+    static ref MONGODB_OP_ERRORS_COUNT: CounterVec = CounterVec::new(
+        Opts::new("replicante_mongodb_operation_errors", "Number of MongoDB operations failed"),
+        &["operation"]
+    ).expect("Failed to create replicante_mongodb_operation_errors counter");
+
+    /// Observe duration of MongoDB operations.
+    static ref MONGODB_OPS_DURATION: HistogramVec = HistogramVec::new(
+        HistogramOpts::new(
+            "replicante_mongodb_operations_duration",
+            "Duration (in seconds) of MongoDB operations"
+        ),
+        &["operation"]
+    ).expect("Failed to create MONGODB_OPS_DURATION histogram");
+}
+
+
+/// Attemps to register metrics with the Repositoy.
+///
+/// Metrics that fail to register are logged and ignored.
+fn register_metrics(logger: &Logger, registry: &Registry) {
+    if let Err(err) = registry.register(Box::new(MONGODB_OPS_COUNT.clone())) {
+        let error = format!("{:?}", err);
+        debug!(logger, "Failed to register MONGODB_OPS_COUNT"; "error" => error);
+    }
+    if let Err(err) = registry.register(Box::new(MONGODB_OP_ERRORS_COUNT.clone())) {
+        let error = format!("{:?}", err);
+        debug!(logger, "Failed to register MONGODB_OP_ERRORS_COUNT"; "error" => error);
+    }
+    if let Err(err) = registry.register(Box::new(MONGODB_OPS_DURATION.clone())) {
+        let error = format!("{:?}", err);
+        debug!(logger, "Failed to register MONGODB_OPS_DURATION"; "error" => error);
+    }
+}
 
 
 /// MongoDB-backed storage layer.
@@ -48,7 +99,13 @@ impl InnerStore for MongoStore {
         let mut options = FindOneAndUpdateOptions::new();
         options.upsert = Some(true);
         let collection = self.nodes_collection();
+        MONGODB_OPS_COUNT.with_label_values(&["findOneAndReplace"]).inc();
+        let _timer = MONGODB_OPS_DURATION.with_label_values(&["findOneAndReplace"]).start_timer();
         let old = collection.find_one_and_replace(filter, replacement, Some(options))
+            .map_err(|error| {
+                MONGODB_OP_ERRORS_COUNT.with_label_values(&["findOneAndReplace"]).inc();
+                error
+            })
             .chain_err(|| FAIL_PERSIST_NODE)?;
         match old {
             None => Ok(None),
@@ -62,10 +119,16 @@ impl InnerStore for MongoStore {
 
 impl MongoStore {
     /// Creates a mongodb-backed store.
-    pub fn new(config: MongoDBConfig) -> Result<MongoStore> {
+    pub fn new(config: MongoDBConfig, logger: Logger, registry: &Registry) -> Result<MongoStore> {
+        info!(logger, "Configuring MongoDB as storage layer");
         let db = config.db.clone();
-        let client = Client::with_uri(&config.uri)?;
-        Ok(MongoStore { db, client })
+        let client = Client::with_uri(&config.uri).chain_err(|| FAIL_CLIENT)?;
+
+        register_metrics(&logger, registry);
+        Ok(MongoStore {
+            db,
+            client,
+        })
     }
 
     /// Returns the collection storing nodes.

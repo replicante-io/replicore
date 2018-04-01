@@ -9,6 +9,9 @@ extern crate router;
 #[cfg(test)]
 extern crate iron_test;
 
+#[macro_use]
+extern crate lazy_static;
+
 extern crate opentracingrust;
 extern crate prometheus;
 

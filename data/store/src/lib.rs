@@ -2,8 +2,11 @@
 extern crate bson;
 #[macro_use]
 extern crate error_chain;
+#[macro_use]
+extern crate lazy_static;
 extern crate mongodb;
 
+extern crate prometheus;
 extern crate serde;
 #[macro_use]
 extern crate serde_derive;
@@ -18,7 +21,9 @@ extern crate replicante_data_models;
 
 use std::sync::Arc;
 
+use prometheus::Registry;
 use slog::Logger;
+
 use replicante_data_models::Node;
 
 
@@ -46,9 +51,9 @@ pub struct Store(Arc<InnerStore>);
 
 impl Store {
     /// Instantiate a new storage interface.
-    pub fn new(config: Config, _logger: Logger) -> Result<Store> {
+    pub fn new(config: Config, logger: Logger, registry: &Registry) -> Result<Store> {
         let store = match config {
-            Config::MongoDB(config) => Arc::new(MongoStore::new(config)?),
+            Config::MongoDB(config) => Arc::new(MongoStore::new(config, logger, registry)?),
         };
         Ok(Store(store))
     }

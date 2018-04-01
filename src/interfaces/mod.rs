@@ -36,7 +36,7 @@ impl Interfaces {
     pub fn new(config: &Config, logger: Logger) -> Result<Interfaces> {
         let metrics = Metrics::new();
         let api = API::new(config.api.clone(), logger.clone(), &metrics);
-        let store = Store::new(config.storage.clone(), logger.clone())?;
+        let store = Store::new(config.storage.clone(), logger.clone(), metrics.registry())?;
         let tracing = Tracing::new(config.tracing.clone(), logger.clone())?;
         Ok(Interfaces {
             api,
