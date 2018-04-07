@@ -13,3 +13,4 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Static agent discovery
 - Storage interface
 - Store node snapshots
+- WebUI enpoint for initial UI.

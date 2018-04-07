@@ -6,8 +6,10 @@ use super::Result;
 
 
 pub mod discovery;
+pub mod webui;
 
 use self::discovery::DiscoveryComponent as Discovery;
+use self::webui::WebUI;
 
 
 /// A container for replicante components.
@@ -21,26 +23,31 @@ use self::discovery::DiscoveryComponent as Discovery;
 /// [`JoinHandle`]: std/thread/struct.JoinHandle.html
 pub struct Components {
     discovery: Discovery,
+    webui: WebUI,
 }
 
 impl Components {
     /// Creates and configures components.
     pub fn new(config: &Config, logger: Logger, interfaces: &mut Interfaces) -> Result<Components> {
         let discovery = Discovery::new(config.discovery.clone(), logger, interfaces);
+        let webui = WebUI::new(interfaces);
         Ok(Components {
             discovery,
+            webui,
         })
     }
 
     /// Performs any final configuration and starts background threads.
     pub fn run(&mut self) -> Result<()> {
         self.discovery.run()?;
+        self.webui.run()?;
         Ok(())
     }
 
     /// Waits for all interfaces to terminate.
     pub fn wait_all(&mut self) -> Result<()> {
         self.discovery.wait()?;
+        self.webui.wait()?;
         Ok(())
     }
 }

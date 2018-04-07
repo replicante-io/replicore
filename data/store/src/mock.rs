@@ -2,6 +2,7 @@ use std::collections::HashMap;
 use std::sync::Mutex;
 
 use replicante_data_models::Node;
+use replicante_data_models::webui::TopClusters;
 
 use super::InnerStore;
 use super::Result;
@@ -10,9 +11,14 @@ use super::Result;
 /// A mock implementation of the storage layer for tests.
 pub struct MockStore {
     pub nodes: Mutex<HashMap<(String, String), Node>>,
+    pub top_clusters: TopClusters,
 }
 
 impl InnerStore for MockStore {
+    fn fetch_top_clusters(&self) -> Result<TopClusters> {
+        Ok(self.top_clusters.clone())
+    }
+
     fn persist_node(&self, node: Node) -> Result<Option<Node>> {
         let cluster = node.info.datastore.cluster.clone();
         let name = node.info.datastore.name.clone();
@@ -29,6 +35,7 @@ impl MockStore {
     pub fn new() -> MockStore {
         MockStore {
             nodes: Mutex::new(HashMap::new()),
+            top_clusters: Vec::new(),
         }
     }
 }

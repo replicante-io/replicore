@@ -7,6 +7,7 @@ use std::thread;
 use std::thread::JoinHandle;
 
 use iron::Iron;
+use iron_json_response::JsonResponseMiddleware;
 use slog::Logger;
 
 use replicante_util_iron::MetricsHandler;
@@ -22,7 +23,7 @@ mod router;
 mod routes;
 
 pub use self::config::Config;
-use self::router::RouterBuilder;
+pub use self::router::RouterBuilder;
 
 
 /// The replicante HTTP API interface.
@@ -64,12 +65,18 @@ impl API {
         }
     }
 
+    /// Mutably access the router builder for extension.
+    pub fn router(&mut self) -> &mut RouterBuilder {
+        self.router.as_mut().expect("Unable to access router. Was API::run called already?")
+    }
+
     /// Creates an Iron server and spawns a thread to serve it.
     pub fn run(&mut self) -> Result<()> {
         let bind = self.config.bind.clone();
         let logger = self.logger.clone();
 
         let mut chain = self.router.take().unwrap().build();
+        chain.link_after(JsonResponseMiddleware::new());
         chain.link_after(RequestLogger::new(self.logger.clone()));
         chain.link(self.metrics_middleware.take().unwrap().into_middleware());
 

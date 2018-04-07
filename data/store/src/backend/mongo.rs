@@ -1,5 +1,6 @@
 use bson;
 use bson::Bson;
+use bson::Document;
 
 use mongodb::Client;
 use mongodb::ThreadedClient;
@@ -15,6 +16,8 @@ use prometheus::Registry;
 use slog::Logger;
 
 use replicante_data_models::Node;
+use replicante_data_models::webui::TopClusterItem;
+use replicante_data_models::webui::TopClusters;
 
 use super::super::InnerStore;
 use super::super::Result;
@@ -25,6 +28,9 @@ use super::super::config::MongoDBConfig;
 static COLLECTION_NODES: &'static str = "nodes";
 static FAIL_CLIENT: &'static str = "Failed to configure MongoDB client";
 static FAIL_PERSIST_NODE: &'static str = "Failed to persist node";
+static FAIL_TOP_CLUSTERS: &'static str = "Failed to list biggest clusters";
+
+static TOP_CLUSTERS_LIMIT: u32 = 10;
 
 
 lazy_static! {
@@ -77,7 +83,9 @@ fn register_metrics(logger: &Logger, registry: &Registry) {
 ///   * `events`: capped collection or TTL indexed.
 ///
 /// # Expected indexes
+///
 /// ## `nodes` collection
+///
 ///   * Unique index on `(info.agent.cluster, info.agent.name)`
 pub struct MongoStore {
     db: String,
@@ -85,6 +93,34 @@ pub struct MongoStore {
 }
 
 impl InnerStore for MongoStore {
+    fn fetch_top_clusters(&self) -> Result<TopClusters> {
+        let group = doc! {
+            "$group" => {
+                "_id" => "$info.datastore.cluster",
+                "nodes" => {"$sum" => 1},
+                "kinds" => {"$addToSet" => "$info.datastore.kind"},
+            }
+        };
+        let sort = doc! {"$sort" => {"nodes" => 1}};
+        let limit = doc! {"$limit" => TOP_CLUSTERS_LIMIT};
+        let project = doc! {
+            "$project" => {
+                "_id" => 0,
+                "name" => "$_id",
+                "kinds" => 1,
+                "nodes" => 1,
+            }
+        };
+        MONGODB_OPS_COUNT.with_label_values(&["aggregate"]).inc();
+        let _timer = MONGODB_OPS_DURATION.with_label_values(&["aggregate"]).start_timer();
+        self.process_top_clusters(vec![group, sort, limit, project])
+            .map_err(|error| {
+                MONGODB_OP_ERRORS_COUNT.with_label_values(&["aggregate"]).inc();
+                error
+            })
+            .chain_err(|| FAIL_TOP_CLUSTERS)
+    }
+
     fn persist_node(&self, node: Node) -> Result<Option<Node>> {
         let replacement = bson::to_bson(&node).chain_err(|| FAIL_PERSIST_NODE)?;
         let replacement = match replacement {
@@ -128,6 +164,19 @@ impl MongoStore {
             db,
             client,
         })
+    }
+
+    /// Runs the aggregation pipeline and converts the results.
+    fn process_top_clusters(&self, steps: Vec<Document>) -> Result<TopClusters> {
+        let collection = self.nodes_collection();
+        let cursor = collection.aggregate(steps, None)?;
+        let mut clusters = TopClusters::new();
+        for doc in cursor {
+            let doc = doc?;
+            let doc = bson::from_bson::<TopClusterItem>(bson::Bson::Document(doc))?;
+            clusters.push(doc);
+        }
+        Ok(clusters)
     }
 
     /// Returns the collection storing nodes.

@@ -25,6 +25,7 @@ use prometheus::Registry;
 use slog::Logger;
 
 use replicante_data_models::Node;
+use replicante_data_models::webui::TopClusters;
 
 
 mod backend;
@@ -58,6 +59,13 @@ impl Store {
         Ok(Store(store))
     }
 
+    /// Fetches overvew details of the top clusters.
+    ///
+    /// Clusters are sorted by number of nodes in the cluster.
+    pub fn fetch_top_clusters(&self) -> Result<TopClusters> {
+        self.0.fetch_top_clusters()
+    }
+
     /// Persists information about a node.
     ///
     /// If the node is known it will be updated, if it is new it will be created.
@@ -83,6 +91,9 @@ impl Store {
 ///
 /// Allows multiple possible datastores to be used as well as mocks for testing.
 trait InnerStore: Send + Sync {
+    /// See `Store::fetch_top_clusters` for details.
+    fn fetch_top_clusters(&self) -> Result<TopClusters>;
+
     /// See `Store::persist_node` for details.
     fn persist_node(&self, node: Node) -> Result<Option<Node>>;
 }

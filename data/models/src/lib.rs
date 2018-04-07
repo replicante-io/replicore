@@ -11,3 +11,7 @@ extern crate replicante_agent_models;
 mod node;
 
 pub use self::node::Node;
+
+
+// WebUI models are not part of the public interface.
+pub mod webui;

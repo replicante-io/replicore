@@ -106,7 +106,7 @@ impl Config {
 }
 
 
-/// Components to periodically perform service discovery.
+/// Component to periodically perform service discovery.
 pub struct DiscoveryComponent {
     config: BackendsConfig,
     interval: Duration,
