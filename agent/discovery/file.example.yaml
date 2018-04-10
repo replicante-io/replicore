@@ -1,0 +1,10 @@
+# This file is a list of dictionaries.
+- 
+  # Unique name for the cluster.
+  name: mongodb-rs
+
+  # Address of the agents managing the nodes in the cluster.
+  nodes:
+    - 'http://node1:37017'
+    - 'http://node2:37017'
+    - 'http://node3:37017'

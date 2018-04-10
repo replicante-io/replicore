@@ -1,94 +1,117 @@
 use std::fs::File;
-use std::io::Read;
-use std::path::Path;
 use serde_yaml;
 
-use super::super::Discovery;
+use replicante_data_models::Cluster;
+
 use super::super::Result;
 use super::super::ResultExt;
 
 
 /// Serialization format for file discovery.
-#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
-#[serde(deny_unknown_fields)]
-struct DiscoveryFile {
-    pub cluster: String,
-    pub targets: Vec<String>,
-}
+type DiscoveryFile = Vec<Cluster>;
 
 
 /// Iterator over results of file discovery.
 pub struct Iter {
-    cluster: String,
-    targets: Vec<String>,
+    data: Option<DiscoveryFile>,
+    path: String,
 }
 
 impl Iter {
-    /// Creates an iterator over the loaded data.
-    fn new(cluster: String, mut targets: Vec<String>) -> Iter {
-        targets.reverse();
-        Iter { cluster, targets }
+    /// Creates an iterator that reads the given file.
+    pub fn new<S>(path: S) -> Iter where S: Into<String> {
+        Iter {
+            data: None,
+            path: path.into(),
+        }
     }
 
-    /// Creates an iterator out of a YAML file.
-    pub fn from_file<P: AsRef<Path>>(path: P) -> Result<Iter> {
-        let error_message = format!("Failed to open {:?}", path.as_ref());
-        let file = File::open(path).chain_err(|| error_message)?;
-        Iter::from_yaml(file)
-    }
-
-    /// Creates an iterator out of a YAML stream.
-    pub fn from_yaml<R: Read>(reader: R) -> Result<Iter> {
-        let content: DiscoveryFile = serde_yaml::from_reader(reader)?;
-        Ok(Iter::new(content.cluster, content.targets))
+    /// Loads the content of the file into memory to iterate over it.
+    fn load_content(&mut self) -> Result<()> {
+        let error_message = format!("Failed to open {:?}", self.path);
+        let file = File::open(&self.path).chain_err(|| error_message)?;
+        let mut content: DiscoveryFile = serde_yaml::from_reader(file)?;
+        content.reverse();
+        self.data = Some(content);
+        Ok(())
     }
 }
 
 impl Iterator for Iter {
-    type Item = Result<Discovery>;
+    type Item = Result<Cluster>;
     fn next(&mut self) -> Option<Self::Item> {
-        self.targets.pop().map(|target| {
-            Ok(Discovery::new(self.cluster.clone(), target))
-        })
+        let data: &mut DiscoveryFile = match self.data {
+            Some(ref mut data) => data,
+            None => {
+                match self.load_content() {
+                    Ok(()) => (),
+                    Err(error) => {
+                        self.data = Some(Vec::new());
+                        return Some(Err(error))
+                    },
+                };
+                self.data.as_mut().unwrap()
+            }
+        };
+        data.pop().map(|cluster| Ok(cluster))
     }
 }
 
 
 #[cfg(test)]
 mod tests {
-    use std::io::Cursor;
-    use super::Discovery;
+    use replicante_data_models::Cluster;
+
+    use super::super::super::Error;
+    use super::super::super::ErrorKind;
     use super::Iter;
 
     #[test]
-    fn empty() {
-        let mut iter = Iter::new(String::from("cluster"), Vec::new());
+    fn file_not_found() {
+        let mut iter = Iter::new("/some/file/that/does/not/exists");
+        match iter.next() {
+            None => panic!("Should have returned a Some"),
+            Some(Ok(_)) => panic!("Should have returned and Err"),
+            Some(Err(Error(ErrorKind::Msg(msg), _))) => assert_eq!(
+                msg, "Failed to open \"/some/file/that/does/not/exists\""
+            ),
+            Some(Err(error)) => panic!("Invalid error: {:?}", error),
+        };
         assert!(iter.next().is_none());
     }
 
     #[test]
-    fn found() {
-        let mut iter = Iter::new(String::from("cluster"), vec![
-            String::from("A"), String::from("B"), String::from("C")
-        ]);
-        assert_eq!(iter.next().unwrap().unwrap(), Discovery::new("cluster", "A"));
-        assert_eq!(iter.next().unwrap().unwrap(), Discovery::new("cluster", "B"));
-        assert_eq!(iter.next().unwrap().unwrap(), Discovery::new("cluster", "C"));
+    fn example_file() {
+        let mut iter = Iter::new("file.example.yaml");
+        let next = iter.next().unwrap().unwrap();
+        assert_eq!(next, Cluster::new("mongodb-rs", vec![
+            "http://node1:37017".into(),
+            "http://node2:37017".into(),
+            "http://node3:37017".into(),
+        ]));
         assert!(iter.next().is_none());
     }
 
     #[test]
-    fn from_yaml() {
-        let cursor = Cursor::new(r#"cluster: c
-targets:
-    - a
-    - b
-    - c
-"#);
-        let mut iter = Iter::from_yaml(cursor).unwrap();
-        assert_eq!(iter.next().unwrap().unwrap(), Discovery::new("c", "a"));
-        assert_eq!(iter.next().unwrap().unwrap(), Discovery::new("c", "b"));
-        assert_eq!(iter.next().unwrap().unwrap(), Discovery::new("c", "c"));
+    fn no_clusters() {
+        let mut iter = Iter::new("tests/no.clusters.yaml");
+        assert!(iter.next().is_none());
+    }
+
+    #[test]
+    fn two_clusters() {
+        let mut iter = Iter::new("tests/two.clusters.yaml");
+        let next = iter.next().unwrap().unwrap();
+        assert_eq!(next, Cluster::new("test1", vec![
+            "http://node1:port/".into(),
+            "http://node2:port/".into(),
+            "http://node3:port/".into(),
+        ]));
+        let next = iter.next().unwrap().unwrap();
+        assert_eq!(next, Cluster::new("test2", vec![
+            "http://node1:port/".into(),
+            "http://node3:port/".into(),
+        ]));
         assert!(iter.next().is_none());
     }
 }

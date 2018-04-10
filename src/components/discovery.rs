@@ -16,9 +16,9 @@ use slog::Logger;
 use replicante_agent_client::Client;
 use replicante_agent_client::HttpClient;
 use replicante_agent_discovery::Config as BackendsConfig;
-use replicante_agent_discovery::Discovery;
 use replicante_agent_discovery::discover;
 
+use replicante_data_models::Cluster;
 use replicante_data_models::Node;
 use replicante_data_store::Store;
 
@@ -140,15 +140,11 @@ impl DiscoveryComponent {
         );
 
         info!(self.logger, "Starting Agent Discovery thread");
-        let logger = self.logger.clone();
         let thread = ThreadBuilder::new().name(String::from("Agent Discovery")).spawn(move || {
             loop {
                 DISCOVERY_COUNT.inc();
                 let timer = DISCOVERY_DURATION.start_timer();
-                if let Err(err) = worker.run() {
-                    let error = err.display_chain().to_string();
-                    error!(logger, "Agent discovery iteration failed"; "error" => error);
-                }
+                worker.run();
                 timer.observe_duration();
                 sleep(interval.clone());
             }
@@ -184,34 +180,45 @@ impl DiscoveryWorker {
     }
 
     /// Runs a signle discovery loop.
-    pub fn run(&self) -> Result<()> {
+    pub fn run(&self) {
         debug!(self.logger, "Discovering agents ...");
-        for agent in discover(self.config.clone())? {
-            let agent = match agent {
-                Ok(agent) => agent,
+        for cluster in discover(self.config.clone()) {
+            let cluster = match cluster {
+                Ok(cluster) => cluster,
                 Err(err) => {
                     let error = err.display_chain().to_string();
-                    error!(self.logger, "Failed to fetch agent"; "error" => error);
+                    error!(self.logger, "Failed to fetch cluster"; "error" => error);
                     DISCOVERY_FETCH_ERRORS_COUNT.inc();
                     continue;
                 }
             };
-            if let Err(err) = self.process(agent) {
-                let error = err.display_chain().to_string();
-                error!(self.logger, "Failed to process agent"; "error" => error);
-                DISCOVERY_PROCESS_ERRORS_COUNT.inc();
-            }
+            self.process(cluster);
         }
         debug!(self.logger, "Agents discovery complete");
-        Ok(())
     }
 
     /// Process a discovery result to fetch the node state.
     // TODO: replace with use of tasks (one task per discovery?)
-    fn process(&self, discovery: Discovery) -> Result<()> {
-        let expect_cluster = discovery.cluster().clone();
-        let node = fetch_state(discovery)?;
-        if node.info.datastore.cluster != expect_cluster {
+    fn process(&self, cluster: Cluster) {
+        // TODO: persist cluster
+        for node in cluster.nodes.iter() {
+            if let Err(err) = self.process_node(&cluster, node) {
+                let error = err.display_chain().to_string();
+                error!(
+                    self.logger, "Failed to process node";
+                    "cluster" => cluster.name.clone(), "error" => error,
+                    "node" => node.clone()
+                );
+                DISCOVERY_PROCESS_ERRORS_COUNT.inc();
+            }
+        }
+    }
+
+    /// TODO
+    fn process_node(&self, cluster: &Cluster, node: &String) -> Result<()> {
+        let expect_cluster = &cluster.name;
+        let node = fetch_state(node)?;
+        if &node.info.datastore.cluster != expect_cluster {
             return Err("Reported cluster does not match expected cluster".into());
         }
         let old = self.store.persist_node(node.clone())?;
@@ -224,8 +231,8 @@ impl DiscoveryWorker {
 
 /*** NOTE: the code below will likely be moved when tasks are introduced  ***/
 /// Converts an agent discovery result into a Node's status.
-fn fetch_state(discovery: Discovery) -> Result<Node> {
-    let client = HttpClient::new(discovery.target().clone())?;
+fn fetch_state(node: &String) -> Result<Node> {
+    let client = HttpClient::new(node.clone())?;
     let info = client.info()?;
     let status = client.status()?;
     Ok(Node::new(info, status))

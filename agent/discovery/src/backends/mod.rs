@@ -1,4 +1,5 @@
-use super::Discovery;
+use replicante_data_models::Cluster;
+
 use super::Result;
 use super::config::Config;
 
@@ -11,7 +12,7 @@ enum Backend {
 }
 
 impl Iterator for Backend {
-    type Item = Result<Discovery>;
+    type Item = Result<Cluster>;
     fn next(&mut self) -> Option<Self::Item> {
         match *self {
             Backend::File(ref mut iter) => iter.next(),
@@ -39,7 +40,7 @@ impl Iter {
     /// Iterate over the active backend, if any.
     ///
     /// If the active backend has no more items it is discarded an the method returns `None`.
-    fn next_active(&mut self) -> Option<Result<Discovery>> {
+    fn next_active(&mut self) -> Option<Result<Cluster>> {
         match self.active.as_mut().unwrap().next() {
             None => {
                 self.active = None;
@@ -52,20 +53,26 @@ impl Iter {
     /// Iterate over the next backend and activate it.
     ///
     /// If there is no other backend the method returns `None`.
-    fn next_backend(&mut self) -> Option<Result<Discovery>> {
-        match self.backends.pop() {
-            None => None,
-            Some(mut backend) => {
-                let next = backend.next();
-                self.active = Some(backend);
-                next
+    /// If a backend immediately `None` this method proceeds to the next backend.
+    fn next_backend(&mut self) -> Option<Result<Cluster>> {
+        // While there are backends in the list look for one that returns something.
+        while let Some(mut backend) = self.backends.pop() {
+            match backend.next() {
+                None => continue,
+                next => {
+                    self.active = Some(backend);
+                    return next;
+                }
             }
         }
+
+        // If there are no more backends return `None`.
+        None
     }
 }
 
 impl Iterator for Iter {
-    type Item = Result<Discovery>;
+    type Item = Result<Cluster>;
     fn next(&mut self) -> Option<Self::Item> {
         if self.active.is_some() {
             match self.next_active() {
@@ -103,7 +110,7 @@ impl Iterator for Iter {
 /// #
 /// # fn run() -> Result<()> {
 ///     let config = Config::default();
-///     let agents = discover(config)?;
+///     let agents = discover(config);
 ///     for agent in agents {
 ///         let agent = agent?;
 ///         println!("{:?}", agent);
@@ -121,22 +128,22 @@ impl Iterator for Iter {
 /// #     }
 /// # }
 /// ```
-pub fn discover(config: Config) -> Result<Iter> {
+pub fn discover(config: Config) -> Iter {
     let mut backends: Vec<Backend> = Vec::new();
     for file in config.files {
-        let backend = file::Iter::from_file(file)?;
+        let backend = file::Iter::new(file);
         backends.push(Backend::File(backend));
     }
-    Ok(Iter::new(backends))
+    Iter::new(backends)
 }
 
 
 #[cfg(test)]
 mod tests {
-    use std::io::Cursor;
+//    use std::io::Cursor;
+    use replicante_data_models::Cluster;
 
     use super::Backend;
-    use super::Discovery;
     use super::Iter;
     use super::file;
 
@@ -147,29 +154,59 @@ mod tests {
     }
 
     #[test]
-    fn with_backend() {
-        let cursor = Cursor::new("cluster: c\ntargets: ['a', 'b', 'c']");
-        let backend = file::Iter::from_yaml(cursor).unwrap();
-        let mut iter = Iter::new(vec![Backend::File(backend)]);
-        assert_eq!(iter.next().unwrap().unwrap(), Discovery::new("c", "a"));
-        assert_eq!(iter.next().unwrap().unwrap(), Discovery::new("c", "b"));
-        assert_eq!(iter.next().unwrap().unwrap(), Discovery::new("c", "c"));
+    fn only_empty_iters() {
+        let cluster_a = file::Iter::new("tests/no.clusters.yaml");
+        let cluster_b = file::Iter::new("tests/no.clusters.yaml");
+        let cluster_c = file::Iter::new("tests/no.clusters.yaml");
+        let mut iter = Iter::new(vec![
+            Backend::File(cluster_a), Backend::File(cluster_b), Backend::File(cluster_c)
+        ]);
         assert!(iter.next().is_none());
     }
 
     #[test]
-    fn with_two_backends() {
-        let cursor = Cursor::new("cluster: a\ntargets: ['a', 'b', 'c']");
-        let cluster_a = file::Iter::from_yaml(cursor).unwrap();
-        let cursor = Cursor::new("cluster: b\ntargets: ['d', 'e', 'f']");
-        let cluster_b = file::Iter::from_yaml(cursor).unwrap();
-        let mut iter = Iter::new(vec![Backend::File(cluster_a), Backend::File(cluster_b)]);
-        assert_eq!(iter.next().unwrap().unwrap(), Discovery::new("a", "a"));
-        assert_eq!(iter.next().unwrap().unwrap(), Discovery::new("a", "b"));
-        assert_eq!(iter.next().unwrap().unwrap(), Discovery::new("a", "c"));
-        assert_eq!(iter.next().unwrap().unwrap(), Discovery::new("b", "d"));
-        assert_eq!(iter.next().unwrap().unwrap(), Discovery::new("b", "e"));
-        assert_eq!(iter.next().unwrap().unwrap(), Discovery::new("b", "f"));
+    fn with_backend() {
+        let backend = file::Iter::new("tests/two.clusters.yaml");
+        let mut iter = Iter::new(vec![Backend::File(backend)]);
+        let next = iter.next().unwrap().unwrap();
+        assert_eq!(next, Cluster::new("test1", vec![
+            "http://node1:port/".into(),
+            "http://node2:port/".into(),
+            "http://node3:port/".into(),
+        ]));
+        let next = iter.next().unwrap().unwrap();
+        assert_eq!(next, Cluster::new("test2", vec![
+            "http://node1:port/".into(),
+            "http://node3:port/".into(),
+        ]));
+        assert!(iter.next().is_none());
+    }
+
+    #[test]
+    fn with_more_backends() {
+        let cluster_a = file::Iter::new("file.example.yaml");
+        let cluster_b = file::Iter::new("tests/no.clusters.yaml");
+        let cluster_c = file::Iter::new("tests/two.clusters.yaml");
+        let mut iter = Iter::new(vec![
+            Backend::File(cluster_a), Backend::File(cluster_b), Backend::File(cluster_c)
+        ]);
+        let next = iter.next().unwrap().unwrap();
+        assert_eq!(next, Cluster::new("mongodb-rs", vec![
+            "http://node1:37017".into(),
+            "http://node2:37017".into(),
+            "http://node3:37017".into(),
+        ]));
+        let next = iter.next().unwrap().unwrap();
+        assert_eq!(next, Cluster::new("test1", vec![
+            "http://node1:port/".into(),
+            "http://node2:port/".into(),
+            "http://node3:port/".into(),
+        ]));
+        let next = iter.next().unwrap().unwrap();
+        assert_eq!(next, Cluster::new("test2", vec![
+            "http://node1:port/".into(),
+            "http://node3:port/".into(),
+        ]));
         assert!(iter.next().is_none());
     }
 }

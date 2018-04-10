@@ -20,8 +20,6 @@ maintenance = { status = "actively-developed" }
 serde = "^1.0.34"
 serde_derive = "^1.0.34"
 
-replicante_agent_client = { path = "../../agent/client" }
-replicante_agent_discovery = { path = "../../agent/discovery" }
 replicante_agent_models = { path = "../../common/agent/models" }
 
 

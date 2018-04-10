@@ -1174,6 +1174,7 @@ name = "replicante_agent_discovery"
 version = "0.1.0"
 dependencies = [
  "error-chain 0.11.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "replicante_data_models 0.1.0",
  "serde 1.0.36 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde_derive 1.0.36 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde_yaml 0.7.3 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -1192,8 +1193,6 @@ dependencies = [
 name = "replicante_data_models"
 version = "0.1.0"
 dependencies = [
- "replicante_agent_client 0.1.0",
- "replicante_agent_discovery 0.1.0",
  "replicante_agent_models 0.1.0",
  "serde 1.0.36 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde_derive 1.0.36 (registry+https://github.com/rust-lang/crates.io-index)",
