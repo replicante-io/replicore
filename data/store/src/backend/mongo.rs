@@ -15,7 +15,9 @@ use prometheus::Opts;
 use prometheus::Registry;
 use slog::Logger;
 
+use replicante_data_models::Cluster;
 use replicante_data_models::Node;
+
 use replicante_data_models::webui::TopClusterItem;
 use replicante_data_models::webui::TopClusters;
 
@@ -25,8 +27,11 @@ use super::super::ResultExt;
 use super::super::config::MongoDBConfig;
 
 
+static COLLECTION_CLUSTERS: &'static str = "clusters";
 static COLLECTION_NODES: &'static str = "nodes";
+
 static FAIL_CLIENT: &'static str = "Failed to configure MongoDB client";
+static FAIL_PERSIST_CLUSTER: &'static str = "Failed to persist cluster";
 static FAIL_PERSIST_NODE: &'static str = "Failed to persist node";
 static FAIL_TOP_CLUSTERS: &'static str = "Failed to list biggest clusters";
 
@@ -84,9 +89,8 @@ fn register_metrics(logger: &Logger, registry: &Registry) {
 ///
 /// # Expected indexes
 ///
-/// ## `nodes` collection
-///
-///   * Unique index on `(info.agent.cluster, info.agent.name)`
+///   * Unique index on `clusters`: `name`
+///   * Unique index on `nodes`: `(info.agent.cluster, info.agent.name)`
 pub struct MongoStore {
     db: String,
     client: Client,
@@ -121,6 +125,30 @@ impl InnerStore for MongoStore {
             .chain_err(|| FAIL_TOP_CLUSTERS)
     }
 
+    fn persist_cluster(&self, cluster: Cluster) -> Result<Option<Cluster>> {
+        let replacement = bson::to_bson(&cluster).chain_err(|| FAIL_PERSIST_CLUSTER)?;
+        let replacement = match replacement {
+            Bson::Document(replacement) => replacement,
+            _ => panic!("Cluster failed to encode as BSON document")
+        };
+        let filter = doc!{"name" => cluster.name};
+        let collection = self.collection_clusters();
+        let mut options = FindOneAndUpdateOptions::new();
+        options.upsert = Some(true);
+        MONGODB_OPS_COUNT.with_label_values(&["findOneAndReplace"]).inc();
+        let _timer = MONGODB_OPS_DURATION.with_label_values(&["findOneAndReplace"]).start_timer();
+        let old = collection.find_one_and_replace(filter, replacement, Some(options))
+            .map_err(|error| {
+                MONGODB_OP_ERRORS_COUNT.with_label_values(&["findOneAndReplace"]).inc();
+                error
+            })
+            .chain_err(|| FAIL_PERSIST_CLUSTER)?;
+        match old {
+            None => Ok(None),
+            Some(doc) => Ok(Some(bson::from_bson::<Cluster>(Bson::Document(doc))?))
+        }
+    }
+
     fn persist_node(&self, node: Node) -> Result<Option<Node>> {
         let replacement = bson::to_bson(&node).chain_err(|| FAIL_PERSIST_NODE)?;
         let replacement = match replacement {
@@ -133,7 +161,7 @@ impl InnerStore for MongoStore {
         };
         let mut options = FindOneAndUpdateOptions::new();
         options.upsert = Some(true);
-        let collection = self.nodes_collection();
+        let collection = self.collection_nodes();
         MONGODB_OPS_COUNT.with_label_values(&["findOneAndReplace"]).inc();
         let _timer = MONGODB_OPS_DURATION.with_label_values(&["findOneAndReplace"]).start_timer();
         let old = collection.find_one_and_replace(filter, replacement, Some(options))
@@ -168,7 +196,7 @@ impl MongoStore {
 
     /// Runs the aggregation pipeline and converts the results.
     fn process_top_clusters(&self, steps: Vec<Document>) -> Result<TopClusters> {
-        let collection = self.nodes_collection();
+        let collection = self.collection_nodes();
         let cursor = collection.aggregate(steps, None)?;
         let mut clusters = TopClusters::new();
         for doc in cursor {
@@ -179,8 +207,13 @@ impl MongoStore {
         Ok(clusters)
     }
 
+    /// Returns the collection storing clusters.
+    fn collection_clusters(&self) -> Collection {
+        self.client.db(&self.db).collection(COLLECTION_CLUSTERS)
+    }
+
     /// Returns the collection storing nodes.
-    fn nodes_collection(&self) -> Collection {
+    fn collection_nodes(&self) -> Collection {
         self.client.db(&self.db).collection(COLLECTION_NODES)
     }
 }

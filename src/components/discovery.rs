@@ -200,7 +200,21 @@ impl DiscoveryWorker {
     /// Process a discovery result to fetch the node state.
     // TODO: replace with use of tasks (one task per discovery?)
     fn process(&self, cluster: Cluster) {
-        // TODO: persist cluster
+        // Persist cluster first.
+        match self.store.persist_cluster(cluster.clone()) {
+            Err(error) => {
+                let error = error.display_chain().to_string();
+                error!(
+                    self.logger, "Failed to persist cluster";
+                    "cluster" => cluster.name.clone(), "error" => error
+                );
+            },
+            Ok(_old) => {
+                // TODO: figure out if the cluster changed.
+            },
+        };
+
+        // Then process each node.
         for node in cluster.nodes.iter() {
             if let Err(err) = self.process_node(&cluster, node) {
                 let error = err.display_chain().to_string();
@@ -214,7 +228,7 @@ impl DiscoveryWorker {
         }
     }
 
-    /// TODO
+    /// Fetch the state of individual nodes.
     fn process_node(&self, cluster: &Cluster, node: &String) -> Result<()> {
         let expect_cluster = &cluster.name;
         let node = fetch_state(node)?;

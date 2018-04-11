@@ -24,7 +24,9 @@ use std::sync::Arc;
 use prometheus::Registry;
 use slog::Logger;
 
+use replicante_data_models::Cluster;
 use replicante_data_models::Node;
+
 use replicante_data_models::webui::TopClusters;
 
 
@@ -66,13 +68,22 @@ impl Store {
         self.0.fetch_top_clusters()
     }
 
+    /// Persists information about a cluster.
+    ///
+    /// If the cluster is known it will be updated and the old model is returned.
+    /// Tf the cluster is new it will be created and `None` will be returned.
+    ///
+    /// Clusters are uniquely identified by their name.
+    pub fn persist_cluster(&self, cluster: Cluster) -> Result<Option<Cluster>> {
+        self.0.persist_cluster(cluster)
+    }
+
     /// Persists information about a node.
     ///
-    /// If the node is known it will be updated, if it is new it will be created.
-    /// Nodes are uniquely identified by `(cluster, name)`.
+    /// If the node is known it will be updated and the old model is returned.
+    /// Tf the node is new it will be created and `None` will be returned.
     ///
-    /// If the node was found the return value is a `Some` with the old node,
-    /// otherwise a `None` is returned.
+    /// Nodes are uniquely identified by `(cluster, name)`.
     pub fn persist_node(&self, node: Node) -> Result<Option<Node>> {
         self.0.persist_node(node)
     }
@@ -93,6 +104,9 @@ impl Store {
 trait InnerStore: Send + Sync {
     /// See `Store::fetch_top_clusters` for details.
     fn fetch_top_clusters(&self) -> Result<TopClusters>;
+
+    /// See `Store::persist_cluster` for details.
+    fn persist_cluster(&self, cluster: Cluster) -> Result<Option<Cluster>>;
 
     /// See `Store::persist_node` for details.
     fn persist_node(&self, node: Node) -> Result<Option<Node>>;

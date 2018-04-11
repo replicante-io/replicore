@@ -1,7 +1,9 @@
 use std::collections::HashMap;
 use std::sync::Mutex;
 
+use replicante_data_models::Cluster;
 use replicante_data_models::Node;
+
 use replicante_data_models::webui::TopClusters;
 
 use super::InnerStore;
@@ -10,6 +12,7 @@ use super::Result;
 
 /// A mock implementation of the storage layer for tests.
 pub struct MockStore {
+    pub clusters: Mutex<HashMap<String, Cluster>>,
     pub nodes: Mutex<HashMap<(String, String), Node>>,
     pub top_clusters: TopClusters,
 }
@@ -17,6 +20,14 @@ pub struct MockStore {
 impl InnerStore for MockStore {
     fn fetch_top_clusters(&self) -> Result<TopClusters> {
         Ok(self.top_clusters.clone())
+    }
+
+    fn persist_cluster(&self, cluster: Cluster) -> Result<Option<Cluster>> {
+        let name = cluster.name.clone();
+        let mut clusters = self.clusters.lock().unwrap();
+        let old = clusters.get(&name).map(|c| c.clone());
+        clusters.insert(name, cluster);
+        Ok(old)
     }
 
     fn persist_node(&self, node: Node) -> Result<Option<Node>> {
@@ -34,6 +45,7 @@ impl MockStore {
     /// Creates a new, empty, mock store.
     pub fn new() -> MockStore {
         MockStore {
+            clusters: Mutex::new(HashMap::new()),
             nodes: Mutex::new(HashMap::new()),
             top_clusters: Vec::new(),
         }
@@ -43,6 +55,39 @@ impl MockStore {
 
 #[cfg(test)]
 mod tests {
+    mod cluster {
+        use std::sync::Arc;
+        use replicante_data_models::Cluster;
+
+        use super::super::super::Store;
+        use super::super::MockStore;
+
+        #[test]
+        fn persist_new() {
+            let cluster = Cluster::new("test", vec!["test".into()]);
+            let mock = Arc::new(MockStore::new());
+            let store = Store::mock(Arc::clone(&mock));
+            let old = store.persist_cluster(cluster.clone()).unwrap();
+            assert!(old.is_none());
+            let stored = mock.clusters.lock().expect("Faild to lock")
+                .get("test")
+                .map(|n| n.clone()).expect("Cluster not found");
+            assert_eq!(cluster, stored)
+        }
+
+        #[test]
+        fn persist_update() {
+            let cluster1 = Cluster::new("test", vec!["test1".into()]);
+            let cluster2 = Cluster::new("test", vec!["test2".into()]);
+            let mock = Arc::new(MockStore::new());
+            let store = Store::mock(Arc::clone(&mock));
+            store.persist_cluster(cluster1.clone()).unwrap();
+            let old = store.persist_cluster(cluster2).unwrap();
+            assert_eq!(Some(cluster1), old);
+        }
+    }
+
+
     use replicante_agent_models::AgentInfo;
     use replicante_agent_models::AgentVersion;
     use replicante_agent_models::DatastoreInfo;
