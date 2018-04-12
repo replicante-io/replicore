@@ -1208,6 +1208,7 @@ dependencies = [
  "lazy_static 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "mongodb 0.3.7 (registry+https://github.com/rust-lang/crates.io-index)",
  "prometheus 0.3.13 (registry+https://github.com/rust-lang/crates.io-index)",
+ "regex 0.2.10 (registry+https://github.com/rust-lang/crates.io-index)",
  "replicante_agent_models 0.1.0",
  "replicante_data_models 0.1.0",
  "serde 1.0.36 (registry+https://github.com/rust-lang/crates.io-index)",

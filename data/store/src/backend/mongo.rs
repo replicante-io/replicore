@@ -6,6 +6,7 @@ use mongodb::Client;
 use mongodb::ThreadedClient;
 use mongodb::coll::Collection;
 use mongodb::coll::options::FindOneAndUpdateOptions;
+use mongodb::coll::options::FindOptions;
 use mongodb::db::ThreadedDatabase;
 
 use prometheus::CounterVec;
@@ -13,6 +14,7 @@ use prometheus::HistogramOpts;
 use prometheus::HistogramVec;
 use prometheus::Opts;
 use prometheus::Registry;
+use regex;
 use slog::Logger;
 
 use replicante_data_models::Cluster;
@@ -31,6 +33,7 @@ static COLLECTION_CLUSTERS: &'static str = "clusters";
 static COLLECTION_NODES: &'static str = "nodes";
 
 static FAIL_CLIENT: &'static str = "Failed to configure MongoDB client";
+static FAIL_FIND_CLUSTERS: &'static str = "Failed while searching for clusters";
 static FAIL_PERSIST_CLUSTER: &'static str = "Failed to persist cluster";
 static FAIL_PERSIST_NODE: &'static str = "Failed to persist node";
 static FAIL_TOP_CLUSTERS: &'static str = "Failed to list biggest clusters";
@@ -97,6 +100,33 @@ pub struct MongoStore {
 }
 
 impl InnerStore for MongoStore {
+    fn find_clusters(&self, search: String, limit: u8) -> Result<Vec<String>> {
+        let search = regex::escape(&search);
+        let filter = doc!{"name" => {"$regex" => search, "$options" => "i"}};
+        let mut options = FindOptions::new();
+        options.limit = Some(limit as i64);
+        options.projection = Some(doc!{"name" => 1});
+
+        MONGODB_OPS_COUNT.with_label_values(&["find"]).inc();
+        let _timer = MONGODB_OPS_DURATION.with_label_values(&["find"]).start_timer();
+        let collection = self.collection_clusters();
+        let cursor = collection.find(Some(filter), Some(options))
+            .map_err(|error| {
+                MONGODB_OP_ERRORS_COUNT.with_label_values(&["find"]).inc();
+                error
+            })
+            .chain_err(|| FAIL_FIND_CLUSTERS)?;
+
+        let mut clusters = Vec::new();
+        for doc in cursor {
+            let doc = doc.chain_err(|| FAIL_FIND_CLUSTERS)?;
+            let doc = bson::from_bson::<FindClustersResult>(bson::Bson::Document(doc))
+                .chain_err(|| FAIL_FIND_CLUSTERS)?;
+            clusters.push(doc.name);
+        }
+        Ok(clusters)
+    }
+
     fn fetch_top_clusters(&self) -> Result<TopClusters> {
         let group = doc! {
             "$group" => {
@@ -216,4 +246,11 @@ impl MongoStore {
     fn collection_nodes(&self) -> Collection {
         self.client.db(&self.db).collection(COLLECTION_NODES)
     }
+}
+
+
+/// Internal structure for `MongoStore::find_clusters` result.
+#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
+struct FindClustersResult {
+    name: String,
 }

@@ -6,11 +6,43 @@ use iron::Response;
 use iron::Set;
 use iron::status;
 use iron_json_response::JsonResponse;
+use router::Router;
 
 use replicante_data_store::Store;
 
 use super::super::super::ResultExt;
 use super::super::super::interfaces::Interfaces;
+
+
+static FIND_CLUSTERS_LIMIT: u8 = 25;
+
+
+/// Clusters find (`/webui/clusters/find`) handler.
+pub struct Find {
+    store: Store
+}
+
+impl Handler for Find {
+    fn handle(&self, req: &mut Request) -> IronResult<Response> {
+        let query = req.extensions.get::<Router>().unwrap().find("query").unwrap_or("");
+        let clusters = self.store.find_clusters(query, FIND_CLUSTERS_LIMIT)
+            .chain_err(|| "Failed to search clusters")?;
+        let mut resp = Response::new();
+        resp.set_mut(JsonResponse::json(clusters)).set_mut(status::Ok);
+        Ok(resp)
+    }
+}
+
+impl Find {
+    /// Attaches the handler for `/webui/clusters/top`.
+    pub fn attach(interfaces: &mut Interfaces) {
+        let router = interfaces.api.router();
+        let handler_root = Find { store: interfaces.store.clone() };
+        let handler_query = Find { store: interfaces.store.clone() };
+        router.get("/webui/clusters/find", handler_root, "webui_clusters_find_root");
+        router.get("/webui/clusters/find/:query", handler_query, "webui_clusters_find_query");
+    }
+}
 
 
 /// Top clusters (`/webui/clusters/top`) handler.
