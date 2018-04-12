@@ -66,7 +66,7 @@ impl Store {
     ///
     /// A limited number of cluster is returned to avoid abuse.
     /// To find more clusters refine the search (paging is not supported).
-    pub fn find_clusters<S>(&self, search: S, limit: u8) -> Result<Vec<String>>
+    pub fn find_clusters<S>(&self, search: S, limit: u8) -> Result<Vec<ClusterListItem>>
         where S: Into<String>,
     {
         self.0.find_clusters(search.into(), limit)
@@ -114,7 +114,7 @@ impl Store {
 /// Allows multiple possible datastores to be used as well as mocks for testing.
 trait InnerStore: Send + Sync {
     /// See `Store::find_clusters` for details.
-    fn find_clusters(&self, search: String, limit: u8) -> Result<Vec<String>>;
+    fn find_clusters(&self, search: String, limit: u8) -> Result<Vec<ClusterListItem>>;
 
     /// See `Store::fetch_top_clusters` for details.
     fn fetch_top_clusters(&self) -> Result<Vec<ClusterListItem>>;

@@ -18,8 +18,8 @@ pub struct MockStore {
 }
 
 impl InnerStore for MockStore {
-    fn find_clusters(&self, _: String, _: u8) -> Result<Vec<String>> {
-        Ok(self.clusters.lock().unwrap().keys().map(|k| k.clone()).collect())
+    fn find_clusters(&self, _: String, _: u8) -> Result<Vec<ClusterListItem>> {
+        Ok(self.top_clusters.clone())
     }
 
     fn fetch_top_clusters(&self) -> Result<Vec<ClusterListItem>> {
@@ -65,20 +65,6 @@ mod tests {
 
         use super::super::super::Store;
         use super::super::MockStore;
-
-        #[test]
-        fn find_clusters() {
-            let cluster1 = Cluster::new("test1", vec!["test1".into()]);
-            let cluster2 = Cluster::new("test2", vec!["test2".into()]);
-            let mock = Arc::new(MockStore::new());
-            let store = Store::mock(Arc::clone(&mock));
-            store.persist_cluster(cluster1).unwrap();
-            store.persist_cluster(cluster2).unwrap();
-            let mut clusters = store.find_clusters("ignored", 5).unwrap();
-            clusters.sort();
-            let expected: Vec<String> = vec!["test1".into(), "test2".into()];
-            assert_eq!(clusters, expected);
-        }
 
         #[test]
         fn persist_new() {
