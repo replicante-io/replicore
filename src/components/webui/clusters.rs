@@ -83,7 +83,7 @@ mod tests {
         use iron_test::request;
         use iron_test::response;
 
-        use replicante_data_models::webui::TopClusterItem;
+        use replicante_data_models::webui::ClusterListItem;
         use replicante_data_store::Store;
         use replicante_data_store::mock::MockStore;
 
@@ -91,8 +91,8 @@ mod tests {
 
         fn mockstore() -> MockStore {
             let mut mock_store = MockStore::new();
-            let c1 = TopClusterItem::new("c1", "mongo", 3);
-            let c2 = TopClusterItem::new("c2", "redis", 5);
+            let c1 = ClusterListItem::new("c1", "mongo", 3);
+            let c2 = ClusterListItem::new("c2", "redis", 5);
             mock_store.top_clusters = vec![c1, c2];
             mock_store
         }

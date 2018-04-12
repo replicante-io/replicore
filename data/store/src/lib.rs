@@ -28,7 +28,7 @@ use slog::Logger;
 use replicante_data_models::Cluster;
 use replicante_data_models::Node;
 
-use replicante_data_models::webui::TopClusters;
+use replicante_data_models::webui::ClusterListItem;
 
 
 mod backend;
@@ -75,7 +75,7 @@ impl Store {
     /// Fetches overvew details of the top clusters.
     ///
     /// Clusters are sorted by number of nodes in the cluster.
-    pub fn fetch_top_clusters(&self) -> Result<TopClusters> {
+    pub fn fetch_top_clusters(&self) -> Result<Vec<ClusterListItem>> {
         self.0.fetch_top_clusters()
     }
 
@@ -117,7 +117,7 @@ trait InnerStore: Send + Sync {
     fn find_clusters(&self, search: String, limit: u8) -> Result<Vec<String>>;
 
     /// See `Store::fetch_top_clusters` for details.
-    fn fetch_top_clusters(&self) -> Result<TopClusters>;
+    fn fetch_top_clusters(&self) -> Result<Vec<ClusterListItem>>;
 
     /// See `Store::persist_cluster` for details.
     fn persist_cluster(&self, cluster: Cluster) -> Result<Option<Cluster>>;

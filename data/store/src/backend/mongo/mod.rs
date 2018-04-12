@@ -20,8 +20,7 @@ use slog::Logger;
 use replicante_data_models::Cluster;
 use replicante_data_models::Node;
 
-use replicante_data_models::webui::TopClusterItem;
-use replicante_data_models::webui::TopClusters;
+use replicante_data_models::webui::ClusterListItem;
 
 use super::super::InnerStore;
 use super::super::Result;
@@ -127,7 +126,7 @@ impl InnerStore for MongoStore {
         Ok(clusters)
     }
 
-    fn fetch_top_clusters(&self) -> Result<TopClusters> {
+    fn fetch_top_clusters(&self) -> Result<Vec<ClusterListItem>> {
         let group = doc! {
             "$group" => {
                 "_id" => "$info.datastore.cluster",
@@ -225,13 +224,13 @@ impl MongoStore {
     }
 
     /// Runs the aggregation pipeline and converts the results.
-    fn process_top_clusters(&self, steps: Vec<Document>) -> Result<TopClusters> {
+    fn process_top_clusters(&self, steps: Vec<Document>) -> Result<Vec<ClusterListItem>> {
         let collection = self.collection_nodes();
         let cursor = collection.aggregate(steps, None)?;
-        let mut clusters = TopClusters::new();
+        let mut clusters = Vec::new();
         for doc in cursor {
             let doc = doc?;
-            let doc = bson::from_bson::<TopClusterItem>(bson::Bson::Document(doc))?;
+            let doc = bson::from_bson::<ClusterListItem>(bson::Bson::Document(doc))?;
             clusters.push(doc);
         }
         Ok(clusters)
