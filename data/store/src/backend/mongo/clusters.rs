@@ -11,7 +11,7 @@ use mongodb::db::ThreadedDatabase;
 use regex;
 
 use replicante_data_models::Cluster;
-use replicante_data_models::webui::ClusterListItem;
+use replicante_data_models::webui::ClusterMeta;
 
 use super::super::super::Result;
 use super::super::super::ResultExt;
@@ -21,6 +21,7 @@ use super::constants::COLLECTION_CLUSTER_LIST;
 use super::constants::COLLECTION_NODES;
 use super::constants::FAIL_CLUSTER_LIST_REBUILD;
 use super::constants::FAIL_FIND_CLUSTERS;
+use super::constants::FAIL_FIND_CLUSTER_META;
 use super::constants::FAIL_PERSIST_CLUSTER;
 use super::constants::FAIL_TOP_CLUSTERS;
 use super::constants::TOP_CLUSTERS_LIMIT;
@@ -41,7 +42,51 @@ impl ClusterStore {
         ClusterStore { client, db }
     }
 
-    pub fn fetch_top_clusters(&self) -> Result<Vec<ClusterListItem>> {
+    pub fn cluster_meta(&self, cluster: String) -> Result<ClusterMeta> {
+        let filter = doc!{"name" => cluster};
+        MONGODB_OPS_COUNT.with_label_values(&["findOne"]).inc();
+        let _timer = MONGODB_OPS_DURATION.with_label_values(&["findOne"]).start_timer();
+        let collection = self.collection_cluster_lists();
+        let meta = collection.find_one(Some(filter), None)
+            .map_err(|error| {
+                MONGODB_OP_ERRORS_COUNT.with_label_values(&["findOne"]).inc();
+                error
+            })
+            .chain_err(|| FAIL_FIND_CLUSTER_META)?;
+        let meta: Result<_> = meta.ok_or("Cluster not found".into());
+        let meta = meta.chain_err(|| FAIL_FIND_CLUSTER_META)?;
+        let meta = bson::from_bson::<ClusterMeta>(bson::Bson::Document(meta))
+            .chain_err(|| FAIL_FIND_CLUSTER_META)?;
+        Ok(meta)
+    }
+
+    pub fn find_clusters(&self, search: String, limit: u8) -> Result<Vec<ClusterMeta>> {
+        let search = regex::escape(&search);
+        let filter = doc!{"name" => {"$regex" => search, "$options" => "i"}};
+        let mut options = FindOptions::new();
+        options.limit = Some(limit as i64);
+
+        MONGODB_OPS_COUNT.with_label_values(&["find"]).inc();
+        let _timer = MONGODB_OPS_DURATION.with_label_values(&["find"]).start_timer();
+        let collection = self.collection_cluster_lists();
+        let cursor = collection.find(Some(filter), Some(options))
+            .map_err(|error| {
+                MONGODB_OP_ERRORS_COUNT.with_label_values(&["find"]).inc();
+                error
+            })
+            .chain_err(|| FAIL_FIND_CLUSTERS)?;
+
+        let mut clusters = Vec::new();
+        for doc in cursor {
+            let doc = doc.chain_err(|| FAIL_FIND_CLUSTERS)?;
+            let cluster = bson::from_bson::<ClusterMeta>(bson::Bson::Document(doc))
+                .chain_err(|| FAIL_FIND_CLUSTERS)?;
+            clusters.push(cluster);
+        }
+        Ok(clusters)
+    }
+
+    pub fn top_clusters(&self) -> Result<Vec<ClusterMeta>> {
         let sort = doc!{
             "name" => 1,
             "nodes" => -1
@@ -62,34 +107,8 @@ impl ClusterStore {
         let mut clusters = Vec::new();
         for doc in cursor {
             let doc = doc.chain_err(|| FAIL_TOP_CLUSTERS)?;
-            let cluster = bson::from_bson::<ClusterListItem>(bson::Bson::Document(doc))
+            let cluster = bson::from_bson::<ClusterMeta>(bson::Bson::Document(doc))
                 .chain_err(|| FAIL_TOP_CLUSTERS)?;
-            clusters.push(cluster);
-        }
-        Ok(clusters)
-    }
-
-    pub fn find_clusters(&self, search: String, limit: u8) -> Result<Vec<ClusterListItem>> {
-        let search = regex::escape(&search);
-        let filter = doc!{"name" => {"$regex" => search, "$options" => "i"}};
-        let mut options = FindOptions::new();
-        options.limit = Some(limit as i64);
-
-        MONGODB_OPS_COUNT.with_label_values(&["find"]).inc();
-        let _timer = MONGODB_OPS_DURATION.with_label_values(&["find"]).start_timer();
-        let collection = self.collection_cluster_lists();
-        let cursor = collection.find(Some(filter), Some(options))
-            .map_err(|error| {
-                MONGODB_OP_ERRORS_COUNT.with_label_values(&["find"]).inc();
-                error
-            })
-            .chain_err(|| FAIL_FIND_CLUSTERS)?;
-
-        let mut clusters = Vec::new();
-        for doc in cursor {
-            let doc = doc.chain_err(|| FAIL_FIND_CLUSTERS)?;
-            let cluster = bson::from_bson::<ClusterListItem>(bson::Bson::Document(doc))
-                .chain_err(|| FAIL_FIND_CLUSTERS)?;
             clusters.push(cluster);
         }
         Ok(clusters)

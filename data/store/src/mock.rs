@@ -4,7 +4,7 @@ use std::sync::Mutex;
 use replicante_data_models::Cluster;
 use replicante_data_models::Node;
 
-use replicante_data_models::webui::ClusterListItem;
+use replicante_data_models::webui::ClusterMeta;
 
 use super::InnerStore;
 use super::Result;
@@ -14,15 +14,19 @@ use super::Result;
 pub struct MockStore {
     pub clusters: Mutex<HashMap<String, Cluster>>,
     pub nodes: Mutex<HashMap<(String, String), Node>>,
-    pub top_clusters: Vec<ClusterListItem>,
+    pub top_clusters: Vec<ClusterMeta>,
 }
 
 impl InnerStore for MockStore {
-    fn find_clusters(&self, _: String, _: u8) -> Result<Vec<ClusterListItem>> {
+    fn cluster_meta(&self, _cluster: String) -> Result<ClusterMeta> {
+        Err("TODO: reimplement mock store to better reflect intended design".into())
+    }
+
+    fn find_clusters(&self, _: String, _: u8) -> Result<Vec<ClusterMeta>> {
         Ok(self.top_clusters.clone())
     }
 
-    fn fetch_top_clusters(&self) -> Result<Vec<ClusterListItem>> {
+    fn top_clusters(&self) -> Result<Vec<ClusterMeta>> {
         Ok(self.top_clusters.clone())
     }
 

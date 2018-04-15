@@ -28,7 +28,7 @@ use slog::Logger;
 use replicante_data_models::Cluster;
 use replicante_data_models::Node;
 
-use replicante_data_models::webui::ClusterListItem;
+use replicante_data_models::webui::ClusterMeta;
 
 
 mod backend;
@@ -49,7 +49,30 @@ use self::backend::mongo::MongoStore;
 /// Public interface to the persistent storage layer.
 ///
 /// This interface abstracts every interaction with the persistence layer and
-/// hides implementation details about storage software and data layout.
+/// hides implementation details about storage software and data encoding.
+///
+/// # Overview
+/// Different data types (models) are owned by a component and different data units
+/// (model instances) are owned by a running replicante component instance.
+///
+/// Owned means that only one component's running instance can generate or update the data.
+/// This avoids most issues with concurrent data updates (it will never be possible to prevent
+/// datastores from changing while data is collected from agents).
+///
+/// Ownership of data also simplifies operations that require a "full view" of the cluster
+/// because one conponent's instance will be uniquely responsible for creating this "full view".
+///
+/// # Data flow
+///
+///   1. The discovery component (only one active in the entire cluster):
+///     1. Discovers clusters with all their nodes.
+///     2. Detects new clusters and nodes as well as nodes leaving the cluster.
+///   2. The datafetch components (as many as desired, at least one):
+///     1. Take exclusive ownership of each cluster.
+///     2. Periodically fetch the state of each agent.
+///     3. Build cluster metadata documents (incrementally, while iterating over agents).
+///     4. Update agents, nodes, and shards models with the new data.
+///     5. Compare known state with the newly fetched state to generate events.
 #[derive(Clone)]
 pub struct Store(Arc<InnerStore>);
 
@@ -62,11 +85,20 @@ impl Store {
         Ok(Store(store))
     }
 
+    /// Fetches metadata about a cluster.
+    ///
+    /// If the cluster is not found an error is returned.
+    pub fn cluster_meta<S>(&self, cluster: S) -> Result<ClusterMeta>
+        where S: Into<String>,
+    {
+        self.0.cluster_meta(cluster.into())
+    }
+
     /// Searches for a list of clusters with names matching the search term.
     ///
     /// A limited number of cluster is returned to avoid abuse.
     /// To find more clusters refine the search (paging is not supported).
-    pub fn find_clusters<S>(&self, search: S, limit: u8) -> Result<Vec<ClusterListItem>>
+    pub fn find_clusters<S>(&self, search: S, limit: u8) -> Result<Vec<ClusterMeta>>
         where S: Into<String>,
     {
         self.0.find_clusters(search.into(), limit)
@@ -75,8 +107,8 @@ impl Store {
     /// Fetches overvew details of the top clusters.
     ///
     /// Clusters are sorted by number of nodes in the cluster.
-    pub fn fetch_top_clusters(&self) -> Result<Vec<ClusterListItem>> {
-        self.0.fetch_top_clusters()
+    pub fn top_clusters(&self) -> Result<Vec<ClusterMeta>> {
+        self.0.top_clusters()
     }
 
     /// Persists information about a cluster.
@@ -113,11 +145,14 @@ impl Store {
 ///
 /// Allows multiple possible datastores to be used as well as mocks for testing.
 trait InnerStore: Send + Sync {
-    /// See `Store::find_clusters` for details.
-    fn find_clusters(&self, search: String, limit: u8) -> Result<Vec<ClusterListItem>>;
+    /// See `Store::cluster_meta` for details.
+    fn cluster_meta(&self, cluster: String) -> Result<ClusterMeta>;
 
-    /// See `Store::fetch_top_clusters` for details.
-    fn fetch_top_clusters(&self) -> Result<Vec<ClusterListItem>>;
+    /// See `Store::find_clusters` for details.
+    fn find_clusters(&self, search: String, limit: u8) -> Result<Vec<ClusterMeta>>;
+
+    /// See `Store::top_clusters` for details.
+    fn top_clusters(&self) -> Result<Vec<ClusterMeta>>;
 
     /// See `Store::persist_cluster` for details.
     fn persist_cluster(&self, cluster: Cluster) -> Result<Option<Cluster>>;

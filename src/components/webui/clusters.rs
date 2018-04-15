@@ -52,7 +52,7 @@ pub struct Top {
 
 impl Handler for Top {
     fn handle(&self, _: &mut Request) -> IronResult<Response> {
-        let clusters = self.store.fetch_top_clusters()
+        let clusters = self.store.top_clusters()
             .chain_err(|| "Could not fetch top clusters")?;
         let mut resp = Response::new();
         resp.set_mut(JsonResponse::json(clusters)).set_mut(status::Ok);
@@ -83,7 +83,7 @@ mod tests {
         use iron_test::request;
         use iron_test::response;
 
-        use replicante_data_models::webui::ClusterListItem;
+        use replicante_data_models::webui::ClusterMeta;
         use replicante_data_store::Store;
         use replicante_data_store::mock::MockStore;
 
@@ -91,8 +91,8 @@ mod tests {
 
         fn mockstore() -> MockStore {
             let mut mock_store = MockStore::new();
-            let c1 = ClusterListItem::new("c1", "mongo", 3);
-            let c2 = ClusterListItem::new("c2", "redis", 5);
+            let c1 = ClusterMeta::new("c1", "mongo", 3);
+            let c2 = ClusterMeta::new("c2", "redis", 5);
             mock_store.top_clusters = vec![c1, c2];
             mock_store
         }

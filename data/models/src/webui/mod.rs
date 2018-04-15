@@ -1,3 +1,3 @@
 mod cluster;
 
-pub use self::cluster::ClusterListItem;
+pub use self::cluster::ClusterMeta;

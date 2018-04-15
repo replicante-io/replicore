@@ -2,6 +2,7 @@ use super::super::Result;
 use super::super::interfaces::Interfaces;
 
 
+mod cluster;
 mod clusters;
 
 
@@ -16,6 +17,7 @@ pub struct WebUI {}
 impl WebUI {
     /// Create a new component and mounts all `/webui` endpoints.
     pub fn new(interfaces: &mut Interfaces) -> WebUI {
+        self::cluster::Meta::attach(interfaces);
         self::clusters::Find::attach(interfaces);
         self::clusters::Top::attach(interfaces);
         WebUI {}

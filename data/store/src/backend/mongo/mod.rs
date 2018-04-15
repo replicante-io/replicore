@@ -6,7 +6,7 @@ use slog::Logger;
 
 use replicante_data_models::Cluster;
 use replicante_data_models::Node;
-use replicante_data_models::webui::ClusterListItem;
+use replicante_data_models::webui::ClusterMeta;
 
 use super::super::InnerStore;
 use super::super::Result;
@@ -44,12 +44,16 @@ pub struct MongoStore {
 }
 
 impl InnerStore for MongoStore {
-    fn find_clusters(&self, search: String, limit: u8) -> Result<Vec<ClusterListItem>> {
+    fn cluster_meta(&self, cluster: String) -> Result<ClusterMeta> {
+        self.clusters.cluster_meta(cluster)
+    }
+
+    fn find_clusters(&self, search: String, limit: u8) -> Result<Vec<ClusterMeta>> {
         self.clusters.find_clusters(search, limit)
     }
 
-    fn fetch_top_clusters(&self) -> Result<Vec<ClusterListItem>> {
-        self.clusters.fetch_top_clusters()
+    fn top_clusters(&self) -> Result<Vec<ClusterMeta>> {
+        self.clusters.top_clusters()
     }
 
     fn persist_cluster(&self, cluster: Cluster) -> Result<Option<Cluster>> {
