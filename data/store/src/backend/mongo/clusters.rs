@@ -21,6 +21,7 @@ use super::constants::COLLECTION_CLUSTER_LIST;
 use super::constants::COLLECTION_NODES;
 use super::constants::FAIL_CLUSTER_LIST_REBUILD;
 use super::constants::FAIL_FIND_CLUSTERS;
+use super::constants::FAIL_FIND_CLUSTER_DISCOVERY;
 use super::constants::FAIL_FIND_CLUSTER_META;
 use super::constants::FAIL_PERSIST_CLUSTER;
 use super::constants::FAIL_TOP_CLUSTERS;
@@ -40,6 +41,24 @@ pub struct ClusterStore {
 impl ClusterStore {
     pub fn new(client: Client, db: String) -> ClusterStore {
         ClusterStore { client, db }
+    }
+
+    pub fn cluster_discovery(&self, cluster: String) -> Result<Cluster> {
+        let filter = doc!{"name" => cluster};
+        MONGODB_OPS_COUNT.with_label_values(&["findOne"]).inc();
+        let _timer = MONGODB_OPS_DURATION.with_label_values(&["findOne"]).start_timer();
+        let collection = self.collection_clusters();
+        let discovery = collection.find_one(Some(filter), None)
+            .map_err(|error| {
+                MONGODB_OP_ERRORS_COUNT.with_label_values(&["findOne"]).inc();
+                error
+            })
+            .chain_err(|| FAIL_FIND_CLUSTER_DISCOVERY)?;
+        let discovery: Result<_> = discovery.ok_or("Cluster not found".into());
+        let discovery = discovery.chain_err(|| FAIL_FIND_CLUSTER_DISCOVERY)?;
+        let discovery = bson::from_bson::<Cluster>(bson::Bson::Document(discovery))
+            .chain_err(|| FAIL_FIND_CLUSTER_DISCOVERY)?;
+        Ok(discovery)
     }
 
     pub fn cluster_meta(&self, cluster: String) -> Result<ClusterMeta> {

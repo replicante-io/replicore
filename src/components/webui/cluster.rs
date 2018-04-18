@@ -15,6 +15,35 @@ use super::super::super::ResultExt;
 use super::super::super::interfaces::Interfaces;
 
 
+/// Cluster discovery (`/webui/cluster/:cluster/discovery`) handler.
+pub struct Discovery {
+    store: Store
+}
+
+impl Handler for Discovery {
+    fn handle(&self, req: &mut Request) -> IronResult<Response> {
+        let cluster: Result<String> = req.extensions.get::<Router>()
+            .unwrap().find("cluster")
+            .map(|cluster| String::from(cluster))
+            .ok_or("Missing `cluster` parameter".into());
+        let cluster = cluster?;
+        let discovery = self.store.cluster_discovery(cluster)
+            .chain_err(|| "Failed to fetch cluster discovery")?;
+        let mut resp = Response::new();
+        resp.set_mut(JsonResponse::json(discovery)).set_mut(status::Ok);
+        Ok(resp)
+    }
+}
+
+impl Discovery {
+    pub fn attach(interfaces: &mut Interfaces) {
+        let router = interfaces.api.router();
+        let handler = Discovery { store: interfaces.store.clone() };
+        router.get("/webui/cluster/:cluster/discovery", handler, "webui_cluster_discovery");
+    }
+}
+
+
 /// Cluster meta (`/webui/cluster/:cluster/meta`) handler.
 pub struct Meta {
     store: Store
@@ -36,7 +65,6 @@ impl Handler for Meta {
 }
 
 impl Meta {
-    /// Attaches the handler for `/webui/clusters/top`.
     pub fn attach(interfaces: &mut Interfaces) {
         let router = interfaces.api.router();
         let handler = Meta { store: interfaces.store.clone() };

@@ -44,6 +44,10 @@ pub struct MongoStore {
 }
 
 impl InnerStore for MongoStore {
+    fn cluster_discovery(&self, cluster: String) -> Result<Cluster> {
+        self.clusters.cluster_discovery(cluster)
+    }
+
     fn cluster_meta(&self, cluster: String) -> Result<ClusterMeta> {
         self.clusters.cluster_meta(cluster)
     }

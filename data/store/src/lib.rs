@@ -85,6 +85,15 @@ impl Store {
         Ok(Store(store))
     }
 
+    /// Fetches discovery information about a cluster.
+    ///
+    /// If the cluster is not found an error is returned.
+    pub fn cluster_discovery<S>(&self, cluster: S) -> Result<Cluster>
+        where S: Into<String>,
+    {
+        self.0.cluster_discovery(cluster.into())
+    }
+
     /// Fetches metadata about a cluster.
     ///
     /// If the cluster is not found an error is returned.
@@ -145,6 +154,9 @@ impl Store {
 ///
 /// Allows multiple possible datastores to be used as well as mocks for testing.
 trait InnerStore: Send + Sync {
+    /// See `Store::cluster_discovery` for details.
+    fn cluster_discovery(&self, cluster: String) -> Result<Cluster>;
+
     /// See `Store::cluster_meta` for details.
     fn cluster_meta(&self, cluster: String) -> Result<ClusterMeta>;
 

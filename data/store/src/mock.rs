@@ -18,6 +18,13 @@ pub struct MockStore {
 }
 
 impl InnerStore for MockStore {
+    fn cluster_discovery(&self, cluster: String) -> Result<Cluster> {
+        let clusters = self.clusters.lock().unwrap();
+        let discovery: Result<Cluster> = clusters.get(&cluster).map(|c| c.clone())
+            .ok_or("Cluster not found".into());
+        Ok(discovery?)
+    }
+
     fn cluster_meta(&self, _cluster: String) -> Result<ClusterMeta> {
         Err("TODO: reimplement mock store to better reflect intended design".into())
     }
