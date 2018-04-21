@@ -24,4 +24,4 @@ pub use self::datastore::Node;
 pub use self::datastore::Shard;
 pub use self::datastore::ShardRole;
 
-pub use self::events::Events;
+pub use self::events::Event;

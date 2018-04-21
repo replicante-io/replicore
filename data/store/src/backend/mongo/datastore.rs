@@ -38,8 +38,8 @@ impl NodeStore {
             _ => panic!("Node failed to encode as BSON document")
         };
         let filter = doc!{
-            "info.datastore.cluster" => node.info.datastore.cluster,
-            "info.datastore.name" => node.info.datastore.name,
+            "cluster" => node.cluster,
+            "name" => node.name,
         };
         let mut options = FindOneAndUpdateOptions::new();
         options.upsert = Some(true);
@@ -55,8 +55,7 @@ impl NodeStore {
         match old {
             None => Ok(None),
             Some(doc) => {
-                let old: Node = bson::from_bson(Bson::Document(doc))?;
-                Ok(Some(old))
+                Ok(Some(bson::from_bson(Bson::Document(doc))?))
             }
         }
     }

@@ -4,9 +4,9 @@ use mongodb::ThreadedClient;
 use prometheus::Registry;
 use slog::Logger;
 
-use replicante_data_models::Cluster;
+use replicante_data_models::ClusterDiscovery;
+use replicante_data_models::ClusterMeta;
 use replicante_data_models::Node;
-use replicante_data_models::webui::ClusterMeta;
 
 use super::super::InnerStore;
 use super::super::Result;
@@ -17,13 +17,13 @@ use super::super::config::MongoDBConfig;
 mod clusters;
 mod constants;
 mod metrics;
-mod nodes;
+mod datastore;
 
 use self::constants::FAIL_CLIENT;
 use self::metrics::register_metrics;
 
 use self::clusters::ClusterStore;
-use self::nodes::NodeStore;
+use self::datastore::NodeStore;
 
 
 /// MongoDB-backed storage layer.
@@ -35,8 +35,8 @@ use self::nodes::NodeStore;
 /// # Expected indexes
 ///
 ///   * Index on `cluster_meta`: `(name: 1, nodes: -1)`
-///   * Unique index on `agents`: `(cluster: 1, host: 1)` || `host: 1`?
-///   * Unique index on `agents_info`: `(cluster: 1, host: 1)` || `host: 1`?
+///   * Unique index on `agents`: `(cluster: 1, host: 1)`
+///   * Unique index on `agents_info`: `(cluster: 1, host: 1)`
 ///   * Unique index on `cluster_meta`: `name: 1`
 ///   * Unique index on `dicoveries`: `name: 1`
 ///   * Unique index on `nodes`: `(cluster: 1, name: 1)`
@@ -47,7 +47,7 @@ pub struct MongoStore {
 }
 
 impl InnerStore for MongoStore {
-    fn cluster_discovery(&self, cluster: String) -> Result<Cluster> {
+    fn cluster_discovery(&self, cluster: String) -> Result<ClusterDiscovery> {
         self.clusters.cluster_discovery(cluster)
     }
 
@@ -63,8 +63,12 @@ impl InnerStore for MongoStore {
         self.clusters.top_clusters()
     }
 
-    fn persist_cluster(&self, cluster: Cluster) -> Result<Option<Cluster>> {
-        self.clusters.persist_cluster(cluster)
+    fn persist_cluster_meta(&self, meta: ClusterMeta) -> Result<Option<ClusterMeta>> {
+        self.clusters.persist_cluster_meta(meta)
+    }
+
+    fn persist_discovery(&self, cluster: ClusterDiscovery) -> Result<Option<ClusterDiscovery>> {
+        self.clusters.persist_discovery(cluster)
     }
 
     fn persist_node(&self, node: Node) -> Result<Option<Node>> {

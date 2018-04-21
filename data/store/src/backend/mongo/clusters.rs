@@ -10,20 +10,22 @@ use mongodb::db::ThreadedDatabase;
 
 use regex;
 
-use replicante_data_models::Cluster;
-use replicante_data_models::webui::ClusterMeta;
+use replicante_data_models::ClusterDiscovery;
+use replicante_data_models::ClusterMeta;
 
 use super::super::super::Result;
 use super::super::super::ResultExt;
 
-use super::constants::COLLECTION_CLUSTERS;
-use super::constants::COLLECTION_CLUSTER_LIST;
-use super::constants::COLLECTION_NODES;
-use super::constants::FAIL_CLUSTER_LIST_REBUILD;
+use super::constants::COLLECTION_CLUSTER_META;
+use super::constants::COLLECTION_DISCOVERIES;
+
 use super::constants::FAIL_FIND_CLUSTERS;
 use super::constants::FAIL_FIND_CLUSTER_DISCOVERY;
 use super::constants::FAIL_FIND_CLUSTER_META;
-use super::constants::FAIL_PERSIST_CLUSTER;
+
+use super::constants::FAIL_PERSIST_CLUSTER_DISCOVERY;
+use super::constants::FAIL_PERSIST_CLUSTER_META;
+
 use super::constants::FAIL_TOP_CLUSTERS;
 use super::constants::TOP_CLUSTERS_LIMIT;
 
@@ -43,11 +45,11 @@ impl ClusterStore {
         ClusterStore { client, db }
     }
 
-    pub fn cluster_discovery(&self, cluster: String) -> Result<Cluster> {
+    pub fn cluster_discovery(&self, cluster: String) -> Result<ClusterDiscovery> {
         let filter = doc!{"name" => cluster};
         MONGODB_OPS_COUNT.with_label_values(&["findOne"]).inc();
         let _timer = MONGODB_OPS_DURATION.with_label_values(&["findOne"]).start_timer();
-        let collection = self.collection_clusters();
+        let collection = self.collection_discoveries();
         let discovery = collection.find_one(Some(filter), None)
             .map_err(|error| {
                 MONGODB_OP_ERRORS_COUNT.with_label_values(&["findOne"]).inc();
@@ -56,7 +58,7 @@ impl ClusterStore {
             .chain_err(|| FAIL_FIND_CLUSTER_DISCOVERY)?;
         let discovery: Result<_> = discovery.ok_or("Cluster not found".into());
         let discovery = discovery.chain_err(|| FAIL_FIND_CLUSTER_DISCOVERY)?;
-        let discovery = bson::from_bson::<Cluster>(bson::Bson::Document(discovery))
+        let discovery = bson::from_bson::<ClusterDiscovery>(bson::Bson::Document(discovery))
             .chain_err(|| FAIL_FIND_CLUSTER_DISCOVERY)?;
         Ok(discovery)
     }
@@ -65,7 +67,7 @@ impl ClusterStore {
         let filter = doc!{"name" => cluster};
         MONGODB_OPS_COUNT.with_label_values(&["findOne"]).inc();
         let _timer = MONGODB_OPS_DURATION.with_label_values(&["findOne"]).start_timer();
-        let collection = self.collection_cluster_lists();
+        let collection = self.collection_cluster_meta();
         let meta = collection.find_one(Some(filter), None)
             .map_err(|error| {
                 MONGODB_OP_ERRORS_COUNT.with_label_values(&["findOne"]).inc();
@@ -87,7 +89,7 @@ impl ClusterStore {
 
         MONGODB_OPS_COUNT.with_label_values(&["find"]).inc();
         let _timer = MONGODB_OPS_DURATION.with_label_values(&["find"]).start_timer();
-        let collection = self.collection_cluster_lists();
+        let collection = self.collection_cluster_meta();
         let cursor = collection.find(Some(filter), Some(options))
             .map_err(|error| {
                 MONGODB_OP_ERRORS_COUNT.with_label_values(&["find"]).inc();
@@ -113,7 +115,7 @@ impl ClusterStore {
         let mut options = FindOptions::new();
         options.limit = Some(TOP_CLUSTERS_LIMIT as i64);
         options.sort = Some(sort);
-        let collection = self.collection_cluster_lists();
+        let collection = self.collection_cluster_meta();
         MONGODB_OPS_COUNT.with_label_values(&["find"]).inc();
         let _timer = MONGODB_OPS_DURATION.with_label_values(&["find"]).start_timer();
         let cursor = collection.find(None, Some(options))
@@ -133,14 +135,14 @@ impl ClusterStore {
         Ok(clusters)
     }
 
-    pub fn persist_cluster(&self, cluster: Cluster) -> Result<Option<Cluster>> {
-        let replacement = bson::to_bson(&cluster).chain_err(|| FAIL_PERSIST_CLUSTER)?;
+    pub fn persist_cluster_meta(&self, meta: ClusterMeta) -> Result<Option<ClusterMeta>> {
+        let replacement = bson::to_bson(&meta).chain_err(|| FAIL_PERSIST_CLUSTER_META)?;
         let replacement = match replacement {
             Bson::Document(replacement) => replacement,
-            _ => panic!("Cluster failed to encode as BSON document")
+            _ => panic!("ClusterMeta failed to encode as BSON document")
         };
-        let filter = doc!{"name" => cluster.name};
-        let collection = self.collection_clusters();
+        let filter = doc!{"name" => meta.name};
+        let collection = self.collection_cluster_meta();
         let mut options = FindOneAndUpdateOptions::new();
         options.upsert = Some(true);
         MONGODB_OPS_COUNT.with_label_values(&["findOneAndReplace"]).inc();
@@ -150,55 +152,44 @@ impl ClusterStore {
                 MONGODB_OP_ERRORS_COUNT.with_label_values(&["findOneAndReplace"]).inc();
                 error
             })
-            .chain_err(|| FAIL_PERSIST_CLUSTER)?;
-        self.rebuild_cluster_lists().chain_err(|| FAIL_PERSIST_CLUSTER)?;
+            .chain_err(|| FAIL_PERSIST_CLUSTER_META)?;
         match old {
             None => Ok(None),
-            Some(doc) => Ok(Some(bson::from_bson::<Cluster>(Bson::Document(doc))?))
+            Some(doc) => Ok(Some(bson::from_bson::<ClusterMeta>(Bson::Document(doc))?))
         }
     }
 
-    /// Returns the `cluster_lists` collection.
-    fn collection_cluster_lists(&self) -> Collection {
-        self.client.db(&self.db).collection(COLLECTION_CLUSTER_LIST)
-    }
-
-    /// Returns the `clusters` collection.
-    fn collection_clusters(&self) -> Collection {
-        self.client.db(&self.db).collection(COLLECTION_CLUSTERS)
-    }
-
-    /// Returns the `nodes` collection.
-    fn collection_nodes(&self) -> Collection {
-        self.client.db(&self.db).collection(COLLECTION_NODES)
-    }
-
-    /// Runs an aggregation that rebuilds the `cluster_lists` collection.
-    fn rebuild_cluster_lists(&self) -> Result<()> {
-        let group = doc! {
-            "$group" => {
-                "_id" => "$info.datastore.cluster",
-                "nodes" => {"$sum" => 1},
-                "kinds" => {"$addToSet" => "$info.datastore.kind"},
-            }
+    pub fn persist_discovery(&self, cluster: ClusterDiscovery) -> Result<Option<ClusterDiscovery>> {
+        let replacement = bson::to_bson(&cluster).chain_err(|| FAIL_PERSIST_CLUSTER_DISCOVERY)?;
+        let replacement = match replacement {
+            Bson::Document(replacement) => replacement,
+            _ => panic!("ClusterDiscovery failed to encode as BSON document")
         };
-        let project = doc! {
-            "$project" => {
-                "name" => "$_id",
-                "kinds" => 1,
-                "nodes" => 1,
-            }
-        };
-        let out = doc! {"$out" => COLLECTION_CLUSTER_LIST};
-        let collection = self.collection_nodes();
-        MONGODB_OPS_COUNT.with_label_values(&["aggregate"]).inc();
-        let _timer = MONGODB_OPS_DURATION.with_label_values(&["aggregate"]).start_timer();
-        collection.aggregate(vec![group, project, out], None)
+        let filter = doc!{"name" => cluster.name};
+        let collection = self.collection_discoveries();
+        let mut options = FindOneAndUpdateOptions::new();
+        options.upsert = Some(true);
+        MONGODB_OPS_COUNT.with_label_values(&["findOneAndReplace"]).inc();
+        let _timer = MONGODB_OPS_DURATION.with_label_values(&["findOneAndReplace"]).start_timer();
+        let old = collection.find_one_and_replace(filter, replacement, Some(options))
             .map_err(|error| {
-                MONGODB_OP_ERRORS_COUNT.with_label_values(&["aggregate"]).inc();
+                MONGODB_OP_ERRORS_COUNT.with_label_values(&["findOneAndReplace"]).inc();
                 error
             })
-            .chain_err(|| FAIL_CLUSTER_LIST_REBUILD)?;
-        Ok(())
+            .chain_err(|| FAIL_PERSIST_CLUSTER_DISCOVERY)?;
+        match old {
+            None => Ok(None),
+            Some(doc) => Ok(Some(bson::from_bson::<ClusterDiscovery>(Bson::Document(doc))?))
+        }
+    }
+
+    /// Returns the `clusters_meta` collection.
+    fn collection_cluster_meta(&self) -> Collection {
+        self.client.db(&self.db).collection(COLLECTION_CLUSTER_META)
+    }
+
+    /// Returns the `discoveries` collection.
+    fn collection_discoveries(&self) -> Collection {
+        self.client.db(&self.db).collection(COLLECTION_DISCOVERIES)
     }
 }
