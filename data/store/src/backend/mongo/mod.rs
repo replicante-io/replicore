@@ -40,7 +40,7 @@ use self::datastore::NodeStore;
 ///   * Unique index on `cluster_meta`: `name: 1`
 ///   * Unique index on `dicoveries`: `name: 1`
 ///   * Unique index on `nodes`: `(cluster: 1, name: 1)`
-///   * Unique index on `shards`: `(cluster: 1, name: 1, shard: 1)`
+///   * Unique index on `shards`: `(cluster: 1, name: 1, id: 1)`
 pub struct MongoStore {
     clusters: ClusterStore,
     nodes: NodeStore,
