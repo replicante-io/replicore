@@ -83,17 +83,18 @@ mod tests {
         use iron_test::request;
         use iron_test::response;
 
-        use replicante_data_models::webui::ClusterMeta;
+        use replicante_data_models::ClusterMeta;
         use replicante_data_store::Store;
         use replicante_data_store::mock::MockStore;
 
         use super::super::Top;
 
         fn mockstore() -> MockStore {
-            let mut mock_store = MockStore::new();
+            let mock_store = MockStore::new();
             let c1 = ClusterMeta::new("c1", "mongo", 3);
             let c2 = ClusterMeta::new("c2", "redis", 5);
-            mock_store.top_clusters = vec![c1, c2];
+            mock_store.clusters_meta.lock().unwrap().insert("c1".into(), c1);
+            mock_store.clusters_meta.lock().unwrap().insert("c2".into(), c2);
             mock_store
         }
 

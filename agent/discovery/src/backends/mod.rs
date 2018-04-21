@@ -1,4 +1,4 @@
-use replicante_data_models::Cluster;
+use replicante_data_models::ClusterDiscovery;
 
 use super::Result;
 use super::config::Config;
@@ -12,7 +12,7 @@ enum Backend {
 }
 
 impl Iterator for Backend {
-    type Item = Result<Cluster>;
+    type Item = Result<ClusterDiscovery>;
     fn next(&mut self) -> Option<Self::Item> {
         match *self {
             Backend::File(ref mut iter) => iter.next(),
@@ -40,7 +40,7 @@ impl Iter {
     /// Iterate over the active backend, if any.
     ///
     /// If the active backend has no more items it is discarded an the method returns `None`.
-    fn next_active(&mut self) -> Option<Result<Cluster>> {
+    fn next_active(&mut self) -> Option<Result<ClusterDiscovery>> {
         match self.active.as_mut().unwrap().next() {
             None => {
                 self.active = None;
@@ -54,7 +54,7 @@ impl Iter {
     ///
     /// If there is no other backend the method returns `None`.
     /// If a backend immediately `None` this method proceeds to the next backend.
-    fn next_backend(&mut self) -> Option<Result<Cluster>> {
+    fn next_backend(&mut self) -> Option<Result<ClusterDiscovery>> {
         // While there are backends in the list look for one that returns something.
         while let Some(mut backend) = self.backends.pop() {
             match backend.next() {
@@ -72,7 +72,7 @@ impl Iter {
 }
 
 impl Iterator for Iter {
-    type Item = Result<Cluster>;
+    type Item = Result<ClusterDiscovery>;
     fn next(&mut self) -> Option<Self::Item> {
         if self.active.is_some() {
             match self.next_active() {
@@ -140,8 +140,7 @@ pub fn discover(config: Config) -> Iter {
 
 #[cfg(test)]
 mod tests {
-//    use std::io::Cursor;
-    use replicante_data_models::Cluster;
+    use replicante_data_models::ClusterDiscovery;
 
     use super::Backend;
     use super::Iter;
@@ -169,13 +168,13 @@ mod tests {
         let backend = file::Iter::new("tests/two.clusters.yaml");
         let mut iter = Iter::new(vec![Backend::File(backend)]);
         let next = iter.next().unwrap().unwrap();
-        assert_eq!(next, Cluster::new("test1", vec![
+        assert_eq!(next, ClusterDiscovery::new("test1", vec![
             "http://node1:port/".into(),
             "http://node2:port/".into(),
             "http://node3:port/".into(),
         ]));
         let next = iter.next().unwrap().unwrap();
-        assert_eq!(next, Cluster::new("test2", vec![
+        assert_eq!(next, ClusterDiscovery::new("test2", vec![
             "http://node1:port/".into(),
             "http://node3:port/".into(),
         ]));
@@ -191,19 +190,19 @@ mod tests {
             Backend::File(cluster_a), Backend::File(cluster_b), Backend::File(cluster_c)
         ]);
         let next = iter.next().unwrap().unwrap();
-        assert_eq!(next, Cluster::new("mongodb-rs", vec![
+        assert_eq!(next, ClusterDiscovery::new("mongodb-rs", vec![
             "http://node1:37017".into(),
             "http://node2:37017".into(),
             "http://node3:37017".into(),
         ]));
         let next = iter.next().unwrap().unwrap();
-        assert_eq!(next, Cluster::new("test1", vec![
+        assert_eq!(next, ClusterDiscovery::new("test1", vec![
             "http://node1:port/".into(),
             "http://node2:port/".into(),
             "http://node3:port/".into(),
         ]));
         let next = iter.next().unwrap().unwrap();
-        assert_eq!(next, Cluster::new("test2", vec![
+        assert_eq!(next, ClusterDiscovery::new("test2", vec![
             "http://node1:port/".into(),
             "http://node3:port/".into(),
         ]));

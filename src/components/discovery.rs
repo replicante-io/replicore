@@ -17,8 +17,10 @@ use replicante_agent_client::Client;
 use replicante_agent_client::HttpClient;
 use replicante_agent_discovery::Config as BackendsConfig;
 use replicante_agent_discovery::discover;
+use replicante_agent_models::NodeInfo;
+use replicante_agent_models::NodeStatus;
 
-use replicante_data_models::Cluster;
+use replicante_data_models::ClusterDiscovery;
 use replicante_data_models::Node;
 use replicante_data_store::Store;
 
@@ -198,10 +200,10 @@ impl DiscoveryWorker {
     }
 
     /// Process a discovery result to fetch the node state.
-    // TODO: replace with use of tasks (one task per discovery?)
-    fn process(&self, cluster: Cluster) {
+    // TODO: refactor code to complete storage improvement
+    fn process(&self, cluster: ClusterDiscovery) {
         // Persist cluster first.
-        match self.store.persist_cluster(cluster.clone()) {
+        match self.store.persist_discovery(cluster.clone()) {
             Err(error) => {
                 let error = error.display_chain().to_string();
                 error!(
@@ -229,13 +231,13 @@ impl DiscoveryWorker {
     }
 
     /// Fetch the state of individual nodes.
-    fn process_node(&self, cluster: &Cluster, node: &String) -> Result<()> {
+    fn process_node(&self, cluster: &ClusterDiscovery, node: &String) -> Result<()> {
         let expect_cluster = &cluster.name;
-        let node = fetch_state(node)?;
-        if &node.info.datastore.cluster != expect_cluster {
+        let (info, _) = fetch_state(node)?;
+        if &info.datastore.cluster != expect_cluster {
             return Err("Reported cluster does not match expected cluster".into());
         }
-        let old = self.store.persist_node(node.clone())?;
+        let old = self.store.persist_node(Node::new(info.datastore))?;
         // TODO: figure out if the node changed.
         debug!(self.logger, "Discovered agent state *** Before: {:?} *** After: {:?}", old, node);
         Ok(())
@@ -245,9 +247,9 @@ impl DiscoveryWorker {
 
 /*** NOTE: the code below will likely be moved when tasks are introduced  ***/
 /// Converts an agent discovery result into a Node's status.
-fn fetch_state(node: &String) -> Result<Node> {
+fn fetch_state(node: &String) -> Result<(NodeInfo, NodeStatus)> {
     let client = HttpClient::new(node.clone())?;
     let info = client.info()?;
     let status = client.status()?;
-    Ok(Node::new(info, status))
+    Ok((info, status))
 }

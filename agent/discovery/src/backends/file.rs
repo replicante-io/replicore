@@ -1,14 +1,14 @@
 use std::fs::File;
 use serde_yaml;
 
-use replicante_data_models::Cluster;
+use replicante_data_models::ClusterDiscovery;
 
 use super::super::Result;
 use super::super::ResultExt;
 
 
 /// Serialization format for file discovery.
-type DiscoveryFile = Vec<Cluster>;
+type DiscoveryFile = Vec<ClusterDiscovery>;
 
 
 /// Iterator over results of file discovery.
@@ -38,7 +38,7 @@ impl Iter {
 }
 
 impl Iterator for Iter {
-    type Item = Result<Cluster>;
+    type Item = Result<ClusterDiscovery>;
     fn next(&mut self) -> Option<Self::Item> {
         let data: &mut DiscoveryFile = match self.data {
             Some(ref mut data) => data,
@@ -60,7 +60,7 @@ impl Iterator for Iter {
 
 #[cfg(test)]
 mod tests {
-    use replicante_data_models::Cluster;
+    use replicante_data_models::ClusterDiscovery;
 
     use super::super::super::Error;
     use super::super::super::ErrorKind;
@@ -84,7 +84,7 @@ mod tests {
     fn example_file() {
         let mut iter = Iter::new("file.example.yaml");
         let next = iter.next().unwrap().unwrap();
-        assert_eq!(next, Cluster::new("mongodb-rs", vec![
+        assert_eq!(next, ClusterDiscovery::new("mongodb-rs", vec![
             "http://node1:37017".into(),
             "http://node2:37017".into(),
             "http://node3:37017".into(),
@@ -102,13 +102,13 @@ mod tests {
     fn two_clusters() {
         let mut iter = Iter::new("tests/two.clusters.yaml");
         let next = iter.next().unwrap().unwrap();
-        assert_eq!(next, Cluster::new("test1", vec![
+        assert_eq!(next, ClusterDiscovery::new("test1", vec![
             "http://node1:port/".into(),
             "http://node2:port/".into(),
             "http://node3:port/".into(),
         ]));
         let next = iter.next().unwrap().unwrap();
-        assert_eq!(next, Cluster::new("test2", vec![
+        assert_eq!(next, ClusterDiscovery::new("test2", vec![
             "http://node1:port/".into(),
             "http://node3:port/".into(),
         ]));
