@@ -34,10 +34,13 @@ use self::nodes::NodeStore;
 ///
 /// # Expected indexes
 ///
-///   * Index on `cluster_lists`: `(name: 1, nodes: -1)`
-///   * Unique index on `cluster_lists`: `name: 1`
-///   * Unique index on `clusters`: `name: 1`
-///   * Unique index on `nodes`: `(info.agent.cluster: 1, info.agent.name: 1)`
+///   * Index on `cluster_meta`: `(name: 1, nodes: -1)`
+///   * Unique index on `agents`: `(cluster: 1, host: 1)` || `host: 1`?
+///   * Unique index on `agents_info`: `(cluster: 1, host: 1)` || `host: 1`?
+///   * Unique index on `cluster_meta`: `name: 1`
+///   * Unique index on `dicoveries`: `name: 1`
+///   * Unique index on `nodes`: `(cluster: 1, name: 1)`
+///   * Unique index on `shards`: `(cluster: 1, name: 1, shard: 1)`
 pub struct MongoStore {
     clusters: ClusterStore,
     nodes: NodeStore,
