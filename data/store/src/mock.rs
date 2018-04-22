@@ -3,13 +3,10 @@ use std::sync::Mutex;
 
 use replicante_data_models::Agent;
 use replicante_data_models::AgentInfo;
-
 use replicante_data_models::ClusterDiscovery;
 use replicante_data_models::ClusterMeta;
-
 use replicante_data_models::Node;
 use replicante_data_models::Shard;
-
 use replicante_data_models::Event;
 
 use super::InnerStore;
@@ -60,6 +57,26 @@ impl InnerStore for MockStore {
         Ok(results)
     }
 
+    fn persist_agent(&self, agent: Agent) -> Result<Option<Agent>> {
+        let cluster = agent.cluster.clone();
+        let host = agent.host.clone();
+        let key = (cluster, host);
+        let mut agents = self.agents.lock().unwrap();
+        let old = agents.get(&key).map(|c| c.clone());
+        agents.insert(key, agent);
+        Ok(old)
+    }
+
+    fn persist_agent_info(&self, agent: AgentInfo) -> Result<Option<AgentInfo>> {
+        let cluster = agent.cluster.clone();
+        let host = agent.host.clone();
+        let key = (cluster, host);
+        let mut agents_info = self.agents_info.lock().unwrap();
+        let old = agents_info.get(&key).map(|c| c.clone());
+        agents_info.insert(key, agent);
+        Ok(old)
+    }
+
     fn persist_discovery(&self, cluster: ClusterDiscovery) -> Result<Option<ClusterDiscovery>> {
         let name = cluster.name.clone();
         let mut discoveries = self.discoveries.lock().unwrap();
@@ -85,6 +102,17 @@ impl InnerStore for MockStore {
         nodes.insert(key, node);
         Ok(old)
     }
+
+    fn persist_shard(&self, shard: Shard) -> Result<Option<Shard>> {
+        let cluster = shard.cluster.clone();
+        let node = shard.node.clone();
+        let id = shard.id.clone();
+        let key = (cluster, node, id);
+        let mut shards = self.shards.lock().unwrap();
+        let old = shards.get(&key).map(|n| n.clone());
+        shards.insert(key, shard);
+        Ok(old)
+    }
 }
 
 impl MockStore {
@@ -105,6 +133,89 @@ impl MockStore {
 
 #[cfg(test)]
 mod tests {
+    mod agent {
+        use std::sync::Arc;
+        use replicante_data_models::Agent;
+        use replicante_data_models::AgentStatus;
+
+        use super::super::super::Store;
+        use super::super::MockStore;
+
+        #[test]
+        fn persist_new() {
+            let mock = Arc::new(MockStore::new());
+            let store = Store::mock(Arc::clone(&mock));
+            let agent = Agent::new("test", "node", AgentStatus::Up);
+            let old = store.persist_agent(agent.clone()).unwrap();
+            assert!(old.is_none());
+            let stored = mock.agents.lock().expect("Faild to lock")
+                .get(&("test".into(), "node".into()))
+                .map(|n| n.clone()).expect("Agent not found");
+            assert_eq!(agent, stored)
+        }
+
+        #[test]
+        fn persist_update() {
+            let mock = Arc::new(MockStore::new());
+            let store = Store::mock(Arc::clone(&mock));
+            let agent1 = Agent::new("test", "node", AgentStatus::Up);
+            let agent2 = Agent::new("test", "node", AgentStatus::AgentDown("TEST".into()));
+            store.persist_agent(agent1.clone()).unwrap();
+            let old = store.persist_agent(agent2).unwrap();
+            assert_eq!(Some(agent1), old);
+        }
+    }
+
+    mod agent_info {
+        use std::sync::Arc;
+        use replicante_data_models::AgentInfo;
+
+        use super::super::super::Store;
+        use super::super::MockStore;
+
+        #[test]
+        fn persist_new() {
+            let mock = Arc::new(MockStore::new());
+            let store = Store::mock(Arc::clone(&mock));
+            let info = AgentInfo {
+                cluster: "test".into(),
+                host: "node".into(),
+                version_checkout: "commit".into(),
+                version_number: "1.2.3".into(),
+                version_taint: "yep".into(),
+            };
+            let old = store.persist_agent_info(info.clone()).unwrap();
+            assert!(old.is_none());
+            let stored = mock.agents_info.lock().expect("Faild to lock")
+                .get(&("test".into(), "node".into()))
+                .map(|n| n.clone()).expect("Agent not found");
+            assert_eq!(info, stored);
+        }
+
+        #[test]
+        fn persist_update() {
+            let mock = Arc::new(MockStore::new());
+            let store = Store::mock(Arc::clone(&mock));
+            let info1 = AgentInfo {
+                cluster: "test".into(),
+                host: "node".into(),
+                version_checkout: "commit1".into(),
+                version_number: "1.2.3".into(),
+                version_taint: "yep".into(),
+            };
+            let info2 = AgentInfo {
+                cluster: "test".into(),
+                host: "node".into(),
+                version_checkout: "commit2".into(),
+                version_number: "4.5.6".into(),
+                version_taint: "nope".into(),
+            };
+            store.persist_agent_info(info1.clone()).unwrap();
+            let old = store.persist_agent_info(info2).unwrap();
+            assert_eq!(Some(info1), old);
+        }
+    }
+
     mod cluster_discovery {
         use std::sync::Arc;
         use replicante_data_models::ClusterDiscovery;
@@ -268,6 +379,32 @@ mod tests {
             store.persist_node(node1.clone()).unwrap();
             let old = store.persist_node(node2).unwrap();
             assert_eq!(Some(node1), old);
+        }
+    }
+
+    mod shards {
+        use std::sync::Arc;
+        use replicante_agent_models::Shard as WireShard;
+        use replicante_data_models::Shard;
+        use replicante_data_models::ShardRole;
+
+        use super::super::super::Store;
+        use super::super::MockStore;
+
+        #[test]
+        fn persist_new() {
+            let mock = Arc::new(MockStore::new());
+            let store = Store::mock(Arc::clone(&mock));
+            let shard = Shard::new("cluster", "node", WireShard::new(
+                "id", ShardRole::Primary, None, 1
+            ));
+            let old = store.persist_shard(shard.clone()).unwrap();
+            assert!(old.is_none());
+            let key = (String::from("cluster"), String::from("node"), String::from("id"));
+            let stored = mock.shards.lock().expect("Faild to lock")
+                .get(&key)
+                .map(|n| n.clone()).expect("Shard not found");
+            assert_eq!(shard, stored)
         }
     }
 }

@@ -109,8 +109,8 @@ impl ClusterStore {
 
     pub fn top_clusters(&self) -> Result<Vec<ClusterMeta>> {
         let sort = doc!{
+            "nodes" => -1,
             "name" => 1,
-            "nodes" => -1
         };
         let mut options = FindOptions::new();
         options.limit = Some(TOP_CLUSTERS_LIMIT as i64);
@@ -155,7 +155,11 @@ impl ClusterStore {
             .chain_err(|| FAIL_PERSIST_CLUSTER_META)?;
         match old {
             None => Ok(None),
-            Some(doc) => Ok(Some(bson::from_bson::<ClusterMeta>(Bson::Document(doc))?))
+            Some(doc) => {
+                let meta = bson::from_bson::<ClusterMeta>(bson::Bson::Document(doc))
+                    .chain_err(|| FAIL_PERSIST_CLUSTER_META)?;
+                Ok(Some(meta))
+            }
         }
     }
 
@@ -179,7 +183,11 @@ impl ClusterStore {
             .chain_err(|| FAIL_PERSIST_CLUSTER_DISCOVERY)?;
         match old {
             None => Ok(None),
-            Some(doc) => Ok(Some(bson::from_bson::<ClusterDiscovery>(Bson::Document(doc))?))
+            Some(doc) => {
+                let discovery = bson::from_bson::<ClusterDiscovery>(bson::Bson::Document(doc))
+                    .chain_err(|| FAIL_PERSIST_CLUSTER_DISCOVERY)?;
+                Ok(Some(discovery))
+            }
         }
     }
 

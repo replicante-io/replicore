@@ -34,12 +34,14 @@ impl ClusterDiscovery {
 pub struct ClusterMeta {
     pub name: String,
     pub kinds: Vec<String>,
-    pub nodes: u32,
+
+    // BSON does not support unsigned integers so this must be signed.
+    pub nodes: i32,
 }
 
 impl ClusterMeta {
     /// Create a new "top clusters" item.
-    pub fn new<S1, S2>(name: S1, kind: S2, nodes: u32) -> ClusterMeta
+    pub fn new<S1, S2>(name: S1, kind: S2, nodes: i32) -> ClusterMeta
         where S1: Into<String>,
               S2: Into<String>,
     {
