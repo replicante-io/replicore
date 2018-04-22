@@ -78,11 +78,11 @@ impl InnerStore for MongoStore {
         self.datastores.node(cluster, name)
     }
 
-    fn persist_agent(&self, agent: Agent) -> Result<Option<Agent>> {
+    fn persist_agent(&self, agent: Agent) -> Result<()> {
         self.agents.persist_agent(agent)
     }
 
-    fn persist_agent_info(&self, agent: AgentInfo) -> Result<Option<AgentInfo>> {
+    fn persist_agent_info(&self, agent: AgentInfo) -> Result<()> {
         self.agents.persist_agent_info(agent)
     }
 

@@ -142,7 +142,7 @@ impl Store {
     /// Tf the agent is new it will be created and `None` will be returned.
     ///
     /// Agents are uniquely identified by their cluster and host.
-    pub fn persist_agent(&self, agent: Agent) -> Result<Option<Agent>> {
+    pub fn persist_agent(&self, agent: Agent) -> Result<()> {
         self.0.persist_agent(agent)
     }
 
@@ -152,7 +152,7 @@ impl Store {
     /// Tf the agent is new it will be created and `None` will be returned.
     ///
     /// Agents are uniquely identified by their cluster and host.
-    pub fn persist_agent_info(&self, agent: AgentInfo) -> Result<Option<AgentInfo>> {
+    pub fn persist_agent_info(&self, agent: AgentInfo) -> Result<()> {
         self.0.persist_agent_info(agent)
     }
 
@@ -244,10 +244,10 @@ trait InnerStore: Send + Sync {
     fn node(&self, cluster: String, name: String) -> Result<Option<Node>>;
 
     /// See `Some::persist_agent` for details.
-    fn persist_agent(&self, agent: Agent) -> Result<Option<Agent>>;
+    fn persist_agent(&self, agent: Agent) -> Result<()>;
 
     /// See `Some::persist_agent_info` for details.
-    fn persist_agent_info(&self, agent: AgentInfo) -> Result<Option<AgentInfo>>;
+    fn persist_agent_info(&self, agent: AgentInfo) -> Result<()>;
 
     /// See `Store::persist_cluster_meta` for details.
     fn persist_cluster_meta(&self, meta: ClusterMeta) -> Result<Option<ClusterMeta>>;

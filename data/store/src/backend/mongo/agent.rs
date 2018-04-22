@@ -4,7 +4,7 @@ use bson::Bson;
 use mongodb::Client;
 use mongodb::ThreadedClient;
 use mongodb::coll::Collection;
-use mongodb::coll::options::FindOneAndUpdateOptions;
+use mongodb::coll::options::UpdateOptions;
 use mongodb::db::ThreadedDatabase;
 
 use replicante_data_models::Agent;
@@ -85,66 +85,52 @@ impl AgentStore {
         Ok(Some(agent_info))
     }
 
-    pub fn persist_agent(&self, agent: Agent) -> Result<Option<Agent>> {
+    pub fn persist_agent(&self, agent: Agent) -> Result<()> {
         let replacement = bson::to_bson(&agent).chain_err(|| FAIL_PERSIST_AGENT)?;
         let replacement = match replacement {
             Bson::Document(replacement) => replacement,
-            _ => panic!("ClusterMeta failed to encode as BSON document")
+            _ => panic!("Agent failed to encode as BSON document")
         };
         let filter = doc!{
             "cluster" => agent.cluster,
             "host" => agent.host,
         };
         let collection = self.collection_agents();
-        let mut options = FindOneAndUpdateOptions::new();
+        let mut options = UpdateOptions::new();
         options.upsert = Some(true);
-        MONGODB_OPS_COUNT.with_label_values(&["findOneAndReplace"]).inc();
-        let _timer = MONGODB_OPS_DURATION.with_label_values(&["findOneAndReplace"]).start_timer();
-        let old = collection.find_one_and_replace(filter, replacement, Some(options))
+        MONGODB_OPS_COUNT.with_label_values(&["replaceOne"]).inc();
+        let _timer = MONGODB_OPS_DURATION.with_label_values(&["replaceOne"]).start_timer();
+        collection.replace_one(filter, replacement, Some(options))
             .map_err(|error| {
-                MONGODB_OP_ERRORS_COUNT.with_label_values(&["findOneAndReplace"]).inc();
+                MONGODB_OP_ERRORS_COUNT.with_label_values(&["replaceOne"]).inc();
                 error
             })
             .chain_err(|| FAIL_PERSIST_AGENT)?;
-        match old {
-            None => Ok(None),
-            Some(doc) => {
-                let agent = bson::from_bson::<Agent>(bson::Bson::Document(doc))
-                    .chain_err(|| FAIL_PERSIST_AGENT)?;
-                Ok(Some(agent))
-            }
-        }
+        Ok(())
     }
 
-    pub fn persist_agent_info(&self, agent: AgentInfo) -> Result<Option<AgentInfo>> {
+    pub fn persist_agent_info(&self, agent: AgentInfo) -> Result<()> {
         let replacement = bson::to_bson(&agent).chain_err(|| FAIL_PERSIST_AGENT_INFO)?;
         let replacement = match replacement {
             Bson::Document(replacement) => replacement,
-            _ => panic!("ClusterMeta failed to encode as BSON document")
+            _ => panic!("AgentInfo failed to encode as BSON document")
         };
         let filter = doc!{
             "cluster" => agent.cluster,
             "host" => agent.host,
         };
         let collection = self.collection_agents_info();
-        let mut options = FindOneAndUpdateOptions::new();
+        let mut options = UpdateOptions::new();
         options.upsert = Some(true);
-        MONGODB_OPS_COUNT.with_label_values(&["findOneAndReplace"]).inc();
-        let _timer = MONGODB_OPS_DURATION.with_label_values(&["findOneAndReplace"]).start_timer();
-        let old = collection.find_one_and_replace(filter, replacement, Some(options))
+        MONGODB_OPS_COUNT.with_label_values(&["replaceOne"]).inc();
+        let _timer = MONGODB_OPS_DURATION.with_label_values(&["replaceOne"]).start_timer();
+        collection.replace_one(filter, replacement, Some(options))
             .map_err(|error| {
-                MONGODB_OP_ERRORS_COUNT.with_label_values(&["findOneAndReplace"]).inc();
+                MONGODB_OP_ERRORS_COUNT.with_label_values(&["replaceOne"]).inc();
                 error
             })
             .chain_err(|| FAIL_PERSIST_AGENT_INFO)?;
-        match old {
-            None => Ok(None),
-            Some(doc) => {
-                let agent = bson::from_bson::<AgentInfo>(bson::Bson::Document(doc))
-                    .chain_err(|| FAIL_PERSIST_AGENT_INFO)?;
-                Ok(Some(agent))
-            }
-        }
+        Ok(())
     }
 
     /// Returns the `agents` collection.

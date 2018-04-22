@@ -103,36 +103,67 @@ impl Fetcher {
     fn persist_agent(&self, agent: Agent) {
         let cluster = agent.cluster.clone();
         let host = agent.host.clone();
-        match self.store.persist_agent(agent) {
-            Ok(_) => (),
-            Err(error) => {
-                DISCOVERY_PROCESS_ERRORS_COUNT.inc();
-                let error = error.display_chain().to_string();
-                error!(
-                    self.logger, "Failed to persist agent";
-                    "cluster" => cluster, "host" => host, "error" => error
-                );
-                return;
-            }
-        };
-    }
-
-    fn persist_agent_info(&self, agent: AgentInfo) {
-        let cluster = agent.cluster.clone();
-        let host = agent.host.clone();
-        let _old = match self.store.persist_agent_info(agent) {
+        let old = match self.store.agent(cluster.clone(), host.clone()) {
             Ok(old) => old,
             Err(error) => {
                 DISCOVERY_PROCESS_ERRORS_COUNT.inc();
                 let error = error.display_chain().to_string();
                 error!(
-                    self.logger, "Failed to persist agent info";
+                    self.logger, "Failed to fetch agent";
                     "cluster" => cluster, "host" => host, "error" => error
                 );
                 return;
             }
         };
-        // TODO: figure out if the agent info changed
+
+        // TODO: Emit agent events.
+
+        if old != Some(agent.clone()) {
+            match self.store.persist_agent(agent) {
+                Ok(_) => (),
+                Err(error) => {
+                    DISCOVERY_PROCESS_ERRORS_COUNT.inc();
+                    let error = error.display_chain().to_string();
+                    error!(
+                        self.logger, "Failed to persist agent";
+                        "cluster" => cluster, "host" => host, "error" => error
+                    );
+                }
+            };
+        }
+    }
+
+    fn persist_agent_info(&self, agent: AgentInfo) {
+        let cluster = agent.cluster.clone();
+        let host = agent.host.clone();
+        let old = match self.store.agent_info(cluster.clone(), host.clone()) {
+            Ok(old) => old,
+            Err(error) => {
+                DISCOVERY_PROCESS_ERRORS_COUNT.inc();
+                let error = error.display_chain().to_string();
+                error!(
+                    self.logger, "Failed to fetch agent info";
+                    "cluster" => cluster, "host" => host, "error" => error
+                );
+                return;
+            }
+        };
+
+        // TODO: Emit agent events.
+
+        if old != Some(agent.clone()) {
+            match self.store.persist_agent_info(agent) {
+                Ok(_) => (),
+                Err(error) => {
+                    DISCOVERY_PROCESS_ERRORS_COUNT.inc();
+                    let error = error.display_chain().to_string();
+                    error!(
+                        self.logger, "Failed to persist agent info";
+                        "cluster" => cluster, "host" => host, "error" => error
+                    );
+                }
+            };
+        }
     }
 
     fn persist_meta(&self, meta: ClusterMeta) {

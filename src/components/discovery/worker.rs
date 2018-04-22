@@ -72,7 +72,6 @@ impl DiscoveryWorker {
 
         // TODO: Emit cluster events based on new vs old.
 
-        // Persist discovery if it changed.
         if old != Some(cluster.clone()) {
             match self.store.persist_discovery(cluster.clone()) {
                 Ok(()) => (),
