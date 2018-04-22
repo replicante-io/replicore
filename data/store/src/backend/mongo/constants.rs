@@ -9,9 +9,13 @@ pub static COLLECTION_SHARDS: &'static str = "shards";
 
 pub static FAIL_CLIENT: &'static str = "Failed to configure MongoDB client";
 
+pub static FAIL_FIND_AGENT: &'static str = "Failed to find agent status";
+pub static FAIL_FIND_AGENT_INFO: &'static str = "Failed to find agent info";
 pub static FAIL_FIND_CLUSTER_DISCOVERY: &'static str = "Failed to find cluster discovery record";
 pub static FAIL_FIND_CLUSTER_META: &'static str = "Failed to find cluster metadata";
 pub static FAIL_FIND_CLUSTERS: &'static str = "Failed while searching for clusters";
+pub static FAIL_FIND_NODE: &'static str = "Failed to find node information";
+pub static FAIL_FIND_SHARD: &'static str = "Failed to find shard information";
 
 pub static FAIL_PERSIST_AGENT: &'static str = "Failed to persist agent status";
 pub static FAIL_PERSIST_AGENT_INFO: &'static str = "Failed to persist agent info";

@@ -6,11 +6,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 ### Added
-- API interface
-- Agent client crate
-- Docker compose file for development
-- Fetch agent state
-- Static agent discovery
-- Storage interface
-- Store node snapshots
+- API interface.
+- Agent client crate.
+- Docker compose file for development.
+- Fetch agent state.
+- File agent discovery.
+- Storage interface.
+- Store clusters and nodes information.
 - WebUI enpoint for initial UI.

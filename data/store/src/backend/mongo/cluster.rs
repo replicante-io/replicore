@@ -45,10 +45,10 @@ impl ClusterStore {
         ClusterStore { client, db }
     }
 
-    pub fn cluster_discovery(&self, cluster: String) -> Result<ClusterDiscovery> {
+    pub fn cluster_discovery(&self, cluster: String) -> Result<Option<ClusterDiscovery>> {
         let filter = doc!{"name" => cluster};
         MONGODB_OPS_COUNT.with_label_values(&["findOne"]).inc();
-        let _timer = MONGODB_OPS_DURATION.with_label_values(&["findOne"]).start_timer();
+        let timer = MONGODB_OPS_DURATION.with_label_values(&["findOne"]).start_timer();
         let collection = self.collection_discoveries();
         let discovery = collection.find_one(Some(filter), None)
             .map_err(|error| {
@@ -56,17 +56,20 @@ impl ClusterStore {
                 error
             })
             .chain_err(|| FAIL_FIND_CLUSTER_DISCOVERY)?;
-        let discovery: Result<_> = discovery.ok_or("Cluster not found".into());
-        let discovery = discovery.chain_err(|| FAIL_FIND_CLUSTER_DISCOVERY)?;
+        timer.observe_duration();
+        if discovery.is_none() {
+            return Ok(None);
+        }
+        let discovery = discovery.unwrap();
         let discovery = bson::from_bson::<ClusterDiscovery>(bson::Bson::Document(discovery))
             .chain_err(|| FAIL_FIND_CLUSTER_DISCOVERY)?;
-        Ok(discovery)
+        Ok(Some(discovery))
     }
 
-    pub fn cluster_meta(&self, cluster: String) -> Result<ClusterMeta> {
+    pub fn cluster_meta(&self, cluster: String) -> Result<Option<ClusterMeta>> {
         let filter = doc!{"name" => cluster};
         MONGODB_OPS_COUNT.with_label_values(&["findOne"]).inc();
-        let _timer = MONGODB_OPS_DURATION.with_label_values(&["findOne"]).start_timer();
+        let timer = MONGODB_OPS_DURATION.with_label_values(&["findOne"]).start_timer();
         let collection = self.collection_cluster_meta();
         let meta = collection.find_one(Some(filter), None)
             .map_err(|error| {
@@ -74,11 +77,14 @@ impl ClusterStore {
                 error
             })
             .chain_err(|| FAIL_FIND_CLUSTER_META)?;
-        let meta: Result<_> = meta.ok_or("Cluster not found".into());
-        let meta = meta.chain_err(|| FAIL_FIND_CLUSTER_META)?;
+        timer.observe_duration();
+        if meta.is_none() {
+            return Ok(None);
+        }
+        let meta = meta.unwrap();
         let meta = bson::from_bson::<ClusterMeta>(bson::Bson::Document(meta))
             .chain_err(|| FAIL_FIND_CLUSTER_META)?;
-        Ok(meta)
+        Ok(Some(meta))
     }
 
     pub fn find_clusters(&self, search: String, limit: u8) -> Result<Vec<ClusterMeta>> {

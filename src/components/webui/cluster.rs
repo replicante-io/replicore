@@ -29,6 +29,8 @@ impl Handler for Discovery {
         let cluster = cluster?;
         let discovery = self.store.cluster_discovery(cluster)
             .chain_err(|| "Failed to fetch cluster discovery")?;
+        let discovery: Result<_> = discovery.ok_or("Cluster not found".into());
+        let discovery = discovery?;
         let mut resp = Response::new();
         resp.set_mut(JsonResponse::json(discovery)).set_mut(status::Ok);
         Ok(resp)
@@ -58,6 +60,8 @@ impl Handler for Meta {
         let cluster = cluster?;
         let meta = self.store.cluster_meta(cluster)
             .chain_err(|| "Failed to fetch cluster metadata")?;
+        let meta: Result<_> = meta.ok_or("Cluster not found".into());
+        let meta = meta?;
         let mut resp = Response::new();
         resp.set_mut(JsonResponse::json(meta)).set_mut(status::Ok);
         Ok(resp)

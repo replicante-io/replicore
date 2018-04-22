@@ -25,18 +25,28 @@ pub struct MockStore {
 }
 
 impl InnerStore for MockStore {
-    fn cluster_discovery(&self, cluster: String) -> Result<ClusterDiscovery> {
-        let discoveries = self.discoveries.lock().unwrap();
-        let discovery: Result<ClusterDiscovery> = discoveries.get(&cluster).map(|c| c.clone())
-            .ok_or("Cluster not found".into());
-        Ok(discovery?)
+    fn agent(&self, cluster: String, host: String) -> Result<Option<Agent>> {
+        let agents = self.agents.lock().unwrap();
+        let agent = agents.get(&(cluster, host)).map(|a| a.clone());
+        Ok(agent)
     }
 
-    fn cluster_meta(&self, cluster: String) -> Result<ClusterMeta> {
+    fn agent_info(&self, cluster: String, host: String) -> Result<Option<AgentInfo>> {
+        let agents_info = self.agents_info.lock().unwrap();
+        let agent_info = agents_info.get(&(cluster, host)).map(|a| a.clone());
+        Ok(agent_info)
+    }
+
+    fn cluster_discovery(&self, cluster: String) -> Result<Option<ClusterDiscovery>> {
+        let discoveries = self.discoveries.lock().unwrap();
+        let discovery = discoveries.get(&cluster).map(|c| c.clone());
+        Ok(discovery)
+    }
+
+    fn cluster_meta(&self, cluster: String) -> Result<Option<ClusterMeta>> {
         let clusters = self.clusters_meta.lock().unwrap();
-        let meta: Result<ClusterMeta> = clusters.get(&cluster).map(|c| c.clone())
-            .ok_or("Cluster not found".into());
-        Ok(meta?)
+        let meta = clusters.get(&cluster).map(|c| c.clone());
+        Ok(meta)
     }
 
     fn find_clusters(&self, search: String, _: u8) -> Result<Vec<ClusterMeta>> {
@@ -47,14 +57,11 @@ impl InnerStore for MockStore {
             .collect();
         Ok(results)
     }
-
-    fn top_clusters(&self) -> Result<Vec<ClusterMeta>> {
-        let clusters = self.clusters_meta.lock().unwrap();
-        let mut results: Vec<ClusterMeta> = clusters.iter()
-            .map(|(_, meta)| meta.clone())
-            .collect();
-        results.sort_by_key(|meta| meta.nodes);
-        Ok(results)
+    
+    fn node(&self, cluster: String, name: String) -> Result<Option<Node>> {
+        let nodes = self.nodes.lock().unwrap();
+        let node = nodes.get(&(cluster, name)).map(|n| n.clone());
+        Ok(node)
     }
 
     fn persist_agent(&self, agent: Agent) -> Result<Option<Agent>> {
@@ -113,6 +120,21 @@ impl InnerStore for MockStore {
         shards.insert(key, shard);
         Ok(old)
     }
+
+    fn shard(&self, cluster: String, node: String, id: String) -> Result<Option<Shard>> {
+        let shards = self.shards.lock().unwrap();
+        let shard = shards.get(&(cluster, node, id)).map(|n| n.clone());
+        Ok(shard)
+    }
+
+    fn top_clusters(&self) -> Result<Vec<ClusterMeta>> {
+        let clusters = self.clusters_meta.lock().unwrap();
+        let mut results: Vec<ClusterMeta> = clusters.iter()
+            .map(|(_, meta)| meta.clone())
+            .collect();
+        results.sort_by_key(|meta| meta.nodes);
+        Ok(results)
+    }
 }
 
 impl MockStore {
@@ -140,6 +162,17 @@ mod tests {
 
         use super::super::super::Store;
         use super::super::MockStore;
+
+        #[test]
+        fn get() {
+            let mock = Arc::new(MockStore::new());
+            let store = Store::mock(Arc::clone(&mock));
+            let agent = Agent::new("test", "node", AgentStatus::Up);
+            let key = (String::from("test"), String::from("node"));
+            mock.agents.lock().unwrap().insert(key.clone(), agent.clone());
+            let stored = store.agent(key.0, key.1).unwrap().unwrap();
+            assert_eq!(stored, agent);
+        }
 
         #[test]
         fn persist_new() {
@@ -229,7 +262,7 @@ mod tests {
             let mock = Arc::new(MockStore::new());
             let store = Store::mock(Arc::clone(&mock));
             mock.discoveries.lock().expect("Faild to lock").insert("test".into(), cluster.clone());
-            let found = store.cluster_discovery("test").unwrap();
+            let found = store.cluster_discovery("test").unwrap().unwrap();
             assert_eq!(found, cluster);
         }
 
@@ -237,10 +270,7 @@ mod tests {
         fn missing_discovery() {
             let mock = Arc::new(MockStore::new());
             let store = Store::mock(Arc::clone(&mock));
-            match store.cluster_discovery("test") {
-                Ok(_) => panic!("Unexpected cluster found"),
-                Err(_) => ()
-            }
+            assert!(store.cluster_discovery("test").unwrap().is_none());
         }
 
         #[test]
@@ -295,7 +325,7 @@ mod tests {
             let store = Store::mock(Arc::clone(&mock));
             let meta = ClusterMeta::new("test", "Redis", 44);
             mock.clusters_meta.lock().expect("Faild to lock").insert("test".into(), meta.clone());
-            let found = store.cluster_meta("test").unwrap();
+            let found = store.cluster_meta("test").unwrap().unwrap();
             assert_eq!(found, meta);
         }
 
@@ -303,10 +333,7 @@ mod tests {
         fn missing_meta() {
             let mock = Arc::new(MockStore::new());
             let store = Store::mock(Arc::clone(&mock));
-            match store.cluster_meta("test") {
-                Ok(_) => panic!("Unexpected cluster found"),
-                Err(_) => ()
-            }
+            assert!(store.cluster_meta("test").unwrap().is_none());
         }
 
         #[test]

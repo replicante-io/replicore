@@ -88,19 +88,31 @@ impl Store {
         Ok(Store(store))
     }
 
+    /// Fetch agent status information.
+    pub fn agent<S1, S2>(&self, cluster: S1, host: S2) -> Result<Option<Agent>>
+        where S1: Into<String>,
+              S2: Into<String>,
+    {
+        self.0.agent(cluster.into(), host.into())
+    }
+
+    /// Fetch agent information.
+    pub fn agent_info<S1, S2>(&self, cluster: S1, host: S2) -> Result<Option<AgentInfo>>
+        where S1: Into<String>,
+              S2: Into<String>,
+    {
+        self.0.agent_info(cluster.into(), host.into())
+    }
+
     /// Fetch discovery information about a cluster.
-    ///
-    /// If the cluster is not found an error is returned.
-    pub fn cluster_discovery<S>(&self, cluster: S) -> Result<ClusterDiscovery>
+    pub fn cluster_discovery<S>(&self, cluster: S) -> Result<Option<ClusterDiscovery>>
         where S: Into<String>,
     {
         self.0.cluster_discovery(cluster.into())
     }
 
     /// Fetch metadata about a cluster.
-    ///
-    /// If the cluster is not found an error is returned.
-    pub fn cluster_meta<S>(&self, cluster: S) -> Result<ClusterMeta>
+    pub fn cluster_meta<S>(&self, cluster: S) -> Result<Option<ClusterMeta>>
         where S: Into<String>,
     {
         self.0.cluster_meta(cluster.into())
@@ -116,11 +128,12 @@ impl Store {
         self.0.find_clusters(search.into(), limit)
     }
 
-    /// Fetch overvew details of the top clusters.
-    ///
-    /// Clusters are sorted by number of nodes in the cluster.
-    pub fn top_clusters(&self) -> Result<Vec<ClusterMeta>> {
-        self.0.top_clusters()
+    /// Fetch information about a node.
+    pub fn node<S1, S2>(&self, cluster: S1, name: S2) -> Result<Option<Node>>
+        where S1: Into<String>,
+              S2: Into<String>,
+    {
+        self.0.node(cluster.into(), name.into())
     }
 
     /// Persist the status of an agent.
@@ -185,6 +198,22 @@ impl Store {
         self.0.persist_shard(shard)
     }
 
+    /// Fetch information about a shard.
+    pub fn shard<S1, S2, S3>(&self, cluster: S1, node: S2, id: S3) -> Result<Option<Shard>>
+        where S1: Into<String>,
+              S2: Into<String>,
+              S3: Into<String>,
+    {
+        self.0.shard(cluster.into(), node.into(), id.into())
+    }
+
+    /// Fetch overvew details of the top clusters.
+    ///
+    /// Clusters are sorted by number of nodes in the cluster.
+    pub fn top_clusters(&self) -> Result<Vec<ClusterMeta>> {
+        self.0.top_clusters()
+    }
+
     /// Instantiate a `Store` that wraps the given `MockStore`.
     // Cargo builds dependencies in debug mode instead of test mode.
     // That means that `cfg(test)` cannot be used if the mock is used outside the crate.
@@ -199,17 +228,23 @@ impl Store {
 ///
 /// Allows multiple possible datastores to be used as well as mocks for testing.
 trait InnerStore: Send + Sync {
+    /// See `Store::agent` for details.
+    fn agent(&self, cluster: String, host: String) -> Result<Option<Agent>>;
+
+    /// See `Store::agent_info` for details.
+    fn agent_info(&self, cluster: String, host: String) -> Result<Option<AgentInfo>>;
+
     /// See `Store::cluster_discovery` for details.
-    fn cluster_discovery(&self, cluster: String) -> Result<ClusterDiscovery>;
+    fn cluster_discovery(&self, cluster: String) -> Result<Option<ClusterDiscovery>>;
 
     /// See `Store::cluster_meta` for details.
-    fn cluster_meta(&self, cluster: String) -> Result<ClusterMeta>;
+    fn cluster_meta(&self, cluster: String) -> Result<Option<ClusterMeta>>;
 
     /// See `Store::find_clusters` for details.
     fn find_clusters(&self, search: String, limit: u8) -> Result<Vec<ClusterMeta>>;
 
-    /// See `Store::top_clusters` for details.
-    fn top_clusters(&self) -> Result<Vec<ClusterMeta>>;
+    /// See `Store::node` for details.
+    fn node(&self, cluster: String, name: String) -> Result<Option<Node>>;
 
     /// See `Some::persist_agent` for details.
     fn persist_agent(&self, agent: Agent) -> Result<Option<Agent>>;
@@ -228,4 +263,10 @@ trait InnerStore: Send + Sync {
 
     /// See `Store::persist_shard` for details.
     fn persist_shard(&self, shard: Shard) -> Result<Option<Shard>>;
+
+    /// See `Store::shard` for details.
+    fn shard(&self, cluster: String, node: String, id: String) -> Result<Option<Shard>>;
+
+    /// See `Store::top_clusters` for details.
+    fn top_clusters(&self) -> Result<Vec<ClusterMeta>>;
 }

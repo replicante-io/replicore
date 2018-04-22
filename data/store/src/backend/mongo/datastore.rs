@@ -15,6 +15,8 @@ use super::super::super::ResultExt;
 
 use super::constants::COLLECTION_NODES;
 use super::constants::COLLECTION_SHARDS;
+use super::constants::FAIL_FIND_NODE;
+use super::constants::FAIL_FIND_SHARD;
 use super::constants::FAIL_PERSIST_NODE;
 use super::constants::FAIL_PERSIST_SHARD;
 
@@ -32,6 +34,30 @@ pub struct DatastoreStore {
 impl DatastoreStore {
     pub fn new(client: Client, db: String) -> DatastoreStore {
         DatastoreStore { client, db }
+    }
+
+    pub fn node(&self, cluster: String, name: String) -> Result<Option<Node>> {
+        let filter = doc!{
+            "cluster" => cluster,
+            "name" => name,
+        };
+        MONGODB_OPS_COUNT.with_label_values(&["findOne"]).inc();
+        let timer = MONGODB_OPS_DURATION.with_label_values(&["findOne"]).start_timer();
+        let collection = self.collection_nodes();
+        let node = collection.find_one(Some(filter), None)
+            .map_err(|error| {
+                MONGODB_OP_ERRORS_COUNT.with_label_values(&["findOne"]).inc();
+                error
+            })
+            .chain_err(|| FAIL_FIND_NODE)?;
+        timer.observe_duration();
+        if node.is_none() {
+            return Ok(None);
+        }
+        let node = node.unwrap();
+        let node = bson::from_bson::<Node>(bson::Bson::Document(node))
+            .chain_err(|| FAIL_FIND_NODE)?;
+        Ok(Some(node))
     }
 
     pub fn persist_node(&self, node: Node) -> Result<Option<Node>> {
@@ -95,6 +121,31 @@ impl DatastoreStore {
                 Ok(Some(shard))
             }
         }
+    }
+
+    pub fn shard(&self, cluster: String, node: String, id: String) -> Result<Option<Shard>> {
+        let filter = doc!{
+            "cluster" => cluster,
+            "node" => node,
+            "id" => id,
+        };
+        MONGODB_OPS_COUNT.with_label_values(&["findOne"]).inc();
+        let timer = MONGODB_OPS_DURATION.with_label_values(&["findOne"]).start_timer();
+        let collection = self.collection_shards();
+        let shard = collection.find_one(Some(filter), None)
+            .map_err(|error| {
+                MONGODB_OP_ERRORS_COUNT.with_label_values(&["findOne"]).inc();
+                error
+            })
+            .chain_err(|| FAIL_FIND_SHARD)?;
+        timer.observe_duration();
+        if shard.is_none() {
+            return Ok(None);
+        }
+        let shard = shard.unwrap();
+        let shard = bson::from_bson::<Shard>(bson::Bson::Document(shard))
+            .chain_err(|| FAIL_FIND_SHARD)?;
+        Ok(Some(shard))
     }
 
     /// Returns the collection storing nodes.

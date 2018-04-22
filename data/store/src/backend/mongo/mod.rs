@@ -54,11 +54,19 @@ pub struct MongoStore {
 }
 
 impl InnerStore for MongoStore {
-    fn cluster_discovery(&self, cluster: String) -> Result<ClusterDiscovery> {
+    fn agent(&self, cluster: String, host: String) -> Result<Option<Agent>> {
+        self.agents.agent(cluster, host)
+    }
+
+    fn agent_info(&self, cluster: String, host: String) -> Result<Option<AgentInfo>> {
+        self.agents.agent_info(cluster, host)
+    }
+
+    fn cluster_discovery(&self, cluster: String) -> Result<Option<ClusterDiscovery>> {
         self.clusters.cluster_discovery(cluster)
     }
 
-    fn cluster_meta(&self, cluster: String) -> Result<ClusterMeta> {
+    fn cluster_meta(&self, cluster: String) -> Result<Option<ClusterMeta>> {
         self.clusters.cluster_meta(cluster)
     }
 
@@ -66,8 +74,8 @@ impl InnerStore for MongoStore {
         self.clusters.find_clusters(search, limit)
     }
 
-    fn top_clusters(&self) -> Result<Vec<ClusterMeta>> {
-        self.clusters.top_clusters()
+    fn node(&self, cluster: String, name: String) -> Result<Option<Node>> {
+        self.datastores.node(cluster, name)
     }
 
     fn persist_agent(&self, agent: Agent) -> Result<Option<Agent>> {
@@ -92,6 +100,14 @@ impl InnerStore for MongoStore {
 
     fn persist_shard(&self, shard: Shard) -> Result<Option<Shard>> {
         self.datastores.persist_shard(shard)
+    }
+
+    fn shard(&self, cluster: String, node: String, id: String) -> Result<Option<Shard>> {
+        self.datastores.shard(cluster, node, id)
+    }
+
+    fn top_clusters(&self) -> Result<Vec<ClusterMeta>> {
+        self.clusters.top_clusters()
     }
 }
 

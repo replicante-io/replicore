@@ -16,6 +16,8 @@ use super::super::super::ResultExt;
 use super::constants::COLLECTION_AGENTS;
 use super::constants::COLLECTION_AGENTS_INFO;
 
+use super::constants::FAIL_FIND_AGENT;
+use super::constants::FAIL_FIND_AGENT_INFO;
 use super::constants::FAIL_PERSIST_AGENT;
 use super::constants::FAIL_PERSIST_AGENT_INFO;
 
@@ -33,6 +35,54 @@ pub struct AgentStore {
 impl AgentStore {
     pub fn new(client: Client, db: String) -> AgentStore {
         AgentStore { client, db }
+    }
+
+    pub fn agent(&self, cluster: String, host: String) -> Result<Option<Agent>> {
+        let filter = doc!{
+            "cluster" => cluster,
+            "host" => host,
+        };
+        MONGODB_OPS_COUNT.with_label_values(&["findOne"]).inc();
+        let timer = MONGODB_OPS_DURATION.with_label_values(&["findOne"]).start_timer();
+        let collection = self.collection_agents();
+        let agent = collection.find_one(Some(filter), None)
+            .map_err(|error| {
+                MONGODB_OP_ERRORS_COUNT.with_label_values(&["findOne"]).inc();
+                error
+            })
+            .chain_err(|| FAIL_FIND_AGENT)?;
+        timer.observe_duration();
+        if agent.is_none() {
+            return Ok(None);
+        }
+        let agent = agent.unwrap();
+        let agent = bson::from_bson::<Agent>(bson::Bson::Document(agent))
+            .chain_err(|| FAIL_FIND_AGENT)?;
+        Ok(Some(agent))
+    }
+
+    pub fn agent_info(&self, cluster: String, host: String) -> Result<Option<AgentInfo>> {
+        let filter = doc!{
+            "cluster" => cluster,
+            "host" => host,
+        };
+        MONGODB_OPS_COUNT.with_label_values(&["findOne"]).inc();
+        let timer = MONGODB_OPS_DURATION.with_label_values(&["findOne"]).start_timer();
+        let collection = self.collection_agents_info();
+        let agent_info = collection.find_one(Some(filter), None)
+            .map_err(|error| {
+                MONGODB_OP_ERRORS_COUNT.with_label_values(&["findOne"]).inc();
+                error
+            })
+            .chain_err(|| FAIL_FIND_AGENT_INFO)?;
+        timer.observe_duration();
+        if agent_info.is_none() {
+            return Ok(None);
+        }
+        let agent_info = agent_info.unwrap();
+        let agent_info = bson::from_bson::<AgentInfo>(bson::Bson::Document(agent_info))
+            .chain_err(|| FAIL_FIND_AGENT_INFO)?;
+        Ok(Some(agent_info))
     }
 
     pub fn persist_agent(&self, agent: Agent) -> Result<Option<Agent>> {
