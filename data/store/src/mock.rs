@@ -84,12 +84,11 @@ impl InnerStore for MockStore {
         Ok(old)
     }
 
-    fn persist_discovery(&self, cluster: ClusterDiscovery) -> Result<Option<ClusterDiscovery>> {
+    fn persist_discovery(&self, cluster: ClusterDiscovery) -> Result<()> {
         let name = cluster.name.clone();
         let mut discoveries = self.discoveries.lock().unwrap();
-        let old = discoveries.get(&name).map(|c| c.clone());
         discoveries.insert(name, cluster);
-        Ok(old)
+        Ok(())
     }
 
     fn persist_cluster_meta(&self, meta: ClusterMeta) -> Result<Option<ClusterMeta>> {
@@ -274,27 +273,15 @@ mod tests {
         }
 
         #[test]
-        fn persist_new() {
+        fn persist() {
             let cluster = ClusterDiscovery::new("test", vec!["test".into()]);
             let mock = Arc::new(MockStore::new());
             let store = Store::mock(Arc::clone(&mock));
-            let old = store.persist_discovery(cluster.clone()).unwrap();
-            assert!(old.is_none());
+            store.persist_discovery(cluster.clone()).unwrap();
             let stored = mock.discoveries.lock().expect("Faild to lock")
                 .get("test")
                 .map(|n| n.clone()).expect("Cluster not found");
             assert_eq!(cluster, stored)
-        }
-
-        #[test]
-        fn persist_update() {
-            let discovery1 = ClusterDiscovery::new("test", vec!["test1".into()]);
-            let discovery2 = ClusterDiscovery::new("test", vec!["test2".into()]);
-            let mock = Arc::new(MockStore::new());
-            let store = Store::mock(Arc::clone(&mock));
-            store.persist_discovery(discovery1.clone()).unwrap();
-            let old = store.persist_discovery(discovery2).unwrap();
-            assert_eq!(Some(discovery1), old);
         }
     }
 

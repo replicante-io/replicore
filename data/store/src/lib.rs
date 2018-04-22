@@ -158,11 +158,8 @@ impl Store {
 
     /// Persist information about a discovered cluster.
     ///
-    /// If the cluster is known it will be updated and the old model is returned.
-    /// Tf the cluster is new it will be created and `None` will be returned.
-    ///
     /// Clusters are uniquely identified by their name.
-    pub fn persist_discovery(&self, cluster: ClusterDiscovery) -> Result<Option<ClusterDiscovery>> {
+    pub fn persist_discovery(&self, cluster: ClusterDiscovery) -> Result<()> {
         self.0.persist_discovery(cluster)
     }
 
@@ -256,7 +253,7 @@ trait InnerStore: Send + Sync {
     fn persist_cluster_meta(&self, meta: ClusterMeta) -> Result<Option<ClusterMeta>>;
 
     /// See `Store::persist_discovery` for details.
-    fn persist_discovery(&self, cluster: ClusterDiscovery) -> Result<Option<ClusterDiscovery>>;
+    fn persist_discovery(&self, cluster: ClusterDiscovery) -> Result<()>;
 
     /// See `Store::persist_node` for details.
     fn persist_node(&self, node: Node) -> Result<Option<Node>>;

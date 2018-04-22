@@ -58,18 +58,33 @@ impl DiscoveryWorker {
     /// Once the discovery is persited the previous result is used to determine changes.
     /// Events are emitted if there are any changes in the cluster.
     fn persist_discovery(&self, cluster: ClusterDiscovery) {
-        let _old = match self.store.persist_discovery(cluster.clone()) {
+        let old = match self.store.cluster_discovery(cluster.name.clone()) {
             Ok(old) => old,
             Err(error) => {
                 let error = error.display_chain().to_string();
                 error!(
-                    self.logger, "Failed to persist cluster discovery";
+                    self.logger, "Failed to fetch cluster discovery";
                     "cluster" => cluster.name.clone(), "error" => error
                 );
                 return;
             }
         };
-        // TODO: figure out if the cluster changed.
+
+        // TODO: Emit cluster events based on new vs old.
+
+        // Persist discovery if it changed.
+        if old != Some(cluster.clone()) {
+            match self.store.persist_discovery(cluster.clone()) {
+                Ok(()) => (),
+                Err(error) => {
+                    let error = error.display_chain().to_string();
+                    error!(
+                        self.logger, "Failed to persist cluster discovery";
+                        "cluster" => cluster.name.clone(), "error" => error
+                    );
+                }
+            };
+        }
     }
 
     /// Process a discovery result to fetch the node state.

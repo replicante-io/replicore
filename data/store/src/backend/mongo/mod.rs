@@ -90,7 +90,7 @@ impl InnerStore for MongoStore {
         self.clusters.persist_cluster_meta(meta)
     }
 
-    fn persist_discovery(&self, cluster: ClusterDiscovery) -> Result<Option<ClusterDiscovery>> {
+    fn persist_discovery(&self, cluster: ClusterDiscovery) -> Result<()> {
         self.clusters.persist_discovery(cluster)
     }
 
