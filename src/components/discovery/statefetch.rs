@@ -177,7 +177,6 @@ impl Fetcher {
                     self.logger, "Failed to persist cluster metadata";
                     "cluster" => name, "error" => error
                 );
-                return;
             }
         };
     }
@@ -185,39 +184,70 @@ impl Fetcher {
     fn persist_node(&self, node: Node) {
         let cluster = node.cluster.clone();
         let name = node.name.clone();
-        let _old = match self.store.persist_node(node) {
+        let old = match self.store.node(cluster.clone(), name.clone()) {
             Ok(old) => old,
             Err(error) => {
                 DISCOVERY_PROCESS_ERRORS_COUNT.inc();
                 let error = error.display_chain().to_string();
                 error!(
-                    self.logger, "Failed to persist node";
+                    self.logger, "Failed to fetch node info";
                     "cluster" => cluster, "name" => name, "error" => error
                 );
                 return;
             }
         };
-        // TODO: figure out if the node changed
+
+        // TODO: Emit node events.
+
+        if old != Some(node.clone()) {
+            match self.store.persist_node(node) {
+                Ok(_) => (),
+                Err(error) => {
+                    DISCOVERY_PROCESS_ERRORS_COUNT.inc();
+                    let error = error.display_chain().to_string();
+                    error!(
+                        self.logger, "Failed to persist node info";
+                        "cluster" => cluster, "name" => name, "error" => error
+                    );
+                }
+            };
+        }
     }
 
     fn persist_shard(&self, shard: Shard) {
         let cluster = shard.cluster.clone();
         let node = shard.node.clone();
         let id = shard.id.clone();
-        let _old = match self.store.persist_shard(shard) {
+        let old = match self.store.shard(cluster.clone(), node.clone(), id.clone()) {
             Ok(old) => old,
             Err(error) => {
                 DISCOVERY_PROCESS_ERRORS_COUNT.inc();
                 let error = error.display_chain().to_string();
                 error!(
-                    self.logger, "Failed to persist shard";
+                    self.logger, "Failed to fetch shard info";
                     "cluster" => cluster, "node" => node, "id" => id,
                     "error" => error
                 );
                 return;
             }
         };
-        // TODO: figure out if the shard changed
+
+        // TODO: Emit shard events.
+
+        if old != Some(shard.clone()) {
+            match self.store.persist_shard(shard) {
+                Ok(_) => (),
+                Err(error) => {
+                    DISCOVERY_PROCESS_ERRORS_COUNT.inc();
+                    let error = error.display_chain().to_string();
+                    error!(
+                        self.logger, "Failed to persist node info";
+                        "cluster" => cluster, "node" => node, "id" => id,
+                        "error" => error
+                    );
+                }
+            };
+        }
     }
 
     fn process_agent(&self, client: &Client, cluster: String, node: String) -> Result<()> {

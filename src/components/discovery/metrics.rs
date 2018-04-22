@@ -13,6 +13,14 @@ lazy_static! {
         Opts::new("replicante_discovery_loops", "Number of discovery runs started")
     ).expect("Failed to create DISCOVERY_COUNT counter");
 
+    /// Observe duration of agent discovery.
+    pub static ref DISCOVERY_DURATION: Histogram = Histogram::with_opts(
+        HistogramOpts::new(
+            "replicante_discovery_duration",
+            "Duration (in seconds) of agent discovery runs"
+        ).buckets(vec![0.25, 0.5, 1.0, 2.5, 5.0, 10.0, 20.0, 40.0])
+    ).expect("Failed to create DISCOVERY_DURATION histogram");
+
     /// Counter for discovery cycles that fail to fetch agents.
     pub static ref DISCOVERY_FETCH_ERRORS_COUNT: Counter = Counter::with_opts(
         Opts::new("replicante_discovery_fetch_errors", "Number of errors during agent discovery")
@@ -25,14 +33,6 @@ lazy_static! {
             "Number of errors during processing of discovered agents"
         )
     ).expect("Failed to create DISCOVERY_PROCESS_ERRORS_COUNT counter");
-
-    /// Observe duration of agent discovery.
-    pub static ref DISCOVERY_DURATION: Histogram = Histogram::with_opts(
-        HistogramOpts::new(
-            "replicante_discovery_duration",
-            "Duration (in seconds) of agent discovery runs"
-        ).buckets(vec![0.25, 0.5, 1.0, 2.5, 5.0, 10.0, 20.0, 40.0])
-    ).expect("Failed to create DISCOVERY_DURATION histogram");
 }
 
 

@@ -87,33 +87,28 @@ impl InnerStore for MockStore {
         Ok(())
     }
 
-    fn persist_cluster_meta(&self, meta: ClusterMeta) -> Result<Option<ClusterMeta>> {
+    fn persist_cluster_meta(&self, meta: ClusterMeta) -> Result<()> {
         let name = meta.name.clone();
         let mut clusters = self.clusters_meta.lock().unwrap();
-        let old = clusters.get(&name).map(|m| m.clone());
         clusters.insert(name, meta);
-        Ok(old)
+        Ok(())
     }
 
-    fn persist_node(&self, node: Node) -> Result<Option<Node>> {
+    fn persist_node(&self, node: Node) -> Result<()> {
         let cluster = node.cluster.clone();
         let name = node.name.clone();
-        let key = (cluster, name);
         let mut nodes = self.nodes.lock().unwrap();
-        let old = nodes.get(&key).map(|n| n.clone());
-        nodes.insert(key, node);
-        Ok(old)
+        nodes.insert((cluster, name), node);
+        Ok(())
     }
 
-    fn persist_shard(&self, shard: Shard) -> Result<Option<Shard>> {
+    fn persist_shard(&self, shard: Shard) -> Result<()> {
         let cluster = shard.cluster.clone();
         let node = shard.node.clone();
         let id = shard.id.clone();
-        let key = (cluster, node, id);
         let mut shards = self.shards.lock().unwrap();
-        let old = shards.get(&key).map(|n| n.clone());
-        shards.insert(key, shard);
-        Ok(old)
+        shards.insert((cluster, node, id), shard);
+        Ok(())
     }
 
     fn shard(&self, cluster: String, node: String, id: String) -> Result<Option<Shard>> {
@@ -298,27 +293,15 @@ mod tests {
         }
 
         #[test]
-        fn persist_new() {
+        fn persist() {
             let mock = Arc::new(MockStore::new());
             let store = Store::mock(Arc::clone(&mock));
             let meta = ClusterMeta::new("test", "Redis", 44);
-            let old = store.persist_cluster_meta(meta.clone()).unwrap();
-            assert!(old.is_none());
+            store.persist_cluster_meta(meta.clone()).unwrap();
             let stored = mock.clusters_meta.lock().expect("Faild to lock")
                 .get("test")
                 .map(|n| n.clone()).expect("Cluster not found");
             assert_eq!(meta, stored)
-        }
-
-        #[test]
-        fn persist_update() {
-            let mock = Arc::new(MockStore::new());
-            let store = Store::mock(Arc::clone(&mock));
-            let meta1 = ClusterMeta::new("test", "Redis", 4);
-            let meta2 = ClusterMeta::new("test", "Redis", 44);
-            store.persist_cluster_meta(meta1.clone()).unwrap();
-            let old = store.persist_cluster_meta(meta2).unwrap();
-            assert_eq!(Some(meta1), old);
         }
     }
 
@@ -331,28 +314,16 @@ mod tests {
         use super::super::MockStore;
 
         #[test]
-        fn persist_new() {
+        fn persist() {
             let mock = Arc::new(MockStore::new());
             let store = Store::mock(Arc::clone(&mock));
             let node = Node::new(DatastoreInfo::new("cluster", "kind", "name", "version"));
-            let old = store.persist_node(node.clone()).unwrap();
-            assert!(old.is_none());
+            store.persist_node(node.clone()).unwrap();
             let key = (String::from("cluster"), String::from("name"));
             let stored = mock.nodes.lock().expect("Faild to lock")
                 .get(&key)
                 .map(|n| n.clone()).expect("Cluster not found");
             assert_eq!(node, stored)
-        }
-
-        #[test]
-        fn persist_update() {
-            let mock = Arc::new(MockStore::new());
-            let store = Store::mock(Arc::clone(&mock));
-            let node1 = Node::new(DatastoreInfo::new("cluster", "kind1", "name", "version"));
-            let node2 = Node::new(DatastoreInfo::new("cluster", "kind2", "name", "version"));
-            store.persist_node(node1.clone()).unwrap();
-            let old = store.persist_node(node2).unwrap();
-            assert_eq!(Some(node1), old);
         }
     }
 
@@ -366,14 +337,13 @@ mod tests {
         use super::super::MockStore;
 
         #[test]
-        fn persist_new() {
+        fn persist() {
             let mock = Arc::new(MockStore::new());
             let store = Store::mock(Arc::clone(&mock));
             let shard = Shard::new("cluster", "node", WireShard::new(
                 "id", ShardRole::Primary, None, 1
             ));
-            let old = store.persist_shard(shard.clone()).unwrap();
-            assert!(old.is_none());
+            store.persist_shard(shard.clone()).unwrap();
             let key = (String::from("cluster"), String::from("node"), String::from("id"));
             let stored = mock.shards.lock().expect("Faild to lock")
                 .get(&key)

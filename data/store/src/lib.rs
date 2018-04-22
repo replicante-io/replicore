@@ -31,7 +31,6 @@ use replicante_data_models::ClusterDiscovery;
 use replicante_data_models::ClusterMeta;
 use replicante_data_models::Node;
 use replicante_data_models::Shard;
-//use replicante_data_models::Events;
 
 
 mod backend;
@@ -171,7 +170,7 @@ impl Store {
     /// Tf the cluster is new it will be created and `None` will be returned.
     ///
     /// Clusters are uniquely identified by their name.
-    pub fn persist_cluster_meta(&self, meta: ClusterMeta) -> Result<Option<ClusterMeta>> {
+    pub fn persist_cluster_meta(&self, meta: ClusterMeta) -> Result<()> {
         self.0.persist_cluster_meta(meta)
     }
 
@@ -181,7 +180,7 @@ impl Store {
     /// Tf the node is new it will be created and `None` will be returned.
     ///
     /// Nodes are uniquely identified by `(cluster, name)`.
-    pub fn persist_node(&self, node: Node) -> Result<Option<Node>> {
+    pub fn persist_node(&self, node: Node) -> Result<()> {
         self.0.persist_node(node)
     }
 
@@ -191,7 +190,7 @@ impl Store {
     /// Tf the shard is new it will be created and `None` will be returned.
     ///
     /// Shards are uniquely identified by `(cluster, node, id)`.
-    pub fn persist_shard(&self, shard: Shard) -> Result<Option<Shard>> {
+    pub fn persist_shard(&self, shard: Shard) -> Result<()> {
         self.0.persist_shard(shard)
     }
 
@@ -250,16 +249,16 @@ trait InnerStore: Send + Sync {
     fn persist_agent_info(&self, agent: AgentInfo) -> Result<()>;
 
     /// See `Store::persist_cluster_meta` for details.
-    fn persist_cluster_meta(&self, meta: ClusterMeta) -> Result<Option<ClusterMeta>>;
+    fn persist_cluster_meta(&self, meta: ClusterMeta) -> Result<()>;
 
     /// See `Store::persist_discovery` for details.
     fn persist_discovery(&self, cluster: ClusterDiscovery) -> Result<()>;
 
     /// See `Store::persist_node` for details.
-    fn persist_node(&self, node: Node) -> Result<Option<Node>>;
+    fn persist_node(&self, node: Node) -> Result<()>;
 
     /// See `Store::persist_shard` for details.
-    fn persist_shard(&self, shard: Shard) -> Result<Option<Shard>>;
+    fn persist_shard(&self, shard: Shard) -> Result<()>;
 
     /// See `Store::shard` for details.
     fn shard(&self, cluster: String, node: String, id: String) -> Result<Option<Shard>>;

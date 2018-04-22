@@ -86,7 +86,7 @@ impl InnerStore for MongoStore {
         self.agents.persist_agent_info(agent)
     }
 
-    fn persist_cluster_meta(&self, meta: ClusterMeta) -> Result<Option<ClusterMeta>> {
+    fn persist_cluster_meta(&self, meta: ClusterMeta) -> Result<()> {
         self.clusters.persist_cluster_meta(meta)
     }
 
@@ -94,11 +94,11 @@ impl InnerStore for MongoStore {
         self.clusters.persist_discovery(cluster)
     }
 
-    fn persist_node(&self, node: Node) -> Result<Option<Node>> {
+    fn persist_node(&self, node: Node) -> Result<()> {
         self.datastores.persist_node(node)
     }
 
-    fn persist_shard(&self, shard: Shard) -> Result<Option<Shard>> {
+    fn persist_shard(&self, shard: Shard) -> Result<()> {
         self.datastores.persist_shard(shard)
     }
 

@@ -4,7 +4,7 @@ use bson::Bson;
 use mongodb::Client;
 use mongodb::ThreadedClient;
 use mongodb::coll::Collection;
-use mongodb::coll::options::FindOneAndUpdateOptions;
+use mongodb::coll::options::UpdateOptions;
 use mongodb::db::ThreadedDatabase;
 
 use replicante_data_models::Node;
@@ -60,7 +60,7 @@ impl DatastoreStore {
         Ok(Some(node))
     }
 
-    pub fn persist_node(&self, node: Node) -> Result<Option<Node>> {
+    pub fn persist_node(&self, node: Node) -> Result<()> {
         let replacement = bson::to_bson(&node).chain_err(|| FAIL_PERSIST_NODE)?;
         let replacement = match replacement {
             Bson::Document(replacement) => replacement,
@@ -70,28 +70,21 @@ impl DatastoreStore {
             "cluster" => node.cluster,
             "name" => node.name,
         };
-        let mut options = FindOneAndUpdateOptions::new();
+        let mut options = UpdateOptions::new();
         options.upsert = Some(true);
         let collection = self.collection_nodes();
-        MONGODB_OPS_COUNT.with_label_values(&["findOneAndReplace"]).inc();
-        let _timer = MONGODB_OPS_DURATION.with_label_values(&["findOneAndReplace"]).start_timer();
-        let old = collection.find_one_and_replace(filter, replacement, Some(options))
+        MONGODB_OPS_COUNT.with_label_values(&["replaceOne"]).inc();
+        let _timer = MONGODB_OPS_DURATION.with_label_values(&["replaceOne"]).start_timer();
+        collection.replace_one(filter, replacement, Some(options))
             .map_err(|error| {
-                MONGODB_OP_ERRORS_COUNT.with_label_values(&["findOneAndReplace"]).inc();
+                MONGODB_OP_ERRORS_COUNT.with_label_values(&["replaceOne"]).inc();
                 error
             })
             .chain_err(|| FAIL_PERSIST_NODE)?;
-        match old {
-            None => Ok(None),
-            Some(doc) => {
-                let node = bson::from_bson::<Node>(bson::Bson::Document(doc))
-                    .chain_err(|| FAIL_PERSIST_NODE)?;
-                Ok(Some(node))
-            }
-        }
+        Ok(())
     }
 
-    pub fn persist_shard(&self, shard: Shard) -> Result<Option<Shard>> {
+    pub fn persist_shard(&self, shard: Shard) -> Result<()> {
         let replacement = bson::to_bson(&shard).chain_err(|| FAIL_PERSIST_SHARD)?;
         let replacement = match replacement {
             Bson::Document(replacement) => replacement,
@@ -102,25 +95,18 @@ impl DatastoreStore {
             "node" => shard.node,
             "id" => shard.id,
         };
-        let mut options = FindOneAndUpdateOptions::new();
+        let mut options = UpdateOptions::new();
         options.upsert = Some(true);
         let collection = self.collection_shards();
-        MONGODB_OPS_COUNT.with_label_values(&["findOneAndReplace"]).inc();
-        let _timer = MONGODB_OPS_DURATION.with_label_values(&["findOneAndReplace"]).start_timer();
-        let old = collection.find_one_and_replace(filter, replacement, Some(options))
+        MONGODB_OPS_COUNT.with_label_values(&["replaceOne"]).inc();
+        let _timer = MONGODB_OPS_DURATION.with_label_values(&["replaceOne"]).start_timer();
+        collection.replace_one(filter, replacement, Some(options))
             .map_err(|error| {
-                MONGODB_OP_ERRORS_COUNT.with_label_values(&["findOneAndReplace"]).inc();
+                MONGODB_OP_ERRORS_COUNT.with_label_values(&["replaceOne"]).inc();
                 error
             })
             .chain_err(|| FAIL_PERSIST_SHARD)?;
-        match old {
-            None => Ok(None),
-            Some(doc) => {
-                let shard = bson::from_bson::<Shard>(bson::Bson::Document(doc))
-                    .chain_err(|| FAIL_PERSIST_SHARD)?;
-                Ok(Some(shard))
-            }
-        }
+        Ok(())
     }
 
     pub fn shard(&self, cluster: String, node: String, id: String) -> Result<Option<Shard>> {

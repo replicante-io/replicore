@@ -43,7 +43,7 @@ impl DiscoveryWorker {
                 Ok(cluster) => cluster,
                 Err(err) => {
                     let error = err.display_chain().to_string();
-                    error!(self.logger, "Failed to fetch cluster"; "error" => error);
+                    error!(self.logger, "Failed to fetch cluster discovery"; "error" => error);
                     DISCOVERY_FETCH_ERRORS_COUNT.inc();
                     continue;
                 }
@@ -96,7 +96,7 @@ impl DiscoveryWorker {
     ///   4. Pass the discovery to the state fetcher (TODO: move after coordinator is in place).
     fn process(&self, cluster: ClusterDiscovery) {
         self.persist_discovery(cluster.clone());
-        //self.ensure_coordination(cluster);
+        //self.ensure_coordination(cluster.clone());
         self.fetcher.process(cluster);
     }
 }

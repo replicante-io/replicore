@@ -4,7 +4,6 @@ use bson::Bson;
 use mongodb::Client;
 use mongodb::ThreadedClient;
 use mongodb::coll::Collection;
-use mongodb::coll::options::FindOneAndUpdateOptions;
 use mongodb::coll::options::FindOptions;
 use mongodb::coll::options::UpdateOptions;
 use mongodb::db::ThreadedDatabase;
@@ -142,7 +141,7 @@ impl ClusterStore {
         Ok(clusters)
     }
 
-    pub fn persist_cluster_meta(&self, meta: ClusterMeta) -> Result<Option<ClusterMeta>> {
+    pub fn persist_cluster_meta(&self, meta: ClusterMeta) -> Result<()> {
         let replacement = bson::to_bson(&meta).chain_err(|| FAIL_PERSIST_CLUSTER_META)?;
         let replacement = match replacement {
             Bson::Document(replacement) => replacement,
@@ -150,24 +149,17 @@ impl ClusterStore {
         };
         let filter = doc!{"name" => meta.name};
         let collection = self.collection_cluster_meta();
-        let mut options = FindOneAndUpdateOptions::new();
+        let mut options = UpdateOptions::new();
         options.upsert = Some(true);
-        MONGODB_OPS_COUNT.with_label_values(&["findOneAndReplace"]).inc();
-        let _timer = MONGODB_OPS_DURATION.with_label_values(&["findOneAndReplace"]).start_timer();
-        let old = collection.find_one_and_replace(filter, replacement, Some(options))
+        MONGODB_OPS_COUNT.with_label_values(&["replaceOne"]).inc();
+        let _timer = MONGODB_OPS_DURATION.with_label_values(&["replaceOne"]).start_timer();
+        collection.replace_one(filter, replacement, Some(options))
             .map_err(|error| {
-                MONGODB_OP_ERRORS_COUNT.with_label_values(&["findOneAndReplace"]).inc();
+                MONGODB_OP_ERRORS_COUNT.with_label_values(&["replaceOne"]).inc();
                 error
             })
             .chain_err(|| FAIL_PERSIST_CLUSTER_META)?;
-        match old {
-            None => Ok(None),
-            Some(doc) => {
-                let meta = bson::from_bson::<ClusterMeta>(bson::Bson::Document(doc))
-                    .chain_err(|| FAIL_PERSIST_CLUSTER_META)?;
-                Ok(Some(meta))
-            }
-        }
+        Ok(())
     }
 
     pub fn persist_discovery(&self, cluster: ClusterDiscovery) -> Result<()> {
