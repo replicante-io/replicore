@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - API interface.
 - Agent client crate.
 - Docker compose file for development.
+- Emit "new cluster" events.
 - Fetch agent state.
 - File agent discovery.
 - Storage interface.
