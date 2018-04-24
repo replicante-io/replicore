@@ -17,6 +17,7 @@ maintenance = { status = "actively-developed" }
 
 
 [dependencies]
+chrono = { version = "^0.4.0", features = ["serde"] }
 serde = "^1.0.34"
 serde_derive = "^1.0.34"
 
