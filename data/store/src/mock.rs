@@ -5,9 +5,9 @@ use replicante_data_models::Agent;
 use replicante_data_models::AgentInfo;
 use replicante_data_models::ClusterDiscovery;
 use replicante_data_models::ClusterMeta;
+use replicante_data_models::Event;
 use replicante_data_models::Node;
 use replicante_data_models::Shard;
-use replicante_data_models::Event;
 
 use super::InnerStore;
 use super::Result;
@@ -91,6 +91,12 @@ impl InnerStore for MockStore {
         let name = meta.name.clone();
         let mut clusters = self.clusters_meta.lock().unwrap();
         clusters.insert(name, meta);
+        Ok(())
+    }
+
+    fn persist_event(&self, event: Event) -> Result<()> {
+        let mut events = self.events.lock().unwrap();
+        events.push(event);
         Ok(())
     }
 
@@ -203,43 +209,6 @@ mod tests {
         }
     }
 
-    mod cluster_discovery {
-        use std::sync::Arc;
-        use replicante_data_models::ClusterDiscovery;
-
-        use super::super::super::Store;
-        use super::super::MockStore;
-
-        #[test]
-        fn found_discovery() {
-            let cluster = ClusterDiscovery::new("test", vec!["test".into()]);
-            let mock = Arc::new(MockStore::new());
-            let store = Store::mock(Arc::clone(&mock));
-            mock.discoveries.lock().expect("Faild to lock").insert("test".into(), cluster.clone());
-            let found = store.cluster_discovery("test").unwrap().unwrap();
-            assert_eq!(found, cluster);
-        }
-
-        #[test]
-        fn missing_discovery() {
-            let mock = Arc::new(MockStore::new());
-            let store = Store::mock(Arc::clone(&mock));
-            assert!(store.cluster_discovery("test").unwrap().is_none());
-        }
-
-        #[test]
-        fn persist() {
-            let cluster = ClusterDiscovery::new("test", vec!["test".into()]);
-            let mock = Arc::new(MockStore::new());
-            let store = Store::mock(Arc::clone(&mock));
-            store.persist_discovery(cluster.clone()).unwrap();
-            let stored = mock.discoveries.lock().expect("Faild to lock")
-                .get("test")
-                .map(|n| n.clone()).expect("Cluster not found");
-            assert_eq!(cluster, stored)
-        }
-    }
-
     mod cluster_meta {
         use std::sync::Arc;
         use replicante_data_models::ClusterMeta;
@@ -301,7 +270,64 @@ mod tests {
             let stored = mock.clusters_meta.lock().expect("Faild to lock")
                 .get("test")
                 .map(|n| n.clone()).expect("Cluster not found");
-            assert_eq!(meta, stored)
+            assert_eq!(meta, stored);
+        }
+    }
+
+    mod discovery {
+        use std::sync::Arc;
+        use replicante_data_models::ClusterDiscovery;
+
+        use super::super::super::Store;
+        use super::super::MockStore;
+
+        #[test]
+        fn found_discovery() {
+            let cluster = ClusterDiscovery::new("test", vec!["test".into()]);
+            let mock = Arc::new(MockStore::new());
+            let store = Store::mock(Arc::clone(&mock));
+            mock.discoveries.lock().expect("Faild to lock").insert("test".into(), cluster.clone());
+            let found = store.cluster_discovery("test").unwrap().unwrap();
+            assert_eq!(found, cluster);
+        }
+
+        #[test]
+        fn missing_discovery() {
+            let mock = Arc::new(MockStore::new());
+            let store = Store::mock(Arc::clone(&mock));
+            assert!(store.cluster_discovery("test").unwrap().is_none());
+        }
+
+        #[test]
+        fn persist() {
+            let cluster = ClusterDiscovery::new("test", vec!["test".into()]);
+            let mock = Arc::new(MockStore::new());
+            let store = Store::mock(Arc::clone(&mock));
+            store.persist_discovery(cluster.clone()).unwrap();
+            let stored = mock.discoveries.lock().expect("Faild to lock")
+                .get("test")
+                .map(|n| n.clone()).expect("Cluster not found");
+            assert_eq!(cluster, stored);
+        }
+    }
+
+    mod event {
+        use std::sync::Arc;
+        use replicante_data_models::ClusterDiscovery;
+        use replicante_data_models::Event;
+
+        use super::super::super::Store;
+        use super::super::MockStore;
+
+        #[test]
+        fn persist() {
+            let mock = Arc::new(MockStore::new());
+            let store = Store::mock(Arc::clone(&mock));
+            let cluster = ClusterDiscovery::new("test", vec!["test".into()]);
+            let event = Event::builder().cluster().new(cluster);
+            store.persist_event(event.clone()).unwrap();
+            let stored = mock.events.lock().expect("Faild to lock").clone();
+            assert_eq!(vec![event], stored);
         }
     }
 
@@ -323,7 +349,7 @@ mod tests {
             let stored = mock.nodes.lock().expect("Faild to lock")
                 .get(&key)
                 .map(|n| n.clone()).expect("Cluster not found");
-            assert_eq!(node, stored)
+            assert_eq!(node, stored);
         }
     }
 

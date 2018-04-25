@@ -8,6 +8,7 @@ use replicante_data_models::Agent;
 use replicante_data_models::AgentInfo;
 use replicante_data_models::ClusterDiscovery;
 use replicante_data_models::ClusterMeta;
+use replicante_data_models::Event;
 use replicante_data_models::Node;
 use replicante_data_models::Shard;
 
@@ -23,6 +24,7 @@ mod metrics;
 mod agent;
 mod cluster;
 mod datastore;
+mod event;
 
 use self::constants::FAIL_CLIENT;
 use self::metrics::register_metrics;
@@ -30,13 +32,14 @@ use self::metrics::register_metrics;
 use self::agent::AgentStore;
 use self::datastore::DatastoreStore;
 use self::cluster::ClusterStore;
+use self::event::EventStore;
 
 
 /// MongoDB-backed storage layer.
 ///
 /// # Special collection requirements
 ///
-///   * `events`: capped collection or TTL indexed.
+///   * `events`: is a capped collection.
 ///
 /// # Expected indexes
 ///
@@ -51,6 +54,7 @@ pub struct MongoStore {
     agents: AgentStore,
     clusters: ClusterStore,
     datastores: DatastoreStore,
+    events: EventStore,
 }
 
 impl InnerStore for MongoStore {
@@ -94,6 +98,10 @@ impl InnerStore for MongoStore {
         self.clusters.persist_discovery(cluster)
     }
 
+    fn persist_event(&self, event: Event) -> Result<()> {
+        self.events.persist_event(event)
+    }
+
     fn persist_node(&self, node: Node) -> Result<()> {
         self.datastores.persist_node(node)
     }
@@ -118,14 +126,16 @@ impl MongoStore {
         let db = config.db.clone();
         let client = Client::with_uri(&config.uri).chain_err(|| FAIL_CLIENT)?;
         let agents = AgentStore::new(client.clone(), db.clone());
-        let datastores = DatastoreStore::new(client.clone(), db.clone());
         let clusters = ClusterStore::new(client.clone(), db.clone());
+        let datastores = DatastoreStore::new(client.clone(), db.clone());
+        let events = EventStore::new(client.clone(), db.clone());
 
         register_metrics(&logger, registry);
         Ok(MongoStore {
             agents,
-            datastores,
             clusters,
+            datastores,
+            events,
         })
     }
 }

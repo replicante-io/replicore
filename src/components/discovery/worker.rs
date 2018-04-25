@@ -56,7 +56,17 @@ impl DiscoveryWorker {
 }
 
 impl DiscoveryWorker {
-    /// TODO
+    /// Persist an event to the store layer.
+    ///
+    /// Once the event stream layer is introduce also emit to that.
+    fn emit_event(&self, event: Event) {
+        if let Err(error) = self.store.persist_event(event) {
+            let error = error.display_chain().to_string();
+            error!(self.logger, "Failed to persist event"; "error" => error);
+        }
+    }
+
+    /// Persist the discovery record to the store.
     fn persist_discovery(&self, cluster: ClusterDiscovery) {
         let name = cluster.name.clone();
         if let Err(error) = self.store.persist_discovery(cluster) {
@@ -122,8 +132,8 @@ impl DiscoveryWorker {
     ///
     /// Emit a ClusterNew event for the discovery.
     fn process_discovery_new(&self, cluster: ClusterDiscovery) {
-        let _event = Event::builder().cluster().new(cluster.clone());
-        // TODO: emit event
+        let event = Event::builder().cluster().new(cluster.clone());
+        self.emit_event(event);
         self.persist_discovery(cluster);
     }
 }
