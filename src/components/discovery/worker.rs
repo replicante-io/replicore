@@ -41,9 +41,9 @@ impl DiscoveryWorker {
         }
     }
 
-    pub fn register_metrics(registry: &Registry) {
-        Aggregator::register_metrics(registry);
-        Fetcher::register_metrics(registry);
+    pub fn register_metrics(logger: &Logger, registry: &Registry) {
+        Aggregator::register_metrics(logger, registry);
+        Fetcher::register_metrics(logger, registry);
     }
 
     /// Runs a signle discovery loop.
@@ -111,22 +111,16 @@ impl DiscoveryWorker {
     ///
     /// Once processing is complete the new cluster discovery is persisted.
     fn process_discovery(&self, cluster: ClusterDiscovery) {
-        let old = match self.store.cluster_discovery(cluster.name.clone()) {
-            Ok(old) => old,
+        match self.store.cluster_discovery(cluster.name.clone()) {
             Err(error) => {
                 let error = error.display_chain().to_string();
                 error!(
                     self.logger, "Failed to fetch cluster discovery";
                     "cluster" => cluster.name.clone(), "error" => error
                 );
-                return;
-            }
-        };
-
-        // Inspect the previous discovery result (if any).
-        match old {
-            None => self.process_discovery_new(cluster),
-            Some(old) => self.process_discovery_exising(cluster, old),
+            },
+            Ok(None) => self.process_discovery_new(cluster),
+            Ok(Some(old)) => self.process_discovery_exising(cluster, old),
         };
     }
 
