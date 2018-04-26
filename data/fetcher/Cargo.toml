@@ -1,0 +1,26 @@
+[package]
+name = "replicante_data_fetcher"
+version = "0.1.0"
+authors = ["Stefano Pogliani <stefano@spogliani.net>"]
+
+description = "Cluster status fetcher for Replicante Core"
+documentation = "https://www.replicante.io/docs"
+homepage = "https://www.replicante.io/"
+repository = "https://github.com/replicante-io/replicante"
+readme = "Readme.md"
+keywords = ["automation", "datastore", "operations"]
+license = "MIT"
+
+
+[badges]
+maintenance = { status = "actively-developed" }
+
+
+[dependencies]
+error-chain = "^0.11.0"
+prometheus = "^0.3.13"
+slog = "^2.1.1"
+
+replicante_agent_client = { path = "../../agent/client" }
+replicante_data_models = { path = "../models" }
+replicante_data_store = { path = "../store" }

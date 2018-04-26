@@ -1144,6 +1144,8 @@ dependencies = [
  "replicante_agent_client 0.1.0",
  "replicante_agent_discovery 0.1.0",
  "replicante_agent_models 0.1.0",
+ "replicante_data_aggregator 0.1.0",
+ "replicante_data_fetcher 0.1.0",
  "replicante_data_models 0.1.0",
  "replicante_data_store 0.1.0",
  "replicante_util_iron 0.1.0",
@@ -1189,6 +1191,28 @@ dependencies = [
  "serde 1.0.36 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde_derive 1.0.36 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde_json 1.0.13 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
+name = "replicante_data_aggregator"
+version = "0.1.0"
+dependencies = [
+ "prometheus 0.3.13 (registry+https://github.com/rust-lang/crates.io-index)",
+ "replicante_data_models 0.1.0",
+ "replicante_data_store 0.1.0",
+ "slog 2.2.3 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
+name = "replicante_data_fetcher"
+version = "0.1.0"
+dependencies = [
+ "error-chain 0.11.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "prometheus 0.3.13 (registry+https://github.com/rust-lang/crates.io-index)",
+ "replicante_agent_client 0.1.0",
+ "replicante_data_models 0.1.0",
+ "replicante_data_store 0.1.0",
+ "slog 2.2.3 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]

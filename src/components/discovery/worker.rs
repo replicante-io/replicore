@@ -1,15 +1,17 @@
 use error_chain::ChainedError;
+use prometheus::Registry;
 use slog::Logger;
 
 use replicante_agent_discovery::Config as BackendsConfig;
 use replicante_agent_discovery::discover;
 
+use replicante_data_aggregator::Aggregator;
+use replicante_data_fetcher::Fetcher;
 use replicante_data_models::ClusterDiscovery;
 use replicante_data_models::Event;
 use replicante_data_store::Store;
 
 use super::metrics::DISCOVERY_FETCH_ERRORS_COUNT;
-use super::statefetch::Fetcher;
 
 
 /// Implements the discovery logic of a signle discovery loop.
@@ -19,12 +21,14 @@ pub struct DiscoveryWorker {
     store: Store,
 
     // TODO: move into dedicated component when possible.
+    aggregator: Aggregator,
     fetcher: Fetcher,
 }
 
 impl DiscoveryWorker {
     /// Creates a discover worker.
     pub fn new(config: BackendsConfig, logger: Logger, store: Store) -> DiscoveryWorker {
+        let aggregator = Aggregator::new(logger.clone(), store.clone());
         let fetcher = Fetcher::new(logger.clone(), store.clone());
         DiscoveryWorker {
             config,
@@ -32,8 +36,14 @@ impl DiscoveryWorker {
             store,
 
             // TODO: move into dedicated component when possible.
+            aggregator,
             fetcher,
         }
+    }
+
+    pub fn register_metrics(registry: &Registry) {
+        Aggregator::register_metrics(registry);
+        Fetcher::register_metrics(registry);
     }
 
     /// Runs a signle discovery loop.
@@ -85,11 +95,13 @@ impl DiscoveryWorker {
     ///   1. Persist the ClusterDiscovery to store.
     ///   2. Emit any discovery events if needed.
     ///   3. TODO: ensure cluster is in coordinator (zookeeper, when datafetch is split).
-    ///   4. Pass the discovery to the state fetcher (TODO: move after coordinator is in place).
+    ///   4. Pass the discovery to the status fetcher (TODO: move when coordinator is in place).
+    ///   5. Pass the discovery to the status aggregator (TODO: move when coordinator is in place).
     fn process(&self, cluster: ClusterDiscovery) {
         self.process_discovery(cluster.clone());
         //self.ensure_coordination(cluster.clone());
-        self.fetcher.process(cluster);
+        self.fetcher.process(cluster.clone());
+        self.aggregator.process(cluster);
     }
 
     /// Process the discovery.

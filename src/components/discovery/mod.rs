@@ -3,6 +3,7 @@ use std::thread::JoinHandle;
 use std::thread::sleep;
 use std::time::Duration;
 
+use prometheus::Registry;
 use slog::Logger;
 
 use replicante_agent_discovery::Config as BackendsConfig;
@@ -14,7 +15,6 @@ use super::Result;
 
 mod config;
 mod metrics;
-mod statefetch;
 mod worker;
 
 pub use self::config::Config;
@@ -31,6 +31,7 @@ pub struct DiscoveryComponent {
     config: BackendsConfig,
     interval: Duration,
     logger: Logger,
+    registry: Registry,
     store: Store,
 
     worker: Option<JoinHandle<()>>,
@@ -45,6 +46,7 @@ impl DiscoveryComponent {
             config: config.backends,
             interval,
             logger,
+            registry: interfaces.metrics.registry().clone(),
             store: interfaces.store.clone(),
             worker: None,
         }
@@ -53,6 +55,7 @@ impl DiscoveryComponent {
     /// Starts the agent discovery process in a background thread.
     pub fn run(&mut self) -> Result<()> {
         let interval = self.interval.clone();
+        DiscoveryWorker::register_metrics(&self.registry);
         let worker = DiscoveryWorker::new(
             self.config.clone(),
             self.logger.clone(),

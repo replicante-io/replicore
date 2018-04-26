@@ -1,6 +1,18 @@
+#[macro_use]
+extern crate error_chain;
+
+extern crate prometheus;
+#[macro_use]
+extern crate slog;
+
+extern crate replicante_agent_client;
+extern crate replicante_data_models;
+extern crate replicante_data_store;
+
 use std::collections::HashSet;
 
 use error_chain::ChainedError;
+use prometheus::Registry;
 use slog::Logger;
 
 use replicante_agent_client::Client;
@@ -16,8 +28,15 @@ use replicante_data_models::Shard;
 
 use replicante_data_store::Store;
 
-use super::metrics::DISCOVERY_PROCESS_ERRORS_COUNT;
-use super::super::Result;
+
+mod errors;
+
+//use super::metrics::DISCOVERY_PROCESS_ERRORS_COUNT;
+
+pub use self::errors::Error;
+pub use self::errors::ErrorKind;
+pub use self::errors::ResultExt;
+pub use self::errors::Result;
 
 
 struct ClusterMetaBuilder {
@@ -51,7 +70,7 @@ impl ClusterMetaBuilder {
 }
 
 
-/// Node (agent and datastore) state fetching and processing logic.
+/// Node (agent and datastore) status fetching and processing logic.
 ///
 /// The Fetcher is responsible for:
 ///
@@ -77,6 +96,10 @@ impl Fetcher {
         }
     }
 
+    pub fn register_metrics(_registry: &Registry) {
+        // TODO
+    }
+
     pub fn process(&self, cluster: ClusterDiscovery) {
         let name = cluster.name.clone();
         let mut meta = ClusterMetaBuilder::new(cluster.name);
@@ -85,7 +108,7 @@ impl Fetcher {
             match result {
                 Ok(_) => (),
                 Err(error) => {
-                    DISCOVERY_PROCESS_ERRORS_COUNT.inc();
+                    //DISCOVERY_PROCESS_ERRORS_COUNT.inc();
                     let error = error.display_chain().to_string();
                     error!(
                         self.logger, "Failed to process cluster node";
@@ -106,7 +129,7 @@ impl Fetcher {
         let old = match self.store.agent(cluster.clone(), host.clone()) {
             Ok(old) => old,
             Err(error) => {
-                DISCOVERY_PROCESS_ERRORS_COUNT.inc();
+                //DISCOVERY_PROCESS_ERRORS_COUNT.inc();
                 let error = error.display_chain().to_string();
                 error!(
                     self.logger, "Failed to fetch agent";
@@ -122,7 +145,7 @@ impl Fetcher {
             match self.store.persist_agent(agent) {
                 Ok(_) => (),
                 Err(error) => {
-                    DISCOVERY_PROCESS_ERRORS_COUNT.inc();
+                    //DISCOVERY_PROCESS_ERRORS_COUNT.inc();
                     let error = error.display_chain().to_string();
                     error!(
                         self.logger, "Failed to persist agent";
@@ -139,7 +162,7 @@ impl Fetcher {
         let old = match self.store.agent_info(cluster.clone(), host.clone()) {
             Ok(old) => old,
             Err(error) => {
-                DISCOVERY_PROCESS_ERRORS_COUNT.inc();
+                //DISCOVERY_PROCESS_ERRORS_COUNT.inc();
                 let error = error.display_chain().to_string();
                 error!(
                     self.logger, "Failed to fetch agent info";
@@ -155,7 +178,7 @@ impl Fetcher {
             match self.store.persist_agent_info(agent) {
                 Ok(_) => (),
                 Err(error) => {
-                    DISCOVERY_PROCESS_ERRORS_COUNT.inc();
+                    //DISCOVERY_PROCESS_ERRORS_COUNT.inc();
                     let error = error.display_chain().to_string();
                     error!(
                         self.logger, "Failed to persist agent info";
@@ -171,7 +194,7 @@ impl Fetcher {
         match self.store.persist_cluster_meta(meta) {
             Ok(_) => (),
             Err(error) => {
-                DISCOVERY_PROCESS_ERRORS_COUNT.inc();
+                //DISCOVERY_PROCESS_ERRORS_COUNT.inc();
                 let error = error.display_chain().to_string();
                 error!(
                     self.logger, "Failed to persist cluster metadata";
@@ -187,7 +210,7 @@ impl Fetcher {
         let old = match self.store.node(cluster.clone(), name.clone()) {
             Ok(old) => old,
             Err(error) => {
-                DISCOVERY_PROCESS_ERRORS_COUNT.inc();
+                //DISCOVERY_PROCESS_ERRORS_COUNT.inc();
                 let error = error.display_chain().to_string();
                 error!(
                     self.logger, "Failed to fetch node info";
@@ -203,7 +226,7 @@ impl Fetcher {
             match self.store.persist_node(node) {
                 Ok(_) => (),
                 Err(error) => {
-                    DISCOVERY_PROCESS_ERRORS_COUNT.inc();
+                    //DISCOVERY_PROCESS_ERRORS_COUNT.inc();
                     let error = error.display_chain().to_string();
                     error!(
                         self.logger, "Failed to persist node info";
@@ -221,7 +244,7 @@ impl Fetcher {
         let old = match self.store.shard(cluster.clone(), node.clone(), id.clone()) {
             Ok(old) => old,
             Err(error) => {
-                DISCOVERY_PROCESS_ERRORS_COUNT.inc();
+                //DISCOVERY_PROCESS_ERRORS_COUNT.inc();
                 let error = error.display_chain().to_string();
                 error!(
                     self.logger, "Failed to fetch shard info";
@@ -238,7 +261,7 @@ impl Fetcher {
             match self.store.persist_shard(shard) {
                 Ok(_) => (),
                 Err(error) => {
-                    DISCOVERY_PROCESS_ERRORS_COUNT.inc();
+                    //DISCOVERY_PROCESS_ERRORS_COUNT.inc();
                     let error = error.display_chain().to_string();
                     error!(
                         self.logger, "Failed to persist node info";
