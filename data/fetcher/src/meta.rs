@@ -1,12 +1,13 @@
 use std::collections::HashSet;
 
-use error_chain::ChainedError;
-use slog::Logger;
-
 use replicante_data_models::ClusterMeta;
 use replicante_data_store::Store;
 
-use super::metrics::FETCHER_ERRORS_COUNT;
+use super::Result;
+use super::ResultExt;
+
+
+const FAIL_PERSIST_META: &'static str = "Failed to persist agent meta";
 
 
 pub struct ClusterMetaBuilder {
@@ -42,30 +43,17 @@ impl ClusterMetaBuilder {
 
 /// Subset of fetcher logic that deals specifically with cluster metadata.
 pub struct MetaFetcher {
-    logger: Logger,
     store: Store,
 }
 
 impl MetaFetcher {
-    pub fn new(logger: Logger, store: Store) -> MetaFetcher {
+    pub fn new(store: Store) -> MetaFetcher {
         MetaFetcher {
-            logger,
             store,
         }
     }
 
-    pub fn persist_meta(&self, meta: ClusterMeta) {
-        let name = meta.name.clone();
-        match self.store.persist_cluster_meta(meta) {
-            Ok(_) => (),
-            Err(error) => {
-                FETCHER_ERRORS_COUNT.with_label_values(&[&name]).inc();
-                let error = error.display_chain().to_string();
-                error!(
-                    self.logger, "Failed to persist cluster metadata";
-                    "cluster" => name, "error" => error
-                );
-            }
-        };
+    pub fn persist_meta(&self, meta: ClusterMeta) -> Result<()> {
+        self.store.persist_cluster_meta(meta).chain_err(|| FAIL_PERSIST_META)
     }
 }

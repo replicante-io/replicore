@@ -1,59 +1,25 @@
-use error_chain::ChainedError;
-use slog::Logger;
-
 use replicante_agent_client::Client;
 use replicante_data_models::Node;
 use replicante_data_store::Store;
 
 use super::Result;
+use super::ResultExt;
 use super::meta::ClusterMetaBuilder;
-use super::metrics::FETCHER_ERRORS_COUNT;
+
+
+const FAIL_FIND_NODE: &'static str = "Failed to fetch node";
+const FAIL_PERSIST_NODE: &'static str = "Failed to persist node";
 
 
 /// Subset of fetcher logic that deals specifically with nodes.
 pub struct NodeFetcher {
-    logger: Logger,
     store: Store,
 }
 
 impl NodeFetcher {
-    pub fn new(logger: Logger, store: Store) -> NodeFetcher {
+    pub fn new(store: Store) -> NodeFetcher {
         NodeFetcher {
-            logger,
             store,
-        }
-    }
-
-    pub fn persist_node(&self, node: Node) {
-        let cluster = node.cluster.clone();
-        let name = node.name.clone();
-        let old = match self.store.node(cluster.clone(), name.clone()) {
-            Ok(old) => old,
-            Err(error) => {
-                FETCHER_ERRORS_COUNT.with_label_values(&[&name]).inc();
-                let error = error.display_chain().to_string();
-                error!(
-                    self.logger, "Failed to fetch node info";
-                    "cluster" => cluster, "name" => name, "error" => error
-                );
-                return;
-            }
-        };
-
-        // TODO: Emit node events.
-
-        if old != Some(node.clone()) {
-            match self.store.persist_node(node) {
-                Ok(_) => (),
-                Err(error) => {
-                    FETCHER_ERRORS_COUNT.with_label_values(&[&name]).inc();
-                    let error = error.display_chain().to_string();
-                    error!(
-                        self.logger, "Failed to persist node info";
-                        "cluster" => cluster, "name" => name, "error" => error
-                    );
-                }
-            };
         }
     }
 
@@ -61,7 +27,28 @@ impl NodeFetcher {
         let info = client.info()?;
         let node = Node::new(info.datastore);
         meta.node_kind(node.kind.clone());
-        self.persist_node(node);
-        Ok(())
+
+        let cluster = node.cluster.clone();
+        let name = node.name.clone();
+        match self.store.node(cluster, name) {
+            Err(error) => Err(error).chain_err(|| FAIL_FIND_NODE),
+            Ok(None) => self.process_node_new(node),
+            Ok(Some(old)) => self.process_node_existing(node, old),
+        }
+    }
+}
+
+impl NodeFetcher {
+    fn process_node_existing(&self, node: Node, old: Node) -> Result<()> {
+        // TODO: emit events.
+        if node == old {
+            return Ok(());
+        }
+        self.store.persist_node(node).chain_err(|| FAIL_PERSIST_NODE)
+    }
+
+    fn process_node_new(&self, node: Node) -> Result<()> {
+        // TODO: emit events.
+        self.store.persist_node(node).chain_err(|| FAIL_PERSIST_NODE)
     }
 }

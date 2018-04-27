@@ -69,10 +69,10 @@ pub struct Fetcher {
 
 impl Fetcher {
     pub fn new(logger: Logger, store: Store) -> Fetcher {
-        let agent = AgentFetcher::new(logger.clone(), store.clone());
-        let meta = MetaFetcher::new(logger.clone(), store.clone());
-        let node = NodeFetcher::new(logger.clone(), store.clone());
-        let shard = ShardFetcher::new(logger.clone(), store);
+        let agent = AgentFetcher::new(store.clone());
+        let meta = MetaFetcher::new(store.clone());
+        let node = NodeFetcher::new(store.clone());
+        let shard = ShardFetcher::new(store);
         Fetcher {
             agent,
             logger,
@@ -89,6 +89,7 @@ impl Fetcher {
     pub fn process(&self, cluster: ClusterDiscovery) {
         let name = cluster.name.clone();
         let mut meta = ClusterMetaBuilder::new(cluster.name);
+
         for node in cluster.nodes {
             let result = self.process_target(name.clone(), node.clone(), &mut meta);
             if let Err(error) = result {
@@ -101,7 +102,15 @@ impl Fetcher {
                 );
             }
         }
-        self.meta.persist_meta(meta.build());
+
+        if let Err(error) = self.meta.persist_meta(meta.build()) {
+            FETCHER_ERRORS_COUNT.with_label_values(&[&name]).inc();
+            let error = error.display_chain().to_string();
+            error!(
+                self.logger, "Failed to persist cluster metadata";
+                "cluster" => name, "error" => error
+            );
+        }
     }
 }
 
@@ -113,11 +122,11 @@ impl Fetcher {
         let client = HttpClient::new(node.clone())?;
         let mut agent = Agent::new(cluster.clone(), node.clone(), AgentStatus::Up);
 
-        let result = self.agent.process_agent(&client, cluster.clone(), node.clone());
+        let result = self.agent.process_agent_info(&client, cluster.clone(), node.clone());
         if let Err(error) = result {
             let message = error.display_chain().to_string();
             agent.status = AgentStatus::AgentDown(message);
-            self.agent.persist_agent(agent);
+            self.agent.process_agent(agent)?;
             return Err(error);
         };
 
@@ -125,7 +134,7 @@ impl Fetcher {
         if let Err(error) = result {
             let message = error.display_chain().to_string();
             agent.status = AgentStatus::DatastoreDown(message);
-            self.agent.persist_agent(agent);
+            self.agent.process_agent(agent)?;
             return Err(error);
         };
 
@@ -133,11 +142,10 @@ impl Fetcher {
         if let Err(error) = result {
             let message = error.display_chain().to_string();
             agent.status = AgentStatus::DatastoreDown(message);
-            self.agent.persist_agent(agent);
+            self.agent.process_agent(agent)?;
             return Err(error);
         };
 
-        self.agent.persist_agent(agent);
-        Ok(())
+        self.agent.process_agent(agent)
     }
 }
