@@ -11,7 +11,13 @@ use replicante_data_models::ClusterDiscovery;
 use replicante_data_models::Event;
 use replicante_data_store::Store;
 
+use super::super::super::Result;
+use super::super::super::ResultExt;
 use super::metrics::DISCOVERY_FETCH_ERRORS_COUNT;
+
+
+const FAIL_FIND_DISCOVERY: &'static str = "Failed to fetch cluster discovery";
+const FAIL_PERSIST_DISCOVERY: &'static str = "Failed to persist cluster discovery";
 
 
 /// Implements the discovery logic of a signle discovery loop.
@@ -64,28 +70,6 @@ impl DiscoveryWorker {
 }
 
 impl DiscoveryWorker {
-    /// Persist an event to the store layer.
-    ///
-    /// Once the event stream layer is introduce also emit to that.
-    fn emit_event(&self, event: Event) {
-        if let Err(error) = self.store.persist_event(event) {
-            let error = error.display_chain().to_string();
-            error!(self.logger, "Failed to persist event"; "error" => error);
-        }
-    }
-
-    /// Persist the discovery record to the store.
-    fn persist_discovery(&self, cluster: ClusterDiscovery) {
-        let name = cluster.name.clone();
-        if let Err(error) = self.store.persist_discovery(cluster) {
-            let error = error.display_chain().to_string();
-            error!(
-                self.logger, "Failed to persist cluster discovery";
-                "cluster" => name, "error" => error
-            );
-        }
-    }
-
     /// Process a discovery result to fetch the node state.
     ///
     /// The following tasks are performed:
@@ -96,48 +80,46 @@ impl DiscoveryWorker {
     ///   4. Pass the discovery to the status fetcher (TODO: move when coordinator is in place).
     ///   5. Pass the discovery to the status aggregator (TODO: move when coordinator is in place).
     fn process(&self, cluster: ClusterDiscovery) {
-        self.process_discovery(cluster.clone());
-        //self.ensure_coordination(cluster.clone());
-        self.fetcher.process(cluster.clone());
-        self.aggregator.process(cluster);
-    }
-
-    /// Process the discovery.
-    ///
-    /// The previous discovery result is used to determine changes.
-    /// Events are emitted if there are any changes in the cluster.
-    ///
-    /// Once processing is complete the new cluster discovery is persisted.
-    fn process_discovery(&self, cluster: ClusterDiscovery) {
-        match self.store.cluster_discovery(cluster.name.clone()) {
-            Err(error) => {
-                let error = error.display_chain().to_string();
-                error!(
-                    self.logger, "Failed to fetch cluster discovery";
-                    "cluster" => cluster.name.clone(), "error" => error
-                );
-            },
-            Ok(None) => self.process_discovery_new(cluster),
-            Ok(Some(old)) => self.process_discovery_exising(cluster, old),
-        };
-    }
-
-    /// Process an update to a discovery result and persist it.
-    ///
-    /// TODO: document emitted events.
-    fn process_discovery_exising(&self, cluster: ClusterDiscovery, old: ClusterDiscovery) {
-        // TODO: Emit cluster events based on new vs old.
-        if cluster != old {
-            self.persist_discovery(cluster);
+        let name = cluster.name.clone();
+        if let Err(error) = self.process_checked(cluster) {
+            let error = error.display_chain().to_string();
+            error!(
+                self.logger, "Failed to process cluster discovery";
+                "cluster" => name, "error" => error
+            );
+            DISCOVERY_FETCH_ERRORS_COUNT.inc();
         }
     }
 
-    /// Process a new discovery result and persist it.
-    ///
-    /// Emit a ClusterNew event for the discovery.
-    fn process_discovery_new(&self, cluster: ClusterDiscovery) {
+    fn process_checked(&self, cluster: ClusterDiscovery) -> Result<()> {
+        self.process_discovery(cluster.clone())?;
+        //self.ensure_coordination(cluster.clone())?;
+        self.fetcher.process(cluster.clone());
+        self.aggregator.process(cluster);
+        Ok(())
+    }
+
+    fn process_discovery(&self, cluster: ClusterDiscovery) -> Result<()> {
+        match self.store.cluster_discovery(cluster.name.clone()) {
+            Err(error) => Err(error).chain_err(|| FAIL_FIND_DISCOVERY),
+            Ok(None) => self.process_discovery_new(cluster),
+            Ok(Some(old)) => self.process_discovery_exising(cluster, old),
+        }
+    }
+
+    fn process_discovery_exising(
+        &self, cluster: ClusterDiscovery, old: ClusterDiscovery
+    ) -> Result<()> {
+        // TODO: Emit cluster events based on new vs old.
+        if cluster == old {
+            return Ok(());
+        }
+        self.store.persist_discovery(cluster).chain_err(|| FAIL_PERSIST_DISCOVERY)
+    }
+
+    fn process_discovery_new(&self, cluster: ClusterDiscovery) -> Result<()> {
         let event = Event::builder().cluster().new(cluster.clone());
-        self.emit_event(event);
-        self.persist_discovery(cluster);
+        self.store.persist_event(event).chain_err(|| FAIL_PERSIST_DISCOVERY)?;
+        self.store.persist_discovery(cluster).chain_err(|| FAIL_PERSIST_DISCOVERY)
     }
 }
