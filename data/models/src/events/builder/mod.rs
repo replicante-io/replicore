@@ -5,8 +5,10 @@ use super::Event;
 use super::EventData;
 
 
+mod agent;
 mod cluster;
 
+use self::agent::AgentBuilder;
 use self::cluster::ClusterBuilder;
 
 
@@ -20,6 +22,11 @@ impl EventBuilder {
         EventBuilder {
             timestamp: None,
         }
+    }
+
+    /// Specialise the builder into an agent events builder.
+    pub fn agent(self) -> AgentBuilder {
+        AgentBuilder::new_builder(self)
     }
 
     /// Specialise the builder into a cluster events builder.

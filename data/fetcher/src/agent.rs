@@ -1,6 +1,7 @@
 use replicante_agent_client::Client;
 use replicante_data_models::Agent;
 use replicante_data_models::AgentInfo;
+use replicante_data_models::Event;
 use replicante_data_store::Store;
 
 use super::Result;
@@ -54,7 +55,8 @@ impl AgentFetcher {
     }
 
     fn process_agent_new(&self, agent: Agent) -> Result<()> {
-        // TODO: emit events.
+        let event = Event::builder().agent().new(agent.clone());
+        self.store.persist_event(event).chain_err(|| FAIL_PERSIST_AGENT)?;
         self.store.persist_agent(agent).chain_err(|| FAIL_PERSIST_AGENT)
     }
 

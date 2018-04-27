@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Agent client crate.
 - Docker compose file for development.
 - Emit "new cluster" events.
+- Emit "new agent" events.
 - Fetch agent state.
 - File agent discovery.
 - Storage interface.

@@ -50,16 +50,14 @@ impl DiscoveryWorker {
     pub fn run(&self) {
         debug!(self.logger, "Discovering agents ...");
         for cluster in discover(self.config.clone()) {
-            let cluster = match cluster {
-                Ok(cluster) => cluster,
-                Err(err) => {
-                    let error = err.display_chain().to_string();
+            match cluster {
+                Ok(cluster) => self.process(cluster),
+                Err(error) => {
+                    let error = error.display_chain().to_string();
                     error!(self.logger, "Failed to fetch cluster discovery"; "error" => error);
                     DISCOVERY_FETCH_ERRORS_COUNT.inc();
-                    continue;
                 }
             };
-            self.process(cluster);
         }
         debug!(self.logger, "Agents discovery complete");
     }
@@ -94,7 +92,7 @@ impl DiscoveryWorker {
     ///
     ///   1. Persist the ClusterDiscovery to store.
     ///   2. Emit any discovery events if needed.
-    ///   3. TODO: ensure cluster is in coordinator (zookeeper, when datafetch is split).
+    ///   3. TODO: ensure cluster is in coordinator (zookeeper).
     ///   4. Pass the discovery to the status fetcher (TODO: move when coordinator is in place).
     ///   5. Pass the discovery to the status aggregator (TODO: move when coordinator is in place).
     fn process(&self, cluster: ClusterDiscovery) {

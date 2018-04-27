@@ -1,6 +1,7 @@
 use chrono::DateTime;
 use chrono::Utc;
 
+use super::Agent;
 use super::ClusterDiscovery;
 
 
@@ -13,6 +14,10 @@ use self::builder::EventBuilder;
 #[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
 #[serde(tag = "event", content = "payload", deny_unknown_fields)]
 pub enum EventData {
+    /// The status of an agent was determined for the first time.
+    #[serde(rename = "AGENT_NEW")]
+    AgentNew(Agent),
+
     /// The service discovery found a new cluster.
     #[serde(rename = "CLUSTER_NEW")]
     ClusterNew(ClusterDiscovery),
