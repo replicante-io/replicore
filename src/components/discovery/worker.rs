@@ -110,10 +110,10 @@ impl DiscoveryWorker {
     fn process_discovery_exising(
         &self, cluster: ClusterDiscovery, old: ClusterDiscovery
     ) -> Result<()> {
-        // TODO: Emit cluster events based on new vs old.
         if cluster == old {
             return Ok(());
         }
+        // TODO: Emit cluster events based on new vs old.
         self.store.persist_discovery(cluster).chain_err(|| FAIL_PERSIST_DISCOVERY)
     }
 

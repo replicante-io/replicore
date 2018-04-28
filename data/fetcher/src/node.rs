@@ -40,10 +40,10 @@ impl NodeFetcher {
 
 impl NodeFetcher {
     fn process_node_existing(&self, node: Node, old: Node) -> Result<()> {
-        // TODO: emit events.
         if node == old {
             return Ok(());
         }
+        // TODO: emit events.
         self.store.persist_node(node).chain_err(|| FAIL_PERSIST_NODE)
     }
 

@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Docker compose file for development.
 - Emit "new cluster" events.
 - Emit "new agent" events.
+- Emit agent status change events.
 - Fetch agent state.
 - File agent discovery.
 - Storage interface.

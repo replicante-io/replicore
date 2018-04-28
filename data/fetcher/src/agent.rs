@@ -47,9 +47,12 @@ impl AgentFetcher {
 
 impl AgentFetcher {
     fn process_agent_existing(&self, agent: Agent, old: Agent) -> Result<()> {
-        // TODO: emit events.
         if agent == old {
             return Ok(());
+        }
+        if agent.status != old.status {
+            let event = Event::builder().agent().transition(old, agent.clone());
+            self.store.persist_event(event).chain_err(|| FAIL_PERSIST_AGENT)?;
         }
         self.store.persist_agent(agent).chain_err(|| FAIL_PERSIST_AGENT)
     }
@@ -61,10 +64,10 @@ impl AgentFetcher {
     }
 
     fn process_agent_info_existing(&self, agent: AgentInfo, old: AgentInfo) -> Result<()> {
-        // TODO: emit events.
         if agent == old {
             return Ok(());
         }
+        // TODO: emit events.
         self.store.persist_agent_info(agent).chain_err(|| FAIL_PERSIST_AGENT_INFO)
     }
 

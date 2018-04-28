@@ -12,7 +12,7 @@ extern crate replicante_agent_models;
 mod agent;
 mod cluster;
 mod datastore;
-mod events;
+pub mod events;
 
 pub use self::agent::Agent;
 pub use self::agent::AgentInfo;

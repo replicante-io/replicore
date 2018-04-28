@@ -46,10 +46,10 @@ impl ShardFetcher {
     }
 
     fn process_shard_existing(&self, shard: Shard, old: Shard) -> Result<()> {
-        // TODO: emit events.
         if shard == old {
             return Ok(());
         }
+        // TODO: emit events.
         self.store.persist_shard(shard).chain_err(|| FAIL_PERSIST_SHARD)
     }
 

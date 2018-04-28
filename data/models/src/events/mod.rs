@@ -1,7 +1,9 @@
+//! System events models and attributes.
 use chrono::DateTime;
 use chrono::Utc;
 
 use super::Agent;
+use super::AgentStatus;
 use super::ClusterDiscovery;
 
 
@@ -10,17 +12,51 @@ mod builder;
 use self::builder::EventBuilder;
 
 
+/// Metadata attached to agent status change events.
+#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
+pub struct AgentStatusChange {
+    pub cluster: String,
+    pub host: String,
+    pub after: AgentStatus,
+    pub before: AgentStatus,
+}
+
+
 /// Enumerates all possible events emitted by the system.
 #[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
 #[serde(tag = "event", content = "payload", deny_unknown_fields)]
 pub enum EventData {
+    /// Emitted when an agent is detected to be down.
+    #[serde(rename = "AGENT_DOWN")]
+    AgentDown(AgentStatusChange),
+
     /// The status of an agent was determined for the first time.
     #[serde(rename = "AGENT_NEW")]
     AgentNew(Agent),
 
+    /// Emitted when an agent was be down but is now detected as up.
+    #[serde(rename = "AGENT_RECOVER")]
+    AgentRecover(AgentStatusChange),
+
+    /// Emitted when an agent was detected to be down but the reason may have changed.
+    #[serde(rename = "AGENT_STILL_DOWN")]
+    AgentStillDown(AgentStatusChange),
+
     /// The service discovery found a new cluster.
     #[serde(rename = "CLUSTER_NEW")]
     ClusterNew(ClusterDiscovery),
+
+    /// Emitted when a datastore is detected to be down.
+    #[serde(rename = "DATASTORE_DOWN")]
+    DatastoreDown(AgentStatusChange),
+
+    /// Emitted when a datastore was be down but is now detected as up.
+    #[serde(rename = "DATASTORE_RECOVER")]
+    DatastoreRecover(AgentStatusChange),
+
+    /// Emitted when a datastore was detected to be down but the reason may have changed.
+    #[serde(rename = "DATASTORE_STILL_DOWN")]
+    DatastoreStillDown(AgentStatusChange),
 }
 
 
@@ -35,6 +71,20 @@ impl Event {
     /// Create an helper object to build `Event`s.
     pub fn builder() -> EventBuilder {
         EventBuilder::new()
+    }
+
+    /// Look up the cluster ID for the event, if they have one.
+    pub fn cluster(&self) -> Option<&str> {
+        match self.event {
+            EventData::AgentDown(ref data) => Some(&data.cluster),
+            EventData::AgentNew(ref data) => Some(&data.cluster),
+            EventData::AgentRecover(ref data) => Some(&data.cluster),
+            EventData::AgentStillDown(ref data) => Some(&data.cluster),
+            EventData::ClusterNew(ref data) => Some(&data.name),
+            EventData::DatastoreDown(ref data) => Some(&data.cluster),
+            EventData::DatastoreRecover(ref data) => Some(&data.cluster),
+            EventData::DatastoreStillDown(ref data) => Some(&data.cluster),
+        }
     }
 }
 
