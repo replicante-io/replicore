@@ -16,4 +16,4 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - File agent discovery.
 - Storage interface.
 - Store clusters and nodes information.
-- WebUI enpoint for initial UI.
+- WebUI enpoints for initial UI.

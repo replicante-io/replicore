@@ -4,6 +4,7 @@ use super::super::interfaces::Interfaces;
 
 mod cluster;
 mod clusters;
+mod events;
 
 
 /// Component to mount /webui endpoints.
@@ -21,6 +22,7 @@ impl WebUI {
         self::cluster::Meta::attach(interfaces);
         self::clusters::Find::attach(interfaces);
         self::clusters::Top::attach(interfaces);
+        self::events::Events::attach(interfaces);
         WebUI {}
     }
 

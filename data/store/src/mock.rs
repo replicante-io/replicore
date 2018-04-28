@@ -19,9 +19,9 @@ pub struct MockStore {
     pub agents_info: Mutex<HashMap<(String, String), AgentInfo>>,
     pub clusters_meta: Mutex<HashMap<String, ClusterMeta>>,
     pub discoveries: Mutex<HashMap<String, ClusterDiscovery>>,
+    pub events: Mutex<Vec<Event>>,
     pub nodes: Mutex<HashMap<(String, String), Node>>,
     pub shards: Mutex<HashMap<(String, String, String), Shard>>,
-    pub events: Mutex<Vec<Event>>,
 }
 
 impl InnerStore for MockStore {
@@ -115,6 +115,12 @@ impl InnerStore for MockStore {
         let mut shards = self.shards.lock().unwrap();
         shards.insert((cluster, node, id), shard);
         Ok(())
+    }
+
+    fn recent_events(&self, limit: u32) -> Result<Vec<Event>> {
+        let events = self.events.lock().unwrap().clone();
+        let events: Vec<_> = events.into_iter().rev().take(limit as usize).collect();
+        Ok(events)
     }
 
     fn shard(&self, cluster: String, node: String, id: String) -> Result<Option<Shard>> {

@@ -4,6 +4,7 @@ use bson::Bson;
 use mongodb::Client;
 use mongodb::ThreadedClient;
 use mongodb::coll::Collection;
+use mongodb::coll::options::FindOptions;
 use mongodb::db::ThreadedDatabase;
 
 use replicante_data_models::Event;
@@ -12,6 +13,7 @@ use super::super::super::Result;
 use super::super::super::ResultExt;
 
 use super::constants::FAIL_PERSIST_EVENT;
+use super::constants::FAIL_RECENT_EVENTS;
 use super::constants::COLLECTION_EVENTS;
 
 use super::metrics::MONGODB_OPS_COUNT;
@@ -46,6 +48,30 @@ impl EventStore {
             })
             .chain_err(|| FAIL_PERSIST_EVENT)?;
         Ok(())
+    }
+
+    pub fn recent_events(&self, limit: u32) -> Result<Vec<Event>> {
+        let mut options = FindOptions::new();
+        options.limit = Some(limit as i64);
+        options.sort = Some(doc!{"$natural" => -1});
+        let collection = self.collection_events();
+        MONGODB_OPS_COUNT.with_label_values(&["find"]).inc();
+        let _timer = MONGODB_OPS_DURATION.with_label_values(&["find"]).start_timer();
+        let cursor = collection.find(None, Some(options))
+            .map_err(|error| {
+                MONGODB_OP_ERRORS_COUNT.with_label_values(&["find"]).inc();
+                error
+            })
+            .chain_err(|| FAIL_RECENT_EVENTS)?;
+
+        let mut events = Vec::new();
+        for doc in cursor {
+            let doc = doc.chain_err(|| FAIL_RECENT_EVENTS)?;
+            let event = bson::from_bson::<Event>(bson::Bson::Document(doc))
+                .chain_err(|| FAIL_RECENT_EVENTS)?;
+            events.push(event);
+        }
+        Ok(events)
     }
 
     /// Returns the `events` collection.

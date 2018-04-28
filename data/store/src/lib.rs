@@ -201,6 +201,13 @@ impl Store {
         self.0.persist_shard(shard)
     }
 
+    /// Return a list of recent events.
+    ///
+    /// Events are returned from most to least recent up to the limit.
+    pub fn recent_events(&self, limit: u32) -> Result<Vec<Event>> {
+        self.0.recent_events(limit)
+    }
+
     /// Fetch information about a shard.
     pub fn shard<S1, S2, S3>(&self, cluster: S1, node: S2, id: S3) -> Result<Option<Shard>>
         where S1: Into<String>,
@@ -269,6 +276,9 @@ trait InnerStore: Send + Sync {
 
     /// See `Store::persist_shard` for details.
     fn persist_shard(&self, shard: Shard) -> Result<()>;
+
+    /// See `Store::recent_events` for details.
+    fn recent_events(&self, limit: u32) -> Result<Vec<Event>>;
 
     /// See `Store::shard` for details.
     fn shard(&self, cluster: String, node: String, id: String) -> Result<Option<Shard>>;

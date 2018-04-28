@@ -25,6 +25,7 @@ pub static FAIL_PERSIST_EVENT: &'static str = "Failed to persist event";
 pub static FAIL_PERSIST_NODE: &'static str = "Failed to persist node";
 pub static FAIL_PERSIST_SHARD: &'static str = "Failed to persist shard";
 
+pub static FAIL_RECENT_EVENTS: &'static str = "Failed to list recent events";
 pub static FAIL_TOP_CLUSTERS: &'static str = "Failed to list biggest clusters";
 
 
