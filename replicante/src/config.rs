@@ -98,7 +98,7 @@ mod tests {
     // NOTE: this cannot validate missing attributes.
     fn ensure_example_config_matches_default() {
         let default = Config::default();
-        let example = Config::from_file("replicante.example.yaml")
+        let example = Config::from_file("../replicante.example.yaml")
             .expect("Cannot open example configuration");
         assert_eq!(
             default, example,

@@ -11,5 +11,5 @@ node_modules/
 
 # Local testing and development tools.
 replicante.yaml
-conf.d/
+conf.d
 devtools/data/

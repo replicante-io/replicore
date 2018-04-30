@@ -1,0 +1,68 @@
+[package]
+name = "replicante"
+version = "0.1.0"
+authors = ["Stefano Pogliani <stefano@spogliani.net>"]
+build = "../build.rs"
+
+description = "Safe DataStore automation"
+documentation = "https://www.replicante.io/docs"
+homepage = "https://www.replicante.io/"
+repository = "https://github.com/replicante-io/replicante"
+readme = "Readme.md"
+keywords = ["automation", "datastore", "operations"]
+license = "MIT"
+
+
+[[bin]]
+name = "replicante"
+path = "src/main.rs"
+
+
+[lib]
+name = "replicante"
+path = "src/lib.rs"
+
+
+[badges]
+maintenance = { status = "actively-developed" }
+
+
+[features]
+journald = ["slog-journald"]
+
+
+[dependencies]
+clap = "^2.31.2"
+error-chain = "^0.11.0"
+iron = "^0.6.0"
+iron-json-response = "^0.6.0"
+lazy_static = "^1.0.0"
+opentracingrust = "^0.3.1"
+prometheus = { version = "^0.3.13", features = ["process"] }
+router = "^0.6.0"
+serde = "^1.0.34"
+serde_derive = "^1.0.34"
+serde_json = "^1.0.13"
+serde_yaml = "^0.7.3"
+slog = "^2.1.1"
+slog-async = "^2.2.0"
+slog-journald = { version = "^2.0.0", optional = true }
+slog-json = "^2.2.0"
+
+replicante_agent_client = { path = "../agent/client" }
+replicante_agent_discovery = { path = "../agent/discovery" }
+replicante_agent_models = { path = "../common/agent/models" }
+replicante_data_aggregator = { path = "../data/aggregator" }
+replicante_data_fetcher = { path = "../data/fetcher" }
+replicante_data_models = { path = "../data/models" }
+replicante_data_store = { path = "../data/store" }
+replicante_util_iron = { path = "../common/util/iron" }
+replicante_util_tracing = { path = "../common/util/tracing" }
+
+
+[build-dependencies]
+git2 = "^0.7.0"
+
+
+[dev-dependencies]
+iron-test = "^0.6.0"

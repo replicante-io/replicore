@@ -1,0 +1,38 @@
+[package]
+name = "replictl"
+version = "0.1.0"
+authors = ["Stefano Pogliani <stefano@spogliani.net>"]
+build = "../build.rs"
+
+description = "Replicante command line tool"
+documentation = "https://www.replicante.io/docs"
+homepage = "https://www.replicante.io/"
+repository = "https://github.com/replicante-io/replicante"
+readme = "Readme.md"
+keywords = ["automation", "datastore", "operations"]
+license = "MIT"
+
+
+[[bin]]
+name = "replicante"
+path = "src/main.rs"
+
+
+[lib]
+name = "replictl"
+path = "src/lib.rs"
+
+
+[badges]
+maintenance = { status = "actively-developed" }
+
+
+[dependencies]
+clap = "^2.31.2"
+error-chain = "^0.11.0"
+
+replicante_data_store = { path = "../data/store" }
+
+
+[build-dependencies]
+git2 = "^0.7.0"
