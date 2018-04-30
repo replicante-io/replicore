@@ -9,8 +9,8 @@ use replicante_data_models::Event;
 use replicante_data_models::Node;
 use replicante_data_models::Shard;
 
-use super::Result;
-use super::store::InnerStore;
+use super::super::Result;
+use super::super::store::InnerStore;
 
 
 /// A mock implementation of the storage layer for tests.
@@ -162,7 +162,7 @@ mod tests {
         use replicante_data_models::Agent;
         use replicante_data_models::AgentStatus;
 
-        use super::super::super::Store;
+        use super::super::super::super::Store;
         use super::super::MockStore;
 
         #[test]
@@ -193,7 +193,7 @@ mod tests {
         use std::sync::Arc;
         use replicante_data_models::AgentInfo;
 
-        use super::super::super::Store;
+        use super::super::super::super::Store;
         use super::super::MockStore;
 
         #[test]
@@ -219,7 +219,7 @@ mod tests {
         use std::sync::Arc;
         use replicante_data_models::ClusterMeta;
 
-        use super::super::super::Store;
+        use super::super::super::super::Store;
         use super::super::MockStore;
 
         #[test]
@@ -284,7 +284,7 @@ mod tests {
         use std::sync::Arc;
         use replicante_data_models::ClusterDiscovery;
 
-        use super::super::super::Store;
+        use super::super::super::super::Store;
         use super::super::MockStore;
 
         #[test]
@@ -322,7 +322,7 @@ mod tests {
         use replicante_data_models::ClusterDiscovery;
         use replicante_data_models::Event;
 
-        use super::super::super::Store;
+        use super::super::super::super::Store;
         use super::super::MockStore;
 
         #[test]
@@ -342,7 +342,7 @@ mod tests {
         use replicante_agent_models::DatastoreInfo;
         use replicante_data_models::Node;
 
-        use super::super::super::Store;
+        use super::super::super::super::Store;
         use super::super::MockStore;
 
         #[test]
@@ -365,7 +365,7 @@ mod tests {
         use replicante_data_models::Shard;
         use replicante_data_models::ShardRole;
 
-        use super::super::super::Store;
+        use super::super::super::super::Store;
         use super::super::MockStore;
 
         #[test]
