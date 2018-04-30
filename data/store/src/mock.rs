@@ -9,8 +9,8 @@ use replicante_data_models::Event;
 use replicante_data_models::Node;
 use replicante_data_models::Shard;
 
-use super::InnerStore;
 use super::Result;
+use super::store::InnerStore;
 
 
 /// A mock implementation of the storage layer for tests.

@@ -12,10 +12,10 @@ use replicante_data_models::Event;
 use replicante_data_models::Node;
 use replicante_data_models::Shard;
 
-use super::super::InnerStore;
 use super::super::Result;
 use super::super::ResultExt;
 use super::super::config::MongoDBConfig;
+use super::super::store::InnerStore;
 
 
 mod constants;
