@@ -16,6 +16,7 @@ use super::super::Result;
 use super::super::ResultExt;
 use super::super::config::MongoDBConfig;
 use super::super::store::InnerStore;
+use super::super::validator::InnerValidator;
 
 
 mod constants;
@@ -141,5 +142,26 @@ impl MongoStore {
             datastores,
             events,
         })
+    }
+}
+
+
+/// MongoDB-backed storage validator.
+pub struct MongoValidator {
+}
+
+impl InnerValidator for MongoValidator {
+}
+
+impl MongoValidator {
+    /// Creates a mongodb-backed store validator.
+    pub fn new(config: MongoDBConfig, logger: Logger, registry: &Registry) -> Result<MongoValidator> {
+        info!(logger, "Configuring MongoDB as storage validator");
+        let _db = config.db.clone();
+        let _client = Client::with_uri(&config.uri).chain_err(|| FAIL_CLIENT)?;
+        // TODO: store client and db in the validator as soon as needed.
+
+        register_metrics(&logger, registry);
+        Ok(MongoValidator {})
     }
 }

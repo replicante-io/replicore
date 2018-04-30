@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Added
 - API interface.
 - Agent client crate.
+- Command line control tool (replictl).
 - Docker compose file for development.
 - Emit "new cluster" events.
 - Emit "new agent" events.
@@ -16,4 +17,5 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - File agent discovery.
 - Storage interface.
 - Store clusters and nodes information.
+- Validate contents of the store.
 - WebUI enpoints for initial UI.

@@ -24,7 +24,7 @@ mod backend;
 mod config;
 mod errors;
 mod store;
-//mod validator;
+mod validator;
 
 // Cargo builds dependencies in debug mode instead of test mode.
 // That means that `cfg(test)` cannot be used if the mock is used outside the crate.
@@ -34,3 +34,4 @@ pub use self::backend::mock;
 pub use self::config::Config;
 pub use self::errors::*;
 pub use self::store::Store;
+pub use self::validator::Validator;
