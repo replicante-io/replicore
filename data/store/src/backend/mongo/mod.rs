@@ -39,7 +39,7 @@ use self::event::EventStore;
 ///
 /// # Special collection requirements
 ///
-///   * `events`: is a capped collection.
+///   * `events`: is a capped or TTL indexed collection.
 ///
 /// # Expected indexes
 ///

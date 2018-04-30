@@ -1,5 +1,6 @@
 use bson;
 use bson::Bson;
+use bson::UtcDateTime;
 
 use mongodb::Client;
 use mongodb::ThreadedClient;
@@ -8,6 +9,7 @@ use mongodb::coll::options::FindOptions;
 use mongodb::db::ThreadedDatabase;
 
 use replicante_data_models::Event;
+use replicante_data_models::EventData;
 
 use super::super::super::Result;
 use super::super::super::ResultExt;
@@ -33,6 +35,7 @@ impl EventStore {
     }
 
     pub fn persist_event(&self, event: Event) -> Result<()> {
+        let event: EventWrapper = event.into();
         let document = bson::to_bson(&event).chain_err(|| FAIL_PERSIST_EVENT)?;
         let document = match document {
             Bson::Document(document) => document,
@@ -67,9 +70,9 @@ impl EventStore {
         let mut events = Vec::new();
         for doc in cursor {
             let doc = doc.chain_err(|| FAIL_RECENT_EVENTS)?;
-            let event = bson::from_bson::<Event>(bson::Bson::Document(doc))
+            let event = bson::from_bson::<EventWrapper>(bson::Bson::Document(doc))
                 .chain_err(|| FAIL_RECENT_EVENTS)?;
-            events.push(event);
+            events.push(event.into());
         }
         Ok(events)
     }
@@ -77,5 +80,32 @@ impl EventStore {
     /// Returns the `events` collection.
     fn collection_events(&self) -> Collection {
         self.client.db(&self.db).collection(COLLECTION_EVENTS)
+    }
+}
+
+
+
+/// A wrapper for the `Event` model to allow BSON to encode/decode timestamps correctly.
+#[derive(Clone, Eq, PartialEq, Debug, Serialize, Deserialize)]
+struct EventWrapper {
+    pub event: EventData,
+    pub timestamp: UtcDateTime,
+}
+
+impl From<Event> for EventWrapper {
+    fn from(event: Event) -> EventWrapper {
+        EventWrapper {
+            event: event.event,
+            timestamp: UtcDateTime(event.timestamp),
+        }
+    }
+}
+
+impl From<EventWrapper> for Event {
+    fn from(event: EventWrapper) -> Event {
+        Event {
+            event: event.event,
+            timestamp: event.timestamp.0,
+        }
     }
 }
