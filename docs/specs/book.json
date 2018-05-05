@@ -5,8 +5,19 @@
 
   "plugins": [
     "-sharing",
-    "alerts"
+    "alerts@0.2.0",
+    "versions@2.1.4"
   ],
+
+  "pluginsConfig": {
+    "versions": {
+      "gitbookConfigURL": "https://raw.githubusercontent.com/replicante-io/replicante/master/docs/specs/book.json",
+      "options": [{
+        "text": "Unreleased (Version 0.1.0)",
+        "value": "https://replicante.io/docs/specs/0.1.0/"
+      }]
+    }
+  },
 
   "styles": {
     "website": "styles/all.css",
