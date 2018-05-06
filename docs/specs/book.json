@@ -13,8 +13,8 @@
     "versions": {
       "gitbookConfigURL": "https://raw.githubusercontent.com/replicante-io/replicante/master/docs/specs/book.json",
       "options": [{
-        "text": "Unreleased (Version 0.1.0)",
-        "value": "https://replicante.io/docs/specs/0.1.0/"
+        "text": "Master (unreleased)",
+        "value": "https://replicante.io/docs/specs/master/"
       }]
     }
   },
