@@ -2,6 +2,8 @@ use clap::App;
 use clap::ArgMatches;
 use clap::SubCommand;
 
+use slog::Logger;
+
 use super::super::Result;
 
 
@@ -20,7 +22,7 @@ pub fn command() -> App<'static, 'static> {
 
 
 /// Switch the control flow to the requested check command.
-pub fn run<'a>(args: ArgMatches<'a>) -> Result<()> {
+pub fn run<'a>(args: ArgMatches<'a>, _logger: Logger) -> Result<()> {
     match args.subcommand_matches(COMMAND).unwrap().subcommand_name() {
         Some(config::COMMAND) => config::run(args),
         None => Err("TODO: run all".into()),

@@ -30,6 +30,8 @@ maintenance = { status = "actively-developed" }
 [dependencies]
 clap = "^2.31.2"
 error-chain = "^0.11.0"
+slog = "^2.1.1"
+slog-term = "^2.4.0"
 
 replicante_data_store = { path = "../data/store" }
 

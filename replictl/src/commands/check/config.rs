@@ -15,7 +15,7 @@ pub fn command() -> App<'static, 'static> {
 
 
 /// TODO
-pub fn run<'a>(args: ArgMatches<'a>) -> Result<()> {
+pub fn run<'a>(_args: ArgMatches<'a>) -> Result<()> {
     println!("TODO: implement check config");
     Ok(())
 }
