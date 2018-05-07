@@ -14,7 +14,7 @@ license = "MIT"
 
 
 [[bin]]
-name = "replicante"
+name = "replictl"
 path = "src/main.rs"
 
 

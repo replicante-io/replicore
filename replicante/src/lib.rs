@@ -99,7 +99,7 @@ pub fn run() -> Result<()> {
         env!("CARGO_PKG_VERSION"), env!("GIT_BUILD_HASH"), env!("GIT_BUILD_TAINT")
     );
     let cli_args = App::new("Replicante Core")
-        .version(&version[..])
+        .version(version.as_ref())
         .about(env!("CARGO_PKG_DESCRIPTION"))
         .arg(Arg::with_name("config")
              .short("c")
