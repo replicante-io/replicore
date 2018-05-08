@@ -10,8 +10,9 @@ use super::super::Result;
 
 
 pub const COMMAND: &'static str = "check";
-pub const DEEP_COMMAND: &'static str = "deep";
-pub const QUICK_COMMAND: &'static str = "quick";
+const DEEP_COMMAND: &'static str = "deep";
+const QUICK_COMMAND: &'static str = "quick";
+const UPDATE_COMMAND: &'static str = "update";
 
 
 /// Configure the `replictl check` command parser.
@@ -25,6 +26,9 @@ pub fn command() -> App<'static, 'static> {
         .subcommand(SubCommand::with_name(QUICK_COMMAND)
             .about("Run all checks that do NOT iterate over data (default command)")
         )
+        .subcommand(SubCommand::with_name(UPDATE_COMMAND)
+            .about("Run all checks to confirm an update is possible (iterates over ALL data!)")
+        )
 }
 
 
@@ -34,6 +38,7 @@ pub fn run<'a>(args: ArgMatches<'a>, interfaces: Interfaces) -> Result<()> {
         Some(config::COMMAND) => config::run(args, interfaces),
         Some(DEEP_COMMAND) => run_deep(args, interfaces),
         Some(QUICK_COMMAND) => run_quick(args, interfaces),
+        Some(UPDATE_COMMAND) => run_deep(args, interfaces),
         None => run_quick(args, interfaces),
         _ => Err("Received unrecognised command".into()),
     }
