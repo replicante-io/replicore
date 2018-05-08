@@ -50,6 +50,12 @@ arg_enum!{
 }
 
 impl Default for LogLevel {
+    #[cfg(debug_assertions)]
+    fn default() -> LogLevel {
+        LogLevel::Debug
+    }
+
+    #[cfg(not(debug_assertions))]
     fn default() -> LogLevel {
         LogLevel::Info
     }

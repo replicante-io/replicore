@@ -50,9 +50,9 @@ mod interfaces;
 mod logging;
 
 use self::components::Components;
-use self::config::Config;
 use self::interfaces::Interfaces;
 
+pub use self::config::Config;
 pub use self::errors::Error;
 pub use self::errors::ErrorKind;
 pub use self::errors::ResultExt;

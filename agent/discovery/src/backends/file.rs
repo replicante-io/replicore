@@ -8,7 +8,7 @@ use super::super::ResultExt;
 
 
 /// Serialization format for file discovery.
-type DiscoveryFile = Vec<ClusterDiscovery>;
+pub type DiscoveryFile = Vec<ClusterDiscovery>;
 
 
 /// Iterator over results of file discovery.

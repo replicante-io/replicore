@@ -16,3 +16,6 @@ pub use self::backends::Iter;
 pub use self::backends::discover;
 pub use self::config::Config;
 pub use self::errors::*;
+
+// Expose internal models for validaion.
+pub use self::backends::DiscoveryFileModel;

@@ -3,21 +3,26 @@ extern crate clap;
 
 #[macro_use]
 extern crate error_chain;
+extern crate indicatif;
+extern crate serde_yaml;
 
 #[macro_use]
 extern crate slog;
 extern crate slog_term;
 
+extern crate replicante;
+extern crate replicante_agent_discovery;
+
 use clap::App;
 use clap::Arg;
 use clap::ArgMatches;
 
-use slog::Logger;
-
 
 mod commands;
 mod errors;
+mod interfaces;
 mod logging;
+mod outcome;
 
 pub use self::errors::Error;
 pub use self::errors::ErrorKind;
@@ -26,6 +31,7 @@ pub use self::errors::Result;
 
 use self::commands::check;
 
+use self::interfaces::Interfaces;
 use self::logging::LogLevel;
 
 
@@ -45,6 +51,7 @@ pub fn run() -> Result<()> {
              .value_name("FILE")
              .default_value("replicante.yaml")
              .takes_value(true)
+             .global(true)
              .help("Specifies the configuration file to use")
         )
         .arg(Arg::with_name("log-level")
@@ -53,7 +60,12 @@ pub fn run() -> Result<()> {
              .takes_value(true)
              .possible_values(&LogLevel::variants())
              .case_insensitive(true)
+             .global(true)
              .help("Specifies the logging verbosity")
+        )
+        .arg(Arg::with_name("no-progress")
+             .long("no-progress")
+             .help("Do not show progress bars")
         )
         .subcommand(check::command())
         .get_matches();
@@ -63,20 +75,21 @@ pub fn run() -> Result<()> {
     let logger = logging::configure(log_level);
     debug!(logger, "replictl starting"; "git-taint" => env!("GIT_BUILD_TAINT"));
 
-    // Run the replictl.
-    let result = run_command(args, logger.clone());
+    // Run the replictl command.
+    let interfaces = Interfaces::new(&args, logger.clone());
+    let result = run_command(args, interfaces);
     match result.is_err() {
-        false => info!(logger, "Shutdown: replictl exiting with success"; "error" => false),
-        true => error!(logger, "Shutdown: replictl exiting with error"; "error" => true),
+        false => debug!(logger, "replictl exiting with success"; "error" => false),
+        true => error!(logger, "replictl exiting with error"; "error" => true),
     };
     result
 }
 
 
 /// Switch the control flow to the requested command.
-fn run_command<'a>(args: ArgMatches<'a>, logger: Logger) -> Result<()> {
+fn run_command<'a>(args: ArgMatches<'a>, interfaces: Interfaces) -> Result<()> {
     match args.subcommand_name() {
-        Some(check::COMMAND) => check::run(args, logger),
+        Some(check::COMMAND) => check::run(args, interfaces),
         None => Err("Need a command to run".into()),
         _ => Err("Received unrecognised command".into()),
     }

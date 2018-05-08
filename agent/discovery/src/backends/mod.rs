@@ -5,6 +5,8 @@ use super::config::Config;
 
 mod file;
 
+pub use self::file::DiscoveryFile as DiscoveryFileModel;
+
 
 /// Enumerate supported backends to access their iterators.
 enum Backend {
