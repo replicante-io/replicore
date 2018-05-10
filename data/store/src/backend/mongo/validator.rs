@@ -1,5 +1,7 @@
 use std::collections::HashMap;
+use std::collections::HashSet;
 
+use bson::Bson;
 use bson::Document;
 use error_chain::ChainedError;
 
@@ -11,8 +13,13 @@ use super::Result;
 use super::ResultExt;
 use super::ValidationResult;
 
-
+use super::constants::COLLECTION_AGENTS;
+use super::constants::COLLECTION_AGENTS_INFO;
+use super::constants::COLLECTION_CLUSTER_META;
+use super::constants::COLLECTION_DISCOVERIES;
 use super::constants::COLLECTION_EVENTS;
+use super::constants::COLLECTION_NODES;
+use super::constants::COLLECTION_SHARDS;
 use super::constants::EXPECTED_COLLECTIONS;
 
 use super::metrics::MONGODB_OPS_COUNT;
@@ -26,12 +33,170 @@ const GROUP_STORE_MISSING: &'static str = "store/missing";
 const GROUP_STORE_SCHEMA: &'static str = "store/schema";
 
 
+lazy_static! {
+    static ref INDEX_NEEDED: HashMap<&'static str, Vec<IndexInfo>> = {
+        let mut map = HashMap::new();
+
+        map.insert(COLLECTION_AGENTS, vec![IndexInfo {
+            expires: false,
+            key: vec![("cluster".into(), 1), ("host".into(), 1)],
+            unique: true
+        }]);
+        map.insert(COLLECTION_AGENTS_INFO, vec![IndexInfo {
+            expires: false,
+            key: vec![("cluster".into(), 1), ("host".into(), 1)],
+            unique: true
+        }]);
+        map.insert(COLLECTION_CLUSTER_META, vec![IndexInfo {
+            expires: false,
+            key: vec![("name".into(), 1)],
+            unique: true
+        }]);
+        map.insert(COLLECTION_DISCOVERIES, vec![IndexInfo {
+            expires: false,
+            key: vec![("name".into(), 1)],
+            unique: true
+        }]);
+        map.insert(COLLECTION_EVENTS, vec![]);
+        map.insert(COLLECTION_NODES, vec![IndexInfo {
+            expires: false,
+            key: vec![("cluster".into(), 1), ("name".into(), 1)],
+            unique: true
+        }]);
+        map.insert(COLLECTION_SHARDS, vec![IndexInfo {
+            expires: false,
+            key: vec![("cluster".into(), 1), ("node".into(), 1), ("id".into(), 1)],
+            unique: true
+        }]);
+
+        map
+    };
+
+    static ref INDEX_SUGGESTED: HashMap<&'static str, Vec<IndexInfo>> = {
+        let mut map = HashMap::new();
+
+        map.insert(COLLECTION_AGENTS, vec![]);
+        map.insert(COLLECTION_AGENTS_INFO, vec![]);
+        map.insert(COLLECTION_CLUSTER_META, vec![IndexInfo {
+            expires: false,
+            key: vec![("nodes".into(), -1), ("name".into(), 1)],
+            unique: false
+        }]);
+        map.insert(COLLECTION_DISCOVERIES, vec![]);
+        map.insert(COLLECTION_EVENTS, vec![]);
+        map.insert(COLLECTION_NODES, vec![]);
+        map.insert(COLLECTION_SHARDS, vec![]);
+
+        map
+    };
+}
+
+
 /// Extra information about a collection.
 #[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug)]
 struct CollectionInfo {
     pub capped: bool,
     pub kind: String,
     pub read_only: bool,
+}
+
+
+/// Extra information about an index.
+#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug)]
+struct IndexInfo {
+    pub expires: bool,
+    pub key: Vec<(String, i8)>,
+    pub unique: bool,
+}
+
+impl IndexInfo {
+    pub fn parse(document: Document) -> Result<IndexInfo> {
+        let mut keys = Vec::new();
+        for (key, direction) in document.get_document("key").expect("index has no key").iter() {
+            let direction = match direction {
+                &Bson::FloatingPoint(f) if f == 1.0 => 1,
+                &Bson::FloatingPoint(f) if f == -1.0 => -1,
+                &Bson::I32(i) if i == 1 => 1,
+                &Bson::I32(i) if i == -1 => -1,
+                &Bson::I64(i) if i == 1 => 1,
+                &Bson::I64(i) if i == -1 => -1,
+                _ => panic!("key direction is not 1 or -1")
+            };
+            keys.push((key.clone(), direction));
+        }
+        let expires = document.get("expireAfterSeconds").is_some();
+        let unique = document.get_bool("unique").unwrap_or(false);
+        Ok(IndexInfo {
+            expires,
+            key: keys,
+            unique,
+        })
+    }
+}
+
+
+/// Subset of the validator looking for indexes configuration.
+pub struct IndexValidator {
+    client: Client,
+    db: String,
+}
+
+impl IndexValidator {
+    pub fn new(db: String, client: Client) -> IndexValidator {
+        IndexValidator { client, db }
+    }
+
+    /// Check for the existence of needed and suggested indexes.
+    pub fn indexes(&self) -> Result<Vec<ValidationResult>> {
+        let mut results = Vec::new();
+        for collection in EXPECTED_COLLECTIONS.iter() {
+            let indexes = self.indexes_set(collection)?;
+
+            let needed = INDEX_NEEDED.get(collection)
+                .expect(format!("needed indexes not configured for '{}'", collection).as_ref());
+            for index in needed {
+                if !indexes.contains(index) {
+                    results.push(ValidationResult::error(
+                        collection.clone(),
+                        format!("missing required index: {:?}", index),
+                        GROUP_STORE_MISSING
+                    ));
+                }
+            }
+
+            let suggested = INDEX_SUGGESTED.get(collection)
+                .expect(format!("suggested indexes not configured for '{}'", collection).as_ref());
+            for index in suggested {
+                if !indexes.contains(index) {
+                    results.push(ValidationResult::result(
+                        collection.clone(),
+                        format!("recommended index not found: {:?}", index),
+                        GROUP_PERF_INDEX
+                    ));
+                }
+            }
+        }
+        Ok(results)
+    }
+}
+
+impl IndexValidator {
+    fn indexes_set(&self, collection: &'static str) -> Result<HashSet<IndexInfo>> {
+        let db = self.client.db(&self.db);
+        let collection = db.collection(collection);
+        let mut indexes = HashSet::new();
+        MONGODB_OPS_COUNT.with_label_values(&["listIndexes"]).inc();
+        let _timer = MONGODB_OPS_DURATION.with_label_values(&["listIndexes"]).start_timer();
+        let cursor = collection.list_indexes().map_err(|error| {
+            MONGODB_OP_ERRORS_COUNT.with_label_values(&["listIndexes"]).inc();
+            error
+        })?;
+        for index in cursor {
+            let index = IndexInfo::parse(index?)?;
+            indexes.insert(index);
+        }
+        Ok(indexes)
+    }
 }
 
 

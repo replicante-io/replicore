@@ -37,6 +37,7 @@ use self::datastore::DatastoreStore;
 use self::cluster::ClusterStore;
 use self::event::EventStore;
 
+use self::validator::IndexValidator;
 use self::validator::SchemaValidator;
 
 
@@ -54,7 +55,7 @@ use self::validator::SchemaValidator;
 ///   * Unique index on `clusters_meta`: `name: 1`
 ///   * Unique index on `discoveries`: `name: 1`
 ///   * Unique index on `nodes`: `(cluster: 1, name: 1)`
-///   * Unique index on `shards`: `(cluster: 1, name: 1, id: 1)`
+///   * Unique index on `shards`: `(cluster: 1, node: 1, id: 1)`
 pub struct MongoStore {
     agents: AgentStore,
     clusters: ClusterStore,
@@ -152,13 +153,13 @@ impl MongoStore {
 
 /// MongoDB-backed storage validator.
 pub struct MongoValidator {
+    index: IndexValidator,
     schema: SchemaValidator,
 }
 
 impl InnerValidator for MongoValidator {
     fn indexes(&self) -> Result<Vec<ValidationResult>> {
-        // TODO(stefano): implement index validation.
-        Ok(vec![])
+        self.index.indexes()
     }
 
     fn removed(&self) -> Result<Vec<ValidationResult>> {
@@ -177,9 +178,10 @@ impl MongoValidator {
         info!(logger, "Configuring MongoDB as storage validator");
         let db = config.db.clone();
         let client = Client::with_uri(&config.uri).chain_err(|| FAIL_CLIENT)?;
+        let index = IndexValidator::new(db.clone(), client.clone());
         let schema = SchemaValidator::new(db, client);
 
         register_metrics(&logger, registry);
-        Ok(MongoValidator { schema })
+        Ok(MongoValidator { index, schema })
     }
 }
