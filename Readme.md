@@ -28,3 +28,13 @@ Use the following command from the root of the repo to generate the documentatio
 ```bash
 cargo rustdoc -- --document-private-items
 ```
+
+TODOs and the like
+==================
+You can scan the code for `TODO`s, `NOTE`s, etcetera with `fixme`.
+
+```bash
+npm install fixme
+node_modules/.bin/fixme -i 'devtools/**' -i 'node_modules/**' -i 'target/**' '**/*.rs'
+rm -r node_modules package-lock.json
+```

@@ -1,5 +1,7 @@
 use slog::Logger;
 
+use replicante_data_store::ValidationResult;
+
 
 const GROUP_PERF_ABUSE: &'static str = "perf/abuse";
 
@@ -8,7 +10,9 @@ const GROUP_PERF_ABUSE: &'static str = "perf/abuse";
 #[derive(Clone, Default, Eq, PartialEq, Ord, PartialOrd, Hash, Debug)]
 pub struct Outcomes {
     errors: Vec<Error>,
+    errors_count: u64,
     warnings: Vec<Warning>,
+    warnings_count: u64,
 }
 
 impl Outcomes {
@@ -18,31 +22,35 @@ impl Outcomes {
 
     /// Record an error.
     pub fn error(&mut self, error: Error) {
+        self.errors_count += 1;
         self.errors.push(error)
     }
 
     /// Return true if there are error outcomes.
     pub fn has_errors(&self) -> bool {
-        self.errors.len() > 0
+        self.errors_count > 0
     }
 
     /// Return true if there are warning outcomes.
     pub fn has_warnings(&self) -> bool {
-        self.warnings.len() > 0
+        self.warnings_count > 0
     }
 
     /// Logs all the collected warnings and errors.
-    pub fn report(&self, logger: &Logger) {
+    pub fn report(&mut self, logger: &Logger) {
         for warn in self.warnings.iter() {
             warn.emit(logger);
         }
         for error in self.errors.iter() {
             error.emit(logger);
         }
+        self.errors.clear();
+        self.warnings.clear();
     }
 
     /// Record a warning.
     pub fn warn(&mut self, warning: Warning) {
+        self.warnings_count += 1;
         self.warnings.push(warning)
     }
 }
@@ -56,6 +64,9 @@ impl Outcomes {
 pub enum Error {
     /// An error was encountered while cheking the system.
     GenericError(String),
+
+    /// The store validator reported an error with the current configuration.
+    StoreValidationError(ValidationResult),
 
     /// A model failed to decode, likely because the format has changed.
     ///
@@ -71,6 +82,11 @@ impl Error {
             &Error::GenericError(ref msg) => error!(
                 logger, "Check failed with error: {}", msg; "group" => group
             ),
+            &Error::StoreValidationError(ref result) => error!(
+                logger,
+                "The store validator reported an error with the current configuration: {}",
+                result.message; "group" => group, "collection" => &result.collection
+            ),
             &Error::UnableToParseModel(ref kind, ref id, ref msg) => error!(
                 logger, "Fail to decode a '{}': {}", kind, msg;
                 "group" => group, "model" => kind, "id" => id
@@ -82,6 +98,7 @@ impl Error {
     pub fn group(&self) -> &'static str {
         match self {
             &Error::GenericError(_) => "generic/error",
+            &Error::StoreValidationError(ref result) => result.group,
             &Error::UnableToParseModel(_, _, _) => "data/format",
         }
     }
@@ -97,7 +114,10 @@ pub enum Warning {
     /// A configuration option is below the suggested threshold.
     ///
     /// Parameters: message, current, threshold.
-    BelowThreshold(String, u64, u64)
+    BelowThreshold(String, u64, u64),
+
+    /// The store validator reported an issue or had a suggestion.
+    StoreValidationWarning(ValidationResult),
 }
 
 impl Warning {
@@ -109,6 +129,10 @@ impl Warning {
                 logger, "Value is below recommended threshold: {}", message;
                 "current" => current, "threshold" => threshold, "group" => group
             ),
+            &Warning::StoreValidationWarning(ref result) => warn!(
+                logger, "The store validator reported an issue or had a suggestion: {}",
+                result.message; "group" => group, "collection" => &result.collection
+            ),
         };
     }
 
@@ -116,6 +140,7 @@ impl Warning {
     pub fn group(&self) -> &'static str {
         match self {
             &Warning::BelowThreshold(_, _, _) => GROUP_PERF_ABUSE,
+            &Warning::StoreValidationWarning(ref result) => result.group,
         }
     }
 }

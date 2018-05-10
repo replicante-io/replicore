@@ -26,7 +26,7 @@ impl ShardFetcher {
         let status = client.status()?;
         for shard in status.shards {
             let shard = Shard::new(cluster.clone(), node.clone(), shard);
-            // TODO: should an error prevent all following shards from being processed?
+            // TODO(stefano): should an error prevent all following shards from being processed?
             self.process_shard(shard)?;
         }
         Ok(())
@@ -49,12 +49,12 @@ impl ShardFetcher {
         if shard == old {
             return Ok(());
         }
-        // TODO: emit events.
+        // TODO(stefano): emit shard changed events.
         self.store.persist_shard(shard).chain_err(|| FAIL_PERSIST_SHARD)
     }
 
     fn process_shard_new(&self, shard: Shard) -> Result<()> {
-        // TODO: emit events.
+        // TODO(stefano): emit shard new events.
         self.store.persist_shard(shard).chain_err(|| FAIL_PERSIST_SHARD)
     }
 }

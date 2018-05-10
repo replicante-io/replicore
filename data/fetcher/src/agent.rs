@@ -67,12 +67,12 @@ impl AgentFetcher {
         if agent == old {
             return Ok(());
         }
-        // TODO: emit events.
+        // TODO(stefano): emit agent info change events.
         self.store.persist_agent_info(agent).chain_err(|| FAIL_PERSIST_AGENT_INFO)
     }
 
     fn process_agent_info_new(&self, agent: AgentInfo) -> Result<()> {
-        // TODO: emit events.
+        // TODO(stefano): emit agent info new events.
         self.store.persist_agent_info(agent).chain_err(|| FAIL_PERSIST_AGENT_INFO)
     }
 }

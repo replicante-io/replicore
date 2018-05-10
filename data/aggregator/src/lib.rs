@@ -27,10 +27,10 @@ impl Aggregator {
     }
 
     pub fn register_metrics(_logger: &Logger, _registry: &Registry) {
-        // TODO: Implement :-)
+        // TODO(stefano): implement metrics registration.
     }
 
     pub fn process(&self, _cluster: ClusterDiscovery) {
-        // TODO: Implement :-)
+        // TODO(stefano): implement cluster aggregation.
     }
 }

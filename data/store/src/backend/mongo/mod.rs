@@ -14,6 +14,7 @@ use replicante_data_models::Shard;
 
 use super::super::Result;
 use super::super::ResultExt;
+use super::super::ValidationResult;
 use super::super::config::MongoDBConfig;
 use super::super::store::InnerStore;
 use super::super::validator::InnerValidator;
@@ -26,6 +27,7 @@ mod agent;
 mod cluster;
 mod datastore;
 mod event;
+mod validator;
 
 use self::constants::FAIL_CLIENT;
 use self::metrics::register_metrics;
@@ -34,6 +36,8 @@ use self::agent::AgentStore;
 use self::datastore::DatastoreStore;
 use self::cluster::ClusterStore;
 use self::event::EventStore;
+
+use self::validator::SchemaValidator;
 
 
 /// MongoDB-backed storage layer.
@@ -148,20 +152,34 @@ impl MongoStore {
 
 /// MongoDB-backed storage validator.
 pub struct MongoValidator {
+    schema: SchemaValidator,
 }
 
 impl InnerValidator for MongoValidator {
+    fn indexes(&self) -> Result<Vec<ValidationResult>> {
+        // TODO(stefano): implement index validation.
+        Ok(vec![])
+    }
+
+    fn removed(&self) -> Result<Vec<ValidationResult>> {
+        // There is nothing removed yet.
+        Ok(vec![])
+    }
+
+    fn schema(&self) -> Result<Vec<ValidationResult>> {
+        self.schema.schema()
+    }
 }
 
 impl MongoValidator {
     /// Creates a mongodb-backed store validator.
     pub fn new(config: MongoDBConfig, logger: Logger, registry: &Registry) -> Result<MongoValidator> {
         info!(logger, "Configuring MongoDB as storage validator");
-        let _db = config.db.clone();
-        let _client = Client::with_uri(&config.uri).chain_err(|| FAIL_CLIENT)?;
-        // TODO: store client and db in the validator as soon as needed.
+        let db = config.db.clone();
+        let client = Client::with_uri(&config.uri).chain_err(|| FAIL_CLIENT)?;
+        let schema = SchemaValidator::new(db, client);
 
         register_metrics(&logger, registry);
-        Ok(MongoValidator {})
+        Ok(MongoValidator { schema })
     }
 }

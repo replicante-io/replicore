@@ -31,11 +31,11 @@ pub fn command() -> App<'static, 'static> {
 
 /// Check the replicante configuration for errors.
 ///
-/// The following checks are perfomed:
+/// The following checks are performed:
 ///
 ///   * Replicante core configuration loads.
 ///   * File discovery files load.
-pub fn run<'a>(args: ArgMatches<'a>, interfaces: Interfaces) -> Result<()> {
+pub fn run<'a>(args: &ArgMatches<'a>, interfaces: &Interfaces) -> Result<()> {
     let file = args.value_of("config").unwrap();
     let logger = interfaces.logger();
     info!(logger, "Checking configuration"; "file" => file);
@@ -50,28 +50,26 @@ pub fn run<'a>(args: ArgMatches<'a>, interfaces: Interfaces) -> Result<()> {
         }
     };
 
-    // Figure out the number of checks to perform.
-    let checks = 1;  // Core config checks.
-    let checks = checks + config.discovery.backends.files.len();
-    let mut outcomes = Outcomes::new();
-
     // Core config checks.
-    let progress = interfaces.progress(Some(checks as u64));
-    progress.inc(1);
+    let mut outcomes = Outcomes::new();
     if config.discovery.interval < DISCOVERY_INTERVAL_THRESHOLD {
         outcomes.warn(Warning::BelowThreshold(
             "'discovery.interval' is very frequent".into(),
             config.discovery.interval, DISCOVERY_INTERVAL_THRESHOLD
         ));
     }
+    outcomes.report(&logger);
 
     // Check each file discovery config.
+    let checks = config.discovery.backends.files.len();
+    let progress = interfaces.progress(Some(checks as u64));
+    progress.inc(1);
     for file in progress.wrap_iter(config.discovery.backends.files.iter()) {
         check_discovery_file(file, &mut outcomes);
     }
+    progress.finish();
 
     // Report results.
-    progress.finish();
     outcomes.report(&logger);
     if outcomes.has_errors() {
         error!(logger, "Configuration checks failed");

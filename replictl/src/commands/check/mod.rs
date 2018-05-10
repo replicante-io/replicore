@@ -4,6 +4,7 @@ use clap::SubCommand;
 
 
 mod config;
+mod store;
 
 use super::super::Interfaces;
 use super::super::Result;
@@ -20,6 +21,7 @@ pub fn command() -> App<'static, 'static> {
     SubCommand::with_name(COMMAND)
         .about("Perform checks on the system to find issues")
         .subcommand(config::command())
+        .subcommand(store::command())
         .subcommand(SubCommand::with_name(DEEP_COMMAND)
             .about("Run all checks INCLUDING the ones that iterate over ALL data")
         )
@@ -33,9 +35,12 @@ pub fn command() -> App<'static, 'static> {
 
 
 /// Switch the control flow to the requested check command.
-pub fn run<'a>(args: ArgMatches<'a>, interfaces: Interfaces) -> Result<()> {
-    match args.subcommand_matches(COMMAND).unwrap().subcommand_name() {
+pub fn run<'a>(args: &ArgMatches<'a>, interfaces: &Interfaces) -> Result<()> {
+    let command = args.subcommand_matches(COMMAND).unwrap();
+    let command = command.subcommand_name().clone();
+    match command {
         Some(config::COMMAND) => config::run(args, interfaces),
+        Some(store::COMMAND) => store::run(args, interfaces),
         Some(DEEP_COMMAND) => run_deep(args, interfaces),
         Some(QUICK_COMMAND) => run_quick(args, interfaces),
         Some(UPDATE_COMMAND) => run_deep(args, interfaces),
@@ -46,12 +51,12 @@ pub fn run<'a>(args: ArgMatches<'a>, interfaces: Interfaces) -> Result<()> {
 
 
 /// Run all checks INCLUDING the ones that iterate over ALL data.
-fn run_deep<'a>(args: ArgMatches<'a>, interfaces: Interfaces) -> Result<()> {
+fn run_deep<'a>(args: &ArgMatches<'a>, interfaces: &Interfaces) -> Result<()> {
     config::run(args, interfaces)
 }
 
 
 /// Run all checks that do NOT iterate over data.
-fn run_quick<'a>(args: ArgMatches<'a>, interfaces: Interfaces) -> Result<()> {
+fn run_quick<'a>(args: &ArgMatches<'a>, interfaces: &Interfaces) -> Result<()> {
     config::run(args, interfaces)
 }

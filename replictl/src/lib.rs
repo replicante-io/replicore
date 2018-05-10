@@ -4,14 +4,16 @@ extern crate clap;
 #[macro_use]
 extern crate error_chain;
 extern crate indicatif;
-extern crate serde_yaml;
+extern crate prometheus;
 
+extern crate serde_yaml;
 #[macro_use]
 extern crate slog;
 extern crate slog_term;
 
 extern crate replicante;
 extern crate replicante_agent_discovery;
+extern crate replicante_data_store;
 
 use clap::App;
 use clap::Arg;
@@ -65,6 +67,7 @@ pub fn run() -> Result<()> {
         )
         .arg(Arg::with_name("no-progress")
              .long("no-progress")
+             .global(true)
              .help("Do not show progress bars")
         )
         .subcommand(check::command())
@@ -89,7 +92,7 @@ pub fn run() -> Result<()> {
 /// Switch the control flow to the requested command.
 fn run_command<'a>(args: ArgMatches<'a>, interfaces: Interfaces) -> Result<()> {
     match args.subcommand_name() {
-        Some(check::COMMAND) => check::run(args, interfaces),
+        Some(check::COMMAND) => check::run(&args, &interfaces),
         None => Err("Need a command to run".into()),
         _ => Err("Received unrecognised command".into()),
     }

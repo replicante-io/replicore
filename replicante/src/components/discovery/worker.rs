@@ -26,7 +26,7 @@ pub struct DiscoveryWorker {
     logger: Logger,
     store: Store,
 
-    // TODO: move into dedicated component when possible.
+    // TODO(stefano): move into dedicated component when possible.
     aggregator: Aggregator,
     fetcher: Fetcher,
 }
@@ -41,7 +41,7 @@ impl DiscoveryWorker {
             logger,
             store,
 
-            // TODO: move into dedicated component when possible.
+            // TODO(stefano): move into dedicated component when possible.
             aggregator,
             fetcher,
         }
@@ -113,7 +113,7 @@ impl DiscoveryWorker {
         if cluster == old {
             return Ok(());
         }
-        // TODO: Emit cluster events based on new vs old.
+        // TODO(stefano): emit cluster events based on new vs old.
         self.store.persist_discovery(cluster).chain_err(|| FAIL_PERSIST_DISCOVERY)
     }
 

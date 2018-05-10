@@ -43,12 +43,12 @@ impl NodeFetcher {
         if node == old {
             return Ok(());
         }
-        // TODO: emit events.
+        // TODO(stefano): emit node changed events.
         self.store.persist_node(node).chain_err(|| FAIL_PERSIST_NODE)
     }
 
     fn process_node_new(&self, node: Node) -> Result<()> {
-        // TODO: emit events.
+        // TODO(stefano): emit node new events.
         self.store.persist_node(node).chain_err(|| FAIL_PERSIST_NODE)
     }
 }

@@ -13,6 +13,52 @@ use super::backend::mongo::MongoValidator;
 ///
 /// Allows multiple possible datastores to be used as well as mocks for testing.
 pub trait InnerValidator: Send + Sync {
+    /// See `Validator::indexes` for details.
+    fn indexes(&self) -> Result<Vec<ValidationResult>>;
+
+    /// See `Validator::removed` for details.
+    fn removed(&self) -> Result<Vec<ValidationResult>>;
+
+    /// See `Validator::schema` for details.
+    fn schema(&self) -> Result<Vec<ValidationResult>>;
+}
+
+
+/// Details of issues detected by the validation process.
+#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug)]
+pub struct ValidationResult {
+    pub collection: String,
+    pub error: bool,
+    pub group: &'static str,
+    pub message: String,
+}
+
+impl ValidationResult {
+    /// Create a `ValidationResult` for an error.
+    pub fn error<S1, S2>(collection: S1, message: S2, group: &'static str) -> ValidationResult
+        where S1: Into<String>,
+              S2: Into<String>,
+    {
+        ValidationResult {
+            collection: collection.into(),
+            error: true,
+            group,
+            message: message.into(),
+        }
+    }
+
+    /// Create a `ValidationResult` for a non-critical issue or a suggestion.
+    pub fn result<S1, S2>(collection: S1, message: S2, group: &'static str) -> ValidationResult
+        where S1: Into<String>,
+              S2: Into<String>,
+    {
+        ValidationResult {
+            collection: collection.into(),
+            error: false,
+            group,
+            message: message.into(),
+        }
+    }
 }
 
 
@@ -30,6 +76,21 @@ impl Validator {
             Config::MongoDB(config) => Arc::new(MongoValidator::new(config, logger, registry)?),
         };
         Ok(Validator(validator))
+    }
+
+    /// Validate the current indexes to ensure they matches the code.
+    pub fn indexes(&self) -> Result<Vec<ValidationResult>> {
+        self.0.indexes()
+    }
+
+    /// Checks the store for collections/tables or indexes that are no longer used.
+    pub fn removed(&self) -> Result<Vec<ValidationResult>> {
+        self.0.removed()
+    }
+
+    /// Validate the current schema to ensure it matches the code.
+    pub fn schema(&self) -> Result<Vec<ValidationResult>> {
+        self.0.schema()
     }
 
     /// Instantiate a `Validator` that wraps the given `MockValidator`.
