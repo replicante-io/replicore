@@ -5,7 +5,6 @@ use error_chain::ChainedError;
 use prometheus::Registry;
 
 use replicante::Config;
-
 use replicante_data_store::Cursor;
 use replicante_data_store::Error as StoreError;
 use replicante_data_store::ErrorKind as StoreErrorKind;
@@ -26,6 +25,7 @@ pub const COMMAND: &'static str = "store";
 const COMMAND_DATA: &'static str = "data";
 const COMMAND_SCHEMA: &'static str = "schema";
 const FAILED_CHECK_SCHEMA : &'static str = "Failed to check store schema";
+const FAILED_CHECK_DATA : &'static str = "Failed to check store data";
 
 const MODEL_AGENT: &'static str = "Agent";
 const MODEL_AGENT_INFO: &'static str = "AgentInfo";
@@ -86,7 +86,7 @@ pub fn data<'a>(args: &ArgMatches<'a>, interfaces: &Interfaces) -> Result<()> {
     let config = Config::from_file(config).chain_err(|| FAILED_CHECK_SCHEMA)?;
     let registry = Registry::new();
     let store = Validator::new(config.storage, logger.clone(), &registry)
-        .chain_err(|| FAILED_CHECK_SCHEMA)?;
+        .chain_err(|| FAILED_CHECK_DATA)?;
 
     info!(logger, "Checking records for the '{}' model", MODEL_AGENT);
     scan_collection(

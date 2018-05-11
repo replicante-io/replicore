@@ -59,6 +59,15 @@ pub use self::errors::ResultExt;
 pub use self::errors::Result;
 
 
+lazy_static! {
+    /// Version details for replictl.
+    pub static ref VERSION: String = format!(
+        "{} [{}; {}]",
+        env!("CARGO_PKG_VERSION"), env!("GIT_BUILD_HASH"), env!("GIT_BUILD_TAINT")
+    );
+}
+
+
 /// Initialised interfaces and components and waits for the system to exit.
 ///
 /// Replicante is built on top of two kinds of units:

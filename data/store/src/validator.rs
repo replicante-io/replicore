@@ -72,6 +72,9 @@ pub trait InnerValidator: Send + Sync {
 
     /// See `Validator::shards_count` for details.
     fn shards_count(&self) -> Result<u64>;
+
+    /// See `Validator::version` for details.
+    fn version(&self) -> Result<String>;
 }
 
 
@@ -212,6 +215,11 @@ impl Validator {
     /// Approximate count of shards in the store.
     pub fn shards_count(&self) -> Result<u64> {
         self.0.shards_count()
+    }
+
+    /// Detect the version of the store in use.
+    pub fn version(&self) -> Result<String> {
+        self.0.version()
     }
 
     /// Instantiate a `Validator` that wraps the given `MockValidator`.

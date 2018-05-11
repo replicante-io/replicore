@@ -84,4 +84,8 @@ impl InnerValidator for MockValidator {
     fn shards_count(&self) -> Result<u64> {
         Err("This feature is not yet mocked".into())
     }
+
+    fn version(&self) -> Result<String> {
+        Err("This feature is not yet mocked".into())
+    }
 }

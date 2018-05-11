@@ -1,5 +1,6 @@
 use mongodb::Client;
 use mongodb::ThreadedClient;
+use mongodb::db::ThreadedDatabase;
 
 use prometheus::Registry;
 use slog::Logger;
@@ -155,6 +156,8 @@ impl MongoStore {
 
 /// MongoDB-backed storage validator.
 pub struct MongoValidator {
+    client: Client,
+    db: String,
     data: DataValidator,
     index: IndexValidator,
     schema: SchemaValidator,
@@ -229,6 +232,13 @@ impl InnerValidator for MongoValidator {
     fn shards_count(&self) -> Result<u64> {
         self.data.shards_count()
     }
+
+    fn version(&self) -> Result<String> {
+        let db = self.client.db(&self.db);
+        let version = db.version()?;
+        let version = format!("MongoDB {}", version);
+        Ok(version)
+    }
 }
 
 impl MongoValidator {
@@ -239,9 +249,12 @@ impl MongoValidator {
         let client = Client::with_uri(&config.uri).chain_err(|| FAIL_CLIENT)?;
         let data = DataValidator::new(db.clone(), client.clone());
         let index = IndexValidator::new(db.clone(), client.clone());
-        let schema = SchemaValidator::new(db, client);
+        let schema = SchemaValidator::new(db.clone(), client.clone());
 
         register_metrics(&logger, registry);
-        Ok(MongoValidator { data, index, schema })
+        Ok(MongoValidator {
+            client, db,
+            data, index, schema
+        })
     }
 }

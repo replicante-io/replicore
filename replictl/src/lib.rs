@@ -4,6 +4,9 @@ extern crate clap;
 #[macro_use]
 extern crate error_chain;
 extern crate indicatif;
+
+#[macro_use]
+extern crate lazy_static;
 extern crate prometheus;
 
 extern crate serde_yaml;
