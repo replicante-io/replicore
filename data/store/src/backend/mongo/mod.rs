@@ -177,6 +177,14 @@ impl InnerValidator for MongoValidator {
         self.data.agents_info_count()
     }
 
+    fn clusters_meta(&self) -> Result<Cursor<ClusterMeta>> {
+        self.data.clusters_meta()
+    }
+
+    fn clusters_meta_count(&self) -> Result<u64> {
+        self.data.clusters_meta_count()
+    }
+
     fn indexes(&self) -> Result<Vec<ValidationResult>> {
         self.index.indexes()
     }

@@ -1,5 +1,6 @@
 use replicante_data_models::Agent;
 use replicante_data_models::AgentInfo;
+use replicante_data_models::ClusterMeta;
 
 use super::super::super::Cursor;
 use super::super::super::Result;
@@ -25,6 +26,14 @@ impl InnerValidator for MockValidator {
     }
 
     fn agents_info_count(&self) -> Result<u64> {
+        Err("This feature is not yet mocked".into())
+    }
+
+    fn clusters_meta(&self) -> Result<Cursor<ClusterMeta>> {
+        Err("This feature is not yet mocked".into())
+    }
+
+    fn clusters_meta_count(&self) -> Result<u64> {
         Err("This feature is not yet mocked".into())
     }
 

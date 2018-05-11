@@ -5,6 +5,7 @@ use slog::Logger;
 
 use replicante_data_models::Agent;
 use replicante_data_models::AgentInfo;
+use replicante_data_models::ClusterMeta;
 
 use super::Config;
 use super::Cursor;
@@ -28,6 +29,12 @@ pub trait InnerValidator: Send + Sync {
 
     /// See `Validator::agents_info_count` for details.
     fn agents_info_count(&self) -> Result<u64>;
+
+    /// See `Validator::clusters_meta` for details.
+    fn clusters_meta(&self) -> Result<Cursor<ClusterMeta>>;
+
+    /// See `Validator::clusters_meta_count` for details.
+    fn clusters_meta_count(&self) -> Result<u64>;
 
     /// See `Validator::indexes` for details.
     fn indexes(&self) -> Result<Vec<ValidationResult>>;
@@ -112,6 +119,16 @@ impl Validator {
     /// Approximate count of agents info in the store.
     pub fn agents_info_count(&self) -> Result<u64> {
         self.0.agents_info_count()
+    }
+
+    /// Iterate over stored cluster meta.
+    pub fn clusters_meta(&self) -> Result<Cursor<ClusterMeta>> {
+        self.0.clusters_meta()
+    }
+
+    /// Approximate count of cluster meta in the store.
+    pub fn clusters_meta_count(&self) -> Result<u64> {
+        self.0.clusters_meta_count()
     }
 
     /// Validate the current indexes to ensure they matches the code.

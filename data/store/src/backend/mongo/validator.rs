@@ -14,6 +14,7 @@ use serde::Deserialize;
 
 use replicante_data_models::Agent;
 use replicante_data_models::AgentInfo;
+use replicante_data_models::ClusterMeta;
 
 use super::super::super::Cursor;
 use super::super::super::Error;
@@ -141,6 +142,17 @@ impl DataValidator {
     pub fn agents_info_count(&self) -> Result<u64> {
         self.count_collection(COLLECTION_AGENTS_INFO)
     }
+
+    /// Iterate over the clusters meta in the store.
+    pub fn clusters_meta(&self) -> Result<Cursor<ClusterMeta>> {
+        self.scan_collection(COLLECTION_CLUSTER_META)
+    }
+
+    /// Count the clusters meta in the store.
+    pub fn clusters_meta_count(&self) -> Result<u64> {
+        self.count_collection(COLLECTION_CLUSTER_META)
+    }
+
 }
 
 impl DataValidator {

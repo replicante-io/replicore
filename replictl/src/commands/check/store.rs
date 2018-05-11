@@ -29,6 +29,7 @@ const FAILED_CHECK_SCHEMA : &'static str = "Failed to check store schema";
 
 const MODEL_AGENT: &'static str = "Agent";
 const MODEL_AGENT_INFO: &'static str = "AgentInfo";
+const MODEL_CLUSTER_META: &'static str = "ClusterMeta";
 
 
 /// Configure the `replictl check store` command parser.
@@ -94,6 +95,13 @@ pub fn data<'a>(args: &ArgMatches<'a>, interfaces: &Interfaces) -> Result<()> {
     scan_collection(
         store.agents_info_count(), store.agents_info(),
         MODEL_AGENT_INFO, &mut outcomes, interfaces
+    );
+    outcomes.report(&logger);
+
+    info!(logger, "Checking records for the '{}' model", MODEL_CLUSTER_META);
+    scan_collection(
+        store.clusters_meta_count(), store.clusters_meta(),
+        MODEL_CLUSTER_META, &mut outcomes, interfaces
     );
     outcomes.report(&logger);
 
