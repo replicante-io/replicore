@@ -43,6 +43,7 @@ pub fn run<'a>(args: &ArgMatches<'a>, interfaces: &Interfaces) -> Result<()> {
         Some(store::COMMAND) => store::run(args, interfaces),
         Some(DEEP_COMMAND) => run_deep(args, interfaces),
         Some(QUICK_COMMAND) => run_quick(args, interfaces),
+        // Currently update is an alias for `deep` but that may change.
         Some(UPDATE_COMMAND) => run_deep(args, interfaces),
         None => run_quick(args, interfaces),
         _ => Err("Received unrecognised command".into()),
@@ -52,7 +53,13 @@ pub fn run<'a>(args: &ArgMatches<'a>, interfaces: &Interfaces) -> Result<()> {
 
 /// Run all checks INCLUDING the ones that iterate over ALL data.
 fn run_deep<'a>(args: &ArgMatches<'a>, interfaces: &Interfaces) -> Result<()> {
-    config::run(args, interfaces)
+    let config = config::run(args, interfaces);
+    let store_schema = store::schema(args, interfaces);
+    let store_data = store::data(args, interfaces);
+    config?;
+    store_schema?;
+    store_data?;
+    Ok(())
 }
 
 

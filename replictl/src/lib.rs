@@ -32,6 +32,7 @@ pub use self::errors::ResultExt;
 pub use self::errors::Result;
 
 use self::commands::check;
+use self::commands::versions;
 
 use self::interfaces::Interfaces;
 use self::logging::LogLevel;
@@ -71,6 +72,7 @@ pub fn run() -> Result<()> {
              .help("Do not show progress bars")
         )
         .subcommand(check::command())
+        .subcommand(versions::command())
         .get_matches();
 
     // Initialise logging.
@@ -93,6 +95,7 @@ pub fn run() -> Result<()> {
 fn run_command<'a>(args: ArgMatches<'a>, interfaces: Interfaces) -> Result<()> {
     match args.subcommand_name() {
         Some(check::COMMAND) => check::run(&args, &interfaces),
+        Some(versions::COMMAND) => versions::run(&args, &interfaces),
         None => Err("Need a command to run".into()),
         _ => Err("Received unrecognised command".into()),
     }

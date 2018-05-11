@@ -30,6 +30,10 @@ const FAILED_CHECK_SCHEMA : &'static str = "Failed to check store schema";
 const MODEL_AGENT: &'static str = "Agent";
 const MODEL_AGENT_INFO: &'static str = "AgentInfo";
 const MODEL_CLUSTER_META: &'static str = "ClusterMeta";
+const MODEL_CLUSTER_DISCOVERY: &'static str = "ClusterDiscovery";
+const MODEL_EVENT: &'static str = "Event";
+const MODEL_NODE: &'static str = "Node";
+const MODEL_SHARD: &'static str = "Shard";
 
 
 /// Configure the `replictl check store` command parser.
@@ -102,6 +106,34 @@ pub fn data<'a>(args: &ArgMatches<'a>, interfaces: &Interfaces) -> Result<()> {
     scan_collection(
         store.clusters_meta_count(), store.clusters_meta(),
         MODEL_CLUSTER_META, &mut outcomes, interfaces
+    );
+    outcomes.report(&logger);
+
+    info!(logger, "Checking records for the '{}' model", MODEL_CLUSTER_DISCOVERY);
+    scan_collection(
+        store.cluster_discoveries_count(), store.cluster_discoveries(),
+        MODEL_CLUSTER_DISCOVERY, &mut outcomes, interfaces
+    );
+    outcomes.report(&logger);
+
+    info!(logger, "Checking records for the '{}' model", MODEL_EVENT);
+    scan_collection(
+        store.events_count(), store.events(),
+        MODEL_EVENT, &mut outcomes, interfaces
+    );
+    outcomes.report(&logger);
+
+    info!(logger, "Checking records for the '{}' model", MODEL_NODE);
+    scan_collection(
+        store.nodes_count(), store.nodes(),
+        MODEL_NODE, &mut outcomes, interfaces
+    );
+    outcomes.report(&logger);
+
+    info!(logger, "Checking records for the '{}' model", MODEL_SHARD);
+    scan_collection(
+        store.shards_count(), store.shards(),
+        MODEL_SHARD, &mut outcomes, interfaces
     );
     outcomes.report(&logger);
 

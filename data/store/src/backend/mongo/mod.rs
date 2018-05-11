@@ -177,6 +177,14 @@ impl InnerValidator for MongoValidator {
         self.data.agents_info_count()
     }
 
+    fn cluster_discoveries(&self) -> Result<Cursor<ClusterDiscovery>> {
+        self.data.cluster_discoveries()
+    }
+
+    fn cluster_discoveries_count(&self) -> Result<u64> {
+        self.data.cluster_discoveries_count()
+    }
+
     fn clusters_meta(&self) -> Result<Cursor<ClusterMeta>> {
         self.data.clusters_meta()
     }
@@ -185,8 +193,24 @@ impl InnerValidator for MongoValidator {
         self.data.clusters_meta_count()
     }
 
+    fn events(&self) -> Result<Cursor<Event>> {
+        self.data.events()
+    }
+
+    fn events_count(&self) -> Result<u64> {
+        self.data.events_count()
+    }
+
     fn indexes(&self) -> Result<Vec<ValidationResult>> {
         self.index.indexes()
+    }
+
+    fn nodes(&self) -> Result<Cursor<Node>> {
+        self.data.nodes()
+    }
+
+    fn nodes_count(&self) -> Result<u64> {
+        self.data.nodes_count()
     }
 
     fn removed(&self) -> Result<Vec<ValidationResult>> {
@@ -196,6 +220,14 @@ impl InnerValidator for MongoValidator {
 
     fn schema(&self) -> Result<Vec<ValidationResult>> {
         self.schema.schema()
+    }
+
+    fn shards(&self) -> Result<Cursor<Shard>> {
+        self.data.shards()
+    }
+
+    fn shards_count(&self) -> Result<u64> {
+        self.data.shards_count()
     }
 }
 

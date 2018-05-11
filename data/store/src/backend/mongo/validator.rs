@@ -15,6 +15,10 @@ use serde::Deserialize;
 use replicante_data_models::Agent;
 use replicante_data_models::AgentInfo;
 use replicante_data_models::ClusterMeta;
+use replicante_data_models::ClusterDiscovery;
+use replicante_data_models::Event;
+use replicante_data_models::Node;
+use replicante_data_models::Shard;
 
 use super::super::super::Cursor;
 use super::super::super::Error;
@@ -33,6 +37,7 @@ use super::constants::COLLECTION_NODES;
 use super::constants::COLLECTION_SHARDS;
 use super::constants::EXPECTED_COLLECTIONS;
 
+use super::event::EventWrapper;
 use super::metrics::MONGODB_OPS_COUNT;
 use super::metrics::MONGODB_OPS_DURATION;
 use super::metrics::MONGODB_OP_ERRORS_COUNT;
@@ -143,6 +148,16 @@ impl DataValidator {
         self.count_collection(COLLECTION_AGENTS_INFO)
     }
 
+    /// Iterate over the cluster discoveries in the store.
+    pub fn cluster_discoveries(&self) -> Result<Cursor<ClusterDiscovery>> {
+        self.scan_collection(COLLECTION_DISCOVERIES)
+    }
+
+    /// Count the cluster discoveries in the store.
+    pub fn cluster_discoveries_count(&self) -> Result<u64> {
+        self.count_collection(COLLECTION_DISCOVERIES)
+    }
+
     /// Iterate over the clusters meta in the store.
     pub fn clusters_meta(&self) -> Result<Cursor<ClusterMeta>> {
         self.scan_collection(COLLECTION_CLUSTER_META)
@@ -153,6 +168,44 @@ impl DataValidator {
         self.count_collection(COLLECTION_CLUSTER_META)
     }
 
+    /// Iterate over the events in the store.
+    pub fn events(&self) -> Result<Cursor<Event>> {
+        match self.scan_collection(COLLECTION_EVENTS) {
+            Err(error) => Err(error),
+            Ok(cursor) => {
+                let cursor = cursor.map(|item: Result<EventWrapper>| match item {
+                    Err(error) => Err(error),
+                    Ok(item) => Ok(item.into()),
+                });
+                Ok(Cursor(Box::new(cursor)))
+            }
+        }
+    }
+
+    /// Count the events in the store.
+    pub fn events_count(&self) -> Result<u64> {
+        self.count_collection(COLLECTION_EVENTS)
+    }
+
+    /// Iterate over the nodes in the store.
+    pub fn nodes(&self) -> Result<Cursor<Node>> {
+        self.scan_collection(COLLECTION_NODES)
+    }
+
+    /// Count the nodes in the store.
+    pub fn nodes_count(&self) -> Result<u64> {
+        self.count_collection(COLLECTION_NODES)
+    }
+
+    /// Iterate over the shards in the store.
+    pub fn shards(&self) -> Result<Cursor<Shard>> {
+        self.scan_collection(COLLECTION_SHARDS)
+    }
+
+    /// Count the shards in the store.
+    pub fn shards_count(&self) -> Result<u64> {
+        self.count_collection(COLLECTION_SHARDS)
+    }
 }
 
 impl DataValidator {

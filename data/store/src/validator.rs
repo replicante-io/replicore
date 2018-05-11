@@ -6,6 +6,10 @@ use slog::Logger;
 use replicante_data_models::Agent;
 use replicante_data_models::AgentInfo;
 use replicante_data_models::ClusterMeta;
+use replicante_data_models::ClusterDiscovery;
+use replicante_data_models::Event;
+use replicante_data_models::Node;
+use replicante_data_models::Shard;
 
 use super::Config;
 use super::Cursor;
@@ -30,20 +34,44 @@ pub trait InnerValidator: Send + Sync {
     /// See `Validator::agents_info_count` for details.
     fn agents_info_count(&self) -> Result<u64>;
 
+    /// See `Validator::cluster_discoveries` for details.
+    fn cluster_discoveries(&self) -> Result<Cursor<ClusterDiscovery>>;
+
+    /// See `Validator::cluster_discoveries_count` for details.
+    fn cluster_discoveries_count(&self) -> Result<u64>;
+
     /// See `Validator::clusters_meta` for details.
     fn clusters_meta(&self) -> Result<Cursor<ClusterMeta>>;
 
     /// See `Validator::clusters_meta_count` for details.
     fn clusters_meta_count(&self) -> Result<u64>;
 
+    /// See `Validator::events` for details.
+    fn events(&self) -> Result<Cursor<Event>>;
+
+    /// See `Validator::events_count` for details.
+    fn events_count(&self) -> Result<u64>;
+
     /// See `Validator::indexes` for details.
     fn indexes(&self) -> Result<Vec<ValidationResult>>;
+
+    /// See `Validator::nodes` for details.
+    fn nodes(&self) -> Result<Cursor<Node>>;
+
+    /// See `Validator::nodes_count` for details.
+    fn nodes_count(&self) -> Result<u64>;
 
     /// See `Validator::removed` for details.
     fn removed(&self) -> Result<Vec<ValidationResult>>;
 
     /// See `Validator::schema` for details.
     fn schema(&self) -> Result<Vec<ValidationResult>>;
+
+    /// See `Validator::shards` for details.
+    fn shards(&self) -> Result<Cursor<Shard>>;
+
+    /// See `Validator::shards_count` for details.
+    fn shards_count(&self) -> Result<u64>;
 }
 
 
@@ -121,6 +149,16 @@ impl Validator {
         self.0.agents_info_count()
     }
 
+    /// Iterate over stored cluster discoveries.
+    pub fn cluster_discoveries(&self) -> Result<Cursor<ClusterDiscovery>> {
+        self.0.cluster_discoveries()
+    }
+
+    /// Approximate count of cluster discoveries in the store.
+    pub fn cluster_discoveries_count(&self) -> Result<u64> {
+        self.0.cluster_discoveries_count()
+    }
+
     /// Iterate over stored cluster meta.
     pub fn clusters_meta(&self) -> Result<Cursor<ClusterMeta>> {
         self.0.clusters_meta()
@@ -131,9 +169,29 @@ impl Validator {
         self.0.clusters_meta_count()
     }
 
+    /// Iterate over stored events.
+    pub fn events(&self) -> Result<Cursor<Event>> {
+        self.0.events()
+    }
+
+    /// Approximate count of events in the store.
+    pub fn events_count(&self) -> Result<u64> {
+        self.0.events_count()
+    }
+
     /// Validate the current indexes to ensure they matches the code.
     pub fn indexes(&self) -> Result<Vec<ValidationResult>> {
         self.0.indexes()
+    }
+
+    /// Iterate over stored nodes.
+    pub fn nodes(&self) -> Result<Cursor<Node>> {
+        self.0.nodes()
+    }
+
+    /// Approximate count of nodes in the store.
+    pub fn nodes_count(&self) -> Result<u64> {
+        self.0.nodes_count()
     }
 
     /// Checks the store for collections/tables or indexes that are no longer used.
@@ -144,6 +202,16 @@ impl Validator {
     /// Validate the current schema to ensure it matches the code.
     pub fn schema(&self) -> Result<Vec<ValidationResult>> {
         self.0.schema()
+    }
+
+    /// Iterate over stored shards.
+    pub fn shards(&self) -> Result<Cursor<Shard>> {
+        self.0.shards()
+    }
+
+    /// Approximate count of shards in the store.
+    pub fn shards_count(&self) -> Result<u64> {
+        self.0.shards_count()
     }
 
     /// Instantiate a `Validator` that wraps the given `MockValidator`.
