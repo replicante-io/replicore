@@ -23,13 +23,12 @@ use super::super::super::outcome::Warning;
 
 pub const COMMAND: &'static str = "store";
 
-const COLLECTION_AGENTS: &'static str = "agents";
-
 const COMMAND_DATA: &'static str = "data";
 const COMMAND_SCHEMA: &'static str = "schema";
 const FAILED_CHECK_SCHEMA : &'static str = "Failed to check store schema";
 
 const MODEL_AGENT: &'static str = "Agent";
+const MODEL_AGENT_INFO: &'static str = "AgentInfo";
 
 
 /// Configure the `replictl check store` command parser.
@@ -84,10 +83,17 @@ pub fn data<'a>(args: &ArgMatches<'a>, interfaces: &Interfaces) -> Result<()> {
     let store = Validator::new(config.storage, logger.clone(), &registry)
         .chain_err(|| FAILED_CHECK_SCHEMA)?;
 
-    info!(logger, "Checking collection '{}'", COLLECTION_AGENTS);
+    info!(logger, "Checking records for the '{}' model", MODEL_AGENT);
     scan_collection(
         store.agents_count(), store.agents(),
         MODEL_AGENT, &mut outcomes, interfaces
+    );
+    outcomes.report(&logger);
+
+    info!(logger, "Checking records for the '{}' model", MODEL_AGENT_INFO);
+    scan_collection(
+        store.agents_info_count(), store.agents_info(),
+        MODEL_AGENT_INFO, &mut outcomes, interfaces
     );
     outcomes.report(&logger);
 

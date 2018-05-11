@@ -169,6 +169,14 @@ impl InnerValidator for MongoValidator {
         self.data.agents_count()
     }
 
+    fn agents_info(&self) -> Result<Cursor<AgentInfo>> {
+        self.data.agents_info()
+    }
+
+    fn agents_info_count(&self) -> Result<u64> {
+        self.data.agents_info_count()
+    }
+
     fn indexes(&self) -> Result<Vec<ValidationResult>> {
         self.index.indexes()
     }

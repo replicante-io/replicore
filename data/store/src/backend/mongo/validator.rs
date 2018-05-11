@@ -10,9 +10,10 @@ use mongodb::Client;
 use mongodb::ThreadedClient;
 use mongodb::coll::options::FindOptions;
 use mongodb::db::ThreadedDatabase;
+use serde::Deserialize;
 
 use replicante_data_models::Agent;
-//use replicante_data_models::AgentInfo;
+use replicante_data_models::AgentInfo;
 
 use super::super::super::Cursor;
 use super::super::super::Error;
@@ -123,20 +124,60 @@ impl DataValidator {
 
     /// Iterate over the agents in the store.
     pub fn agents(&self) -> Result<Cursor<Agent>> {
+        self.scan_collection(COLLECTION_AGENTS)
+    }
+
+    /// Count the agents in the store.
+    pub fn agents_count(&self) -> Result<u64> {
+        self.count_collection(COLLECTION_AGENTS)
+    }
+
+    /// Iterate over the agents info in the store.
+    pub fn agents_info(&self) -> Result<Cursor<AgentInfo>> {
+        self.scan_collection(COLLECTION_AGENTS_INFO)
+    }
+
+    /// Count the agents info in the store.
+    pub fn agents_info_count(&self) -> Result<u64> {
+        self.count_collection(COLLECTION_AGENTS_INFO)
+    }
+}
+
+impl DataValidator {
+    /// Generic method to count items in a collection.
+    fn count_collection(&self, collection: &'static str) -> Result<u64> {
+        let db = self.client.db(&self.db);
+        let collection = db.collection(collection);
+        MONGODB_OPS_COUNT.with_label_values(&["count"]).inc();
+        let _timer = MONGODB_OPS_DURATION.with_label_values(&["count"]).start_timer();
+        collection.count(None, None).map(|count| count as u64).map_err(|error| {
+            MONGODB_OP_ERRORS_COUNT.with_label_values(&["count"]).inc();
+            error
+        }).chain_err(|| "Failed to count agents info")
+    }
+
+    /// Generic method to scan items in a collection.
+    fn scan_collection<'a, Model>(&self, collection: &'static str) -> Result<Cursor<Model>>
+        where Model: Deserialize<'a>
+    {
         let sort = doc! { "_id" => 1 };
         let mut options = FindOptions::new();
         options.sort = Some(sort);
-        // TODO: metrics
         let db = self.client.db(&self.db);
-        let collection = db.collection(COLLECTION_AGENTS);
-        let cursor = collection.find(None, Some(options))?;
+        let collection = db.collection(collection);
+        MONGODB_OPS_COUNT.with_label_values(&["find"]).inc();
+        let _timer = MONGODB_OPS_DURATION.with_label_values(&["find"]).start_timer();
+        let cursor = collection.find(None, Some(options)).map_err(|error| {
+            MONGODB_OP_ERRORS_COUNT.with_label_values(&["find"]).inc();
+            error
+        })?;
         let cursor = cursor.map(|item| match item {
             Err(error) => Err(error.into()),
             Ok(item) => {
                 let id = item.get_object_id("_id")
                     .map(|id| id.to_hex())
                     .unwrap_or("<NO ID>".into());
-                match bson::from_bson::<Agent>(bson::Bson::Document(item)) {
+                match bson::from_bson::<Model>(bson::Bson::Document(item)) {
                     Ok(item) => Ok(item),
                     Err(error) => {
                         let error: Error = error.into();
@@ -148,15 +189,6 @@ impl DataValidator {
         });
         let cursor = Cursor(Box::new(cursor));
         Ok(cursor)
-    }
-
-    /// Count the agents in the store.
-    pub fn agents_count(&self) -> Result<u64> {
-        // TODO: metrics
-        let db = self.client.db(&self.db);
-        let collection = db.collection(COLLECTION_AGENTS);
-        collection.count(None, None).map(|count| count as u64)
-            .chain_err(|| "Failed to count agents")
     }
 }
 

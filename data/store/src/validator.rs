@@ -4,6 +4,7 @@ use prometheus::Registry;
 use slog::Logger;
 
 use replicante_data_models::Agent;
+use replicante_data_models::AgentInfo;
 
 use super::Config;
 use super::Cursor;
@@ -21,6 +22,12 @@ pub trait InnerValidator: Send + Sync {
 
     /// See `Validator::agents_count` for details.
     fn agents_count(&self) -> Result<u64>;
+
+    /// See `Validator::agents_info` for details.
+    fn agents_info(&self) -> Result<Cursor<AgentInfo>>;
+
+    /// See `Validator::agents_info_count` for details.
+    fn agents_info_count(&self) -> Result<u64>;
 
     /// See `Validator::indexes` for details.
     fn indexes(&self) -> Result<Vec<ValidationResult>>;
@@ -95,6 +102,16 @@ impl Validator {
     /// Approximate count of agents in the store.
     pub fn agents_count(&self) -> Result<u64> {
         self.0.agents_count()
+    }
+
+    /// Iterate over stored agents info.
+    pub fn agents_info(&self) -> Result<Cursor<AgentInfo>> {
+        self.0.agents_info()
+    }
+
+    /// Approximate count of agents info in the store.
+    pub fn agents_info_count(&self) -> Result<u64> {
+        self.0.agents_info_count()
     }
 
     /// Validate the current indexes to ensure they matches the code.

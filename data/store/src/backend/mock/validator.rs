@@ -1,4 +1,5 @@
 use replicante_data_models::Agent;
+use replicante_data_models::AgentInfo;
 
 use super::super::super::Cursor;
 use super::super::super::Result;
@@ -16,6 +17,14 @@ impl InnerValidator for MockValidator {
     }
 
     fn agents_count(&self) -> Result<u64> {
+        Err("This feature is not yet mocked".into())
+    }
+
+    fn agents_info(&self) -> Result<Cursor<AgentInfo>> {
+        Err("This feature is not yet mocked".into())
+    }
+
+    fn agents_info_count(&self) -> Result<u64> {
         Err("This feature is not yet mocked".into())
     }
 
