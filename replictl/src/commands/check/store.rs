@@ -5,6 +5,10 @@ use error_chain::ChainedError;
 use prometheus::Registry;
 
 use replicante::Config;
+
+use replicante_data_store::Cursor;
+use replicante_data_store::Error as StoreError;
+use replicante_data_store::ErrorKind as StoreErrorKind;
 use replicante_data_store::ValidationResult;
 use replicante_data_store::Validator;
 
@@ -19,15 +23,23 @@ use super::super::super::outcome::Warning;
 
 pub const COMMAND: &'static str = "store";
 
-const SCHEMA_COMMAND: &'static str = "schema";
+const COLLECTION_AGENTS: &'static str = "agents";
+
+const COMMAND_DATA: &'static str = "data";
+const COMMAND_SCHEMA: &'static str = "schema";
 const FAILED_CHECK_SCHEMA : &'static str = "Failed to check store schema";
+
+const MODEL_AGENT: &'static str = "Agent";
 
 
 /// Configure the `replictl check store` command parser.
 pub fn command() -> App<'static, 'static> {
     SubCommand::with_name(COMMAND)
         .about("Check the primary store for incompatibilities")
-        .subcommand(SubCommand::with_name(SCHEMA_COMMAND)
+        .subcommand(SubCommand::with_name(COMMAND_DATA).about(
+            "Check ALL primary store content for compatibility with this version of replicante"
+        ))
+        .subcommand(SubCommand::with_name(COMMAND_SCHEMA)
             .about("Check the primary store schema compatibility with this version of replicante")
         )
 }
@@ -39,10 +51,94 @@ pub fn run<'a>(args: &ArgMatches<'a>, interfaces: &Interfaces) -> Result<()> {
     let command = command.subcommand_matches(COMMAND).unwrap();
     let command = command.subcommand_name().clone();
     match command {
-        Some(SCHEMA_COMMAND) => schema(args, interfaces),
+        Some(COMMAND_DATA) => data(args, interfaces),
+        Some(COMMAND_SCHEMA) => schema(args, interfaces),
         None => Err("Need a store check to run".into()),
         _ => Err("Received unrecognised command".into()),
     }
+}
+
+
+/// Check ALL primary store content for compatibility with this version of replicante.
+///
+/// The following checks are performed:
+///
+///   * Each content item is loaded and parsed.
+pub fn data<'a>(args: &ArgMatches<'a>, interfaces: &Interfaces) -> Result<()> {
+    let logger = interfaces.logger();
+    info!(logger, "Checking store data");
+    let confirm = interfaces.prompt().confirm_danger(
+        "About to scan ALL content of the store. \
+        This could impact your production system. \
+        Would you like to proceed?"
+    )?;
+    if !confirm {
+        error!(logger, "Cannot check without user interactive confirmation");
+        return Err("Operation aborded by the user".into());
+    }
+
+    let mut outcomes = Outcomes::new();
+    let config = args.value_of("config").unwrap();
+    let config = Config::from_file(config).chain_err(|| FAILED_CHECK_SCHEMA)?;
+    let registry = Registry::new();
+    let store = Validator::new(config.storage, logger.clone(), &registry)
+        .chain_err(|| FAILED_CHECK_SCHEMA)?;
+
+    info!(logger, "Checking collection '{}'", COLLECTION_AGENTS);
+    scan_collection(
+        store.agents_count(), store.agents(),
+        MODEL_AGENT, &mut outcomes, interfaces
+    );
+    outcomes.report(&logger);
+
+    // Report results.
+    if outcomes.has_errors() {
+        error!(logger, "Store data checks failed");
+        return Err("Store data checks failed".into());
+    }
+    if outcomes.has_warnings() {
+        warn!(logger, "Store data checks passed with warnings");
+        return Ok(());
+    }
+    info!(logger, "Store data checks passed");
+    Ok(())
+}
+
+fn scan_collection<Model: ::std::fmt::Debug>(
+    count: ::replicante_data_store::Result<u64>,
+    cursor: ::replicante_data_store::Result<Cursor<Model>>,
+    collection: &str, outcomes: &mut Outcomes, interfaces: &Interfaces
+) {
+    let count = match count {
+        Ok(count) => count,
+        Err(error) => {
+            let error = error.display_chain().to_string();
+            outcomes.error(Error::GenericError(error));
+            return;
+        }
+    };
+    let cursor = match cursor {
+        Ok(cursor) => cursor,
+        Err(error) => {
+            let error = error.display_chain().to_string();
+            outcomes.error(Error::GenericError(error));
+            return;
+        }
+    };
+    let progress = interfaces.progress(Some(count));
+    for item in progress.wrap_iter(cursor) {
+        match item {
+            Err(StoreError(StoreErrorKind::UnableToParseModel(id, msg), _)) => {
+                outcomes.error(Error::UnableToParseModel(collection.to_string(), id, msg));
+            },
+            Err(error) => {
+                let error = error.display_chain().to_string();
+                outcomes.error(Error::GenericError(error));
+            },
+            Ok(_) => (),
+        };
+    }
+    progress.finish();
 }
 
 

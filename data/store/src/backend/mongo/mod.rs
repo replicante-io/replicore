@@ -12,6 +12,7 @@ use replicante_data_models::Event;
 use replicante_data_models::Node;
 use replicante_data_models::Shard;
 
+use super::super::Cursor;
 use super::super::Result;
 use super::super::ResultExt;
 use super::super::ValidationResult;
@@ -37,6 +38,7 @@ use self::datastore::DatastoreStore;
 use self::cluster::ClusterStore;
 use self::event::EventStore;
 
+use self::validator::DataValidator;
 use self::validator::IndexValidator;
 use self::validator::SchemaValidator;
 
@@ -153,11 +155,20 @@ impl MongoStore {
 
 /// MongoDB-backed storage validator.
 pub struct MongoValidator {
+    data: DataValidator,
     index: IndexValidator,
     schema: SchemaValidator,
 }
 
 impl InnerValidator for MongoValidator {
+    fn agents(&self) -> Result<Cursor<Agent>> {
+        self.data.agents()
+    }
+
+    fn agents_count(&self) -> Result<u64> {
+        self.data.agents_count()
+    }
+
     fn indexes(&self) -> Result<Vec<ValidationResult>> {
         self.index.indexes()
     }
@@ -178,10 +189,11 @@ impl MongoValidator {
         info!(logger, "Configuring MongoDB as storage validator");
         let db = config.db.clone();
         let client = Client::with_uri(&config.uri).chain_err(|| FAIL_CLIENT)?;
+        let data = DataValidator::new(db.clone(), client.clone());
         let index = IndexValidator::new(db.clone(), client.clone());
         let schema = SchemaValidator::new(db, client);
 
         register_metrics(&logger, registry);
-        Ok(MongoValidator { index, schema })
+        Ok(MongoValidator { data, index, schema })
     }
 }

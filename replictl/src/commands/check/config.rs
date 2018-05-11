@@ -63,7 +63,6 @@ pub fn run<'a>(args: &ArgMatches<'a>, interfaces: &Interfaces) -> Result<()> {
     // Check each file discovery config.
     let checks = config.discovery.backends.files.len();
     let progress = interfaces.progress(Some(checks as u64));
-    progress.inc(1);
     for file in progress.wrap_iter(config.discovery.backends.files.iter()) {
         check_discovery_file(file, &mut outcomes);
     }

@@ -3,7 +3,10 @@ use std::sync::Arc;
 use prometheus::Registry;
 use slog::Logger;
 
+use replicante_data_models::Agent;
+
 use super::Config;
+use super::Cursor;
 use super::Result;
 
 use super::backend::mongo::MongoValidator;
@@ -13,6 +16,12 @@ use super::backend::mongo::MongoValidator;
 ///
 /// Allows multiple possible datastores to be used as well as mocks for testing.
 pub trait InnerValidator: Send + Sync {
+    /// See `Validator::agents` for details.
+    fn agents(&self) -> Result<Cursor<Agent>>;
+
+    /// See `Validator::agents_count` for details.
+    fn agents_count(&self) -> Result<u64>;
+
     /// See `Validator::indexes` for details.
     fn indexes(&self) -> Result<Vec<ValidationResult>>;
 
@@ -76,6 +85,16 @@ impl Validator {
             Config::MongoDB(config) => Arc::new(MongoValidator::new(config, logger, registry)?),
         };
         Ok(Validator(validator))
+    }
+
+    /// Iterate over stored agents.
+    pub fn agents(&self) -> Result<Cursor<Agent>> {
+        self.0.agents()
+    }
+
+    /// Approximate count of agents in the store.
+    pub fn agents_count(&self) -> Result<u64> {
+        self.0.agents_count()
     }
 
     /// Validate the current indexes to ensure they matches the code.

@@ -1,11 +1,17 @@
+use std::io;
+use std::io::Write;
+
 use indicatif::ProgressBar;
 use clap::ArgMatches;
 use slog::Logger;
+
+use super::Result;
 
 
 /// A container sturcture to inject dependencies.
 pub struct Interfaces {
     logger: Logger,
+    prompt: Prompt,
 
     // Internal attributes.
     progress: bool,
@@ -14,8 +20,12 @@ pub struct Interfaces {
 impl Interfaces {
     /// Create a new `Interfaces` container.
     pub fn new<'a>(args: &ArgMatches<'a>, logger: Logger) -> Interfaces {
+        let prompt = Prompt {
+            _logger: logger.clone()
+        };
         Interfaces {
             logger,
+            prompt,
             progress: !args.is_present("no-progress"),
         }
     }
@@ -38,6 +48,32 @@ impl Interfaces {
         match len {
             Some(len) => ProgressBar::new(len),
             None => ProgressBar::new_spinner(),
+        }
+    }
+
+    /// Access the user prompts interface.
+    pub fn prompt(&self) -> &Prompt {
+        &self.prompt
+    }
+}
+
+
+/// Interface to interact with users over stdout/stdin.
+pub struct Prompt {
+    _logger: Logger,
+}
+
+impl Prompt {
+    /// Ask the user for confirmation before something potentially harmful is done.
+    pub fn confirm_danger(&self, prompt: &str) -> Result<bool> {
+        print!("{} [y/N] ", prompt);
+        io::stdout().flush()?;
+        let mut reply = String::new();
+        io::stdin().read_line(&mut reply)?;
+        match reply.trim() {
+            "y" => Ok(true),
+            "yes" => Ok(true),
+            _ => Ok(false),
         }
     }
 }

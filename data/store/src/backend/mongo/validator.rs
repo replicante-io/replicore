@@ -1,13 +1,22 @@
 use std::collections::HashMap;
 use std::collections::HashSet;
 
+use bson;
 use bson::Bson;
 use bson::Document;
 use error_chain::ChainedError;
 
 use mongodb::Client;
 use mongodb::ThreadedClient;
+use mongodb::coll::options::FindOptions;
 use mongodb::db::ThreadedDatabase;
+
+use replicante_data_models::Agent;
+//use replicante_data_models::AgentInfo;
+
+use super::super::super::Cursor;
+use super::super::super::Error;
+use super::super::super::ErrorKind;
 
 use super::Result;
 use super::ResultExt;
@@ -98,6 +107,57 @@ struct CollectionInfo {
     pub capped: bool,
     pub kind: String,
     pub read_only: bool,
+}
+
+
+/// Subset of the validator looking at the dataset.
+pub struct DataValidator {
+    client: Client,
+    db: String,
+}
+
+impl DataValidator {
+    pub fn new(db: String, client: Client) -> DataValidator {
+        DataValidator { client, db }
+    }
+
+    /// Iterate over the agents in the store.
+    pub fn agents(&self) -> Result<Cursor<Agent>> {
+        let sort = doc! { "_id" => 1 };
+        let mut options = FindOptions::new();
+        options.sort = Some(sort);
+        // TODO: metrics
+        let db = self.client.db(&self.db);
+        let collection = db.collection(COLLECTION_AGENTS);
+        let cursor = collection.find(None, Some(options))?;
+        let cursor = cursor.map(|item| match item {
+            Err(error) => Err(error.into()),
+            Ok(item) => {
+                let id = item.get_object_id("_id")
+                    .map(|id| id.to_hex())
+                    .unwrap_or("<NO ID>".into());
+                match bson::from_bson::<Agent>(bson::Bson::Document(item)) {
+                    Ok(item) => Ok(item),
+                    Err(error) => {
+                        let error: Error = error.into();
+                        let error = error.display_chain().to_string();
+                        Err(ErrorKind::UnableToParseModel(id, error).into())
+                    }
+                }
+            }
+        });
+        let cursor = Cursor(Box::new(cursor));
+        Ok(cursor)
+    }
+
+    /// Count the agents in the store.
+    pub fn agents_count(&self) -> Result<u64> {
+        // TODO: metrics
+        let db = self.client.db(&self.db);
+        let collection = db.collection(COLLECTION_AGENTS);
+        collection.count(None, None).map(|count| count as u64)
+            .chain_err(|| "Failed to count agents")
+    }
 }
 
 
