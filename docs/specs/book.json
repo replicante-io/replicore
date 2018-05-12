@@ -6,6 +6,9 @@
   "plugins": [
     "-sharing",
     "alerts@0.2.0",
+    "anchors@0.7.1",
+    "rest@1.1.1",
+    "theme-api@1.1.2",
     "versions@2.1.4"
   ],
 

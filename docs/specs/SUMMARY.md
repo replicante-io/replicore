@@ -8,13 +8,14 @@
   * [Replication](model/README.md#replication)
   * [Sharding](model/README.md#sharding)
   * [Performance](model/README.md#performance)
-* [Examples: mapping DBs to the Model](model/mapping.md)
-  * [MongoDB Replica Set](model/mapping.md#mongodb-replica-set)
-  * [MongoDB Sharded](model/mapping.md#mongodb-sharded)
-  * [(TODO) RabbitMQ](model/mapping.md#rabbitmq)
+* [Examples: mapping DBs to the Model](model/mapping/README.md)
+  * [MongoDB](model/mapping/mongodb.md)
+  * [(TODO) Kafka](model/mapping/kafka.md)
+  * [(TODO) RabbitMQ](model/mapping/rabbitmq.md)
+  * [(TODO) Zookeeper](model/mapping/zookeeper.md)
 * [The Agent Protocol](agent/README.md)
-  * [`GET /api/v1/info`](agent/README.md#get-apiv1info)
-  * [`GET /api/v1/status`](agent/README.md#get-apiv1status)
+  * [Agent information](agent/info.md)
+  * [Shards information](agent/shards.md)
 
 ---
 

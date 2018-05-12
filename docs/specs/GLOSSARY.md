@@ -1,4 +1,4 @@
-## Datastore
+## Data-store
 A software solution specialised in storing data for other software.
 The term datastore is used to avoid focus on
 details of specific storage models or uses.

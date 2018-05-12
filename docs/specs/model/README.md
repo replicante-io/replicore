@@ -3,10 +3,6 @@
 >
 > The model defined below is in early development cycle
 > and is subject to (potentially breaking) change.
->
-> The model is expected to change as it is used for implementations.
-> In particular, required metrics can be "downgraded" to suggested metrics
-> if most datastores do not expose the information.
 
 Any (collection of) software that fullfills the requirements and expectations
 of the model defined in this document is considered a datastore.
