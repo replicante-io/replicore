@@ -35,8 +35,8 @@ impl AgentFetcher {
     }
 
     pub fn process_agent_info(&self, client: &Client, cluster: String, node: String) -> Result<()> {
-        let info = client.info()?;
-        let info = AgentInfo::new(cluster, node, info.agent);
+        let info = client.agent_info()?;
+        let info = AgentInfo::new(cluster, node, info);
         match self.store.agent_info(info.cluster.clone(), info.host.clone()) {
             Err(error) => Err(error).chain_err(|| FAIL_FIND_AGENT_INFO),
             Ok(None) => self.process_agent_info_new(info),

@@ -23,8 +23,8 @@ impl ShardFetcher {
     }
 
     pub fn process_shards(&self, client: &Client, cluster: String, node: String) -> Result<()> {
-        let status = client.status()?;
-        for shard in status.shards {
+        let shards = client.shards()?;
+        for shard in shards.shards {
             let shard = Shard::new(cluster.clone(), node.clone(), shard);
             // TODO(stefano): should an error prevent all following shards from being processed?
             self.process_shard(shard)?;

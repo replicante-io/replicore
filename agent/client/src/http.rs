@@ -7,8 +7,9 @@ use prometheus::Registry;
 use reqwest::Client as ReqwestClient;
 use slog::Logger;
 
-use replicante_agent_models::NodeInfo;
-use replicante_agent_models::NodeStatus;
+use replicante_agent_models::AgentInfo;
+use replicante_agent_models::DatastoreInfo;
+use replicante_agent_models::Shards;
 
 use super::Client;
 use super::Result;
@@ -52,44 +53,64 @@ pub struct HttpClient {
 }
 
 impl Client for HttpClient {
-    fn info(&self) -> Result<NodeInfo> {
-        CLIENT_OPS_COUNT.with_label_values(&["/api/v1/info"]).inc();
-        let _timer = CLIENT_OPS_DURATION.with_label_values(&["/api/v1/info"]).start_timer();
-        let endpoint = self.endpoint("/api/v1/info");
+    fn agent_info(&self) -> Result<AgentInfo> {
+        CLIENT_OPS_COUNT.with_label_values(&["/api/v1/info/agent"]).inc();
+        let _timer = CLIENT_OPS_DURATION.with_label_values(&["/api/v1/info/agent"]).start_timer();
+        let endpoint = self.endpoint("/api/v1/info/agent");
         let mut request = self.client.get(&endpoint);
         let mut response = request.send()
             .map_err(|error| {
-                CLIENT_OP_ERRORS_COUNT.with_label_values(&["/api/v1/info"]).inc();
+                CLIENT_OP_ERRORS_COUNT.with_label_values(&["/api/v1/info/agent"]).inc();
                 error
             })
             .chain_err(|| FAIL_INFO_FETCH)?;
         let info = response.json()
             .map_err(|error| {
-                CLIENT_OP_ERRORS_COUNT.with_label_values(&["/api/v1/info"]).inc();
+                CLIENT_OP_ERRORS_COUNT.with_label_values(&["/api/v1/info/agent"]).inc();
                 error
             })
             .chain_err(|| FAIL_INFO_FETCH)?;
         Ok(info)
     }
 
-    fn status(&self) -> Result<NodeStatus> {
-        CLIENT_OPS_COUNT.with_label_values(&["/api/v1/status"]).inc();
-        let _timer = CLIENT_OPS_DURATION.with_label_values(&["/api/v1/status"]).start_timer();
-        let endpoint = self.endpoint("/api/v1/status");
+    fn datastore_info(&self) -> Result<DatastoreInfo> {
+        CLIENT_OPS_COUNT.with_label_values(&["/api/v1/info/datastore"]).inc();
+        let _timer = CLIENT_OPS_DURATION.with_label_values(&["/api/v1/info/datastore"]).start_timer();
+        let endpoint = self.endpoint("/api/v1/info/datastore");
         let mut request = self.client.get(&endpoint);
         let mut response = request.send()
             .map_err(|error| {
-                CLIENT_OP_ERRORS_COUNT.with_label_values(&["/api/v1/status"]).inc();
+                CLIENT_OP_ERRORS_COUNT.with_label_values(&["/api/v1/info/datastore"]).inc();
                 error
             })
-            .chain_err(|| FAIL_STATUS_FETCH)?;
-        let status = response.json()
+            .chain_err(|| FAIL_INFO_FETCH)?;
+        let info = response.json()
             .map_err(|error| {
-                CLIENT_OP_ERRORS_COUNT.with_label_values(&["/api/v1/status"]).inc();
+                CLIENT_OP_ERRORS_COUNT.with_label_values(&["/api/v1/info/datastore"]).inc();
+                error
+            })
+            .chain_err(|| FAIL_INFO_FETCH)?;
+        Ok(info)
+    }
+
+    fn shards(&self) -> Result<Shards> {
+        CLIENT_OPS_COUNT.with_label_values(&["/api/v1/shards"]).inc();
+        let _timer = CLIENT_OPS_DURATION.with_label_values(&["/api/v1/shards"]).start_timer();
+        let endpoint = self.endpoint("/api/v1/shards");
+        let mut request = self.client.get(&endpoint);
+        let mut response = request.send()
+            .map_err(|error| {
+                CLIENT_OP_ERRORS_COUNT.with_label_values(&["/api/v1/shards"]).inc();
                 error
             })
             .chain_err(|| FAIL_STATUS_FETCH)?;
-        Ok(status)
+        let shards = response.json()
+            .map_err(|error| {
+                CLIENT_OP_ERRORS_COUNT.with_label_values(&["/api/v1/shards"]).inc();
+                error
+            })
+            .chain_err(|| FAIL_STATUS_FETCH)?;
+        Ok(shards)
     }
 }
 

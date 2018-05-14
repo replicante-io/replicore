@@ -24,8 +24,8 @@ impl NodeFetcher {
     }
 
     pub fn process_node(&self, client: &Client, meta: &mut ClusterMetaBuilder) -> Result<()> {
-        let info = client.info()?;
-        let node = Node::new(info.datastore);
+        let info = client.datastore_info()?;
+        let node = Node::new(info);
         meta.node_kind(node.kind.clone());
 
         let cluster = node.cluster.clone();

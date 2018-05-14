@@ -9,8 +9,10 @@ extern crate slog;
 
 extern crate replicante_agent_models;
 
-use replicante_agent_models::NodeInfo;
-use replicante_agent_models::NodeStatus;
+
+use replicante_agent_models::AgentInfo;
+use replicante_agent_models::DatastoreInfo;
+use replicante_agent_models::Shards;
 
 
 mod errors;
@@ -28,9 +30,12 @@ pub use self::http::HttpClient;
 /// Users should use the `HttpClient`.
 /// The `mock` module is useful for tests.
 pub trait Client {
-    /// Returns general agent and datastore information.
-    fn info(&self) -> Result<NodeInfo>;
+    /// Returns general agent information.
+    fn agent_info(&self) -> Result<AgentInfo>;
+
+    /// Returns general datastore information.
+    fn datastore_info(&self) -> Result<DatastoreInfo>;
 
     /// Returns status information for the node.
-    fn status(&self) -> Result<NodeStatus>;
+    fn shards(&self) -> Result<Shards>;
 }
