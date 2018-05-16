@@ -1,0 +1,22 @@
+{
+  "title": "Replicante User Manual",
+  "description": "Replicante User Manual",
+  "gitbook": "3.2.3",
+
+  "plugins": [
+    "-sharing",
+    "anchors@0.7.1",
+    "theme-api@1.1.2",
+    "versions@2.1.4"
+  ],
+
+  "pluginsConfig": {
+    "versions": {
+      "gitbookConfigURL": "https://raw.githubusercontent.com/replicante-io/replicante/master/docs/manual/book.json",
+      "options": [{
+        "text": "Master (unreleased)",
+        "value": "https://replicante.io/docs/manual/master/"
+      }]
+    }
+  }
+}

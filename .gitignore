@@ -2,7 +2,7 @@
 **/*.rs.bk
 
 /target/
-docs/specs/_book/
+_book/
 node_modules/
 
 # Ingore nested cargo locks but keep the root one.
