@@ -11,8 +11,12 @@
 
 * [Dependencies](setup/deps.md)
 * [Install](setup/install.md)
-* [Configuration](setup/config.md)
 * [Store initialization](setup/store.md)
+
+### Configuration
+
+* [Configuration](config/README.md)
+* [Agents discovery](config/discovery.md)
 
 ### Upgrades
 
