@@ -82,7 +82,19 @@ and runs the API and WebUI on port 16016 and 3000 respectively.
 
 {% common %}
 ```bash
+$ cd replicantecore/
 $ docker-compose up
+```
+{% endmethod %}
+
+{% method %}
+If you see any errors about missing networks you may need to have other playgrounds
+create their networks first.
+
+{% common %}
+```bash
+cd path/to/missing/project
+$ docker-compose up --no-build --no-start
 ```
 {% endmethod %}
 
@@ -93,8 +105,24 @@ Once everything is up and running the WebUI will be available at http://localhos
 
 
 ### 4. Experimenting with the playground
-TODO
+Now that all processes are up and running we can interfear with systems and see what happens.
+Try things like:
+
+  * Stop/start datanodes and/or agents.
+  * Fail over pimaries.
+  * Use the awesome kernel features and tools to symulate network issues (`tc`) and other limits (`cgroups`).
 
 
 ### 5. Clean up
-TODO
+{% method %}
+Each cluster runs as a signle docker-compose project and stores data in a local `./data` directory.
+
+To clean up after you no longer need these processes remove all the docker containers and images
+and all data in `./data`.
+
+{% common %}
+```bash
+$ docker-compose -f docker-compose.yml -f docker-compose-agents.yml down --rmi all --volumes
+$ rm -r ./data
+```
+{% endmethod %}
