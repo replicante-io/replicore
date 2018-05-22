@@ -38,3 +38,10 @@ npm install fixme
 node_modules/.bin/fixme -i 'devtools/**' -i 'node_modules/**' -i 'target/**' '**/*.rs'
 rm -r node_modules package-lock.json
 ```
+
+
+Build dependences
+=================
+
+  * cmake
+  * openssl-devel

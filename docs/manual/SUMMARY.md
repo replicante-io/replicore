@@ -5,18 +5,20 @@
 * [Introduction](README.md)
 * [Architecture overview](first-steps/architecture.md)
 * [Quick start](first-steps/quickstart.md)
-* [Features](first-steps/features.md)
 
 ### Setup
 
 * [Dependencies](setup/deps.md)
-* [Install](setup/install.md)
+* [Installation](setup/install.md)
 * [Store initialization](setup/store.md)
+* [Configuration](setup/config.md)
 
-### Configuration
+### Features
 
-* [Configuration](config/README.md)
-* [Agents discovery](config/discovery.md)
+* [Agents discovery](features/discovery.md)
+* [Events trail](features/events.md)
+* [WebUI](features/webui.md)
+* [Introspection](features/introspection.md)
 
 ### Upgrades
 
@@ -28,3 +30,8 @@
 * [Introduction](replictl/README.md)
 * [`replictl check`](replictl/checks.md)
 * [`replictl versions`](replictl/versions.md)
+
+### API Reference
+
+* [Public](api/public.md)
+* [WebUI (internal)](api/webui.md)
