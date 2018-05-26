@@ -1,30 +1,30 @@
-# The section below is for the API server configuration options.
+# The section below is for the API interface configuration.
 api:
-  # The interface and port to bind the API server onto.
+  # The network interface and port to bind the API server onto.
   #
-  # By default, only bind to the local interface.
+  # By default, only bind to the loopback interface.
   # Production environments should place an HTTPS proxy in front of the API.
   bind: '127.0.0.1:16016'
 
 
-# The section below is for agent discovery configuration options.
+# The section below is for agent discovery configuration.
 #
-# Replicante core uses a pull model to interact with agents.
-# Discovery is the way the agents that should be monitor are found.
+# Discovery is the way the agents that should be managed are found.
+# Replicante core then interact with agents by initiating connections out to them.
 discovery:
-  # Interval (in seconds) to wait after a discovery run before starting another one.
+  # Interval (in seconds) to wait between agent discovery runs.
   interval: 60
 
   # Discovery backends configuration.
   #
-  # Backends are a way to support an extensible set of discovery solutions.
+  # Backends are a way to support an extensible set of discovery systems.
   # Each backend has its own options as described below.
   #
   # Available backends are:
   #
-  #   * `files`: discovers agents from files.
+  #   * `files`: discover agents from local config files.
   backends:
-    # The `files` backend: discovers agents from files.
+    # The `files` backend discover agents from files.
     #
     # The `files` backend can be useful to delegate discovery to unsupported systems.
     # Examples are configuration managemnet tools (ansible, chef, puppet, ...).
@@ -33,13 +33,13 @@ discovery:
     files: []
 
 
-# The section below is for the logging configuration options.
+# The section below is for logging configuration.
 logging:
   # Flush logs asynchronously.
   # 
   # Pro:
-  #     Async log flushing is more efficient as logging statements
-  #     are not blocked waiting for the backend to complete.
+  #     Async log flushing is more efficient as processes
+  #     are not blocked waiting for logging backends to complete.
   # 
   # Con:
   #     If the process crashes logs in the buffer may be lost.
@@ -52,7 +52,7 @@ logging:
   #     or developing environments.
   async: true
 
-  # Logging backend configuration options.
+  # Logging backend configuration.
   backend:
     # The backend to send logs to.
     # This option also determines the format and destination of logs.
@@ -60,13 +60,13 @@ logging:
     # Available options:
     #
     #   * 'json': prints JSON formatted logs to standard output.
-    #   * 'journald': if enabled at compile time, sends logs to systemd journal.
+    #   * 'journald': sends logs to systemd journal (if enabled at compile time).
     name: json
 
-    # Any backend-specific option is set in the `options` dictionary.
+    # Any backend-specific option is set here.
     # The available options vary from backend to backend and are documented below.
     #
-    # *** None avaliave at this time ***
+    # *** None available at this time ***
     #options:
 
   # The minimum logging level.
@@ -77,19 +77,19 @@ logging:
   #   * 'error'
   #   * 'warning'
   #   * 'info'
-  #   * 'debug' (only avaialbe in debug builds)
+  #   * 'debug' (only available in debug builds)
   level: info
 
 
-# The section below is for the storage configuration options.
+# The section below is for storage configuration.
 storage:
-  # The database to use for persisten storage.
+  # The database to use for persistent storage.
   #
-  # DO NOT CHANGE after initial configuration.
+  # !!! DO NOT CHANGE AFTER INITIAL CONFIGURATION !!!
   # This option is to allow users to choose a supported database that best fits
   # their use and environment.
   #
-  # To change this option you will need to "Upgrade by rebuild".
+  # To change this option you will need to "Update by rebuild".
   # See the documentation for more details on this process.
   #
   # Available options:
@@ -97,18 +97,18 @@ storage:
   #   * 'mongodb' (recommended)
   backend: mongodb
 
-  # Any backend-specific option is set in the `options` dictionary.
+  # Any backend-specific option is set here.
   # The available options vary from backend to backend and are documented below.
   #
   # MongoDB options
   options:
     # Name of the MongoDB database to use for persistence.
     #
-    # DO NOT CHANGE after initial configuration.
+    # !!! DO NOT CHANGE AFTER INITIAL CONFIGURATION !!!
     # This option is to allow users to choose a supported database that best fits
     # their use and environment.
     #
-    # To change this option you will need to "Upgrade by rebuild".
+    # To change this option you will need to "Update by rebuild".
     # See the documentation for more details on this process.
     db: replicante  # (recommended)
 
@@ -116,7 +116,7 @@ storage:
     uri: mongodb://localhost:27017/
 
 
-# The section below is for the distributed tracing configuration options.
+# The section below is for distributed tracing configuration.
 tracing:
   # The distributed tracing backend to integrate with.
   #
@@ -126,7 +126,7 @@ tracing:
   #   * 'zipkin'
   backend: noop
 
-  # Any backend-specific option is set in the `options` dictionary.
+  # Any backend-specific option is set here.
   # The available options vary from tracer to tracer and are documented below.
   #
   # Zipkin options
@@ -139,5 +139,5 @@ tracing:
   #    - HOST1:9092
   #    - HOST2:9092
   #
-  #  # (optional) The kafka topic to publish spans to.
+  #  # The kafka topic to publish spans to.
   #  topic: zipkin

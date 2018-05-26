@@ -7,7 +7,8 @@
     "-sharing",
     "anchors@0.7.1",
     "theme-api@1.1.2",
-    "versions@2.1.4"
+    "versions@2.1.4",
+    "include-codeblock@3.2.2"
   ],
 
   "pluginsConfig": {

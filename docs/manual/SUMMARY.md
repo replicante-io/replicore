@@ -10,7 +10,6 @@
 
 * [Dependencies](setup/deps.md)
 * [Installation](setup/install.md)
-* [Store initialization](setup/store.md)
 * [Configuration](setup/config.md)
 
 ### Features
