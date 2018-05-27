@@ -81,7 +81,7 @@ impl InnerStore for MockStore {
     }
 
     fn persist_discovery(&self, cluster: ClusterDiscovery) -> Result<()> {
-        let name = cluster.name.clone();
+        let name = cluster.cluster.clone();
         let mut discoveries = self.discoveries.lock().unwrap();
         discoveries.insert(name, cluster);
         Ok(())

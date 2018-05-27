@@ -1,7 +1,7 @@
 # This file is a list of dictionaries.
 - 
   # Unique name for the cluster.
-  name: mongodb-rs
+  cluster: mongodb-rs
 
   # Address of the agents managing the nodes in the cluster.
   nodes:

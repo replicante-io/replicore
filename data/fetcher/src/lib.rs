@@ -87,8 +87,8 @@ impl Fetcher {
     }
 
     pub fn process(&self, cluster: ClusterDiscovery) {
-        let name = cluster.name.clone();
-        let mut meta = ClusterMetaBuilder::new(cluster.name);
+        let name = cluster.cluster.clone();
+        let mut meta = ClusterMetaBuilder::new(cluster.cluster);
 
         for node in cluster.nodes {
             let result = self.process_target(name.clone(), node.clone(), &mut meta);

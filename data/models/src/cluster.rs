@@ -13,16 +13,16 @@
 /// Any configuration option that replicante should apply to the cluster is defined in this model.
 #[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
 pub struct ClusterDiscovery {
-    pub name: String,
+    pub cluster: String,
     pub nodes: Vec<String>,
 }
 
 impl ClusterDiscovery {
-    pub fn new<S>(name: S, nodes: Vec<String>) -> ClusterDiscovery
+    pub fn new<S>(cluster: S, nodes: Vec<String>) -> ClusterDiscovery
         where S: Into<String>,
     {
         ClusterDiscovery {
-            name: name.into(),
+            cluster: cluster.into(),
             nodes,
         }
     }
@@ -62,7 +62,7 @@ mod tests {
 
         #[test]
         fn from_json() {
-            let payload = r#"{"name":"test","nodes":["a","b"]}"#;
+            let payload = r#"{"cluster":"test","nodes":["a","b"]}"#;
             let cluster: ClusterDiscovery = serde_json::from_str(&payload).unwrap();
             let expected = ClusterDiscovery::new("test", vec!["a".into(), "b".into()]);
             assert_eq!(cluster, expected);
@@ -72,7 +72,7 @@ mod tests {
         fn to_json() {
             let cluster = ClusterDiscovery::new("test", vec!["a".into(), "b".into()]);
             let payload = serde_json::to_string(&cluster).unwrap();
-            let expected = r#"{"name":"test","nodes":["a","b"]}"#;
+            let expected = r#"{"cluster":"test","nodes":["a","b"]}"#;
             assert_eq!(payload, expected);
         }
     }

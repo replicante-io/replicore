@@ -80,7 +80,7 @@ impl DiscoveryWorker {
     ///   4. Pass the discovery to the status fetcher (TODO: move when coordinator is in place).
     ///   5. Pass the discovery to the status aggregator (TODO: move when coordinator is in place).
     fn process(&self, cluster: ClusterDiscovery) {
-        let name = cluster.name.clone();
+        let name = cluster.cluster.clone();
         if let Err(error) = self.process_checked(cluster) {
             let error = error.display_chain().to_string();
             error!(
@@ -100,7 +100,7 @@ impl DiscoveryWorker {
     }
 
     fn process_discovery(&self, cluster: ClusterDiscovery) -> Result<()> {
-        match self.store.cluster_discovery(cluster.name.clone()) {
+        match self.store.cluster_discovery(cluster.cluster.clone()) {
             Err(error) => Err(error).chain_err(|| FAIL_FIND_DISCOVERY),
             Ok(None) => self.process_discovery_new(cluster),
             Ok(Some(old)) => self.process_discovery_exising(cluster, old),

@@ -80,7 +80,7 @@ impl Event {
             EventData::AgentNew(ref data) => Some(&data.cluster),
             EventData::AgentRecover(ref data) => Some(&data.cluster),
             EventData::AgentStillDown(ref data) => Some(&data.cluster),
-            EventData::ClusterNew(ref data) => Some(&data.name),
+            EventData::ClusterNew(ref data) => Some(&data.cluster),
             EventData::DatastoreDown(ref data) => Some(&data.cluster),
             EventData::DatastoreRecover(ref data) => Some(&data.cluster),
             EventData::DatastoreStillDown(ref data) => Some(&data.cluster),
@@ -100,7 +100,7 @@ mod tests {
 
     #[test]
     fn from_json() {
-        let payload = r#"{"event":{"event":"CLUSTER_NEW","payload":{"name":"test","nodes":[]}},"timestamp":"2014-07-08T09:10:11.012Z"}"#;
+        let payload = r#"{"event":{"event":"CLUSTER_NEW","payload":{"cluster":"test","nodes":[]}},"timestamp":"2014-07-08T09:10:11.012Z"}"#;
         let event: Event = serde_json::from_str(&payload).unwrap();
         let discovery = ClusterDiscovery::new("test", vec![]);
         let expected = Event::builder()
@@ -116,7 +116,7 @@ mod tests {
             .timestamp(Utc.ymd(2014, 7, 8).and_hms(9, 10, 11))
             .cluster().new(discovery);
         let payload = serde_json::to_string(&event).unwrap();
-        let expected = r#"{"event":{"event":"CLUSTER_NEW","payload":{"name":"test","nodes":[]}},"timestamp":"2014-07-08T09:10:11Z"}"#;
+        let expected = r#"{"event":{"event":"CLUSTER_NEW","payload":{"cluster":"test","nodes":[]}},"timestamp":"2014-07-08T09:10:11Z"}"#;
         assert_eq!(payload, expected);
     }
 }

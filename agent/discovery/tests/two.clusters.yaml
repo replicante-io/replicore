@@ -1,10 +1,10 @@
-- name: test1
+- cluster: test1
   nodes:
     - 'http://node1:port/'
     - 'http://node2:port/'
     - 'http://node3:port/'
 
-- name: test2
+- cluster: test2
   nodes:
     - 'http://node1:port/'
     - 'http://node3:port/'

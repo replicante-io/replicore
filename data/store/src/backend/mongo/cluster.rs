@@ -168,7 +168,7 @@ impl ClusterStore {
             Bson::Document(replacement) => replacement,
             _ => panic!("ClusterDiscovery failed to encode as BSON document")
         };
-        let filter = doc!{"name" => cluster.name};
+        let filter = doc!{"name" => cluster.cluster};
         let collection = self.collection_discoveries();
         let mut options = UpdateOptions::new();
         options.upsert = Some(true);
