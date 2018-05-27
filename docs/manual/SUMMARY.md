@@ -14,7 +14,7 @@
 
 ### Features
 
-* [Agents discovery](features/discovery.md)
+* [Agent discovery](features/discovery.md)
 * [Events trail](features/events.md)
 * [WebUI](features/webui.md)
 * [Introspection](features/introspection.md)
