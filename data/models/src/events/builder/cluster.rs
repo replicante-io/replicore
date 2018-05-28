@@ -34,6 +34,6 @@ mod tests {
         let discovery = ClusterDiscovery::new("test", vec![]);
         let event = Event::builder().cluster().new(discovery.clone());
         let expected = EventData::ClusterNew(discovery);
-        assert_eq!(event.event, expected);
+        assert_eq!(event.payload, expected);
     }
 }

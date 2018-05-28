@@ -88,14 +88,14 @@ impl EventStore {
 /// A wrapper for the `Event` model to allow BSON to encode/decode timestamps correctly.
 #[derive(Clone, Eq, PartialEq, Debug, Serialize, Deserialize)]
 pub struct EventWrapper {
-    pub event: EventData,
+    pub payload: EventData,
     pub timestamp: UtcDateTime,
 }
 
 impl From<Event> for EventWrapper {
     fn from(event: Event) -> EventWrapper {
         EventWrapper {
-            event: event.event,
+            payload: event.payload,
             timestamp: UtcDateTime(event.timestamp),
         }
     }
@@ -104,7 +104,7 @@ impl From<Event> for EventWrapper {
 impl From<EventWrapper> for Event {
     fn from(event: EventWrapper) -> Event {
         Event {
-            event: event.event,
+            payload: event.payload,
             timestamp: event.timestamp.0,
         }
     }

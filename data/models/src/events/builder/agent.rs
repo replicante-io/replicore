@@ -115,7 +115,7 @@ mod tests {
         let agent = Agent::new("cluster", "host", AgentStatus::AgentDown("TEST".into()));
         let event = Event::builder().agent().new(agent.clone());
         let expected = EventData::AgentNew(agent);
-        assert_eq!(event.event, expected);
+        assert_eq!(event.payload, expected);
     }
 
     mod transition {
@@ -136,7 +136,7 @@ mod tests {
                 after: after.status,
                 before: before.status,
             });
-            assert_eq!(event.event, expected);
+            assert_eq!(event.payload, expected);
         }
 
         #[test]
@@ -150,7 +150,7 @@ mod tests {
                 after: after.status,
                 before: before.status,
             });
-            assert_eq!(event.event, expected);
+            assert_eq!(event.payload, expected);
         }
 
         #[test]
@@ -164,7 +164,7 @@ mod tests {
                 after: after.status,
                 before: before.status,
             });
-            assert_eq!(event.event, expected);
+            assert_eq!(event.payload, expected);
         }
 
         #[test]
@@ -178,7 +178,7 @@ mod tests {
                 after: after.status,
                 before: before.status,
             });
-            assert_eq!(event.event, expected);
+            assert_eq!(event.payload, expected);
         }
 
         #[test]
@@ -192,7 +192,7 @@ mod tests {
                 after: after.status,
                 before: before.status,
             });
-            assert_eq!(event.event, expected);
+            assert_eq!(event.payload, expected);
         }
 
         #[test]
@@ -206,7 +206,7 @@ mod tests {
                 after: after.status,
                 before: before.status,
             });
-            assert_eq!(event.event, expected);
+            assert_eq!(event.payload, expected);
         }
 
         #[test]
@@ -220,7 +220,7 @@ mod tests {
                 after: after.status,
                 before: before.status,
             });
-            assert_eq!(event.event, expected);
+            assert_eq!(event.payload, expected);
         }
 
         #[test]
@@ -234,7 +234,7 @@ mod tests {
                 after: after.status,
                 before: before.status,
             });
-            assert_eq!(event.event, expected);
+            assert_eq!(event.payload, expected);
         }
 
         #[test]
