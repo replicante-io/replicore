@@ -15,7 +15,7 @@
 ### Features
 
 * [Agent discovery](features/discovery.md)
-* [Events trail](features/events.md)
+* [Events](features/events.md)
 * [WebUI](features/webui.md)
 * [Introspection](features/introspection.md)
 
@@ -33,4 +33,3 @@
 ### API Reference
 
 * [Public](api/public.md)
-* [WebUI (internal)](api/webui.md)
