@@ -24,7 +24,7 @@ pub struct AgentStatusChange {
 
 /// Enumerates all possible events emitted by the system.
 #[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
-#[serde(tag = "event", content = "data", deny_unknown_fields)]
+#[serde(tag = "event", content = "data")]
 pub enum EventData {
     /// Emitted when an agent is detected to be down.
     #[serde(rename = "AGENT_DOWN")]

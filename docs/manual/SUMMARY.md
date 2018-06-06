@@ -19,10 +19,17 @@
 * [WebUI](features/webui.md)
 * [Introspection](features/introspection.md)
 
+### Security
+
+* [Security considerations](security/considerations.md)
+* [Agent transport](security/transport.md)
+
 ### Upgrades
 
 * [Rolling upgrades](upgrades/rolling.md)
-* [Store changes](upgrades/store.md)
+* [Version compatibility](upgrades/versions.md)
+* [Upgrade notes](upgrades/notes.md)
+* [Change Log](upgrades/changelog.md)
 
 ### replictl
 

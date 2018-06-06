@@ -22,6 +22,13 @@ Because of that, most activities of the system can be explained and monitored by
 The [events](./events.md) section explains how to view and programmatically follow events.
 
 
+## Metrics
+Information about internal operation of replicante is exposed through metrics.
+These can be used to monitor the health and activity of a process as well as its performance.
+
+Metrics are exposed in [Prometheus](https://prometheus.io/) format by the API endpoint `/api/v1/metrics`.
+
+
 ## Logging
 Logging is a good way to see exactly what one system was doing at a precise point in time.
 Replicante provides structured logging so administrators can see what is happening and in what context.
