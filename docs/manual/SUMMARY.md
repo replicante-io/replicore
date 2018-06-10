@@ -22,7 +22,7 @@
 ### Security
 
 * [Security considerations](security/considerations.md)
-* [Agent transport](security/transport.md)
+* [Agent transports](security/transport.md)
 
 ### Upgrades
 
