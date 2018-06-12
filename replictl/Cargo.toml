@@ -33,12 +33,14 @@ error-chain = "^0.11.0"
 indicatif = "^0.9.0"
 lazy_static = "^1.0.0"
 prometheus = "^0.4.1"
+reqwest = "^0.8.5"
 serde_yaml = "^0.7.3"
 slog = "^2.1.1"
 slog-term = "^2.4.0"
 
 replicante = { path = "../replicante" }
 replicante_agent_discovery = { path = "../agent/discovery" }
+replicante_data_models = { path = "../data/models" }
 replicante_data_store = { path = "../data/store" }
 
 

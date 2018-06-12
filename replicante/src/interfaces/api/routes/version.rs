@@ -9,12 +9,12 @@ use replicante_data_models::api::Version;
 
 
 lazy_static! {
-    /// TODO
+    /// Compile-time constant version of core.
     static ref REPLICANTE_VERSION: Version = {
         Version {
-            commit: env!("GIT_BUILD_HASH"),
-            taint: env!("GIT_BUILD_TAINT"),
-            version: env!("CARGO_PKG_VERSION"),
+            commit: String::from(env!("GIT_BUILD_HASH")),
+            taint: String::from(env!("GIT_BUILD_TAINT")),
+            version: String::from(env!("CARGO_PKG_VERSION")),
         }
     };
 }

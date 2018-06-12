@@ -11,6 +11,7 @@ use replicante_data_store::Validator;
 use super::super::Interfaces;
 use super::super::Result;
 use super::super::ResultExt;
+use super::super::core::Client;
 
 
 pub const COMMAND: &'static str = "versions";
@@ -26,7 +27,8 @@ lazy_static! {
 
 /// Collect information about various needed systems.
 struct Versions {
-    replicante: String,
+    replicante_dynamic: Result<String>,
+    replicante_static: String,
     replictl: String,
     store: Result<String>,
 }
@@ -35,12 +37,12 @@ impl Versions {
     /// Print all the collected information to stdout.
     pub fn show(&self) {
         println!("replictl: {}", self.replictl);
-        println!("Replicante (statically determined): {}", self.replicante);
-        let store = match self.store {
-            Err(ref error) => error.display_chain().to_string(),
-            Ok(ref store) => store.clone(),
-        };
-        println!("Store: {}", store);
+        println!("Replicante (statically determined): {}", self.replicante_static);
+        println!(
+            "Replicante (dynamically determined): {}",
+            value_or_error(&self.replicante_dynamic)
+        );
+        println!("Store: {}", value_or_error(&self.store));
     }
 }
 
@@ -52,6 +54,14 @@ pub fn command() -> App<'static, 'static> {
 }
 
 
+/// Collect version information from the replicante API.
+fn replicante_version<'a>(args: &ArgMatches<'a>) -> Result<String> {
+    let client = Client::new(args)?;
+    let version = client.version()?;
+    Ok(format!("{} [{}; {}]", version.version, version.commit, version.taint))
+}
+
+
 /// Switch the control flow to the requested check command.
 pub fn run<'a>(args: &ArgMatches<'a>, interfaces: &Interfaces) -> Result<()> {
     let logger = interfaces.logger();
@@ -60,11 +70,13 @@ pub fn run<'a>(args: &ArgMatches<'a>, interfaces: &Interfaces) -> Result<()> {
     // Find external systems version.
     let config = args.value_of("config").unwrap();
     let config = Config::from_file(config).chain_err(|| "Failed to load configuration")?;
+    let replicante_dynamic = replicante_version(args);
     let store = store_version(&config, interfaces);
 
     // Display results.
     let versions = Versions {
-        replicante: REPLICANTE_VERSION.clone(),
+        replicante_dynamic,
+        replicante_static: REPLICANTE_VERSION.clone(),
         replictl: VERSION.clone(),
         store,
     };
@@ -72,10 +84,21 @@ pub fn run<'a>(args: &ArgMatches<'a>, interfaces: &Interfaces) -> Result<()> {
     Ok(())
 }
 
+
+/// Collect version information for the configured store.
 fn store_version(config: &Config, interfaces: &Interfaces) -> Result<String> {
     let logger = interfaces.logger();
     let registry = Registry::new();
     let store = Validator::new(config.storage.clone(), logger.clone(), &registry)?;
     let version = store.version()?;
     Ok(version)
+}
+
+
+/// Returns the value of the result or a formatted error message.
+fn value_or_error(result: &Result<String>) -> String {
+    match result {
+        &Err(ref error) => error.display_chain().to_string().trim_right().to_string(),
+        &Ok(ref value) => value.clone(),
+    }
 }

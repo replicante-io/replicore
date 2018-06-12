@@ -8,6 +8,7 @@ extern crate indicatif;
 #[macro_use]
 extern crate lazy_static;
 extern crate prometheus;
+extern crate reqwest;
 
 extern crate serde_yaml;
 #[macro_use]
@@ -16,6 +17,7 @@ extern crate slog_term;
 
 extern crate replicante;
 extern crate replicante_agent_discovery;
+extern crate replicante_data_models;
 extern crate replicante_data_store;
 
 use clap::App;
@@ -24,6 +26,7 @@ use clap::ArgMatches;
 
 
 mod commands;
+mod core;
 mod errors;
 mod interfaces;
 mod logging;
@@ -73,6 +76,14 @@ pub fn run() -> Result<()> {
              .long("no-progress")
              .global(true)
              .help("Do not show progress bars")
+        )
+        .arg(Arg::with_name("url")
+             .long("url")
+             .value_name("URL")
+             .default_value("http://localhost:16016/")
+             .takes_value(true)
+             .global(true)
+             .help("Specifies the URL of the Replicante API to use")
         )
         .subcommand(check::command())
         .subcommand(versions::command())
