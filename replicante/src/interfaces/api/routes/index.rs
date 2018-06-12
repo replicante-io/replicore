@@ -1,4 +1,3 @@
-//! Module that defines a set of core handlers for the API interface.
 use iron::IronResult;
 use iron::Request;
 use iron::Response;
@@ -6,7 +5,7 @@ use iron::status;
 
 
 /// Root index (`/`) handler.
-pub fn root_index(_: &mut Request) -> IronResult<Response> {
+pub fn handler(_: &mut Request) -> IronResult<Response> {
     Ok(Response::with((status::Ok, "Replicante API server")))
 }
 
@@ -17,12 +16,12 @@ mod tests {
     use iron_test::request;
     use iron_test::response;
 
-    use super::root_index;
+    use super::handler;
 
 
     #[test]
     fn get_index() {
-        let response = request::get("http://host:16016/", Headers::new(), &root_index).unwrap();
+        let response = request::get("http://host:16016/", Headers::new(), &handler).unwrap();
         let result_body = response::extract_body_to_bytes(response);
         let result_body = String::from_utf8(result_body).unwrap();
         assert_eq!(result_body, "Replicante API server");

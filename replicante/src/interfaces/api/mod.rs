@@ -10,7 +10,6 @@ use iron::Iron;
 use iron_json_response::JsonResponseMiddleware;
 use slog::Logger;
 
-use replicante_util_iron::MetricsHandler;
 use replicante_util_iron::MetricsMiddleware;
 use replicante_util_iron::RequestLogger;
 
@@ -40,14 +39,11 @@ pub struct API {
 impl API {
     /// Creates a new API interface.
     pub fn new(config: Config, logger: Logger, metrics: &Metrics) -> API {
-        let mut router = RouterBuilder::new();
-        router.get("/", routes::root_index, "index");
-
         let registry = metrics.registry().clone();
-        let metrics = MetricsHandler::new(registry.clone());
-        router.get("/api/v1/metrics", metrics, "metrics");
+        let mut router = RouterBuilder::new();
+        routes::mount(&mut router, registry.clone());
 
-        let (duration, errors, requests) = MetricsMiddleware::metrics("repplicante");
+        let (duration, errors, requests) = MetricsMiddleware::metrics("replicante");
         registry.register(Box::new(duration.clone()))
             .expect("Unable to register duration histogram");
         registry.register(Box::new(errors.clone())).expect("Unable to register errors counter");
