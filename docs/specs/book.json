@@ -5,8 +5,8 @@
 
   "plugins": [
     "-sharing",
-    "alerts@0.2.0",
     "anchors@0.7.1",
+    "hints@1.0.2",
     "rest@1.1.1",
     "theme-api@1.1.2",
     "versions@2.1.4"
@@ -20,13 +20,5 @@
         "value": "https://replicante.io/docs/specs/master/"
       }]
     }
-  },
-
-  "styles": {
-    "website": "styles/all.css",
-    "ebook": "styles/all.css",
-    "pdf": "styles/all.css",
-    "mobi": "styles/all.css",
-    "epub": "styles/all.css"
   }
 }

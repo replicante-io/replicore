@@ -1,8 +1,10 @@
 # The Agent Protocol
-> **[warning] Alpha state disclaimer**
->
-> The protocol defined below is in early development cycle
-> and is subject to (potentially breaking) change.
+{% hint style="working" %}
+**Alpha state disclaimer**
+
+The protocol defined below is in early development cycle
+and is subject to (potentially breaking) change.
+{% endhint %}
 
 The Agents interface is a JSON encoded HTTP API.  
 The API is versioned so that breaking changes can be rolled out gradually

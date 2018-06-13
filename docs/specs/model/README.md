@@ -1,8 +1,10 @@
 # The Datastore Model
-> **[warning] Alpha state disclaimer**
->
-> The model defined below is in early development cycle
-> and is subject to (potentially breaking) change.
+{% hint style="working" %}
+**Alpha state disclaimer**
+
+The model defined below is in early development cycle
+and is subject to (potentially breaking) change.
+{% endhint %}
 
 Any (collection of) software that fullfills the requirements and expectations
 of the model defined in this document is considered a datastore.

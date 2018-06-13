@@ -1,8 +1,10 @@
 # Shards information
-> **[warning] Alpha state disclaimer**
->
-> The protocol defined below is in early development cycle
-> and is subject to (potentially breaking) change.
+{% hint style="working" %}
+**Alpha state disclaimer**
+
+The protocol defined below is in early development cycle
+and is subject to (potentially breaking) change.
+{% endhint %}
 
 
 {% rest %}
