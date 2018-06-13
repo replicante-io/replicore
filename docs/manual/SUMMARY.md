@@ -39,4 +39,5 @@
 
 ### API Reference
 
-* [Public](api/public.md)
+* [Overview](api/README.md)
+* [Monitoring](api/monitoring.md)
