@@ -24,12 +24,12 @@ impl Handler for Discovery {
     fn handle(&self, req: &mut Request) -> IronResult<Response> {
         let cluster: Result<String> = req.extensions.get::<Router>()
             .unwrap().find("cluster")
-            .map(|cluster| String::from(cluster))
-            .ok_or("Missing `cluster` parameter".into());
+            .map(String::from)
+            .ok_or_else(|| "Missing `cluster` parameter".into());
         let cluster = cluster?;
         let discovery = self.store.cluster_discovery(cluster)
             .chain_err(|| "Failed to fetch cluster discovery")?;
-        let discovery: Result<_> = discovery.ok_or("Cluster not found".into());
+        let discovery: Result<_> = discovery.ok_or_else(|| "Cluster not found".into());
         let discovery = discovery?;
         let mut resp = Response::new();
         resp.set_mut(JsonResponse::json(discovery)).set_mut(status::Ok);
@@ -55,12 +55,12 @@ impl Handler for Meta {
     fn handle(&self, req: &mut Request) -> IronResult<Response> {
         let cluster: Result<String> = req.extensions.get::<Router>()
             .unwrap().find("cluster")
-            .map(|cluster| String::from(cluster))
-            .ok_or("Missing `cluster` parameter".into());
+            .map(String::from)
+            .ok_or_else(|| "Missing `cluster` parameter".into());
         let cluster = cluster?;
         let meta = self.store.cluster_meta(cluster)
             .chain_err(|| "Failed to fetch cluster metadata")?;
-        let meta: Result<_> = meta.ok_or("Cluster not found".into());
+        let meta: Result<_> = meta.ok_or_else(|| "Cluster not found".into());
         let meta = meta?;
         let mut resp = Response::new();
         resp.set_mut(JsonResponse::json(meta)).set_mut(status::Ok);

@@ -158,13 +158,15 @@ fn into_logger<D>(drain: D) -> Logger
 /// Optionally wrap the drain into an [`Async`] drain.
 ///
 /// [`Async`]: slog_async/struct.Async.html
+#[cfg_attr(feature = "cargo-clippy", allow(needless_pass_by_value))]
 fn config_async<D>(config: Config, drain: D) -> Logger
     where D: SendSyncUnwindSafeDrain<Ok = (), Err = Never>,
           D: 'static + SendSyncRefUnwindSafeDrain<Ok = (), Err = Never>
 {
-    match config.async {
-        true => into_logger(Async::new(drain).build().ignore_res()),
-        false => into_logger(drain),
+    if config.async {
+        into_logger(Async::new(drain).build().ignore_res())
+    } else {
+        into_logger(drain)
     }
 }
 

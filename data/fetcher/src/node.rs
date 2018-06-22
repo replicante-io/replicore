@@ -7,8 +7,8 @@ use super::ResultExt;
 use super::meta::ClusterMetaBuilder;
 
 
-const FAIL_FIND_NODE: &'static str = "Failed to fetch node";
-const FAIL_PERSIST_NODE: &'static str = "Failed to persist node";
+const FAIL_FIND_NODE: &str = "Failed to fetch node";
+const FAIL_PERSIST_NODE: &str = "Failed to persist node";
 
 
 /// Subset of fetcher logic that deals specifically with nodes.

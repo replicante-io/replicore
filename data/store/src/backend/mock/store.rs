@@ -14,6 +14,7 @@ use super::super::super::store::InnerStore;
 
 
 /// A mock implementation of the storage layer for tests.
+#[derive(Default)]
 pub struct MockStore {
     pub agents: Mutex<HashMap<(String, String), Agent>>,
     pub agents_info: Mutex<HashMap<(String, String), AgentInfo>>,
@@ -27,25 +28,25 @@ pub struct MockStore {
 impl InnerStore for MockStore {
     fn agent(&self, cluster: String, host: String) -> Result<Option<Agent>> {
         let agents = self.agents.lock().unwrap();
-        let agent = agents.get(&(cluster, host)).map(|a| a.clone());
+        let agent = agents.get(&(cluster, host)).cloned();
         Ok(agent)
     }
 
     fn agent_info(&self, cluster: String, host: String) -> Result<Option<AgentInfo>> {
         let agents_info = self.agents_info.lock().unwrap();
-        let agent_info = agents_info.get(&(cluster, host)).map(|a| a.clone());
+        let agent_info = agents_info.get(&(cluster, host)).cloned();
         Ok(agent_info)
     }
 
     fn cluster_discovery(&self, cluster: String) -> Result<Option<ClusterDiscovery>> {
         let discoveries = self.discoveries.lock().unwrap();
-        let discovery = discoveries.get(&cluster).map(|c| c.clone());
+        let discovery = discoveries.get(&cluster).cloned();
         Ok(discovery)
     }
 
     fn cluster_meta(&self, cluster: String) -> Result<Option<ClusterMeta>> {
         let clusters = self.clusters_meta.lock().unwrap();
-        let meta = clusters.get(&cluster).map(|c| c.clone());
+        let meta = clusters.get(&cluster).cloned();
         Ok(meta)
     }
 
@@ -60,7 +61,7 @@ impl InnerStore for MockStore {
     
     fn node(&self, cluster: String, name: String) -> Result<Option<Node>> {
         let nodes = self.nodes.lock().unwrap();
-        let node = nodes.get(&(cluster, name)).map(|n| n.clone());
+        let node = nodes.get(&(cluster, name)).cloned();
         Ok(node)
     }
 
@@ -125,7 +126,7 @@ impl InnerStore for MockStore {
 
     fn shard(&self, cluster: String, node: String, id: String) -> Result<Option<Shard>> {
         let shards = self.shards.lock().unwrap();
-        let shard = shards.get(&(cluster, node, id)).map(|n| n.clone());
+        let shard = shards.get(&(cluster, node, id)).cloned();
         Ok(shard)
     }
 
@@ -142,15 +143,7 @@ impl InnerStore for MockStore {
 impl MockStore {
     /// Creates a new, empty, mock store.
     pub fn new() -> MockStore {
-        MockStore {
-            agents: Mutex::new(HashMap::new()),
-            agents_info: Mutex::new(HashMap::new()),
-            clusters_meta: Mutex::new(HashMap::new()),
-            discoveries: Mutex::new(HashMap::new()),
-            nodes: Mutex::new(HashMap::new()),
-            shards: Mutex::new(HashMap::new()),
-            events: Mutex::new(Vec::new()),
-        }
+        MockStore::default()
     }
 }
 
@@ -330,7 +323,7 @@ mod tests {
             let mock = Arc::new(MockStore::new());
             let store = Store::mock(Arc::clone(&mock));
             let cluster = ClusterDiscovery::new("test", vec!["test".into()]);
-            let event = Event::builder().cluster().new(cluster);
+            let event = Event::builder().cluster().cluster_new(cluster);
             store.persist_event(event.clone()).unwrap();
             let stored = mock.events.lock().expect("Faild to lock").clone();
             assert_eq!(vec![event], stored);

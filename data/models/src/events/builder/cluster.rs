@@ -11,12 +11,12 @@ pub struct ClusterBuilder {
 
 impl ClusterBuilder {
     /// Create a new cluster event builder.
-    pub fn new_builder(builder: EventBuilder) -> ClusterBuilder {
+    pub fn builder(builder: EventBuilder) -> ClusterBuilder {
         ClusterBuilder { builder }
     }
 
     /// Build an `EventData::ClusterNew`.
-    pub fn new(self, discovery: ClusterDiscovery) -> Event {
+    pub fn cluster_new(self, discovery: ClusterDiscovery) -> Event {
         let data = EventData::ClusterNew(discovery);
         self.builder.build(data)
     }
@@ -32,7 +32,7 @@ mod tests {
     #[test]
     fn cluster_new() {
         let discovery = ClusterDiscovery::new("test", vec![]);
-        let event = Event::builder().cluster().new(discovery.clone());
+        let event = Event::builder().cluster().cluster_new(discovery.clone());
         let expected = EventData::ClusterNew(discovery);
         assert_eq!(event.payload, expected);
     }

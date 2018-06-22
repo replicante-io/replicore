@@ -87,11 +87,11 @@ impl ClusterStore {
         Ok(Some(meta))
     }
 
-    pub fn find_clusters(&self, search: String, limit: u8) -> Result<Vec<ClusterMeta>> {
+    pub fn find_clusters(&self, search: &str, limit: u8) -> Result<Vec<ClusterMeta>> {
         let search = regex::escape(&search);
         let filter = doc!{"name" => {"$regex" => search, "$options" => "i"}};
         let mut options = FindOptions::new();
-        options.limit = Some(limit as i64);
+        options.limit = Some(i64::from(limit));
 
         MONGODB_OPS_COUNT.with_label_values(&["find"]).inc();
         let _timer = MONGODB_OPS_DURATION.with_label_values(&["find"]).start_timer();
@@ -119,7 +119,7 @@ impl ClusterStore {
             "name" => 1,
         };
         let mut options = FindOptions::new();
-        options.limit = Some(TOP_CLUSTERS_LIMIT as i64);
+        options.limit = Some(i64::from(TOP_CLUSTERS_LIMIT));
         options.sort = Some(sort);
         let collection = self.collection_cluster_meta();
         MONGODB_OPS_COUNT.with_label_values(&["find"]).inc();

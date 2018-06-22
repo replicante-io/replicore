@@ -14,7 +14,7 @@ use super::super::ResultExt;
 use super::super::core::Client;
 
 
-pub const COMMAND: &'static str = "versions";
+pub const COMMAND: &str = "versions";
 
 lazy_static! {
     /// Version details for replictl.
@@ -97,8 +97,8 @@ fn store_version(config: &Config, interfaces: &Interfaces) -> Result<String> {
 
 /// Returns the value of the result or a formatted error message.
 fn value_or_error(result: &Result<String>) -> String {
-    match result {
-        &Err(ref error) => error.display_chain().to_string().trim_right().to_string(),
-        &Ok(ref value) => value.clone(),
+    match *result {
+        Err(ref error) => error.display_chain().to_string().trim_right().to_string(),
+        Ok(ref value) => value.clone(),
     }
 }

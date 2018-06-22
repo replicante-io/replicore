@@ -105,7 +105,7 @@ mod tests {
         let discovery = ClusterDiscovery::new("test", vec![]);
         let expected = Event::builder()
             .timestamp(Utc.ymd(2014, 7, 8).and_hms_micro(9, 10, 11, 12000))
-            .cluster().new(discovery);
+            .cluster().cluster_new(discovery);
         assert_eq!(event, expected);
     }
 
@@ -114,7 +114,7 @@ mod tests {
         let discovery = ClusterDiscovery::new("test", vec![]);
         let event = Event::builder()
             .timestamp(Utc.ymd(2014, 7, 8).and_hms(9, 10, 11))
-            .cluster().new(discovery);
+            .cluster().cluster_new(discovery);
         let payload = serde_json::to_string(&event).unwrap();
         let expected = r#"{"payload":{"event":"CLUSTER_NEW","data":{"cluster":"test","nodes":[]}},"timestamp":"2014-07-08T09:10:11Z"}"#;
         assert_eq!(payload, expected);

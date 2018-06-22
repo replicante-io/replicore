@@ -8,10 +8,10 @@ use super::Result;
 use super::ResultExt;
 
 
-const FAIL_FIND_AGENT: &'static str = "Failed to fetch agent";
-const FAIL_FIND_AGENT_INFO: &'static str = "Failed to fetch agent info";
-const FAIL_PERSIST_AGENT: &'static str = "Failed to persist agent";
-const FAIL_PERSIST_AGENT_INFO: &'static str = "Failed to persist agent info";
+const FAIL_FIND_AGENT: &str = "Failed to fetch agent";
+const FAIL_FIND_AGENT_INFO: &str = "Failed to fetch agent info";
+const FAIL_PERSIST_AGENT: &str = "Failed to persist agent";
+const FAIL_PERSIST_AGENT_INFO: &str = "Failed to persist agent info";
 
 
 /// Subset of fetcher logic that deals specifically with agents.
@@ -58,7 +58,7 @@ impl AgentFetcher {
     }
 
     fn process_agent_new(&self, agent: Agent) -> Result<()> {
-        let event = Event::builder().agent().new(agent.clone());
+        let event = Event::builder().agent().agent_new(agent.clone());
         self.store.persist_event(event).chain_err(|| FAIL_PERSIST_AGENT)?;
         self.store.persist_agent(agent).chain_err(|| FAIL_PERSIST_AGENT)
     }

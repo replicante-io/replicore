@@ -33,6 +33,7 @@ pub struct Interfaces {
 
 impl Interfaces {
     /// Creates and configures interfaces.
+    #[cfg_attr(feature = "cargo-clippy", allow(needless_pass_by_value))]
     pub fn new(config: &Config, logger: Logger) -> Result<Interfaces> {
         let metrics = Metrics::new(&logger);
         let api = API::new(config.api.clone(), logger.clone(), &metrics);

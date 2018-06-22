@@ -13,7 +13,7 @@ use super::super::super::ResultExt;
 use super::super::super::interfaces::Interfaces;
 
 
-const FAIL_FETCH_EVENTS: &'static str = "Failed to fetch recent events";
+const FAIL_FETCH_EVENTS: &str = "Failed to fetch recent events";
 const RECENT_EVENTS_LIMIT: u32 = 100;
 
 

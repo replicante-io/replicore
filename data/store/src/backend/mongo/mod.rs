@@ -84,7 +84,7 @@ impl InnerStore for MongoStore {
     }
 
     fn find_clusters(&self, search: String, limit: u8) -> Result<Vec<ClusterMeta>> {
-        self.clusters.find_clusters(search, limit)
+        self.clusters.find_clusters(&search, limit)
     }
 
     fn node(&self, cluster: String, name: String) -> Result<Option<Node>> {
@@ -134,6 +134,7 @@ impl InnerStore for MongoStore {
 
 impl MongoStore {
     /// Creates a mongodb-backed store.
+    #[cfg_attr(feature = "cargo-clippy", allow(needless_pass_by_value))]
     pub fn new(config: MongoDBConfig, logger: Logger, registry: &Registry) -> Result<MongoStore> {
         info!(logger, "Configuring MongoDB as storage layer");
         let db = config.db.clone();
@@ -243,6 +244,7 @@ impl InnerValidator for MongoValidator {
 
 impl MongoValidator {
     /// Creates a mongodb-backed store validator.
+    #[cfg_attr(feature = "cargo-clippy", allow(needless_pass_by_value))]
     pub fn new(config: MongoDBConfig, logger: Logger, registry: &Registry) -> Result<MongoValidator> {
         info!(logger, "Configuring MongoDB as storage validator");
         let db = config.db.clone();

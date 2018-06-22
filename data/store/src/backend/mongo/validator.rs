@@ -43,10 +43,10 @@ use super::metrics::MONGODB_OPS_DURATION;
 use super::metrics::MONGODB_OP_ERRORS_COUNT;
 
 
-const GROUP_PERF_INDEX: &'static str = "perf/index";
-const GROUP_STORE_ERROR: &'static str = "store/error";
-const GROUP_STORE_MISSING: &'static str = "store/missing";
-const GROUP_STORE_SCHEMA: &'static str = "store/schema";
+const GROUP_PERF_INDEX: &str = "perf/index";
+const GROUP_STORE_ERROR: &str = "store/error";
+const GROUP_STORE_MISSING: &str = "store/missing";
+const GROUP_STORE_SCHEMA: &str = "store/schema";
 
 
 lazy_static! {
@@ -241,7 +241,7 @@ impl DataValidator {
             Ok(item) => {
                 let id = item.get_object_id("_id")
                     .map(|id| id.to_hex())
-                    .unwrap_or("<NO ID>".into());
+                    .unwrap_or_else(|_| "<NO ID>".into());
                 match bson::from_bson::<Model>(bson::Bson::Document(item)) {
                     Ok(item) => Ok(item),
                     Err(error) => {
@@ -267,16 +267,16 @@ struct IndexInfo {
 }
 
 impl IndexInfo {
-    pub fn parse(document: Document) -> Result<IndexInfo> {
+    pub fn parse(document: &Document) -> Result<IndexInfo> {
         let mut keys = Vec::new();
         for (key, direction) in document.get_document("key").expect("index has no key").iter() {
-            let direction = match direction {
-                &Bson::FloatingPoint(f) if f == 1.0 => 1,
-                &Bson::FloatingPoint(f) if f == -1.0 => -1,
-                &Bson::I32(i) if i == 1 => 1,
-                &Bson::I32(i) if i == -1 => -1,
-                &Bson::I64(i) if i == 1 => 1,
-                &Bson::I64(i) if i == -1 => -1,
+            let direction = match *direction {
+                Bson::FloatingPoint(f) if (f - 1.0).abs() < 0.1 => 1,
+                Bson::FloatingPoint(f) if (f - -1.0).abs() < 0.1 => -1,
+                Bson::I32(i) if i == 1 => 1,
+                Bson::I32(i) if i == -1 => -1,
+                Bson::I64(i) if i == 1 => 1,
+                Bson::I64(i) if i == -1 => -1,
                 _ => panic!("key direction is not 1 or -1")
             };
             keys.push((key.clone(), direction));
@@ -314,7 +314,7 @@ impl IndexValidator {
             for index in needed {
                 if !indexes.contains(index) {
                     results.push(ValidationResult::error(
-                        collection.clone(),
+                        String::from(*collection),
                         format!("missing required index: {:?}", index),
                         GROUP_STORE_MISSING
                     ));
@@ -326,7 +326,7 @@ impl IndexValidator {
             for index in suggested {
                 if !indexes.contains(index) {
                     results.push(ValidationResult::result(
-                        collection.clone(),
+                        String::from(*collection),
                         format!("recommended index not found: {:?}", index),
                         GROUP_PERF_INDEX
                     ));
@@ -349,7 +349,7 @@ impl IndexValidator {
             error
         })?;
         for index in cursor {
-            let index = IndexInfo::parse(index?)?;
+            let index = IndexInfo::parse(&(index?))?;
             indexes.insert(index);
         }
         Ok(indexes)
@@ -378,7 +378,7 @@ impl SchemaValidator {
 
         // Check all needed collections exist and are writable.
         for collection in EXPECTED_COLLECTIONS.iter() {
-            let name: &'static str = collection.clone();
+            let name: &'static str = collection;
             let collection = match collections.get(name) {
                 Some(info) => info,
                 None => {

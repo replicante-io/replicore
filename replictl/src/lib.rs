@@ -90,26 +90,27 @@ pub fn run() -> Result<()> {
         .get_matches();
 
     // Initialise logging.
-    let log_level = value_t!(args, "log-level", LogLevel).unwrap_or(LogLevel::default());
+    let log_level = value_t!(args, "log-level", LogLevel).unwrap_or_default();
     let logger = logging::configure(log_level);
     debug!(logger, "replictl starting"; "git-taint" => env!("GIT_BUILD_TAINT"));
 
     // Run the replictl command.
     let interfaces = Interfaces::new(&args, logger.clone());
-    let result = run_command(args, interfaces);
-    match result.is_err() {
-        false => debug!(logger, "replictl exiting with success"; "error" => false),
-        true => error!(logger, "replictl exiting with error"; "error" => true),
-    };
+    let result = run_command(&args, &interfaces);
+    if result.is_err() {
+        error!(logger, "replictl exiting with error"; "error" => true);
+    } else {
+        debug!(logger, "replictl exiting with success"; "error" => false);
+    }
     result
 }
 
 
 /// Switch the control flow to the requested command.
-fn run_command<'a>(args: ArgMatches<'a>, interfaces: Interfaces) -> Result<()> {
+fn run_command(args: &ArgMatches, interfaces: &Interfaces) -> Result<()> {
     match args.subcommand_name() {
-        Some(check::COMMAND) => check::run(&args, &interfaces),
-        Some(versions::COMMAND) => versions::run(&args, &interfaces),
+        Some(check::COMMAND) => check::run(args, interfaces),
+        Some(versions::COMMAND) => versions::run(args, interfaces),
         None => Err("Need a command to run".into()),
         _ => Err("Received unrecognised command".into()),
     }

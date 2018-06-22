@@ -20,20 +20,20 @@ use super::super::super::outcome::Outcomes;
 use super::super::super::outcome::Warning;
 
 
-pub const COMMAND: &'static str = "store";
+pub const COMMAND: &str = "store";
 
-const COMMAND_DATA: &'static str = "data";
-const COMMAND_SCHEMA: &'static str = "schema";
-const FAILED_CHECK_SCHEMA : &'static str = "Failed to check store schema";
-const FAILED_CHECK_DATA : &'static str = "Failed to check store data";
+const COMMAND_DATA: &str = "data";
+const COMMAND_SCHEMA: &str = "schema";
+const FAILED_CHECK_SCHEMA : &str = "Failed to check store schema";
+const FAILED_CHECK_DATA : &str = "Failed to check store data";
 
-const MODEL_AGENT: &'static str = "Agent";
-const MODEL_AGENT_INFO: &'static str = "AgentInfo";
-const MODEL_CLUSTER_META: &'static str = "ClusterMeta";
-const MODEL_CLUSTER_DISCOVERY: &'static str = "ClusterDiscovery";
-const MODEL_EVENT: &'static str = "Event";
-const MODEL_NODE: &'static str = "Node";
-const MODEL_SHARD: &'static str = "Shard";
+const MODEL_AGENT: &str = "Agent";
+const MODEL_AGENT_INFO: &str = "AgentInfo";
+const MODEL_CLUSTER_META: &str = "ClusterMeta";
+const MODEL_CLUSTER_DISCOVERY: &str = "ClusterDiscovery";
+const MODEL_EVENT: &str = "Event";
+const MODEL_NODE: &str = "Node";
+const MODEL_SHARD: &str = "Shard";
 
 
 /// Configure the `replictl check store` command parser.
@@ -53,7 +53,7 @@ pub fn command() -> App<'static, 'static> {
 pub fn run<'a>(args: &ArgMatches<'a>, interfaces: &Interfaces) -> Result<()> {
     let command = args.subcommand_matches(super::COMMAND).unwrap();
     let command = command.subcommand_matches(COMMAND).unwrap();
-    let command = command.subcommand_name().clone();
+    let command = command.subcommand_name();
     match command {
         Some(COMMAND_DATA) => data(args, interfaces),
         Some(COMMAND_SCHEMA) => schema(args, interfaces),

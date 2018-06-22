@@ -16,8 +16,8 @@ use super::super::super::ResultExt;
 use super::metrics::DISCOVERY_FETCH_ERRORS_COUNT;
 
 
-const FAIL_FIND_DISCOVERY: &'static str = "Failed to fetch cluster discovery";
-const FAIL_PERSIST_DISCOVERY: &'static str = "Failed to persist cluster discovery";
+const FAIL_FIND_DISCOVERY: &str = "Failed to fetch cluster discovery";
+const FAIL_PERSIST_DISCOVERY: &str = "Failed to persist cluster discovery";
 
 
 /// Implements the discovery logic of a signle discovery loop.
@@ -118,7 +118,7 @@ impl DiscoveryWorker {
     }
 
     fn process_discovery_new(&self, cluster: ClusterDiscovery) -> Result<()> {
-        let event = Event::builder().cluster().new(cluster.clone());
+        let event = Event::builder().cluster().cluster_new(cluster.clone());
         self.store.persist_event(event).chain_err(|| FAIL_PERSIST_DISCOVERY)?;
         self.store.persist_discovery(cluster).chain_err(|| FAIL_PERSIST_DISCOVERY)
     }

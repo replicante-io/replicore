@@ -17,7 +17,7 @@ impl Agent {
         Agent {
             cluster: cluster.into(),
             host: host.into(),
-            status: status,
+            status,
         }
     }
 }

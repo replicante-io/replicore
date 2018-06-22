@@ -91,7 +91,7 @@ impl Fetcher {
         let mut meta = ClusterMetaBuilder::new(cluster.cluster);
 
         for node in cluster.nodes {
-            let result = self.process_target(name.clone(), node.clone(), &mut meta);
+            let result = self.process_target(&name, &node, &mut meta);
             if let Err(error) = result {
                 FETCHER_ERRORS_COUNT.with_label_values(&[&name]).inc();
                 let error = error.display_chain().to_string();
@@ -116,13 +116,13 @@ impl Fetcher {
 
 impl Fetcher {
     fn process_target(
-        &self, cluster: String, node: String, meta: &mut ClusterMetaBuilder
+        &self, cluster: &str, node: &str, meta: &mut ClusterMetaBuilder
     ) -> Result<()> {
         meta.node_inc();
-        let client = HttpClient::new(node.clone())?;
-        let mut agent = Agent::new(cluster.clone(), node.clone(), AgentStatus::Up);
+        let client = HttpClient::new(node.to_string())?;
+        let mut agent = Agent::new(cluster.to_string(), node.to_string(), AgentStatus::Up);
 
-        let result = self.agent.process_agent_info(&client, cluster.clone(), node.clone());
+        let result = self.agent.process_agent_info(&client, cluster.to_string(), node.to_string());
         if let Err(error) = result {
             let message = error.display_chain().to_string();
             agent.status = AgentStatus::AgentDown(message);

@@ -6,8 +6,8 @@ use super::Result;
 use super::ResultExt;
 
 
-const FAIL_FIND_SHARD: &'static str = "Failed to fetch shard";
-const FAIL_PERSIST_SHARD: &'static str = "Failed to persist shard";
+const FAIL_FIND_SHARD: &str = "Failed to fetch shard";
+const FAIL_PERSIST_SHARD: &str = "Failed to persist shard";
 
 
 /// Subset of fetcher logic that deals specifically with shards.
@@ -22,10 +22,10 @@ impl ShardFetcher {
         }
     }
 
-    pub fn process_shards(&self, client: &Client, cluster: String, node: String) -> Result<()> {
+    pub fn process_shards(&self, client: &Client, cluster: &str, node: &str) -> Result<()> {
         let shards = client.shards()?;
         for shard in shards.shards {
-            let shard = Shard::new(cluster.clone(), node.clone(), shard);
+            let shard = Shard::new(cluster.to_string(), node.to_string(), shard);
             // TODO(stefano): should an error prevent all following shards from being processed?
             self.process_shard(shard)?;
         }

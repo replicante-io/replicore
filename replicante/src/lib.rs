@@ -78,6 +78,7 @@ lazy_static! {
 /// Most, if not all, components start background threads and must join on drop.
 /// Interfaces can work in the same way if they need threads but some may just provide
 /// services to other interfaces and/or components.
+#[cfg_attr(feature = "cargo-clippy", allow(needless_pass_by_value))]
 fn initialise_and_run(config: Config, logger: Logger) -> Result<()> {
     info!(logger, "Initialising sub-systems ...");
     let mut interfaces = Interfaces::new(&config, logger.clone())?;
@@ -127,7 +128,7 @@ pub fn run() -> Result<()> {
     // Load configuration.
     let config_location = cli_args.value_of("config").unwrap();
     info!(logger, "Loading configuration ..."; "config" => config_location);
-    let config = Config::from_file(config_location.clone())
+    let config = Config::from_file(config_location)
         .chain_err(|| format!("Failed to load configuration: {}", config_location))?;
 
     // Initialise and run forever.

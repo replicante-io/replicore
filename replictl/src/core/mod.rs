@@ -7,7 +7,7 @@ use super::Result;
 use super::ResultExt;
 
 
-const FAIL_REQUEST_VERSION: &'static str = "Failed to request replicante version";
+const FAIL_REQUEST_VERSION: &str = "Failed to request replicante version";
 
 
 /// Replicante core HTTP API client.

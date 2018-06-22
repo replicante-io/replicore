@@ -53,7 +53,7 @@ impl Iterator for Iter {
                 self.data.as_mut().unwrap()
             }
         };
-        data.pop().map(|cluster| Ok(cluster))
+        data.pop().map(Ok)
     }
 }
 
@@ -65,6 +65,8 @@ mod tests {
     use super::super::super::Error;
     use super::super::super::ErrorKind;
     use super::Iter;
+
+    use super::super::tests::fixture_path;
 
     #[test]
     fn file_not_found() {
@@ -82,7 +84,7 @@ mod tests {
 
     #[test]
     fn example_file() {
-        let mut iter = Iter::new("file.example.yaml");
+        let mut iter = Iter::new(fixture_path("file.example.yaml"));
         let next = iter.next().unwrap().unwrap();
         assert_eq!(next, ClusterDiscovery::new("mongodb-rs", vec![
             "http://node1:37017".into(),
@@ -94,13 +96,13 @@ mod tests {
 
     #[test]
     fn no_clusters() {
-        let mut iter = Iter::new("tests/no.clusters.yaml");
+        let mut iter = Iter::new(fixture_path("tests/no.clusters.yaml"));
         assert!(iter.next().is_none());
     }
 
     #[test]
     fn two_clusters() {
-        let mut iter = Iter::new("tests/two.clusters.yaml");
+        let mut iter = Iter::new(fixture_path("tests/two.clusters.yaml"));
         let next = iter.next().unwrap().unwrap();
         assert_eq!(next, ClusterDiscovery::new("test1", vec![
             "http://node1:port/".into(),

@@ -13,25 +13,24 @@ use self::cluster::ClusterBuilder;
 
 
 /// Build `Event`s, validating inputs.
+#[derive(Default)]
 pub struct EventBuilder {
     timestamp: Option<DateTime<Utc>>,
 }
 
 impl EventBuilder {
     pub fn new() -> EventBuilder {
-        EventBuilder {
-            timestamp: None,
-        }
+        EventBuilder::default()
     }
 
     /// Specialise the builder into an agent events builder.
     pub fn agent(self) -> AgentBuilder {
-        AgentBuilder::new_builder(self)
+        AgentBuilder::builder(self)
     }
 
     /// Specialise the builder into a cluster events builder.
     pub fn cluster(self) -> ClusterBuilder {
-        ClusterBuilder::new_builder(self)
+        ClusterBuilder::builder(self)
     }
 
     /// Set the event occurrence timestamp.

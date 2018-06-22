@@ -30,7 +30,7 @@ impl Tracing {
             TracerExtra::ReporterThread(reporter) => Some(reporter),
         };
         Ok(Tracing {
-            reporter: reporter,
+            reporter,
             tracer,
         })
     }

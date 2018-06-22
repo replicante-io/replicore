@@ -18,7 +18,7 @@ use super::super::super::outcome::Outcomes;
 use super::super::super::outcome::Warning;
 
 
-pub const COMMAND: &'static str = "config";
+pub const COMMAND: &str = "config";
 const DISCOVERY_INTERVAL_THRESHOLD: u64 = 15;
 
 
@@ -84,7 +84,7 @@ pub fn run<'a>(args: &ArgMatches<'a>, interfaces: &Interfaces) -> Result<()> {
 
 
 /// Attempt to load and parse file.
-fn check_discovery_file(path: &String, outcomes: &mut Outcomes) {
+fn check_discovery_file(path: &str, outcomes: &mut Outcomes) {
     let file = match File::open(path) {
         Ok(file) => file,
         Err(error) => {
@@ -102,7 +102,9 @@ fn check_discovery_file(path: &String, outcomes: &mut Outcomes) {
         Err(error) => {
             let error: super::super::super::Error = error.into();
             let error = error.display_chain().to_string();
-            outcomes.error(Error::UnableToParseModel("DiscoveryFile".into(), path.clone(), error));
+            outcomes.error(Error::UnableToParseModel(
+                "DiscoveryFile".into(), path.to_string(), error
+            ));
             return;
         }
     };

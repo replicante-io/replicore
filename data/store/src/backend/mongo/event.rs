@@ -55,7 +55,7 @@ impl EventStore {
 
     pub fn recent_events(&self, limit: u32) -> Result<Vec<Event>> {
         let mut options = FindOptions::new();
-        options.limit = Some(limit as i64);
+        options.limit = Some(i64::from(limit));
         options.sort = Some(doc!{"$natural" => -1});
         let collection = self.collection_events();
         MONGODB_OPS_COUNT.with_label_values(&["find"]).inc();

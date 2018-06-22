@@ -7,7 +7,7 @@ use super::Result;
 use super::ResultExt;
 
 
-const FAIL_PERSIST_META: &'static str = "Failed to persist agent meta";
+const FAIL_PERSIST_META: &str = "Failed to persist agent meta";
 
 
 pub struct ClusterMetaBuilder {

@@ -3,7 +3,7 @@ use slog::Logger;
 use replicante_data_store::ValidationResult;
 
 
-const GROUP_PERF_ABUSE: &'static str = "perf/abuse";
+const GROUP_PERF_ABUSE: &str = "perf/abuse";
 
 
 /// Collection of outcomes for a set of checks.
@@ -38,10 +38,10 @@ impl Outcomes {
 
     /// Logs all the collected warnings and errors.
     pub fn report(&mut self, logger: &Logger) {
-        for warn in self.warnings.iter() {
+        for warn in &self.warnings {
             warn.emit(logger);
         }
-        for error in self.errors.iter() {
+        for error in &self.errors {
             error.emit(logger);
         }
         self.errors.clear();
@@ -78,16 +78,16 @@ impl Error {
     /// Logs the error.
     pub fn emit(&self, logger: &Logger) {
         let group = self.group();
-        match self {
-            &Error::GenericError(ref msg) => error!(
+        match *self {
+            Error::GenericError(ref msg) => error!(
                 logger, "Check failed with error: {}", msg; "group" => group
             ),
-            &Error::StoreValidationError(ref result) => error!(
+            Error::StoreValidationError(ref result) => error!(
                 logger,
                 "The store validator reported an error with the current configuration: {}",
                 result.message; "group" => group, "collection" => &result.collection
             ),
-            &Error::UnableToParseModel(ref kind, ref id, ref msg) => error!(
+            Error::UnableToParseModel(ref kind, ref id, ref msg) => error!(
                 logger, "Fail to decode a '{}': {}", kind, msg;
                 "group" => group, "model" => kind, "id" => id
             ),
@@ -96,10 +96,10 @@ impl Error {
 
     /// Issue group for the error.
     pub fn group(&self) -> &'static str {
-        match self {
-            &Error::GenericError(_) => "generic/error",
-            &Error::StoreValidationError(ref result) => result.group,
-            &Error::UnableToParseModel(_, _, _) => "data/format",
+        match *self {
+            Error::GenericError(_) => "generic/error",
+            Error::StoreValidationError(ref result) => result.group,
+            Error::UnableToParseModel(_, _, _) => "data/format",
         }
     }
 }
@@ -124,12 +124,12 @@ impl Warning {
     /// Logs the warning.
     pub fn emit(&self, logger: &Logger) {
         let group = self.group();
-        match self {
-            &Warning::BelowThreshold(ref message, ref current, ref threshold) => warn!(
+        match *self {
+            Warning::BelowThreshold(ref message, ref current, ref threshold) => warn!(
                 logger, "Value is below recommended threshold: {}", message;
                 "current" => current, "threshold" => threshold, "group" => group
             ),
-            &Warning::StoreValidationWarning(ref result) => warn!(
+            Warning::StoreValidationWarning(ref result) => warn!(
                 logger, "The store validator reported an issue or had a suggestion: {}",
                 result.message; "group" => group, "collection" => &result.collection
             ),
@@ -138,9 +138,9 @@ impl Warning {
 
     /// Issue group for the warning.
     pub fn group(&self) -> &'static str {
-        match self {
-            &Warning::BelowThreshold(_, _, _) => GROUP_PERF_ABUSE,
-            &Warning::StoreValidationWarning(ref result) => result.group,
+        match *self {
+            Warning::BelowThreshold(_, _, _) => GROUP_PERF_ABUSE,
+            Warning::StoreValidationWarning(ref result) => result.group,
         }
     }
 }

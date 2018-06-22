@@ -54,7 +54,7 @@ impl DiscoveryComponent {
 
     /// Starts the agent discovery process in a background thread.
     pub fn run(&mut self) -> Result<()> {
-        let interval = self.interval.clone();
+        let interval = self.interval;
         DiscoveryWorker::register_metrics(&self.logger, &self.registry);
         let worker = DiscoveryWorker::new(
             self.config.clone(),
@@ -69,7 +69,7 @@ impl DiscoveryComponent {
                 let timer = DISCOVERY_DURATION.start_timer();
                 worker.run();
                 timer.observe_duration();
-                sleep(interval.clone());
+                sleep(interval);
             }
         })?;
         self.worker = Some(thread);

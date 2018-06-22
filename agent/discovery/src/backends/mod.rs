@@ -142,11 +142,25 @@ pub fn discover(config: Config) -> Iter {
 
 #[cfg(test)]
 mod tests {
+    use std::path::Path;
     use replicante_data_models::ClusterDiscovery;
 
     use super::Backend;
     use super::Iter;
     use super::file;
+
+    /// Helper function to find fixtrue files.
+    ///
+    /// Neede because `cargo test` and `cargo kcov` behave differently with regards to the working
+    /// directory of the executed command (`cargo test` moves to the crate, `cargo kcov` does not).
+    pub fn fixture_path(path: &str) -> String {
+        let nested = format!("agent/discovery/{}", path);
+        if Path::new(&nested).exists() {
+            nested
+        } else {
+            path.to_string()
+        }
+    }
 
     #[test]
     fn empty() {
@@ -156,9 +170,9 @@ mod tests {
 
     #[test]
     fn only_empty_iters() {
-        let cluster_a = file::Iter::new("tests/no.clusters.yaml");
-        let cluster_b = file::Iter::new("tests/no.clusters.yaml");
-        let cluster_c = file::Iter::new("tests/no.clusters.yaml");
+        let cluster_a = file::Iter::new(fixture_path("tests/no.clusters.yaml"));
+        let cluster_b = file::Iter::new(fixture_path("tests/no.clusters.yaml"));
+        let cluster_c = file::Iter::new(fixture_path("tests/no.clusters.yaml"));
         let mut iter = Iter::new(vec![
             Backend::File(cluster_a), Backend::File(cluster_b), Backend::File(cluster_c)
         ]);
@@ -167,7 +181,7 @@ mod tests {
 
     #[test]
     fn with_backend() {
-        let backend = file::Iter::new("tests/two.clusters.yaml");
+        let backend = file::Iter::new(fixture_path("tests/two.clusters.yaml"));
         let mut iter = Iter::new(vec![Backend::File(backend)]);
         let next = iter.next().unwrap().unwrap();
         assert_eq!(next, ClusterDiscovery::new("test1", vec![
@@ -185,9 +199,9 @@ mod tests {
 
     #[test]
     fn with_more_backends() {
-        let cluster_a = file::Iter::new("file.example.yaml");
-        let cluster_b = file::Iter::new("tests/no.clusters.yaml");
-        let cluster_c = file::Iter::new("tests/two.clusters.yaml");
+        let cluster_a = file::Iter::new(fixture_path("file.example.yaml"));
+        let cluster_b = file::Iter::new(fixture_path("tests/no.clusters.yaml"));
+        let cluster_c = file::Iter::new(fixture_path("tests/two.clusters.yaml"));
         let mut iter = Iter::new(vec![
             Backend::File(cluster_a), Backend::File(cluster_b), Backend::File(cluster_c)
         ]);

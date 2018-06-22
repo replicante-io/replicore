@@ -14,12 +14,12 @@ pub struct AgentBuilder {
 
 impl AgentBuilder {
     /// Create a new agent event builder.
-    pub fn new_builder(builder: EventBuilder) -> AgentBuilder {
+    pub fn builder(builder: EventBuilder) -> AgentBuilder {
         AgentBuilder { builder }
     }
 
     /// Build an `EventData::AgentNew`.
-    pub fn new(self, agent: Agent) -> Event {
+    pub fn agent_new(self, agent: Agent) -> Event {
         let data = EventData::AgentNew(agent);
         self.builder.build(data)
     }
@@ -113,7 +113,7 @@ mod tests {
     #[test]
     fn new() {
         let agent = Agent::new("cluster", "host", AgentStatus::AgentDown("TEST".into()));
-        let event = Event::builder().agent().new(agent.clone());
+        let event = Event::builder().agent().agent_new(agent.clone());
         let expected = EventData::AgentNew(agent);
         assert_eq!(event.payload, expected);
     }

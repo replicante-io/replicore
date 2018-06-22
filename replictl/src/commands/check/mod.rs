@@ -10,10 +10,10 @@ use super::super::Interfaces;
 use super::super::Result;
 
 
-pub const COMMAND: &'static str = "check";
-const DEEP_COMMAND: &'static str = "deep";
-const QUICK_COMMAND: &'static str = "quick";
-const UPDATE_COMMAND: &'static str = "update";
+pub const COMMAND: &str = "check";
+const DEEP_COMMAND: &str = "deep";
+const QUICK_COMMAND: &str = "quick";
+const UPDATE_COMMAND: &str = "update";
 
 
 /// Configure the `replictl check` command parser.
@@ -37,7 +37,7 @@ pub fn command() -> App<'static, 'static> {
 /// Switch the control flow to the requested check command.
 pub fn run<'a>(args: &ArgMatches<'a>, interfaces: &Interfaces) -> Result<()> {
     let command = args.subcommand_matches(COMMAND).unwrap();
-    let command = command.subcommand_name().clone();
+    let command = command.subcommand_name();
     match command {
         Some(config::COMMAND) => config::run(args, interfaces),
         Some(store::COMMAND) => store::run(args, interfaces),

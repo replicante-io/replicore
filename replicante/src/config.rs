@@ -73,10 +73,24 @@ impl Config {
 #[cfg(test)]
 mod tests {
     use std::io::Cursor;
+    use std::path::Path;
 
     use super::super::Error;
     use super::super::ErrorKind;
     use super::Config;
+
+    /// Helper function to find fixtrue files.
+    ///
+    /// Neede because `cargo test` and `cargo kcov` behave differently with regards to the working
+    /// directory of the executed command (`cargo test` moves to the crate, `cargo kcov` does not).
+    fn fixture_path(path: &str) -> String {
+        let nested = format!("replicante/{}", path);
+        if Path::new(&nested).exists() {
+            nested
+        } else {
+            path.to_string()
+        }
+    }
 
     #[test]
     fn from_reader_error() {
@@ -98,7 +112,7 @@ mod tests {
     // NOTE: this cannot validate missing attributes.
     fn ensure_example_config_matches_default() {
         let default = Config::default();
-        let example = Config::from_file("../replicante.example.yaml")
+        let example = Config::from_file(fixture_path("../replicante.example.yaml"))
             .expect("Cannot open example configuration");
         assert_eq!(
             default, example,
