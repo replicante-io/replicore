@@ -33,7 +33,7 @@ journald = ["slog-journald"]
 
 [dependencies]
 clap = "^2.31.2"
-error-chain = "^0.11.0"
+error-chain = "^0.12.0"
 iron = "^0.6.0"
 iron-json-response = "^0.6.0"
 lazy_static = "^1.0.0"

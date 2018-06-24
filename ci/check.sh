@@ -10,6 +10,7 @@ if [ "${USE_NIGHTLY}" == "yes" ]; then
   cargo clippy
 fi
 cargo outdated --root-deps-only
+cargo outdated
 
 # Coverage tests are slow to build, only run when requested.
 if [ "${USE_NIGHTLY}" == "yes" -a "${COVERAGE}" == "yes" ]; then
