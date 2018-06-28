@@ -7,7 +7,6 @@ description = "Replicante core models"
 documentation = "https://www.replicante.io/docs"
 homepage = "https://www.replicante.io/"
 repository = "https://github.com/replicante-io/replicante"
-readme = "Readme.md"
 keywords = ["automation", "datastore", "operations"]
 license = "MIT"
 
