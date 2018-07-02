@@ -3,6 +3,7 @@ members = [
   "agent/client",
   "agent/discovery",
   "common/agent/models",
+  "common/logging",
   "common/util/iron",
   "common/util/tracing",
   "data/aggregator",

@@ -11,7 +11,7 @@ use super::Result;
 
 use super::components::discovery::Config as DiscoveryConfig;
 use super::interfaces::api::Config as APIConfig;
-use super::logging::Config as LoggingConfig;
+use replicante_logging::Config as LoggingConfig;
 
 
 /// Replicante configuration options.

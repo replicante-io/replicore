@@ -22,6 +22,7 @@ extern crate replicante_data_aggregator;
 extern crate replicante_data_fetcher;
 extern crate replicante_data_models;
 extern crate replicante_data_store;
+extern crate replicante_logging;
 extern crate replicante_util_iron;
 extern crate replicante_util_tracing;
 
@@ -33,10 +34,6 @@ extern crate serde_yaml;
 
 #[macro_use]
 extern crate slog;
-extern crate slog_async;
-#[cfg(feature = "journald")]
-extern crate slog_journald;
-extern crate slog_json;
 
 use clap::App;
 use clap::Arg;
@@ -47,7 +44,6 @@ mod components;
 mod config;
 mod errors;
 mod interfaces;
-mod logging;
 
 use self::components::Components;
 use self::interfaces::Interfaces;
@@ -122,7 +118,8 @@ pub fn run() -> Result<()> {
         .get_matches();
 
     // Log initialisation start message.
-    let logger = logging::starter();
+    let logger_opts = replicante_logging::Opts::new(env!("GIT_BUILD_HASH").into());
+    let logger = replicante_logging::starter(&logger_opts);
     info!(logger, "Starting replicante core"; "git-taint" => env!("GIT_BUILD_TAINT"));
 
     // Load configuration.
@@ -132,7 +129,7 @@ pub fn run() -> Result<()> {
         .chain_err(|| format!("Failed to load configuration: {}", config_location))?;
 
     // Initialise and run forever.
-    let logger = logging::configure(config.logging.clone());
+    let logger = replicante_logging::configure(config.logging.clone(), &logger_opts);
     debug!(logger, "Logging configured");
 
     let result = initialise_and_run(config, logger.clone());

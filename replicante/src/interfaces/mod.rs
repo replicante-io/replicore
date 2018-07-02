@@ -80,7 +80,8 @@ impl Interfaces {
     /// This method will use a JSON logger to stdout.
     /// Use `Interfaces::mock_with_logger` to specify the logger.
     pub fn mock() -> (Interfaces, MockInterfaces) {
-        let logger = super::logging::starter();
+        let logger_opts = ::replicante_logging::Opts::new(env!("GIT_BUILD_HASH").into());
+        let logger = ::replicante_logging::starter(&logger_opts);
         Interfaces::mock_with_logger(logger)
     }
 

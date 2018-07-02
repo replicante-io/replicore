@@ -1,6 +1,6 @@
 [package]
 name = "replicante"
-version = "0.1.0"
+version = "0.1.1"
 authors = ["Stefano Pogliani <stefano@spogliani.net>"]
 build = "../build.rs"
 
@@ -27,10 +27,6 @@ path = "src/lib.rs"
 maintenance = { status = "actively-developed" }
 
 
-[features]
-journald = ["slog-journald"]
-
-
 [dependencies]
 clap = "^2.31.2"
 error-chain = "^0.12.0"
@@ -45,9 +41,6 @@ serde_derive = "^1.0.34"
 serde_json = "^1.0.13"
 serde_yaml = "^0.7.3"
 slog = "^2.1.1"
-slog-async = "^2.2.0"
-slog-journald = { version = "^2.0.0", optional = true }
-slog-json = "^2.2.0"
 
 replicante_agent_client = { path = "../agent/client" }
 replicante_agent_discovery = { path = "../agent/discovery" }
@@ -56,6 +49,7 @@ replicante_data_aggregator = { path = "../data/aggregator" }
 replicante_data_fetcher = { path = "../data/fetcher" }
 replicante_data_models = { path = "../data/models" }
 replicante_data_store = { path = "../data/store" }
+replicante_logging = { path = "../common/logging" }
 replicante_util_iron = { path = "../common/util/iron" }
 replicante_util_tracing = { path = "../common/util/tracing" }
 
@@ -66,3 +60,7 @@ git2 = "^0.7.0"
 
 [dev-dependencies]
 iron-test = "^0.6.0"
+
+
+[features]
+journald = ["replicante_logging/journald"]
