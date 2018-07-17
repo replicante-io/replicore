@@ -22,8 +22,10 @@
 
 ## MongoDB Sharded
 * Administration:
-  * A cluster-unique name for the node: name field from [`replSetGetStatus`](https://docs.mongodb.com/manual/reference/command/replSetGetStatus/).
-  * Cluster name shared by all nodes: user defined in agents configuration.
+  * A cluster-unique name for the node:
+    * `mongod`: name field from [`replSetGetStatus`](https://docs.mongodb.com/manual/reference/command/replSetGetStatus/).
+    * `mongos`: user defined in agent configuration.
+  * Cluster name shared by all nodes: user defined in agent configuration.
   * Version information: [`buildInfo`](https://docs.mongodb.com/manual/reference/command/buildInfo/).
 
 * Clustering:
@@ -37,7 +39,9 @@
   * For each non-primary shard on each node, the replication lag for the node: [`replSetGetStatus`](https://docs.mongodb.com/manual/reference/command/replSetGetStatus/).
 
 * Sharding:
-  * What is a shard: a shard is one of the Replica Sets storing the data.
+  * What is a shard:
+    * `mongod`: a shard is one of the Replica Sets storing the data.
+    * `mongos`: `mongos` instances have no shards on them.
   * For each shard, the time of the last operation: [`replSetGetStatus`](https://docs.mongodb.com/manual/reference/command/replSetGetStatus/).
 
 * Performance:
