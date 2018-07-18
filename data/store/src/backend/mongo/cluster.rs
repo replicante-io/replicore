@@ -9,6 +9,7 @@ use mongodb::coll::options::UpdateOptions;
 use mongodb::db::ThreadedDatabase;
 
 use regex;
+use slog::Logger;
 
 use replicante_data_models::ClusterDiscovery;
 use replicante_data_models::ClusterMeta;
@@ -38,15 +39,16 @@ use super::metrics::MONGODB_OP_ERRORS_COUNT;
 pub struct ClusterStore {
     client: Client,
     db: String,
+    logger: Logger,
 }
 
 impl ClusterStore {
-    pub fn new(client: Client, db: String) -> ClusterStore {
-        ClusterStore { client, db }
+    pub fn new(client: Client, db: String, logger: Logger) -> ClusterStore {
+        ClusterStore { client, db, logger }
     }
 
     pub fn cluster_discovery(&self, cluster: String) -> Result<Option<ClusterDiscovery>> {
-        let filter = doc!{"name" => cluster};
+        let filter = doc!{"cluster" => cluster};
         MONGODB_OPS_COUNT.with_label_values(&["findOne"]).inc();
         let timer = MONGODB_OPS_DURATION.with_label_values(&["findOne"]).start_timer();
         let collection = self.collection_discoveries();
@@ -168,18 +170,26 @@ impl ClusterStore {
             Bson::Document(replacement) => replacement,
             _ => panic!("ClusterDiscovery failed to encode as BSON document")
         };
-        let filter = doc!{"name" => cluster.cluster};
+        let filter = doc!{"cluster" => cluster.cluster.clone()};
         let collection = self.collection_discoveries();
         let mut options = UpdateOptions::new();
         options.upsert = Some(true);
         MONGODB_OPS_COUNT.with_label_values(&["replaceOne"]).inc();
-        let _timer = MONGODB_OPS_DURATION.with_label_values(&["replaceOne"]).start_timer();
-        collection.replace_one(filter, replacement, Some(options))
+        let timer = MONGODB_OPS_DURATION.with_label_values(&["replaceOne"]).start_timer();
+        let result = collection.replace_one(filter, replacement, Some(options))
             .map_err(|error| {
                 MONGODB_OP_ERRORS_COUNT.with_label_values(&["replaceOne"]).inc();
                 error
             })
             .chain_err(|| FAIL_PERSIST_CLUSTER_DISCOVERY)?;
+        timer.observe_duration();
+        debug!(
+            self.logger, "Persisted cluster discovery";
+            "cluster" => cluster.cluster,
+            "matched_count" => result.matched_count,
+            "modified_count" => result.modified_count,
+            "upserted_id" => ?result.upserted_id,
+        );
         Ok(())
     }
 

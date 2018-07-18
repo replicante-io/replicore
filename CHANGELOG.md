@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Changed
 - Move logging code to common crate.
 
+### Fixed
+- Fix persistence and querying of discoveries.
+
 ## 0.1.0 - 2018-06-28
 ### Added
 - API interface.

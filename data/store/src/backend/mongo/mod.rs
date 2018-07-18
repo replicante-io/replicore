@@ -140,7 +140,7 @@ impl MongoStore {
         let db = config.db.clone();
         let client = Client::with_uri(&config.uri).chain_err(|| FAIL_CLIENT)?;
         let agents = AgentStore::new(client.clone(), db.clone());
-        let clusters = ClusterStore::new(client.clone(), db.clone());
+        let clusters = ClusterStore::new(client.clone(), db.clone(), logger.clone());
         let datastores = DatastoreStore::new(client.clone(), db.clone());
         let events = EventStore::new(client.clone(), db.clone());
 

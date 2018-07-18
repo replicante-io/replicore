@@ -70,7 +70,7 @@ lazy_static! {
         }]);
         map.insert(COLLECTION_DISCOVERIES, vec![IndexInfo {
             expires: false,
-            key: vec![("name".into(), 1)],
+            key: vec![("cluster".into(), 1)],
             unique: true
         }]);
         map.insert(COLLECTION_EVENTS, vec![]);
