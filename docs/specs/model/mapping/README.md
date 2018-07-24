@@ -11,6 +11,6 @@ This section has two purposes:
 ## Examples
 
   * [MongoDB](./mongodb.md)
-  * [(TODO) Kafka](./kafka.md)
+  * [Kafka](./kafka.md)
   * [(TODO) RabbitMQ](./rabbitmq.md)
-  * [(TODO) Zookeeper](./zookeeper.md)
+  * [Zookeeper](./zookeeper.md)
