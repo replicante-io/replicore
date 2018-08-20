@@ -1,17 +1,18 @@
 ## Zookeeper
 * Administration:
+  * A cluster name shared by all nodes: user defined in agent configuration.
   * A cluster-unique name for the node: `serverId` value of the [`conf`](https://zookeeper.apache.org/doc/current/zookeeperAdmin.html#sc_zkCommands) command output.
-  * Cluster name shared by all nodes: user defined in agent configuration.
   * Version information: from the output of either [`envi`](https://zookeeper.apache.org/doc/current/zookeeperAdmin.html#sc_zkCommands) or [`srvr`](https://zookeeper.apache.org/doc/current/zookeeperAdmin.html#sc_zkCommands) command.
 
 * Clustering: zookeeper processes forming an ensable.
 
-* Replication:
-  * For each node, which shards are on the node: a single shard named `ensamble`.
-  * For each shard on each node, what the role of the node is: `Mode` value of the [`srvr`](https://zookeeper.apache.org/doc/current/zookeeperAdmin.html#sc_zkCommands) command output.
-  * For each non-primary shard on each node, the replication lag for the node: different in node's zookeepr transation ids.
+* Sharding: (A shard is the entire ensamble)
+  * A shard ID: the cluster name.
+  * [Optional] An indicator of when the last write operation happened (commit offset):
+    * The replication lag unit (i.e, seconds, commits, ...): offset/zkid.
+    * A commit offset value (as a 64-bits integer): the `Zkid` value of the [`srvr`](https://zookeeper.apache.org/doc/current/zookeeperAdmin.html#sc_zkCommands) command.
 
-* Sharding:
-  * What is a shard: the entire ensamble.
-  * What is a shard ID: the cluster name.
-  * For each shard, the time of the last operation: unavailable.
+* Replication:
+  * Which shards are on the node: a single shard named as the cluster.
+  * For each shard, what the role on the node is: `Mode` value of the [`srvr`](https://zookeeper.apache.org/doc/current/zookeeperAdmin.html#sc_zkCommands) command output.
+  * [Optional] For each non-primary shard, the replication lag: unavailable (need access to primary as well as local node).

@@ -12,5 +12,4 @@ This section has two purposes:
 
   * [MongoDB](./mongodb.md)
   * [Kafka](./kafka.md)
-  * [(TODO) RabbitMQ](./rabbitmq.md)
   * [Zookeeper](./zookeeper.md)

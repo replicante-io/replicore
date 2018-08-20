@@ -14,11 +14,15 @@ and is subject to (potentially breaking) change.
 {% method %}
 The following information MUST be included:
 
-  * A list of all `shards` on the node:
+  * A list of `shards` on the node:
     * The shard `id`.
     * The `role` of the node for the shard.
-    * The `lag` (in seconds) of a secondary from its primary.
-    * The UNIX timestamp (in seconds) of the last operation on the shard.
+    * The (optional) `commit_offset` of the shard on the node:
+      * The commit offset `unit`.
+      * The commit offset `value` (as a 64-bits integer).
+    * The (optional) `lag` of a secondary from its primary:
+      * The lag `unit`.
+      * The lag `value` (as a 64-bits integer).
 
 {% common %}
 Example:
@@ -27,8 +31,14 @@ Example:
   "shards": [{
     "id": "shard_id",
     "role": "SECONDARY",
-    "lag": 12345,
-    "last_op": 67890
+    "commit_offset": {
+      "unit": "seconds",
+      "value": 67890
+    },
+    "lag": {
+      "unit": "seconds",
+      "value": 33
+    }
   }]
 }
 ```

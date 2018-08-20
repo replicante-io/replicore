@@ -12,12 +12,11 @@ and is subject to (potentially breaking) change.
     Returns information about the agent itself
 {% endrest %}
 {% method %}
-The following information MUST be included:
+The following agent information MUST be included:
 
-  * `agent` information:
-    * `version` information:
+  * `version` information:
     * Version `number`: the [SemVer](https://semver.org/) agent version.
-    * Version control `checkout`: VCS ID of the code that was build.
+    * Version control `checkout`: VCS ID of the agent code that is running.
     * Version control `taint` status: indicates uncommitted changes to the code.
 
 {% common %}
@@ -39,13 +38,12 @@ Example:
     Returns information about the datastore
 {% endrest %}
 {% method %}
-The following information MUST be included:
+The following datastore information MUST be included:
 
-  * `datastore` information:
-    * `cluster`: datastore determined cluster name.
-    * `kind`: datastore software managed by the agent.
-    * `name`: datastore determined, cluster unique, node name.
-    * `version`: the datastore version.
+  * `cluster`: datastore determined cluster name.
+  * `kind`: datastore software managed by the agent.
+  * `name`: datastore determined, cluster unique, node name.
+  * `version`: the [SemVer](https://semver.org/) datastore version.
 
 {% common %}
 Example:
