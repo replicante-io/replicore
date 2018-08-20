@@ -83,13 +83,3 @@ All datastores have at least one shard: the entire dataset.
 The datastore MUST provide the following information:
 
   * For each shard, the time of the last operation.
-
-
-## Performance
-The datastore SHOULD provide some performance metrics for users to understand
-the overall state of the system.
-
-The datastore SHOULD provide the following metrics:
-
-  * Number of clients connected.
-  * Number of read/writes.

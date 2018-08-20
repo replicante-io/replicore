@@ -11,7 +11,6 @@
 * [Examples: mapping DBs to the Model](model/mapping/README.md)
   * [MongoDB](model/mapping/mongodb.md)
   * [Kafka](model/mapping/kafka.md)
-  * [(TODO) RabbitMQ](model/mapping/rabbitmq.md)
   * [Zookeeper](model/mapping/zookeeper.md)
 * [The Agent Protocol](agent/README.md)
   * [Agent information](agent/info.md)

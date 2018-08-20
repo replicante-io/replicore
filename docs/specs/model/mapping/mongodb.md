@@ -13,6 +13,7 @@
 
 * Sharding:
   * What is a shard: the entire replica set.
+  * What is a shard ID: RS name.
   * For each shard, the time of the last operation: [`replSetGetStatus`](https://docs.mongodb.com/manual/reference/command/replSetGetStatus/).
 
 * Performance:
@@ -42,8 +43,5 @@
   * What is a shard:
     * `mongod`: a shard is one of the Replica Sets storing the data.
     * `mongos`: `mongos` instances have no shards on them.
+  * What is a shard ID: the shard's RS name.
   * For each shard, the time of the last operation: [`replSetGetStatus`](https://docs.mongodb.com/manual/reference/command/replSetGetStatus/).
-
-* Performance:
-  * Number of clients connected: [`serverStatus`](https://docs.mongodb.com/manual/reference/command/serverStatus/).
-  * Number of read/writes: [`serverStatus`](https://docs.mongodb.com/manual/reference/command/serverStatus/).

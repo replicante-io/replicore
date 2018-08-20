@@ -14,9 +14,6 @@
   * For each non-primary shard on each node, the replication lag for the node: value of the [`kafka.server:type=FetcherLagMetrics,name=ConsumerLag,clientId=ReplicaFetcherThread-0-LEADER_ID,topic=TOPIC,partition=PARTITON_ID`](https://kafka.apache.org/documentation/#monitoring) JMX MBean, expressed as number of messages.
 
 * Sharding:
-  * What is a shard: a topic partition
+  * What is a shard: a topic partition.
+  * What is a shard ID: `TOPIC/PARTITION`.
   * For each shard, the time of the last operation: unavailable.
-
-* Performance:
-  * Number of clients connected: the `connection-count` of the `kafka.server:type=socker-server-metrics,listener=LISTENER,networkProcessor=X` JMX MBean.
-  * Number of read/writes: unavailabe (there seems to be a messages in rate mbean).
