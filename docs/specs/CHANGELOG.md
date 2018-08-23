@@ -6,11 +6,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## Unreleased
 ### Changed
-- Replaced shard's `last_op` with a `commit_offset`.
-- Replication lag has a specified unit (no longer assumed to be seconds).
+- **BREAKING**: Encode shard roles in lowercase
+- **BREAKING**: Replaced shard's `last_op` with a `commit_offset`
+- **BREAKING**: Replication lag has a specified unit (no longer assumed to be seconds)
 
 ### Removed
-- Half-thought performance stats.
+- Half-thought performance stats
 
 ## 0.1.0 - 2018-01-28
 ### Added
