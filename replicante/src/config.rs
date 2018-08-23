@@ -74,9 +74,6 @@ impl Config {
 mod tests {
     use std::io::Cursor;
     use std::path::Path;
-
-    use super::super::Error;
-    use super::super::ErrorKind;
     use super::Config;
 
     /// Helper function to find fixtrue files.
@@ -93,13 +90,10 @@ mod tests {
     }
 
     #[test]
+    #[should_panic(expected = "invalid type: string")]
     fn from_reader_error() {
         let cursor = Cursor::new("some other text");
-        match Config::from_reader(cursor) {
-            Err(Error(ErrorKind::YamlDecode(_), _)) => (),
-            Err(err) => panic!("Unexpected error: {:?}", err),
-            Ok(_) => panic!("Unexpected success!"),
-        };
+        Config::from_reader(cursor).unwrap();
     }
 
     #[test]

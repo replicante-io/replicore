@@ -1,6 +1,6 @@
 [package]
 name = "replicante"
-version = "0.1.1"
+version = "0.2.0"
 authors = ["Stefano Pogliani <stefano@spogliani.net>"]
 build = "../build.rs"
 
@@ -39,7 +39,7 @@ router = "^0.6.0"
 serde = "^1.0.34"
 serde_derive = "^1.0.34"
 serde_json = "^1.0.13"
-serde_yaml = "^0.7.3"
+serde_yaml = "^0.8.0"
 slog = "^2.1.1"
 
 replicante_agent_client = { path = "../agent/client" }
