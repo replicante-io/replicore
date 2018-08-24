@@ -355,6 +355,7 @@ mod tests {
     mod shards {
         use std::sync::Arc;
         use replicante_agent_models::Shard as WireShard;
+        use replicante_data_models::CommitOffset;
         use replicante_data_models::Shard;
         use replicante_data_models::ShardRole;
 
@@ -366,7 +367,7 @@ mod tests {
             let mock = Arc::new(MockStore::new());
             let store = Store::mock(Arc::clone(&mock));
             let shard = Shard::new("cluster", "node", WireShard::new(
-                "id", ShardRole::Primary, None, 1
+                "id", ShardRole::Primary, Some(CommitOffset::seconds(1)), None
             ));
             store.persist_shard(shard.clone()).unwrap();
             let key = (String::from("cluster"), String::from("node"), String::from("id"));

@@ -52,6 +52,7 @@ mod tests {
     use replicante_agent_models::AgentInfo;
     use replicante_agent_models::AgentVersion;
     use replicante_agent_models::DatastoreInfo;
+    use replicante_agent_models::CommitOffset;
     use replicante_agent_models::Shard;
     use replicante_agent_models::Shards;
     use replicante_agent_models::ShardRole;
@@ -65,7 +66,10 @@ mod tests {
     }
 
     fn mock_shards() -> Shards {
-        let shard = Shard::new("id", ShardRole::Primary, Some(2), 1234);
+        let shard = Shard::new(
+            "id", ShardRole::Primary, Some(CommitOffset::seconds(1234)),
+            Some(CommitOffset::seconds(2))
+        );
         Shards::new(vec![shard])
     }
 

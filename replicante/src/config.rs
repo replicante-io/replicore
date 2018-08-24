@@ -5,13 +5,13 @@ use std::path::Path;
 use serde_yaml;
 
 use replicante_data_store::Config as StorageConfig;
+use replicante_logging::Config as LoggingConfig;
 use replicante_util_tracing::Config as TracingConfig;
 
 use super::Result;
 
 use super::components::discovery::Config as DiscoveryConfig;
 use super::interfaces::api::Config as APIConfig;
-use replicante_logging::Config as LoggingConfig;
 
 
 /// Replicante configuration options.
@@ -100,17 +100,5 @@ mod tests {
     fn from_reader_ok() {
         let cursor = Cursor::new("{}");
         Config::from_reader(cursor).unwrap();
-    }
-
-    #[test]
-    // NOTE: this cannot validate missing attributes.
-    fn ensure_example_config_matches_default() {
-        let default = Config::default();
-        let example = Config::from_file(fixture_path("../replicante.example.yaml"))
-            .expect("Cannot open example configuration");
-        assert_eq!(
-            default, example,
-            "Default configuration does not match replicante.example.yaml"
-        );
     }
 }

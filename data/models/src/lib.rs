@@ -24,6 +24,8 @@ pub use self::agent::AgentStatus;
 pub use self::cluster::ClusterDiscovery;
 pub use self::cluster::ClusterMeta;
 
+pub use self::datastore::CommitOffset;
+pub use self::datastore::CommitUnit;
 pub use self::datastore::Node;
 pub use self::datastore::Shard;
 pub use self::datastore::ShardRole;
