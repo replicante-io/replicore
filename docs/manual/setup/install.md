@@ -51,7 +51,7 @@ The requirements depend on the selected store and are documented in the code:
 
   * MongoDB:
     * Requirements: https://github.com/replicante-io/replicante/blob/master/data/store/src/backend/mongo/mod.rs#L47
-    * Playground example: https://github.com/replicante-io/replicante/blob/master/data/store/src/backend/mongo/mod.rs#L47
+    * Playground example: https://github.com/replicante-io/playgrounds/blob/master/images/replicante/indexes.js
 
 It is possible to verify the store configuration with [`replictl check store schema`](../replictl/checks.md).
 `replictl` requires replicante to be [configured](./config.md) before the tests can work.

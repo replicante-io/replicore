@@ -82,7 +82,7 @@ and runs the API and WebUI on port 16016 and 3000 respectively.
 
 {% common %}
 ```bash
-$ cd replicantecore/
+$ cd tools/replicore/
 $ docker-compose up
 ```
 {% endmethod %}
@@ -123,6 +123,5 @@ and all data in `./data`.
 {% common %}
 ```bash
 $ docker-compose -f docker-compose.yml -f docker-compose-agents.yml down --rmi all --volumes
-$ rm -r ./data
 ```
 {% endmethod %}
