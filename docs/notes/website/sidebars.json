@@ -1,0 +1,14 @@
+{
+  "docs": {
+    "Architectural Notes": [
+      "architecture",
+      "from-discovery-to-events"
+    ],
+    "Premature Optimisations": [
+      "optimizations"
+    ],
+    "Dreamland": [
+      "dreamland"
+    ]
+  }
+}
