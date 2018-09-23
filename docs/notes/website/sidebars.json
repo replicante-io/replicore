@@ -2,13 +2,43 @@
   "docs": {
     "Architectural Notes": [
       "architecture",
-      "from-discovery-to-events"
+      "from-discovery-to-events",
+      "cluster-view",
+      "data-storage-format",
+      "scaling",
+      "coordinator"
     ],
     "Premature Optimisations": [
-      "optimizations"
+      "optimizations",
+      "concurrent-agent-fetch",
+      "dynamic-config",
+      "layered-config",
+      "lock-validation-writes",
+      "multi-cache",
+      "optimisable-store-methods"
     ],
     "Dreamland": [
-      "dreamland"
+      "dreamland",
+      "actions",
+      "auditing",
+      "best-checklists",
+      "cluster-playbooks",
+      "cluster-groups",
+      "cluster-tags",
+      "core-bootstrap",
+      "failure-trigger-recognition",
+      "generic-backends",
+      "migration-backend",
+      "metrics-insight",
+      "multiple-transports",
+      "node-events",
+      "organisations",
+      "provisioners",
+      "read-only-mode",
+      "replication-window",
+      "resync-webui",
+      "secrets",
+      "tls-rotation"
     ]
   }
 }
