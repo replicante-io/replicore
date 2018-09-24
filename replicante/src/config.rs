@@ -73,21 +73,7 @@ impl Config {
 #[cfg(test)]
 mod tests {
     use std::io::Cursor;
-    use std::path::Path;
     use super::Config;
-
-    /// Helper function to find fixtrue files.
-    ///
-    /// Neede because `cargo test` and `cargo kcov` behave differently with regards to the working
-    /// directory of the executed command (`cargo test` moves to the crate, `cargo kcov` does not).
-    fn fixture_path(path: &str) -> String {
-        let nested = format!("replicante/{}", path);
-        if Path::new(&nested).exists() {
-            nested
-        } else {
-            path.to_string()
-        }
-    }
 
     #[test]
     #[should_panic(expected = "invalid type: string")]

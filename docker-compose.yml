@@ -6,7 +6,7 @@ services:
     command:
       - 'mongod'
       - '--replSet'
-      - 'datastore'
+      - 'replistore'
       - '--bind_ip'
       - '0.0.0.0'
     image: mongo:4.0
@@ -17,6 +17,16 @@ services:
       - type: volume
         source: mongo
         target: /data/db
+
+  mongoui:
+    environment:
+      CONN_NAME: 'replistore'
+      DB_HOST: 'mongo'
+      PORT: '4321'
+    image: 'mrvautin/adminmongo:latest'
+    hostname: mongoui
+    ports:
+      - '4321:4321'
 
 
 volumes:

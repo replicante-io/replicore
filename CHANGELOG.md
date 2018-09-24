@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Move logging code to common crate.
 
 ### Fixed
+- Better handle HTTP errors returned by agents.
 - Fix persistence and querying of discoveries.
 
 ## 0.1.0 - 2018-06-28

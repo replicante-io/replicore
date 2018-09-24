@@ -30,7 +30,7 @@ impl Client {
     /// Fetches the version Replicante over the API.
     pub fn version(&self) -> Result<Version> {
         let endpoint = self.endpoint("/api/v1/version");
-        let mut request = self.client.get(&endpoint);
+        let request = self.client.get(&endpoint);
         let mut response = request.send().chain_err(|| FAIL_REQUEST_VERSION)?;
         let version = response.json().chain_err(|| FAIL_REQUEST_VERSION)?;
         Ok(version)

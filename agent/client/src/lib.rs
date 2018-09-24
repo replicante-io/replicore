@@ -4,6 +4,9 @@ extern crate error_chain;
 extern crate lazy_static;
 extern crate prometheus;
 extern crate reqwest;
+extern crate serde;
+#[macro_use]
+extern crate serde_derive;
 #[macro_use]
 extern crate slog;
 

@@ -5,6 +5,9 @@ use prometheus::Opts;
 use prometheus::Registry;
 
 use reqwest::Client as ReqwestClient;
+use reqwest::RequestBuilder;
+use reqwest::StatusCode;
+use serde::de::DeserializeOwned;
 use slog::Logger;
 
 use replicante_agent_models::AgentInfo;
@@ -21,17 +24,23 @@ static FAIL_STATUS_FETCH: &'static str = "Failed to fetch agent status";
 
 
 lazy_static! {
-    /// Counter for agent operations.
-    static ref CLIENT_OPS_COUNT: CounterVec = CounterVec::new(
-        Opts::new("replicante_agentclient_operations", "Number of agent operations issued"),
-        &["endpoint"]
-    ).expect("Failed to create replicante_agentclient_operations counter");
+    /// Counter of HTTP response statused.
+    static ref CLIENT_HTTP_STATUS: CounterVec = CounterVec::new(
+        Opts::new("replicante_agentclient_http_status", "Number of HTTP status for an endpoint"),
+        &["endpoint", "status"]
+    ).expect("Failed to create replicante_agentclient_http_status counter");
 
     /// Counter for agent operation errors.
     static ref CLIENT_OP_ERRORS_COUNT: CounterVec = CounterVec::new(
         Opts::new("replicante_agentclient_operation_errors", "Number of agent operations failed"),
         &["endpoint"]
     ).expect("Failed to create replicante_agentclient_operation_errors counter");
+
+    /// Counter for agent operations.
+    static ref CLIENT_OPS_COUNT: CounterVec = CounterVec::new(
+        Opts::new("replicante_agentclient_operations", "Number of agent operations issued"),
+        &["endpoint"]
+    ).expect("Failed to create replicante_agentclient_operations counter");
 
     /// Observe duration of agent operations.
     static ref CLIENT_OPS_DURATION: HistogramVec = HistogramVec::new(
@@ -44,6 +53,11 @@ lazy_static! {
 }
 
 
+/// Decode useful portions of error messages from clients.
+#[derive(Deserialize)]
+struct ClientError {
+    error: String,
+}
 
 
 /// Interface to interact with (remote) agents over HTTP.
@@ -54,63 +68,24 @@ pub struct HttpClient {
 
 impl Client for HttpClient {
     fn agent_info(&self) -> Result<AgentInfo> {
-        CLIENT_OPS_COUNT.with_label_values(&["/api/v1/info/agent"]).inc();
-        let _timer = CLIENT_OPS_DURATION.with_label_values(&["/api/v1/info/agent"]).start_timer();
         let endpoint = self.endpoint("/api/v1/info/agent");
-        let mut request = self.client.get(&endpoint);
-        let mut response = request.send()
-            .map_err(|error| {
-                CLIENT_OP_ERRORS_COUNT.with_label_values(&["/api/v1/info/agent"]).inc();
-                error
-            })
-            .chain_err(|| FAIL_INFO_FETCH)?;
-        let info = response.json()
-            .map_err(|error| {
-                CLIENT_OP_ERRORS_COUNT.with_label_values(&["/api/v1/info/agent"]).inc();
-                error
-            })
-            .chain_err(|| FAIL_INFO_FETCH)?;
-        Ok(info)
+        let request = self.client.get(&endpoint);
+        self.perform(request)
+            .chain_err(|| FAIL_INFO_FETCH)
     }
 
     fn datastore_info(&self) -> Result<DatastoreInfo> {
-        CLIENT_OPS_COUNT.with_label_values(&["/api/v1/info/datastore"]).inc();
-        let _timer = CLIENT_OPS_DURATION.with_label_values(&["/api/v1/info/datastore"]).start_timer();
         let endpoint = self.endpoint("/api/v1/info/datastore");
-        let mut request = self.client.get(&endpoint);
-        let mut response = request.send()
-            .map_err(|error| {
-                CLIENT_OP_ERRORS_COUNT.with_label_values(&["/api/v1/info/datastore"]).inc();
-                error
-            })
-            .chain_err(|| FAIL_INFO_FETCH)?;
-        let info = response.json()
-            .map_err(|error| {
-                CLIENT_OP_ERRORS_COUNT.with_label_values(&["/api/v1/info/datastore"]).inc();
-                error
-            })
-            .chain_err(|| FAIL_INFO_FETCH)?;
-        Ok(info)
+        let request = self.client.get(&endpoint);
+        self.perform(request)
+            .chain_err(|| FAIL_INFO_FETCH)
     }
 
     fn shards(&self) -> Result<Shards> {
-        CLIENT_OPS_COUNT.with_label_values(&["/api/v1/shards"]).inc();
-        let _timer = CLIENT_OPS_DURATION.with_label_values(&["/api/v1/shards"]).start_timer();
         let endpoint = self.endpoint("/api/v1/shards");
-        let mut request = self.client.get(&endpoint);
-        let mut response = request.send()
-            .map_err(|error| {
-                CLIENT_OP_ERRORS_COUNT.with_label_values(&["/api/v1/shards"]).inc();
-                error
-            })
-            .chain_err(|| FAIL_STATUS_FETCH)?;
-        let shards = response.json()
-            .map_err(|error| {
-                CLIENT_OP_ERRORS_COUNT.with_label_values(&["/api/v1/shards"]).inc();
-                error
-            })
-            .chain_err(|| FAIL_STATUS_FETCH)?;
-        Ok(shards)
+        let request = self.client.get(&endpoint);
+        self.perform(request)
+            .chain_err(|| FAIL_STATUS_FETCH)
     }
 }
 
@@ -134,6 +109,14 @@ impl HttpClient {
     ///
     /// **This method should be called before using any client**.
     pub fn register_metrics(logger: &Logger, registry: &Registry) {
+        if let Err(err) = registry.register(Box::new(CLIENT_HTTP_STATUS.clone())) {
+            let error = format!("{:?}", err);
+            debug!(logger, "Failed to register CLIENT_HTTP_STATUS"; "error" => error);
+        }
+        if let Err(err) = registry.register(Box::new(CLIENT_OP_ERRORS_COUNT.clone())) {
+            let error = format!("{:?}", err);
+            debug!(logger, "Failed to register CLIENT_OP_ERRORS_COUNT"; "error" => error);
+        }
         if let Err(err) = registry.register(Box::new(CLIENT_OPS_COUNT.clone())) {
             let error = format!("{:?}", err);
             debug!(logger, "Failed to register CLIENT_OPS_COUNT"; "error" => error);
@@ -143,13 +126,47 @@ impl HttpClient {
             debug!(logger, "Failed to register CLIENT_OPS_DURATION"; "error" => error);
         }
     }
+}
 
+impl HttpClient {
     /// Utility method to build a full path for an endpoint.
     fn endpoint<S>(&self, path: S) -> String 
         where S: Into<String>,
     {
         let path = path.into();
         format!("{}/{}", self.root_url, path.trim_left_matches('/'))
+    }
+
+    /// Performs a request, decoding the JSON response and tracking some stats.
+    fn perform<T>(&self, request: RequestBuilder) -> Result<T>
+        where T: DeserializeOwned
+    {
+        let request = request.build()?;
+        let endpoint = String::from(&request.url().as_str()[self.root_url.len()..]);
+        CLIENT_OPS_COUNT.with_label_values(&[&endpoint]).inc();
+        let timer = CLIENT_OPS_DURATION.with_label_values(&[&endpoint]).start_timer();
+        let mut response = self.client.execute(request)
+            .map_err(|error| {
+                CLIENT_OP_ERRORS_COUNT.with_label_values(&[&endpoint]).inc();
+                error
+            })?;
+        timer.observe_duration();
+        let status = response.status();
+        CLIENT_HTTP_STATUS.with_label_values(&[&endpoint, status.as_str()]).inc();
+        if response.status() < StatusCode::BAD_REQUEST {
+            response.json().map_err(|error| {
+                CLIENT_OP_ERRORS_COUNT.with_label_values(&[&endpoint]).inc();
+                error.into()
+            })
+        } else {
+            response.json::<ClientError>()
+                .map_err(|error| error.into())
+                .and_then(|response| Err(response.error.into()))
+                .map_err(|error| {
+                    CLIENT_OP_ERRORS_COUNT.with_label_values(&[&endpoint]).inc();
+                    error
+                })
+        }
     }
 }
 

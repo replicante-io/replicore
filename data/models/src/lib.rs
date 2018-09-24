@@ -2,7 +2,6 @@ extern crate chrono;
 extern crate serde;
 #[macro_use]
 extern crate serde_derive;
-
 #[cfg(test)]
 extern crate serde_json;
 
