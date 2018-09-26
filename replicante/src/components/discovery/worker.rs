@@ -1,3 +1,4 @@
+use std::time::Duration;
 use error_chain::ChainedError;
 use prometheus::Registry;
 use slog::Logger;
@@ -33,9 +34,11 @@ pub struct DiscoveryWorker {
 
 impl DiscoveryWorker {
     /// Creates a discover worker.
-    pub fn new(config: BackendsConfig, logger: Logger, store: Store) -> DiscoveryWorker {
+    pub fn new(
+        config: BackendsConfig, logger: Logger, store: Store, timeout: Duration
+    ) -> DiscoveryWorker {
         let aggregator = Aggregator::new(logger.clone(), store.clone());
-        let fetcher = Fetcher::new(logger.clone(), store.clone());
+        let fetcher = Fetcher::new(logger.clone(), store.clone(), timeout);
         DiscoveryWorker {
             config,
             logger,

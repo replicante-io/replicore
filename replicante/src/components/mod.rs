@@ -1,3 +1,4 @@
+use std::time::Duration;
 use slog::Logger;
 
 use super::Config;
@@ -29,7 +30,10 @@ pub struct Components {
 impl Components {
     /// Creates and configures components.
     pub fn new(config: &Config, logger: Logger, interfaces: &mut Interfaces) -> Result<Components> {
-        let discovery = Discovery::new(config.discovery.clone(), logger, interfaces);
+        let discovery = Discovery::new(
+            config.discovery.clone(), Duration::from_secs(config.timeouts.agents_api),
+            logger, interfaces
+        );
         let webui = WebUI::new(interfaces);
         Ok(Components {
             discovery,

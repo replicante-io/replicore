@@ -1,3 +1,6 @@
+use std::io;
+use std::time::Duration;
+
 use prometheus::CounterVec;
 use prometheus::HistogramOpts;
 use prometheus::HistogramVec;
@@ -28,19 +31,19 @@ lazy_static! {
     static ref CLIENT_HTTP_STATUS: CounterVec = CounterVec::new(
         Opts::new("replicante_agentclient_http_status", "Number of HTTP status for an endpoint"),
         &["endpoint", "status"]
-    ).expect("Failed to create replicante_agentclient_http_status counter");
+    ).expect("Failed to create CLIENT_HTTP_STATUS counter");
 
     /// Counter for agent operation errors.
     static ref CLIENT_OP_ERRORS_COUNT: CounterVec = CounterVec::new(
         Opts::new("replicante_agentclient_operation_errors", "Number of agent operations failed"),
         &["endpoint"]
-    ).expect("Failed to create replicante_agentclient_operation_errors counter");
+    ).expect("Failed to create CLIENT_OP_ERRORS_COUNT counter");
 
     /// Counter for agent operations.
     static ref CLIENT_OPS_COUNT: CounterVec = CounterVec::new(
         Opts::new("replicante_agentclient_operations", "Number of agent operations issued"),
         &["endpoint"]
-    ).expect("Failed to create replicante_agentclient_operations counter");
+    ).expect("Failed to create CLIENT_OPS_COUNT counter");
 
     /// Observe duration of agent operations.
     static ref CLIENT_OPS_DURATION: HistogramVec = HistogramVec::new(
@@ -50,6 +53,12 @@ lazy_static! {
         ),
         &["endpoint"]
     ).expect("Failed to create CLIENT_OPS_DURATION histogram");
+
+    /// Counter for agent operation timeout errors.
+    static ref CLIENT_TIMEOUT: CounterVec = CounterVec::new(
+        Opts::new("replicante_agentclient_timeout", "Number of agent operations that timed out"),
+        &["endpoint"]
+    ).expect("Failed to create CLIENT_TIMEOUT counter");
 }
 
 
@@ -91,10 +100,10 @@ impl Client for HttpClient {
 
 impl HttpClient {
     /// Creates a new HTTP client to interact with the agent.
-    pub fn new<S>(target: S) -> Result<HttpClient>
+    pub fn new<S>(target: S, timeout: Duration) -> Result<HttpClient>
         where S: Into<String>,
     {
-        let client = ReqwestClient::builder().build()?;
+        let client = ReqwestClient::builder().timeout(timeout).build()?;
         let target = target.into();
         let root_url = String::from(target.trim_right_matches('/'));
         Ok(HttpClient {
@@ -125,6 +134,10 @@ impl HttpClient {
             let error = format!("{:?}", err);
             debug!(logger, "Failed to register CLIENT_OPS_DURATION"; "error" => error);
         }
+        if let Err(err) = registry.register(Box::new(CLIENT_TIMEOUT.clone())) {
+            let error = format!("{:?}", err);
+            debug!(logger, "Failed to register CLIENT_TIMEOUT"; "error" => error);
+        }
     }
 }
 
@@ -148,6 +161,17 @@ impl HttpClient {
         let mut response = self.client.execute(request)
             .map_err(|error| {
                 CLIENT_OP_ERRORS_COUNT.with_label_values(&[&endpoint]).inc();
+                // Look at the inner error, if any, to check if it is a timout.
+                let inner_kind = error.get_ref()
+                    .and_then(|error| error.downcast_ref::<io::Error>())
+                    .map(|error| error.kind());
+                match inner_kind {
+                    Some(io::ErrorKind::TimedOut) |
+                    Some(io::ErrorKind:: WouldBlock) => {
+                        CLIENT_TIMEOUT.with_label_values(&[&endpoint]).inc();
+                    }
+                    _ => (),
+                };
                 error
             })?;
         timer.observe_duration();
@@ -173,23 +197,24 @@ impl HttpClient {
 
 #[cfg(test)]
 mod tests {
+    use std::time::Duration;
     use super::HttpClient;
 
     #[test]
     fn enpoint_concat() {
-        let client = HttpClient::new("proto://host:port").unwrap();
+        let client = HttpClient::new("proto://host:port", Duration::from_secs(15)).unwrap();
         assert_eq!(client.endpoint("some/path"), "proto://host:port/some/path");
     }
 
     #[test]
     fn enpoint_trim_root() {
-        let client = HttpClient::new("proto://host:port/").unwrap();
+        let client = HttpClient::new("proto://host:port", Duration::from_secs(15)).unwrap();
         assert_eq!(client.endpoint("some/path"), "proto://host:port/some/path");
     }
 
     #[test]
     fn enpoint_trim_path_prefix() {
-        let client = HttpClient::new("proto://host:port/").unwrap();
+        let client = HttpClient::new("proto://host:port", Duration::from_secs(15)).unwrap();
         assert_eq!(client.endpoint("/some/path"), "proto://host:port/some/path");
     }
 }

@@ -16,7 +16,6 @@ use super::interfaces::api::Config as APIConfig;
 
 /// Replicante configuration options.
 #[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
-#[serde(deny_unknown_fields)]
 pub struct Config {
     /// API server configuration.
     #[serde(default)]
@@ -34,6 +33,10 @@ pub struct Config {
     #[serde(default)]
     pub storage: StorageConfig,
 
+    /// Timeouts configured here are used throughout the system for various reasons.
+    #[serde(default)]
+    pub timeouts: TimeoutsConfig,
+
     /// Distributed tracing configuration.
     #[serde(default)]
     pub tracing: TracingConfig,
@@ -46,6 +49,7 @@ impl Default for Config {
             discovery: DiscoveryConfig::default(),
             logging: LoggingConfig::default(),
             storage: StorageConfig::default(),
+            timeouts: TimeoutsConfig::default(),
             tracing: TracingConfig::default(),
         }
     }
@@ -67,6 +71,28 @@ impl Config {
         let conf = serde_yaml::from_reader(reader)?;
         Ok(conf)
     }
+}
+
+
+/// Replicante timeouts configuration options.
+#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
+pub struct TimeoutsConfig {
+    /// Time after which API requests to agents are failed.
+    #[serde(default = "TimeoutsConfig::default_agents_api")]
+    pub agents_api: u64,
+}
+
+impl Default for TimeoutsConfig {
+    fn default() -> TimeoutsConfig {
+        TimeoutsConfig {
+            agents_api: Self::default_agents_api(),
+        }
+    }
+}
+
+impl TimeoutsConfig {
+    /// Default value for `agents_api` used by serde.
+    fn default_agents_api() -> u64 { 15 }
 }
 
 

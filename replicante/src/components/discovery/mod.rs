@@ -28,6 +28,7 @@ use self::worker::DiscoveryWorker;
 
 /// Component to periodically perform service discovery.
 pub struct DiscoveryComponent {
+    agents_api_timeout: Duration,
     config: BackendsConfig,
     interval: Duration,
     logger: Logger,
@@ -39,10 +40,13 @@ pub struct DiscoveryComponent {
 
 impl DiscoveryComponent {
     /// Creates a new agent discovery component.
-    pub fn new(config: Config, logger: Logger, interfaces: &Interfaces) -> DiscoveryComponent {
+    pub fn new(
+        config: Config, agents_api_timeout: Duration, logger: Logger, interfaces: &Interfaces
+    ) -> DiscoveryComponent {
         let interval = Duration::from_secs(config.interval);
         register_metrics(&logger, interfaces.metrics.registry());
         DiscoveryComponent {
+            agents_api_timeout,
             config: config.backends,
             interval,
             logger,
@@ -60,6 +64,7 @@ impl DiscoveryComponent {
             self.config.clone(),
             self.logger.clone(),
             self.store.clone(),
+            self.agents_api_timeout.clone(),
         );
 
         info!(self.logger, "Starting Agent Discovery thread");

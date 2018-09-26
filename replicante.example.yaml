@@ -116,6 +116,12 @@ storage:
     uri: mongodb://localhost:27017/
 
 
+# Timeouts configured here are used throughout the system for various reasons.
+timeouts:
+  # Time after which API requests to agents are failed.
+  agents_api: 15
+
+      
 # The section below is for distributed tracing configuration.
 tracing:
   # The distributed tracing backend to integrate with.

@@ -12,6 +12,7 @@ extern crate replicante_agent_client;
 extern crate replicante_data_models;
 extern crate replicante_data_store;
 
+use std::time::Duration;
 use error_chain::ChainedError;
 use prometheus::Registry;
 use slog::Logger;
@@ -65,10 +66,11 @@ pub struct Fetcher {
     meta: MetaFetcher,
     node: NodeFetcher,
     shard: ShardFetcher,
+    timeout: Duration,
 }
 
 impl Fetcher {
-    pub fn new(logger: Logger, store: Store) -> Fetcher {
+    pub fn new(logger: Logger, store: Store, timeout: Duration) -> Fetcher {
         let agent = AgentFetcher::new(store.clone());
         let meta = MetaFetcher::new(store.clone());
         let node = NodeFetcher::new(store.clone());
@@ -79,6 +81,7 @@ impl Fetcher {
             meta,
             node,
             shard,
+            timeout,
         }
     }
 
@@ -119,7 +122,7 @@ impl Fetcher {
         &self, cluster: &str, node: &str, meta: &mut ClusterMetaBuilder
     ) -> Result<()> {
         meta.node_inc();
-        let client = HttpClient::new(node.to_string())?;
+        let client = HttpClient::new(node.to_string(), self.timeout.clone())?;
         let mut agent = Agent::new(cluster.to_string(), node.to_string(), AgentStatus::Up);
 
         let result = self.agent.process_agent_info(&client, cluster.to_string(), node.to_string());
