@@ -30,4 +30,4 @@ pub use self::datastore::Shard;
 pub use self::datastore::ShardRole;
 
 pub use self::events::Event;
-pub use self::events::EventData;
+pub use self::events::EventPayload;

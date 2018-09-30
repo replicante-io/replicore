@@ -9,7 +9,7 @@ use mongodb::coll::options::FindOptions;
 use mongodb::db::ThreadedDatabase;
 
 use replicante_data_models::Event;
-use replicante_data_models::EventData;
+use replicante_data_models::EventPayload;
 
 use super::super::super::Result;
 use super::super::super::ResultExt;
@@ -89,7 +89,7 @@ impl EventStore {
 #[derive(Clone, Eq, PartialEq, Debug, Serialize, Deserialize)]
 pub struct EventWrapper {
     #[serde(flatten)]
-    pub payload: EventData,
+    pub payload: EventPayload,
     pub timestamp: UtcDateTime,
 }
 

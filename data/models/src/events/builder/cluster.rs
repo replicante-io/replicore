@@ -1,7 +1,7 @@
 use super::super::super::ClusterDiscovery;
 use super::super::Event;
 use super::super::EventBuilder;
-use super::super::EventData;
+use super::super::EventPayload;
 
 
 /// Build `Event`s that belongs to the cluster family.
@@ -15,9 +15,9 @@ impl ClusterBuilder {
         ClusterBuilder { builder }
     }
 
-    /// Build an `EventData::ClusterNew`.
+    /// Build an `EventPayload::ClusterNew`.
     pub fn cluster_new(self, discovery: ClusterDiscovery) -> Event {
-        let data = EventData::ClusterNew(discovery);
+        let data = EventPayload::ClusterNew(discovery);
         self.builder.build(data)
     }
 }
@@ -27,13 +27,13 @@ impl ClusterBuilder {
 mod tests {
     use super::ClusterDiscovery;
     use super::Event;
-    use super::EventData;
+    use super::EventPayload;
 
     #[test]
     fn cluster_new() {
         let discovery = ClusterDiscovery::new("test", vec![]);
         let event = Event::builder().cluster().cluster_new(discovery.clone());
-        let expected = EventData::ClusterNew(discovery);
+        let expected = EventPayload::ClusterNew(discovery);
         assert_eq!(event.payload, expected);
     }
 }

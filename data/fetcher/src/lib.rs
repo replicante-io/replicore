@@ -136,7 +136,7 @@ impl Fetcher {
         let result = self.node.process_node(&client, meta);
         if let Err(error) = result {
             let message = error.display_chain().to_string();
-            agent.status = AgentStatus::DatastoreDown(message);
+            agent.status = AgentStatus::NodeDown(message);
             self.agent.process_agent(agent)?;
             return Err(error);
         };
@@ -144,7 +144,7 @@ impl Fetcher {
         let result = self.shard.process_shards(&client, cluster, node);
         if let Err(error) = result {
             let message = error.display_chain().to_string();
-            agent.status = AgentStatus::DatastoreDown(message);
+            agent.status = AgentStatus::NodeDown(message);
             self.agent.process_agent(agent)?;
             return Err(error);
         };

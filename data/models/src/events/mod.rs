@@ -25,7 +25,7 @@ pub struct AgentStatusChange {
 /// Enumerates all possible events emitted by the system.
 #[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
 #[serde(tag = "event", content = "data")]
-pub enum EventData {
+pub enum EventPayload {
     /// Emitted when an agent is detected to be down.
     #[serde(rename = "AGENT_DOWN")]
     AgentDown(AgentStatusChange),
@@ -34,9 +34,9 @@ pub enum EventData {
     #[serde(rename = "AGENT_NEW")]
     AgentNew(Agent),
 
-    /// Emitted when an agent was be down but is now detected as up.
-    #[serde(rename = "AGENT_RECOVER")]
-    AgentRecover(AgentStatusChange),
+    /// Emitted when an agent is detected to be up.
+    #[serde(rename = "AGENT_UP")]
+    AgentUp(AgentStatusChange),
 
     /// Emitted when an agent was detected to be down but the reason may have changed.
     #[serde(rename = "AGENT_STILL_DOWN")]
@@ -46,13 +46,13 @@ pub enum EventData {
     #[serde(rename = "CLUSTER_NEW")]
     ClusterNew(ClusterDiscovery),
 
-    /// Emitted when a datastore is detected to be down.
-    #[serde(rename = "DATASTORE_DOWN")]
-    DatastoreDown(AgentStatusChange),
+    /// Emitted when a datastore node is detected to be down.
+    #[serde(rename = "NODE_DOWN")]
+    NodeDown(AgentStatusChange),
 
-    /// Emitted when a datastore was be down but is now detected as up.
-    #[serde(rename = "DATASTORE_RECOVER")]
-    DatastoreRecover(AgentStatusChange),
+    /// Emitted when a datastore node is detected as up.
+    #[serde(rename = "NODE_UP")]
+    NodeUp(AgentStatusChange),
 
     /// Emitted when a datastore was detected to be down but the reason may have changed.
     #[serde(rename = "DATASTORE_STILL_DOWN")]
@@ -64,7 +64,7 @@ pub enum EventData {
 #[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
 pub struct Event {
     #[serde(flatten)]
-    pub payload: EventData,
+    pub payload: EventPayload,
     pub timestamp: DateTime<Utc>,
 }
 
@@ -77,14 +77,14 @@ impl Event {
     /// Look up the cluster ID for the event, if they have one.
     pub fn cluster(&self) -> Option<&str> {
         match self.payload {
-            EventData::AgentDown(ref data) => Some(&data.cluster),
-            EventData::AgentNew(ref data) => Some(&data.cluster),
-            EventData::AgentRecover(ref data) => Some(&data.cluster),
-            EventData::AgentStillDown(ref data) => Some(&data.cluster),
-            EventData::ClusterNew(ref data) => Some(&data.cluster),
-            EventData::DatastoreDown(ref data) => Some(&data.cluster),
-            EventData::DatastoreRecover(ref data) => Some(&data.cluster),
-            EventData::DatastoreStillDown(ref data) => Some(&data.cluster),
+            EventPayload::AgentDown(ref data) => Some(&data.cluster),
+            EventPayload::AgentNew(ref data) => Some(&data.cluster),
+            EventPayload::AgentUp(ref data) => Some(&data.cluster),
+            EventPayload::AgentStillDown(ref data) => Some(&data.cluster),
+            EventPayload::ClusterNew(ref data) => Some(&data.cluster),
+            EventPayload::NodeDown(ref data) => Some(&data.cluster),
+            EventPayload::NodeUp(ref data) => Some(&data.cluster),
+            EventPayload::DatastoreStillDown(ref data) => Some(&data.cluster),
         }
     }
 }

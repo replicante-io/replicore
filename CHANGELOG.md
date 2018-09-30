@@ -11,6 +11,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Changed
 - **BREAKING**: Flatten encoded events structure (`data`, `event`, `timeout` are all root attributes).
 - **BREAKING**: Update models.
+- **BREAKING**: Rename `*Recover` events.
+- **BREAKING**: Rename `DatastoreDown` to `NodeDown`.
+- **BREAKING**: Rename `DatastoreRecovered` to `NodeUp`.
+- **BREAKING**: Rename `EventData` to `EventPayload`.
 - Move logging code to common crate.
 
 ### Fixed

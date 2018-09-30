@@ -58,7 +58,7 @@ pub enum AgentStatus {
     AgentDown(String),
 
     /// The agent is up but the datastore is down or is returning errors.
-    DatastoreDown(String),
+    NodeDown(String),
 
     /// The agent is up and can communicate with the datastore.
     Up,
@@ -132,9 +132,9 @@ mod tests {
 
         #[test]
         fn downstore_down() {
-            let status = AgentStatus::DatastoreDown("TEST".into());
+            let status = AgentStatus::NodeDown("TEST".into());
             let payload = serde_json::to_string(&status).unwrap();
-            let expected = r#"{"DatastoreDown":"TEST"}"#;
+            let expected = r#"{"NodeDown":"TEST"}"#;
             assert_eq!(payload, expected);
         }
 
