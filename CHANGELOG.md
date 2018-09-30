@@ -15,6 +15,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - **BREAKING**: Rename `DatastoreDown` to `NodeDown`.
 - **BREAKING**: Rename `DatastoreRecovered` to `NodeUp`.
 - **BREAKING**: Rename `EventData` to `EventPayload`.
+- **BREAKING**: Replace `AgentStillDown` with `AgentDown`.
+- **BREAKING**: Replace `DatastoreStillDown` with `NodeDown`.
 - Move logging code to common crate.
 
 ### Fixed

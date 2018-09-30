@@ -38,10 +38,6 @@ pub enum EventPayload {
     #[serde(rename = "AGENT_UP")]
     AgentUp(AgentStatusChange),
 
-    /// Emitted when an agent was detected to be down but the reason may have changed.
-    #[serde(rename = "AGENT_STILL_DOWN")]
-    AgentStillDown(AgentStatusChange),
-
     /// The service discovery found a new cluster.
     #[serde(rename = "CLUSTER_NEW")]
     ClusterNew(ClusterDiscovery),
@@ -53,10 +49,6 @@ pub enum EventPayload {
     /// Emitted when a datastore node is detected as up.
     #[serde(rename = "NODE_UP")]
     NodeUp(AgentStatusChange),
-
-    /// Emitted when a datastore was detected to be down but the reason may have changed.
-    #[serde(rename = "DATASTORE_STILL_DOWN")]
-    DatastoreStillDown(AgentStatusChange),
 }
 
 
@@ -80,11 +72,9 @@ impl Event {
             EventPayload::AgentDown(ref data) => Some(&data.cluster),
             EventPayload::AgentNew(ref data) => Some(&data.cluster),
             EventPayload::AgentUp(ref data) => Some(&data.cluster),
-            EventPayload::AgentStillDown(ref data) => Some(&data.cluster),
             EventPayload::ClusterNew(ref data) => Some(&data.cluster),
             EventPayload::NodeDown(ref data) => Some(&data.cluster),
             EventPayload::NodeUp(ref data) => Some(&data.cluster),
-            EventPayload::DatastoreStillDown(ref data) => Some(&data.cluster),
         }
     }
 }
