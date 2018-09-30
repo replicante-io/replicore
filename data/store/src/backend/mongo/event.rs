@@ -88,6 +88,7 @@ impl EventStore {
 /// A wrapper for the `Event` model to allow BSON to encode/decode timestamps correctly.
 #[derive(Clone, Eq, PartialEq, Debug, Serialize, Deserialize)]
 pub struct EventWrapper {
+    #[serde(flatten)]
     pub payload: EventData,
     pub timestamp: UtcDateTime,
 }

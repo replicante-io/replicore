@@ -6,9 +6,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 ### Added
-- Configurable Agent API calls timeout
+- Configurable Agent API calls timeout.
 
 ### Changed
+- **BREAKING**: Flatten encoded events structure (`data`, `event`, `timeout` are all root attributes).
 - **BREAKING**: Update models.
 - Move logging code to common crate.
 
@@ -31,7 +32,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Store clusters and nodes information.
 - User manual (documentation).
 - Validate contents of the store.
-- WebUI enpoints for initial UI.
+- WebUI endpoints for initial UI.
 
 
 [Unreleased]: https://github.com/replicante-io/replicante/compare/v0.1.0...HEAD

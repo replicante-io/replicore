@@ -23,6 +23,12 @@ $ docker-compose exec mongo mongo
 > // Init script as https://github.com/replicante-io/playgrounds/blob/master/images/replicante/indexes.js
 ```
 
+### FAQ
+
+  * **adminMongo wants me to create a connection**
+    Ensure the mongo server is up and running and the replicante DB exists, then restart the UI:
+    `docker-compose restart mongoui`.
+
 
 ## Build dependences
 

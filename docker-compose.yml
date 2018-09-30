@@ -19,14 +19,19 @@ services:
         target: /data/db
 
   mongoui:
+    depends_on:
+      - mongo
     environment:
-      CONN_NAME: 'replistore'
-      DB_HOST: 'mongo'
       PORT: '4321'
     image: 'mrvautin/adminmongo:latest'
     hostname: mongoui
     ports:
       - '4321:4321'
+    volumes:
+      - type: bind
+        source: './devtools/mongoui.connections.json'
+        target: '/app/user/config/config.json'
+        read_only: true
 
 
 volumes:
