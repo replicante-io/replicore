@@ -1,6 +1,8 @@
 use super::super::super::Agent;
+use super::super::super::AgentInfo;
 use super::super::super::AgentStatus;
 
+use super::super::AgentNew;
 use super::super::AgentStatusChange;
 use super::super::Event;
 use super::super::EventBuilder;
@@ -19,9 +21,14 @@ impl AgentBuilder {
     }
 
     /// Build an `EventPayload::AgentNew`.
-    pub fn agent_new(self, agent: Agent) -> Event {
-        let data = EventPayload::AgentNew(agent);
+    pub fn agent_new(self, cluster: String, host: String) -> Event {
+        let data = EventPayload::AgentNew(AgentNew { cluster, host });
         self.builder.build(data)
+    }
+
+    /// Specialise the builder into an agent info event builder.
+    pub fn info(self) -> AgentInfoBuilder {
+        AgentInfoBuilder::builder(self.builder)
     }
 
     /// Build an agent status transition event.
@@ -90,18 +97,40 @@ impl AgentBuilder {
 }
 
 
+/// Build `Event`s that belongs to the agnet info family.
+pub struct AgentInfoBuilder {
+    builder: EventBuilder,
+}
+
+impl AgentInfoBuilder {
+    /// Create a new agent info event builder.
+    pub fn builder(builder: EventBuilder) -> AgentInfoBuilder {
+        AgentInfoBuilder { builder }
+    }
+
+    /// Build an `EventPayload::AgentInfoNew`.
+    pub fn info_new(self, agent: AgentInfo) -> Event {
+        let data = EventPayload::AgentInfoNew(agent);
+        self.builder.build(data)
+    }
+}
+
+
 #[cfg(test)]
 mod tests {
     use super::super::super::super::AgentStatus;
+    use super::super::super::AgentNew;
     use super::Agent;
     use super::Event;
     use super::EventPayload;
 
     #[test]
     fn new() {
-        let agent = Agent::new("cluster", "host", AgentStatus::AgentDown("TEST".into()));
-        let event = Event::builder().agent().agent_new(agent.clone());
-        let expected = EventPayload::AgentNew(agent);
+        let event = Event::builder().agent().agent_new("cluster".into(), "host".into());
+        let expected = EventPayload::AgentNew(AgentNew {
+            cluster: "cluster".into(),
+            host: "host".into(),
+        });
         assert_eq!(event.payload, expected);
     }
 
@@ -230,6 +259,24 @@ mod tests {
             let after = Agent::new("cluster", "host", AgentStatus::Up);
             let before = Agent::new("cluster", "host", AgentStatus::Up);
             Event::builder().agent().transition(before, after);
+        }
+    }
+
+    mod info {
+        use replicante_agent_models::AgentInfo as WireAgentInfo;
+        use replicante_agent_models::AgentVersion;
+        use super::super::super::super::super::AgentInfo;
+        use super::Event;
+        use super::EventPayload;
+
+        #[test]
+        fn new() {
+            let agent = AgentVersion::new("1.2.3", "abcdef", "tainted");
+            let agent = WireAgentInfo::new(agent);
+            let agent = AgentInfo::new("cluster", "host", agent);
+            let event = Event::builder().agent().info().info_new(agent.clone());
+            let expected = EventPayload::AgentInfoNew(agent);
+            assert_eq!(event.payload, expected);
         }
     }
 }

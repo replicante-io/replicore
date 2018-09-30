@@ -2,7 +2,7 @@
 use chrono::DateTime;
 use chrono::Utc;
 
-use super::Agent;
+use super::AgentInfo;
 use super::AgentStatus;
 use super::ClusterDiscovery;
 use super::Node;
@@ -12,6 +12,14 @@ use super::Shard;
 mod builder;
 
 use self::builder::EventBuilder;
+
+
+/// Metadata attached to agent new events.
+#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
+pub struct AgentNew {
+    pub cluster: String,
+    pub host: String,
+}
 
 
 /// Metadata attached to agent status change events.
@@ -32,9 +40,13 @@ pub enum EventPayload {
     #[serde(rename = "AGENT_DOWN")]
     AgentDown(AgentStatusChange),
 
+    /// Information about an agent was collected for the first time.
+    #[serde(rename = "AGENT_INFO_NEW")]
+    AgentInfoNew(AgentInfo),
+
     /// An agent was discovered for the first time.
     #[serde(rename = "AGENT_NEW")]
-    AgentNew(Agent),
+    AgentNew(AgentNew),
 
     /// An agent was found to be up.
     #[serde(rename = "AGENT_UP")]
@@ -80,6 +92,7 @@ impl Event {
     pub fn cluster(&self) -> Option<&str> {
         match self.payload {
             EventPayload::AgentDown(ref data) => Some(&data.cluster),
+            EventPayload::AgentInfoNew(ref data) => Some(&data.cluster),
             EventPayload::AgentNew(ref data) => Some(&data.cluster),
             EventPayload::AgentUp(ref data) => Some(&data.cluster),
             EventPayload::ClusterNew(ref data) => Some(&data.cluster),

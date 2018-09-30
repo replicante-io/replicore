@@ -1,6 +1,7 @@
 use replicante_agent_client::Client;
 use replicante_data_models::Agent;
 use replicante_data_models::AgentInfo;
+use replicante_data_models::AgentStatus;
 use replicante_data_models::Event;
 use replicante_data_store::Store;
 
@@ -58,7 +59,12 @@ impl AgentFetcher {
     }
 
     fn process_agent_new(&self, agent: Agent) -> Result<()> {
-        let event = Event::builder().agent().agent_new(agent.clone());
+        let event = Event::builder().agent().agent_new(agent.cluster.clone(), agent.host.clone());
+        self.store.persist_event(event).chain_err(|| FAIL_PERSIST_AGENT)?;
+        // Emit a synthetic transition.
+        let before = AgentStatus::AgentDown("Newly discovered agent".into());
+        let before = Agent::new(agent.cluster.clone(), agent.host.clone(), before);
+        let event = Event::builder().agent().transition(before, agent.clone());
         self.store.persist_event(event).chain_err(|| FAIL_PERSIST_AGENT)?;
         self.store.persist_agent(agent).chain_err(|| FAIL_PERSIST_AGENT)
     }
@@ -72,7 +78,8 @@ impl AgentFetcher {
     }
 
     fn process_agent_info_new(&self, agent: AgentInfo) -> Result<()> {
-        // TODO(stefano): emit agent info new events.
+        let event = Event::builder().agent().info().info_new(agent.clone());
+        self.store.persist_event(event).chain_err(|| FAIL_PERSIST_AGENT_INFO)?;
         self.store.persist_agent_info(agent).chain_err(|| FAIL_PERSIST_AGENT_INFO)
     }
 }
