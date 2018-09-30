@@ -1,4 +1,5 @@
 use replicante_agent_client::Client;
+use replicante_data_models::Event;
 use replicante_data_models::Shard;
 use replicante_data_store::Store;
 
@@ -54,7 +55,8 @@ impl ShardFetcher {
     }
 
     fn process_shard_new(&self, shard: Shard) -> Result<()> {
-        // TODO(stefano): emit shard new events.
+        let event = Event::builder().shard().shard_allocation_new(shard.clone());
+        self.store.persist_event(event).chain_err(|| FAIL_PERSIST_SHARD)?;
         self.store.persist_shard(shard).chain_err(|| FAIL_PERSIST_SHARD)
     }
 }

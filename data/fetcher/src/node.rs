@@ -1,4 +1,5 @@
 use replicante_agent_client::Client;
+use replicante_data_models::Event;
 use replicante_data_models::Node;
 use replicante_data_store::Store;
 
@@ -48,7 +49,8 @@ impl NodeFetcher {
     }
 
     fn process_node_new(&self, node: Node) -> Result<()> {
-        // TODO(stefano): emit node new events.
+        let event = Event::builder().node().node_new(node.clone());
+        self.store.persist_event(event).chain_err(|| FAIL_PERSIST_NODE)?;
         self.store.persist_node(node).chain_err(|| FAIL_PERSIST_NODE)
     }
 }

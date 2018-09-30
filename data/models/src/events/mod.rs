@@ -5,6 +5,8 @@ use chrono::Utc;
 use super::Agent;
 use super::AgentStatus;
 use super::ClusterDiscovery;
+use super::Node;
+use super::Shard;
 
 
 mod builder;
@@ -26,29 +28,37 @@ pub struct AgentStatusChange {
 #[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
 #[serde(tag = "event", content = "data")]
 pub enum EventPayload {
-    /// Emitted when an agent is detected to be down.
+    /// An agent was found to be down.
     #[serde(rename = "AGENT_DOWN")]
     AgentDown(AgentStatusChange),
 
-    /// The status of an agent was determined for the first time.
+    /// An agent was discovered for the first time.
     #[serde(rename = "AGENT_NEW")]
     AgentNew(Agent),
 
-    /// Emitted when an agent is detected to be up.
+    /// An agent was found to be up.
     #[serde(rename = "AGENT_UP")]
     AgentUp(AgentStatusChange),
 
-    /// The service discovery found a new cluster.
+    /// Service discovery found a new cluster.
     #[serde(rename = "CLUSTER_NEW")]
     ClusterNew(ClusterDiscovery),
 
-    /// Emitted when a datastore node is detected to be down.
+    /// A datastore node was found to be down.
     #[serde(rename = "NODE_DOWN")]
     NodeDown(AgentStatusChange),
 
-    /// Emitted when a datastore node is detected as up.
+    /// A datastore node was found for the first time.
+    #[serde(rename = "NODE_NEW")]
+    NodeNew(Node),
+
+    /// A datastore node was found to be up.
     #[serde(rename = "NODE_UP")]
     NodeUp(AgentStatusChange),
+
+    /// A shard was found for the first time on a node.
+    #[serde(rename = "SHARD_ALLOCATION_NEW")]
+    ShardAllocationNew(Shard),
 }
 
 
@@ -74,7 +84,9 @@ impl Event {
             EventPayload::AgentUp(ref data) => Some(&data.cluster),
             EventPayload::ClusterNew(ref data) => Some(&data.cluster),
             EventPayload::NodeDown(ref data) => Some(&data.cluster),
+            EventPayload::NodeNew(ref data) => Some(&data.cluster),
             EventPayload::NodeUp(ref data) => Some(&data.cluster),
+            EventPayload::ShardAllocationNew(ref data) => Some(&data.cluster),
         }
     }
 }

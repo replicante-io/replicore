@@ -7,9 +7,13 @@ use super::EventPayload;
 
 mod agent;
 mod cluster;
+mod node;
+mod shard;
 
 use self::agent::AgentBuilder;
 use self::cluster::ClusterBuilder;
+use self::node::NodeBuilder;
+use self::shard::ShardBuilder;
 
 
 /// Build `Event`s, validating inputs.
@@ -23,14 +27,24 @@ impl EventBuilder {
         EventBuilder::default()
     }
 
-    /// Specialise the builder into an agent events builder.
+    /// Specialise the builder into an agent event builder.
     pub fn agent(self) -> AgentBuilder {
         AgentBuilder::builder(self)
     }
 
-    /// Specialise the builder into a cluster events builder.
+    /// Specialise the builder into a cluster event builder.
     pub fn cluster(self) -> ClusterBuilder {
         ClusterBuilder::builder(self)
+    }
+
+    /// Specialise the builder into a node event builder.
+    pub fn node(self) -> NodeBuilder {
+        NodeBuilder::builder(self)
+    }
+
+    /// Specialise the builder into a shard event builder.
+    pub fn shard(self) -> ShardBuilder {
+        ShardBuilder::builder(self)
     }
 
     /// Set the event occurrence timestamp.
