@@ -1,4 +1,5 @@
 use super::super::super::ClusterDiscovery;
+use super::super::ClusterChanged;
 use super::super::Event;
 use super::super::EventBuilder;
 use super::super::EventPayload;
@@ -13,6 +14,17 @@ impl ClusterBuilder {
     /// Create a new cluster event builder.
     pub fn builder(builder: EventBuilder) -> ClusterBuilder {
         ClusterBuilder { builder }
+    }
+
+    /// Build an `EventPayload::ClusterChanged`.
+    pub fn changed(self, before: ClusterDiscovery, after: ClusterDiscovery) -> Event {
+        let data = ClusterChanged {
+            cluster: before.cluster.clone(),
+            before,
+            after,
+        };
+        let data = EventPayload::ClusterChanged(data);
+        self.builder.build(data)
     }
 
     /// Build an `EventPayload::ClusterNew`.

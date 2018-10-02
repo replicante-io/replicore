@@ -32,6 +32,15 @@ pub struct AgentStatusChange {
 }
 
 
+/// Metadata attached to cluster status change events.
+#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
+pub struct ClusterChanged {
+    pub cluster: String,
+    pub before: ClusterDiscovery,
+    pub after: ClusterDiscovery,
+}
+
+
 /// Enumerates all possible events emitted by the system.
 #[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
 #[serde(tag = "event", content = "data")]
@@ -51,6 +60,10 @@ pub enum EventPayload {
     /// An agent was found to be up.
     #[serde(rename = "AGENT_UP")]
     AgentUp(AgentStatusChange),
+
+    /// Service discovery record for a cluster changed.
+    #[serde(rename = "CLUSTER_CHANGED")]
+    ClusterChanged(ClusterChanged),
 
     /// Service discovery found a new cluster.
     #[serde(rename = "CLUSTER_NEW")]
@@ -95,6 +108,7 @@ impl Event {
             EventPayload::AgentInfoNew(ref data) => Some(&data.cluster),
             EventPayload::AgentNew(ref data) => Some(&data.cluster),
             EventPayload::AgentUp(ref data) => Some(&data.cluster),
+            EventPayload::ClusterChanged(ref data) => Some(&data.cluster),
             EventPayload::ClusterNew(ref data) => Some(&data.cluster),
             EventPayload::NodeDown(ref data) => Some(&data.cluster),
             EventPayload::NodeNew(ref data) => Some(&data.cluster),

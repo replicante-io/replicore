@@ -79,9 +79,9 @@ impl DiscoveryWorker {
     ///
     ///   1. Persist the ClusterDiscovery to store.
     ///   2. Emit any discovery events if needed.
-    ///   3. TODO: ensure cluster is in coordinator (zookeeper).
-    ///   4. Pass the discovery to the status fetcher (TODO: move when coordinator is in place).
-    ///   5. Pass the discovery to the status aggregator (TODO: move when coordinator is in place).
+    ///   3. TODO: Emit cluster refresh task.
+    ///   4. Pass the discovery to the status fetcher (TODO: move when tasks are in place).
+    ///   5. Pass the discovery to the status aggregator (TODO: move when tasks are in place).
     fn process(&self, cluster: ClusterDiscovery) {
         let name = cluster.cluster.clone();
         if let Err(error) = self.process_checked(cluster) {
@@ -96,7 +96,6 @@ impl DiscoveryWorker {
 
     fn process_checked(&self, cluster: ClusterDiscovery) -> Result<()> {
         self.process_discovery(cluster.clone())?;
-        //self.ensure_coordination(cluster.clone())?;
         self.fetcher.process(cluster.clone());
         self.aggregator.process(cluster);
         Ok(())
@@ -116,7 +115,8 @@ impl DiscoveryWorker {
         if cluster == old {
             return Ok(());
         }
-        // TODO(stefano): emit cluster events based on new vs old.
+        let event = Event::builder().cluster().changed(old, cluster.clone());
+        self.store.persist_event(event).chain_err(|| FAIL_PERSIST_DISCOVERY)?;
         self.store.persist_discovery(cluster).chain_err(|| FAIL_PERSIST_DISCOVERY)
     }
 
