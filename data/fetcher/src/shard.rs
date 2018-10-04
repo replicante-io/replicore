@@ -50,7 +50,8 @@ impl ShardFetcher {
         if shard == old {
             return Ok(());
         }
-        // TODO(stefano): emit shard changed events.
+        let event = Event::builder().shard().allocation_changed(old, shard.clone());
+        self.store.persist_event(event).chain_err(|| FAIL_PERSIST_SHARD)?;
         self.store.persist_shard(shard).chain_err(|| FAIL_PERSIST_SHARD)
     }
 

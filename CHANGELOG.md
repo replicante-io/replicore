@@ -7,9 +7,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## [Unreleased]
 ### Added
 - Configurable Agent API calls timeout.
+- Emit new `AGENT_INFO_CHANGED` event.
 - Emit new `AGENT_INFO_NEW` event.
 - Emit new `CLUSTER_CHANGED` event.
+- Emit new `NODE_CHANGED` event.
 - Emit new `NODE_NEW` event.
+- Emit new `SHARD_ALLOCATION_CHANGED` event.
 - Emit new `SHARD_ALLOCATION_NEW` event.
 
 ### Changed

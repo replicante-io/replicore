@@ -44,7 +44,8 @@ impl NodeFetcher {
         if node == old {
             return Ok(());
         }
-        // TODO(stefano): emit node changed events.
+        let event = Event::builder().node().changed(old, node.clone());
+        self.store.persist_event(event).chain_err(|| FAIL_PERSIST_NODE)?;
         self.store.persist_node(node).chain_err(|| FAIL_PERSIST_NODE)
     }
 

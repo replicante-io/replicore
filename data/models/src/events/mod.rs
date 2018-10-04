@@ -22,22 +22,52 @@ pub struct AgentNew {
 }
 
 
+/// Metadata attached to agent info changed.
+#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
+pub struct AgentInfoChanged {
+    pub after: AgentInfo,
+    pub before: AgentInfo,
+    pub cluster: String,
+}
+
+
 /// Metadata attached to agent status change events.
 #[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
 pub struct AgentStatusChange {
-    pub cluster: String,
-    pub host: String,
     pub after: AgentStatus,
     pub before: AgentStatus,
+    pub cluster: String,
+    pub host: String,
 }
 
 
 /// Metadata attached to cluster status change events.
 #[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
 pub struct ClusterChanged {
-    pub cluster: String,
-    pub before: ClusterDiscovery,
     pub after: ClusterDiscovery,
+    pub before: ClusterDiscovery,
+    pub cluster: String,
+}
+
+
+/// Metadata attached to node changed events.
+#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
+pub struct NodeChanged {
+    pub after: Node,
+    pub before: Node,
+    pub cluster: String,
+    pub host: String,
+}
+
+
+/// Metadata attached to shard allocation changed events.
+#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
+pub struct ShardAllocationChanged {
+    pub after: Shard,
+    pub before: Shard,
+    pub cluster: String,
+    pub id: String,
+    pub node: String,
 }
 
 
@@ -48,6 +78,10 @@ pub enum EventPayload {
     /// An agent was found to be down.
     #[serde(rename = "AGENT_DOWN")]
     AgentDown(AgentStatusChange),
+
+    /// Information about an agent changed.
+    #[serde(rename = "AGENT_INFO_CHANGED")]
+    AgentInfoChanged(AgentInfoChanged),
 
     /// Information about an agent was collected for the first time.
     #[serde(rename = "AGENT_INFO_NEW")]
@@ -69,6 +103,10 @@ pub enum EventPayload {
     #[serde(rename = "CLUSTER_NEW")]
     ClusterNew(ClusterDiscovery),
 
+    /// A datastore node has changed.
+    #[serde(rename = "NODE_CHANGED")]
+    NodeChanged(NodeChanged),
+
     /// A datastore node was found to be down.
     #[serde(rename = "NODE_DOWN")]
     NodeDown(AgentStatusChange),
@@ -80,6 +118,10 @@ pub enum EventPayload {
     /// A datastore node was found to be up.
     #[serde(rename = "NODE_UP")]
     NodeUp(AgentStatusChange),
+
+    /// A shard on a node has changed.
+    #[serde(rename = "SHARD_ALLOCATION_CHANGED")]
+    ShardAllocationChanged(ShardAllocationChanged),
 
     /// A shard was found for the first time on a node.
     #[serde(rename = "SHARD_ALLOCATION_NEW")]
@@ -105,14 +147,17 @@ impl Event {
     pub fn cluster(&self) -> Option<&str> {
         match self.payload {
             EventPayload::AgentDown(ref data) => Some(&data.cluster),
+            EventPayload::AgentInfoChanged(ref data) => Some(&data.cluster),
             EventPayload::AgentInfoNew(ref data) => Some(&data.cluster),
             EventPayload::AgentNew(ref data) => Some(&data.cluster),
             EventPayload::AgentUp(ref data) => Some(&data.cluster),
             EventPayload::ClusterChanged(ref data) => Some(&data.cluster),
             EventPayload::ClusterNew(ref data) => Some(&data.cluster),
+            EventPayload::NodeChanged(ref data) => Some(&data.cluster),
             EventPayload::NodeDown(ref data) => Some(&data.cluster),
             EventPayload::NodeNew(ref data) => Some(&data.cluster),
             EventPayload::NodeUp(ref data) => Some(&data.cluster),
+            EventPayload::ShardAllocationChanged(ref data) => Some(&data.cluster),
             EventPayload::ShardAllocationNew(ref data) => Some(&data.cluster),
         }
     }

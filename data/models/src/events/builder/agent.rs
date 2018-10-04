@@ -3,6 +3,7 @@ use super::super::super::AgentInfo;
 use super::super::super::AgentStatus;
 
 use super::super::AgentNew;
+use super::super::AgentInfoChanged;
 use super::super::AgentStatusChange;
 use super::super::Event;
 use super::super::EventBuilder;
@@ -108,7 +109,17 @@ impl AgentInfoBuilder {
         AgentInfoBuilder { builder }
     }
 
-    /// Build an `EventPayload::AgentInfoNew`.
+    /// Build an `EventPayload::AgentInfoChanged` event.
+    pub fn changed(self, before: AgentInfo, after: AgentInfo) -> Event {
+        let data = EventPayload::AgentInfoChanged(AgentInfoChanged {
+            cluster: before.cluster.clone(),
+            before,
+            after,
+        });
+        self.builder.build(data)
+    }
+
+    /// Build an `EventPayload::AgentInfoNew` event.
     pub fn info_new(self, agent: AgentInfo) -> Event {
         let data = EventPayload::AgentInfoNew(agent);
         self.builder.build(data)
@@ -266,8 +277,26 @@ mod tests {
         use replicante_agent_models::AgentInfo as WireAgentInfo;
         use replicante_agent_models::AgentVersion;
         use super::super::super::super::super::AgentInfo;
+        use super::super::AgentInfoChanged;
         use super::Event;
         use super::EventPayload;
+
+        #[test]
+        fn changed() {
+            let before = AgentVersion::new("1.2.3", "abcdef", "tainted");
+            let before = WireAgentInfo::new(before);
+            let before = AgentInfo::new("cluster", "host", before);
+            let after = AgentVersion::new("1.2.3", "abcdef", "tainted");
+            let after = WireAgentInfo::new(after);
+            let after = AgentInfo::new("cluster", "host", after);
+            let event = Event::builder().agent().info().changed(before.clone(), after.clone());
+            let expected = EventPayload::AgentInfoChanged(AgentInfoChanged {
+                cluster: "cluster".into(),
+                before,
+                after
+            });
+            assert_eq!(event.payload, expected);
+        }
 
         #[test]
         fn new() {

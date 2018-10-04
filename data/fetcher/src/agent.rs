@@ -73,7 +73,8 @@ impl AgentFetcher {
         if agent == old {
             return Ok(());
         }
-        // TODO(stefano): emit agent info change events.
+        let event = Event::builder().agent().info().changed(old, agent.clone());
+        self.store.persist_event(event).chain_err(|| FAIL_PERSIST_AGENT_INFO)?;
         self.store.persist_agent_info(agent).chain_err(|| FAIL_PERSIST_AGENT_INFO)
     }
 
