@@ -8,6 +8,7 @@ use slog::Logger;
 
 use replicante_agent_discovery::Config as BackendsConfig;
 use replicante_data_store::Store;
+use replicante_streams_events::EventsStream;
 
 use super::Interfaces;
 use super::Result;
@@ -30,6 +31,7 @@ use self::worker::DiscoveryWorker;
 pub struct DiscoveryComponent {
     agents_api_timeout: Duration,
     config: BackendsConfig,
+    events: EventsStream,
     interval: Duration,
     logger: Logger,
     registry: Registry,
@@ -48,6 +50,7 @@ impl DiscoveryComponent {
         DiscoveryComponent {
             agents_api_timeout,
             config: config.backends,
+            events: interfaces.streams.events.clone(),
             interval,
             logger,
             registry: interfaces.metrics.registry().clone(),
@@ -63,6 +66,7 @@ impl DiscoveryComponent {
         let worker = DiscoveryWorker::new(
             self.config.clone(),
             self.logger.clone(),
+            self.events.clone(),
             self.store.clone(),
             self.agents_api_timeout.clone(),
         );

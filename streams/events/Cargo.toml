@@ -1,0 +1,22 @@
+[package]
+name = "replicante_streams_events"
+version = "0.1.0"
+authors = ["Stefano Pogliani <stefano@spogliani.net>"]
+
+description = "Replicante streaming interface for events"
+documentation = "https://www.replicante.io/docs"
+homepage = "https://www.replicante.io/"
+repository = "https://github.com/replicante-io/replicante"
+keywords = ["automation", "datastore", "operations"]
+license = "MIT"
+
+
+[dependencies]
+error-chain = "^0.12.0"
+prometheus = "^0.4.1"
+serde = "^1.0.34"
+serde_derive = "^1.0.34"
+slog = "^2.2.0"
+
+replicante_data_models = { path = "../../data/models" }
+replicante_data_store = { path = "../../data/store" }

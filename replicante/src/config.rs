@@ -6,6 +6,7 @@ use serde_yaml;
 
 use replicante_data_store::Config as StorageConfig;
 use replicante_logging::Config as LoggingConfig;
+use replicante_streams_events::Config as EventsStreamConfig;
 use replicante_util_tracing::Config as TracingConfig;
 
 use super::Result;
@@ -24,6 +25,10 @@ pub struct Config {
     /// Agent discovery configuration.
     #[serde(default)]
     pub discovery: DiscoveryConfig,
+
+    /// Events configuration.
+    #[serde(default)]
+    pub events: EventsConfig,
 
     /// Logging configuration.
     #[serde(default)]
@@ -47,6 +52,7 @@ impl Default for Config {
         Config {
             api: APIConfig::default(),
             discovery: DiscoveryConfig::default(),
+            events: EventsConfig::default(),
             logging: LoggingConfig::default(),
             storage: StorageConfig::default(),
             timeouts: TimeoutsConfig::default(),
@@ -70,6 +76,23 @@ impl Config {
     pub fn from_reader<R: Read>(reader: R) -> Result<Config> {
         let conf = serde_yaml::from_reader(reader)?;
         Ok(conf)
+    }
+}
+
+
+/// Replicante events configuration options.
+#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
+pub struct EventsConfig {
+    /// Events streaming backend.
+    #[serde(default)]
+    pub stream: EventsStreamConfig,
+}
+
+impl Default for EventsConfig {
+    fn default() -> EventsConfig {
+        EventsConfig {
+            stream: EventsStreamConfig::default(),
+        }
     }
 }
 

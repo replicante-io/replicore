@@ -10,7 +10,9 @@ use replicante_data_aggregator::Aggregator;
 use replicante_data_fetcher::Fetcher;
 use replicante_data_models::ClusterDiscovery;
 use replicante_data_models::Event;
+
 use replicante_data_store::Store;
+use replicante_streams_events::EventsStream;
 
 use super::super::super::Result;
 use super::super::super::ResultExt;
@@ -24,6 +26,7 @@ const FAIL_PERSIST_DISCOVERY: &str = "Failed to persist cluster discovery";
 /// Implements the discovery logic of a signle discovery loop.
 pub struct DiscoveryWorker {
     config: BackendsConfig,
+    events: EventsStream,
     logger: Logger,
     store: Store,
 
@@ -35,12 +38,14 @@ pub struct DiscoveryWorker {
 impl DiscoveryWorker {
     /// Creates a discover worker.
     pub fn new(
-        config: BackendsConfig, logger: Logger, store: Store, timeout: Duration
+        config: BackendsConfig, logger: Logger, events: EventsStream, store: Store,
+        timeout: Duration
     ) -> DiscoveryWorker {
         let aggregator = Aggregator::new(logger.clone(), store.clone());
-        let fetcher = Fetcher::new(logger.clone(), store.clone(), timeout);
+        let fetcher = Fetcher::new(logger.clone(), events.clone(), store.clone(), timeout);
         DiscoveryWorker {
             config,
+            events,
             logger,
             store,
 
@@ -116,13 +121,13 @@ impl DiscoveryWorker {
             return Ok(());
         }
         let event = Event::builder().cluster().changed(old, cluster.clone());
-        self.store.persist_event(event).chain_err(|| FAIL_PERSIST_DISCOVERY)?;
+        self.events.emit(event).chain_err(|| FAIL_PERSIST_DISCOVERY)?;
         self.store.persist_discovery(cluster).chain_err(|| FAIL_PERSIST_DISCOVERY)
     }
 
     fn process_discovery_new(&self, cluster: ClusterDiscovery) -> Result<()> {
         let event = Event::builder().cluster().cluster_new(cluster.clone());
-        self.store.persist_event(event).chain_err(|| FAIL_PERSIST_DISCOVERY)?;
+        self.events.emit(event).chain_err(|| FAIL_PERSIST_DISCOVERY)?;
         self.store.persist_discovery(cluster).chain_err(|| FAIL_PERSIST_DISCOVERY)
     }
 }

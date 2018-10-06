@@ -3,7 +3,9 @@ use replicante_data_models::Agent;
 use replicante_data_models::AgentInfo;
 use replicante_data_models::AgentStatus;
 use replicante_data_models::Event;
+
 use replicante_data_store::Store;
+use replicante_streams_events::EventsStream;
 
 use super::Result;
 use super::ResultExt;
@@ -17,12 +19,14 @@ const FAIL_PERSIST_AGENT_INFO: &str = "Failed to persist agent info";
 
 /// Subset of fetcher logic that deals specifically with agents.
 pub struct AgentFetcher {
+    events: EventsStream,
     store: Store,
 }
 
 impl AgentFetcher {
-    pub fn new(store: Store) -> AgentFetcher {
+    pub fn new(events: EventsStream, store: Store) -> AgentFetcher {
         AgentFetcher {
+            events,
             store,
         }
     }
@@ -53,19 +57,19 @@ impl AgentFetcher {
         }
         if agent.status != old.status {
             let event = Event::builder().agent().transition(old, agent.clone());
-            self.store.persist_event(event).chain_err(|| FAIL_PERSIST_AGENT)?;
+            self.events.emit(event).chain_err(|| FAIL_PERSIST_AGENT)?;
         }
         self.store.persist_agent(agent).chain_err(|| FAIL_PERSIST_AGENT)
     }
 
     fn process_agent_new(&self, agent: Agent) -> Result<()> {
         let event = Event::builder().agent().agent_new(agent.cluster.clone(), agent.host.clone());
-        self.store.persist_event(event).chain_err(|| FAIL_PERSIST_AGENT)?;
+        self.events.emit(event).chain_err(|| FAIL_PERSIST_AGENT)?;
         // Emit a synthetic transition.
         let before = AgentStatus::AgentDown("Newly discovered agent".into());
         let before = Agent::new(agent.cluster.clone(), agent.host.clone(), before);
         let event = Event::builder().agent().transition(before, agent.clone());
-        self.store.persist_event(event).chain_err(|| FAIL_PERSIST_AGENT)?;
+        self.events.emit(event).chain_err(|| FAIL_PERSIST_AGENT)?;
         self.store.persist_agent(agent).chain_err(|| FAIL_PERSIST_AGENT)
     }
 
@@ -74,13 +78,13 @@ impl AgentFetcher {
             return Ok(());
         }
         let event = Event::builder().agent().info().changed(old, agent.clone());
-        self.store.persist_event(event).chain_err(|| FAIL_PERSIST_AGENT_INFO)?;
+        self.events.emit(event).chain_err(|| FAIL_PERSIST_AGENT_INFO)?;
         self.store.persist_agent_info(agent).chain_err(|| FAIL_PERSIST_AGENT_INFO)
     }
 
     fn process_agent_info_new(&self, agent: AgentInfo) -> Result<()> {
         let event = Event::builder().agent().info().info_new(agent.clone());
-        self.store.persist_event(event).chain_err(|| FAIL_PERSIST_AGENT_INFO)?;
+        self.events.emit(event).chain_err(|| FAIL_PERSIST_AGENT_INFO)?;
         self.store.persist_agent_info(agent).chain_err(|| FAIL_PERSIST_AGENT_INFO)
     }
 }

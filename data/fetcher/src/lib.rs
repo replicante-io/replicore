@@ -11,6 +11,7 @@ extern crate slog;
 extern crate replicante_agent_client;
 extern crate replicante_data_models;
 extern crate replicante_data_store;
+extern crate replicante_streams_events;
 
 use std::time::Duration;
 use error_chain::ChainedError;
@@ -21,7 +22,9 @@ use replicante_agent_client::HttpClient;
 use replicante_data_models::Agent;
 use replicante_data_models::AgentStatus;
 use replicante_data_models::ClusterDiscovery;
+
 use replicante_data_store::Store;
+use replicante_streams_events::EventsStream;
 
 
 mod agent;
@@ -70,11 +73,11 @@ pub struct Fetcher {
 }
 
 impl Fetcher {
-    pub fn new(logger: Logger, store: Store, timeout: Duration) -> Fetcher {
-        let agent = AgentFetcher::new(store.clone());
+    pub fn new(logger: Logger, events: EventsStream, store: Store, timeout: Duration) -> Fetcher {
+        let agent = AgentFetcher::new(events.clone(), store.clone());
         let meta = MetaFetcher::new(store.clone());
-        let node = NodeFetcher::new(store.clone());
-        let shard = ShardFetcher::new(store);
+        let node = NodeFetcher::new(events.clone(), store.clone());
+        let shard = ShardFetcher::new(events, store);
         Fetcher {
             agent,
             logger,

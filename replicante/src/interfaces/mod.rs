@@ -1,6 +1,7 @@
 use slog::Logger;
 
 use replicante_data_store::Store;
+use replicante_streams_events::EventsStream;
 
 use super::Result;
 use super::config::Config;
@@ -28,6 +29,7 @@ pub struct Interfaces {
     pub api: API,
     pub metrics: Metrics,
     pub store: Store,
+    pub streams: Streams,
     pub tracing: Tracing,
 }
 
@@ -38,11 +40,13 @@ impl Interfaces {
         let metrics = Metrics::new(&logger);
         let api = API::new(config.api.clone(), logger.clone(), &metrics);
         let store = Store::new(config.storage.clone(), logger.clone(), metrics.registry())?;
+        let streams = Streams::new(config, logger.clone(), store.clone())?;
         let tracing = Tracing::new(config.tracing.clone(), logger.clone())?;
         Ok(Interfaces {
             api,
             metrics,
             store,
+            streams,
             tracing,
         })
     }
@@ -67,10 +71,27 @@ impl Interfaces {
 }
 
 
+/// Collection of all the streaming interfaces.
+pub struct Streams {
+    pub events: EventsStream,
+}
+
+impl Streams {
+    pub fn new(config: &Config, logger: Logger, store: Store) -> Result<Streams> {
+        let events = EventsStream::new(config.events.stream.clone(), logger, store);
+        Ok(Streams {
+            events,
+        })
+    }
+}
+
+
 // *** Implement interfaces mocks for tests *** //
 /// A container for mocks used by interfaces.
 #[cfg(test)]
 pub struct MockInterfaces {
+    pub events: ::std::sync::Arc<::replicante_streams_events::mock::MockEvents>,
+    pub store: ::std::sync::Arc<::replicante_data_store::mock::MockStore>,
 }
 
 #[cfg(test)]
@@ -91,16 +112,26 @@ impl Interfaces {
         let api = API::mock(logger.clone(), &metrics);
         let tracing = Tracing::mock();
 
+        let mock_events = ::replicante_streams_events::mock::MockEvents::new();
+        let mock_events = ::std::sync::Arc::new(mock_events);
+        let events = ::replicante_streams_events::mock::MockEvents::mock(mock_events.clone());
+
         let mock_store = ::replicante_data_store::mock::MockStore::new();
         let mock_store = ::std::sync::Arc::new(mock_store);
         let store = Store::mock(mock_store.clone());
 
         // Wrap things up.
-        let mocks = MockInterfaces {};
+        let mocks = MockInterfaces {
+            events: mock_events,
+            store: mock_store,
+        };
         let interfaces = Interfaces {
             api,
             metrics,
             store,
+            streams: Streams {
+                events,
+            },
             tracing,
         };
         (interfaces, mocks)

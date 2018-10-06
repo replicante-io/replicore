@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Emit new `NODE_NEW` event.
 - Emit new `SHARD_ALLOCATION_CHANGED` event.
 - Emit new `SHARD_ALLOCATION_NEW` event.
+- Events streaming interface (backed by store).
 
 ### Changed
 - **BREAKING**: Flatten encoded events structure (`data`, `event`, `timeout` are all root attributes).

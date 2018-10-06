@@ -23,6 +23,7 @@ extern crate replicante_data_fetcher;
 extern crate replicante_data_models;
 extern crate replicante_data_store;
 extern crate replicante_logging;
+extern crate replicante_streams_events;
 extern crate replicante_util_iron;
 extern crate replicante_util_tracing;
 

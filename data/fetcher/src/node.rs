@@ -1,7 +1,9 @@
 use replicante_agent_client::Client;
 use replicante_data_models::Event;
 use replicante_data_models::Node;
+
 use replicante_data_store::Store;
+use replicante_streams_events::EventsStream;
 
 use super::Result;
 use super::ResultExt;
@@ -14,12 +16,14 @@ const FAIL_PERSIST_NODE: &str = "Failed to persist node";
 
 /// Subset of fetcher logic that deals specifically with nodes.
 pub struct NodeFetcher {
+    events: EventsStream,
     store: Store,
 }
 
 impl NodeFetcher {
-    pub fn new(store: Store) -> NodeFetcher {
+    pub fn new(events: EventsStream, store: Store) -> NodeFetcher {
         NodeFetcher {
+            events,
             store,
         }
     }
@@ -45,13 +49,13 @@ impl NodeFetcher {
             return Ok(());
         }
         let event = Event::builder().node().changed(old, node.clone());
-        self.store.persist_event(event).chain_err(|| FAIL_PERSIST_NODE)?;
+        self.events.emit(event).chain_err(|| FAIL_PERSIST_NODE)?;
         self.store.persist_node(node).chain_err(|| FAIL_PERSIST_NODE)
     }
 
     fn process_node_new(&self, node: Node) -> Result<()> {
         let event = Event::builder().node().node_new(node.clone());
-        self.store.persist_event(event).chain_err(|| FAIL_PERSIST_NODE)?;
+        self.events.emit(event).chain_err(|| FAIL_PERSIST_NODE)?;
         self.store.persist_node(node).chain_err(|| FAIL_PERSIST_NODE)
     }
 }

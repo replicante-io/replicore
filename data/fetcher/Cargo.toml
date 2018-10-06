@@ -24,3 +24,4 @@ slog = "^2.1.1"
 replicante_agent_client = { path = "../../agent/client" }
 replicante_data_models = { path = "../models" }
 replicante_data_store = { path = "../store" }
+replicante_streams_events = { path = "../../streams/events" }

@@ -1,7 +1,9 @@
 use replicante_agent_client::Client;
 use replicante_data_models::Event;
 use replicante_data_models::Shard;
+
 use replicante_data_store::Store;
+use replicante_streams_events::EventsStream;
 
 use super::Result;
 use super::ResultExt;
@@ -13,12 +15,14 @@ const FAIL_PERSIST_SHARD: &str = "Failed to persist shard";
 
 /// Subset of fetcher logic that deals specifically with shards.
 pub struct ShardFetcher {
+    events: EventsStream,
     store: Store,
 }
 
 impl ShardFetcher {
-    pub fn new(store: Store) -> ShardFetcher {
+    pub fn new(events: EventsStream, store: Store) -> ShardFetcher {
         ShardFetcher {
+            events,
             store,
         }
     }
@@ -51,13 +55,13 @@ impl ShardFetcher {
             return Ok(());
         }
         let event = Event::builder().shard().allocation_changed(old, shard.clone());
-        self.store.persist_event(event).chain_err(|| FAIL_PERSIST_SHARD)?;
+        self.events.emit(event).chain_err(|| FAIL_PERSIST_SHARD)?;
         self.store.persist_shard(shard).chain_err(|| FAIL_PERSIST_SHARD)
     }
 
     fn process_shard_new(&self, shard: Shard) -> Result<()> {
         let event = Event::builder().shard().shard_allocation_new(shard.clone());
-        self.store.persist_event(event).chain_err(|| FAIL_PERSIST_SHARD)?;
+        self.events.emit(event).chain_err(|| FAIL_PERSIST_SHARD)?;
         self.store.persist_shard(shard).chain_err(|| FAIL_PERSIST_SHARD)
     }
 }

@@ -33,6 +33,24 @@ discovery:
     files: []
 
 
+# The section below is for events related configuration.
+events:
+  # Configuration of the streaming platform events are emitted to.
+  stream:
+    # The backend to emit events to.
+    #
+    # Available options are:
+    #
+    #   * 'store': use the configured datastore as the backend for the events stream too.
+    backend: 'store'
+
+    # Any backend-specific option is set here.
+    # The available options vary from backend to backend and are documented below.
+    #
+    # *** None available at this time ***
+    #options:
+
+
 # The section below is for logging configuration.
 logging:
   # Flush logs asynchronously.
