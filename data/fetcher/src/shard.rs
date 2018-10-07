@@ -51,11 +51,18 @@ impl ShardFetcher {
     }
 
     fn process_shard_existing(&self, shard: Shard, old: Shard) -> Result<()> {
+        // If the shard is the same (including offset and lag) exit now.
         if shard == old {
             return Ok(());
         }
-        let event = Event::builder().shard().allocation_changed(old, shard.clone());
-        self.events.emit(event).chain_err(|| FAIL_PERSIST_SHARD)?;
+
+        // If anything other then offset or lag changed emit and event.
+        if self.shard_changed(&shard, &old) {
+            let event = Event::builder().shard().allocation_changed(old, shard.clone());
+            self.events.emit(event).chain_err(|| FAIL_PERSIST_SHARD)?;
+        }
+
+        // Persist the model so the latest offset and lag information are available.
         self.store.persist_shard(shard).chain_err(|| FAIL_PERSIST_SHARD)
     }
 
@@ -63,5 +70,21 @@ impl ShardFetcher {
         let event = Event::builder().shard().shard_allocation_new(shard.clone());
         self.events.emit(event).chain_err(|| FAIL_PERSIST_SHARD)?;
         self.store.persist_shard(shard).chain_err(|| FAIL_PERSIST_SHARD)
+    }
+
+    /// Checks if a shard has changed since the last fetch.
+    ///
+    /// Because shard data includes commit offsets and lag we need to do a more
+    /// in-depth comparison to ignore "expected" changes.
+    fn shard_changed(&self, shard: &Shard, old: &Shard) -> bool {
+        // Easy case: they are the same.
+        if shard == old {
+            return false;
+        }
+        // Check if the "stable" attributes have changed.
+        shard.cluster != old.cluster ||
+            shard.id != old.id ||
+            shard.node != old.node ||
+            shard.role != old.role
     }
 }
