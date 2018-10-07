@@ -129,12 +129,6 @@ impl InnerStore for MockStore {
         Ok(())
     }
 
-    fn recent_events(&self, limit: u32) -> Result<Vec<Event>> {
-        let events = self.events.lock().unwrap().clone();
-        let events: Vec<_> = events.into_iter().rev().take(limit as usize).collect();
-        Ok(events)
-    }
-
     fn shard(&self, cluster: String, node: String, id: String) -> Result<Option<Shard>> {
         let shards = self.shards.lock().unwrap();
         let shard = shards.get(&(cluster, node, id)).cloned();

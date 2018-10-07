@@ -7,6 +7,8 @@ use iron::Set;
 use iron::status;
 use iron_json_response::JsonResponse;
 
+use replicante_data_store::EventsFilters;
+use replicante_data_store::EventsOptions;
 use replicante_data_store::Store;
 
 use super::super::super::ResultExt;
@@ -14,7 +16,7 @@ use super::super::super::interfaces::Interfaces;
 
 
 const FAIL_FETCH_EVENTS: &str = "Failed to fetch recent events";
-const RECENT_EVENTS_LIMIT: u32 = 100;
+const RECENT_EVENTS_LIMIT: i64 = 100;
 
 
 /// Cluster discovery (`/webui/events`) handler.
@@ -24,8 +26,18 @@ pub struct Events {
 
 impl Handler for Events {
     fn handle(&self, _req: &mut Request) -> IronResult<Response> {
-        let events = self.store.recent_events(RECENT_EVENTS_LIMIT)
+        let mut options = EventsOptions::default();
+        options.limit = Some(RECENT_EVENTS_LIMIT);
+        options.reverse = true;
+        let iter = self.store.events(EventsFilters::all(), options)
             .chain_err(|| FAIL_FETCH_EVENTS)?;
+
+        let mut events = Vec::new();
+        for event in iter {
+            let event = event.chain_err(|| FAIL_FETCH_EVENTS)?;
+            events.push(event);
+        }
+
         let mut resp = Response::new();
         resp.set_mut(JsonResponse::json(events)).set_mut(status::Ok);
         Ok(resp)

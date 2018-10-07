@@ -117,9 +117,6 @@ pub trait InnerStore: Send + Sync {
     /// See `Store::persist_shard` for details.
     fn persist_shard(&self, shard: Shard) -> Result<()>;
 
-    /// See `Store::recent_events` for details.
-    fn recent_events(&self, limit: u32) -> Result<Vec<Event>>;
-
     /// See `Store::shard` for details.
     fn shard(&self, cluster: String, node: String, id: String) -> Result<Option<Shard>>;
 
@@ -286,13 +283,6 @@ impl Store {
     /// Shards are uniquely identified by `(cluster, node, id)`.
     pub fn persist_shard(&self, shard: Shard) -> Result<()> {
         self.0.persist_shard(shard)
-    }
-
-    /// Return a list of recent events.
-    ///
-    /// Events are returned from most to least recent up to the limit.
-    pub fn recent_events(&self, limit: u32) -> Result<Vec<Event>> {
-        self.0.recent_events(limit)
     }
 
     /// Fetch information about a shard.

@@ -80,30 +80,6 @@ impl EventStore {
         Ok(())
     }
 
-    pub fn recent_events(&self, limit: u32) -> Result<Vec<Event>> {
-        let mut options = FindOptions::new();
-        options.limit = Some(i64::from(limit));
-        options.sort = Some(doc!{"$natural" => -1});
-        let collection = self.collection_events();
-        MONGODB_OPS_COUNT.with_label_values(&["find"]).inc();
-        let _timer = MONGODB_OPS_DURATION.with_label_values(&["find"]).start_timer();
-        let cursor = collection.find(None, Some(options))
-            .map_err(|error| {
-                MONGODB_OP_ERRORS_COUNT.with_label_values(&["find"]).inc();
-                error
-            })
-            .chain_err(|| FAIL_RECENT_EVENTS)?;
-
-        let mut events = Vec::new();
-        for doc in cursor {
-            let doc = doc.chain_err(|| FAIL_RECENT_EVENTS)?;
-            let event = bson::from_bson::<EventWrapper>(bson::Bson::Document(doc))
-                .chain_err(|| FAIL_RECENT_EVENTS)?;
-            events.push(event.into());
-        }
-        Ok(events)
-    }
-
     /// Returns the `events` collection.
     fn collection_events(&self) -> Collection {
         self.client.db(&self.db).collection(COLLECTION_EVENTS)

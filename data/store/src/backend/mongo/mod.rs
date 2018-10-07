@@ -127,10 +127,6 @@ impl InnerStore for MongoStore {
         self.datastores.persist_shard(shard)
     }
 
-    fn recent_events(&self, limit: u32) -> Result<Vec<Event>> {
-        self.events.recent_events(limit)
-    }
-
     fn shard(&self, cluster: String, node: String, id: String) -> Result<Option<Shard>> {
         self.datastores.shard(cluster, node, id)
     }
