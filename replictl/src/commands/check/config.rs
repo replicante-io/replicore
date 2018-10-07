@@ -61,12 +61,11 @@ pub fn run<'a>(args: &ArgMatches<'a>, interfaces: &Interfaces) -> Result<()> {
     outcomes.report(&logger);
 
     // Check each file discovery config.
-    let checks = config.discovery.backends.files.len();
-    let progress = interfaces.progress(Some(checks as u64));
-    for file in progress.wrap_iter(config.discovery.backends.files.iter()) {
+    let mut tracker = interfaces.progress("Processed more file discovery configurations");
+    for file in config.discovery.backends.files.iter() {
         check_discovery_file(file, &mut outcomes);
+        tracker.track();
     }
-    progress.finish();
 
     // Report results.
     outcomes.report(&logger);

@@ -468,11 +468,10 @@ impl SchemaValidator {
     fn has_ttl_index(&self, collection: &'static str) -> Result<bool> {
         let indexes = self.indexes(collection)?;
         for index in indexes {
-            if let Ok(options) = index.get_document("options") {
-                if options.get("expireAfterSeconds").is_some() {
-                    return Ok(true);
-                }
-            };
+            let index = IndexInfo::parse(&index)?;
+            if index.expires {
+                return Ok(index.expires);
+            }
         }
         Ok(false)
     }

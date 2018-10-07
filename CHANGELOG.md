@@ -25,6 +25,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - **BREAKING**: Rename `EventData` to `EventPayload`.
 - **BREAKING**: Replace `AgentStillDown` with `AgentDown`.
 - **BREAKING**: Replace `DatastoreStillDown` with `NodeDown`.
+- **BREAKING**: Replace `replictl` progress bar with periodic logs.
 - **BREAKING**: Replace store `recent_events` with `events(filters, options)` and return an iterator.
 - **BREAKING**: Rework `AGENT_NEW` to include only cluster and host.
 - **BREAKING**: Update models.

@@ -40,10 +40,13 @@ const MODEL_SHARD: &str = "Shard";
 pub fn command() -> App<'static, 'static> {
     SubCommand::with_name(COMMAND)
         .about("Check the primary store for incompatibilities")
-        .subcommand(SubCommand::with_name(COMMAND_DATA).about(
-            "Check ALL primary store content for compatibility with this version of replicante"
-        ))
-        .subcommand(SubCommand::with_name(COMMAND_SCHEMA)
+        .subcommand(
+            SubCommand::with_name(COMMAND_DATA).about(
+                "Check ALL primary store content for compatibility with this version of replicante"
+            )
+        )
+        .subcommand(
+            SubCommand::with_name(COMMAND_SCHEMA)
             .about("Check the primary store schema compatibility with this version of replicante")
         )
 }
@@ -89,52 +92,33 @@ pub fn data<'a>(args: &ArgMatches<'a>, interfaces: &Interfaces) -> Result<()> {
         .chain_err(|| FAILED_CHECK_DATA)?;
 
     info!(logger, "Checking records for the '{}' model", MODEL_AGENT);
-    scan_collection(
-        store.agents_count(), store.agents(),
-        MODEL_AGENT, &mut outcomes, interfaces
-    );
+    scan_collection(store.agents(), MODEL_AGENT, &mut outcomes, interfaces);
     outcomes.report(&logger);
 
     info!(logger, "Checking records for the '{}' model", MODEL_AGENT_INFO);
-    scan_collection(
-        store.agents_info_count(), store.agents_info(),
-        MODEL_AGENT_INFO, &mut outcomes, interfaces
-    );
+    scan_collection(store.agents_info(), MODEL_AGENT_INFO, &mut outcomes, interfaces);
     outcomes.report(&logger);
 
     info!(logger, "Checking records for the '{}' model", MODEL_CLUSTER_META);
-    scan_collection(
-        store.clusters_meta_count(), store.clusters_meta(),
-        MODEL_CLUSTER_META, &mut outcomes, interfaces
-    );
+    scan_collection(store.clusters_meta(), MODEL_CLUSTER_META, &mut outcomes, interfaces);
     outcomes.report(&logger);
 
     info!(logger, "Checking records for the '{}' model", MODEL_CLUSTER_DISCOVERY);
     scan_collection(
-        store.cluster_discoveries_count(), store.cluster_discoveries(),
-        MODEL_CLUSTER_DISCOVERY, &mut outcomes, interfaces
+        store.cluster_discoveries(), MODEL_CLUSTER_DISCOVERY, &mut outcomes, interfaces
     );
     outcomes.report(&logger);
 
     info!(logger, "Checking records for the '{}' model", MODEL_EVENT);
-    scan_collection(
-        store.events_count(), store.events(),
-        MODEL_EVENT, &mut outcomes, interfaces
-    );
+    scan_collection(store.events(), MODEL_EVENT, &mut outcomes, interfaces);
     outcomes.report(&logger);
 
     info!(logger, "Checking records for the '{}' model", MODEL_NODE);
-    scan_collection(
-        store.nodes_count(), store.nodes(),
-        MODEL_NODE, &mut outcomes, interfaces
-    );
+    scan_collection(store.nodes(), MODEL_NODE, &mut outcomes, interfaces);
     outcomes.report(&logger);
 
     info!(logger, "Checking records for the '{}' model", MODEL_SHARD);
-    scan_collection(
-        store.shards_count(), store.shards(),
-        MODEL_SHARD, &mut outcomes, interfaces
-    );
+    scan_collection(store.shards(), MODEL_SHARD, &mut outcomes, interfaces);
     outcomes.report(&logger);
 
     // Report results.
@@ -151,18 +135,9 @@ pub fn data<'a>(args: &ArgMatches<'a>, interfaces: &Interfaces) -> Result<()> {
 }
 
 fn scan_collection<Model: ::std::fmt::Debug>(
-    count: ::replicante_data_store::Result<u64>,
     cursor: ::replicante_data_store::Result<Cursor<Model>>,
     collection: &str, outcomes: &mut Outcomes, interfaces: &Interfaces
 ) {
-    let count = match count {
-        Ok(count) => count,
-        Err(error) => {
-            let error = error.display_chain().to_string();
-            outcomes.error(Error::GenericError(error));
-            return;
-        }
-    };
     let cursor = match cursor {
         Ok(cursor) => cursor,
         Err(error) => {
@@ -171,8 +146,8 @@ fn scan_collection<Model: ::std::fmt::Debug>(
             return;
         }
     };
-    let progress = interfaces.progress(Some(count));
-    for item in progress.wrap_iter(cursor) {
+    let mut tracker = interfaces.progress(format!("Scanned more {} documents", collection));
+    for item in cursor {
         match item {
             Err(StoreError(StoreErrorKind::UnableToParseModel(id, msg), _)) => {
                 outcomes.error(Error::UnableToParseModel(collection.to_string(), id, msg));
@@ -183,8 +158,8 @@ fn scan_collection<Model: ::std::fmt::Debug>(
             },
             Ok(_) => (),
         };
+        tracker.track();
     }
-    progress.finish();
 }
 
 

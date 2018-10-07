@@ -1,11 +1,11 @@
 use std::io;
 use std::io::Write;
 
-use indicatif::ProgressBar;
 use clap::ArgMatches;
 use slog::Logger;
 
 use super::Result;
+use super::ResultExt;
 
 
 /// A container sturcture to inject dependencies.
@@ -15,19 +15,26 @@ pub struct Interfaces {
 
     // Internal attributes.
     progress: bool,
+    progress_chunk: u32,
 }
 
 impl Interfaces {
     /// Create a new `Interfaces` container.
-    pub fn new<'a>(args: &ArgMatches<'a>, logger: Logger) -> Interfaces {
+    pub fn new<'a>(args: &ArgMatches<'a>, logger: Logger) -> Result<Interfaces> {
         let prompt = Prompt {
             _logger: logger.clone()
         };
-        Interfaces {
+        let progress_chunk = value_t!(args, "progress-chunk", u32)
+            .chain_err(|| "Progress chunk size is not vaild")?;
+        if progress_chunk == 0 {
+            return Err("Progress chunck size must be grater then 0".into());
+        }
+        Ok(Interfaces {
             logger,
             prompt,
             progress: !args.is_present("no-progress"),
-        }
+            progress_chunk,
+        })
     }
 
     /// Access the logger instnace.
@@ -35,25 +42,56 @@ impl Interfaces {
         &self.logger
     }
 
-    /// Instantiate a new progress bar.
+    /// Instantiate a new progress tracker.
     ///
-    /// An optional length parameter determines the max value.
-    /// If the length is not specified a spinning progress bar is returned.
+    /// The `ProgressTracker` emits the given message to the given logger.
+    /// The message is emitted only once every `process_chunk`.
     ///
-    /// The progress bar will not render if the `--no-progress` command line argument is passed.
-    pub fn progress(&self, len: Option<u64>) -> ProgressBar {
-        if !self.progress {
-            return ProgressBar::hidden();
-        }
-        match len {
-            Some(len) => ProgressBar::new(len),
-            None => ProgressBar::new_spinner(),
-        }
+    /// No progress will be outputted if the `--no-progress` command line argument is passed.
+    pub fn progress<S>(&self, message: S) -> ProgressTracker
+        where S: Into<String>,
+    {
+        ProgressTracker::new(
+            self.progress_chunk, !self.progress, self.logger.clone(), message.into()
+        )
     }
 
     /// Access the user prompts interface.
     pub fn prompt(&self) -> &Prompt {
         &self.prompt
+    }
+}
+
+
+/// Track progress of long running operations and emit logs about it.
+pub struct ProgressTracker {
+    chunk: u32,
+    hidden: bool,
+    logger: Logger,
+    message: String,
+    state: u32,
+}
+
+impl ProgressTracker {
+    pub fn new(chunk: u32, hidden: bool, logger: Logger, message: String) -> ProgressTracker {
+        ProgressTracker {
+            chunk,
+            hidden,
+            logger,
+            message,
+            state: chunk,
+        }
+    }
+
+    pub fn track(&mut self) {
+        if self.hidden {
+            return;
+        }
+        self.state -= 1;
+        if self.state <= 0 {
+            self.state = self.chunk;
+            info!(self.logger, "{}", self.message; "chunk" => self.chunk);
+        }
     }
 }
 

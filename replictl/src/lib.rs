@@ -19,6 +19,7 @@ extern crate replicante;
 extern crate replicante_agent_discovery;
 extern crate replicante_data_models;
 extern crate replicante_data_store;
+extern crate replicante_streams_events;
 
 use clap::App;
 use clap::Arg;
@@ -77,6 +78,14 @@ pub fn run() -> Result<()> {
              .global(true)
              .help("Do not show progress bars")
         )
+        .arg(Arg::with_name("progress-chunk")
+             .long("progress-chunk")
+             .value_name("CHUNK")
+             .default_value("500")
+             .takes_value(true)
+             .global(true)
+             .help("Specifies how frequently to show progress messages")
+        )
         .arg(Arg::with_name("url")
              .long("url")
              .value_name("URL")
@@ -95,7 +104,7 @@ pub fn run() -> Result<()> {
     debug!(logger, "replictl starting"; "git-taint" => env!("GIT_BUILD_TAINT"));
 
     // Run the replictl command.
-    let interfaces = Interfaces::new(&args, logger.clone());
+    let interfaces = Interfaces::new(&args, logger.clone())?;
     let result = run_command(&args, &interfaces);
     if result.is_err() {
         error!(logger, "replictl exiting with error"; "error" => true);
