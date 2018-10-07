@@ -14,6 +14,10 @@ use replicante_data_models::EventPayload;
 use super::super::super::Result;
 use super::super::super::ResultExt;
 
+use super::EventsFilters;
+use super::EventsIter;
+use super::EventsOptions;
+
 use super::constants::FAIL_PERSIST_EVENT;
 use super::constants::FAIL_RECENT_EVENTS;
 use super::constants::COLLECTION_EVENTS;
@@ -32,6 +36,29 @@ pub struct EventStore {
 impl EventStore {
     pub fn new(client: Client, db: String) -> EventStore {
         EventStore { client, db }
+    }
+
+    pub fn events(&self, _filters: EventsFilters, opts: EventsOptions) -> Result<EventsIter> {
+        let mut options = FindOptions::new();
+        options.limit = opts.limit;
+        options.sort = Some(doc!{"$natural" => if opts.reverse { -1 } else { 1 }});
+        let collection = self.collection_events();
+        MONGODB_OPS_COUNT.with_label_values(&["find"]).inc();
+        let timer = MONGODB_OPS_DURATION.with_label_values(&["find"]).start_timer();
+        let cursor = collection.find(None, Some(options))
+            .map_err(|error| {
+                MONGODB_OP_ERRORS_COUNT.with_label_values(&["find"]).inc();
+                error
+            })
+            .chain_err(|| FAIL_RECENT_EVENTS)?;
+        timer.observe_duration();
+        let iter = cursor.map(|doc| {
+            let doc = doc.chain_err(|| FAIL_RECENT_EVENTS)?;
+            let event = bson::from_bson::<EventWrapper>(bson::Bson::Document(doc))
+                .chain_err(|| FAIL_RECENT_EVENTS)?;
+            Ok(event.into())
+        });
+        Ok(EventsIter::new(iter))
     }
 
     pub fn persist_event(&self, event: Event) -> Result<()> {

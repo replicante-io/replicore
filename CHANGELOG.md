@@ -6,6 +6,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 ### Added
+- Add scan method to events stream interface.
 - Configurable Agent API calls timeout.
 - Emit new `AGENT_INFO_CHANGED` event.
 - Emit new `AGENT_INFO_NEW` event.
@@ -24,6 +25,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - **BREAKING**: Rename `EventData` to `EventPayload`.
 - **BREAKING**: Replace `AgentStillDown` with `AgentDown`.
 - **BREAKING**: Replace `DatastoreStillDown` with `NodeDown`.
+- **BREAKING**: Replace store `recent_events` with `events(filters, options)` and return an iterator.
 - **BREAKING**: Rework `AGENT_NEW` to include only cluster and host.
 - **BREAKING**: Update models.
 - Emit agent status change after emitting `AGENT_NEW` events.

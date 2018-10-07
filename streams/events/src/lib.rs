@@ -34,6 +34,9 @@ pub mod mock;
 pub use self::config::Config;
 pub use self::errors::*;
 
+pub use self::interface::Iter;
+pub use self::interface::ScanFilters;
+pub use self::interface::ScanOptions;
 use self::interface::StreamInterface;
 
 
@@ -66,5 +69,10 @@ impl EventsStream {
     /// Emit events to the events stream.
     pub fn emit(&self, event: Event) -> Result<()> {
         self.0.emit(event)
+    }
+
+    /// Scan for events matching the given filters, old to new.
+    pub fn scan(&self, filters: ScanFilters, options: ScanOptions) -> Result<Iter> {
+        self.0.scan(filters, options)
     }
 }

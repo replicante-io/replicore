@@ -14,6 +14,10 @@ use replicante_data_models::Node;
 use replicante_data_models::Shard;
 
 use super::super::Cursor;
+use super::super::EventsFilters;
+use super::super::EventsIter;
+use super::super::EventsOptions;
+
 use super::super::Result;
 use super::super::ResultExt;
 use super::super::ValidationResult;
@@ -81,6 +85,10 @@ impl InnerStore for MongoStore {
 
     fn cluster_meta(&self, cluster: String) -> Result<Option<ClusterMeta>> {
         self.clusters.cluster_meta(cluster)
+    }
+
+    fn events(&self, filters: EventsFilters, options: EventsOptions) -> Result<EventsIter> {
+        self.events.events(filters, options)
     }
 
     fn find_clusters(&self, search: String, limit: u8) -> Result<Vec<ClusterMeta>> {
