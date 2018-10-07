@@ -15,7 +15,6 @@ use replicante_data_models::Shard;
 
 use super::super::Cursor;
 use super::super::EventsFilters;
-use super::super::EventsIter;
 use super::super::EventsOptions;
 
 use super::super::Result;
@@ -87,7 +86,7 @@ impl InnerStore for MongoStore {
         self.clusters.cluster_meta(cluster)
     }
 
-    fn events(&self, filters: EventsFilters, options: EventsOptions) -> Result<EventsIter> {
+    fn events(&self, filters: EventsFilters, options: EventsOptions) -> Result<Cursor<Event>> {
         self.events.events(filters, options)
     }
 

@@ -12,27 +12,9 @@ use replicante_data_models::Node;
 use replicante_data_models::Shard;
 
 use super::Config;
+use super::Cursor;
 use super::Result;
 use super::backend::mongo::MongoStore;
-
-
-/// Iterator over events returned by `Store::events`.
-pub struct EventsIter(Box<Iterator<Item=Result<Event>>>);
-
-impl EventsIter {
-    pub fn new<I>(iter: I) -> EventsIter
-        where I: Iterator<Item=Result<Event>> + 'static
-    {
-        EventsIter(Box::new(iter))
-    }
-}
-
-impl Iterator for EventsIter {
-    type Item = Result<Event>;
-    fn next(&mut self) -> Option<Self::Item> {
-        self.0.next()
-    }
-}
 
 
 /// Filters to apply when iterating over events.
@@ -88,7 +70,7 @@ pub trait InnerStore: Send + Sync {
     fn cluster_meta(&self, cluster: String) -> Result<Option<ClusterMeta>>;
 
     /// See `Store::events` for details.
-    fn events(&self, filters: EventsFilters, options: EventsOptions) -> Result<EventsIter>;
+    fn events(&self, filters: EventsFilters, options: EventsOptions) -> Result<Cursor<Event>>;
 
     /// See `Store::find_clusters` for details.
     fn find_clusters(&self, search: String, limit: u8) -> Result<Vec<ClusterMeta>>;
@@ -198,7 +180,7 @@ impl Store {
     ///
     /// Pass `filters` to tune the events that will be returned and `options` to
     /// control result behavior like limit of items or order (old to new/new to old).
-    pub fn events(&self, filters: EventsFilters, options: EventsOptions) -> Result<EventsIter> {
+    pub fn events(&self, filters: EventsFilters, options: EventsOptions) -> Result<Cursor<Event>> {
         self.0.events(filters, options)
     }
 

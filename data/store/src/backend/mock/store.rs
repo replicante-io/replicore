@@ -9,8 +9,8 @@ use replicante_data_models::Event;
 use replicante_data_models::Node;
 use replicante_data_models::Shard;
 
+use super::super::super::Cursor;
 use super::super::super::EventsFilters;
-use super::super::super::EventsIter;
 use super::super::super::EventsOptions;
 
 use super::super::super::Result;
@@ -54,11 +54,11 @@ impl InnerStore for MockStore {
         Ok(meta)
     }
 
-    fn events(&self, _filters: EventsFilters, _options: EventsOptions) -> Result<EventsIter> {
+    fn events(&self, _filters: EventsFilters, _options: EventsOptions) -> Result<Cursor<Event>> {
         let events = self.events.lock().unwrap().clone();
         let events: Vec<_> = events.into_iter().rev().collect();
         let iter = events.into_iter().map(|e| Ok(e));
-        Ok(EventsIter::new(iter))
+        Ok(Cursor(Box::new(iter)))
     }
 
     fn find_clusters(&self, search: String, _: u8) -> Result<Vec<ClusterMeta>> {

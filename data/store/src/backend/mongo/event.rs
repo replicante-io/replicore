@@ -11,11 +11,11 @@ use mongodb::db::ThreadedDatabase;
 use replicante_data_models::Event;
 use replicante_data_models::EventPayload;
 
+use super::super::super::Cursor;
 use super::super::super::Result;
 use super::super::super::ResultExt;
 
 use super::EventsFilters;
-use super::EventsIter;
 use super::EventsOptions;
 
 use super::constants::FAIL_PERSIST_EVENT;
@@ -38,7 +38,7 @@ impl EventStore {
         EventStore { client, db }
     }
 
-    pub fn events(&self, _filters: EventsFilters, opts: EventsOptions) -> Result<EventsIter> {
+    pub fn events(&self, _filters: EventsFilters, opts: EventsOptions) -> Result<Cursor<Event>> {
         let mut options = FindOptions::new();
         options.limit = opts.limit;
         options.sort = Some(doc!{"$natural" => if opts.reverse { -1 } else { 1 }});
@@ -58,7 +58,7 @@ impl EventStore {
                 .chain_err(|| FAIL_RECENT_EVENTS)?;
             Ok(event.into())
         });
-        Ok(EventsIter::new(iter))
+        Ok(Cursor(Box::new(iter)))
     }
 
     pub fn persist_event(&self, event: Event) -> Result<()> {

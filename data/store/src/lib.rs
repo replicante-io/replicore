@@ -35,7 +35,6 @@ pub use self::config::Config;
 pub use self::errors::*;
 
 pub use self::store::EventsFilters;
-pub use self::store::EventsIter;
 pub use self::store::EventsOptions;
 pub use self::store::Store;
 
