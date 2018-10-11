@@ -33,6 +33,7 @@ mod meta;
 mod metrics;
 mod node;
 mod shard;
+mod snapshotter;
 
 use self::agent::AgentFetcher;
 use self::meta::ClusterMetaBuilder;
@@ -48,6 +49,7 @@ pub use self::errors::Error;
 pub use self::errors::ErrorKind;
 pub use self::errors::ResultExt;
 pub use self::errors::Result;
+pub use self::snapshotter::Snapshotter;
 
 
 /// Node (agent and datastore) status fetching and processing logic.

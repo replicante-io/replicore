@@ -2,6 +2,7 @@
 use chrono::DateTime;
 use chrono::Utc;
 
+use super::Agent;
 use super::AgentInfo;
 use super::AgentStatus;
 use super::ClusterDiscovery;
@@ -126,6 +127,26 @@ pub enum EventPayload {
     /// A shard was found for the first time on a node.
     #[serde(rename = "SHARD_ALLOCATION_NEW")]
     ShardAllocationNew(Shard),
+
+    /// Snapshot state of an agent status.
+    #[serde(rename = "SNAPSHOT_AGENT")]
+    SnapshotAgent(Agent),
+
+    /// Snapshot state of an agent info.
+    #[serde(rename = "SNAPSHOT_AGENT_INFO")]
+    SnapshotAgentInfo(AgentInfo),
+
+    /// Snapshot state of a cluster discovery.
+    #[serde(rename = "SNAPSHOT_DISCOVERY")]
+    SnapshotDiscovery(ClusterDiscovery),
+
+    /// Snapshot state of a cluster node.
+    #[serde(rename = "SNAPSHOT_NODE")]
+    SnapshotNode(Node),
+
+    /// Snapshot state of a cluster shard.
+    #[serde(rename = "SNAPSHOT_SHARD")]
+    SnapshotShard(Shard),
 }
 
 
@@ -159,6 +180,11 @@ impl Event {
             EventPayload::NodeUp(ref data) => Some(&data.cluster),
             EventPayload::ShardAllocationChanged(ref data) => Some(&data.cluster),
             EventPayload::ShardAllocationNew(ref data) => Some(&data.cluster),
+            EventPayload::SnapshotAgent(ref data) => Some(&data.cluster),
+            EventPayload::SnapshotAgentInfo(ref data) => Some(&data.cluster),
+            EventPayload::SnapshotDiscovery(ref data) => Some(&data.cluster),
+            EventPayload::SnapshotNode(ref data) => Some(&data.cluster),
+            EventPayload::SnapshotShard(ref data) => Some(&data.cluster),
         }
     }
 }

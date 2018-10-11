@@ -31,8 +31,8 @@ impl Components {
     /// Creates and configures components.
     pub fn new(config: &Config, logger: Logger, interfaces: &mut Interfaces) -> Result<Components> {
         let discovery = Discovery::new(
-            config.discovery.clone(), Duration::from_secs(config.timeouts.agents_api),
-            logger, interfaces
+            config.discovery.clone(), config.events.snapshots.clone(),
+            Duration::from_secs(config.timeouts.agents_api), logger, interfaces
         );
         let webui = WebUI::new(interfaces);
         Ok(Components {

@@ -10,6 +10,7 @@ use mongodb::db::ThreadedDatabase;
 use replicante_data_models::Node;
 use replicante_data_models::Shard;
 
+use super::super::super::Cursor;
 use super::super::super::Result;
 use super::super::super::ResultExt;
 
@@ -34,6 +35,48 @@ pub struct DatastoreStore {
 impl DatastoreStore {
     pub fn new(client: Client, db: String) -> DatastoreStore {
         DatastoreStore { client, db }
+    }
+
+    pub fn cluster_nodes(&self, cluster: String) -> Result<Cursor<Node>> {
+        let filter = doc!{"cluster" => cluster};
+        MONGODB_OPS_COUNT.with_label_values(&["find"]).inc();
+        let timer = MONGODB_OPS_DURATION.with_label_values(&["find"]).start_timer();
+        let collection = self.collection_nodes();
+        let cursor = collection.find(Some(filter), None)
+            .map_err(|error| {
+                MONGODB_OP_ERRORS_COUNT.with_label_values(&["find"]).inc();
+                error
+            })
+            .chain_err(|| FAIL_FIND_NODE)?;
+        timer.observe_duration();
+        let iter = cursor.map(|doc| {
+            let doc = doc.chain_err(|| FAIL_FIND_NODE)?;
+            let node = bson::from_bson::<Node>(bson::Bson::Document(doc))
+                .chain_err(|| FAIL_FIND_NODE)?;
+            Ok(node.into())
+        });
+        Ok(Cursor(Box::new(iter)))
+    }
+
+    pub fn cluster_shards(&self, cluster: String) -> Result<Cursor<Shard>> {
+        let filter = doc!{"cluster" => cluster};
+        MONGODB_OPS_COUNT.with_label_values(&["find"]).inc();
+        let timer = MONGODB_OPS_DURATION.with_label_values(&["find"]).start_timer();
+        let collection = self.collection_shards();
+        let cursor = collection.find(Some(filter), None)
+            .map_err(|error| {
+                MONGODB_OP_ERRORS_COUNT.with_label_values(&["find"]).inc();
+                error
+            })
+            .chain_err(|| FAIL_FIND_SHARD)?;
+        timer.observe_duration();
+        let iter = cursor.map(|doc| {
+            let doc = doc.chain_err(|| FAIL_FIND_SHARD)?;
+            let shard = bson::from_bson::<Shard>(bson::Bson::Document(doc))
+                .chain_err(|| FAIL_FIND_SHARD)?;
+            Ok(shard.into())
+        });
+        Ok(Cursor(Box::new(iter)))
     }
 
     pub fn node(&self, cluster: String, name: String) -> Result<Option<Node>> {

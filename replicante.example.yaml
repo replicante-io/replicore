@@ -22,12 +22,12 @@ discovery:
   #
   # Available backends are:
   #
-  #   * `files`: discover agents from local config files.
+  #   * `files`: discover agents from local configuration files.
   backends:
     # The `files` backend discover agents from files.
     #
     # The `files` backend can be useful to delegate discovery to unsupported systems.
-    # Examples are configuration managemnet tools (ansible, chef, puppet, ...).
+    # Examples are configuration management tools (ansible, chef, puppet, ...).
     #
     # This is a list of files that are periodically read to perform discovery.
     files: []
@@ -35,6 +35,18 @@ discovery:
 
 # The section below is for events related configuration.
 events:
+  # Configuration of periodic snapshots of tracked clusters/agents state.
+  snapshots:
+    # Enables/disables the emission of snapshot events.
+    enabled: true
+
+    # Frequency (expressed as number of cluster state fetches) of snapshot emission.
+    #
+    # Snapshots may be emitted more often than requested.
+    # Precautions are taken to emit snapshots at least this frequently but there is no guarantee
+    # this will happen, especially in the presence of some prolonged (total or partial) failures.
+    frequency: 60
+
   # Configuration of the streaming platform events are emitted to.
   stream:
     # The backend to emit events to.

@@ -10,6 +10,7 @@ use replicante_agent_discovery::Config as BackendsConfig;
 use replicante_data_store::Store;
 use replicante_streams_events::EventsStream;
 
+use super::super::config::EventsSnapshotsConfig;
 use super::Interfaces;
 use super::Result;
 
@@ -30,30 +31,32 @@ use self::worker::DiscoveryWorker;
 /// Component to periodically perform service discovery.
 pub struct DiscoveryComponent {
     agents_api_timeout: Duration,
-    config: BackendsConfig,
+    discovery_config: BackendsConfig,
     events: EventsStream,
     interval: Duration,
     logger: Logger,
     registry: Registry,
+    snapshots_config: EventsSnapshotsConfig,
     store: Store,
-
     worker: Option<JoinHandle<()>>,
 }
 
 impl DiscoveryComponent {
     /// Creates a new agent discovery component.
     pub fn new(
-        config: Config, agents_api_timeout: Duration, logger: Logger, interfaces: &Interfaces
+        discovery_config: Config, snapshots_config: EventsSnapshotsConfig,
+        agents_api_timeout: Duration, logger: Logger, interfaces: &Interfaces
     ) -> DiscoveryComponent {
-        let interval = Duration::from_secs(config.interval);
+        let interval = Duration::from_secs(discovery_config.interval);
         register_metrics(&logger, interfaces.metrics.registry());
         DiscoveryComponent {
             agents_api_timeout,
-            config: config.backends,
+            discovery_config: discovery_config.backends,
             events: interfaces.streams.events.clone(),
             interval,
             logger,
             registry: interfaces.metrics.registry().clone(),
+            snapshots_config,
             store: interfaces.store.clone(),
             worker: None,
         }
@@ -64,7 +67,8 @@ impl DiscoveryComponent {
         let interval = self.interval;
         DiscoveryWorker::register_metrics(&self.logger, &self.registry);
         let worker = DiscoveryWorker::new(
-            self.config.clone(),
+            self.discovery_config.clone(),
+            self.snapshots_config.clone(),
             self.logger.clone(),
             self.events.clone(),
             self.store.clone(),

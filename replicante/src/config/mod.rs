@@ -6,13 +6,20 @@ use serde_yaml;
 
 use replicante_data_store::Config as StorageConfig;
 use replicante_logging::Config as LoggingConfig;
-use replicante_streams_events::Config as EventsStreamConfig;
 use replicante_util_tracing::Config as TracingConfig;
 
 use super::Result;
 
 use super::components::discovery::Config as DiscoveryConfig;
 use super::interfaces::api::Config as APIConfig;
+
+
+mod events;
+mod timeouts;
+
+pub use self::events::EventsConfig;
+pub use self::events::SnapshotsConfig as EventsSnapshotsConfig;
+pub use self::timeouts::TimeoutsConfig;
 
 
 /// Replicante configuration options.
@@ -77,45 +84,6 @@ impl Config {
         let conf = serde_yaml::from_reader(reader)?;
         Ok(conf)
     }
-}
-
-
-/// Replicante events configuration options.
-#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
-pub struct EventsConfig {
-    /// Events streaming backend.
-    #[serde(default)]
-    pub stream: EventsStreamConfig,
-}
-
-impl Default for EventsConfig {
-    fn default() -> EventsConfig {
-        EventsConfig {
-            stream: EventsStreamConfig::default(),
-        }
-    }
-}
-
-
-/// Replicante timeouts configuration options.
-#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
-pub struct TimeoutsConfig {
-    /// Time after which API requests to agents are failed.
-    #[serde(default = "TimeoutsConfig::default_agents_api")]
-    pub agents_api: u64,
-}
-
-impl Default for TimeoutsConfig {
-    fn default() -> TimeoutsConfig {
-        TimeoutsConfig {
-            agents_api: Self::default_agents_api(),
-        }
-    }
-}
-
-impl TimeoutsConfig {
-    /// Default value for `agents_api` used by serde.
-    fn default_agents_api() -> u64 { 15 }
 }
 
 

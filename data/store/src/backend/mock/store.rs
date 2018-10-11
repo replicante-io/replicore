@@ -42,6 +42,14 @@ impl InnerStore for MockStore {
         Ok(agent_info)
     }
 
+    fn cluster_agents(&self, _cluster: String) -> Result<Cursor<Agent>> {
+        Err("Not yet implemented".into())
+    }
+
+    fn cluster_agents_info(&self, _cluster: String) -> Result<Cursor<AgentInfo>> {
+        Err("Not yet implemented".into())
+    }
+
     fn cluster_discovery(&self, cluster: String) -> Result<Option<ClusterDiscovery>> {
         let discoveries = self.discoveries.lock().unwrap();
         let discovery = discoveries.get(&cluster).cloned();
@@ -52,6 +60,14 @@ impl InnerStore for MockStore {
         let clusters = self.clusters_meta.lock().unwrap();
         let meta = clusters.get(&cluster).cloned();
         Ok(meta)
+    }
+
+    fn cluster_nodes(&self, _cluster: String) -> Result<Cursor<Node>> {
+        Err("Not yet implemented".into())
+    }
+
+    fn cluster_shards(&self, _cluster: String) -> Result<Cursor<Shard>> {
+        Err("Not yet implemented".into())
     }
 
     fn events(&self, _filters: EventsFilters, _options: EventsOptions) -> Result<Cursor<Event>> {

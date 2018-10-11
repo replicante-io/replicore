@@ -10,6 +10,7 @@ use mongodb::db::ThreadedDatabase;
 use replicante_data_models::Agent;
 use replicante_data_models::AgentInfo;
 
+use super::super::super::Cursor;
 use super::super::super::Result;
 use super::super::super::ResultExt;
 
@@ -17,6 +18,7 @@ use super::constants::COLLECTION_AGENTS;
 use super::constants::COLLECTION_AGENTS_INFO;
 
 use super::constants::FAIL_FIND_AGENT;
+use super::constants::FAIL_FIND_AGENTS;
 use super::constants::FAIL_FIND_AGENT_INFO;
 use super::constants::FAIL_PERSIST_AGENT;
 use super::constants::FAIL_PERSIST_AGENT_INFO;
@@ -83,6 +85,48 @@ impl AgentStore {
         let agent_info = bson::from_bson::<AgentInfo>(bson::Bson::Document(agent_info))
             .chain_err(|| FAIL_FIND_AGENT_INFO)?;
         Ok(Some(agent_info))
+    }
+
+    pub fn cluster_agents(&self, cluster: String) -> Result<Cursor<Agent>> {
+        let filter = doc!{"cluster" => cluster};
+        MONGODB_OPS_COUNT.with_label_values(&["find"]).inc();
+        let timer = MONGODB_OPS_DURATION.with_label_values(&["find"]).start_timer();
+        let collection = self.collection_agents();
+        let cursor = collection.find(Some(filter), None)
+            .map_err(|error| {
+                MONGODB_OP_ERRORS_COUNT.with_label_values(&["find"]).inc();
+                error
+            })
+            .chain_err(|| FAIL_FIND_AGENTS)?;
+        timer.observe_duration();
+        let iter = cursor.map(|doc| {
+            let doc = doc.chain_err(|| FAIL_FIND_AGENTS)?;
+            let agent = bson::from_bson::<Agent>(bson::Bson::Document(doc))
+                .chain_err(|| FAIL_FIND_AGENTS)?;
+            Ok(agent.into())
+        });
+        Ok(Cursor(Box::new(iter)))
+    }
+
+    pub fn cluster_agents_info(&self, cluster: String) -> Result<Cursor<AgentInfo>> {
+        let filter = doc!{"cluster" => cluster};
+        MONGODB_OPS_COUNT.with_label_values(&["find"]).inc();
+        let timer = MONGODB_OPS_DURATION.with_label_values(&["find"]).start_timer();
+        let collection = self.collection_agents_info();
+        let cursor = collection.find(Some(filter), None)
+            .map_err(|error| {
+                MONGODB_OP_ERRORS_COUNT.with_label_values(&["find"]).inc();
+                error
+            })
+            .chain_err(|| FAIL_FIND_AGENTS)?;
+        timer.observe_duration();
+        let iter = cursor.map(|doc| {
+            let doc = doc.chain_err(|| FAIL_FIND_AGENTS)?;
+            let agent = bson::from_bson::<AgentInfo>(bson::Bson::Document(doc))
+                .chain_err(|| FAIL_FIND_AGENTS)?;
+            Ok(agent.into())
+        });
+        Ok(Cursor(Box::new(iter)))
     }
 
     pub fn persist_agent(&self, agent: Agent) -> Result<()> {

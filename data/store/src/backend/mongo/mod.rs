@@ -78,12 +78,28 @@ impl InnerStore for MongoStore {
         self.agents.agent_info(cluster, host)
     }
 
+    fn cluster_agents(&self, cluster: String) -> Result<Cursor<Agent>> {
+        self.agents.cluster_agents(cluster)
+    }
+
+    fn cluster_agents_info(&self, cluster: String) -> Result<Cursor<AgentInfo>> {
+        self.agents.cluster_agents_info(cluster)
+    }
+
     fn cluster_discovery(&self, cluster: String) -> Result<Option<ClusterDiscovery>> {
         self.clusters.cluster_discovery(cluster)
     }
 
     fn cluster_meta(&self, cluster: String) -> Result<Option<ClusterMeta>> {
         self.clusters.cluster_meta(cluster)
+    }
+
+    fn cluster_nodes(&self, cluster: String) -> Result<Cursor<Node>> {
+        self.datastores.cluster_nodes(cluster)
+    }
+
+    fn cluster_shards(&self, cluster: String) -> Result<Cursor<Shard>> {
+        self.datastores.cluster_shards(cluster)
     }
 
     fn events(&self, filters: EventsFilters, options: EventsOptions) -> Result<Cursor<Event>> {

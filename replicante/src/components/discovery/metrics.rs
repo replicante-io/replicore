@@ -33,6 +33,14 @@ lazy_static! {
             "Number of errors during processing of discovered agents"
         )
     ).expect("Failed to create DISCOVERY_PROCESS_ERRORS_COUNT counter");
+
+    /// Number of clusters tracked by the discovery snapshots emission tracker.
+    pub static ref DISCOVERY_SNAPSHOT_TRACKER_COUNT: Counter = Counter::with_opts(
+        Opts::new(
+            "replicante_discovery_snapshot_tracker",
+            "Number of clusters tracked by the discovery snapshots emission tracker"
+        )
+    ).expect("Failed to create DISCOVERY_SNAPSHOT_TRACKER_COUNT counter");
 }
 
 
@@ -55,5 +63,9 @@ pub fn register_metrics(logger: &Logger, registry: &Registry) {
     if let Err(err) = registry.register(Box::new(DISCOVERY_DURATION.clone())) {
         let error = format!("{:?}", err);
         debug!(logger, "Failed to register DISCOVERY_DURATION"; "error" => error);
+    }
+    if let Err(err) = registry.register(Box::new(DISCOVERY_SNAPSHOT_TRACKER_COUNT.clone())) {
+        let error = format!("{:?}", err);
+        debug!(logger, "Failed to register DISCOVERY_SNAPSHOT_TRACKER_COUNT"; "error" => error);
     }
 }

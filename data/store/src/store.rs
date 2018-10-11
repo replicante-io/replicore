@@ -63,11 +63,23 @@ pub trait InnerStore: Send + Sync {
     /// See `Store::agent_info` for details.
     fn agent_info(&self, cluster: String, host: String) -> Result<Option<AgentInfo>>;
 
+    /// See `Store::cluster_agents` for details.
+    fn cluster_agents(&self, cluster: String) -> Result<Cursor<Agent>>;
+
+    /// See `Store::cluster_agents_info` for details.
+    fn cluster_agents_info(&self, cluster: String) -> Result<Cursor<AgentInfo>>;
+
     /// See `Store::cluster_discovery` for details.
     fn cluster_discovery(&self, cluster: String) -> Result<Option<ClusterDiscovery>>;
 
     /// See `Store::cluster_meta` for details.
     fn cluster_meta(&self, cluster: String) -> Result<Option<ClusterMeta>>;
+
+    /// See `Store::cluster_nodes` for details.
+    fn cluster_nodes(&self, cluster: String) -> Result<Cursor<Node>>;
+
+    /// See `Store::cluster_shards` for details.
+    fn cluster_shards(&self, cluster: String) -> Result<Cursor<Shard>>;
 
     /// See `Store::events` for details.
     fn events(&self, filters: EventsFilters, options: EventsOptions) -> Result<Cursor<Event>>;
@@ -162,6 +174,20 @@ impl Store {
         self.0.agent_info(cluster.into(), host.into())
     }
 
+    /// Fetch the status of all agents in a cluster.
+    pub fn cluster_agents<S>(&self, cluster: S) -> Result<Cursor<Agent>>
+        where S: Into<String>,
+    {
+        self.0.cluster_agents(cluster.into())
+    }
+
+    /// Fetch information about all agents in a cluster.
+    pub fn cluster_agents_info<S>(&self, cluster: S) -> Result<Cursor<AgentInfo>>
+        where S: Into<String>,
+    {
+        self.0.cluster_agents_info(cluster.into())
+    }
+
     /// Fetch discovery information about a cluster.
     pub fn cluster_discovery<S>(&self, cluster: S) -> Result<Option<ClusterDiscovery>>
         where S: Into<String>,
@@ -174,6 +200,18 @@ impl Store {
         where S: Into<String>,
     {
         self.0.cluster_meta(cluster.into())
+    }
+
+    /// Fetch information about all nodes in a cluster.
+    pub fn cluster_nodes<S>(&self, cluster: S) -> Result<Cursor<Node>>
+        where S: Into<String>,
+    {
+        self.0.cluster_nodes(cluster.into())
+    }
+
+    /// Fetch information about all shards in a cluster.
+    pub fn cluster_shards(&self, cluster: String) -> Result<Cursor<Shard>> {
+        self.0.cluster_shards(cluster)
     }
 
     /// Return an iterator over events in the store.

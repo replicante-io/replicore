@@ -9,11 +9,13 @@ mod agent;
 mod cluster;
 mod node;
 mod shard;
+mod snapshot;
 
 use self::agent::AgentBuilder;
 use self::cluster::ClusterBuilder;
 use self::node::NodeBuilder;
 use self::shard::ShardBuilder;
+use self::snapshot::SnapshotBuilder;
 
 
 /// Build `Event`s, validating inputs.
@@ -45,6 +47,11 @@ impl EventBuilder {
     /// Specialise the builder into a shard event builder.
     pub fn shard(self) -> ShardBuilder {
         ShardBuilder::builder(self)
+    }
+
+    /// Specialise the builder into a snapshot event builder.
+    pub fn snapshot(self) -> SnapshotBuilder {
+        SnapshotBuilder::builder(self)
     }
 
     /// Set the event occurrence timestamp.

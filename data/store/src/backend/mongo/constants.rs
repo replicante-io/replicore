@@ -13,6 +13,7 @@ pub const COLLECTION_SHARDS: &str = "shards";
 pub const FAIL_CLIENT: &str = "Failed to configure MongoDB client";
 
 pub const FAIL_FIND_AGENT: &str = "Failed to find agent status";
+pub const FAIL_FIND_AGENTS: &str = "Failed to find agents statuses";
 pub const FAIL_FIND_AGENT_INFO: &str = "Failed to find agent info";
 pub const FAIL_FIND_CLUSTER_DISCOVERY: &str = "Failed to find cluster discovery record";
 pub const FAIL_FIND_CLUSTER_META: &str = "Failed to find cluster metadata";
