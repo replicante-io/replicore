@@ -18,11 +18,15 @@ use super::metrics::Metrics;
 
 
 mod config;
+mod metrics;
 mod router;
 mod routes;
 
 pub use self::config::Config;
+pub use self::metrics::register_metrics;
 pub use self::router::RouterBuilder;
+
+use self::metrics::MIDDLEWARE;
 
 
 /// The replicante HTTP API interface.
@@ -41,20 +45,15 @@ impl API {
     pub fn new(config: Config, logger: Logger, metrics: &Metrics) -> API {
         let registry = metrics.registry().clone();
         let mut router = RouterBuilder::new();
-        routes::mount(&mut router, registry.clone());
+        routes::mount(&mut router, registry);
 
-        let (duration, errors, requests) = MetricsMiddleware::metrics("replicante");
-        registry.register(Box::new(duration.clone()))
-            .expect("Unable to register duration histogram");
-        registry.register(Box::new(errors.clone())).expect("Unable to register errors counter");
-        registry.register(Box::new(requests.clone()))
-            .expect("Unable to register requests counter");
-        let middleware = MetricsMiddleware::new(duration, errors, requests, logger.clone());
+        let middleware = MetricsMiddleware::new(
+            MIDDLEWARE.0.clone(), MIDDLEWARE.1.clone(), MIDDLEWARE.2.clone(), logger.clone()
+        );
 
         API {
             config,
             logger,
-
             handle: None,
             metrics_middleware: Some(middleware),
             router: Some(router),

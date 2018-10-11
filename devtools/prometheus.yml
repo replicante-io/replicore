@@ -1,0 +1,11 @@
+global:
+  scrape_interval: 15s
+
+
+scrape_configs:
+  - job_name: dev-core
+    metrics_path: '/api/v1/metrics'
+    static_configs:
+      - targets:
+        # Because we fixed the docker network subnet, the gateway IP of the host is fixed too.
+        - '172.128.0.1:16016'

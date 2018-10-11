@@ -32,6 +32,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - **BREAKING**: Update models.
 - Emit agent status change after emitting `AGENT_NEW` events.
 - Move logging code to common crate.
+- Refactor metrics initialisation code.
 
 ### Fixed
 - Better handle HTTP errors returned by agents.

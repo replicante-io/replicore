@@ -77,8 +77,13 @@ lazy_static! {
 /// services to other interfaces and/or components.
 #[cfg_attr(feature = "cargo-clippy", allow(needless_pass_by_value))]
 fn initialise_and_run(config: Config, logger: Logger) -> Result<()> {
+    // TODO: iniialise sentry as soon as possible.
+
     info!(logger, "Initialising sub-systems ...");
+    // Need to initialise the interfaces before we can register all metrics.
     let mut interfaces = Interfaces::new(&config, logger.clone())?;
+    Interfaces::register_metrics(&logger, interfaces.metrics.registry());
+    Components::register_metrics(&logger, interfaces.metrics.registry());
     let mut components = Components::new(&config, logger.clone(), &mut interfaces)?;
 
     // Initialisation done, run all interfaces and components.

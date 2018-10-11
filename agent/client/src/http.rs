@@ -112,7 +112,7 @@ impl HttpClient {
         })
     }
 
-    /// Attemps to register metrics with the Repositoy.
+    /// Attemps to register metrics with the Registry.
     ///
     /// Metrics that fail to register are logged and ignored.
     ///

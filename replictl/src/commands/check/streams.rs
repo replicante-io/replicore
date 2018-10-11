@@ -2,7 +2,6 @@ use clap::App;
 use clap::ArgMatches;
 use clap::SubCommand;
 use error_chain::ChainedError;
-use prometheus::Registry;
 
 use replicante::Config;
 use replicante_data_store::Store;
@@ -55,8 +54,7 @@ pub fn events<'a>(args: &ArgMatches<'a>, interfaces: &Interfaces) -> Result<()> 
     let mut outcomes = Outcomes::new();
     let config = args.value_of("config").unwrap();
     let config = Config::from_file(config).chain_err(|| "Failed to check events")?;
-    let registry = Registry::new();
-    let store = Store::new(config.storage, logger.clone(), &registry)?;
+    let store = Store::new(config.storage, logger.clone())?;
     let stream = EventsStream::new(config.events.stream, logger.clone(), store);
 
     info!(logger, "Checking events stream ...");

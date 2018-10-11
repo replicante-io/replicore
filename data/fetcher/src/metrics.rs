@@ -13,7 +13,7 @@ lazy_static! {
 }
 
 
-/// Attemps to register metrics with the Repositoy.
+/// Attemps to register metrics with the Registry.
 ///
 /// Metrics that fail to register are logged and ignored.
 pub fn register_metrics(logger: &Logger, registry: &Registry) {

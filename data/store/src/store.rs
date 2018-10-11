@@ -151,11 +151,18 @@ pub struct Store(Arc<InnerStore>);
 
 impl Store {
     /// Instantiate a new storage interface.
-    pub fn new(config: Config, logger: Logger, registry: &Registry) -> Result<Store> {
+    pub fn new(config: Config, logger: Logger) -> Result<Store> {
         let store = match config {
-            Config::MongoDB(config) => Arc::new(MongoStore::new(config, logger, registry)?),
+            Config::MongoDB(config) => Arc::new(MongoStore::new(config, logger)?),
         };
         Ok(Store(store))
+    }
+
+    /// Attemps to register all metrics with the Registry.
+    ///
+    /// Metrics that fail to register are logged and ignored.
+    pub fn register_metrics(logger: &Logger, registry: &Registry) {
+        super::backend::mongo::register_metrics(logger, registry);
     }
 
     /// Fetch agent status information.

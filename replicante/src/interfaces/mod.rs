@@ -1,3 +1,4 @@
+use prometheus::Registry;
 use slog::Logger;
 
 use replicante_data_store::Store;
@@ -37,9 +38,9 @@ impl Interfaces {
     /// Creates and configures interfaces.
     #[cfg_attr(feature = "cargo-clippy", allow(needless_pass_by_value))]
     pub fn new(config: &Config, logger: Logger) -> Result<Interfaces> {
-        let metrics = Metrics::new(&logger);
+        let metrics = Metrics::new();
         let api = API::new(config.api.clone(), logger.clone(), &metrics);
-        let store = Store::new(config.storage.clone(), logger.clone(), metrics.registry())?;
+        let store = Store::new(config.storage.clone(), logger.clone())?;
         let streams = Streams::new(config, logger.clone(), store.clone())?;
         let tracing = Tracing::new(config.tracing.clone(), logger.clone())?;
         Ok(Interfaces {
@@ -49,6 +50,16 @@ impl Interfaces {
             streams,
             tracing,
         })
+    }
+
+    /// Attemps to register all interfaces metrics with the Registry.
+    ///
+    /// Metrics that fail to register are logged and ignored.
+    pub fn register_metrics(logger: &Logger, registry: &Registry) {
+        self::api::register_metrics(logger, registry);
+        self::metrics::register_metrics(logger, registry);
+        EventsStream::register_metrics(logger, registry);
+        Store::register_metrics(logger, registry);
     }
 
     /// Performs any final configuration and starts background threads.
@@ -108,7 +119,7 @@ impl Interfaces {
 
     /// Mock interfaces using the given logger and wrap them in an `Interfaces` instance.
     pub fn mock_with_logger(logger: Logger) -> (Interfaces, MockInterfaces) {
-        let metrics = Metrics::mock(&logger);
+        let metrics = Metrics::mock();
         let api = API::mock(logger.clone(), &metrics);
         let tracing = Tracing::mock();
 

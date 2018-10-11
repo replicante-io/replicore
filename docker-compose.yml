@@ -16,7 +16,7 @@ services:
     volumes:
       - type: volume
         source: mongo
-        target: /data/db
+        target: '/data/db'
 
   mongoui:
     command:
@@ -37,6 +37,28 @@ services:
         target: '/app/user/config/config.json'
         read_only: true
 
+  prometheus:
+    image: 'prom/prometheus:v2.4.3'
+    hostname: prometheus
+    ports:
+      - '9090:9090'
+    volumes:
+      - type: bind
+        source: './devtools/prometheus.yml'
+        target: '/etc/prometheus/prometheus.yml'
+        read_only: true
+      - type: volume
+        source: prometheus
+        target: '/prometheus'
+
+
+networks:
+  default:
+    ipam:
+      config:
+        - subnet: 172.128.0.0/27
+
 
 volumes:
   mongo:
+  prometheus:

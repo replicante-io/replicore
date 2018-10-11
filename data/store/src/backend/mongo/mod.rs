@@ -34,12 +34,12 @@ mod datastore;
 mod event;
 mod validator;
 
-use self::constants::FAIL_CLIENT;
-use self::metrics::register_metrics;
+pub use self::metrics::register_metrics;
 
 use self::agent::AgentStore;
 use self::datastore::DatastoreStore;
 use self::cluster::ClusterStore;
+use self::constants::FAIL_CLIENT;
 use self::event::EventStore;
 
 use self::validator::DataValidator;
@@ -154,16 +154,14 @@ impl InnerStore for MongoStore {
 impl MongoStore {
     /// Creates a mongodb-backed store.
     #[cfg_attr(feature = "cargo-clippy", allow(needless_pass_by_value))]
-    pub fn new(config: MongoDBConfig, logger: Logger, registry: &Registry) -> Result<MongoStore> {
+    pub fn new(config: MongoDBConfig, logger: Logger) -> Result<MongoStore> {
         info!(logger, "Configuring MongoDB as storage layer");
         let db = config.db.clone();
         let client = Client::with_uri(&config.uri).chain_err(|| FAIL_CLIENT)?;
         let agents = AgentStore::new(client.clone(), db.clone());
-        let clusters = ClusterStore::new(client.clone(), db.clone(), logger.clone());
+        let clusters = ClusterStore::new(client.clone(), db.clone(), logger);
         let datastores = DatastoreStore::new(client.clone(), db.clone());
-        let events = EventStore::new(client.clone(), db.clone());
-
-        register_metrics(&logger, registry);
+        let events = EventStore::new(client, db);
         Ok(MongoStore {
             agents,
             clusters,

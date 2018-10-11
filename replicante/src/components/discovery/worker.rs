@@ -3,7 +3,6 @@ use std::sync::Mutex;
 use std::time::Duration;
 
 use error_chain::ChainedError;
-use prometheus::Registry;
 use slog::Logger;
 
 use replicante_agent_discovery::Config as BackendsConfig;
@@ -63,11 +62,6 @@ impl DiscoveryWorker {
             aggregator,
             fetcher,
         }
-    }
-
-    pub fn register_metrics(logger: &Logger, registry: &Registry) {
-        Aggregator::register_metrics(logger, registry);
-        Fetcher::register_metrics(logger, registry);
     }
 
     /// Runs a signle discovery loop.

@@ -1,5 +1,10 @@
 use std::time::Duration;
+use prometheus::Registry;
 use slog::Logger;
+
+use replicante_agent_client::HttpClient as AgentHttpClient;
+use replicante_data_aggregator::Aggregator;
+use replicante_data_fetcher::Fetcher;
 
 use super::Config;
 use super::Interfaces;
@@ -40,6 +45,17 @@ impl Components {
             webui,
         })
     }
+
+    /// Attemps to register all components metrics with the Registry.
+    ///
+    /// Metrics that fail to register are logged and ignored.
+    pub fn register_metrics(logger: &Logger, registry: &Registry) {
+        self::discovery::register_metrics(logger, registry);
+        AgentHttpClient::register_metrics(logger, registry);
+        Aggregator::register_metrics(logger, registry);
+        Fetcher::register_metrics(logger, registry);
+    }
+
 
     /// Performs any final configuration and starts background threads.
     pub fn run(&mut self) -> Result<()> {
