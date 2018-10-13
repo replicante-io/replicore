@@ -45,6 +45,7 @@ mod components;
 mod config;
 mod errors;
 mod interfaces;
+mod metrics;
 
 use self::components::Components;
 use self::interfaces::Interfaces;
@@ -84,6 +85,7 @@ fn initialise_and_run(config: Config, logger: Logger) -> Result<()> {
     let mut interfaces = Interfaces::new(&config, logger.clone())?;
     Interfaces::register_metrics(&logger, interfaces.metrics.registry());
     Components::register_metrics(&logger, interfaces.metrics.registry());
+    self::metrics::register_metrics(&logger, interfaces.metrics.registry());
     let mut components = Components::new(&config, logger.clone(), &mut interfaces)?;
 
     // Initialisation done, run all interfaces and components.

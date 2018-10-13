@@ -7,6 +7,62 @@ api:
   bind: '127.0.0.1:16016'
 
 
+# Components enabling configuration.
+#
+# For Replicante to function correctly ALL components need to be running
+# (unless explicitly stated otherwise).
+#
+# By default, all required components are enabled on all nodes.
+#
+# While this allows the configuration to stay simple (all nodes in the cluster are identical),
+# more advanced configuration options based around specialised nodes roles can be used to
+# scale to larger clusters in a more efficient way (because roles can be scaled based on
+# each role needs rather then scaling all roles to the needs of the biggest role).
+#
+# # Exceptions to the ALL components rule
+# Some components are not required for essential operations.
+# Examples of these are new features being beta-tested or features that you may not need.
+#
+# # Advanced configurations
+# Advanced configurations are aimed at large clusters or other specialised needs.
+# By default, start with all components enabled on all nodes and move to roles if and when needed.
+#
+# ## Dedicated Web/API nodes
+# The first thing to split aside are the API and Web nodes.
+# API/Web nodes are the ones that recieve requests from users and have a less predictable
+# resource requirements.
+#
+# Separating them from other comonents means that users can use all resources without background
+# tasks impacting them as well as having other components not impacted by user requests.
+#
+# ```
+# # For the API/Web nodes
+# components:
+#   _default: false
+#   webui: true
+#
+# # For all other nodes
+# components:
+#   _default: true
+#   webui: false
+# ```
+#
+# ## Fully dedicated components
+# Here each node runs only one component at a time.
+components:
+  # Default status for all components that are not explicitly enabled/disabled.
+  _default: true
+
+  # Enable/disable agent discovery.
+  discovery: null
+
+  # Enable the WebUI API endpoints.
+  #
+  # This component is optional.
+  # Without it the node.js WebUI will NOT work.
+  webui: null
+
+
 # The section below is for agent discovery configuration.
 #
 # Discovery is the way the agents that should be managed are found.

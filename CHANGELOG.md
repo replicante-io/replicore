@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Added
 - Add scan method to events stream interface.
 - Configurable Agent API calls timeout.
+- Configurable components enabled in each process.
 - Emit new `AGENT_INFO_CHANGED` event.
 - Emit new `AGENT_INFO_NEW` event.
 - Emit new `CLUSTER_CHANGED` event.

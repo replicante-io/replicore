@@ -14,9 +14,11 @@ use super::components::discovery::Config as DiscoveryConfig;
 use super::interfaces::api::Config as APIConfig;
 
 
+mod components;
 mod events;
 mod timeouts;
 
+pub use self::components::ComponentsConfig;
 pub use self::events::EventsConfig;
 pub use self::events::SnapshotsConfig as EventsSnapshotsConfig;
 pub use self::timeouts::TimeoutsConfig;
@@ -28,6 +30,10 @@ pub struct Config {
     /// API server configuration.
     #[serde(default)]
     pub api: APIConfig,
+
+    /// Components enabling configuration.
+    #[serde(default)]
+    pub components: ComponentsConfig,
 
     /// Agent discovery configuration.
     #[serde(default)]
@@ -58,6 +64,7 @@ impl Default for Config {
     fn default() -> Config {
         Config {
             api: APIConfig::default(),
+            components: ComponentsConfig::default(),
             discovery: DiscoveryConfig::default(),
             events: EventsConfig::default(),
             logging: LoggingConfig::default(),
