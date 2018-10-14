@@ -56,9 +56,11 @@ components:
   # Enable/disable agent discovery.
   discovery: null
 
-  # Enable the WebUI API endpoints.
+  # Enable Grafana Annotations API endpoints (optional).
+  grafana: null
+
+  # Enable the WebUI API endpoints (optional).
   #
-  # This component is optional.
   # Without it the node.js WebUI will NOT work.
   webui: null
 

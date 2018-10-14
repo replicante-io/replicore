@@ -14,6 +14,6 @@ mod version;
 pub fn mount(router: &mut RouterBuilder, registry: Registry) {
     let metrics = MetricsHandler::new(registry);
     router.get("/", index::handler, "index");
-    router.get("/api/v1/metrics", metrics, "v1/metrics");
-    router.get("/api/v1/version", version::handler, "v1/version");
+    router.get("/api/v1/metrics", metrics, "api/v1/metrics");
+    router.get("/api/v1/version", version::handler, "api/v1/version");
 }

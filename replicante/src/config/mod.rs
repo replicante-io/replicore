@@ -10,7 +10,7 @@ use replicante_util_tracing::Config as TracingConfig;
 
 use super::Result;
 
-use super::components::discovery::Config as DiscoveryConfig;
+use super::components::DiscoveryConfig;
 use super::interfaces::api::Config as APIConfig;
 
 

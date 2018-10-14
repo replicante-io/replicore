@@ -187,6 +187,30 @@ impl Event {
             EventPayload::SnapshotShard(ref data) => Some(&data.cluster),
         }
     }
+
+    /// Returns the event "code", the string that represents the event type.
+    pub fn code(&self) -> &'static str {
+        match self.payload {
+            EventPayload::AgentDown(_) => "AGENT_DOWN",
+            EventPayload::AgentInfoChanged(_) => "AGENT_INFO_CHANGED",
+            EventPayload::AgentInfoNew(_) => "AGENT_INFO_NEW",
+            EventPayload::AgentNew(_) => "AGENT_NEW",
+            EventPayload::AgentUp(_) => "AGENT_UP",
+            EventPayload::ClusterChanged(_) => "CLUSTER_CHANGED",
+            EventPayload::ClusterNew(_) => "CLUSTER_NEW",
+            EventPayload::NodeChanged(_) => "NODE_CHANGED",
+            EventPayload::NodeDown(_) => "NODE_DOWN",
+            EventPayload::NodeNew(_) => "NODE_NEW",
+            EventPayload::NodeUp(_) => "NODE_UP",
+            EventPayload::ShardAllocationChanged(_) => "SHARD_ALLOCATION_CHANGED",
+            EventPayload::ShardAllocationNew(_) => "SHARD_ALLOCATION_NEW",
+            EventPayload::SnapshotAgent(_) => "SNAPSHOT_AGENT",
+            EventPayload::SnapshotAgentInfo(_) => "SNAPSHOT_AGENT_INFO",
+            EventPayload::SnapshotDiscovery(_) => "SNAPSHOT_DISCOVERY",
+            EventPayload::SnapshotNode(_) => "SNAPSHOT_NODE",
+            EventPayload::SnapshotShard(_) => "SNAPSHOT_SHARD",
+        }
+    }
 }
 
 

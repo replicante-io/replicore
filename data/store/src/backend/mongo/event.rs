@@ -38,14 +38,43 @@ impl EventStore {
         EventStore { client, db }
     }
 
-    pub fn events(&self, _filters: EventsFilters, opts: EventsOptions) -> Result<Cursor<Event>> {
+    pub fn events(&self, filters: EventsFilters, opts: EventsOptions) -> Result<Cursor<Event>> {
         let mut options = FindOptions::new();
         options.limit = opts.limit;
         options.sort = Some(doc!{"$natural" => if opts.reverse { -1 } else { 1 }});
+
+        let mut filter = Vec::new();
+        if let Some(start_from) = filters.start_from {
+            filter.push(Bson::from(doc! {
+                "timestamp" => {"$gte" => start_from}
+            }));
+        }
+        if let Some(stop_at) = filters.stop_at {
+            filter.push(Bson::from(doc! {
+                "timestamp" => {"$lte" => stop_at}
+            }));
+        }
+        if filters.exclude_snapshots {
+            filter.push(Bson::from(doc! {
+                "event" => {"$nin" => [
+                    "SNAPSHOT_AGENT",
+                    "SNAPSHOT_AGENT_INFO",
+                    "SNAPSHOT_DISCOVERY",
+                    "SNAPSHOT_NODE",
+                    "SNAPSHOT_SHARD",
+                ]}
+            }));
+        }
+        let filter = if filter.len() > 0 {
+            Some(doc! {"$and" => filter})
+        } else {
+            None
+        };
+
         let collection = self.collection_events();
         MONGODB_OPS_COUNT.with_label_values(&["find"]).inc();
         let timer = MONGODB_OPS_DURATION.with_label_values(&["find"]).start_timer();
-        let cursor = collection.find(None, Some(options))
+        let cursor = collection.find(filter, Some(options))
             .map_err(|error| {
                 MONGODB_OP_ERRORS_COUNT.with_label_values(&["find"]).inc();
                 error

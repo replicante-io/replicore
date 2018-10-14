@@ -8,6 +8,9 @@ pub struct ComponentsConfig {
     /// Enable agent discovery.
     discovery: Option<bool>,
 
+    /// Enable Grafana Annotations API endpoints (optional).
+    grafana: Option<bool>,
+
     /// Enable the WebUI API endpoints (optional).
     webui: Option<bool>,
 }
@@ -17,6 +20,7 @@ impl Default for ComponentsConfig {
         Self {
             default: Self::default_default(),
             discovery: None,
+            grafana: None,
             webui: None,
         }
     }
@@ -31,6 +35,11 @@ impl ComponentsConfig {
     /// Check if the discovery component is enabled.
     pub fn discovery(&self) -> bool {
         self.discovery.unwrap_or(self.default)
+    }
+
+    /// Check if the Grafana Annotations endpoints component is enabled.
+    pub fn grafana(&self) -> bool {
+        self.grafana.unwrap_or(self.default)
     }
 
     /// Check if the WebUI endpoints component is enabled.

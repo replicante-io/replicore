@@ -41,7 +41,7 @@ impl Discovery {
     pub fn attach(interfaces: &mut Interfaces) {
         let router = interfaces.api.router();
         let handler = Discovery { store: interfaces.store.clone() };
-        router.get("/webui/cluster/:cluster/discovery", handler, "webui_cluster_discovery");
+        router.get("/webui/cluster/:cluster/discovery", handler, "webui/cluster/discovery");
     }
 }
 
@@ -72,6 +72,6 @@ impl Meta {
     pub fn attach(interfaces: &mut Interfaces) {
         let router = interfaces.api.router();
         let handler = Meta { store: interfaces.store.clone() };
-        router.get("/webui/cluster/:cluster/meta", handler, "webui_cluster_meta");
+        router.get("/webui/cluster/:cluster/meta", handler, "webui/cluster/meta");
     }
 }

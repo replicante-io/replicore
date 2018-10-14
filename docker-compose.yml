@@ -31,6 +31,7 @@ services:
     hostname: mongoui
     ports:
       - '4321:4321'
+    stop_grace_period: 1s
     volumes:
       - type: bind
         source: './devtools/mongoui.connections.json'

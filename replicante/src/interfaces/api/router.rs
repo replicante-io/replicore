@@ -44,6 +44,13 @@ impl RouterBuilder {
     ) -> &mut RouterBuilder {
         self.route(method::Get, glob, handler, route_id)
     }
+
+    /// Like route, but specialized to the `Post` method.
+    pub fn post<S: AsRef<str>, H: Handler, I: AsRef<str>>(
+        &mut self, glob: S, handler: H, route_id: I
+    ) -> &mut RouterBuilder {
+        self.route(method::Post, glob, handler, route_id)
+    }
 }
 
 

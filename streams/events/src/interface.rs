@@ -1,3 +1,6 @@
+use chrono::DateTime;
+use chrono::Utc;
+
 use replicante_data_models::Event;
 
 use super::Result;
@@ -35,18 +38,38 @@ impl Iterator for Iter {
 
 
 /// Filters to apply when scanning events.
-pub struct ScanFilters {}
+pub struct ScanFilters {
+    /// Exclude snapshot events from the result (on by default).
+    pub exclude_snapshots: bool,
+
+    /// Scan events starting from the given UTC date and time instead of from the oldest event.
+    pub start_from: Option<DateTime<Utc>>,
+
+    /// Scan events up to the given UTC date and time instead of up to the newest event.
+    pub stop_at: Option<DateTime<Utc>>,
+}
 
 impl ScanFilters {
-    /// Return all events, don't skip any.
+    /// Return all events, don't skip any (include snapshots).
     pub fn all() -> ScanFilters {
+        let mut filters = Self::default();
+        filters.exclude_snapshots = false;
+        filters
+    }
+
+    /// Return all events except snapshot events.
+    pub fn most() -> ScanFilters {
         Self::default()
     }
 }
 
 impl Default for ScanFilters {
     fn default() -> ScanFilters {
-        ScanFilters { }
+        ScanFilters {
+            exclude_snapshots: true,
+            start_from: None,
+            stop_at: None,
+        }
     }
 }
 

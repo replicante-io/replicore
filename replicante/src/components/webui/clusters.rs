@@ -39,8 +39,8 @@ impl Find {
         let router = interfaces.api.router();
         let handler_root = Find { store: interfaces.store.clone() };
         let handler_query = Find { store: interfaces.store.clone() };
-        router.get("/webui/clusters/find", handler_root, "webui_clusters_find_root");
-        router.get("/webui/clusters/find/:query", handler_query, "webui_clusters_find_query");
+        router.get("/webui/clusters/find", handler_root, "webui/clusters/find");
+        router.get("/webui/clusters/find/:query", handler_query, "webui/clusters/find/query");
     }
 }
 
@@ -67,7 +67,7 @@ impl Top {
         let handler = Top {
             store: interfaces.store.clone()
         };
-        router.get("/webui/clusters/top", handler, "webui_clusters_top");
+        router.get("/webui/clusters/top", handler, "webui/clusters/top");
     }
 }
 

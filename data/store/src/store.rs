@@ -1,5 +1,7 @@
 use std::sync::Arc;
 
+use chrono::DateTime;
+use chrono::Utc;
 use prometheus::Registry;
 use slog::Logger;
 
@@ -18,7 +20,16 @@ use super::backend::mongo::MongoStore;
 
 
 /// Filters to apply when iterating over events.
-pub struct EventsFilters {}
+pub struct EventsFilters {
+    /// Exclude snapshot events from the result (on by default).
+    pub exclude_snapshots: bool,
+
+    /// Scan events starting from the given UTC date and time instead of from the oldest event.
+    pub start_from: Option<DateTime<Utc>>,
+
+    /// Scan events up to the given UTC date and time instead of up to the newest event.
+    pub stop_at: Option<DateTime<Utc>>,
+}
 
 impl EventsFilters {
     /// Return all events, don't skip any.
@@ -29,7 +40,11 @@ impl EventsFilters {
 
 impl Default for EventsFilters {
     fn default() -> EventsFilters {
-        EventsFilters { }
+        EventsFilters {
+            exclude_snapshots: true,
+            start_from: None,
+            stop_at: None,
+        }
     }
 }
 

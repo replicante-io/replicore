@@ -1,3 +1,5 @@
+extern crate bodyparser;
+extern crate chrono;
 extern crate clap;
 
 #[macro_use]

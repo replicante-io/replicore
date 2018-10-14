@@ -1,0 +1,203 @@
+//! Module to define cluster related WebUI endpoints.
+use bodyparser;
+
+use chrono::DateTime;
+use chrono::Utc;
+
+use iron::prelude::*;
+use iron::Handler;
+use iron::status;
+use iron_json_response::JsonResponse;
+
+use serde_json;
+
+use replicante_data_models::Event;
+use replicante_data_models::EventPayload;
+use replicante_streams_events::EventsStream;
+use replicante_streams_events::ScanFilters;
+use replicante_streams_events::ScanOptions;
+
+use super::super::super::Error;
+use super::super::super::ResultExt;
+use super::Interfaces;
+
+
+/// Advanced query parameters passed as JSON blob in the annotation.query field.
+#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
+struct AdvancedQuery {
+    #[serde(default = "AdvancedQuery::default_include_snapshots")]
+    include_snapshots: bool,
+
+    #[serde(default = "AdvancedQuery::default_limit")]
+    limit: i64,
+}
+
+impl Default for AdvancedQuery {
+    fn default() -> Self {
+        Self {
+            include_snapshots: Self::default_include_snapshots(),
+            limit: Self::default_limit(),
+        }
+    }
+}
+
+impl AdvancedQuery {
+    fn default_include_snapshots() -> bool { false }
+    fn default_limit() -> i64 { 1000 }
+}
+
+
+/// Response annotation, a list of which is our response to SimpleJson.
+#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
+struct Annotation {
+    tags: Vec<String>,
+    text: String,
+    time: i64,
+    title: String,
+}
+
+
+/// Request data sent to us by SimpleJson.
+#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
+struct AnnotationRequest {
+    annotation: AnnotationQuery,
+    range: AnnotationRequestRange,
+}
+
+
+/// Annotation query sent by SimpleJson.
+#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
+struct AnnotationQuery {
+    datasource: String,
+    enable: bool,
+    #[serde(rename = "iconColor")]
+    icon_color: String,
+    name: String,
+    query: Option<String>,
+}
+
+
+/// Time-range for the annotation query.
+#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
+struct AnnotationRequestRange {
+    from: DateTime<Utc>,
+    to: DateTime<Utc>,
+}
+
+
+/// Grafana check endpoint (`/api/v1/grafana/annotations`) handler.
+pub struct Annotations {
+    events: EventsStream,
+}
+
+impl Handler for Annotations {
+    fn handle(&self, req: &mut Request) -> IronResult<Response> {
+        // Get the annotation query.
+        let request = req.get::<bodyparser::Struct<AnnotationRequest>>()
+            .chain_err(|| "Failed to parse annotation request")?
+            .ok_or_else(|| Error::from("Annotation request body missing"))?;
+
+        // We should not get queries for disabled annotations but just in case skip them.
+        if !request.annotation.enable {
+            let mut resp = Response::new();
+            let nothing: Vec<Annotation> = Vec::new();
+            resp.set_mut(JsonResponse::json(nothing)).set_mut(status::Ok);
+            return Ok(resp);
+        }
+
+        // Fetch and collect annotations.
+        let query = match request.annotation.query.as_ref() {
+            Some(query) if query == "" => AdvancedQuery::default(),
+            Some(query) => serde_json::from_str(query)
+                .chain_err(|| "Failed to parse annotation query")?,
+            None => AdvancedQuery::default(),
+        };
+        let mut filters = ScanFilters::most();
+        let mut options = ScanOptions::default();
+        filters.exclude_snapshots = !query.include_snapshots;
+        filters.start_from = Some(request.range.from);
+        filters.stop_at = Some(request.range.to);
+        options.limit = Some(query.limit);
+        let events = self.events.scan(filters, options)
+            .chain_err(|| "Failed to scan event stream")?;
+        let mut annotations: Vec<Annotation> = Vec::new();
+        for event in events {
+            let event = event.chain_err(|| "Failed to decode event from stream")?;
+            let tags = Annotations::tags(&event);
+            let text = Annotations::text(&event);
+            let time = event.timestamp.timestamp_millis();
+            let title = Annotations::title(&event);
+            annotations.push(Annotation {
+                tags,
+                text,
+                time,
+                title,
+            });
+        }
+
+        // Send the response to clients.
+        let mut resp = Response::new();
+        resp.set_mut(JsonResponse::json(annotations)).set_mut(status::Ok);
+        Ok(resp)
+    }
+}
+
+impl Annotations {
+    pub fn attach(interfaces: &mut Interfaces) {
+        let router = interfaces.api.router();
+        let handler = Annotations {
+            events: interfaces.streams.events.clone(),
+        };
+        router.post("/api/v1/grafana/annotations", handler, "api/v1/grafana/annotations");
+    }
+
+    fn tags(event: &Event) -> Vec<String> {
+        let mut tags = Vec::new();
+        tags.push(event.code().into());
+        tags.push(String::from(event.cluster().unwrap_or("System")));
+        tags
+    }
+
+    fn text(event: &Event) -> String {
+        match event.payload {
+            EventPayload::AgentDown(ref data) => format!(
+                "Agent {} is down or non-responsive", data.host
+            ),
+            EventPayload::AgentInfoChanged(ref data) => format!(
+                "Details about agent on {} changed", data.before.host
+            ),
+            EventPayload::AgentInfoNew(ref data) => format!(
+                "A new agent was detected on host {}", data.host
+            ),
+            //EventPayload::AgentNew(_) => "AGENT_NEW",
+            //EventPayload::AgentUp(_) => "AGENT_UP",
+            //EventPayload::ClusterChanged(_) => "CLUSTER_CHANGED",
+            //EventPayload::ClusterNew(_) => "CLUSTER_NEW",
+            //EventPayload::NodeChanged(_) => "NODE_CHANGED",
+            //EventPayload::NodeDown(_) => "NODE_DOWN",
+            //EventPayload::NodeNew(_) => "NODE_NEW",
+            //EventPayload::NodeUp(_) => "NODE_UP",
+            //EventPayload::ShardAllocationChanged(_) => "SHARD_ALLOCATION_CHANGED",
+            //EventPayload::ShardAllocationNew(_) => "SHARD_ALLOCATION_NEW",
+            _ => format!("{}", event.code()),
+        }
+    }
+
+    fn title(event: &Event) -> String {
+        match event.payload {
+            EventPayload::AgentDown(_) => "Agent is down".into(),
+            EventPayload::AgentInfoNew(_) => "New agent detected".into(),
+            EventPayload::AgentNew(_) => "New agent detected".into(),
+            EventPayload::AgentUp(_) => "Agent is up".into(),
+            EventPayload::ClusterChanged(_) => "Cluster changed".into(),
+            EventPayload::ClusterNew(_) => "New cluster detected".into(),
+            //EventPayload::NodeChanged(_) => "NODE_CHANGED",
+            //EventPayload::NodeDown(_) => "NODE_DOWN",
+            //EventPayload::NodeNew(_) => "NODE_NEW",
+            //EventPayload::NodeUp(_) => "NODE_UP",
+            //EventPayload::ShardAllocationChanged(_) => "SHARD_ALLOCATION_CHANGED",
+            //EventPayload::ShardAllocationNew(_) => "SHARD_ALLOCATION_NEW",
+            _ => format!("{}", event.code()),
+        }
+    }
+}

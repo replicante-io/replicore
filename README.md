@@ -11,11 +11,20 @@ stopped/recreated without loosing all development data.
 The project also comes with tools to inspect the services to see what is in them:
 
   * [adminMongo](https://adminmongo.markmoffat.com/): manage MongoDB store at http://localhost:4321/
+  * [Prometheus](https://prometheus.io/): monitoring server at http://localhost:9090/
+
+Extra services that may not be useful for day to day work but may be helpful on occasions
+are prodived by the `docker-compose-exta.yml` docker-compose override file.
+These services are:
+
+  * [Grafana](https://grafana.com/): dashboards and visualisation at http://localhost:3000/
 
 
 To start and initialise the services:
 ```bash
 $ docker-compose up
+# Use this INSTEAD to also run the extra services:
+# docker-compose -f docker-compose.yml -f docker-compose-extra.yml up
 
 # Initialise MongoDB store
 $ docker-compose exec mongo mongo

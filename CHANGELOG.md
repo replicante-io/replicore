@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Emit new `SHARD_ALLOCATION_CHANGED` event.
 - Emit new `SHARD_ALLOCATION_NEW` event.
 - Events streaming interface (backed by store).
+- Grafana annotations backend (through JSON datasource).
 - Periodically emit snapshot events.
 
 ### Changed

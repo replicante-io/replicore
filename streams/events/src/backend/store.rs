@@ -33,8 +33,8 @@ impl StreamInterface for StoreInterface {
         Ok(())
     }
 
-    fn scan(&self, _filters: ScanFilters, options: ScanOptions) -> Result<Iter> {
-        let filters = EventsFilters::all();
+    fn scan(&self, filters: ScanFilters, options: ScanOptions) -> Result<Iter> {
+        let filters = into_store_filters(filters);
         let options = into_store_options(options);
         let iter = self.store.events(filters, options)?;
         let iter = iter.map(|e| Ok(e?));
@@ -42,6 +42,14 @@ impl StreamInterface for StoreInterface {
     }
 }
 
+
+fn into_store_filters(filters: ScanFilters) -> EventsFilters {
+    let mut fils = EventsFilters::default();
+    fils.exclude_snapshots = filters.exclude_snapshots;
+    fils.start_from = filters.start_from;
+    fils.stop_at = filters.stop_at;
+    fils
+}
 
 fn into_store_options(options: ScanOptions) -> EventsOptions {
     let mut opts = EventsOptions::default();

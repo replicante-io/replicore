@@ -48,6 +48,6 @@ impl Events {
     pub fn attach(interfaces: &mut Interfaces) {
         let router = interfaces.api.router();
         let handler = Events { store: interfaces.store.clone() };
-        router.get("/webui/events", handler, "webui_events");
+        router.get("/webui/events", handler, "webui/events");
     }
 }
