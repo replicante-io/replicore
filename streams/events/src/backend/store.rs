@@ -45,7 +45,10 @@ impl StreamInterface for StoreInterface {
 
 fn into_store_filters(filters: ScanFilters) -> EventsFilters {
     let mut fils = EventsFilters::default();
+    fils.cluster_id = filters.cluster_id;
+    fils.event = filters.event;
     fils.exclude_snapshots = filters.exclude_snapshots;
+    fils.exclude_system_events = filters.exclude_system_events;
     fils.start_from = filters.start_from;
     fils.stop_at = filters.stop_at;
     fils

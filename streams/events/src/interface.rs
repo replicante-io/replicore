@@ -39,8 +39,19 @@ impl Iterator for Iter {
 
 /// Filters to apply when scanning events.
 pub struct ScanFilters {
+    /// Only return cluster-related events if the cluster ID matches.
+    ///
+    /// Non-cluster events will still be returned.
+    pub cluster_id: Option<String>,
+
+    /// Only return events with a matching event code.
+    pub event: Option<String>,
+
     /// Exclude snapshot events from the result (on by default).
     pub exclude_snapshots: bool,
+
+    /// Exclude events that do not relate to a cluster (off by default).
+    pub exclude_system_events: bool,
 
     /// Scan events starting from the given UTC date and time instead of from the oldest event.
     pub start_from: Option<DateTime<Utc>>,
@@ -66,7 +77,10 @@ impl ScanFilters {
 impl Default for ScanFilters {
     fn default() -> ScanFilters {
         ScanFilters {
+            cluster_id: None,
+            event: None,
             exclude_snapshots: true,
+            exclude_system_events: false,
             start_from: None,
             stop_at: None,
         }

@@ -21,8 +21,19 @@ use super::backend::mongo::MongoStore;
 
 /// Filters to apply when iterating over events.
 pub struct EventsFilters {
+    /// Only return cluster-related events if the cluster ID matches.
+    ///
+    /// Non-cluster events will still be returned.
+    pub cluster_id: Option<String>,
+
+    /// Only return events with a matching event code.
+    pub event: Option<String>,
+
     /// Exclude snapshot events from the result (on by default).
     pub exclude_snapshots: bool,
+
+    /// Exclude events that do not relate to a cluster (off by default).
+    pub exclude_system_events: bool,
 
     /// Scan events starting from the given UTC date and time instead of from the oldest event.
     pub start_from: Option<DateTime<Utc>>,
@@ -41,7 +52,10 @@ impl EventsFilters {
 impl Default for EventsFilters {
     fn default() -> EventsFilters {
         EventsFilters {
+            cluster_id: None,
+            event: None,
             exclude_snapshots: true,
+            exclude_system_events: false,
             start_from: None,
             stop_at: None,
         }

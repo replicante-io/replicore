@@ -25,8 +25,17 @@ use super::Interfaces;
 /// Advanced query parameters passed as JSON blob in the annotation.query field.
 #[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
 struct AdvancedQuery {
-    #[serde(default = "AdvancedQuery::default_include_snapshots")]
-    include_snapshots: bool,
+    #[serde(default)]
+    cluster_id: Option<String>,
+
+    #[serde(default)]
+    event: Option<String>,
+
+    #[serde(default = "AdvancedQuery::default_exclude_snapshots")]
+    exclude_snapshots: bool,
+
+    #[serde(default = "AdvancedQuery::default_exclude_system_events")]
+    exclude_system_events: bool,
 
     #[serde(default = "AdvancedQuery::default_limit")]
     limit: i64,
@@ -35,14 +44,18 @@ struct AdvancedQuery {
 impl Default for AdvancedQuery {
     fn default() -> Self {
         Self {
-            include_snapshots: Self::default_include_snapshots(),
+            cluster_id: None,
+            event: None,
+            exclude_snapshots: Self::default_exclude_snapshots(),
+            exclude_system_events: Self::default_exclude_system_events(),
             limit: Self::default_limit(),
         }
     }
 }
 
 impl AdvancedQuery {
-    fn default_include_snapshots() -> bool { false }
+    fn default_exclude_snapshots() -> bool { true }
+    fn default_exclude_system_events() -> bool { false }
     fn default_limit() -> i64 { 1000 }
 }
 
@@ -114,7 +127,10 @@ impl Handler for Annotations {
         };
         let mut filters = ScanFilters::most();
         let mut options = ScanOptions::default();
-        filters.exclude_snapshots = !query.include_snapshots;
+        filters.cluster_id = query.cluster_id;
+        filters.event = query.event;
+        filters.exclude_snapshots = query.exclude_snapshots;
+        filters.exclude_system_events = query.exclude_system_events;
         filters.start_from = Some(request.range.from);
         filters.stop_at = Some(request.range.to);
         options.limit = Some(query.limit);
@@ -169,16 +185,30 @@ impl Annotations {
             EventPayload::AgentInfoNew(ref data) => format!(
                 "A new agent was detected on host {}", data.host
             ),
-            //EventPayload::AgentNew(_) => "AGENT_NEW",
-            //EventPayload::AgentUp(_) => "AGENT_UP",
-            //EventPayload::ClusterChanged(_) => "CLUSTER_CHANGED",
-            //EventPayload::ClusterNew(_) => "CLUSTER_NEW",
-            //EventPayload::NodeChanged(_) => "NODE_CHANGED",
-            //EventPayload::NodeDown(_) => "NODE_DOWN",
-            //EventPayload::NodeNew(_) => "NODE_NEW",
-            //EventPayload::NodeUp(_) => "NODE_UP",
-            //EventPayload::ShardAllocationChanged(_) => "SHARD_ALLOCATION_CHANGED",
-            //EventPayload::ShardAllocationNew(_) => "SHARD_ALLOCATION_NEW",
+            EventPayload::AgentNew(ref data) => format!(
+                "A new agent was detected on host {}", data.host
+            ),
+            EventPayload::AgentUp(ref data) => format!("Agent {} is now up", data.host),
+            EventPayload::ClusterChanged(_) => String::from(concat!(
+                "Cluster discovery record changed (most commonly, this indicates",
+                "a membership change)"
+            )),
+            EventPayload::ClusterNew(_) => String::from("Cluster discovered for the first time"),
+            EventPayload::NodeChanged(ref data) => format!(
+                "Details about datastore node {} changed", data.host
+            ),
+            EventPayload::NodeDown(ref data) => format!(
+                "Node {} is down or non-responsive but the agent on the node could be reached",
+                data.host
+            ),
+            EventPayload::NodeNew(_) => "A new datastore node was detected".into(),
+            EventPayload::NodeUp(ref data) => format!("Datastore node {} is now up", data.host),
+            EventPayload::ShardAllocationChanged(ref data) => format!(
+                "Status of shard {} on node {} have changed", data.id, data.node
+            ),
+            EventPayload::ShardAllocationNew(ref data) => format!(
+                "Shard {} found on node {} for the first time", data.id, data.node
+            ),
             _ => format!("{}", event.code()),
         }
     }
@@ -186,17 +216,18 @@ impl Annotations {
     fn title(event: &Event) -> String {
         match event.payload {
             EventPayload::AgentDown(_) => "Agent is down".into(),
+            EventPayload::AgentInfoChanged(_) => "Agent details changed".into(),
             EventPayload::AgentInfoNew(_) => "New agent detected".into(),
             EventPayload::AgentNew(_) => "New agent detected".into(),
             EventPayload::AgentUp(_) => "Agent is up".into(),
             EventPayload::ClusterChanged(_) => "Cluster changed".into(),
             EventPayload::ClusterNew(_) => "New cluster detected".into(),
-            //EventPayload::NodeChanged(_) => "NODE_CHANGED",
-            //EventPayload::NodeDown(_) => "NODE_DOWN",
-            //EventPayload::NodeNew(_) => "NODE_NEW",
-            //EventPayload::NodeUp(_) => "NODE_UP",
-            //EventPayload::ShardAllocationChanged(_) => "SHARD_ALLOCATION_CHANGED",
-            //EventPayload::ShardAllocationNew(_) => "SHARD_ALLOCATION_NEW",
+            EventPayload::NodeChanged(_) => "Datastore node details changed".into(),
+            EventPayload::NodeDown(_) => "Datastore node is down".into(),
+            EventPayload::NodeNew(_) => "New datastore node detected".into(),
+            EventPayload::NodeUp(_) => "Datastore node is up".into(),
+            EventPayload::ShardAllocationChanged(_) => "Shard status on node changed".into(),
+            EventPayload::ShardAllocationNew(_) => "Shard found on node".into(),
             _ => format!("{}", event.code()),
         }
     }

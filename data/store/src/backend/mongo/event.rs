@@ -44,14 +44,18 @@ impl EventStore {
         options.sort = Some(doc!{"$natural" => if opts.reverse { -1 } else { 1 }});
 
         let mut filter = Vec::new();
-        if let Some(start_from) = filters.start_from {
+        if let Some(cluster_id) = filters.cluster_id {
             filter.push(Bson::from(doc! {
-                "timestamp" => {"$gte" => start_from}
+                "$or": [{
+                    "data.cluster" => {"$eq" => cluster_id}
+                }, {
+                    "data.cluster" => {"$exists" => false}
+                }]
             }));
         }
-        if let Some(stop_at) = filters.stop_at {
+        if let Some(event) = filters.event {
             filter.push(Bson::from(doc! {
-                "timestamp" => {"$lte" => stop_at}
+                "event" => {"$eq" => event}
             }));
         }
         if filters.exclude_snapshots {
@@ -63,6 +67,21 @@ impl EventStore {
                     "SNAPSHOT_NODE",
                     "SNAPSHOT_SHARD",
                 ]}
+            }));
+        }
+        if filters.exclude_system_events {
+            filter.push(Bson::from(doc! {
+                "data.cluster" => {"$exists" => false}
+            }));
+        }
+        if let Some(start_from) = filters.start_from {
+            filter.push(Bson::from(doc! {
+                "timestamp" => {"$gte" => start_from}
+            }));
+        }
+        if let Some(stop_at) = filters.stop_at {
+            filter.push(Bson::from(doc! {
+                "timestamp" => {"$lte" => stop_at}
             }));
         }
         let filter = if filter.len() > 0 {
