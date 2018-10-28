@@ -177,9 +177,6 @@ storage:
   # This option is to allow users to choose a supported database that best fits
   # their use and environment.
   #
-  # To change this option you will need to "Update by rebuild".
-  # See the documentation for more details on this process.
-  #
   # Available options:
   #
   #   * 'mongodb' (recommended)
@@ -188,7 +185,7 @@ storage:
   # Any backend-specific option is set here.
   # The available options vary from backend to backend and are documented below.
   #
-  # MongoDB options
+  # MongoDB options:
   options:
     # Name of the MongoDB database to use for persistence.
     #
@@ -202,6 +199,26 @@ storage:
 
     # URI of the MongoDB Replica Set or sharded cluster to connect to.
     uri: mongodb://localhost:27017/
+
+
+# The section below is for the tasks system configuration.
+tasks:
+  # The queue system to use for async tasks.
+  #
+  # !!! DO NOT CHANGE AFTER INITIAL CONFIGURATION !!!
+  # This option is to allow users to choose a supported software that best fits
+  # their use and environment.
+  #
+  # Available options:
+  #
+  #   * 'kafka' (recommended)
+  backend: kafka
+
+  # Any backend-specific option is set here.
+  # The available options vary from backend to backend and are documented below.
+  #
+  # Kafka options:
+  options: {}
 
 
 # Timeouts configured here are used throughout the system for various reasons.

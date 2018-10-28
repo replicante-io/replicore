@@ -6,6 +6,7 @@ use replicante_streams_events::EventsStream;
 
 use super::Result;
 use super::config::Config;
+use super::tasks::Tasks;
 
 
 pub mod api;
@@ -31,6 +32,7 @@ pub struct Interfaces {
     pub metrics: Metrics,
     pub store: Store,
     pub streams: Streams,
+    pub tasks: Tasks,
     pub tracing: Tracing,
 }
 
@@ -42,12 +44,14 @@ impl Interfaces {
         let api = API::new(config.api.clone(), logger.clone(), &metrics);
         let store = Store::new(config.storage.clone(), logger.clone())?;
         let streams = Streams::new(config, logger.clone(), store.clone())?;
+        let tasks = Tasks::new(config.tasks.clone());
         let tracing = Tracing::new(config.tracing.clone(), logger.clone())?;
         Ok(Interfaces {
             api,
             metrics,
             store,
             streams,
+            tasks,
             tracing,
         })
     }
@@ -103,6 +107,7 @@ impl Streams {
 pub struct MockInterfaces {
     pub events: ::std::sync::Arc<::replicante_streams_events::mock::MockEvents>,
     pub store: ::std::sync::Arc<::replicante_data_store::mock::MockStore>,
+    pub tasks: ::std::sync::Arc<super::tasks::MockTasks>,
 }
 
 #[cfg(test)]
@@ -130,11 +135,13 @@ impl Interfaces {
         let mock_store = ::replicante_data_store::mock::MockStore::new();
         let mock_store = ::std::sync::Arc::new(mock_store);
         let store = Store::mock(mock_store.clone());
+        let tasks = ::std::sync::Arc::new(super::tasks::MockTasks::new());
 
         // Wrap things up.
         let mocks = MockInterfaces {
             events: mock_events,
             store: mock_store,
+            tasks,
         };
         let interfaces = Interfaces {
             api,
@@ -143,6 +150,7 @@ impl Interfaces {
             streams: Streams {
                 events,
             },
+            tasks: mocks.tasks.mock(),
             tracing,
         };
         (interfaces, mocks)

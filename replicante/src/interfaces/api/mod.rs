@@ -3,7 +3,7 @@
 //! This interface is a wrapper around the [`iron`] framework.
 //! This module does not implement all of the APIs but rather provides
 //! tools for other interfaces and components to add their own endpoints.
-use std::thread;
+use std::thread::Builder as ThreadBuilder;
 use std::thread::JoinHandle;
 
 use iron::Iron;
@@ -75,10 +75,10 @@ impl API {
         chain.link_after(RequestLogger::new(self.logger.clone()));
         chain.link(self.metrics_middleware.take().unwrap().into_middleware());
 
-        self.handle = Some(thread::spawn(move || {
+        self.handle = Some(ThreadBuilder::new().name("r:i:api".into()).spawn(move || {
             info!(logger, "Starting API server"; "bind" => bind.clone());
             Iron::new(chain).http(bind).expect("Unable to start API server");
-        }));
+        })?);
         Ok(())
     }
 

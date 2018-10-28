@@ -6,6 +6,7 @@ use serde_yaml;
 
 use replicante_data_store::Config as StorageConfig;
 use replicante_logging::Config as LoggingConfig;
+use replicante_tasks::Config as TasksConfig;
 use replicante_util_tracing::Config as TracingConfig;
 
 use super::Result;
@@ -51,6 +52,10 @@ pub struct Config {
     #[serde(default)]
     pub storage: StorageConfig,
 
+    /// Tasks system configuration.
+    #[serde(default)]
+    pub tasks: TasksConfig,
+
     /// Timeouts configured here are used throughout the system for various reasons.
     #[serde(default)]
     pub timeouts: TimeoutsConfig,
@@ -69,6 +74,7 @@ impl Default for Config {
             events: EventsConfig::default(),
             logging: LoggingConfig::default(),
             storage: StorageConfig::default(),
+            tasks: TasksConfig::default(),
             timeouts: TimeoutsConfig::default(),
             tracing: TracingConfig::default(),
         }

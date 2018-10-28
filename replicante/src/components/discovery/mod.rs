@@ -10,6 +10,7 @@ use replicante_data_store::Store;
 use replicante_streams_events::EventsStream;
 
 use super::super::config::EventsSnapshotsConfig;
+use super::super::tasks::Tasks;
 use super::Interfaces;
 use super::Result;
 
@@ -36,6 +37,7 @@ pub struct DiscoveryComponent {
     logger: Logger,
     snapshots_config: EventsSnapshotsConfig,
     store: Store,
+    tasks: Tasks,
     worker: Option<JoinHandle<()>>,
 }
 
@@ -54,6 +56,7 @@ impl DiscoveryComponent {
             logger,
             snapshots_config,
             store: interfaces.store.clone(),
+            tasks: interfaces.tasks.clone(),
             worker: None,
         }
     }
@@ -67,11 +70,12 @@ impl DiscoveryComponent {
             self.logger.clone(),
             self.events.clone(),
             self.store.clone(),
+            self.tasks.clone(),
             self.agents_api_timeout.clone(),
         );
 
         info!(self.logger, "Starting Agent Discovery thread");
-        let thread = ThreadBuilder::new().name(String::from("Agent Discovery")).spawn(move || {
+        let thread = ThreadBuilder::new().name("r:c:discovery".into()).spawn(move || {
             loop {
                 DISCOVERY_COUNT.inc();
                 let timer = DISCOVERY_DURATION.start_timer();

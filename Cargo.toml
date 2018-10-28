@@ -13,4 +13,5 @@ members = [
   "replicante",
   "replictl",
   "streams/events",
+  "tasks",
 ]

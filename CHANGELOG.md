@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## [Unreleased]
 ### Added
 - Add scan method to events stream interface.
+- Async tasks and workers framework.
 - Configurable Agent API calls timeout.
 - Configurable components enabled in each process.
 - Emit new `AGENT_INFO_CHANGED` event.
@@ -34,6 +35,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - **BREAKING**: Update models.
 - Emit agent status change after emitting `AGENT_NEW` events.
 - Move logging code to common crate.
+- Name background threads.
 - Refactor metrics initialisation code.
 
 ### Fixed

@@ -16,9 +16,12 @@ use replicante_data_models::Event;
 
 use replicante_data_store::Store;
 use replicante_streams_events::EventsStream;
+use replicante_tasks::TaskRequest;
 
 use super::super::super::Result;
 use super::super::super::ResultExt;
+use super::super::super::tasks::ReplicanteQueues;
+use super::super::super::tasks::Tasks;
 use super::EventsSnapshotsConfig;
 
 use super::metrics::DISCOVERY_FETCH_ERRORS_COUNT;
@@ -36,6 +39,7 @@ pub struct DiscoveryWorker {
     events: EventsStream,
     logger: Logger,
     store: Store,
+    tasks: Tasks,
 
     // TODO(stefano): move into dedicated component when possible.
     aggregator: Aggregator,
@@ -46,7 +50,7 @@ impl DiscoveryWorker {
     /// Creates a discover worker.
     pub fn new(
         discovery_config: BackendsConfig, snapshots_config: EventsSnapshotsConfig,
-        logger: Logger, events: EventsStream, store: Store, timeout: Duration
+        logger: Logger, events: EventsStream, store: Store, tasks: Tasks, timeout: Duration
     ) -> DiscoveryWorker {
         let aggregator = Aggregator::new(logger.clone(), store.clone());
         let fetcher = Fetcher::new(logger.clone(), events.clone(), store.clone(), timeout);
@@ -57,6 +61,7 @@ impl DiscoveryWorker {
             events,
             logger,
             store,
+            tasks,
 
             // TODO(stefano): move into dedicated component when possible.
             aggregator,
@@ -69,7 +74,14 @@ impl DiscoveryWorker {
         debug!(self.logger, "Discovering agents ...");
         for cluster in discover(self.discovery_config.clone()) {
             match cluster {
-                Ok(cluster) => self.process(cluster),
+                Ok(cluster) => {
+                    self.process(cluster.clone());
+                    let task = TaskRequest::new(ReplicanteQueues::Discovery);
+                    if let Err(error) = self.tasks.request(task, cluster) {
+                        error!(self.logger, "Failed to request cluster discovery"; "error" => %error);
+                        DISCOVERY_FETCH_ERRORS_COUNT.inc();
+                    };
+                },
                 Err(error) => {
                     let error = error.display_chain().to_string();
                     error!(self.logger, "Failed to fetch cluster discovery"; "error" => error);
