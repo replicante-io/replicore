@@ -8,10 +8,18 @@ all dependences needed to develop Replicante core components.
 
 The compose project uses docker volumes to persist data so that containers can be
 stopped/recreated without loosing all development data.
+These services are:
+
+  * [Kafka](https://kafka.apache.org/) for events streaming and task queues.
+  * [MongoDB](https://www.mongodb.com/) for the storage layer.
+  * [Zookeeper](https://zookeeper.apache.org/) for cluster coordination (and for use by kafka).
+
 The project also comes with tools to inspect the services to see what is in them:
 
   * [adminMongo](https://adminmongo.markmoffat.com/): manage MongoDB store at http://localhost:4321/
+  * [kafka-topics-ui](https://github.com/Landoop/kafka-topics-ui): inspect the content of kafka topics at http://localhost:8001/
   * [Prometheus](https://prometheus.io/): monitoring server at http://localhost:9090/
+  * [ZooNavigator](https://github.com/elkozmon/zoonavigator): manage Zookeeper at http://localhost:8000/
 
 Extra services that may not be useful for day to day work but may be helpful on occasions
 are prodived by the `docker-compose-exta.yml` docker-compose override file.

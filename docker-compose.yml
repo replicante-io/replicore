@@ -2,6 +2,27 @@ version: '3.5'
 
 
 services:
+  # Dependencies.
+  kafka:
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_LISTENERS: PLAINTEXT://172.128.0.30:9092
+      KAFKA_LOG_FLUSH_SCHEDULER_INTERVAL_MS: 60000
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_ZOOKEEPER_CONNECT: 'zookeeper:2181/kafka'
+      JMX_PORT: 9999
+    hostname: kafka
+    image: wurstmeister/kafka:2.11-2.0.0
+    links:
+      - zookeeper
+    networks:
+      default:
+        ipv4_address: '172.128.0.30'
+    volumes:
+      - type: volume
+        source: kafka
+        target: /kafka
+
   mongo:
     command:
       - 'mongod'
@@ -9,14 +30,56 @@ services:
       - 'replistore'
       - '--bind_ip'
       - '0.0.0.0'
-    image: mongo:4.0
     hostname: mongo
+    image: mongo:4.0
     ports:
       - '27017:27017'
     volumes:
       - type: volume
         source: mongo
         target: '/data/db'
+
+  zookeeper:
+    environment:
+      ZOO_MY_ID: 1
+      ZOO_SERVERS: server.1=0.0.0.0:2888:3888
+    hostname: 'zookeeper'
+    image: 'zookeeper:3.4'
+    ports:
+      - '2181:2181'
+    volumes:
+      - type: volume
+        source: zkdata
+        target: '/data'
+      - type: volume
+        source: zklog
+        target: '/datalog'
+
+  # Web UIs for dependencies.
+  kafka-rest:
+    depends_on:
+      - zookeeper
+      - kafka
+    environment:
+      KAFKA_REST_HOST_NAME: '172.128.0.29'
+      KAFKA_REST_LISTENERS: 'http://0.0.0.0:8082'
+      KAFKA_REST_ZOOKEEPER_CONNECT: 'zookeeper:2181/kafka'
+    hostname: 'kafka-rest'
+    image: 'confluentinc/cp-kafka-rest:5.0.0'
+    networks:
+      default:
+        ipv4_address: '172.128.0.29'
+
+  kafka-webui:
+    depends_on:
+      - kafka-rest
+    environment:
+      KAFKA_REST_PROXY_URL: 'http://172.128.0.29:8082'
+      PROXY: 'true'
+    hostname: 'kafka-webui'
+    image: 'landoop/kafka-topics-ui'
+    ports:
+      - '8001:8000'
 
   mongoui:
     command:
@@ -27,8 +90,8 @@ services:
       - mongo
     environment:
       PORT: '4321'
-    image: 'mrvautin/adminmongo:latest'
     hostname: mongoui
+    image: 'mrvautin/adminmongo:latest'
     ports:
       - '4321:4321'
     stop_grace_period: 1s
@@ -38,9 +101,30 @@ services:
         target: '/app/user/config/config.json'
         read_only: true
 
+  zoonavigator-api:
+    environment:
+      API_HTTP_PORT: 9000
+    hostname: zoonavigator-api
+    image: elkozmon/zoonavigator-api:0.5.0
+
+  zoonavigator-web:
+    environment:
+      AUTO_CONNECT_CONNECTION_STRING: 'zookeeper:2181'
+      WEB_HTTP_PORT: 8000
+      API_HOST: 'zoonavigator-api'
+      API_PORT: 9000
+    hostname: zoonavigator-web
+    image: elkozmon/zoonavigator-web:0.5.0
+    links:
+      - zoonavigator-api
+      - zookeeper
+    ports:
+      - '8000:8000'
+
+  # Monitoring and introspection
   prometheus:
-    image: 'prom/prometheus:v2.4.3'
     hostname: prometheus
+    image: 'prom/prometheus:v2.4.3'
     ports:
       - '9090:9090'
     volumes:
@@ -61,5 +145,8 @@ networks:
 
 
 volumes:
+  kafka:
   mongo:
   prometheus:
+  zkdata:
+  zklog:
