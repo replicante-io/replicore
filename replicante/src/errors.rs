@@ -22,6 +22,11 @@ error_chain! {
     }
 }
 
+impl From<::failure::Error> for Error {
+    fn from(error: ::failure::Error) -> Self {
+        error.to_string().into()
+    }
+}
 
 impl From<Error> for IronError {
     fn from(error: Error) -> Self {

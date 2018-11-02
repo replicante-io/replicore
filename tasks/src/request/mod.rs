@@ -58,11 +58,11 @@ pub struct Tasks<Q: TaskQueue>(Arc<Backend<Q>>);
 
 impl<Q: TaskQueue> Tasks<Q> {
     /// Create a new `Tasks` interface to enqueue new tasks.
-    pub fn new(config: Config) -> Tasks<Q> {
+    pub fn new(config: Config) -> Result<Tasks<Q>> {
         let backend = match config.backend {
-            BackendConfig::Kafka(backend) => Arc::new(Kafka::new(backend)),
+            BackendConfig::Kafka(backend) => Arc::new(Kafka::new(backend)?),
         };
-        Tasks(backend)
+        Ok(Tasks(backend))
     }
 
     /// Request a new task to be performed.

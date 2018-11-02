@@ -4,6 +4,7 @@ extern crate clap;
 
 #[macro_use]
 extern crate error_chain;
+extern crate failure;
 
 extern crate iron;
 extern crate iron_json_response;
@@ -16,6 +17,17 @@ extern crate lazy_static;
 
 extern crate opentracingrust;
 extern crate prometheus;
+
+extern crate serde;
+#[macro_use]
+extern crate serde_derive;
+extern crate serde_json;
+extern crate serde_yaml;
+
+#[macro_use]
+extern crate slog;
+extern crate slog_scope;
+extern crate slog_stdlog;
 
 extern crate replicante_agent_client;
 extern crate replicante_agent_discovery;
@@ -30,14 +42,6 @@ extern crate replicante_tasks;
 extern crate replicante_util_iron;
 extern crate replicante_util_tracing;
 
-extern crate serde;
-#[macro_use]
-extern crate serde_derive;
-extern crate serde_json;
-extern crate serde_yaml;
-
-#[macro_use]
-extern crate slog;
 
 use clap::App;
 use clap::Arg;
@@ -142,6 +146,8 @@ pub fn run() -> Result<()> {
 
     // Initialise and run forever.
     let logger = replicante_logging::configure(config.logging.clone(), &logger_opts);
+    let _scope_guard = slog_scope::set_global_logger(logger.clone());
+    let _log_guard = slog_stdlog::init().expect("Failed to initialise log -> slog integration");
     debug!(logger, "Logging configured");
 
     let result = initialise_and_run(config, logger.clone());

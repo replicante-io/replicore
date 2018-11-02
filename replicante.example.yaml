@@ -218,7 +218,17 @@ tasks:
   # The available options vary from backend to backend and are documented below.
   #
   # Kafka options:
-  options: {}
+  options:
+    # Comma separated list of seed brokers.
+    brokers: 'localhost:9092'
+
+    # Kafka-specific timeout options.
+    timeouts:
+      # Timeout (in millisecond) for non-topic requests.
+      metadata: 60000
+
+      # Default timeout (in milliseconds) for network requests.
+      socket: 60000
 
 
 # Timeouts configured here are used throughout the system for various reasons.

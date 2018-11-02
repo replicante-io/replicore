@@ -18,6 +18,8 @@ services:
     networks:
       default:
         ipv4_address: '172.128.0.30'
+    ports:
+      - '9092:9092'
     volumes:
       - type: volume
         source: kafka

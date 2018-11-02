@@ -44,7 +44,7 @@ impl Interfaces {
         let api = API::new(config.api.clone(), logger.clone(), &metrics);
         let store = Store::new(config.storage.clone(), logger.clone())?;
         let streams = Streams::new(config, logger.clone(), store.clone())?;
-        let tasks = Tasks::new(config.tasks.clone());
+        let tasks = Tasks::new(config.tasks.clone())?;
         let tracing = Tracing::new(config.tracing.clone(), logger.clone())?;
         Ok(Interfaces {
             api,
