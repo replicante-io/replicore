@@ -1,3 +1,5 @@
+use std::str::FromStr;
+
 use replicante_tasks::TaskQueue;
 
 
@@ -8,6 +10,16 @@ pub enum ReplicanteQueues {
     Discovery,
 }
 
+impl FromStr for ReplicanteQueues {
+    type Err = ::failure::Error;
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "discovery" => Ok(ReplicanteQueues::Discovery),
+            s => Err(::failure::err_msg(format!("unknown queue '{}'", s))),
+        }
+    }
+}
+
 impl TaskQueue for ReplicanteQueues {
     fn name(&self) -> String {
         match self {
@@ -15,6 +27,10 @@ impl TaskQueue for ReplicanteQueues {
         }
     }
 }
+
+
+/// Type-specialised task model.
+pub type Task = ::replicante_tasks::Task<ReplicanteQueues>;
 
 
 /// Type-specialised task requester.

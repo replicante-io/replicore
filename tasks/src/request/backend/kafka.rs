@@ -1,9 +1,9 @@
 use rdkafka::config::ClientConfig;
+use rdkafka::config::RDKafkaLogLevel;
 use rdkafka::producer::base_producer::BaseRecord;
 use rdkafka::producer::base_producer::DefaultProducerContext;
 use rdkafka::producer::base_producer::ThreadedProducer;
 
-//use super::super::super::TaskError;
 use super::super::super::config::KafkaConfig;
 
 use super::Backend;
@@ -28,11 +28,11 @@ impl Kafka {
             .set("metadata.request.timeout.ms", &config.timeouts.metadata.to_string())
             .set("queue.buffering.max.ms", "0")  // Do not buffer messages.
             .set("request.required.acks", "all")
+            .set("request.timeout.ms", &config.timeouts.request.to_string())
             .set("socket.timeout.ms", &config.timeouts.socket.to_string())
+            .set_log_level(RDKafkaLogLevel::Debug)
             .create()?;
-        let kafka = Kafka {
-            producer,
-        };
+        let kafka = Kafka { producer };
         Ok(kafka)
     }
 }

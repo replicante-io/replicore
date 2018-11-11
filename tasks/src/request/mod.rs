@@ -83,7 +83,7 @@ pub struct MockTasks<Q: TaskQueue> {
 }
 
 #[cfg(debug_assertions)]
-impl<Q: TaskQueue + 'static> MockTasks<Q> {
+impl<Q: TaskQueue> MockTasks<Q> {
     /// Create a mock tasks instance to be used for tests.
     pub fn new() -> MockTasks<Q> {
         MockTasks {
@@ -102,13 +102,25 @@ impl<Q: TaskQueue + 'static> MockTasks<Q> {
 
 #[cfg(test)]
 mod tests {
+    use std::str::FromStr;
+
     use super::MockTasks;
     use super::TaskQueue;
     use super::TaskRequest;
 
-    #[derive(Clone, Debug, Eq, PartialEq)]
+    #[derive(Clone, Debug, Eq, Hash, PartialEq)]
     enum TestQueues {
         Test
+    }
+
+    impl FromStr for TestQueues {
+        type Err = ::failure::Error;
+        fn from_str(s: &str) -> Result<Self, Self::Err> {
+            match s {
+                "test" => Ok(TestQueues::Test),
+                s => Err(::failure::err_msg(format!("unknown queue '{}'", s))),
+            }
+        }
     }
 
     impl TaskQueue for TestQueues {

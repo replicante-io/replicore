@@ -13,6 +13,9 @@ pub struct ComponentsConfig {
 
     /// Enable the WebUI API endpoints (optional).
     webui: Option<bool>,
+
+    /// Enable the tasks workers pool component.
+    workers: Option<bool>,
 }
 
 impl Default for ComponentsConfig {
@@ -22,6 +25,7 @@ impl Default for ComponentsConfig {
             discovery: None,
             grafana: None,
             webui: None,
+            workers: None,
         }
     }
 }
@@ -45,5 +49,10 @@ impl ComponentsConfig {
     /// Check if the WebUI endpoints component is enabled.
     pub fn webui(&self) -> bool {
         self.webui.unwrap_or(self.default)
+    }
+
+    /// Check if the Workers component is enabled.
+    pub fn workers(&self) -> bool {
+        self.workers.unwrap_or(self.default)
     }
 }

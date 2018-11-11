@@ -64,6 +64,9 @@ components:
   # Without it the node.js WebUI will NOT work.
   webui: null
 
+  # Enable the tasks workers pool component.
+  workers: null
+
 
 # The section below is for agent discovery configuration.
 #
@@ -222,13 +225,25 @@ tasks:
     # Comma separated list of seed brokers.
     brokers: 'localhost:9092'
 
+    # Worker session keepalive heartbeat interval.
+    heartbeat: 3000
+
     # Kafka-specific timeout options.
     timeouts:
       # Timeout (in millisecond) for non-topic requests.
       metadata: 60000
 
+      # Timeout (in milliseconds) for tasks to be acknowledged.
+      request: 5000
+
+      # Timeout (in milliseconds) after which workers are presumed dead by the brokers.
+      session: 10000
+
       # Default timeout (in milliseconds) for network requests.
       socket: 60000
+
+  # Number of task processing threads to spawn.
+  #threads_count: 8 * number of CPUs
 
 
 # Timeouts configured here are used throughout the system for various reasons.

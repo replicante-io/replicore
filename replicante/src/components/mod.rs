@@ -15,12 +15,14 @@ use super::metrics::COMPONENTS_ENABLED;
 mod discovery;
 mod grafana;
 mod webui;
+mod workers;
 
 pub use self::discovery::Config as DiscoveryConfig;
 
 use self::discovery::DiscoveryComponent as Discovery;
 use self::grafana::Grafana;
 use self::webui::WebUI;
+use self::workers::Workers;
 
 
 /// Helper macro to keep `Components::run` simpler in the presence of optional components.
@@ -74,6 +76,7 @@ pub struct Components {
     discovery: Option<Discovery>,
     grafana: Option<Grafana>,
     webui: Option<WebUI>,
+    workers: Option<Workers>,
 }
 
 impl Components {
@@ -94,10 +97,20 @@ impl Components {
         let webui = component_new(
             "webui", "optional", config.components.webui(), &logger, || WebUI::new(interfaces)
         );
+        let workers = component_new(
+            "workers", "required", config.components.workers(), &logger,
+            || Workers::new(interfaces, logger.clone(), config.tasks.clone())
+        );
+        let workers = match workers {
+            Some(Err(error)) => return Err(error),
+            Some(Ok(workers)) => Some(workers),
+            None => None,
+        };
         Ok(Components {
             discovery,
             grafana,
             webui,
+            workers,
         })
     }
 
@@ -117,6 +130,7 @@ impl Components {
         component_run!(self.discovery.as_mut());
         component_run!(self.grafana.as_mut());
         component_run!(self.webui.as_mut());
+        component_run!(self.workers.as_mut());
         Ok(())
     }
 
@@ -125,6 +139,7 @@ impl Components {
         component_wait!(self.discovery.as_mut());
         component_wait!(self.grafana.as_mut());
         component_wait!(self.webui.as_mut());
+        component_wait!(self.workers.as_mut());
         Ok(())
     }
 }
