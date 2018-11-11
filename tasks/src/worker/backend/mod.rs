@@ -13,9 +13,10 @@ pub mod mock;
 ///
 /// Once created, tasks are mostly independent of their backend.
 /// Acks and retries are the exception.
-pub trait AckStrategy<Q: TaskQueue>  : Send + Sync {
-// TODO: remove sync and send and fix mock.
-//pub trait AckStrategy<Q: TaskQueue> {
+///
+/// Strategies are not `Send` (or `Sync`) because some backends (for example the kafka backend)
+/// may rely on thread local variables to coordinate polls and acknowledgement of tasks.
+pub trait AckStrategy<Q: TaskQueue> {
     /// Schedule the given task for retry because it failed.
     fn fail(&self, task: Task<Q>) -> Result<()>;
 

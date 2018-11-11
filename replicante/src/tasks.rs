@@ -38,5 +38,5 @@ pub type Tasks = ::replicante_tasks::Tasks<ReplicanteQueues>;
 
 
 /// Type-specialised task requester mock.
-#[cfg(debug_assertions)]
+#[cfg(test)]
 pub type MockTasks = ::replicante_tasks::MockTasks<ReplicanteQueues>;

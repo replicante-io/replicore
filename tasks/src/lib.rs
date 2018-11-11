@@ -32,10 +32,6 @@ pub use self::worker::WorkerSetPool;
 #[cfg(debug_assertions)]
 pub use self::request::MockTasks;
 #[cfg(debug_assertions)]
-pub use self::worker::MockTask;
-#[cfg(debug_assertions)]
-pub use self::worker::MockWorkerSet;
-#[cfg(debug_assertions)]
 pub use self::worker::mock as worker_mock;
 
 

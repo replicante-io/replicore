@@ -10,54 +10,21 @@ use super::TaskQueue;
 mod backend;
 mod set;
 
+#[cfg(debug_assertions)]
+pub mod mock;
+
 pub use self::set::WorkerSet;
 pub use self::set::WorkerSetPool;
-
-#[cfg(debug_assertions)]
-pub use self::backend::mock;
-#[cfg(debug_assertions)]
-pub use self::set::MockWorkerSet;
 
 
 // TODO: replace with configurable option.
 const MAX_RETRY_COUNT: u8 = 10;
 
 
-/// Mock tools to simulate tasks.
-#[cfg(debug_assertions)]
-pub struct MockTask {
-    pub ack: mock::TaskAck,
-}
-
-#[cfg(debug_assertions)]
-impl MockTask {
-    pub fn mock<M, Q>(
-        queue: Q, message: M, headers: HashMap<String, String>, retry_count: u8
-    ) -> Result<(Task<Q>, Arc<::std::sync::Mutex<MockTask>>)>
-        where M: ::serde::Serialize,
-              Q: TaskQueue,
-    {
-        let mock = Arc::new(::std::sync::Mutex::new(MockTask {
-            ack: mock::TaskAck::NotAcked,
-        }));
-        let ack_strategy = Arc::new(mock::MockAck {
-            mock: Arc::clone(&mock)
-        });
-        let message = ::serde_json::to_vec(&message)?;
-        let task = Task {
-            ack_strategy,
-            headers,
-            message,
-            processed: false,
-            queue,
-            retry_count: retry_count,
-        };
-        Ok((task, mock))
-    }
-}
-
-
 /// Task information dispatched to a worker process.
+///
+/// Tasks are not `Send` or `Sync` due the `AckStrategy` not always being such.
+/// The `WorkerSet` thread pool also works by using multiple threads to process one task each.
 #[derive(Clone)]
 pub struct Task<Q: TaskQueue> {
     ack_strategy: Arc<self::backend::AckStrategy<Q>>,
@@ -127,9 +94,9 @@ mod tests {
     use std::collections::HashMap;
     use std::str::FromStr;
 
-    use super::MockTask;
     use super::TaskQueue;
     use super::mock::TaskAck;
+    use super::mock::TaskTemplate;
 
     #[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
     enum TestQueues {
@@ -160,34 +127,44 @@ mod tests {
     #[test]
     #[should_panic(expected = "task must be marked as process before they are dropped")]
     fn unacked_task_cause_panic() {
-        let (_task, mock) = MockTask::mock(TestQueues::Test1, (), HashMap::new(), 0).unwrap();
+        let template = TaskTemplate::new(TestQueues::Test1, (), HashMap::new(), 0);
+        let mock = template.mock();
+        let _task = template.task();
         assert_eq!(mock.lock().unwrap().ack, TaskAck::NotAcked);
     }
 
     #[test]
     fn task_fail() {
-        let (task, mock) = MockTask::mock(TestQueues::Test1, (), HashMap::new(), 0).unwrap();
+        let template = TaskTemplate::new(TestQueues::Test1, (), HashMap::new(), 0);
+        let mock = template.mock();
+        let task = template.task();
         task.fail().unwrap();
         assert_eq!(mock.lock().unwrap().ack, TaskAck::Fail);
     }
 
     #[test]
     fn task_success() {
-        let (task, mock) = MockTask::mock(TestQueues::Test1, (), HashMap::new(), 0).unwrap();
+        let template = TaskTemplate::new(TestQueues::Test1, (), HashMap::new(), 0);
+        let mock = template.mock();
+        let task = template.task();
         task.success().unwrap();
         assert_eq!(mock.lock().unwrap().ack, TaskAck::Success);
     }
 
     #[test]
     fn task_trash() {
-        let (task, mock) = MockTask::mock(TestQueues::Test1, (), HashMap::new(), 0).unwrap();
+        let template = TaskTemplate::new(TestQueues::Test1, (), HashMap::new(), 0);
+        let mock = template.mock();
+        let task = template.task();
         task.trash().unwrap();
         assert_eq!(mock.lock().unwrap().ack, TaskAck::Trash);
     }
 
     #[test]
     fn too_many_retries_cause_trash() {
-        let (task, mock) = MockTask::mock(TestQueues::Test1, (), HashMap::new(), 100).unwrap();
+        let template = TaskTemplate::new(TestQueues::Test1, (), HashMap::new(), 100);
+        let mock = template.mock();
+        let task = template.task();
         task.fail().unwrap();
         assert_eq!(mock.lock().unwrap().ack, TaskAck::Trash);
     }

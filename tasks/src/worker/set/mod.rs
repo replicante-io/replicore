@@ -20,45 +20,12 @@ use super::backend::Backend;
 use super::backend::kafka::Kafka;
 
 
+#[cfg(debug_assertions)]
+pub mod mock;
+
+
 const TIMEOUT_MS_POLL: u64 = 200;
 const TIMEOUT_MS_ERROR: u64 = 100;
-
-
-/// Mock tools to test `WorkerSet` users.
-#[cfg(debug_assertions)]
-pub struct MockWorkerSet<Q: TaskQueue> {
-    pub tasks: Arc<::std::sync::Mutex<::std::collections::VecDeque<Task<Q>>>>,
-}
-
-#[cfg(debug_assertions)]
-impl<Q: TaskQueue> MockWorkerSet<Q> {
-    /// Create a mock tasks instance to be used for tests.
-    pub fn new() -> MockWorkerSet<Q> {
-        MockWorkerSet {
-            tasks: Arc::new(::std::sync::Mutex::new(::std::collections::VecDeque::new())),
-        }
-    }
-
-    /// Return the non-mock interface to interact with this mock using the default configuration.
-    pub fn mock(&self, logger: Logger) -> WorkerSet<Q> {
-        let mut config = Config::default();
-        config.threads_count = 2;
-        self.mock_with_config(logger, config)
-    }
-
-    /// Return the non-mock interface to interact with this mock.
-    pub fn mock_with_config(&self, logger: Logger, config: Config) -> WorkerSet<Q> {
-        let backend = Arc::new(super::backend::mock::Mock {
-            tasks: self.tasks.clone(),
-        });
-        WorkerSet {
-            backend,
-            config,
-            handlers: HashMap::new(),
-            logger,
-        }
-    }
-}
 
 
 /// Interface for code that can process a task.
@@ -257,8 +224,8 @@ mod tests {
     use slog::Discard;
     use slog::Logger;
 
-    use super::super::MockTask;
-    use super::MockWorkerSet;
+    use super::super::mock::MockWorkerSet;
+    use super::super::mock::TaskTemplate;
     use super::Task;
     use super::TaskQueue;
 
@@ -291,7 +258,7 @@ mod tests {
     #[test]
     fn dispath_task() {
         let logger = Logger::root(Discard, o!());
-        let (task, _) = MockTask::mock(TestQueues::Test1, (), HashMap::new(), 0).unwrap();
+        let task = TaskTemplate::new(TestQueues::Test1, (), HashMap::new(), 0);
         let mock_set = MockWorkerSet::new();
         (*mock_set.tasks.lock().unwrap()).push_back(task);
         let processed = Arc::new(Mutex::new(Vec::new()));
