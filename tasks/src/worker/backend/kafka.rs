@@ -3,21 +3,30 @@ use std::collections::HashMap;
 use std::sync::Arc;
 use std::time::Duration;
 
+use futures::future::Future;
+
 use rdkafka::Message;
+use rdkafka::Offset::Offset;
 use rdkafka::TopicPartitionList;
 use rdkafka::config::ClientConfig;
-use rdkafka::config::RDKafkaLogLevel;
 use rdkafka::consumer::CommitMode;
 use rdkafka::consumer::Consumer;
 use rdkafka::consumer::base_consumer::BaseConsumer;
 use rdkafka::message::BorrowedMessage;
 use rdkafka::message::Headers;
-use rdkafka::Offset::Offset;
+use rdkafka::message::OwnedHeaders;
+use rdkafka::producer::future_producer::FutureProducer;
+use rdkafka::producer::future_producer::FutureRecord;
 
 use slog::Logger;
 
 use super::super::TaskError;
 use super::super::super::config::KafkaConfig;
+
+use super::super::super::shared::kafka::KAFKA_TASKS_RETRY_HEADER;
+use super::super::super::shared::kafka::KAFKA_TASKS_RETRY_PRODUCER;
+use super::super::super::shared::kafka::consumer_config;
+use super::super::super::shared::kafka::producer_config;
 
 use super::AckStrategy;
 use super::Backend;
@@ -25,11 +34,6 @@ use super::Result;
 use super::Task;
 use super::TaskQueue;
 
-
-static KAFKA_TASKS_CONSUMER: &'static str = "replicante.tasks.worker";
-static KAFKA_TASKS_GROUP: &'static str = "replicante.tasks.worker";
-static KAFKA_TASKS_RETRY_HEADER: &'static str = "meta:task:retry";
-static KAFKA_MESSAGE_QUEUE_MIN: &'static str = "5";
 
 thread_local! {
     static THREAD_CONSUMER: RefCell<Option<Arc<BaseConsumer>>> = RefCell::new(None);
@@ -46,43 +50,47 @@ thread_local! {
 ///
 ///
 /// # Queue <-> topics mapping
-/// TODO
+/// Kafka uses tasks to store messages in partitions.
+/// As a task queue, we do not care much for that and leave it to kafka with a couple of notes:
 ///
+///   1. Partition topics are the concurrency limit.
+///      Endu users/operators need to understand kafka works this way so that scanling can
+///      be done (just changing the number of threads/processes is not enough).
+///   2. We map the code concept of a `TaskQueue` to three kafka topics per queue:
+///      a. The queue topic (named `<queue>`).
+///      b. The retry topic (named `<queue>_retry`).
+///      c. The trash topic (named `<queue>_trash`).
 ///
 /// # Retries
 /// TODO
 ///
 ///
 /// # Trash
-/// TODO
+/// Tasks are sent to the trash when the user (code) wants it or when a retry attemp pushes
+/// the retry count to (or above) the maximum retry count.
+///
+/// Trashed tasks are converted to messages pushed to the trash topic and never looked at
+/// again by the system.
+/// End users/operators may replay the trashed tasks by copying those messages to the
+/// primary kafka topic for the task (but may need to change the retry count header if they
+/// want the retry functionality to work again).
 pub struct Kafka {
     config: ClientConfig,
     logger: Logger,
+    retry_producer: Arc<FutureProducer>,
+    retry_timeout: u32,
     subscriptions: Vec<String>,
 }
 
 impl Kafka {
     pub fn new(config: KafkaConfig, logger: Logger) -> Result<Kafka> {
-        let mut kafka_config = ClientConfig::new();
-        kafka_config
-            .set("auto.commit.enable", "false")
-            .set("auto.offset.reset", "smallest")
-            .set("bootstrap.servers", &config.brokers)
-            .set("client.id", KAFKA_TASKS_CONSUMER)
-            .set("enable.auto.offset.store", "false")
-            .set("enable.partition.eof", "false")
-            .set("group.id", KAFKA_TASKS_GROUP)
-            .set("heartbeat.interval.ms", &config.heartbeat.to_string())
-            .set("metadata.request.timeout.ms", &config.timeouts.metadata.to_string())
-            .set("queued.min.messages", KAFKA_MESSAGE_QUEUE_MIN)
-            .set("session.timeout.ms", &config.timeouts.session.to_string())
-            .set("socket.timeout.ms", &config.timeouts.socket.to_string())
-            //TODO: Enable debug logging once we can exclude non-replicante debug by default
-            //.set("debug", "consumer,cgrp,topic,fetch")
-            .set_log_level(RDKafkaLogLevel::Debug);
+        let kafka_config = consumer_config(&config);
+        let retry_producer = producer_config(&config, KAFKA_TASKS_RETRY_PRODUCER).create()?;
         Ok(Kafka {
             config: kafka_config,
             logger,
+            retry_producer: Arc::new(retry_producer),
+            retry_timeout: config.timeouts.request,
             subscriptions: Vec::new(),
         })
     }
@@ -144,6 +152,8 @@ impl Kafka {
             processed: false,
             queue,
             retry_count,
+            retry_producer: Arc::clone(&self.retry_producer),
+            retry_timeout: self.retry_timeout,
         })
     }
 }
@@ -221,6 +231,8 @@ struct KafkaAck {
     consumer: Arc<BaseConsumer>,
     offset: i64,
     partition: i32,
+    retry_producer: Arc<FutureProducer>,
+    retry_timeout: u32,
 }
 
 impl KafkaAck {
@@ -238,6 +250,24 @@ impl KafkaAck {
         self.consumer.commit(&list, CommitMode::Sync)?;
         Ok(())
     }
+
+    /// Publish a new task to kafka on the given retry topic.
+    ///
+    /// Also used to send tasks to the trash.
+    fn retry<Q: TaskQueue>(&self, topic: &str, task: Task<Q>) -> Result<()> {
+        let mut headers = OwnedHeaders::new_with_capacity(task.headers.len());
+        for (key, value) in &task.headers {
+            headers = headers.add(key, value);
+        }
+        let retry_value = (task.retry_count + 1).to_string();
+        headers = headers.add(KAFKA_TASKS_RETRY_HEADER, &retry_value);
+        let record: FutureRecord<(), [u8]> = FutureRecord::to(topic)
+            .headers(headers)
+            .payload(&task.message);
+        self.retry_producer.send(record, self.retry_timeout as i64)
+            .wait()?.map_err(|(error, _)| error)?;
+        Ok(())
+    }
 }
 
 impl<Q: TaskQueue> AckStrategy<Q> for KafkaAck {
@@ -253,8 +283,12 @@ impl<Q: TaskQueue> AckStrategy<Q> for KafkaAck {
         Ok(())
     }
 
-    fn trash(&self, _task: Task<Q>) -> Result<()> {
-        // TODO: implement
+    fn trash(&self, task: Task<Q>) -> Result<()> {
+        let topic = task.queue.name();
+        let retry_topic = format!("{}_trash", topic);
+        self.retry(&retry_topic, task)?;
+        self.commit(&topic)?;
+        self.clear_cache();
         Ok(())
     }
 }
@@ -282,6 +316,8 @@ struct TaskCache {
     processed: bool,
     queue: String,
     retry_count: u8,
+    retry_producer: Arc<FutureProducer>,
+    retry_timeout: u32,
 }
 
 impl TaskCache {
@@ -290,7 +326,9 @@ impl TaskCache {
             ack_strategy: Arc::new(KafkaAck {
                 consumer: self.consumer,
                 offset: self.offset,
-                partition: self.partition
+                partition: self.partition,
+                retry_producer: self.retry_producer,
+                retry_timeout: self.retry_timeout,
             }),
             headers: self.headers,
             message: self.message,

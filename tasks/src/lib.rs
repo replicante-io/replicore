@@ -1,6 +1,7 @@
 extern crate failure;
 #[macro_use]
 extern crate failure_derive;
+extern crate futures;
 extern crate num_cpus;
 extern crate rdkafka;
 extern crate serde;
@@ -18,6 +19,7 @@ use std::str::FromStr;
 mod config;
 mod error;
 mod request;
+mod shared;
 mod worker;
 
 pub use self::config::Config;

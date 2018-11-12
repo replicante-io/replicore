@@ -1,18 +1,16 @@
-use rdkafka::config::ClientConfig;
-use rdkafka::config::RDKafkaLogLevel;
+use rdkafka::message::OwnedHeaders;
 use rdkafka::producer::base_producer::BaseRecord;
 use rdkafka::producer::base_producer::DefaultProducerContext;
 use rdkafka::producer::base_producer::ThreadedProducer;
 
 use super::super::super::config::KafkaConfig;
+use super::super::super::shared::kafka::KAFKA_TASKS_PRODUCER;
+use super::super::super::shared::kafka::producer_config;
 
 use super::Backend;
 use super::Result;
 use super::TaskQueue;
 use super::TaskRequest;
-
-
-static KAFKA_TASKS_PRODUCER: &'static str = "replicante.tasks.producer";
 
 
 /// Requests to kafka-backed tasks queue system.
@@ -22,16 +20,7 @@ pub struct Kafka {
 
 impl Kafka {
     pub fn new(config: KafkaConfig) -> Result<Kafka> {
-        let producer = ClientConfig::new()
-            .set("bootstrap.servers", &config.brokers)
-            .set("client.id", KAFKA_TASKS_PRODUCER)
-            .set("metadata.request.timeout.ms", &config.timeouts.metadata.to_string())
-            .set("queue.buffering.max.ms", "0")  // Do not buffer messages.
-            .set("request.required.acks", "all")
-            .set("request.timeout.ms", &config.timeouts.request.to_string())
-            .set("socket.timeout.ms", &config.timeouts.socket.to_string())
-            .set_log_level(RDKafkaLogLevel::Debug)
-            .create()?;
+        let producer = producer_config(&config, KAFKA_TASKS_PRODUCER).create()?;
         let kafka = Kafka { producer };
         Ok(kafka)
     }
@@ -39,8 +28,13 @@ impl Kafka {
 
 impl<Q: TaskQueue> Backend<Q> for Kafka {
     fn request(&self, task: TaskRequest<Q>, message: &[u8]) -> Result<()> {
+        let mut headers = OwnedHeaders::new_with_capacity(task.headers.len());
+        for (key, value) in &task.headers {
+            headers = headers.add(key, value);
+        }
         let queue = task.queue.name();
         let record: BaseRecord<(), [u8], ()> = BaseRecord::to(&queue)
+            .headers(headers)
             .payload(message);
         self.producer.send(record).map_err(|(error, _)| error)?;
         Ok(())
