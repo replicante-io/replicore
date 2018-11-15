@@ -64,7 +64,7 @@ components:
   # Without it the node.js WebUI will NOT work.
   webui: null
 
-  # Enable the tasks workers pool component.
+  # Enable the task workers component to process tasks.
   workers: null
 
 
@@ -202,6 +202,26 @@ storage:
 
     # URI of the MongoDB Replica Set or sharded cluster to connect to.
     uri: mongodb://localhost:27017/
+
+
+# Task workers enabling configuration.
+#
+# For Replicante to function correctly ALL queues need to be worked on.
+# By default, all queues are enabled on all nodes.
+#
+# While this allows the configuration to stay simple (all nodes in the cluster are identical),
+# more advanced configuration options based around specialised node roles can be used to
+# scale replicante deployments in a more efficient way (because roles can be scaled based on
+# each role needs rather then scaling all roles to the needs of the biggest role).
+#
+# This is similar to the `components` configuration section but targeted at queues.
+# Processes MUST have the `workers` component enabled on the process for tasks to be processed.
+task_workers:
+  # Default status for all task workers that are not explicitly enabled/disabled.
+  _default: true
+
+  # Enable the cluster discovery to refresh a cluster state.
+  discovery: ~
 
 
 # The section below is for the tasks system configuration.

@@ -28,6 +28,7 @@ pub use self::error::TaskError;
 pub use self::request::TaskRequest;
 pub use self::request::Tasks;
 pub use self::worker::Task;
+pub use self::worker::TaskHandler;
 pub use self::worker::WorkerSet;
 pub use self::worker::WorkerSetPool;
 

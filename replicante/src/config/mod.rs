@@ -17,11 +17,13 @@ use super::interfaces::api::Config as APIConfig;
 
 mod components;
 mod events;
+mod task_workers;
 mod timeouts;
 
 pub use self::components::ComponentsConfig;
 pub use self::events::EventsConfig;
 pub use self::events::SnapshotsConfig as EventsSnapshotsConfig;
+pub use self::task_workers::TaskWorkers;
 pub use self::timeouts::TimeoutsConfig;
 
 
@@ -52,6 +54,10 @@ pub struct Config {
     #[serde(default)]
     pub storage: StorageConfig,
 
+    /// Task workers enabling configuration.
+    #[serde(default)]
+    pub task_workers: TaskWorkers,
+
     /// Tasks system configuration.
     #[serde(default)]
     pub tasks: TasksConfig,
@@ -74,6 +80,7 @@ impl Default for Config {
             events: EventsConfig::default(),
             logging: LoggingConfig::default(),
             storage: StorageConfig::default(),
+            task_workers: TaskWorkers::default(),
             tasks: TasksConfig::default(),
             timeouts: TimeoutsConfig::default(),
             tracing: TracingConfig::default(),

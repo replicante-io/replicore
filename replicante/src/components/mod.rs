@@ -98,8 +98,9 @@ impl Components {
             "webui", "optional", config.components.webui(), &logger, || WebUI::new(interfaces)
         );
         let workers = component_new(
-            "workers", "required", config.components.workers(), &logger,
-            || Workers::new(interfaces, logger.clone(), config.tasks.clone())
+            "workers", "required", config.components.workers(), &logger, || Workers::new(
+                interfaces, logger.clone(), config.tasks.clone(), config.task_workers.clone()
+            )
         );
         let workers = match workers {
             Some(Err(error)) => return Err(error),

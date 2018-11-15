@@ -32,10 +32,8 @@ impl TaskQueue for ReplicanteQueues {
 /// Type-specialised task model.
 pub type Task = ::replicante_tasks::Task<ReplicanteQueues>;
 
-
 /// Type-specialised task requester.
 pub type Tasks = ::replicante_tasks::Tasks<ReplicanteQueues>;
-
 
 /// Type-specialised task requester mock.
 #[cfg(test)]

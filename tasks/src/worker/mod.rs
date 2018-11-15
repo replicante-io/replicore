@@ -13,6 +13,7 @@ mod set;
 #[cfg(debug_assertions)]
 pub mod mock;
 
+pub use self::set::TaskHandler;
 pub use self::set::WorkerSet;
 pub use self::set::WorkerSetPool;
 
