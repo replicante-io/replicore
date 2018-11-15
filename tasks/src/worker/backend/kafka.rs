@@ -69,12 +69,12 @@ thread_local! {
 ///   2. We map the code concept of a `TaskQueue` to three kafka topics per queue:
 ///      a. The queue topic (named `<queue>`).
 ///      b. The retry topic (named `<queue>_retry`).
-///      c. The trash topic (named `<queue>_trash`).
+///      c. The skipped topic (named `<queue>_skipped`).
 ///
 ///
 /// # Offset commits
 /// Message offsets are committed in order and only after a task is fully processed
-/// (either acked or moved to a retry/trash topic).
+/// (either acked or moved to a retry/skipped topic).
 ///
 /// The consumer start consuming messages AT the committed offset, not AFTER it.
 /// This means that if we conume and commit offset 16 and the process is restarted
@@ -95,13 +95,13 @@ thread_local! {
 /// require a topic for each backoff level, which is too complex for now.
 ///
 ///
-/// # Trash
-/// Tasks are sent to the trash when the user (code) wants it or when a retry attemp pushes
+/// # Skipped tasks
+/// Tasks are skipped when the user (code) wants it or when a retry attemp pushes
 /// the retry count to (or above) the maximum retry count.
 ///
-/// Trashed tasks are converted to messages pushed to the trash topic and never looked at
-/// again by the system.
-/// End users/operators may replay the trashed tasks by copying those messages to the
+/// Skipped tasks are converted to messages pushed to the skipped topic
+/// and never looked at again by the system.
+/// End users/operators may replay the skipped tasks by copying those messages to the
 /// primary kafka topic for the task (but may need to change the retry count header if they
 /// want the retry functionality to work again).
 pub struct Kafka {
@@ -417,7 +417,7 @@ impl KafkaAck {
 
     /// Publish a new task to kafka on the given retry topic.
     ///
-    /// Also used to send tasks to the trash.
+    /// Also used to send tasks to the skipped topic.
     fn retry<Q: TaskQueue>(&self, topic: &str, task: Task<Q>) -> Result<()> {
         let mut headers = OwnedHeaders::new_with_capacity(task.headers.len());
         for (key, value) in &task.headers {
@@ -444,17 +444,17 @@ impl<Q: TaskQueue> AckStrategy<Q> for KafkaAck {
         Ok(())
     }
 
-    fn success(&self, task: Task<Q>) -> Result<()> {
+    fn skip(&self, task: Task<Q>) -> Result<()> {
         let topic = task.queue.name();
+        let retry_topic = format!("{}_skip", topic);
+        self.retry(&retry_topic, task)?;
         self.commit(&topic)?;
         self.clear_cache();
         Ok(())
     }
 
-    fn trash(&self, task: Task<Q>) -> Result<()> {
+    fn success(&self, task: Task<Q>) -> Result<()> {
         let topic = task.queue.name();
-        let retry_topic = format!("{}_trash", topic);
-        self.retry(&retry_topic, task)?;
         self.commit(&topic)?;
         self.clear_cache();
         Ok(())

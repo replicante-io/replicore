@@ -56,14 +56,23 @@ impl<Q: TaskQueue> Task<Q> {
 
 impl<Q: TaskQueue> Task<Q> {
     /// Mark the task as failed and needing retry
+    ///
+    /// If a task has failed too many times it will be skipped.
     pub fn fail(mut self) -> Result<()> {
         self.processed = true;
         let ack = Arc::clone(&self.ack_strategy);
         if self.retry_count >= MAX_RETRY_COUNT {
-            ack.trash(self)
+            ack.skip(self)
         } else {
             ack.fail(self)
         }
+    }
+
+    /// Permanently skip a task and move it aside for later inspection.
+    pub fn skip(mut self) -> Result<()> {
+        self.processed = true;
+        let ack = Arc::clone(&self.ack_strategy);
+        ack.skip(self)
     }
 
     /// Mark the task as competed successfully
@@ -71,13 +80,6 @@ impl<Q: TaskQueue> Task<Q> {
         self.processed = true;
         let ack = Arc::clone(&self.ack_strategy);
         ack.success(self)
-    }
-
-    /// Move a failed task to the (backend dependent) trash
-    pub fn trash(mut self) -> Result<()> {
-        self.processed = true;
-        let ack = Arc::clone(&self.ack_strategy);
-        ack.trash(self)
     }
 }
 
@@ -144,6 +146,15 @@ mod tests {
     }
 
     #[test]
+    fn task_skip() {
+        let template = TaskTemplate::new(TestQueues::Test1, (), HashMap::new(), 0);
+        let mock = template.mock();
+        let task = template.task();
+        task.skip().unwrap();
+        assert_eq!(mock.lock().unwrap().ack, TaskAck::Skipped);
+    }
+
+    #[test]
     fn task_success() {
         let template = TaskTemplate::new(TestQueues::Test1, (), HashMap::new(), 0);
         let mock = template.mock();
@@ -153,20 +164,11 @@ mod tests {
     }
 
     #[test]
-    fn task_trash() {
-        let template = TaskTemplate::new(TestQueues::Test1, (), HashMap::new(), 0);
-        let mock = template.mock();
-        let task = template.task();
-        task.trash().unwrap();
-        assert_eq!(mock.lock().unwrap().ack, TaskAck::Trash);
-    }
-
-    #[test]
-    fn too_many_retries_cause_trash() {
+    fn too_many_retries_cause_skip() {
         let template = TaskTemplate::new(TestQueues::Test1, (), HashMap::new(), 100);
         let mock = template.mock();
         let task = template.task();
         task.fail().unwrap();
-        assert_eq!(mock.lock().unwrap().ack, TaskAck::Trash);
+        assert_eq!(mock.lock().unwrap().ack, TaskAck::Skipped);
     }
 }

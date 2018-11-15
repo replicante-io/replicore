@@ -20,13 +20,13 @@ pub trait AckStrategy<Q: TaskQueue> {
     /// Schedule the given task for retry because it failed.
     fn fail(&self, task: Task<Q>) -> Result<()>;
 
-    /// Acknowledge the given task so we can move on to the next one.
-    fn success(&self, task: Task<Q>) -> Result<()>;
-
     /// Copy the given task to a dedicated queue for later debugging.
     ///
     /// The task will not be retried any longer an may never succeed.
-    fn trash(&self, task: Task<Q>) -> Result<()>;
+    fn skip(&self, task: Task<Q>) -> Result<()>;
+
+    /// Acknowledge the given task so we can move on to the next one.
+    fn success(&self, task: Task<Q>) -> Result<()>;
 }
 
 

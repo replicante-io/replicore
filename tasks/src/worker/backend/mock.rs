@@ -25,13 +25,13 @@ impl<Q: TaskQueue> AckStrategy<Q> for MockAck {
         Ok(())
     }
 
-    fn success(&self, _task: Task<Q>) -> Result<()> {
-        self.mock.lock().unwrap().ack = TaskAck::Success;
+    fn skip(&self, _task: Task<Q>) -> Result<()> {
+        self.mock.lock().unwrap().ack = TaskAck::Skipped;
         Ok(())
     }
 
-    fn trash(&self, _task: Task<Q>) -> Result<()> {
-        self.mock.lock().unwrap().ack = TaskAck::Trash;
+    fn success(&self, _task: Task<Q>) -> Result<()> {
+        self.mock.lock().unwrap().ack = TaskAck::Success;
         Ok(())
     }
 }
@@ -69,12 +69,12 @@ pub struct MockTask {
 pub enum TaskAck {
     Fail,
     NotAcked,
+    Skipped,
     Success,
-    Trash,
 }
 
 
-/// TODO
+/// Template describing mocked tasks that can be later inspected for assertions.
 pub struct TaskTemplate<Q: TaskQueue> {
     headers: HashMap<String, String>,
     message: Vec<u8>,

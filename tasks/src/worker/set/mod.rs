@@ -32,16 +32,16 @@ const TIMEOUT_MS_ERROR: u64 = 100;
 pub trait TaskHandler<Q: TaskQueue> : Send + Sync + 'static {
     /// Process the given task.
     ///
-    /// If the fucntion returns `Ok` the task is condsidered process successfully while an 
-    /// `Err` will result in a task being retried (or trashed if it failed too many times).
-    fn handle(&self, task: Task<Q>) -> Result<()>;
+    /// The handler MUST call one of the task acknowledgement methods (`fail`, `skip`, `success`)
+    /// or the worker thread will panic to ensure that no task is skipped.
+    fn handle(&self, task: Task<Q>);
 }
 
 impl<F, Q> TaskHandler<Q> for F
-    where F: Fn(Task<Q>) -> Result<()> + Send + Sync + 'static,
+    where F: Fn(Task<Q>) -> () + Send + Sync + 'static,
           Q: TaskQueue,
 {
-    fn handle(&self, task: Task<Q>) -> Result<()> {
+    fn handle(&self, task: Task<Q>) {
         self(task)
     }
 }
@@ -77,12 +77,10 @@ impl<Q: TaskQueue> Worker<Q> {
             Ok(Some(task)) => task,
         };
         trace!(self.logger, "Received task"; "queue" => task.queue.name());
-        let result = self.handlers.get(&task.queue).ok_or_else(|| TaskError::Msg(
-            format!("no handler found for queue '{}'", task.queue.name())
-        ).into()).and_then(|handler| handler.handle(task));
-        if let Err(error) = result {
-            error!(self.logger, "Task handler failed"; "error" => ?error);
-        }
+        match self.handlers.get(&task.queue) {
+            None => error!(self.logger, "No task handler found"; "queue" => task.queue.name()),
+            Some(handler) => handler.handle(task),
+        };
     }
 }
 
@@ -267,7 +265,6 @@ mod tests {
             .worker(TestQueues::Test1, move |task: Task<TestQueues>| {
                 let queue = task.queue.name();
                 processed_thread.lock().unwrap().push(queue);
-                Ok(())
             }).unwrap()
             .run().unwrap();
         ::std::thread::sleep(Duration::from_millis(200));
@@ -279,8 +276,8 @@ mod tests {
         let logger = Logger::root(Discard, o!());
         let mock_set = MockWorkerSet::new();
         let workers = mock_set.mock(logger)
-            .worker(TestQueues::Test1, |_| Ok(())).unwrap()
-            .worker(TestQueues::Test2, |_| Ok(())).unwrap();
+            .worker(TestQueues::Test1, |_|()).unwrap()
+            .worker(TestQueues::Test2, |_| ()).unwrap();
         assert_eq!(workers.handlers.len(), 2);
         let mut keys: Vec<TestQueues> = workers.handlers.keys().map(|k| k.clone()).collect();
         keys.sort();
@@ -292,7 +289,7 @@ mod tests {
         let logger = Logger::root(Discard, o!());
         let mock_set = MockWorkerSet::new();
         let mut workers = mock_set.mock(logger)
-            .worker(TestQueues::Test1, |_| Ok(())).unwrap()
+            .worker(TestQueues::Test1, |_| ()).unwrap()
             .run().unwrap();
         workers.stop().unwrap();
     }
