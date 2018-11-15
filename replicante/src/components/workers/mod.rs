@@ -38,8 +38,7 @@ impl Workers {
         let worker_set = worker_set.worker(ReplicanteQueues::Discovery, move |task: Task| {
             let discovery: ClusterDiscovery = task.deserialize()?;
             debug!(logger, "TODO: implement discovery task"; "discovery" => ?discovery);
-            ::std::thread::sleep(::std::time::Duration::from_secs(20));
-            debug!(logger, "TODO: implement discovery task (b)"; "discovery" => ?discovery);
+            ::std::thread::sleep(::std::time::Duration::from_secs(5));
             task.success()?;
             Ok(())
         })?;

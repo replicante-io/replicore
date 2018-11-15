@@ -18,7 +18,7 @@ pub use self::set::WorkerSetPool;
 
 
 // TODO: replace with configurable option.
-const MAX_RETRY_COUNT: u8 = 10;
+const MAX_RETRY_COUNT: u8 = 12;
 
 
 /// Task information dispatched to a worker process.

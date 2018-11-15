@@ -2,6 +2,7 @@ use std::cell::RefCell;
 use std::collections::HashMap;
 use std::sync::Arc;
 use std::time::Duration;
+use std::time::Instant;
 
 use futures::future::Future;
 
@@ -15,6 +16,7 @@ use rdkafka::consumer::base_consumer::BaseConsumer;
 use rdkafka::message::BorrowedMessage;
 use rdkafka::message::Headers;
 use rdkafka::message::OwnedHeaders;
+use rdkafka::message::OwnedMessage;
 use rdkafka::producer::future_producer::FutureProducer;
 use rdkafka::producer::future_producer::FutureRecord;
 
@@ -35,9 +37,17 @@ use super::Task;
 use super::TaskQueue;
 
 
+static RETRY_DELAY: i64 = 5 * 60 * 1000;
+
+
 thread_local! {
+    // Task consumer caches.
     static THREAD_CONSUMER: RefCell<Option<Arc<BaseConsumer>>> = RefCell::new(None);
     static THREAD_TASK_CACHE: RefCell<Option<TaskCache>> = RefCell::new(None);
+
+    // Task rerty caches.
+    static THREAD_RETRY_CONSUMER: RefCell<Option<Arc<BaseConsumer>>> = RefCell::new(None);
+    static THREAD_RETRY_TASK_CACHE: RefCell<Option<OwnedMessage>> = RefCell::new(None);
 }
 
 
@@ -61,8 +71,28 @@ thread_local! {
 ///      b. The retry topic (named `<queue>_retry`).
 ///      c. The trash topic (named `<queue>_trash`).
 ///
+///
+/// # Offset commits
+/// Message offsets are committed in order and only after a task is fully processed
+/// (either acked or moved to a retry/trash topic).
+///
+/// The consumer start consuming messages AT the committed offset, not AFTER it.
+/// This means that if we conume and commit offset 16 and the process is restarted
+/// it will be restarted at offset 16 instead of 17.
+///
+/// As a result we commit offset + 1 after each message is processed
+/// so that consumers can resume processing tasks without duplicates.
+///
+///
 /// # Retries
-/// TODO
+/// Failed tasks are copied onto a retry topic.
+/// The retry topics are checked before the main topics are to see if any task needs to be
+/// retired and if it is time to do so.
+///
+/// When a task needs to be retried it is copied back to the main topic and its offset committed.
+/// Tasks are NOT processed directly off of the retry topic.
+/// The delay for task retry is fixed (and can't be a backoff delay) because that would
+/// require a topic for each backoff level, which is too complex for now.
 ///
 ///
 /// # Trash
@@ -78,6 +108,7 @@ pub struct Kafka {
     config: ClientConfig,
     logger: Logger,
     retry_producer: Arc<FutureProducer>,
+    retry_subscriptions: Vec<String>,
     retry_timeout: u32,
     subscriptions: Vec<String>,
 }
@@ -90,6 +121,7 @@ impl Kafka {
             config: kafka_config,
             logger,
             retry_producer: Arc::new(retry_producer),
+            retry_subscriptions: Vec::new(),
             retry_timeout: config.timeouts.request,
             subscriptions: Vec::new(),
         })
@@ -97,11 +129,69 @@ impl Kafka {
 }
 
 impl Kafka {
+    /// Poll the *_retry submissions and re-enqueue tasks if the time is right.
+    fn check_retries(&self, timeout: Duration) -> Result<()> {
+        THREAD_RETRY_CONSUMER.with(|consumer| {
+            // The first time the thread polls for tasks we create a consumer.
+            if consumer.borrow().is_none() {
+                let new_consumer = Arc::new(self.consumer(&self.retry_subscriptions)?);
+                *consumer.borrow_mut() = Some(new_consumer);
+            }
+            // New or old, once we have a consumer to use.
+            let consumer = consumer.borrow();
+            let consumer = consumer.as_ref().unwrap();
+
+            // Check if there is a cached task to (possibly) re-process.
+            let early_return = THREAD_RETRY_TASK_CACHE.with(|cache| -> Result<bool> {
+                let mut clear_cache = false;
+                if let Some(message) = cache.borrow().as_ref() {
+                    let retried = self.retry_message(consumer, message)?;
+                    if !retried {
+                        // The task still needs to be processed so retry later.
+                        return Ok(true);
+                    }
+                    clear_cache = true;
+                }
+                if clear_cache {
+                    *cache.borrow_mut() = None;
+                    // TODO: log task ID when introduced.
+                    debug!(self.logger, "Scheduled task from retry cache");
+                }
+                Ok(false)
+            })?;
+            if early_return {
+                // We have a task in the cache that needs to be retried later so move on for now.
+                return Ok(());
+            }
+
+            // Since the task retry cache is empty, poll the consumer.
+            let mut timeout = timeout;
+            loop {
+                let start = Instant::now();
+                if self.poll_retries(consumer, timeout)? {
+                    // Return early if there was no task to retry.
+                    return Ok(());
+                }
+                let mut duration = start.elapsed();
+                // Ensure the duration is never zero so we can avoid endless loops.
+                if duration == Duration::from_micros(0) {
+                    duration = Duration::from_micros(1);
+                }
+                timeout = match timeout.checked_sub(duration) {
+                    None => return Ok(()),
+                    // Still exit if the timeout is 0.
+                    Some(t) if t == Duration::from_micros(0) => return Ok(()),
+                    Some(t) => t,
+                };
+            }
+        })
+    }
+
     /// Create a new consumer subscribed to the given partitions.
-    fn consumer(&self) -> Result<BaseConsumer> {
+    fn consumer(&self, subscriptions: &Vec<String>) -> Result<BaseConsumer> {
         debug!(self.logger, "Starting new kafka workers consumer");
         let consumer: BaseConsumer = self.config.create()?;
-        let names: Vec<&str> = self.subscriptions.iter().map(|n|n.as_str()).collect();
+        let names: Vec<&str> = subscriptions.iter().map(|n|n.as_str()).collect();
         consumer.subscribe(&names)?;
         Ok(consumer)
     }
@@ -156,10 +246,82 @@ impl Kafka {
             retry_timeout: self.retry_timeout,
         })
     }
+
+    /// Check if there is a retry task to consume (and retry or cache).
+    ///
+    /// This method returns `true` if the last inspected task can't be re-tried yet
+    /// (or there were no tasks to process).
+    /// Think of this as the answer to the question "are the retry checks done for now?".
+    fn poll_retries(&self, consumer: &BaseConsumer, timeout: Duration) -> Result<bool> {
+        let poll_result = consumer.poll(Some(timeout));
+        match poll_result {
+            None => Ok(true),
+            Some(Err(error)) => Err(error.into()),
+            Some(Ok(message)) => {
+                let message = message.detach();
+                // Always cache the message in case of errors while processing it.
+                let retried = THREAD_RETRY_TASK_CACHE.with(|cache| {
+                    *cache.borrow_mut() = Some(message);
+                    self.retry_message(consumer, cache.borrow().as_ref().unwrap())
+                })?;
+                if retried {
+                    // Clear the cache since the task was retired correctly.
+                    THREAD_RETRY_TASK_CACHE.with(|cache| {
+                        *cache.borrow_mut() = None;
+                    });
+                    Ok(false)
+                } else {
+                    // Not yet time to retry this task, leve it cached and stop checks for now.
+                    // TODO: log task ID when introduced.
+                    debug!(self.logger, "Found retry task that could not yet be scheduled");
+                    Ok(true)
+                }
+            }
+        }
+    }
+
+    /// Schedule a task from the retry topic to the main topic and commit its retry offset.
+    ///
+    /// Returns `true` if the task was rescheduled and `false` otherwise
+    fn retry_message(&self, consumer: &BaseConsumer, message: &OwnedMessage) -> Result<bool> {
+        let timestamp = message.timestamp().to_millis().unwrap_or(0);
+        let now = ::rdkafka::message::Timestamp::now().to_millis().unwrap();
+        // TODO: configurable retry timeout.
+        let retry = (now - timestamp) >= RETRY_DELAY;
+        if retry {
+            let topic = message.topic();
+            if !topic.ends_with("_retry") {
+                panic!("Attempting to retry task from non _retry topic '{}'", topic);
+            }
+            let topic_len = topic.len() - 6;  // '_retry' = 6
+            let topic: String = topic.chars().take(topic_len).collect();
+            let mut record: FutureRecord<(), [u8]> = FutureRecord::to(&topic);
+            if let Some(headers) = message.headers() {
+                record = record.headers(headers.clone());
+            }
+            if let Some(payload) = message.payload() {
+                record = record.payload(payload);
+            }
+            self.retry_producer.send(record, self.retry_timeout as i64)
+                .wait()?.map_err(|(error, _)| error)?;
+            let mut list = TopicPartitionList::new();
+            list.add_partition_offset(
+                message.topic(), message.partition(), Offset(message.offset() + 1)
+            );
+            consumer.commit(&list, CommitMode::Sync)?;
+            Ok(true)
+
+        } else {
+            Ok(false)
+        }
+    }
 }
 
 impl<Q: TaskQueue> Backend<Q> for Kafka {
     fn poll(&self, timeout: Duration) -> Result<Option<Task<Q>>> {
+        // Check if any task needs to be rertied.
+        self.check_retries(timeout.clone())?;
+
         // Check if there is a cached task to re-deliver.
         let cache = THREAD_TASK_CACHE.with(|cache| {
             cache.borrow().as_ref().map(|cache| cache.clone())
@@ -179,7 +341,7 @@ impl<Q: TaskQueue> Backend<Q> for Kafka {
         THREAD_CONSUMER.with(|consumer| {
             // The first time the thread polls for tasks we create a consumer.
             if consumer.borrow().is_none() {
-                let new_consumer = Arc::new(self.consumer()?);
+                let new_consumer = Arc::new(self.consumer(&self.subscriptions)?);
                 *consumer.borrow_mut() = Some(new_consumer);
             }
 
@@ -204,6 +366,8 @@ impl<Q: TaskQueue> Backend<Q> for Kafka {
     }
 
     fn subscribe(&mut self, queue: &Q) -> Result<()> {
+        let retry = format!("{}_retry", queue.name());
+        self.retry_subscriptions.push(retry);
         self.subscriptions.push(queue.name());
         Ok(())
     }
@@ -246,7 +410,7 @@ impl KafkaAck {
     /// Commit the kafka partition offset for this message as consumed.
     fn commit(&self, topic: &str) -> Result<()> {
         let mut list = TopicPartitionList::new();
-        list.add_partition_offset(topic, self.partition, Offset(self.offset));
+        list.add_partition_offset(topic, self.partition, Offset(self.offset + 1));
         self.consumer.commit(&list, CommitMode::Sync)?;
         Ok(())
     }
@@ -271,8 +435,12 @@ impl KafkaAck {
 }
 
 impl<Q: TaskQueue> AckStrategy<Q> for KafkaAck {
-    fn fail(&self, _task: Task<Q>) -> Result<()> {
-        // TODO: implement
+    fn fail(&self, task: Task<Q>) -> Result<()> {
+        let topic = task.queue.name();
+        let retry_topic = format!("{}_retry", topic);
+        self.retry(&retry_topic, task)?;
+        self.commit(&topic)?;
+        self.clear_cache();
         Ok(())
     }
 
