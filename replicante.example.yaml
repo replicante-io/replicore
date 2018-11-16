@@ -220,8 +220,8 @@ task_workers:
   # Default status for all task workers that are not explicitly enabled/disabled.
   _default: true
 
-  # Enable the cluster discovery to refresh a cluster state.
-  discovery: ~
+  # Enable cluster state refresh and aggregation task processing.
+  cluster_refresh: ~
 
 
 # The section below is for the tasks system configuration.

@@ -5,15 +5,15 @@ pub struct TaskWorkers {
     #[serde(default = "TaskWorkers::default_default", rename = "_default")]
     default: bool,
 
-    /// Enable the cluster discovery to refresh a cluster state.
-    discovery: Option<bool>,
+    /// Enable cluster state refresh and aggregation task processing.
+    cluster_refresh: Option<bool>,
 }
 
 impl Default for TaskWorkers {
     fn default() -> Self {
         Self {
             default: Self::default_default(),
-            discovery: None,
+            cluster_refresh: None,
         }
     }
 }
@@ -24,8 +24,8 @@ impl TaskWorkers {
 }
 
 impl TaskWorkers {
-    /// Check if the discovery worker is enabled.
-    pub fn discovery(&self) -> bool {
-        self.discovery.unwrap_or(self.default)
+    /// Check if the cluster refresh worker is enabled.
+    pub fn cluster_refresh(&self) -> bool {
+        self.cluster_refresh.unwrap_or(self.default)
     }
 }

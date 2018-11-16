@@ -12,7 +12,7 @@ use super::super::tasks::ReplicanteQueues;
 use super::super::tasks::Task;
 
 
-mod discovery;
+mod cluster_refresh;
 
 
 /// Store the state of the WorkerSet.
@@ -56,8 +56,8 @@ impl Workers {
     ) -> Result<Workers> {
         let worker_set = WorkerSet::new(logger.clone(), config)?;
         let worker_set = configure_worker(
-            worker_set, ReplicanteQueues::Discovery, task_workers.discovery(),
-            || self::discovery::Handler::new(logger.clone())
+            worker_set, ReplicanteQueues::ClusterRefresh, task_workers.cluster_refresh(),
+            || self::cluster_refresh::Handler::new(logger.clone())
         )?;
         Ok(Workers {
             state: Some(State::Configured(worker_set)),

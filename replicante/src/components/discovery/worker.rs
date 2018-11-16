@@ -76,7 +76,7 @@ impl DiscoveryWorker {
             match cluster {
                 Ok(cluster) => {
                     self.process(cluster.clone());
-                    let task = TaskRequest::new(ReplicanteQueues::Discovery);
+                    let task = TaskRequest::new(ReplicanteQueues::ClusterRefresh);
                     if let Err(error) = self.tasks.request(task, cluster) {
                         error!(self.logger, "Failed to request cluster discovery"; "error" => %error);
                         DISCOVERY_FETCH_ERRORS_COUNT.inc();

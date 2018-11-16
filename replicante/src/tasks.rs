@@ -6,15 +6,15 @@ use replicante_tasks::TaskQueue;
 /// Enumerate all queues used in Replicante.
 #[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug)]
 pub enum ReplicanteQueues {
-    /// Queue used to spawn cluster discovery tasks.
-    Discovery,
+    /// Cluster state refresh and aggregation tasks.
+    ClusterRefresh,
 }
 
 impl FromStr for ReplicanteQueues {
     type Err = ::failure::Error;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
-            "discovery" => Ok(ReplicanteQueues::Discovery),
+            "cluster_refresh" => Ok(ReplicanteQueues::ClusterRefresh),
             s => Err(::failure::err_msg(format!("unknown queue '{}'", s))),
         }
     }
@@ -23,7 +23,7 @@ impl FromStr for ReplicanteQueues {
 impl TaskQueue for ReplicanteQueues {
     fn name(&self) -> String {
         match self {
-            ReplicanteQueues::Discovery => "discovery".into(),
+            ReplicanteQueues::ClusterRefresh => "cluster_refresh".into(),
         }
     }
 }
