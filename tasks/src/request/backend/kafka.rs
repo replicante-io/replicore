@@ -1,9 +1,11 @@
+use futures::Future;
+
 use rdkafka::message::OwnedHeaders;
-use rdkafka::producer::base_producer::BaseRecord;
-use rdkafka::producer::base_producer::DefaultProducerContext;
-use rdkafka::producer::base_producer::ThreadedProducer;
+use rdkafka::producer::FutureProducer;
+use rdkafka::producer::FutureRecord;
 
 use super::super::super::config::KafkaConfig;
+use super::super::super::shared::kafka::ClientStatsContext;
 use super::super::super::shared::kafka::KAFKA_TASKS_PRODUCER;
 use super::super::super::shared::kafka::producer_config;
 
@@ -15,13 +17,18 @@ use super::TaskRequest;
 
 /// Requests to kafka-backed tasks queue system.
 pub struct Kafka {
-    producer: ThreadedProducer<DefaultProducerContext>,
+    producer: FutureProducer<ClientStatsContext>,
+    timeout: i64,
 }
 
 impl Kafka {
     pub fn new(config: KafkaConfig) -> Result<Kafka> {
-        let producer = producer_config(&config, KAFKA_TASKS_PRODUCER).create()?;
-        let kafka = Kafka { producer };
+        let producer = producer_config(&config, KAFKA_TASKS_PRODUCER)
+            .create_with_context(ClientStatsContext::new("request-producer"))?;
+        let kafka = Kafka {
+            producer,
+            timeout: config.timeouts.request as i64,
+        };
         Ok(kafka)
     }
 }
@@ -33,10 +40,11 @@ impl<Q: TaskQueue> Backend<Q> for Kafka {
             headers = headers.add(key, value);
         }
         let queue = task.queue.name();
-        let record: BaseRecord<(), [u8], ()> = BaseRecord::to(&queue)
+        let record: FutureRecord<(), [u8]> = FutureRecord::to(&queue)
             .headers(headers)
             .payload(message);
-        self.producer.send(record).map_err(|(error, _)| error)?;
+        self.producer.send(record, self.timeout)
+            .wait()?.map_err(|(error, _)| error)?;
         Ok(())
     }
 }

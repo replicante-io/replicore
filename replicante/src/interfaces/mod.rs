@@ -60,10 +60,11 @@ impl Interfaces {
     ///
     /// Metrics that fail to register are logged and ignored.
     pub fn register_metrics(logger: &Logger, registry: &Registry) {
-        self::api::register_metrics(logger, registry);
-        self::metrics::register_metrics(logger, registry);
+        ::replicante_tasks::register_metrics(logger, registry);
         EventsStream::register_metrics(logger, registry);
         Store::register_metrics(logger, registry);
+        self::api::register_metrics(logger, registry);
+        self::metrics::register_metrics(logger, registry);
     }
 
     /// Performs any final configuration and starts background threads.

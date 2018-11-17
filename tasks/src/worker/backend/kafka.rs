@@ -25,6 +25,7 @@ use slog::Logger;
 use super::super::TaskError;
 use super::super::super::config::KafkaConfig;
 
+use super::super::super::shared::kafka::ClientStatsContext;
 use super::super::super::shared::kafka::KAFKA_TASKS_RETRY_HEADER;
 use super::super::super::shared::kafka::KAFKA_TASKS_RETRY_PRODUCER;
 use super::super::super::shared::kafka::consumer_config;
@@ -40,13 +41,17 @@ use super::TaskQueue;
 static RETRY_DELAY: i64 = 5 * 60 * 1000;
 
 
+/// Type alias for a BaseConsumer that has a ClientStatsContext context.
+type BaseStatsConsumer = BaseConsumer<ClientStatsContext>;
+
+
 thread_local! {
     // Task consumer caches.
-    static THREAD_CONSUMER: RefCell<Option<Arc<BaseConsumer>>> = RefCell::new(None);
+    static THREAD_CONSUMER: RefCell<Option<Arc<BaseStatsConsumer>>> = RefCell::new(None);
     static THREAD_TASK_CACHE: RefCell<Option<TaskCache>> = RefCell::new(None);
 
     // Task rerty caches.
-    static THREAD_RETRY_CONSUMER: RefCell<Option<Arc<BaseConsumer>>> = RefCell::new(None);
+    static THREAD_RETRY_CONSUMER: RefCell<Option<Arc<BaseStatsConsumer>>> = RefCell::new(None);
     static THREAD_RETRY_TASK_CACHE: RefCell<Option<OwnedMessage>> = RefCell::new(None);
 }
 
@@ -107,7 +112,7 @@ thread_local! {
 pub struct Kafka {
     config: ClientConfig,
     logger: Logger,
-    retry_producer: Arc<FutureProducer>,
+    retry_producer: Arc<FutureProducer<ClientStatsContext>>,
     retry_subscriptions: Vec<String>,
     retry_timeout: u32,
     subscriptions: Vec<String>,
@@ -116,7 +121,8 @@ pub struct Kafka {
 impl Kafka {
     pub fn new(config: KafkaConfig, logger: Logger) -> Result<Kafka> {
         let kafka_config = consumer_config(&config);
-        let retry_producer = producer_config(&config, KAFKA_TASKS_RETRY_PRODUCER).create()?;
+        let retry_producer = producer_config(&config, KAFKA_TASKS_RETRY_PRODUCER)
+            .create_with_context(ClientStatsContext::new("retry-producer"))?;
         Ok(Kafka {
             config: kafka_config,
             logger,
@@ -188,9 +194,12 @@ impl Kafka {
     }
 
     /// Create a new consumer subscribed to the given partitions.
-    fn consumer(&self, subscriptions: &Vec<String>) -> Result<BaseConsumer> {
+    fn consumer(&self, subscriptions: &Vec<String>) -> Result<BaseStatsConsumer> {
         debug!(self.logger, "Starting new kafka workers consumer");
-        let consumer: BaseConsumer = self.config.create()?;
+        let consumer_role = format!("worker-{:?}-consumer", ::std::thread::current().id());
+        let consumer: BaseStatsConsumer = self.config.create_with_context(
+            ClientStatsContext::new(consumer_role)
+        )?;
         let names: Vec<&str> = subscriptions.iter().map(|n|n.as_str()).collect();
         consumer.subscribe(&names)?;
         Ok(consumer)
@@ -198,7 +207,7 @@ impl Kafka {
 
     /// Converts an rdkafka message into a task to process.
     fn parse_message<Q: TaskQueue>(
-        &self, message: BorrowedMessage, consumer: Arc<BaseConsumer>
+        &self, message: BorrowedMessage, consumer: Arc<BaseStatsConsumer>
     ) -> Result<TaskCache> {
         // Validate the message is on a supported queue.
         // The queue is stored as a string in the end because we cache it as a thread local.
@@ -252,7 +261,7 @@ impl Kafka {
     /// This method returns `true` if the last inspected task can't be re-tried yet
     /// (or there were no tasks to process).
     /// Think of this as the answer to the question "are the retry checks done for now?".
-    fn poll_retries(&self, consumer: &BaseConsumer, timeout: Duration) -> Result<bool> {
+    fn poll_retries(&self, consumer: &BaseStatsConsumer, timeout: Duration) -> Result<bool> {
         let poll_result = consumer.poll(Some(timeout));
         match poll_result {
             None => Ok(true),
@@ -283,7 +292,7 @@ impl Kafka {
     /// Schedule a task from the retry topic to the main topic and commit its retry offset.
     ///
     /// Returns `true` if the task was rescheduled and `false` otherwise
-    fn retry_message(&self, consumer: &BaseConsumer, message: &OwnedMessage) -> Result<bool> {
+    fn retry_message(&self, consumer: &BaseStatsConsumer, message: &OwnedMessage) -> Result<bool> {
         let timestamp = message.timestamp().to_millis().unwrap_or(0);
         let now = ::rdkafka::message::Timestamp::now().to_millis().unwrap();
         // TODO: configurable retry timeout.
@@ -392,10 +401,10 @@ impl<Q: TaskQueue> Backend<Q> for Kafka {
 /// (after rebalance the new and existing consumers would get two copies of the same task)
 /// but it does not lead to missed messages.
 struct KafkaAck {
-    consumer: Arc<BaseConsumer>,
+    consumer: Arc<BaseStatsConsumer>,
     offset: i64,
     partition: i32,
-    retry_producer: Arc<FutureProducer>,
+    retry_producer: Arc<FutureProducer<ClientStatsContext>>,
     retry_timeout: u32,
 }
 
@@ -476,7 +485,7 @@ impl<Q: TaskQueue> AckStrategy<Q> for KafkaAck {
 /// such as partition re-assignment) we re-deliver the same task at the next `Kafka::poll`.
 #[derive(Clone)]
 struct TaskCache {
-    consumer: Arc<BaseConsumer>,
+    consumer: Arc<BaseStatsConsumer>,
     headers: HashMap<String, String>,
     message: Vec<u8>,
     offset: i64,
@@ -484,7 +493,7 @@ struct TaskCache {
     processed: bool,
     queue: String,
     retry_count: u8,
-    retry_producer: Arc<FutureProducer>,
+    retry_producer: Arc<FutureProducer<ClientStatsContext>>,
     retry_timeout: u32,
 }
 

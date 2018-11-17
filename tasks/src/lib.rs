@@ -2,7 +2,10 @@ extern crate failure;
 #[macro_use]
 extern crate failure_derive;
 extern crate futures;
+#[macro_use]
+extern crate lazy_static;
 extern crate num_cpus;
+extern crate prometheus;
 extern crate rdkafka;
 extern crate serde;
 #[macro_use]
@@ -14,6 +17,9 @@ extern crate slog;
 
 use std::hash::Hash;
 use std::str::FromStr;
+
+use prometheus::Registry;
+use slog::Logger;
 
 
 mod config;
@@ -47,4 +53,12 @@ pub use self::worker::mock as worker_mock;
 pub trait TaskQueue : Clone + Eq + FromStr<Err=failure::Error> + Hash + Send + Sync + 'static {
     /// Returns the name of the queue tasks should be sent to/received from.
     fn name(&self) -> String;
+}
+
+
+/// Attemps to register metrics with the Registry.
+///
+/// Metrics that fail to register are logged and ignored.
+pub fn register_metrics(logger: &Logger, registry: &Registry) {
+    self::shared::kafka::register_metrics(logger, registry);
 }

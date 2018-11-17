@@ -24,8 +24,8 @@ use super::backend::kafka::Kafka;
 pub mod mock;
 
 
-const TIMEOUT_MS_POLL: u64 = 200;
-const TIMEOUT_MS_ERROR: u64 = 100;
+const TIMEOUT_MS_POLL: u64 = 500;
+const TIMEOUT_MS_ERROR: u64 = 1000;
 
 
 /// Interface for code that can process a task.
@@ -224,6 +224,7 @@ mod tests {
 
     use super::super::mock::MockWorkerSet;
     use super::super::mock::TaskTemplate;
+    use super::TIMEOUT_MS_POLL;
     use super::Task;
     use super::TaskQueue;
 
@@ -267,7 +268,7 @@ mod tests {
                 processed_thread.lock().unwrap().push(queue);
             }).unwrap()
             .run().unwrap();
-        ::std::thread::sleep(Duration::from_millis(200));
+        ::std::thread::sleep(Duration::from_millis(TIMEOUT_MS_POLL + 100));
         assert_eq!(*processed.lock().unwrap(), vec![String::from("test1")]);
     }
 

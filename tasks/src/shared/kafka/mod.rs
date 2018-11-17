@@ -5,8 +5,11 @@ use super::super::config::KafkaConfig;
 
 
 mod constants;
+mod metrics;
 
 pub use self::constants::*;
+pub use self::metrics::ClientStatsContext;
+pub use self::metrics::register_metrics;
 
 
 /// Set kafka configuration options common to producers and consumers.
@@ -24,6 +27,7 @@ fn common_config(config: &KafkaConfig, client_id: &str) -> ClientConfig {
         .set("request.timeout.ms", &config.timeouts.request.to_string())
         .set("session.timeout.ms", &config.timeouts.session.to_string())
         .set("socket.timeout.ms", &config.timeouts.socket.to_string())
+        .set("statistics.interval.ms", KAFKA_STATS_INTERVAL)
         .set_log_level(RDKafkaLogLevel::Debug);
     kafka_config
 }
