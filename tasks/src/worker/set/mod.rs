@@ -11,6 +11,10 @@ use slog::Logger;
 use super::super::Config;
 use super::super::config::Backend as BackendConfig;
 
+use super::super::metrics::TASK_WORKER_NO_HANDLER;
+use super::super::metrics::TASK_WORKER_POLL_ERRORS;
+use super::super::metrics::TASK_WORKER_RECEIVED;
+
 use super::Result;
 use super::Task;
 use super::TaskError;
@@ -70,16 +74,24 @@ impl<Q: TaskQueue> Worker<Q> {
         let task = match self.backend.poll(Duration::from_millis(TIMEOUT_MS_POLL)) {
             Err(error) => {
                 error!(self.logger, "Failed to poll for tasks, sleeping before retring"; "error" => ?error);
+                TASK_WORKER_POLL_ERRORS.inc();
                 ::std::thread::sleep(Duration::from_millis(TIMEOUT_MS_ERROR));
                 return
             },
             Ok(None) => return,
             Ok(Some(task)) => task,
         };
-        trace!(self.logger, "Received task"; "queue" => task.queue.name());
+        let queue = task.queue.name();
+        trace!(self.logger, "Received task"; "queue" => &queue);
         match self.handlers.get(&task.queue) {
-            None => error!(self.logger, "No task handler found"; "queue" => task.queue.name()),
-            Some(handler) => handler.handle(task),
+            None => {
+                error!(self.logger, "No task handler found"; "queue" => task.queue.name());
+                TASK_WORKER_NO_HANDLER.with_label_values(&[&queue]).inc();
+            },
+            Some(handler) => {
+                TASK_WORKER_RECEIVED.with_label_values(&[&queue]).inc();
+                handler.handle(task)
+            },
         };
     }
 }

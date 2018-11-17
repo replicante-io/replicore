@@ -6,6 +6,8 @@ use serde::Deserialize;
 use super::Result;
 use super::TaskError;
 use super::TaskQueue;
+use super::metrics::TASK_ACK_ERRORS;
+use super::metrics::TASK_ACK_TOTAL;
 
 mod backend;
 mod set;
@@ -61,10 +63,19 @@ impl<Q: TaskQueue> Task<Q> {
     pub fn fail(mut self) -> Result<()> {
         self.processed = true;
         let ack = Arc::clone(&self.ack_strategy);
+        let queue = self.queue.name();
         if self.retry_count >= MAX_RETRY_COUNT {
-            ack.skip(self)
+            TASK_ACK_TOTAL.with_label_values(&[&queue, "fail[skip]"]).inc();
+            ack.skip(self).map_err(|error| {
+                TASK_ACK_ERRORS.with_label_values(&[&queue, "fail[skip]"]).inc();
+                error
+            })
         } else {
-            ack.fail(self)
+            TASK_ACK_TOTAL.with_label_values(&[&queue, "fail"]).inc();
+            ack.fail(self).map_err(|error| {
+                TASK_ACK_ERRORS.with_label_values(&[&queue, "fail"]).inc();
+                error
+            })
         }
     }
 
@@ -72,14 +83,24 @@ impl<Q: TaskQueue> Task<Q> {
     pub fn skip(mut self) -> Result<()> {
         self.processed = true;
         let ack = Arc::clone(&self.ack_strategy);
-        ack.skip(self)
+        let queue = self.queue.name();
+        TASK_ACK_TOTAL.with_label_values(&[&queue, "skip"]).inc();
+        ack.skip(self).map_err(|error| {
+            TASK_ACK_ERRORS.with_label_values(&[&queue, "skip"]).inc();
+            error
+        })
     }
 
     /// Mark the task as competed successfully
     pub fn success(mut self) -> Result<()> {
         self.processed = true;
         let ack = Arc::clone(&self.ack_strategy);
-        ack.success(self)
+        let queue = self.queue.name();
+        TASK_ACK_TOTAL.with_label_values(&[&queue, "success"]).inc();
+        ack.success(self).map_err(|error| {
+            TASK_ACK_ERRORS.with_label_values(&[&queue, "success"]).inc();
+            error
+        })
     }
 }
 

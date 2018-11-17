@@ -7,6 +7,8 @@ use super::Config;
 use super::Result;
 use super::TaskQueue;
 use super::config::Backend as BackendConfig;
+use super::metrics::TASK_REQUEST_ERRORS;
+use super::metrics::TASK_REQUEST_TOTAL;
 
 
 mod backend;
@@ -71,7 +73,12 @@ impl<Q: TaskQueue> Tasks<Q> {
     /// There is no guarantee about times within which tasks are completed.
     pub fn request<M: Serialize>(&self, task: TaskRequest<Q>, message: M) -> Result<()> {
         let message = ::serde_json::to_vec(&message)?;
-        self.0.request(task, &message)
+        let queue = task.queue.name();
+        TASK_REQUEST_TOTAL.with_label_values(&[&queue]).inc();
+        self.0.request(task, &message).map_err(|error| {
+            TASK_REQUEST_ERRORS.with_label_values(&[&queue]).inc();
+            error
+        })
     }
 }
 

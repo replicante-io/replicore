@@ -24,6 +24,7 @@ use slog::Logger;
 
 mod config;
 mod error;
+mod metrics;
 mod request;
 mod shared;
 mod worker;
@@ -60,5 +61,6 @@ pub trait TaskQueue : Clone + Eq + FromStr<Err=failure::Error> + Hash + Send + S
 ///
 /// Metrics that fail to register are logged and ignored.
 pub fn register_metrics(logger: &Logger, registry: &Registry) {
+    self::metrics::register_metrics(logger, registry);
     self::shared::kafka::register_metrics(logger, registry);
 }
