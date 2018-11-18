@@ -20,7 +20,10 @@ impl Handler {
 
     fn do_handle(&self, task: Task) -> Result<()> {
         let discovery: ClusterDiscovery = task.deserialize()?;
-        debug!(self.logger, "TODO: implement discovery task"; "discovery" => ?discovery);
+        debug!(
+            self.logger, "TODO: implement discovery task";
+            "discovery" => ?discovery, "task-id" => %task.id()
+        );
         ::std::thread::sleep(::std::time::Duration::from_secs(5));
         task.success()?;
         Ok(())

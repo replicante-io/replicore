@@ -6,6 +6,7 @@ use serde::Deserialize;
 use super::Result;
 use super::TaskError;
 use super::TaskQueue;
+use super::TaskId;
 use super::metrics::TASK_ACK_ERRORS;
 use super::metrics::TASK_ACK_TOTAL;
 
@@ -28,6 +29,7 @@ pub use self::set::WorkerSetPool;
 pub struct Task<Q: TaskQueue> {
     ack_strategy: Arc<self::backend::AckStrategy<Q>>,
     headers: HashMap<String, String>,
+    id: TaskId,
     message: Vec<u8>,
     processed: bool,
     queue: Q,
@@ -44,6 +46,11 @@ impl<Q: TaskQueue> Task<Q> {
     /// Lookup an header
     pub fn header(&self, name: &str) -> Option<&str> {
         self.headers.get(name).map(|s| s.as_str())
+    }
+
+    /// Access the task ID.
+    pub fn id(&self) -> &TaskId {
+        &self.id
     }
 
     /// Access the message body

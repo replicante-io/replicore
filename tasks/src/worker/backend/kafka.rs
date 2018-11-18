@@ -22,10 +22,12 @@ use rdkafka::producer::future_producer::FutureRecord;
 
 use slog::Logger;
 
-use super::super::TaskError;
+use super::super::super::TaskId;
 use super::super::super::config::KafkaConfig;
+use super::super::TaskError;
 
 use super::super::super::shared::kafka::ClientStatsContext;
+use super::super::super::shared::kafka::KAFKA_TASKS_ID_HEADER;
 use super::super::super::shared::kafka::KAFKA_TASKS_RETRY_HEADER;
 use super::super::super::shared::kafka::KAFKA_TASKS_RETRY_PRODUCER;
 use super::super::super::shared::kafka::consumer_config;
@@ -157,7 +159,6 @@ impl Kafka {
                 }
                 if clear_cache {
                     *cache.borrow_mut() = None;
-                    // TODO: log task ID when introduced.
                     debug!(self.logger, "Scheduled task from retry cache");
                 }
                 Ok(false)
@@ -213,9 +214,9 @@ impl Kafka {
 
         // Extract message metadata and payload.
         let topic = message.topic();
-        let id = format!("{}:{}:{}", topic, message.partition(), message.offset());
+        let message_id = format!("{}:{}:{}", topic, message.partition(), message.offset());
         let payload = message.payload().ok_or_else(|| TaskError::Msg(
-            format!("received task without payload (id: {})", id)
+            format!("received task without payload (id: {})", message_id)
         ))?.to_vec();
 
         let mut headers = match message.headers() {
@@ -232,6 +233,10 @@ impl Kafka {
                 hdrs
             }
         };
+        let id: TaskId = match headers.remove(KAFKA_TASKS_ID_HEADER) {
+            None => return Err(TaskError::Msg("Found task without ID".into()).into()),
+            Some(id) => id.parse()?,
+        };
         let retry_count = match headers.remove(KAFKA_TASKS_RETRY_HEADER) {
             None => 0,
             Some(retry_count) => retry_count.parse()?,
@@ -242,6 +247,7 @@ impl Kafka {
         Ok(TaskCache {
             consumer,
             headers,
+            id,
             message: payload,
             offset: message.offset(),
             partition: message.partition(),
@@ -280,7 +286,6 @@ impl Kafka {
                     Ok(false)
                 } else {
                     // Not yet time to retry this task, leve it cached and stop checks for now.
-                    // TODO: log task ID when introduced.
                     debug!(self.logger, "Found retry task that could not yet be scheduled");
                     Ok(true)
                 }
@@ -344,13 +349,13 @@ impl<Q: TaskQueue> Backend<Q> for Kafka {
             cache.borrow().as_ref().map(|cache| cache.clone())
         });
         if cache.is_some() {
-            // TODO: log task ID once they are introduced.
+            let task = cache.unwrap().task()?;
             warn!(
                 self.logger,
-                "Kafka thread cache contains a task, injecting delay before re-delivering"
+                "Kafka thread cache contains a task, injecting delay before re-delivering";
+                "task-id" => %task.id()
             );
             ::std::thread::sleep(timeout);
-            let task = cache.unwrap().task()?;
             return Ok(Some(task));
         }
 
@@ -496,6 +501,7 @@ struct TaskCache {
     consumer: Arc<BaseStatsConsumer>,
     headers: HashMap<String, String>,
     message: Vec<u8>,
+    id: TaskId,
     offset: i64,
     partition: i32,
     processed: bool,
@@ -516,6 +522,7 @@ impl TaskCache {
                 retry_timeout: self.retry_timeout,
             }),
             headers: self.headers,
+            id: self.id,
             message: self.message,
             processed: self.processed,
             queue: self.queue.parse()?,

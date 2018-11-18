@@ -5,6 +5,7 @@ use serde::Serialize;
 
 use super::Config;
 use super::Result;
+use super::TaskId;
 use super::TaskQueue;
 use super::config::Backend as BackendConfig;
 use super::metrics::TASK_REQUEST_ERRORS;
@@ -20,6 +21,7 @@ use self::backend::kafka::Kafka;
 /// Request a task to be queued for processing
 pub struct TaskRequest<Q: TaskQueue> {
     headers: HashMap<String, String>,
+    id: TaskId,
     queue: Q,
 }
 
@@ -43,8 +45,14 @@ impl<Q: TaskQueue> TaskRequest<Q> {
     pub fn new(queue: Q) -> TaskRequest<Q> {
         TaskRequest {
             headers: HashMap::new(),
+            id: TaskId::new(),
             queue,
         }
+    }
+
+    /// Access the ID of this task.
+    pub fn id(&self) -> &TaskId {
+        &self.id
     }
 
     /// Access information about the task's queue.

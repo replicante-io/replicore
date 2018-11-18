@@ -7,6 +7,7 @@ use std::time::Duration;
 
 use serde::Serialize;
 
+use super::super::TaskId;
 use super::AckStrategy;
 use super::Backend;
 use super::Result;
@@ -77,6 +78,7 @@ pub enum TaskAck {
 /// Template describing mocked tasks that can be later inspected for assertions.
 pub struct TaskTemplate<Q: TaskQueue> {
     headers: HashMap<String, String>,
+    id: TaskId,
     message: Vec<u8>,
     mock: Arc<Mutex<MockTask>>,
     queue: Q,
@@ -94,6 +96,7 @@ impl<Q: TaskQueue> TaskTemplate<Q> {
         }));
         TaskTemplate {
             headers,
+            id: TaskId::new(),
             message: ::serde_json::to_vec(&message).expect("mock message to serialise"),
             mock,
             queue,
@@ -112,6 +115,7 @@ impl<Q: TaskQueue> TaskTemplate<Q> {
         Task {
             ack_strategy, 
             headers: self.headers.clone(),
+            id: self.id.clone(),
             message: self.message.clone(),
             processed: false,
             queue: self.queue.clone(),

@@ -6,6 +6,7 @@ use rdkafka::producer::FutureRecord;
 
 use super::super::super::config::KafkaConfig;
 use super::super::super::shared::kafka::ClientStatsContext;
+use super::super::super::shared::kafka::KAFKA_TASKS_ID_HEADER;
 use super::super::super::shared::kafka::KAFKA_TASKS_PRODUCER;
 use super::super::super::shared::kafka::producer_config;
 
@@ -39,6 +40,7 @@ impl<Q: TaskQueue> Backend<Q> for Kafka {
         for (key, value) in &task.headers {
             headers = headers.add(key, value);
         }
+        headers = headers.add(KAFKA_TASKS_ID_HEADER, &task.id.to_string());
         let queue = task.queue.name();
         let record: FutureRecord<(), [u8]> = FutureRecord::to(&queue)
             .headers(headers)

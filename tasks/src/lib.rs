@@ -1,3 +1,4 @@
+extern crate data_encoding;
 extern crate failure;
 #[macro_use]
 extern crate failure_derive;
@@ -6,6 +7,7 @@ extern crate futures;
 extern crate lazy_static;
 extern crate num_cpus;
 extern crate prometheus;
+extern crate rand;
 extern crate rdkafka;
 extern crate serde;
 #[macro_use]
@@ -28,6 +30,7 @@ mod error;
 mod metrics;
 mod request;
 mod shared;
+mod task_id;
 mod worker;
 
 pub use self::config::Config;
@@ -35,6 +38,7 @@ pub use self::error::Result;
 pub use self::error::TaskError;
 pub use self::request::TaskRequest;
 pub use self::request::Tasks;
+pub use self::task_id::TaskId;
 pub use self::worker::Task;
 pub use self::worker::TaskHandler;
 pub use self::worker::WorkerSet;
