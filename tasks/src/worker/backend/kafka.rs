@@ -38,9 +38,6 @@ use super::Task;
 use super::TaskQueue;
 
 
-static RETRY_DELAY: i64 = 5 * 60 * 1000;
-
-
 /// Type alias for a BaseConsumer that has a ClientStatsContext context.
 type BaseStatsConsumer = BaseConsumer<ClientStatsContext>;
 
@@ -136,7 +133,7 @@ impl Kafka {
 
 impl Kafka {
     /// Poll the *_retry submissions and re-enqueue tasks if the time is right.
-    fn check_retries(&self, timeout: Duration) -> Result<()> {
+    fn check_retries<Q: TaskQueue>(&self, timeout: Duration) -> Result<()> {
         THREAD_RETRY_CONSUMER.with(|consumer| {
             // The first time the thread polls for tasks we create a consumer.
             if consumer.borrow().is_none() {
@@ -151,7 +148,7 @@ impl Kafka {
             let early_return = THREAD_RETRY_TASK_CACHE.with(|cache| -> Result<bool> {
                 let mut clear_cache = false;
                 if let Some(message) = cache.borrow().as_ref() {
-                    let retried = self.retry_message(consumer, message)?;
+                    let retried = self.retry_message::<Q>(consumer, message)?;
                     if !retried {
                         // The task still needs to be processed so retry later.
                         return Ok(true);
@@ -174,7 +171,7 @@ impl Kafka {
             let mut timeout = timeout;
             loop {
                 let start = Instant::now();
-                if self.poll_retries(consumer, timeout)? {
+                if self.poll_retries::<Q>(consumer, timeout)? {
                     // Return early if there was no task to retry.
                     return Ok(());
                 }
@@ -261,7 +258,9 @@ impl Kafka {
     /// This method returns `true` if the last inspected task can't be re-tried yet
     /// (or there were no tasks to process).
     /// Think of this as the answer to the question "are the retry checks done for now?".
-    fn poll_retries(&self, consumer: &BaseStatsConsumer, timeout: Duration) -> Result<bool> {
+    fn poll_retries<Q: TaskQueue>(
+        &self, consumer: &BaseStatsConsumer, timeout: Duration
+    ) -> Result<bool> {
         let poll_result = consumer.poll(Some(timeout));
         match poll_result {
             None => Ok(true),
@@ -271,7 +270,7 @@ impl Kafka {
                 // Always cache the message in case of errors while processing it.
                 let retried = THREAD_RETRY_TASK_CACHE.with(|cache| {
                     *cache.borrow_mut() = Some(message);
-                    self.retry_message(consumer, cache.borrow().as_ref().unwrap())
+                    self.retry_message::<Q>(consumer, cache.borrow().as_ref().unwrap())
                 })?;
                 if retried {
                     // Clear the cache since the task was retired correctly.
@@ -292,18 +291,27 @@ impl Kafka {
     /// Schedule a task from the retry topic to the main topic and commit its retry offset.
     ///
     /// Returns `true` if the task was rescheduled and `false` otherwise
-    fn retry_message(&self, consumer: &BaseStatsConsumer, message: &OwnedMessage) -> Result<bool> {
+    fn retry_message<Q: TaskQueue>(
+        &self, consumer: &BaseStatsConsumer, message: &OwnedMessage
+    ) -> Result<bool> {
+        // Determine topic to retry to and the queue the task belong to.
+        let topic = message.topic();
+        if !topic.ends_with("_retry") {
+            panic!("Attempting to retry task from non _retry topic '{}'", topic);
+        }
+        let topic_len = topic.len() - 6;  // '_retry' = 6
+        let topic: String = topic.chars().take(topic_len).collect();
+        let queue: Q = topic.parse()?;
+
+        // Check if the task has reached the retry delay.
         let timestamp = message.timestamp().to_millis().unwrap_or(0);
         let now = ::rdkafka::message::Timestamp::now().to_millis().unwrap();
-        // TODO: configurable retry timeout.
-        let retry = (now - timestamp) >= RETRY_DELAY;
+        let retry_delay = queue.retry_delay();
+        let retry_delay = retry_delay.as_secs() * 1000 + (retry_delay.subsec_millis() as u64);
+        let retry = (now - timestamp).abs() as u64 >= retry_delay;
+
+        // If so, re-publish the message to the task queue.
         if retry {
-            let topic = message.topic();
-            if !topic.ends_with("_retry") {
-                panic!("Attempting to retry task from non _retry topic '{}'", topic);
-            }
-            let topic_len = topic.len() - 6;  // '_retry' = 6
-            let topic: String = topic.chars().take(topic_len).collect();
             let mut record: FutureRecord<(), [u8]> = FutureRecord::to(&topic);
             if let Some(headers) = message.headers() {
                 record = record.headers(headers.clone());
@@ -329,7 +337,7 @@ impl Kafka {
 impl<Q: TaskQueue> Backend<Q> for Kafka {
     fn poll(&self, timeout: Duration) -> Result<Option<Task<Q>>> {
         // Check if any task needs to be rertied.
-        self.check_retries(timeout.clone())?;
+        self.check_retries::<Q>(timeout.clone())?;
 
         // Check if there is a cached task to re-deliver.
         let cache = THREAD_TASK_CACHE.with(|cache| {

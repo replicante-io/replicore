@@ -20,10 +20,6 @@ pub use self::set::WorkerSet;
 pub use self::set::WorkerSetPool;
 
 
-// TODO: replace with configurable option.
-const MAX_RETRY_COUNT: u8 = 12;
-
-
 /// Task information dispatched to a worker process.
 ///
 /// Tasks are not `Send` or `Sync` due the `AckStrategy` not always being such.
@@ -64,7 +60,7 @@ impl<Q: TaskQueue> Task<Q> {
         self.processed = true;
         let ack = Arc::clone(&self.ack_strategy);
         let queue = self.queue.name();
-        if self.retry_count >= MAX_RETRY_COUNT {
+        if self.retry_count >= self.queue.max_retry_count() {
             TASK_ACK_TOTAL.with_label_values(&[&queue, "fail[skip]"]).inc();
             ack.skip(self).map_err(|error| {
                 TASK_ACK_ERRORS.with_label_values(&[&queue, "fail[skip]"]).inc();
@@ -117,6 +113,7 @@ impl<Q: TaskQueue> Drop for Task<Q> {
 mod tests {
     use std::collections::HashMap;
     use std::str::FromStr;
+    use std::time::Duration;
 
     use super::TaskQueue;
     use super::mock::TaskAck;
@@ -140,12 +137,14 @@ mod tests {
     }
 
     impl TaskQueue for TestQueues {
+        fn max_retry_count(&self) -> u8 { 12 }
         fn name(&self) -> String {
             match self {
                 TestQueues::Test1 => "test1".into(),
                 TestQueues::Test2 => "test2".into(),
             }
         }
+        fn retry_delay(&self) -> Duration { Duration::from_secs(5 * 60) }
     }
 
     #[test]

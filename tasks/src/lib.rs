@@ -17,6 +17,7 @@ extern crate slog;
 
 use std::hash::Hash;
 use std::str::FromStr;
+use std::time::Duration;
 
 use prometheus::Registry;
 use slog::Logger;
@@ -52,8 +53,14 @@ pub use self::worker::mock as worker_mock;
 ///
 /// Anything in beetween is also supported with variant attributes and complex structures.
 pub trait TaskQueue : Clone + Eq + FromStr<Err=failure::Error> + Hash + Send + Sync + 'static {
-    /// Returns the name of the queue tasks should be sent to/received from.
+    /// The maximum number of retries for a task before skipping it.
+    fn max_retry_count(&self) -> u8;
+
+    /// The name of the queue tasks should be sent to/received from.
     fn name(&self) -> String;
+
+    /// The delay before a failed task is retried.
+    fn retry_delay(&self) -> Duration;
 }
 
 

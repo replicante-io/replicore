@@ -110,6 +110,7 @@ impl<Q: TaskQueue> MockTasks<Q> {
 #[cfg(test)]
 mod tests {
     use std::str::FromStr;
+    use std::time::Duration;
 
     use super::MockTasks;
     use super::TaskQueue;
@@ -131,11 +132,13 @@ mod tests {
     }
 
     impl TaskQueue for TestQueues {
+        fn max_retry_count(&self) -> u8 { 12 }
         fn name(&self) -> String {
             match self {
                 TestQueues::Test => "test".into(),
             }
         }
+        fn retry_delay(&self) -> Duration { Duration::from_secs(5 * 60) }
     }
 
     #[test]

@@ -1,4 +1,5 @@
 use std::str::FromStr;
+use std::time::Duration;
 
 use replicante_tasks::TaskQueue;
 
@@ -21,9 +22,21 @@ impl FromStr for ReplicanteQueues {
 }
 
 impl TaskQueue for ReplicanteQueues {
+    fn max_retry_count(&self) -> u8 {
+        match self {
+            _ => 12,
+        }
+    }
+
     fn name(&self) -> String {
         match self {
             ReplicanteQueues::ClusterRefresh => "cluster_refresh".into(),
+        }
+    }
+    
+    fn retry_delay(&self) -> Duration {
+        match self {
+            _ => Duration::from_secs(5 * 60),
         }
     }
 }

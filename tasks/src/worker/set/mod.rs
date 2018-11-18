@@ -258,12 +258,14 @@ mod tests {
     }
 
     impl TaskQueue for TestQueues {
+        fn max_retry_count(&self) -> u8 { 12 }
         fn name(&self) -> String {
             match self {
                 TestQueues::Test1 => "test1".into(),
                 TestQueues::Test2 => "test2".into(),
             }
         }
+        fn retry_delay(&self) -> Duration { Duration::from_secs(5 * 60) }
     }
 
     #[test]
