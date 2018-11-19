@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Async tasks and workers framework.
 - Configurable Agent API calls timeout.
 - Configurable components enabled in each process.
+- Configurable kafka tasks ack level.
 - Configurable task queues enabled in each process.
 - Emit log messages from the `log` crate.
 - Emit new `AGENT_INFO_CHANGED` event.

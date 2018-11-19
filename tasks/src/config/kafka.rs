@@ -1,47 +1,41 @@
-/// Task queue backend configuration.
+/// Control the Kafka acknowledgement level for published messages.
 #[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
-#[serde(tag = "backend", content = "options", deny_unknown_fields)]
-pub enum Backend {
-    /// Use kafka as a task system (recommended, default).
-    #[serde(rename = "kafka")]
-    Kafka(KafkaConfig),
+pub enum KafkaAckLevel {
+    #[serde(rename = "all")]
+    All,
+
+    #[serde(rename = "leader_only")]
+    LeaderOnly,
+
+    #[serde(rename = "none")]
+    NoAck,
 }
 
-impl Default for Backend {
-    fn default() -> Backend {
-        Backend::Kafka(KafkaConfig::default())
-    }
-}
-
-
-/// Tasks configuration options.
-#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
-pub struct Config {
-    #[serde(default, flatten)]
-    pub backend: Backend,
-
-    /// Number of task processing threads to spawn
-    #[serde(default = "Config::default_threads_count")]
-    pub threads_count: u16,
-}
-
-impl Default for Config {
-    fn default() -> Config {
-        Config {
-            backend: Backend::default(),
-            threads_count: Config::default_threads_count(),
+impl KafkaAckLevel {
+    /// Present the ack level as a string compatible with rdkafka client configuration.
+    pub fn as_rdkafka_option(&self) -> &'static str {
+        match self {
+            KafkaAckLevel::All => "all",
+            KafkaAckLevel::LeaderOnly => "1",
+            KafkaAckLevel::NoAck => "0",
         }
     }
 }
 
-impl Config {
-    fn default_threads_count() -> u16 { 8 * (::num_cpus::get() as u16) }
+impl Default for KafkaAckLevel {
+    fn default() -> KafkaAckLevel {
+        KafkaAckLevel::All
+    }
 }
 
 
 /// Kafka as a task queue configuration options.
 #[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
 pub struct KafkaConfig {
+    /// Acknowledgement level for published messages.
+    #[serde(default)]
+    pub ack_level: KafkaAckLevel,
+
     /// Comma separated list of seed brokers.
     #[serde(default = "KafkaConfig::default_brokers")]
     pub brokers: String,
@@ -58,6 +52,7 @@ pub struct KafkaConfig {
 impl Default for KafkaConfig {
     fn default() -> KafkaConfig {
         KafkaConfig {
+            ack_level: KafkaAckLevel::default(),
             brokers: KafkaConfig::default_brokers(),
             heartbeat: KafkaConfig::default_heartbeat(),
             timeouts: KafkaTimeouts::default(),

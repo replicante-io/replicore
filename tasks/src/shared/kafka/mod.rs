@@ -50,6 +50,6 @@ pub fn producer_config(config: &KafkaConfig, client_id: &str) -> ClientConfig {
     let mut kafka_config = common_config(config, client_id);
     kafka_config
         .set("queue.buffering.max.ms", "0")  // Do not buffer messages.
-        .set("request.required.acks", "all");
+        .set("request.required.acks", config.ack_level.as_rdkafka_option());
     kafka_config
 }

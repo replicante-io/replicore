@@ -242,6 +242,16 @@ tasks:
   #
   # Kafka options:
   options:
+    # Acknowledgement level for published messages.
+    #
+    # Possible values are:
+    #
+    #   * 'all': all in-sync-replicas for the partition published to must ack messages
+    #            (default; required for consistency; see kafka documentation for details).
+    #   * 'leader_only': only the leader of the partition published to must ack messages.
+    #   * 'none': no acknowledgements are required for produced messages.
+    ack_level: 'all'
+
     # Comma separated list of seed brokers.
     brokers: 'localhost:9092'
 
