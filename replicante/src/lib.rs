@@ -63,6 +63,7 @@ pub use self::errors::Error;
 pub use self::errors::ErrorKind;
 pub use self::errors::ResultExt;
 pub use self::errors::Result;
+pub use self::tasks::ReplicanteQueues;
 
 
 lazy_static! {

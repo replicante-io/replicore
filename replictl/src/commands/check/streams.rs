@@ -28,7 +28,7 @@ pub fn command() -> App<'static, 'static> {
         .about("Check all streams for incompatibilities")
         .subcommand(
             SubCommand::with_name(COMMAND_EVENTS)
-            .about("Check the primary store schema compatibility with this version of replicante")
+            .about("Check all events data for format incompatibilities")
         )
 }
 

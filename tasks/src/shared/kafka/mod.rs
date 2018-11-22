@@ -34,10 +34,10 @@ fn common_config(config: &KafkaConfig, client_id: &str) -> ClientConfig {
 
 
 /// Set kafka configuration options for consumers (on top of common configs).
-pub fn consumer_config(config: &KafkaConfig) -> ClientConfig {
-    let mut kafka_config = common_config(config, KAFKA_TASKS_CONSUMER);
+pub fn consumer_config(config: &KafkaConfig, client_id: &str, group_id: &str) -> ClientConfig {
+    let mut kafka_config = common_config(config, client_id);
     kafka_config
-        .set("group.id", KAFKA_TASKS_GROUP)
+        .set("group.id", group_id)
         //TODO: Enable debug logging once we can exclude non-replicante debug by default
         //.set("debug", "consumer,cgrp,topic,fetch")
         .set("queued.min.messages", KAFKA_MESSAGE_QUEUE_MIN);

@@ -23,6 +23,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Events streaming interface (backed by store).
 - Grafana annotations backend (through JSON datasource).
 - Periodically emit snapshot events.
+- ROADMAP.md to document "nearby" versions and their "aim".
 
 ### Changed
 - **BREAKING**: Flatten encoded events structure (`data`, `event`, `timeout` are all root attributes).

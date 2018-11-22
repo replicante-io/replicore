@@ -25,6 +25,7 @@ use prometheus::Registry;
 use slog::Logger;
 
 
+pub mod admin;
 mod config;
 mod error;
 mod metrics;

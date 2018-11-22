@@ -18,6 +18,7 @@ extern crate replicante_agent_discovery;
 extern crate replicante_data_models;
 extern crate replicante_data_store;
 extern crate replicante_streams_events;
+extern crate replicante_tasks;
 
 use clap::App;
 use clap::Arg;

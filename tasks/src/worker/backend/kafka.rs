@@ -27,6 +27,8 @@ use super::super::super::config::KafkaConfig;
 use super::super::TaskError;
 
 use super::super::super::shared::kafka::ClientStatsContext;
+use super::super::super::shared::kafka::KAFKA_TASKS_CONSUMER;
+use super::super::super::shared::kafka::KAFKA_TASKS_GROUP;
 use super::super::super::shared::kafka::KAFKA_TASKS_ID_HEADER;
 use super::super::super::shared::kafka::KAFKA_TASKS_RETRY_HEADER;
 use super::super::super::shared::kafka::KAFKA_TASKS_RETRY_PRODUCER;
@@ -119,7 +121,7 @@ pub struct Kafka {
 
 impl Kafka {
     pub fn new(config: KafkaConfig, logger: Logger) -> Result<Kafka> {
-        let kafka_config = consumer_config(&config);
+        let kafka_config = consumer_config(&config, KAFKA_TASKS_CONSUMER, KAFKA_TASKS_GROUP);
         let retry_producer = producer_config(&config, KAFKA_TASKS_RETRY_PRODUCER)
             .create_with_context(ClientStatsContext::new("retry-producer"))?;
         Ok(Kafka {

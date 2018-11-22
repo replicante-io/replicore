@@ -16,6 +16,7 @@ mod set;
 #[cfg(debug_assertions)]
 pub mod mock;
 
+pub use self::backend::AckStrategy;
 pub use self::set::TaskHandler;
 pub use self::set::WorkerSet;
 pub use self::set::WorkerSetPool;
@@ -27,13 +28,13 @@ pub use self::set::WorkerSetPool;
 /// The `WorkerSet` thread pool also works by using multiple threads to process one task each.
 #[derive(Clone)]
 pub struct Task<Q: TaskQueue> {
-    ack_strategy: Arc<self::backend::AckStrategy<Q>>,
-    headers: HashMap<String, String>,
-    id: TaskId,
-    message: Vec<u8>,
-    processed: bool,
-    queue: Q,
-    retry_count: u8,
+    pub(crate) ack_strategy: Arc<self::backend::AckStrategy<Q>>,
+    pub(crate) headers: HashMap<String, String>,
+    pub(crate) id: TaskId,
+    pub(crate) message: Vec<u8>,
+    pub(crate) processed: bool,
+    pub(crate) queue: Q,
+    pub(crate) retry_count: u8,
 }
 
 impl<Q: TaskQueue> Task<Q> {
