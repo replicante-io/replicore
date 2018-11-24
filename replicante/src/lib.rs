@@ -144,6 +144,7 @@ pub fn run() -> Result<()> {
     info!(logger, "Loading configuration ..."; "config" => config_location);
     let config = Config::from_file(config_location)
         .chain_err(|| format!("Failed to load configuration: {}", config_location))?;
+    let config = config.transform();
 
     // Initialise and run forever.
     let logger = replicante_logging::configure(config.logging.clone(), &logger_opts);

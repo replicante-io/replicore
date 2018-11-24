@@ -171,6 +171,36 @@ logging:
   #   * 'debug' (only available in debug builds)
   level: info
 
+  # Advanced level configuration by module prefix.
+  #
+  # The keys in this map are used as prefix matches against log event modules.
+  # If a match is found the mapped level is used for the event.
+  # If no match is found the `level` value is used as the filter.
+  #
+  # Example:
+  #
+  # ```yaml
+  # modules:
+  #   'hyper::server': debug
+  #   'rdkafka': error
+  # ```
+  #
+  # To find out what modules are available you can set `level` to DEBUG
+  # and enable `verbose` logging to see all logs.
+  # Once you know what logs you are looking for you can undo the changes to `level` and `verbose`
+  # and add the module prefix you need to the `modules` option.
+  modules: {}
+
+  # Enable verbose debug logs.
+  #
+  # When DEBUG level is enbabled, things can get loud pretty easily.
+  # To allow DEBUG level to be more usefull, only application events are emitted at
+  # DEBUG level while dependency events are emitted at INFO level.
+  #
+  # Verbose mode can be used in cases where DEBUG level should be enabled by default
+  # on all events and not just the application logs.
+  verbose: false
+
 
 # The section below is for storage configuration.
 storage:

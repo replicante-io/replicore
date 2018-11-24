@@ -6,6 +6,7 @@ use serde_yaml;
 
 use replicante_data_store::Config as StorageConfig;
 use replicante_logging::Config as LoggingConfig;
+use replicante_logging::LoggingLevel;
 use replicante_tasks::Config as TasksConfig;
 use replicante_util_tracing::Config as TracingConfig;
 
@@ -103,6 +104,19 @@ impl Config {
     pub fn from_reader<R: Read>(reader: R) -> Result<Config> {
         let conf = serde_yaml::from_reader(reader)?;
         Ok(conf)
+    }
+
+    /// Apply transformations to the configuration to derive some parameters.
+    ///
+    /// Transvormation:
+    ///
+    ///   * Apply verbose debug level logic.
+    pub fn transform(mut self) -> Self {
+        if self.logging.level == LoggingLevel::Debug && !self.logging.verbose {
+            self.logging.level = LoggingLevel::Info;
+            self.logging.modules.entry("replicante".into()).or_insert(LoggingLevel::Debug);
+        }
+        self
     }
 }
 
