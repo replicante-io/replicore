@@ -1,50 +1,32 @@
 use std::fmt;
 use std::str::FromStr;
 
-use data_encoding::HEXLOWER_PERMISSIVE;
-use rand::Rng;
-
-use super::Result;
-use super::TaskError;
+use replicante_util_rndid::RndId;
 
 
 /// Task (probably) unique identifiers.
 ///
 /// Use to distinguish each task from others and "connect" retires to the main task.
 #[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
-pub struct TaskId(String);
+pub struct TaskId(RndId);
 
 impl TaskId {
-    /// Return a new, random TaskId.
     pub fn new() -> TaskId {
-        let mut rng = rand::thread_rng();
-        let id: [u8; 16] = rng.gen();
-        TaskId(HEXLOWER_PERMISSIVE.encode(&id))
-    }
-}
-
-impl fmt::Display for TaskId {
-    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
-        write!(fmt, "{}", self.0)
+        TaskId(RndId::new())
     }
 }
 
 impl FromStr for TaskId {
     type Err = ::failure::Error;
     fn from_str(s: &str) -> ::std::result::Result<Self, Self::Err> {
-        match HEXLOWER_PERMISSIVE.decode_len(s.len()) {
-            Ok(16) => {
-                // Make sure the ID is actually valid and not just the correct length.
-                let mut buf = [0; 16];
-                let decode_error: Result<_> = HEXLOWER_PERMISSIVE
-                    .decode_mut(s.as_bytes(), &mut buf)
-                    .map_err(|e| e.error.into());
-                decode_error?;
-                // But still store it as a string.
-                Ok(TaskId(String::from(s).to_lowercase()))
-            },
-            _ => return Err(TaskError::Msg("invalid ID length".into()).into()),
-        }
+        let id: RndId = s.parse()?;
+        Ok(TaskId(id))
+    }
+}
+
+impl fmt::Display for TaskId {
+    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
+        write!(fmt, "{}", self.0)
     }
 }
 
@@ -75,7 +57,7 @@ mod tests {
     }
 
     #[test]
-    #[should_panic(expected = "invalid ID length")]
+    #[should_panic(expected = "kind: Length")]
     fn from_string_invalid_length() {
         let raw_id = "ABC";
         let _id: TaskId = raw_id.parse().unwrap();

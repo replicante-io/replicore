@@ -1,6 +1,6 @@
 ## 0.2.0 - High Availability (Work In Progress)
-- Move agent fetch and aggregation to tasks.
 - Introduce distibuted coordinator.
+- Move agent fetch and aggregation to tasks.
 - Improve generated cluster data.
 
 

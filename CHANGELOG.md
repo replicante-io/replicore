@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Configurable components enabled in each process.
 - Configurable kafka tasks ack level.
 - Configurable task queues enabled in each process.
+- Distributed coordinator system.
 - Emit log messages from the `log` crate.
 - Emit new `AGENT_INFO_CHANGED` event.
 - Emit new `AGENT_INFO_NEW` event.

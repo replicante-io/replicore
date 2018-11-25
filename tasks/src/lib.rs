@@ -1,4 +1,3 @@
-extern crate data_encoding;
 extern crate failure;
 #[macro_use]
 extern crate failure_derive;
@@ -7,7 +6,6 @@ extern crate futures;
 extern crate lazy_static;
 extern crate num_cpus;
 extern crate prometheus;
-extern crate rand;
 extern crate rdkafka;
 extern crate serde;
 #[macro_use]
@@ -15,6 +13,8 @@ extern crate serde_derive;
 extern crate serde_json;
 #[macro_use]
 extern crate slog;
+
+extern crate replicante_util_rndid;
 
 
 use std::hash::Hash;

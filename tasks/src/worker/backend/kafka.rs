@@ -195,7 +195,7 @@ impl Kafka {
 
     /// Create a new consumer subscribed to the given partitions.
     fn consumer(&self, subscriptions: &Vec<String>) -> Result<BaseStatsConsumer> {
-        debug!(self.logger, "Starting new kafka workers consumer");
+        debug!(self.logger, "Starting new kafka consumer"; "subscriptions" => ?subscriptions);
         let consumer_role = format!("worker-{:?}-consumer", ::std::thread::current().id());
         let consumer: BaseStatsConsumer = self.config.create_with_context(
             ClientStatsContext::new(consumer_role)
