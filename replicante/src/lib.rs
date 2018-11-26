@@ -32,6 +32,7 @@ extern crate slog_stdlog;
 extern crate replicante_agent_client;
 extern crate replicante_agent_discovery;
 extern crate replicante_agent_models;
+extern crate replicante_coordinator;
 extern crate replicante_data_aggregator;
 extern crate replicante_data_fetcher;
 extern crate replicante_data_models;

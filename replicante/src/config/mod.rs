@@ -4,6 +4,7 @@ use std::path::Path;
 
 use serde_yaml;
 
+use replicante_coordinator::Config as CoordinatorConfig;
 use replicante_data_store::Config as StorageConfig;
 use replicante_logging::Config as LoggingConfig;
 use replicante_logging::LoggingLevel;
@@ -38,6 +39,10 @@ pub struct Config {
     /// Components enabling configuration.
     #[serde(default)]
     pub components: ComponentsConfig,
+
+    /// Distributed coordinator configuration options.
+    #[serde(default)]
+    pub coordinator: CoordinatorConfig,
 
     /// Agent discovery configuration.
     #[serde(default)]
@@ -77,6 +82,7 @@ impl Default for Config {
         Config {
             api: APIConfig::default(),
             components: ComponentsConfig::default(),
+            coordinator: CoordinatorConfig::default(),
             discovery: DiscoveryConfig::default(),
             events: EventsConfig::default(),
             logging: LoggingConfig::default(),
