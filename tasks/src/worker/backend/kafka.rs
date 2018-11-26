@@ -32,8 +32,12 @@ use super::super::super::shared::kafka::KAFKA_TASKS_GROUP;
 use super::super::super::shared::kafka::KAFKA_TASKS_ID_HEADER;
 use super::super::super::shared::kafka::KAFKA_TASKS_RETRY_HEADER;
 use super::super::super::shared::kafka::KAFKA_TASKS_RETRY_PRODUCER;
+use super::super::super::shared::kafka::TopicRole;
 use super::super::super::shared::kafka::consumer_config;
 use super::super::super::shared::kafka::producer_config;
+use super::super::super::shared::kafka::queue_from_topic;
+use super::super::super::shared::kafka::topic_for_queue;
+use super::super::super::shared::kafka::topic_is_retry;
 
 use super::AckStrategy;
 use super::Backend;
@@ -113,6 +117,7 @@ thread_local! {
 pub struct Kafka {
     config: ClientConfig,
     logger: Logger,
+    prefix: String,
     retry_producer: Arc<FutureProducer<ClientStatsContext>>,
     retry_subscriptions: Vec<String>,
     retry_timeout: u32,
@@ -127,6 +132,7 @@ impl Kafka {
         Ok(Kafka {
             config: kafka_config,
             logger,
+            prefix: config.queue_prefix,
             retry_producer: Arc::new(retry_producer),
             retry_subscriptions: Vec::new(),
             retry_timeout: config.timeouts.request,
@@ -211,7 +217,7 @@ impl Kafka {
     ) -> Result<TaskCache> {
         // Validate the message is on a supported queue.
         // The queue is stored as a string in the end because we cache it as a thread local.
-        let queue: Q = message.topic().parse()?;
+        let queue: Q = queue_from_topic(&self.prefix, message.topic(), TopicRole::Queue).parse()?;
         let queue = queue.name();
 
         // Extract message metadata and payload.
@@ -253,6 +259,7 @@ impl Kafka {
             message: payload,
             offset: message.offset(),
             partition: message.partition(),
+            prefix: self.prefix.clone(),
             processed: false,
             queue,
             retry_count,
@@ -303,12 +310,11 @@ impl Kafka {
     ) -> Result<bool> {
         // Determine topic to retry to and the queue the task belong to.
         let topic = message.topic();
-        if !topic.ends_with("_retry") {
+        if !topic_is_retry(topic) {
             panic!("Attempting to retry task from non _retry topic '{}'", topic);
         }
-        let topic_len = topic.len() - 6;  // '_retry' = 6
-        let topic: String = topic.chars().take(topic_len).collect();
-        let queue: Q = topic.parse()?;
+        let queue: Q = queue_from_topic(&self.prefix, topic, TopicRole::Retry).parse()?;
+        let topic = topic_for_queue(&self.prefix, &queue.name(), TopicRole::Queue);
 
         // Check if the task has reached the retry delay.
         let timestamp = message.timestamp().to_millis().unwrap_or(0);
@@ -390,9 +396,10 @@ impl<Q: TaskQueue> Backend<Q> for Kafka {
     }
 
     fn subscribe(&mut self, queue: &Q) -> Result<()> {
-        let retry = format!("{}_retry", queue.name());
+        let queue_name = queue.name();
+        let retry = topic_for_queue(&self.prefix, &queue_name, TopicRole::Retry);
         self.retry_subscriptions.push(retry);
-        self.subscriptions.push(queue.name());
+        self.subscriptions.push(topic_for_queue(&self.prefix, &queue_name, TopicRole::Queue));
         Ok(())
     }
 }
@@ -419,6 +426,7 @@ struct KafkaAck {
     consumer: Arc<BaseStatsConsumer>,
     offset: i64,
     partition: i32,
+    prefix: String,
     retry_producer: Arc<FutureProducer<ClientStatsContext>>,
     retry_timeout: u32,
 }
@@ -449,6 +457,7 @@ impl KafkaAck {
         }
         let retry_value = (task.retry_count + 1).to_string();
         headers = headers.add(KAFKA_TASKS_RETRY_HEADER, &retry_value);
+        headers = headers.add(KAFKA_TASKS_ID_HEADER, &task.id().to_string());
         let record: FutureRecord<(), [u8]> = FutureRecord::to(topic)
             .headers(headers)
             .payload(&task.message);
@@ -461,7 +470,8 @@ impl KafkaAck {
 impl<Q: TaskQueue> AckStrategy<Q> for KafkaAck {
     fn fail(&self, task: Task<Q>) -> Result<()> {
         let topic = task.queue.name();
-        let retry_topic = format!("{}_retry", topic);
+        let retry_topic = topic_for_queue(&self.prefix, &topic, TopicRole::Retry);
+        let topic = topic_for_queue(&self.prefix, &topic, TopicRole::Queue);
         self.retry(&retry_topic, task)?;
         self.commit(&topic)?;
         self.clear_cache();
@@ -470,8 +480,9 @@ impl<Q: TaskQueue> AckStrategy<Q> for KafkaAck {
 
     fn skip(&self, task: Task<Q>) -> Result<()> {
         let topic = task.queue.name();
-        let retry_topic = format!("{}_skip", topic);
-        self.retry(&retry_topic, task)?;
+        let skip_topic = topic_for_queue(&self.prefix, &topic, TopicRole::Skip);
+        let topic = topic_for_queue(&self.prefix, &topic, TopicRole::Queue);
+        self.retry(&skip_topic, task)?;
         self.commit(&topic)?;
         self.clear_cache();
         Ok(())
@@ -479,6 +490,7 @@ impl<Q: TaskQueue> AckStrategy<Q> for KafkaAck {
 
     fn success(&self, task: Task<Q>) -> Result<()> {
         let topic = task.queue.name();
+        let topic = topic_for_queue(&self.prefix, &topic, TopicRole::Queue);
         self.commit(&topic)?;
         self.clear_cache();
         Ok(())
@@ -506,6 +518,7 @@ struct TaskCache {
     id: TaskId,
     offset: i64,
     partition: i32,
+    prefix: String,
     processed: bool,
     queue: String,
     retry_count: u8,
@@ -520,6 +533,7 @@ impl TaskCache {
                 consumer: self.consumer,
                 offset: self.offset,
                 partition: self.partition,
+                prefix: self.prefix,
                 retry_producer: self.retry_producer,
                 retry_timeout: self.retry_timeout,
             }),

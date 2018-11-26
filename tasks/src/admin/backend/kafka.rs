@@ -22,7 +22,10 @@ use super::super::super::shared::kafka::KAFKA_ADMIN_CONSUMER;
 use super::super::super::shared::kafka::KAFKA_ADMIN_GROUP;
 use super::super::super::shared::kafka::KAFKA_TASKS_ID_HEADER;
 use super::super::super::shared::kafka::KAFKA_TASKS_RETRY_HEADER;
+use super::super::super::shared::kafka::TopicRole;
 use super::super::super::shared::kafka::consumer_config;
+use super::super::super::shared::kafka::queue_from_topic;
+use super::super::super::shared::kafka::topic_for_queue;
 
 use super::super::super::worker::AckStrategy;
 
@@ -51,11 +54,13 @@ impl Kafka {
 
 impl<Q: TaskQueue> AdminBackend<Q> for Kafka {
     fn scan(&self, queue: Q) -> Result<TasksIter<Q>> {
+        let queue_name = queue.name();
+
         // Generate consumer IDs.
         // TODO: Are these enough or do they need to be more unique?
-        let client_id = format!("{}-{}", KAFKA_ADMIN_CONSUMER, queue.name());
-        let group_id = format!("{}-{}", KAFKA_ADMIN_GROUP, queue.name());
-        let stats_id = format!("admin-{}-consumer", queue.name());
+        let client_id = format!("{}-{}", KAFKA_ADMIN_CONSUMER, queue_name);
+        let group_id = format!("{}-{}", KAFKA_ADMIN_GROUP, queue_name);
+        let stats_id = format!("admin-{}-consumer", queue_name);
         let kafka_config = consumer_config(&self.config, &client_id, &group_id);
 
         // Create consumer and subscribe to queue's topics.
@@ -63,12 +68,13 @@ impl<Q: TaskQueue> AdminBackend<Q> for Kafka {
             ClientStatsContext::new(stats_id)
         )?;
         consumer.subscribe(&[
-           &queue.name(),
-           &format!("{}_retry", queue.name()),
+           &topic_for_queue(&self.config.queue_prefix, &queue_name, TopicRole::Queue),
+           &topic_for_queue(&self.config.queue_prefix, &queue_name, TopicRole::Retry)
         ])?;
         Ok(TasksIter(Box::new(KafkaIter {
             _queue: ::std::marker::PhantomData,
             consumer,
+            prefix: self.config.queue_prefix.clone(),
         })))
     }
 }
@@ -78,13 +84,14 @@ impl<Q: TaskQueue> AdminBackend<Q> for Kafka {
 struct KafkaIter<Q: TaskQueue> {
     _queue: ::std::marker::PhantomData<Q>,
     consumer: BaseStatsConsumer,
+    prefix: String,
 }
 
 impl<Q: TaskQueue> KafkaIter<Q> {
     fn parse_message(&self, message: BorrowedMessage) -> Result<Task<Q>> {
         // Validate the message is on a supported queue.
         // The queue is stored as a string in the end because we cache it as a thread local.
-        let queue: Q = message.topic().parse()?;
+        let queue: Q = queue_from_topic(&self.prefix, message.topic(), TopicRole::Queue).parse()?;
 
         // Extract message metadata and payload.
         let topic = message.topic();

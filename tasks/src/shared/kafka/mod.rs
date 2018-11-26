@@ -12,6 +12,18 @@ pub use self::metrics::ClientStatsContext;
 pub use self::metrics::register_metrics;
 
 
+const RETRY_LEN: usize = 6;
+const SKIP_LEN: usize = 8;
+
+
+/// Roles a topic can have for a `Queue`.
+pub enum TopicRole {
+    Queue,
+    Retry,
+    Skip,
+}
+
+
 /// Set kafka configuration options common to producers and consumers.
 fn common_config(config: &KafkaConfig, client_id: &str) -> ClientConfig {
     let mut kafka_config = ClientConfig::new();
@@ -38,8 +50,6 @@ pub fn consumer_config(config: &KafkaConfig, client_id: &str, group_id: &str) ->
     let mut kafka_config = common_config(config, client_id);
     kafka_config
         .set("group.id", group_id)
-        //TODO: Enable debug logging once we can exclude non-replicante debug by default
-        //.set("debug", "consumer,cgrp,topic,fetch")
         .set("queued.min.messages", KAFKA_MESSAGE_QUEUE_MIN);
     kafka_config
 }
@@ -52,4 +62,33 @@ pub fn producer_config(config: &KafkaConfig, client_id: &str) -> ClientConfig {
         .set("queue.buffering.max.ms", "0")  // Do not buffer messages.
         .set("request.required.acks", config.ack_level.as_rdkafka_option());
     kafka_config
+}
+
+
+/// Parse a topic name of the given role to return a `Queue` name.
+pub fn queue_from_topic(prefix: &str, topic: &str, role: TopicRole) -> String {
+    let prefix_len = prefix.len() + 1;
+    let topic_len = topic.len();
+    match role {
+        TopicRole::Queue => topic.chars().skip(prefix_len).collect(),
+        TopicRole::Retry => topic.chars().skip(prefix_len)
+            .take(topic_len - prefix_len - RETRY_LEN).collect(),
+        TopicRole::Skip => topic.chars().skip(prefix_len)
+            .take(topic_len - prefix_len - SKIP_LEN).collect(),
+    }
+}
+
+/// Decorate a `Queue` name to obtain a topic name.
+pub fn topic_for_queue(prefix: &str, name: &str, role: TopicRole) -> String {
+    match role {
+        TopicRole::Queue => format!("{}_{}", prefix, name),
+        TopicRole::Retry => format!("{}_{}_retry", prefix, name),
+        TopicRole::Skip => format!("{}_{}_skipped", prefix, name),
+    }
+}
+
+
+/// Checks if the topic name is for a `TopicRole::Retry`.
+pub fn topic_is_retry(topic: &str) -> bool {
+    topic.ends_with("_retry")
 }

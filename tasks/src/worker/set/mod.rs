@@ -29,7 +29,7 @@ pub mod mock;
 
 
 const TIMEOUT_MS_POLL: u64 = 500;
-const TIMEOUT_MS_ERROR: u64 = 1000;
+const TIMEOUT_MS_ERROR: u64 = 5000;
 
 
 /// Interface for code that can process a task.

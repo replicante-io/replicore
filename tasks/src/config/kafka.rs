@@ -44,6 +44,10 @@ pub struct KafkaConfig {
     #[serde(default = "KafkaConfig::default_heartbeat")]
     pub heartbeat: u32,
 
+    /// Prefix to be placed in front of queue names to derive topic names.
+    #[serde(default = "KafkaConfig::default_queue_preifx")]
+    pub queue_prefix: String,
+
     /// Kafka timeout options.
     #[serde(default)]
     pub timeouts: KafkaTimeouts,
@@ -55,6 +59,7 @@ impl Default for KafkaConfig {
             ack_level: KafkaAckLevel::default(),
             brokers: KafkaConfig::default_brokers(),
             heartbeat: KafkaConfig::default_heartbeat(),
+            queue_prefix: KafkaConfig::default_queue_preifx(),
             timeouts: KafkaTimeouts::default(),
         }
     }
@@ -63,6 +68,7 @@ impl Default for KafkaConfig {
 impl KafkaConfig {
     fn default_brokers() -> String { "localhost:9092".into() }
     fn default_heartbeat() -> u32 { 3000 }
+    fn default_queue_preifx() -> String { "task".into() }
 }
 
 

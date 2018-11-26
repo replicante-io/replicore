@@ -297,6 +297,9 @@ tasks:
     # Worker session keepalive heartbeat interval.
     heartbeat: 3000
 
+    # Prefix to be placed in front of queue names to derive topic names.
+    queue_prefix: 'task'
+
     # Kafka-specific timeout options.
     timeouts:
       # Timeout (in millisecond) for non-topic requests.
