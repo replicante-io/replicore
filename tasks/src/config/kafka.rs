@@ -40,6 +40,10 @@ pub struct KafkaConfig {
     #[serde(default = "KafkaConfig::default_brokers")]
     pub brokers: String,
 
+    /// Number of attempts to commit offsets before giving up and recreating the client.
+    #[serde(default = "KafkaConfig::default_commit_retries")]
+    pub commit_retries: u8,
+
     /// Worker session keepalive heartbeat interval.
     #[serde(default = "KafkaConfig::default_heartbeat")]
     pub heartbeat: u32,
@@ -58,6 +62,7 @@ impl Default for KafkaConfig {
         KafkaConfig {
             ack_level: KafkaAckLevel::default(),
             brokers: KafkaConfig::default_brokers(),
+            commit_retries: KafkaConfig::default_commit_retries(),
             heartbeat: KafkaConfig::default_heartbeat(),
             queue_prefix: KafkaConfig::default_queue_preifx(),
             timeouts: KafkaTimeouts::default(),
@@ -67,6 +72,7 @@ impl Default for KafkaConfig {
 
 impl KafkaConfig {
     fn default_brokers() -> String { "localhost:9092".into() }
+    fn default_commit_retries() -> u8 { 5 }
     fn default_heartbeat() -> u32 { 3000 }
     fn default_queue_preifx() -> String { "task".into() }
 }

@@ -1,5 +1,6 @@
 use std::cell::RefCell;
 use std::collections::HashMap;
+use std::rc::Rc;
 use std::sync::Arc;
 use std::time::Duration;
 use std::time::Instant;
@@ -51,13 +52,15 @@ type BaseStatsConsumer = BaseConsumer<ClientStatsContext>;
 
 
 thread_local! {
-    // Task consumer caches.
-    static THREAD_CONSUMER: RefCell<Option<Arc<BaseStatsConsumer>>> = RefCell::new(None);
-    static THREAD_TASK_CACHE: RefCell<Option<TaskCache>> = RefCell::new(None);
-
     // Task rerty caches.
+    static THREAD_RETRY_CACHE: RefCell<Option<RetryCache>> = RefCell::new(None);
+    static THREAD_RETRY_CLEAR: RefCell<bool> = RefCell::new(false);
     static THREAD_RETRY_CONSUMER: RefCell<Option<Arc<BaseStatsConsumer>>> = RefCell::new(None);
-    static THREAD_RETRY_TASK_CACHE: RefCell<Option<OwnedMessage>> = RefCell::new(None);
+
+    // Task consumer caches.
+    static THREAD_TASK_CACHE: RefCell<Option<TaskCache>> = RefCell::new(None);
+    static THREAD_TASK_CLEAR: RefCell<bool> = RefCell::new(false);
+    static THREAD_TASK_CONSUMER: RefCell<Option<Arc<BaseStatsConsumer>>> = RefCell::new(None);
 }
 
 
@@ -115,6 +118,7 @@ thread_local! {
 /// primary kafka topic for the task (but may need to change the retry count header if they
 /// want the retry functionality to work again).
 pub struct Kafka {
+    commit_retries: u8,
     config: ClientConfig,
     logger: Logger,
     prefix: String,
@@ -130,6 +134,7 @@ impl Kafka {
         let retry_producer = producer_config(&config, KAFKA_TASKS_RETRY_PRODUCER)
             .create_with_context(ClientStatsContext::new("retry-producer"))?;
         Ok(Kafka {
+            commit_retries: config.commit_retries,
             config: kafka_config,
             logger,
             prefix: config.queue_prefix,
@@ -155,10 +160,10 @@ impl Kafka {
             let consumer = consumer.as_ref().unwrap();
 
             // Check if there is a cached task to (possibly) re-process.
-            let early_return = THREAD_RETRY_TASK_CACHE.with(|cache| -> Result<bool> {
+            let early_return = THREAD_RETRY_CACHE.with(|cache| -> Result<bool> {
                 let mut clear_cache = false;
-                if let Some(message) = cache.borrow().as_ref() {
-                    let retried = self.retry_message::<Q>(consumer, message)?;
+                if let Some(retry_cache) = cache.borrow_mut().as_mut() {
+                    let retried = self.retry_message::<Q>(consumer, retry_cache)?;
                     if !retried {
                         // The task still needs to be processed so retry later.
                         return Ok(true);
@@ -253,18 +258,22 @@ impl Kafka {
         // Return a TaskCache instead of a task so we can store it as a thread local
         // and we ensure only one path exists to create tasks: `TaskCache::task`.
         Ok(TaskCache {
+            commit_attempts: Rc::new(RefCell::new(0)),
+            commit_max_attemts: self.commit_retries,
             consumer,
             headers,
             id,
+            logger: self.logger.clone(),
             message: payload,
             offset: message.offset(),
             partition: message.partition(),
             prefix: self.prefix.clone(),
-            processed: false,
             queue,
             retry_count,
             retry_producer: Arc::clone(&self.retry_producer),
+            retry_published: Rc::new(RefCell::new(false)),
             retry_timeout: self.retry_timeout,
+            skipped_published: Rc::new(RefCell::new(false)),
         })
     }
 
@@ -283,13 +292,13 @@ impl Kafka {
             Some(Ok(message)) => {
                 let message = message.detach();
                 // Always cache the message in case of errors while processing it.
-                let retried = THREAD_RETRY_TASK_CACHE.with(|cache| {
-                    *cache.borrow_mut() = Some(message);
-                    self.retry_message::<Q>(consumer, cache.borrow().as_ref().unwrap())
+                let retried = THREAD_RETRY_CACHE.with(|cache| {
+                    *cache.borrow_mut() = Some(RetryCache::new(message));
+                    self.retry_message::<Q>(consumer, cache.borrow_mut().as_mut().unwrap())
                 })?;
                 if retried {
                     // Clear the cache since the task was retired correctly.
-                    THREAD_RETRY_TASK_CACHE.with(|cache| {
+                    THREAD_RETRY_CACHE.with(|cache| {
                         *cache.borrow_mut() = None;
                     });
                     Ok(false)
@@ -306,9 +315,10 @@ impl Kafka {
     ///
     /// Returns `true` if the task was rescheduled and `false` otherwise
     fn retry_message<Q: TaskQueue>(
-        &self, consumer: &BaseStatsConsumer, message: &OwnedMessage
+        &self, consumer: &BaseStatsConsumer, retry_cache: &mut RetryCache
     ) -> Result<bool> {
         // Determine topic to retry to and the queue the task belong to.
+        let message = &retry_cache.message;
         let topic = message.topic();
         if !topic_is_retry(topic) {
             panic!("Attempting to retry task from non _retry topic '{}'", topic);
@@ -325,19 +335,33 @@ impl Kafka {
 
         // If so, re-publish the message to the task queue.
         if retry {
-            let mut record: FutureRecord<(), [u8]> = FutureRecord::to(&topic);
-            if let Some(headers) = message.headers() {
-                record = record.headers(headers.clone());
+            // Avoid knowingly injecting dupilcates by not publishing if we already did
+            // but committing the offset later failed.
+            if !retry_cache.published {
+                let mut record: FutureRecord<(), [u8]> = FutureRecord::to(&topic);
+                if let Some(headers) = message.headers() {
+                    record = record.headers(headers.clone());
+                }
+                if let Some(payload) = message.payload() {
+                    record = record.payload(payload);
+                }
+                self.retry_producer.send(record, self.retry_timeout as i64)
+                    .wait()?.map_err(|(error, _)| error)?;
+                retry_cache.published = true;
             }
-            if let Some(payload) = message.payload() {
-                record = record.payload(payload);
-            }
-            self.retry_producer.send(record, self.retry_timeout as i64)
-                .wait()?.map_err(|(error, _)| error)?;
             let mut list = TopicPartitionList::new();
             list.add_partition_offset(
                 message.topic(), message.partition(), Offset(message.offset() + 1)
             );
+            if retry_cache.attempts >= self.commit_retries {
+                let message_id = format!(
+                    "{}:{}:{}", message.topic(), message.partition(), message.offset()
+                );
+                warn!(self.logger, "Stuck trying to commit replyed task"; "id" => message_id);
+                THREAD_RETRY_CLEAR.with(|retry| { *retry.borrow_mut() = true });
+                return Err(TaskError::Msg("Stuck trying to commit replyed task".into()).into());
+            }
+            retry_cache.attempts += 1;
             consumer.commit(&list, CommitMode::Sync)?;
             Ok(true)
 
@@ -349,6 +373,24 @@ impl Kafka {
 
 impl<Q: TaskQueue> Backend<Q> for Kafka {
     fn poll(&self, timeout: Duration) -> Result<Option<Task<Q>>> {
+        // Drop all caches and clients if we flaged for clear.
+        THREAD_RETRY_CLEAR.with(|clear| {
+            if *clear.borrow() {
+                THREAD_RETRY_CACHE.with(|cache| { *cache.borrow_mut() = None });
+                THREAD_RETRY_CONSUMER.with(|cache| { *cache.borrow_mut() = None });
+                *clear.borrow_mut() = false;
+                debug!(self.logger, "Cleared kafka worker retry cache");
+            }
+        });
+        THREAD_TASK_CLEAR.with(|clear| {
+            if *clear.borrow() {
+                THREAD_TASK_CACHE.with(|cache| { *cache.borrow_mut() = None });
+                THREAD_TASK_CONSUMER.with(|cache| { *cache.borrow_mut() = None });
+                *clear.borrow_mut() = false;
+                debug!(self.logger, "Cleared kafka worker task cache");
+            }
+        });
+
         // Check if any task needs to be rertied.
         self.check_retries::<Q>(timeout.clone())?;
 
@@ -368,7 +410,7 @@ impl<Q: TaskQueue> Backend<Q> for Kafka {
         }
 
         // Since the task cache is empty, poll the consumer.
-        THREAD_CONSUMER.with(|consumer| {
+        THREAD_TASK_CONSUMER.with(|consumer| {
             // The first time the thread polls for tasks we create a consumer.
             if consumer.borrow().is_none() {
                 let new_consumer = Arc::new(self.consumer(&self.subscriptions)?);
@@ -423,12 +465,17 @@ impl<Q: TaskQueue> Backend<Q> for Kafka {
 /// (after rebalance the new and existing consumers would get two copies of the same task)
 /// but it does not lead to missed messages.
 struct KafkaAck {
+    commit_attempts: Rc<RefCell<u8>>,
+    commit_max_attemts: u8,
     consumer: Arc<BaseStatsConsumer>,
+    logger: Logger,
     offset: i64,
     partition: i32,
     prefix: String,
     retry_producer: Arc<FutureProducer<ClientStatsContext>>,
+    retry_published: Rc<RefCell<bool>>,
     retry_timeout: u32,
+    skipped_published: Rc<RefCell<bool>>,
 }
 
 impl KafkaAck {
@@ -441,6 +488,16 @@ impl KafkaAck {
 
     /// Commit the kafka partition offset for this message as consumed.
     fn commit(&self, topic: &str) -> Result<()> {
+        if *self.commit_attempts.borrow() >= self.commit_max_attemts {
+            let message_id = format!("{}:{}:{}", topic, self.partition, self.offset);
+            warn!(
+                self.logger, "Stuck trying to commit processed task";
+                "id" => message_id
+            );
+            THREAD_TASK_CLEAR.with(|retry| { *retry.borrow_mut() = true });
+            return Err(TaskError::Msg("Stuck trying to commit processed task".into()).into());
+        }
+        *self.commit_attempts.borrow_mut() += 1;
         let mut list = TopicPartitionList::new();
         list.add_partition_offset(topic, self.partition, Offset(self.offset + 1));
         self.consumer.commit(&list, CommitMode::Sync)?;
@@ -472,7 +529,10 @@ impl<Q: TaskQueue> AckStrategy<Q> for KafkaAck {
         let topic = task.queue.name();
         let retry_topic = topic_for_queue(&self.prefix, &topic, TopicRole::Retry);
         let topic = topic_for_queue(&self.prefix, &topic, TopicRole::Queue);
-        self.retry(&retry_topic, task)?;
+        if !*self.retry_published.borrow() {
+            self.retry(&retry_topic, task)?;
+            *self.retry_published.borrow_mut() = true;
+        }
         self.commit(&topic)?;
         self.clear_cache();
         Ok(())
@@ -482,7 +542,10 @@ impl<Q: TaskQueue> AckStrategy<Q> for KafkaAck {
         let topic = task.queue.name();
         let skip_topic = topic_for_queue(&self.prefix, &topic, TopicRole::Skip);
         let topic = topic_for_queue(&self.prefix, &topic, TopicRole::Queue);
-        self.retry(&skip_topic, task)?;
+        if !*self.skipped_published.borrow() {
+            self.retry(&skip_topic, task)?;
+            *self.skipped_published.borrow_mut() = true;
+        }
         self.commit(&topic)?;
         self.clear_cache();
         Ok(())
@@ -494,6 +557,24 @@ impl<Q: TaskQueue> AckStrategy<Q> for KafkaAck {
         self.commit(&topic)?;
         self.clear_cache();
         Ok(())
+    }
+}
+
+
+/// Store information about a task cached in a ThreadLocal for retry publishing.
+struct RetryCache {
+    attempts: u8,
+    message: OwnedMessage,
+    published: bool,
+}
+
+impl RetryCache {
+    fn new(message: OwnedMessage) -> RetryCache {
+        RetryCache {
+            attempts: 0,
+            message,
+            published: false,
+        }
     }
 }
 
@@ -512,35 +593,60 @@ impl<Q: TaskQueue> AckStrategy<Q> for KafkaAck {
 /// such as partition re-assignment) we re-deliver the same task at the next `Kafka::poll`.
 #[derive(Clone)]
 struct TaskCache {
+    /// Counter of attempts to commit the task.
+    commit_attempts: Rc<RefCell<u8>>,
+    /// Configured maximum number of attempts to commit.
+    commit_max_attemts: u8,
+    /// Kafka consumer to commit offsets on.
     consumer: Arc<BaseStatsConsumer>,
+    /// The logger instance to log to.
+    logger: Logger,
+    /// Kafka message headers.
     headers: HashMap<String, String>,
+    /// Kafka message body.
     message: Vec<u8>,
+    /// Task ID.
     id: TaskId,
+    /// Kafka message offset on partition.
     offset: i64,
+    /// Kafka message partition in topic.
     partition: i32,
+    /// Prefix of kafka topics.
     prefix: String,
-    processed: bool,
+    /// Name of the queue the task was from.
     queue: String,
+    /// Number of times the task was retried.
     retry_count: u8,
+    /// Kafka producer to retry tasks with.
     retry_producer: Arc<FutureProducer<ClientStatsContext>>,
+    /// The task was already republished to the retry topic.
+    retry_published: Rc<RefCell<bool>>,
+    /// Timeout for kafka to ack retried tasks.
     retry_timeout: u32,
+    /// The task was already republished to the skipped topic.
+    skipped_published: Rc<RefCell<bool>>,
 }
 
 impl TaskCache {
     fn task<Q: TaskQueue>(self) -> Result<Task<Q>> {
         Ok(Task {
             ack_strategy: Arc::new(KafkaAck {
+                commit_attempts: Rc::clone(&self.commit_attempts),
+                commit_max_attemts: self.commit_max_attemts,
                 consumer: self.consumer,
+                logger: self.logger.clone(),
                 offset: self.offset,
                 partition: self.partition,
                 prefix: self.prefix,
                 retry_producer: self.retry_producer,
+                retry_published: Rc::clone(&self.retry_published),
                 retry_timeout: self.retry_timeout,
+                skipped_published: Rc::clone(&self.skipped_published),
             }),
             headers: self.headers,
             id: self.id,
             message: self.message,
-            processed: self.processed,
+            processed: false,
             queue: self.queue.parse()?,
             retry_count: self.retry_count,
         })

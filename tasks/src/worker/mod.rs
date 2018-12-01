@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 use std::sync::Arc;
+use std::thread::panicking;
 
 use serde::Deserialize;
 
@@ -25,7 +26,8 @@ pub use self::set::WorkerSetPool;
 /// Task information dispatched to a worker process.
 ///
 /// Tasks are not `Send` or `Sync` due the `AckStrategy` not always being such.
-/// The `WorkerSet` thread pool also works by using multiple threads to process one task each.
+/// The `WorkerSet` thread pool also works by using multiple threads to process one
+/// task in each thread so there is no reason for `Task` to be `Send` or `Sync`.
 #[derive(Clone)]
 pub struct Task<Q: TaskQueue> {
     pub(crate) ack_strategy: Arc<self::backend::AckStrategy<Q>>,
@@ -110,7 +112,9 @@ impl<Q: TaskQueue> Task<Q> {
 
 impl<Q: TaskQueue> Drop for Task<Q> {
     fn drop(&mut self) {
-        if !self.processed {
+        // Panic if dropped before an ack message and outside of a panic unwind.
+        // This is to ensure tasks are never erroneously missed by application code.
+        if !self.processed && !panicking() {
             panic!("task must be marked as process before they are dropped");
         }
     }

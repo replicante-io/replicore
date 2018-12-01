@@ -294,6 +294,9 @@ tasks:
     # Comma separated list of seed brokers.
     brokers: 'localhost:9092'
 
+    # Number of attempts to commit offsets before giving up and recreating the client.
+    commit_retries: 10
+
     # Worker session keepalive heartbeat interval.
     heartbeat: 3000
 

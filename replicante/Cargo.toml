@@ -23,10 +23,6 @@ name = "replicante"
 path = "src/lib.rs"
 
 
-[badges]
-maintenance = { status = "actively-developed" }
-
-
 [dependencies]
 bodyparser = "^0.8.0"
 chrono = "^0.4.6"
