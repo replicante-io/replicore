@@ -1,6 +1,7 @@
 use prometheus::Registry;
 use slog::Logger;
 
+use replicante_coordinator::Coordinator;
 use replicante_data_store::Store;
 use replicante_streams_events::EventsStream;
 
@@ -29,6 +30,7 @@ use self::tracing::Tracing;
 /// [`JoinHandle`]: std/thread/struct.JoinHandle.html
 pub struct Interfaces {
     pub api: API,
+    pub coordinator: Coordinator,
     pub metrics: Metrics,
     pub store: Store,
     pub streams: Streams,
@@ -42,12 +44,14 @@ impl Interfaces {
     pub fn new(config: &Config, logger: Logger) -> Result<Interfaces> {
         let metrics = Metrics::new();
         let api = API::new(config.api.clone(), logger.clone(), &metrics);
+        let coordinator = Coordinator::new(config.coordinator.clone(), logger.clone());
         let store = Store::new(config.storage.clone(), logger.clone())?;
         let streams = Streams::new(config, logger.clone(), store.clone())?;
         let tasks = Tasks::new(config.tasks.clone())?;
         let tracing = Tracing::new(config.tracing.clone(), logger.clone())?;
         Ok(Interfaces {
             api,
+            coordinator,
             metrics,
             store,
             streams,
@@ -106,6 +110,7 @@ impl Streams {
 /// A container for mocks used by interfaces.
 #[cfg(test)]
 pub struct MockInterfaces {
+    pub coordinator: ::replicante_coordinator::mock::MockCoordinator,
     pub events: ::std::sync::Arc<::replicante_streams_events::mock::MockEvents>,
     pub store: ::std::sync::Arc<::replicante_data_store::mock::MockStore>,
     pub tasks: ::std::sync::Arc<super::tasks::MockTasks>,
@@ -129,6 +134,9 @@ impl Interfaces {
         let api = API::mock(logger.clone(), &metrics);
         let tracing = Tracing::mock();
 
+        let mock_coordinator = ::replicante_coordinator::mock::MockCoordinator::new(logger.clone());
+        let coordinator = mock_coordinator.mock();
+
         let mock_events = ::replicante_streams_events::mock::MockEvents::new();
         let mock_events = ::std::sync::Arc::new(mock_events);
         let events = ::replicante_streams_events::mock::MockEvents::mock(mock_events.clone());
@@ -140,12 +148,14 @@ impl Interfaces {
 
         // Wrap things up.
         let mocks = MockInterfaces {
+            coordinator: mock_coordinator,
             events: mock_events,
             store: mock_store,
             tasks,
         };
         let interfaces = Interfaces {
             api,
+            coordinator,
             metrics,
             store,
             streams: Streams {
