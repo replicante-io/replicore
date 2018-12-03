@@ -43,6 +43,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Move logging code to common crate.
 - Name background threads.
 - Refactor metrics initialisation code.
+- Start move to the `failure` crate.
 
 ### Fixed
 - Better handle HTTP errors returned by agents.

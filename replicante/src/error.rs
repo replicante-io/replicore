@@ -107,16 +107,16 @@ pub type Result<T> = ::std::result::Result<T, Error>;
 // IronError compatibility code.
 impl From<Error> for IronError {
     fn from(error: Error) -> Self {
-        let backtrace = match error.backtrace().map(|bt| bt.to_string()) {
+        let trace = match error.backtrace().map(|bt| bt.to_string()) {
             None => None,
             Some(ref bt) if bt == "" => None,
             Some(bt) => Some(bt),
         };
         let wrapper = JsonErrorWrapper {
-            backtrace,
             cause: error.cause().map(|cause| cause.find_root_cause().to_string()),
             error: error.to_string(),
             layer: Fail::iter_chain(&error).count(),
+            trace,
         };
         let mut response = Response::with((
             status::InternalServerError, serde_json::to_string(&wrapper).unwrap()
@@ -160,10 +160,10 @@ impl ::iron::Error for ErrorWrapper {
 /// JSON format of the error response.
 #[derive(Serialize)]
 struct JsonErrorWrapper {
-    backtrace: Option<String>,
     cause: Option<String>,
     error: String,
     layer: usize,
+    trace: Option<String>,
 }
 
 
@@ -205,6 +205,6 @@ mod tests {
 
         let result_body = response::extract_body_to_bytes(response);
         let result_body = String::from_utf8(result_body).unwrap();
-        assert_eq!(result_body, r#"{"backtrace":null,"cause":"test","error":"failures","layer":3}"#);
+        assert_eq!(result_body, r#"{"cause":"test","error":"failures","layer":3,"trace":null}"#);
     }
 }
