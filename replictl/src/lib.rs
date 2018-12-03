@@ -1,7 +1,9 @@
 #[macro_use]
 extern crate clap;
 #[macro_use]
-extern crate error_chain;
+extern crate failure;
+#[macro_use]
+extern crate failure_derive;
 
 #[macro_use]
 extern crate lazy_static;
@@ -19,23 +21,25 @@ extern crate replicante_data_models;
 extern crate replicante_data_store;
 extern crate replicante_streams_events;
 extern crate replicante_tasks;
+extern crate replicante_util_failure;
+
 
 use clap::App;
 use clap::Arg;
 use clap::ArgMatches;
+use failure::err_msg;
 
 
 mod commands;
 mod core;
-mod errors;
+mod error;
 mod interfaces;
 mod logging;
 mod outcome;
 
-pub use self::errors::Error;
-pub use self::errors::ErrorKind;
-pub use self::errors::ResultExt;
-pub use self::errors::Result;
+pub use self::error::Error;
+pub use self::error::ErrorKind;
+pub use self::error::Result;
 
 use self::commands::check;
 use self::commands::versions;
@@ -119,7 +123,7 @@ fn run_command(args: &ArgMatches, interfaces: &Interfaces) -> Result<()> {
     match args.subcommand_name() {
         Some(check::COMMAND) => check::run(args, interfaces),
         Some(versions::COMMAND) => versions::run(args, interfaces),
-        None => Err("Need a command to run".into()),
-        _ => Err("Received unrecognised command".into()),
+        None => Err(ErrorKind::Legacy(err_msg("need a command to run")).into()),
+        _ => Err(ErrorKind::Legacy(err_msg("received unrecognised command")).into()),
     }
 }

@@ -1,4 +1,7 @@
 //! Module to define cluster related WebUI endpoints.
+use failure::ResultExt;
+use failure::err_msg;
+
 use iron::Handler;
 use iron::IronResult;
 use iron::Request;
@@ -10,8 +13,8 @@ use router::Router;
 
 use replicante_data_store::Store;
 
-use super::super::super::Result;
-use super::super::super::ResultExt;
+use super::super::super::Error;
+use super::super::super::ErrorKind;
 use super::super::super::interfaces::Interfaces;
 
 
@@ -22,15 +25,16 @@ pub struct Discovery {
 
 impl Handler for Discovery {
     fn handle(&self, req: &mut Request) -> IronResult<Response> {
-        let cluster: Result<String> = req.extensions.get::<Router>()
+        let cluster = req.extensions.get::<Router>()
             .unwrap().find("cluster")
             .map(String::from)
-            .ok_or_else(|| "Missing `cluster` parameter".into());
-        let cluster = cluster?;
-        let discovery = self.store.cluster_discovery(cluster)
-            .chain_err(|| "Failed to fetch cluster discovery")?;
-        let discovery: Result<_> = discovery.ok_or_else(|| "Cluster not found".into());
-        let discovery = discovery?;
+            .ok_or_else(|| ErrorKind::Legacy(err_msg("missing `cluster` parameter")))
+            .map_err(Error::from)?;
+        let discovery = self.store.cluster_discovery(cluster).map_err(Error::from)
+            .context(ErrorKind::Legacy(err_msg("failed to fetch cluster discovery")))
+            .map_err(Error::from)?
+            .ok_or_else(|| ErrorKind::Legacy(err_msg("cluster not found")))
+            .map_err(Error::from)?;
         let mut resp = Response::new();
         resp.set_mut(JsonResponse::json(discovery)).set_mut(status::Ok);
         Ok(resp)
@@ -53,15 +57,16 @@ pub struct Meta {
 
 impl Handler for Meta {
     fn handle(&self, req: &mut Request) -> IronResult<Response> {
-        let cluster: Result<String> = req.extensions.get::<Router>()
+        let cluster = req.extensions.get::<Router>()
             .unwrap().find("cluster")
             .map(String::from)
-            .ok_or_else(|| "Missing `cluster` parameter".into());
-        let cluster = cluster?;
-        let meta = self.store.cluster_meta(cluster)
-            .chain_err(|| "Failed to fetch cluster metadata")?;
-        let meta: Result<_> = meta.ok_or_else(|| "Cluster not found".into());
-        let meta = meta?;
+            .ok_or_else(|| ErrorKind::Legacy(err_msg("missing `cluster` parameter")))
+            .map_err(Error::from)?;
+        let meta = self.store.cluster_meta(cluster).map_err(Error::from)
+            .context(ErrorKind::Legacy(err_msg("failed to fetch cluster metadata")))
+            .map_err(Error::from)?
+            .ok_or_else(|| ErrorKind::Legacy(err_msg("cluster not found")))
+            .map_err(Error::from)?;
         let mut resp = Response::new();
         resp.set_mut(JsonResponse::json(meta)).set_mut(status::Ok);
         Ok(resp)

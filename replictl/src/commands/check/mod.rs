@@ -1,6 +1,7 @@
 use clap::App;
 use clap::ArgMatches;
 use clap::SubCommand;
+use failure::err_msg;
 
 
 mod config;
@@ -8,6 +9,8 @@ mod store;
 mod streams;
 mod tasks;
 
+
+use super::super::ErrorKind;
 use super::super::Interfaces;
 use super::super::Result;
 
@@ -52,7 +55,7 @@ pub fn run<'a>(args: &ArgMatches<'a>, interfaces: &Interfaces) -> Result<()> {
         // Currently update is an alias for `deep` but that may change.
         Some(UPDATE_COMMAND) => run_deep(args, interfaces),
         None => run_quick(args, interfaces),
-        _ => Err("Received unrecognised command".into()),
+        _ => Err(ErrorKind::Legacy(err_msg("Received unrecognised command")).into()),
     }
 }
 

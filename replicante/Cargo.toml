@@ -27,8 +27,8 @@ path = "src/lib.rs"
 bodyparser = "^0.8.0"
 chrono = "^0.4.6"
 clap = "^2.31.2"
-error-chain = "^0.12.0"
 failure = "^0.1.3"
+failure_derive = "^0.1.3"
 iron = "^0.6.0"
 iron-json-response = "^0.6.0"
 lazy_static = "^1.0.0"
@@ -54,6 +54,7 @@ replicante_data_store = { path = "../data/store" }
 replicante_logging = { path = "../common/logging" }
 replicante_streams_events = { path = "../streams/events" }
 replicante_tasks = { path = "../tasks" }
+replicante_util_failure = { path = "../common/util/failure" }
 replicante_util_iron = { path = "../common/util/iron" }
 replicante_util_tracing = { path = "../common/util/tracing" }
 

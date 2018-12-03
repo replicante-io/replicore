@@ -1,10 +1,10 @@
 extern crate bodyparser;
 extern crate chrono;
 extern crate clap;
-
 #[macro_use]
-extern crate error_chain;
 extern crate failure;
+#[macro_use]
+extern crate failure_derive;
 
 extern crate iron;
 extern crate iron_json_response;
@@ -40,18 +40,20 @@ extern crate replicante_data_store;
 extern crate replicante_logging;
 extern crate replicante_streams_events;
 extern crate replicante_tasks;
+extern crate replicante_util_failure;
 extern crate replicante_util_iron;
 extern crate replicante_util_tracing;
 
 
 use clap::App;
 use clap::Arg;
+use failure::ResultExt;
 use slog::Logger;
 
 
 mod components;
 mod config;
-mod errors;
+mod error;
 mod interfaces;
 mod metrics;
 mod tasks;
@@ -60,10 +62,9 @@ use self::components::Components;
 use self::interfaces::Interfaces;
 
 pub use self::config::Config;
-pub use self::errors::Error;
-pub use self::errors::ErrorKind;
-pub use self::errors::ResultExt;
-pub use self::errors::Result;
+pub use self::error::Error;
+pub use self::error::ErrorKind;
+pub use self::error::Result;
 pub use self::tasks::ReplicanteQueues;
 
 
@@ -143,8 +144,9 @@ pub fn run() -> Result<()> {
     // Load configuration.
     let config_location = cli_args.value_of("config").unwrap();
     info!(logger, "Loading configuration ..."; "config" => config_location);
-    let config = Config::from_file(config_location)
-        .chain_err(|| format!("Failed to load configuration: {}", config_location))?;
+    let config = Config::from_file(config_location).context(
+        ErrorKind::Legacy(format_err!("failed to load configuration: {}", config_location))
+    )?;
     let config = config.transform();
 
     // Initialise and run forever.

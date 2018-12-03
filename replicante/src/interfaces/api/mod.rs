@@ -6,6 +6,7 @@
 use std::thread::Builder as ThreadBuilder;
 use std::thread::JoinHandle;
 
+use failure::ResultExt;
 use iron::Iron;
 use iron_json_response::JsonResponseMiddleware;
 use slog::Logger;
@@ -13,6 +14,7 @@ use slog::Logger;
 use replicante_util_iron::MetricsMiddleware;
 use replicante_util_iron::RequestLogger;
 
+use super::super::ErrorKind;
 use super::super::Result;
 use super::metrics::Metrics;
 
@@ -75,10 +77,11 @@ impl API {
         chain.link_after(RequestLogger::new(self.logger.clone()));
         chain.link(self.metrics_middleware.take().unwrap().into_middleware());
 
-        self.handle = Some(ThreadBuilder::new().name("r:i:api".into()).spawn(move || {
+        let handle = ThreadBuilder::new().name("r:i:api".into()).spawn(move || {
             info!(logger, "Starting API server"; "bind" => bind.clone());
             Iron::new(chain).http(bind).expect("Unable to start API server");
-        })?);
+        }).context(ErrorKind::SpawnThread("http server"))?;
+        self.handle = Some(handle);
         Ok(())
     }
 

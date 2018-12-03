@@ -1,7 +1,17 @@
-#[macro_use]
-extern crate error_chain;
 extern crate replictl;
+extern crate replicante_util_failure;
 
+
+use std::process::exit;
 
 use replictl::run;
-quick_main!(run);
+use replicante_util_failure::format_fail;
+
+
+fn main() {
+    if let Err(error) = run() {
+        let message = format_fail(&error);
+        println!("{}", message);
+        exit(1);
+    }
+}

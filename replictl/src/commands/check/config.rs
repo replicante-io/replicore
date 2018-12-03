@@ -3,15 +3,16 @@ use std::fs::File;
 use clap::App;
 use clap::ArgMatches;
 use clap::SubCommand;
-use error_chain::ChainedError;
+use failure::Fail;
+use failure::err_msg;
 use serde_yaml;
 
 use replicante::Config;
 use replicante_agent_discovery::DiscoveryFileModel;
 
+use super::super::super::ErrorKind;
 use super::super::super::Interfaces;
 use super::super::super::Result;
-use super::super::super::ResultExt;
 
 use super::super::super::outcome::Error;
 use super::super::super::outcome::Outcomes;
@@ -44,9 +45,10 @@ pub fn run<'a>(args: &ArgMatches<'a>, interfaces: &Interfaces) -> Result<()> {
     let config = match Config::from_file(file) {
         Ok(config) => config,
         Err(error) => {
-            let error_string = error.display_chain().to_string();
-            error!(logger, "Configuration checks failed"; "error" => error_string);
-            return Err(error).chain_err(|| "Check failed: could not load configuration");
+            error!(logger, "Configuration checks failed"; "error" => ?error);
+            return Err(error.context(
+                ErrorKind::Legacy(err_msg("check failed: could not load configuration"))
+            ).into());
         }
     };
 
@@ -71,7 +73,7 @@ pub fn run<'a>(args: &ArgMatches<'a>, interfaces: &Interfaces) -> Result<()> {
     outcomes.report(&logger);
     if outcomes.has_errors() {
         error!(logger, "Configuration checks failed");
-        return Err("Configuration checks failed".into());
+        return Err(ErrorKind::Legacy(err_msg("configuration checks failed")).into());
     }
     if outcomes.has_warnings() {
         warn!(logger, "Configuration checks passed with warnings");
@@ -87,11 +89,9 @@ fn check_discovery_file(path: &str, outcomes: &mut Outcomes) {
     let file = match File::open(path) {
         Ok(file) => file,
         Err(error) => {
-            let error: super::super::super::Error = error.into();
-            let error = error.chain_err(
-                || format!("Failed to open file discovery unit: {}", path)
-            );
-            let error = error.display_chain().to_string();
+            let error = error.context(ErrorKind::Legacy(
+                format_err!("failed to open file discovery unit: {}", path))
+            ).to_string();
             outcomes.error(Error::GenericError(error));
             return;
         }
@@ -99,8 +99,9 @@ fn check_discovery_file(path: &str, outcomes: &mut Outcomes) {
     let _content: DiscoveryFileModel = match serde_yaml::from_reader(file) {
         Ok(content) => content,
         Err(error) => {
-            let error: super::super::super::Error = error.into();
-            let error = error.display_chain().to_string();
+            let error = error.context(
+                ErrorKind::Legacy(err_msg("unable to parse model"))
+            ).to_string();
             outcomes.error(Error::UnableToParseModel(
                 "DiscoveryFile".into(), path.to_string(), error
             ));

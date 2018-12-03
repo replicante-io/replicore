@@ -23,13 +23,10 @@ name = "replictl"
 path = "src/lib.rs"
 
 
-[badges]
-maintenance = { status = "actively-developed" }
-
-
 [dependencies]
 clap = "^2.31.2"
-error-chain = "^0.12.0"
+failure = "^0.1.3"
+failure_derive = "^0.1.3"
 lazy_static = "^1.0.0"
 prometheus = "^0.4.1"
 reqwest = "^0.9.1"
@@ -43,6 +40,7 @@ replicante_data_models = { path = "../data/models" }
 replicante_data_store = { path = "../data/store" }
 replicante_streams_events = { path = "../streams/events" }
 replicante_tasks = { path = "../tasks" }
+replicante_util_failure = { path = "../common/util/failure" }
 
 
 [build-dependencies]

@@ -3,12 +3,15 @@ use std::thread::JoinHandle;
 use std::thread::sleep;
 use std::time::Duration;
 
+use failure::ResultExt;
 use slog::Logger;
 
 use replicante_agent_discovery::Config as BackendsConfig;
 use replicante_data_store::Store;
 use replicante_streams_events::EventsStream;
 
+use super::super::Error;
+use super::super::ErrorKind;
 use super::super::config::EventsSnapshotsConfig;
 use super::super::tasks::Tasks;
 use super::Interfaces;
@@ -18,6 +21,7 @@ use super::Result;
 mod config;
 mod metrics;
 mod worker;
+
 
 pub use self::config::Config;
 pub use self::metrics::register_metrics;
@@ -83,7 +87,7 @@ impl DiscoveryComponent {
                 timer.observe_duration();
                 sleep(interval);
             }
-        })?;
+        }).context(ErrorKind::SpawnThread("agent discovery"))?;
         self.worker = Some(thread);
         Ok(())
     }
@@ -91,7 +95,12 @@ impl DiscoveryComponent {
     /// Wait for the worker thread to stop.
     pub fn wait(&mut self) -> Result<()> {
         info!(self.logger, "Waiting for Agent Discovery to stop");
-        self.worker.take().map(|handle| handle.join());
+        if let Some(handle) = self.worker.take() {
+            if let Err(error) = handle.join() {
+                let error: Error = format_err!("discovery thread failed: {:?}", error).into();
+                return Err(error);
+            }
+        }
         Ok(())
     }
 }

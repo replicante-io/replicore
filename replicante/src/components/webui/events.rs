@@ -1,4 +1,7 @@
 //! Module to define events related WebUI endpoints.
+use failure::ResultExt;
+use failure::err_msg;
+
 use iron::Handler;
 use iron::IronResult;
 use iron::Request;
@@ -11,7 +14,8 @@ use replicante_data_store::EventsFilters;
 use replicante_data_store::EventsOptions;
 use replicante_data_store::Store;
 
-use super::super::super::ResultExt;
+use super::super::super::Error;
+use super::super::super::ErrorKind;
 use super::super::super::interfaces::Interfaces;
 
 
@@ -30,11 +34,15 @@ impl Handler for Events {
         options.limit = Some(RECENT_EVENTS_LIMIT);
         options.reverse = true;
         let iter = self.store.events(EventsFilters::all(), options)
-            .chain_err(|| FAIL_FETCH_EVENTS)?;
+            .map_err(Error::from)
+            .context(ErrorKind::Legacy(err_msg(FAIL_FETCH_EVENTS)))
+            .map_err(Error::from)?;
 
         let mut events = Vec::new();
         for event in iter {
-            let event = event.chain_err(|| FAIL_FETCH_EVENTS)?;
+            let event = event.map_err(Error::from)
+                .context(ErrorKind::Legacy(err_msg(FAIL_FETCH_EVENTS)))
+                .map_err(Error::from)?;
             events.push(event);
         }
 

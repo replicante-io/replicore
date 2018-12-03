@@ -2,10 +2,12 @@ use std::io;
 use std::io::Write;
 
 use clap::ArgMatches;
+use failure::ResultExt;
+use failure::err_msg;
 use slog::Logger;
 
+use super::ErrorKind;
 use super::Result;
-use super::ResultExt;
 
 
 /// A container sturcture to inject dependencies.
@@ -25,9 +27,11 @@ impl Interfaces {
             _logger: logger.clone()
         };
         let progress_chunk = value_t!(args, "progress-chunk", u32)
-            .chain_err(|| "Progress chunk size is not vaild")?;
+            .context(ErrorKind::Legacy(err_msg("progress chunk size is not vaild")))?;
         if progress_chunk == 0 {
-            return Err("Progress chunck size must be grater then 0".into());
+            return Err(ErrorKind::Legacy(
+                err_msg("progress chunck size must be grater then 0")
+            ).into());
         }
         Ok(Interfaces {
             logger,
@@ -105,9 +109,10 @@ impl Prompt {
     /// Ask the user for confirmation before something potentially harmful is done.
     pub fn confirm_danger(&self, prompt: &str) -> Result<bool> {
         print!("{} [y/N] ", prompt);
-        io::stdout().flush()?;
+        io::stdout().flush().context(ErrorKind::Legacy(err_msg("standard output I/O error")))?;
         let mut reply = String::new();
-        io::stdin().read_line(&mut reply)?;
+        io::stdin().read_line(&mut reply)
+            .context(ErrorKind::Legacy(err_msg("standard output I/O error")))?;
         match reply.trim() {
             "y" => Ok(true),
             "yes" => Ok(true),

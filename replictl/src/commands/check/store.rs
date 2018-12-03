@@ -1,7 +1,9 @@
 use clap::App;
 use clap::ArgMatches;
 use clap::SubCommand;
-use error_chain::ChainedError;
+use failure::Fail;
+use failure::ResultExt;
+use failure::err_msg;
 use prometheus::Registry;
 
 use replicante::Config;
@@ -11,9 +13,9 @@ use replicante_data_store::ErrorKind as StoreErrorKind;
 use replicante_data_store::ValidationResult;
 use replicante_data_store::Validator;
 
+use super::super::super::ErrorKind;
 use super::super::super::Interfaces;
 use super::super::super::Result;
-use super::super::super::ResultExt;
 
 use super::super::super::outcome::Error;
 use super::super::super::outcome::Outcomes;
@@ -24,8 +26,8 @@ pub const COMMAND: &str = "store";
 
 const COMMAND_DATA: &str = "data";
 const COMMAND_SCHEMA: &str = "schema";
-const FAILED_CHECK_SCHEMA : &str = "Failed to check store schema";
-const FAILED_CHECK_DATA : &str = "Failed to check store data";
+const FAILED_CHECK_SCHEMA : &str = "failed to check store schema";
+const FAILED_CHECK_DATA : &str = "failed to check store data";
 
 const MODEL_AGENT: &str = "Agent";
 const MODEL_AGENT_INFO: &str = "AgentInfo";
@@ -60,8 +62,8 @@ pub fn run<'a>(args: &ArgMatches<'a>, interfaces: &Interfaces) -> Result<()> {
     match command {
         Some(COMMAND_DATA) => data(args, interfaces),
         Some(COMMAND_SCHEMA) => schema(args, interfaces),
-        None => Err("Need a store check to run".into()),
-        _ => Err("Received unrecognised command".into()),
+        None => Err(ErrorKind::Legacy(err_msg("need a store check to run")).into()),
+        _ => Err(ErrorKind::Legacy(err_msg("received unrecognised command")).into()),
     }
 }
 
@@ -81,15 +83,17 @@ pub fn data<'a>(args: &ArgMatches<'a>, interfaces: &Interfaces) -> Result<()> {
     )?;
     if !confirm {
         error!(logger, "Cannot check without user interactive confirmation");
-        return Err("Operation aborded by the user".into());
+        return Err(ErrorKind::Legacy(err_msg("operation aborded by the user")).into());
     }
 
     let mut outcomes = Outcomes::new();
     let config = args.value_of("config").unwrap();
-    let config = Config::from_file(config).chain_err(|| FAILED_CHECK_SCHEMA)?;
+    let config = Config::from_file(config)
+        .context(ErrorKind::Legacy(err_msg(FAILED_CHECK_SCHEMA)))?;
     let registry = Registry::new();
     let store = Validator::new(config.storage, logger.clone(), &registry)
-        .chain_err(|| FAILED_CHECK_DATA)?;
+        .map_err(super::super::super::Error::from)
+        .context(ErrorKind::Legacy(err_msg(FAILED_CHECK_DATA)))?;
 
     info!(logger, "Checking records for the '{}' model", MODEL_AGENT);
     scan_collection(store.agents(), MODEL_AGENT, &mut outcomes, interfaces);
@@ -124,7 +128,7 @@ pub fn data<'a>(args: &ArgMatches<'a>, interfaces: &Interfaces) -> Result<()> {
     // Report results.
     if outcomes.has_errors() {
         error!(logger, "Store data checks failed");
-        return Err("Store data checks failed".into());
+        return Err(ErrorKind::Legacy(err_msg("store data checks failed")).into());
     }
     if outcomes.has_warnings() {
         warn!(logger, "Store data checks passed with warnings");
@@ -141,7 +145,7 @@ fn scan_collection<Model: ::std::fmt::Debug>(
     let cursor = match cursor {
         Ok(cursor) => cursor,
         Err(error) => {
-            let error = error.display_chain().to_string();
+            let error = error.to_string();
             outcomes.error(Error::GenericError(error));
             return;
         }
@@ -153,7 +157,7 @@ fn scan_collection<Model: ::std::fmt::Debug>(
                 outcomes.error(Error::UnableToParseModel(collection.to_string(), id, msg));
             },
             Err(error) => {
-                let error = error.display_chain().to_string();
+                let error = error.to_string();
                 outcomes.error(Error::GenericError(error));
             },
             Ok(_) => (),
@@ -175,18 +179,21 @@ pub fn schema<'a>(args: &ArgMatches<'a>, interfaces: &Interfaces) -> Result<()> 
     info!(logger, "Checking store schema");
 
     let config = args.value_of("config").unwrap();
-    let config = Config::from_file(config).chain_err(|| FAILED_CHECK_SCHEMA)?;
+    let config = Config::from_file(config)
+        .context(ErrorKind::Legacy(err_msg(FAILED_CHECK_SCHEMA)))?;
     let registry = Registry::new();
     let store = Validator::new(config.storage, logger.clone(), &registry)
-        .chain_err(|| FAILED_CHECK_SCHEMA)?;
+        .map_err(super::super::super::Error::from)
+        .context(ErrorKind::Legacy(err_msg(FAILED_CHECK_SCHEMA)))?;
     let mut outcomes = Outcomes::new();
 
     debug!(logger, "Checking schema");
     match store.schema() {
         Ok(results) => consume_results(results, &mut outcomes),
         Err(error) => {
-            let error = error.chain_err(|| "Failed to validate store schema")
-                .display_chain().to_string();
+            let error = super::super::super::Error::from(error)
+                .context(ErrorKind::Legacy(err_msg("failed to validate store schema")))
+                .to_string();
             outcomes.error(Error::GenericError(error));
         }
     };
@@ -196,8 +203,9 @@ pub fn schema<'a>(args: &ArgMatches<'a>, interfaces: &Interfaces) -> Result<()> 
     match store.indexes() {
         Ok(results) => consume_results(results, &mut outcomes),
         Err(error) => {
-            let error = error.chain_err(|| "Failed to validate store indexes")
-                .display_chain().to_string();
+            let error = super::super::super::Error::from(error)
+                .context(ErrorKind::Legacy(err_msg("failed to validate store indexes")))
+                .to_string();
             outcomes.error(Error::GenericError(error));
         }
     };
@@ -207,8 +215,10 @@ pub fn schema<'a>(args: &ArgMatches<'a>, interfaces: &Interfaces) -> Result<()> 
     match store.removed() {
         Ok(results) => consume_results(results, &mut outcomes),
         Err(error) => {
-            let error = error.chain_err(|| "Failed to check for removed collections or indexes")
-                .display_chain().to_string();
+            let error = super::super::super::Error::from(error)
+                .context(ErrorKind::Legacy(
+                    err_msg("failed to check for removed collections or indexes")
+                )).to_string();
             outcomes.error(Error::GenericError(error));
         }
     };
@@ -217,7 +227,7 @@ pub fn schema<'a>(args: &ArgMatches<'a>, interfaces: &Interfaces) -> Result<()> 
     // Finish up.
     if outcomes.has_errors() {
         error!(logger, "Store schema checks failed");
-        return Err("Store schema checks failed".into());
+        return Err(ErrorKind::Legacy(err_msg("store schema checks failed")).into());
     }
     if outcomes.has_warnings() {
         warn!(logger, "Store schema checks passed with warnings");

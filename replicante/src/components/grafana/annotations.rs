@@ -1,8 +1,10 @@
 //! Module to define cluster related WebUI endpoints.
 use bodyparser;
-
 use chrono::DateTime;
 use chrono::Utc;
+
+use failure::ResultExt;
+use failure::err_msg;
 
 use iron::prelude::*;
 use iron::Handler;
@@ -18,7 +20,7 @@ use replicante_streams_events::ScanFilters;
 use replicante_streams_events::ScanOptions;
 
 use super::super::super::Error;
-use super::super::super::ResultExt;
+use super::super::super::ErrorKind;
 use super::Interfaces;
 
 
@@ -107,8 +109,10 @@ impl Handler for Annotations {
     fn handle(&self, req: &mut Request) -> IronResult<Response> {
         // Get the annotation query.
         let request = req.get::<bodyparser::Struct<AnnotationRequest>>()
-            .chain_err(|| "Failed to parse annotation request")?
-            .ok_or_else(|| Error::from("Annotation request body missing"))?;
+            .context(ErrorKind::Legacy(err_msg("failed to parse annotation request")))
+            .map_err(Error::from)?
+            .ok_or_else(|| ErrorKind::Legacy(err_msg("annotation request body missing")))
+            .map_err(Error::from)?;
 
         // We should not get queries for disabled annotations but just in case skip them.
         if !request.annotation.enable {
@@ -122,7 +126,8 @@ impl Handler for Annotations {
         let query = match request.annotation.query.as_ref() {
             Some(query) if query == "" => AdvancedQuery::default(),
             Some(query) => serde_json::from_str(query)
-                .chain_err(|| "Failed to parse annotation query")?,
+                .context(ErrorKind::Legacy(err_msg("failed to parse annotation query")))
+                .map_err(Error::from)?,
             None => AdvancedQuery::default(),
         };
         let mut filters = ScanFilters::most();
@@ -134,11 +139,14 @@ impl Handler for Annotations {
         filters.start_from = Some(request.range.from);
         filters.stop_at = Some(request.range.to);
         options.limit = Some(query.limit);
-        let events = self.events.scan(filters, options)
-            .chain_err(|| "Failed to scan event stream")?;
+        let events = self.events.scan(filters, options).map_err(Error::from)
+            .context(ErrorKind::Legacy(err_msg("failed to scan event stream")))
+            .map_err(Error::from)?;
         let mut annotations: Vec<Annotation> = Vec::new();
         for event in events {
-            let event = event.chain_err(|| "Failed to decode event from stream")?;
+            let event = event.map_err(Error::from)
+                .context(ErrorKind::Legacy(err_msg("failed to decode event from stream")))
+                .map_err(Error::from)?;
             let tags = Annotations::tags(&event);
             let text = Annotations::text(&event);
             let time = event.timestamp.timestamp_millis();

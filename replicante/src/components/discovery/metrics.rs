@@ -48,24 +48,19 @@ lazy_static! {
 ///
 /// Metrics that fail to register are logged and ignored.
 pub fn register_metrics(logger: &Logger, registry: &Registry) {
-    if let Err(err) = registry.register(Box::new(DISCOVERY_COUNT.clone())) {
-        let error = format!("{:?}", err);
-        debug!(logger, "Failed to register DISCOVERY_COUNT"; "error" => error);
+    if let Err(error) = registry.register(Box::new(DISCOVERY_COUNT.clone())) {
+        debug!(logger, "Failed to register DISCOVERY_COUNT"; "error" => ?error);
     }
-    if let Err(err) = registry.register(Box::new(DISCOVERY_FETCH_ERRORS_COUNT.clone())) {
-        let error = format!("{:?}", err);
-        debug!(logger, "Failed to register DISCOVERY_FETCH_ERRORS_COUNT"; "error" => error);
+    if let Err(error) = registry.register(Box::new(DISCOVERY_FETCH_ERRORS_COUNT.clone())) {
+        debug!(logger, "Failed to register DISCOVERY_FETCH_ERRORS_COUNT"; "error" => ?error);
     }
-    if let Err(err) = registry.register(Box::new(DISCOVERY_PROCESS_ERRORS_COUNT.clone())) {
-        let error = format!("{:?}", err);
-        debug!(logger, "Failed to register DISCOVERY_PROCESS_ERRORS_COUNT"; "error" => error);
+    if let Err(error) = registry.register(Box::new(DISCOVERY_PROCESS_ERRORS_COUNT.clone())) {
+        debug!(logger, "Failed to register DISCOVERY_PROCESS_ERRORS_COUNT"; "error" => ?error);
     }
-    if let Err(err) = registry.register(Box::new(DISCOVERY_DURATION.clone())) {
-        let error = format!("{:?}", err);
-        debug!(logger, "Failed to register DISCOVERY_DURATION"; "error" => error);
+    if let Err(error) = registry.register(Box::new(DISCOVERY_DURATION.clone())) {
+        debug!(logger, "Failed to register DISCOVERY_DURATION"; "error" => ?error);
     }
-    if let Err(err) = registry.register(Box::new(DISCOVERY_SNAPSHOT_TRACKER_COUNT.clone())) {
-        let error = format!("{:?}", err);
-        debug!(logger, "Failed to register DISCOVERY_SNAPSHOT_TRACKER_COUNT"; "error" => error);
+    if let Err(error) = registry.register(Box::new(DISCOVERY_SNAPSHOT_TRACKER_COUNT.clone())) {
+        debug!(logger, "Failed to register DISCOVERY_SNAPSHOT_TRACKER_COUNT"; "error" => ?error);
     }
 }

@@ -1,16 +1,17 @@
 use clap::App;
 use clap::ArgMatches;
 use clap::SubCommand;
-use error_chain::ChainedError;
+use failure::ResultExt;
+use failure::err_msg;
 use prometheus::Registry;
 
 use replicante::Config;
 use replicante::VERSION as REPLICANTE_VERSION;
 use replicante_data_store::Validator;
 
+use super::super::ErrorKind;
 use super::super::Interfaces;
 use super::super::Result;
-use super::super::ResultExt;
 use super::super::core::Client;
 
 
@@ -69,7 +70,8 @@ pub fn run<'a>(args: &ArgMatches<'a>, interfaces: &Interfaces) -> Result<()> {
 
     // Find external systems version.
     let config = args.value_of("config").unwrap();
-    let config = Config::from_file(config).chain_err(|| "Failed to load configuration")?;
+    let config = Config::from_file(config)
+        .context(ErrorKind::Legacy(err_msg("failed to load configuration")))?;
     let replicante_dynamic = replicante_version(args);
     let store = store_version(&config, interfaces);
 
@@ -98,7 +100,7 @@ fn store_version(config: &Config, interfaces: &Interfaces) -> Result<String> {
 /// Returns the value of the result or a formatted error message.
 fn value_or_error(result: &Result<String>) -> String {
     match *result {
-        Err(ref error) => error.display_chain().to_string().trim_right().to_string(),
+        Err(ref error) => error.to_string().trim_right().to_string(),
         Ok(ref value) => value.clone(),
     }
 }

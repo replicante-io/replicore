@@ -4,6 +4,7 @@ members = [
   "agent/discovery",
   "common/agent/models",
   "common/logging",
+  "common/util/failure",
   "common/util/iron",
   "common/util/rndid",
   "common/util/tracing",

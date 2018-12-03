@@ -2,6 +2,8 @@ use std::fs::File;
 use std::io::Read;
 use std::path::Path;
 
+use failure::ResultExt;
+use failure::err_msg;
 use serde_yaml;
 
 use replicante_coordinator::Config as CoordinatorConfig;
@@ -11,6 +13,7 @@ use replicante_logging::LoggingLevel;
 use replicante_tasks::Config as TasksConfig;
 use replicante_util_tracing::Config as TracingConfig;
 
+use super::ErrorKind;
 use super::Result;
 
 use super::components::DiscoveryConfig;
@@ -100,7 +103,8 @@ impl Config {
     ///
     /// [`std::fs::File`]: https://doc.rust-lang.org/std/fs/struct.File.html
     pub fn from_file<P: AsRef<Path>>(path: P) -> Result<Config> {
-        let config = File::open(path)?;
+        let config = File::open(path)
+            .context(ErrorKind::Legacy(err_msg("failed to open config file")))?;
         Config::from_reader(config)
     }
 
@@ -108,7 +112,8 @@ impl Config {
     ///
     /// [`std::io::Read`]: https://doc.rust-lang.org/std/io/trait.Read.html
     pub fn from_reader<R: Read>(reader: R) -> Result<Config> {
-        let conf = serde_yaml::from_reader(reader)?;
+        let conf = serde_yaml::from_reader(reader)
+            .context(ErrorKind::Legacy(err_msg("failed to decode config file")))?;
         Ok(conf)
     }
 

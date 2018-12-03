@@ -1,6 +1,8 @@
 use clap::App;
 use clap::ArgMatches;
 use clap::SubCommand;
+use failure::ResultExt;
+use failure::err_msg;
 use slog::Logger;
 
 use replicante::Config;
@@ -9,9 +11,9 @@ use replicante_data_models::ClusterDiscovery;
 use replicante_tasks::TaskQueue;
 use replicante_tasks::admin::TasksAdmin;
 
+use super::super::super::ErrorKind;
 use super::super::super::Interfaces;
 use super::super::super::Result;
-use super::super::super::ResultExt;
 
 use super::super::super::outcome::Error;
 use super::super::super::outcome::Outcomes;
@@ -28,7 +30,7 @@ fn check_cluster_refresh(
 ) -> Result<()> {
     info!(logger, "Checking tasks queue ..."; "queue" => ReplicanteQueues::ClusterRefresh.name());
     let mut tracker = interfaces.progress("Processed more tasks");
-    let iter = tasks.scan(ReplicanteQueues::ClusterRefresh).map_err(|error| error.to_string())?;
+    let iter = tasks.scan(ReplicanteQueues::ClusterRefresh)?;
     for task in iter {
         match task {
             Err(error) => {
@@ -77,14 +79,14 @@ pub fn data<'a>(args: &ArgMatches<'a>, interfaces: &Interfaces) -> Result<()> {
     )?;
     if !confirm {
         error!(logger, "Cannot check without user confirmation");
-        return Err("Operation aborded by the user".into());
+        return Err(ErrorKind::Legacy(err_msg("operation aborded by the user")).into());
     }
 
     let mut outcomes = Outcomes::new();
     let config = args.value_of("config").unwrap();
-    let config = Config::from_file(config).chain_err(|| "Failed to check tasks")?;
-    let tasks: TasksAdmin<ReplicanteQueues> = TasksAdmin::new(logger.clone(), config.tasks)
-        .map_err(|error| error.to_string())?;
+    let config = Config::from_file(config)
+        .context(ErrorKind::Legacy(err_msg("failed to check tasks")))?;
+    let tasks: TasksAdmin<ReplicanteQueues> = TasksAdmin::new(logger.clone(), config.tasks)?;
 
     // Check all queues now.
     check_cluster_refresh(&logger, interfaces, &mut outcomes, &tasks)?;
@@ -92,7 +94,7 @@ pub fn data<'a>(args: &ArgMatches<'a>, interfaces: &Interfaces) -> Result<()> {
     // Report results.
     if outcomes.has_errors() {
         error!(logger, "Tasks data checks failed");
-        return Err("Tasks data checks failed".into());
+        return Err(ErrorKind::Legacy(err_msg("tasks data checks failed")).into());
     }
     if outcomes.has_warnings() {
         warn!(logger, "Tasks data checks passed with warnings");
@@ -110,7 +112,7 @@ pub fn run<'a>(args: &ArgMatches<'a>, interfaces: &Interfaces) -> Result<()> {
     let command = command.subcommand_name();
     match command {
         Some(COMMAND_DATA) => data(args, interfaces),
-        None => Err("Need a tasks check to run".into()),
-        _ => Err("Received unrecognised command".into()),
+        None => Err(ErrorKind::Legacy(err_msg("need a tasks check to run")).into()),
+        _ => Err(ErrorKind::Legacy(err_msg("received unrecognised command")).into()),
     }
 }

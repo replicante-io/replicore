@@ -1,3 +1,4 @@
+use failure::err_msg;
 use slog::Logger;
 
 use replicante_tasks::Config;
@@ -5,6 +6,7 @@ use replicante_tasks::TaskHandler;
 use replicante_tasks::WorkerSet;
 use replicante_tasks::WorkerSetPool;
 
+use super::super::ErrorKind;
 use super::super::Result;
 use super::super::config::TaskWorkers;
 use super::super::interfaces::Interfaces;
@@ -71,7 +73,7 @@ impl Workers {
             self.state = Some(State::Started(workers));
             Ok(())
         } else {
-            Err("workers already running".into())
+            Err(ErrorKind::Legacy(err_msg("workers already running")))?
         }
     }
 
@@ -81,7 +83,7 @@ impl Workers {
             drop(pool);
             Ok(())
         } else {
-            Err("workers not running".into())
+            Err(ErrorKind::Legacy(err_msg("workers not running")))?
         }
     }
 }

@@ -2,24 +2,24 @@ use std::collections::HashMap;
 use std::sync::Mutex;
 use std::time::Duration;
 
-use error_chain::ChainedError;
+use failure::ResultExt;
+use failure::err_msg;
 use slog::Logger;
 
 use replicante_agent_discovery::Config as BackendsConfig;
 use replicante_agent_discovery::discover;
-
 use replicante_data_aggregator::Aggregator;
 use replicante_data_fetcher::Fetcher;
 use replicante_data_fetcher::Snapshotter;
 use replicante_data_models::ClusterDiscovery;
 use replicante_data_models::Event;
-
 use replicante_data_store::Store;
 use replicante_streams_events::EventsStream;
 use replicante_tasks::TaskRequest;
 
+use super::super::super::Error;
+use super::super::super::ErrorKind;
 use super::super::super::Result;
-use super::super::super::ResultExt;
 use super::super::super::tasks::ReplicanteQueues;
 use super::super::super::tasks::Tasks;
 use super::EventsSnapshotsConfig;
@@ -28,7 +28,6 @@ use super::metrics::DISCOVERY_FETCH_ERRORS_COUNT;
 use super::metrics::DISCOVERY_SNAPSHOT_TRACKER_COUNT;
 
 
-const FAIL_FIND_DISCOVERY: &str = "Failed to fetch cluster discovery";
 const FAIL_PERSIST_DISCOVERY: &str = "Failed to persist cluster discovery";
 
 
@@ -78,13 +77,20 @@ impl DiscoveryWorker {
                     self.process(cluster.clone());
                     let task = TaskRequest::new(ReplicanteQueues::ClusterRefresh);
                     if let Err(error) = self.tasks.request(task, cluster) {
-                        error!(self.logger, "Failed to request cluster discovery"; "error" => %error);
+                        error!(
+                            self.logger, "Failed to request cluster discovery";
+                            "error" => %error
+                            // TODO: failure_info(&error)
+                        );
                         DISCOVERY_FETCH_ERRORS_COUNT.inc();
                     };
                 },
                 Err(error) => {
-                    let error = error.display_chain().to_string();
-                    error!(self.logger, "Failed to fetch cluster discovery"; "error" => error);
+                    error!(
+                        self.logger, "Failed to fetch cluster discovery";
+                        "error" => %error
+                        // TODO: failure_info(&error)
+                    );
                     DISCOVERY_FETCH_ERRORS_COUNT.inc();
                 }
             };
@@ -107,10 +113,10 @@ impl DiscoveryWorker {
         let name = cluster.cluster.clone();
         let snapshot = self.emissions.snapshot(name.clone());
         if let Err(error) = self.process_checked(cluster, snapshot) {
-            let error = error.display_chain().to_string();
             error!(
                 self.logger, "Failed to process cluster discovery";
-                "cluster" => name, "error" => error
+                "cluster" => name, "error" => %error
+                // TODO: failure_info(&error)
             );
             DISCOVERY_FETCH_ERRORS_COUNT.inc();
         }
@@ -123,10 +129,10 @@ impl DiscoveryWorker {
                 name.clone(), self.events.clone(), self.store.clone()
             );
             if let Err(error) = snapshotter.run() {
-                let error = error.display_chain().to_string();
                 error!(
                     self.logger, "Failed to emit snapshots";
-                    "cluster" => name, "error" => error
+                    "cluster" => name, "error" => %error
+                    // TODO: failure_info(&error)
                 );
             }
         }
@@ -138,7 +144,7 @@ impl DiscoveryWorker {
 
     fn process_discovery(&self, cluster: ClusterDiscovery) -> Result<()> {
         match self.store.cluster_discovery(cluster.cluster.clone()) {
-            Err(error) => Err(error).chain_err(|| FAIL_FIND_DISCOVERY),
+            Err(error) => Err(error.into()),
             Ok(None) => self.process_discovery_new(cluster),
             Ok(Some(old)) => self.process_discovery_exising(cluster, old),
         }
@@ -151,14 +157,24 @@ impl DiscoveryWorker {
             return Ok(());
         }
         let event = Event::builder().cluster().changed(old, cluster.clone());
-        self.events.emit(event).chain_err(|| FAIL_PERSIST_DISCOVERY)?;
-        self.store.persist_discovery(cluster).chain_err(|| FAIL_PERSIST_DISCOVERY)
+        self.events.emit(event).map_err(Error::from)
+            .context(ErrorKind::Legacy(err_msg(FAIL_PERSIST_DISCOVERY)))
+            .map_err(Error::from)?;
+        self.store.persist_discovery(cluster).map_err(Error::from)
+            .context(ErrorKind::Legacy(err_msg(FAIL_PERSIST_DISCOVERY)))
+            .map_err(Error::from)?;
+        Ok(())
     }
 
     fn process_discovery_new(&self, cluster: ClusterDiscovery) -> Result<()> {
         let event = Event::builder().cluster().cluster_new(cluster.clone());
-        self.events.emit(event).chain_err(|| FAIL_PERSIST_DISCOVERY)?;
-        self.store.persist_discovery(cluster).chain_err(|| FAIL_PERSIST_DISCOVERY)
+        self.events.emit(event).map_err(Error::from)
+            .context(ErrorKind::Legacy(err_msg(FAIL_PERSIST_DISCOVERY)))
+            .map_err(Error::from)?;
+        self.store.persist_discovery(cluster).map_err(Error::from)
+            .context(ErrorKind::Legacy(err_msg(FAIL_PERSIST_DISCOVERY)))
+            .map_err(Error::from)?;
+        Ok(())
     }
 }
 

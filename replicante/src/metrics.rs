@@ -19,8 +19,7 @@ lazy_static! {
 ///
 /// Metrics that fail to register are logged and ignored.
 pub fn register_metrics(logger: &Logger, registry: &Registry) {
-    if let Err(err) = registry.register(Box::new(COMPONENTS_ENABLED.clone())) {
-        let error = format!("{:?}", err);
-        debug!(logger, "Failed to register COMPONENTS_ENABLED"; "error" => error);
+    if let Err(error) = registry.register(Box::new(COMPONENTS_ENABLED.clone())) {
+        debug!(logger, "Failed to register COMPONENTS_ENABLED"; "error" => ?error);
     }
 }
