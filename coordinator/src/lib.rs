@@ -1,6 +1,8 @@
 extern crate failure;
 #[macro_use]
 extern crate failure_derive;
+#[macro_use]
+extern crate lazy_static;
 extern crate prometheus;
 extern crate serde;
 #[macro_use]

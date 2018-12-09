@@ -21,6 +21,10 @@ use super::super::super::NodeId;
 use super::super::super::Result;
 use super::super::super::config::ZookeeperConfig;
 
+use super::metrics::ZOO_CONNECTION_COUNT;
+use super::metrics::ZOO_OP_DURATION;
+use super::metrics::ZOO_OP_ERRORS_COUNT;
+
 
 const HASH_MIN_LEGTH: usize = 4;
 
@@ -73,10 +77,14 @@ impl Client {
     /// `CreateMode::Container` requires Zookeeper 3.5.3+ and does not seem to be reliable
     /// (or maybe I failed to configure the server).
     pub fn mkcontaner(keeper: &ZooKeeper, path: &str) -> Result<()> {
+        let _timer = ZOO_OP_DURATION.with_label_values(&["create"]).start_timer();
         match keeper.create(path, Vec::new(), Acl::open_unsafe().clone(), CreateMode::Persistent) {
-            Err(ZkError::NodeExists) => (),
-            Err(error) => Err(error).context(ErrorKind::Backend("container creation"))?,
             Ok(_) => (),
+            Err(ZkError::NodeExists) => (),
+            Err(error) => {
+                ZOO_OP_ERRORS_COUNT.with_label_values(&["create"]).inc();
+                return Err(error).context(ErrorKind::Backend("container creation"))?;
+            },
         };
         Ok(())
     }
@@ -110,15 +118,29 @@ impl Client {
 impl Client {
     /// Ensure the given path exists and create it if it does not.
     fn ensure_persistent(&self, path: &str, keeper: &ZooKeeper) -> Result<()> {
-        if keeper.exists(path, false).context(ErrorKind::Backend("path check"))?.is_none() {
+        let timer = ZOO_OP_DURATION.with_label_values(&["exists"]).start_timer();
+        let not_exists = keeper.exists(path, false)
+            .context(ErrorKind::Backend("path check"))
+            .map_err(|error| {
+                ZOO_OP_ERRORS_COUNT.with_label_values(&["exists"]).inc();
+                error
+            })?
+            .is_none();
+        timer.observe_duration();
+        if not_exists {
             info!(self.logger, "Need to create persistent path"; "path" => path);
+            let timer = ZOO_OP_DURATION.with_label_values(&["create"]).start_timer();
             let result = keeper.create(
                 path, Vec::new(), Acl::open_unsafe().clone(), CreateMode::Persistent
             );
+            timer.observe_duration();
             match result {
                 Ok(_) => (),
                 Err(ZkError::NodeExists) => (),
-                Err(err) => return Err(err).context(ErrorKind::Backend("path creation"))?,
+                Err(err) => {
+                    ZOO_OP_ERRORS_COUNT.with_label_values(&["create"]).inc();
+                    return Err(err).context(ErrorKind::Backend("path creation"))?;
+                },
             };
         }
         Ok(())
@@ -128,8 +150,15 @@ impl Client {
     fn new_client(&self) -> Result<CurrentClient> {
         info!(self.logger, "Initiating new zookeeper session");
         let timeout = Duration::from_secs(self.config.timeout);
+        ZOO_CONNECTION_COUNT.inc();
+        let timer = ZOO_OP_DURATION.with_label_values(&["connect"]).start_timer();
         let keeper = ZooKeeper::connect(&self.config.ensamble, timeout, |_| {})
-            .context(ErrorKind::BackendConnect)?;
+            .context(ErrorKind::BackendConnect)
+            .map_err(|error| {
+                ZOO_OP_ERRORS_COUNT.with_label_values(&["connect"]).inc();
+                error
+            })?;
+        timer.observe_duration();
 
         // Make root if needed.
         self.ensure_persistent("/", &keeper).context(ErrorKind::Backend("ensure '/' exists"))?;
@@ -199,9 +228,13 @@ impl Client {
     /// Register the current node ID and attributes.
     fn register_node(&self, keeper: &ZooKeeper) -> ZkResult<()> {
         let data = self.registry_data.clone();
+        let _timer = ZOO_OP_DURATION.with_label_values(&["create"]).start_timer();
         keeper.create(
             &self.registry_key, data, Acl::read_unsafe().clone(), CreateMode::Ephemeral
-        )?;
+        ).map_err(|error| {
+            ZOO_OP_ERRORS_COUNT.with_label_values(&["create"]).inc();
+            error
+        })?;
         Ok(())
     }
 }

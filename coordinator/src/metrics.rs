@@ -5,6 +5,6 @@ use slog::Logger;
 /// Attemps to register metrics with the Registry.
 ///
 /// Metrics that fail to register are logged and ignored.
-pub fn register_metrics(_logger: &Logger, _registry: &Registry) {
-    // TODO
+pub fn register_metrics(logger: &Logger, registry: &Registry) {
+    super::backend::zookeeper::register_metrics(logger, registry);
 }
