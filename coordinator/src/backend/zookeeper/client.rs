@@ -24,6 +24,7 @@ use super::super::super::config::ZookeeperConfig;
 use super::metrics::ZOO_CONNECTION_COUNT;
 use super::metrics::ZOO_OP_DURATION;
 use super::metrics::ZOO_OP_ERRORS_COUNT;
+use super::metrics::ZOO_TIMEOUTS_COUNT;
 
 
 const HASH_MIN_LEGTH: usize = 4;
@@ -83,6 +84,9 @@ impl Client {
             Err(ZkError::NodeExists) => (),
             Err(error) => {
                 ZOO_OP_ERRORS_COUNT.with_label_values(&["create"]).inc();
+                if error == ZkError::OperationTimeout {
+                    ZOO_TIMEOUTS_COUNT.inc();
+                }
                 return Err(error).context(ErrorKind::Backend("container creation"))?;
             },
         };
@@ -120,11 +124,14 @@ impl Client {
     fn ensure_persistent(&self, path: &str, keeper: &ZooKeeper) -> Result<()> {
         let timer = ZOO_OP_DURATION.with_label_values(&["exists"]).start_timer();
         let not_exists = keeper.exists(path, false)
-            .context(ErrorKind::Backend("path check"))
             .map_err(|error| {
                 ZOO_OP_ERRORS_COUNT.with_label_values(&["exists"]).inc();
+                if error == ZkError::OperationTimeout {
+                    ZOO_TIMEOUTS_COUNT.inc();
+                }
                 error
-            })?
+            })
+            .context(ErrorKind::Backend("path check"))?
             .is_none();
         timer.observe_duration();
         if not_exists {
@@ -137,9 +144,12 @@ impl Client {
             match result {
                 Ok(_) => (),
                 Err(ZkError::NodeExists) => (),
-                Err(err) => {
+                Err(error) => {
                     ZOO_OP_ERRORS_COUNT.with_label_values(&["create"]).inc();
-                    return Err(err).context(ErrorKind::Backend("path creation"))?;
+                    if error == ZkError::OperationTimeout {
+                        ZOO_TIMEOUTS_COUNT.inc();
+                    }
+                    return Err(error).context(ErrorKind::Backend("path creation"))?;
                 },
             };
         }
@@ -153,11 +163,14 @@ impl Client {
         ZOO_CONNECTION_COUNT.inc();
         let timer = ZOO_OP_DURATION.with_label_values(&["connect"]).start_timer();
         let keeper = ZooKeeper::connect(&self.config.ensamble, timeout, |_| {})
-            .context(ErrorKind::BackendConnect)
             .map_err(|error| {
                 ZOO_OP_ERRORS_COUNT.with_label_values(&["connect"]).inc();
+                if error == ZkError::OperationTimeout {
+                    ZOO_TIMEOUTS_COUNT.inc();
+                }
                 error
-            })?;
+            })
+            .context(ErrorKind::BackendConnect)?;
         timer.observe_duration();
 
         // Make root if needed.
@@ -233,6 +246,9 @@ impl Client {
             &self.registry_key, data, Acl::read_unsafe().clone(), CreateMode::Ephemeral
         ).map_err(|error| {
             ZOO_OP_ERRORS_COUNT.with_label_values(&["create"]).inc();
+            if error == ZkError::OperationTimeout {
+                ZOO_TIMEOUTS_COUNT.inc();
+            }
             error
         })?;
         Ok(())

@@ -30,6 +30,11 @@ lazy_static! {
         ),
         &["operation"]
     ).expect("Failed to create ZOO_OP_ERRORS_COUNT counter");
+
+    pub static ref ZOO_TIMEOUTS_COUNT: Counter = Counter::new(
+        "replicore_coordinator_zookeeper_timeouts",
+        "Number of operations that failed due to timeouts"
+    ).expect("Failed to create ZOO_TIMEOUTS_COUNT counter");
 }
 
 
@@ -45,5 +50,8 @@ pub fn register_metrics(logger: &Logger, registry: &Registry) {
     }
     if let Err(err) = registry.register(Box::new(ZOO_OP_ERRORS_COUNT.clone())) {
         debug!(logger, "Failed to register ZOO_OP_ERRORS_COUNT"; "error" => ?err);
+    }
+    if let Err(err) = registry.register(Box::new(ZOO_TIMEOUTS_COUNT.clone())) {
+        debug!(logger, "Failed to register ZOO_TIMEOUTS_COUNT"; "error" => ?err);
     }
 }
