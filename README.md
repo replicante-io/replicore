@@ -10,9 +10,9 @@ The compose project uses docker volumes to persist data so that containers can b
 stopped/recreated without loosing all development data.
 These services are:
 
-  * [Kafka](https://kafka.apache.org/) for events streaming and task queues.
-  * [MongoDB](https://www.mongodb.com/) for the storage layer.
-  * [Zookeeper](https://zookeeper.apache.org/) for cluster coordination (and for use by kafka).
+  * [Kafka](https://kafka.apache.org/) 1.0+ for events streaming and task queues.
+  * [MongoDB](https://www.mongodb.com/) 3.4+ for the storage layer.
+  * [Zookeeper](https://zookeeper.apache.org/) 3.4+ for cluster coordination (and for use by kafka).
 
 The project also comes with tools to inspect the services to see what is in them:
 
