@@ -47,9 +47,14 @@ impl fmt::Display for Error {
 /// Exhaustive list of possible errors emitted by this crate.
 #[derive(Clone, Copy, Eq, PartialEq, Hash, Debug, Fail)]
 pub enum ErrorKind {
-    // TODO
-    #[fail(display = "TODO: create errors")]
-    __TODO__
+    #[fail(display = "connection to coordinator failed")]
+    BackendConnect,
+
+    #[fail(display = "{} failed due to coordinator error", _0)]
+    Backend(&'static str),
+
+    #[fail(display = "failed to encode {}", _0)]
+    Encode(&'static str),
 }
 
 

@@ -11,6 +11,8 @@ node_modules/
 !Cargo.lock
 
 # Local testing and development tools.
+deps.dot
+deps.svg
 replicante.yaml
 conf.d
 devtools/data/

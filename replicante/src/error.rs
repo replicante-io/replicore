@@ -82,6 +82,12 @@ impl fmt::Display for Error {
 //#[derive(Clone, Eq, PartialEq, Hash, Debug, Fail)]
 #[derive(Debug, Fail)]
 pub enum ErrorKind {
+    #[fail(display = "coordination error")]
+    Coordination,
+
+    #[fail(display = "failed to initialise {} interface", _0)]
+    InterfaceInit(&'static str),
+
     #[fail(display = "unable to spawn new thread for '{}'", _0)]
     SpawnThread(&'static str),
 

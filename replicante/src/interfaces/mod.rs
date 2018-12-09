@@ -1,3 +1,4 @@
+use failure::ResultExt;
 use prometheus::Registry;
 use slog::Logger;
 
@@ -5,6 +6,7 @@ use replicante_coordinator::Coordinator;
 use replicante_data_store::Store;
 use replicante_streams_events::EventsStream;
 
+use super::ErrorKind;
 use super::Result;
 use super::config::Config;
 use super::tasks::Tasks;
@@ -44,7 +46,8 @@ impl Interfaces {
     pub fn new(config: &Config, logger: Logger) -> Result<Interfaces> {
         let metrics = Metrics::new();
         let api = API::new(config.api.clone(), logger.clone(), &metrics);
-        let coordinator = Coordinator::new(config.coordinator.clone(), logger.clone());
+        let coordinator = Coordinator::new(config.coordinator.clone(), logger.clone())
+            .context(ErrorKind::InterfaceInit("coordinator"))?;
         let store = Store::new(config.storage.clone(), logger.clone())?;
         let streams = Streams::new(config, logger.clone(), store.clone())?;
         let tasks = Tasks::new(config.tasks.clone())?;
@@ -64,6 +67,7 @@ impl Interfaces {
     ///
     /// Metrics that fail to register are logged and ignored.
     pub fn register_metrics(logger: &Logger, registry: &Registry) {
+        ::replicante_coordinator::register_metrics(logger, registry);
         ::replicante_tasks::register_metrics(logger, registry);
         EventsStream::register_metrics(logger, registry);
         Store::register_metrics(logger, registry);

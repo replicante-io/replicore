@@ -70,11 +70,33 @@ components:
 
 # Distributed coordinator configuration options.
 coordinator:
+  # The distributed coordination system to use for nodes coordination.
+  #
+  # !!! DO NOT CHANGE AFTER INITIAL CONFIGURATION !!!
+  # This option is to allow users to choose a supported software that best fits
+  # their use and environment.
+  #
+  # Available options:
+  #
+  #   * 'zookeeper' (recommended)
+  backend: 'zookeeper'
+
   # User specified key/value map attached to node IDs.
   #
   # This data is not used by the system and is provided to help users debug
   # and otherwise label nodes for whatever needs they may have.
   node_attributes: {}
+
+  # Any backend-specific option is set here.
+  # The available options vary from backend to backend and are documented below.
+  #
+  # Zookeeper options:
+  options:
+    # Zookeeper ensamble connection string.
+    ensamble: 'localhost:2181/replicante'
+
+    # Zookeeper session timeout (in seconds).
+    timeout: 10
 
 
 # The section below is for agent discovery configuration.
@@ -274,7 +296,7 @@ tasks:
   # Available options:
   #
   #   * 'kafka' (recommended)
-  backend: kafka
+  backend: 'kafka'
 
   # Any backend-specific option is set here.
   # The available options vary from backend to backend and are documented below.

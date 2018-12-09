@@ -54,12 +54,12 @@ impl Workers {
     ///
     /// The tasks that are processed by this node are defined in the configuration file.
     pub fn new(
-        _interfaces: &mut Interfaces, logger: Logger, config: Config, task_workers: TaskWorkers
+        interfaces: &mut Interfaces, logger: Logger, config: Config, task_workers: TaskWorkers
     ) -> Result<Workers> {
         let worker_set = WorkerSet::new(logger.clone(), config)?;
         let worker_set = configure_worker(
             worker_set, ReplicanteQueues::ClusterRefresh, task_workers.cluster_refresh(),
-            || self::cluster_refresh::Handler::new(logger.clone())
+            || self::cluster_refresh::Handler::new(interfaces, logger.clone())
         )?;
         Ok(Workers {
             state: Some(State::Configured(worker_set)),

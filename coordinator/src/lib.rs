@@ -1,38 +1,38 @@
 extern crate failure;
 #[macro_use]
 extern crate failure_derive;
+extern crate prometheus;
 extern crate serde;
 #[macro_use]
 extern crate serde_derive;
+extern crate serde_json;
+#[macro_use]
 extern crate slog;
+extern crate zookeeper;
 
 extern crate replicante_util_rndid;
 
 
-use slog::Logger;
-
-
+mod admin;
+mod backend;
 mod config;
+mod coordinator;
 mod error;
+mod metrics;
 mod node_id;
+mod tombstone;
 
 #[cfg(debug_assertions)]
 pub mod mock;
 
 
+pub use self::admin::Admin;
+pub use self::config::Backend as BackendConfig;
 pub use self::config::Config;
+pub use self::coordinator::Coordinator;
 pub use self::error::Error;
 pub use self::error::ErrorKind;
 pub use self::error::Result;
+pub use self::metrics::register_metrics;
 pub use self::node_id::NodeId;
-
-
-/// Interface to access distributed coordination services.
-#[derive(Clone)]
-pub struct Coordinator();
-
-impl Coordinator {
-    pub fn new(_config: Config, _logger: Logger) -> Coordinator {
-        Coordinator()
-    }
-}
+pub use self::tombstone::Tombstone;
