@@ -1773,6 +1773,7 @@ dependencies = [
  "prometheus 0.4.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "replicante 0.2.0",
  "replicante_agent_discovery 0.1.0",
+ "replicante_coordinator 0.1.0",
  "replicante_data_models 0.2.0",
  "replicante_data_store 0.2.0",
  "replicante_streams_events 0.1.0",

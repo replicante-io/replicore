@@ -35,21 +35,27 @@ pub struct Client {
     config: ZookeeperConfig,
     keeper: Option<Mutex<CurrentClient>>,
     logger: Logger,
-    registry_data: Vec<u8>,
-    registry_key: String,
+    registry: Option<RegistryData>,
 }
 
 impl Client {
-    pub fn new(config: ZookeeperConfig, node_id: &NodeId, logger: Logger) -> Result<Client> {
-        let registry_data: Vec<u8> = serde_json::to_vec(node_id)
-            .context(ErrorKind::Encode("node id"))?;
-        let registry_key = Client::path_from_hash("/nodes", &node_id.to_string());
+    pub fn new(config: ZookeeperConfig, node_id: Option<&NodeId>, logger: Logger) -> Result<Client> {
+        let registry = match node_id {
+            None => None,
+            Some(node_id) => {
+                let data = serde_json::to_vec(node_id).context(ErrorKind::Encode("node id"))?;
+                let key = Client::path_from_hash("/nodes", &node_id.to_string());
+                Some(RegistryData {
+                    data,
+                    key,
+                })
+            },
+        };
         let mut client = Client {
             config,
             keeper: None,
             logger,
-            registry_data,
-            registry_key,
+            registry,
         };
         let keeper = Mutex::new(client.new_client()?);
         client.keeper = Some(keeper);
@@ -103,6 +109,42 @@ impl Client {
         }
         let prefix: String = hash.chars().take(HASH_MIN_LEGTH).collect();
         format!("{}/{}/{}", root, prefix, hash)
+    }
+}
+
+impl Client {
+    /// Register the current node ID and attributes.
+    fn register_node(keeper: &ZooKeeper, registry: &RegistryData, logger: &Logger) -> Result<()> {
+        match Client::register_node_data(keeper, registry) {
+            Err(ZkError::NoNode) => {
+                let path = Client::container_path(&registry.key);
+                Client::mkcontaner(keeper, &path)?;
+                Client::register_node_data(keeper, registry)
+                    .context(ErrorKind::Backend("node registration"))?;
+            },
+            Err(err) => {
+                return Err(err).context(ErrorKind::Backend("node registration"))?;
+            },
+            Ok(()) => (),
+        };
+        debug!(logger, "Registered node for debugging");
+        Ok(())
+    }
+
+    /// Write the data node to zookeeper.
+    fn register_node_data(keeper: &ZooKeeper, registry: &RegistryData) -> ZkResult<()> {
+        let data = registry.data.clone();
+        let key = &registry.key;
+        let _timer = ZOO_OP_DURATION.with_label_values(&["create"]).start_timer();
+        keeper.create(key, data, Acl::read_unsafe().clone(), CreateMode::Ephemeral)
+            .map_err(|error| {
+                ZOO_OP_ERRORS_COUNT.with_label_values(&["create"]).inc();
+                if error == ZkError::OperationTimeout {
+                    ZOO_TIMEOUTS_COUNT.inc();
+                }
+                error
+            })?;
+        Ok(())
     }
 }
 
@@ -180,19 +222,10 @@ impl Client {
         self.ensure_persistent("/tombstones", &keeper)
             .context(ErrorKind::Backend("ensure '/tombstones' exists"))?;
 
-        // Register node_id for debugging.
-        match self.register_node(&keeper) {
-            Err(ZkError::NoNode) => {
-                let path = Client::container_path(&self.registry_key);
-                Client::mkcontaner(&keeper, &path)?;
-                self.register_node(&keeper).context(ErrorKind::Backend("node registration"))?;
-            },
-            Err(err) => {
-                return Err(err).context(ErrorKind::Backend("node registration"))?;
-            },
-            Ok(_) => (),
-        };
-        debug!(self.logger, "Registered node for debugging");
+        // Register node_id for debugging (if provided).
+        if let Some(registry) = self.registry.as_ref() {
+            Client::register_node(&keeper, registry, &self.logger)?;
+        }
 
         // Listen for connection events to close self.
         let logger = self.logger.clone();
@@ -237,22 +270,6 @@ impl Client {
             keeper: Arc::new(keeper),
         })
     }
-
-    /// Register the current node ID and attributes.
-    fn register_node(&self, keeper: &ZooKeeper) -> ZkResult<()> {
-        let data = self.registry_data.clone();
-        let _timer = ZOO_OP_DURATION.with_label_values(&["create"]).start_timer();
-        keeper.create(
-            &self.registry_key, data, Acl::read_unsafe().clone(), CreateMode::Ephemeral
-        ).map_err(|error| {
-            ZOO_OP_ERRORS_COUNT.with_label_values(&["create"]).inc();
-            if error == ZkError::OperationTimeout {
-                ZOO_TIMEOUTS_COUNT.inc();
-            }
-            error
-        })?;
-        Ok(())
-    }
 }
 
 
@@ -270,4 +287,11 @@ impl CurrentClient {
     fn client(&self) -> Arc<ZooKeeper> {
         Arc::clone(&self.keeper)
     }
+}
+
+
+/// Container for node register data.
+struct RegistryData {
+    data: Vec<u8>,
+    key: String,
 }

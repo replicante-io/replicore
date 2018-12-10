@@ -24,7 +24,7 @@ pub struct Zookeeper {
 
 impl Zookeeper {
     pub fn new(node_id: NodeId, config: ZookeeperConfig, logger: Logger) -> Result<Zookeeper> {
-        let client = Arc::new(Client::new(config.clone(), &node_id, logger.clone())?);
+        let client = Arc::new(Client::new(config.clone(), Some(&node_id), logger.clone())?);
         let cleaner = Cleaner::new(Arc::clone(&client), config, logger)?;
         Ok(Zookeeper {
             _cleaner: cleaner,

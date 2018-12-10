@@ -17,6 +17,7 @@ extern crate slog_term;
 
 extern crate replicante;
 extern crate replicante_agent_discovery;
+extern crate replicante_coordinator;
 extern crate replicante_data_models;
 extern crate replicante_data_store;
 extern crate replicante_streams_events;

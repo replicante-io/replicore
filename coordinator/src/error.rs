@@ -53,6 +53,9 @@ pub enum ErrorKind {
     #[fail(display = "{} failed due to coordinator error", _0)]
     Backend(&'static str),
 
+    #[fail(display = "failed to decode {}", _0)]
+    Decode(&'static str),
+
     #[fail(display = "failed to encode {}", _0)]
     Encode(&'static str),
 
