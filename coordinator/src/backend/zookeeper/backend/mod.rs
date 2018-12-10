@@ -1,3 +1,4 @@
+use std::sync::Arc;
 use std::time::Duration;
 
 use slog::Logger;
@@ -8,17 +9,25 @@ use super::super::super::config::ZookeeperConfig;
 use super::super::Backend;
 use super::client::Client;
 
+mod cleaner;
+
+use self::cleaner::Cleaner;
+
 
 /// Zookeeper-backed distributed coordination.
 pub struct Zookeeper {
-    client: Client,
+    // Background thread to clean unused nodes.
+    _cleaner: Cleaner,
+    client: Arc<Client>,
     node_id: NodeId,
 }
 
 impl Zookeeper {
     pub fn new(node_id: NodeId, config: ZookeeperConfig, logger: Logger) -> Result<Zookeeper> {
-        let client = Client::new(config, &node_id, logger)?;
+        let client = Arc::new(Client::new(config.clone(), &node_id, logger.clone())?);
+        let cleaner = Cleaner::new(Arc::clone(&client), config, logger)?;
         Ok(Zookeeper {
+            _cleaner: cleaner,
             client,
             node_id,
         })

@@ -92,8 +92,19 @@ coordinator:
   #
   # Zookeeper options:
   options:
-    # Zookeeper ensamble connection string.
-    ensamble: 'localhost:2181/replicante'
+    # Zookeeper ensemble connection string.
+    ensemble: 'localhost:2181/replicante'
+
+    # Zookeeper background cleaner configuration.
+    cleanup:
+      # Maximum number of nodes to delete in a single cleanup cycle.
+      limit: 1000
+
+      # Maximum amount of time to wait between cleanup cycles.
+      interval_max: 10800
+
+      # Minimum amount of time to wait between cleanup cycles.
+      interval_min: 3600
 
     # Zookeeper session timeout (in seconds).
     timeout: 10

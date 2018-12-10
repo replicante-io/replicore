@@ -8,12 +8,16 @@ use slog::Logger;
 
 
 lazy_static! {
+    pub static ref ZOO_CLEANUP_COUNT: Counter = Counter::new(
+        "replicore_coordinator_zookeeper_cleanup",
+        "Number of znodes deleted by the background cleaner"
+    ).expect("Failed to create ZOO_CLEANUP_COUNT counter");
+
     pub static ref ZOO_CONNECTION_COUNT: Counter = Counter::new(
         "replicore_coordinator_zookeeper_connect",
-        "Number of connections to the zookeeper ensamble since the process started"
+        "Number of connections to the zookeeper ensemble since the process started"
     ).expect("Failed to create ZOO_CONNECTION_COUNT counter");
 
-    /// Observe duration of Zookeeper operations.
     pub static ref ZOO_OP_DURATION: HistogramVec = HistogramVec::new(
         HistogramOpts::new(
             "replicore_coordinator_zookeeper_op_duration",
@@ -22,7 +26,6 @@ lazy_static! {
         &["operation"]
     ).expect("Failed to create ZOO_OP_DURATION histogram");
 
-    /// Counter for MongoDB operation errors.
     pub static ref ZOO_OP_ERRORS_COUNT: CounterVec = CounterVec::new(
         Opts::new(
             "replicore_coordinator_zookeeper_op_errors",
@@ -42,6 +45,9 @@ lazy_static! {
 ///
 /// Metrics that fail to register are logged and ignored.
 pub fn register_metrics(logger: &Logger, registry: &Registry) {
+    if let Err(err) = registry.register(Box::new(ZOO_CLEANUP_COUNT.clone())) {
+        debug!(logger, "Failed to register ZOO_CLEANUP_COUNT"; "error" => ?err);
+    }
     if let Err(err) = registry.register(Box::new(ZOO_CONNECTION_COUNT.clone())) {
         debug!(logger, "Failed to register ZOO_CONNECTION_COUNT"; "error" => ?err);
     }

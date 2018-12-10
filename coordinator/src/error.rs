@@ -55,6 +55,9 @@ pub enum ErrorKind {
 
     #[fail(display = "failed to encode {}", _0)]
     Encode(&'static str),
+
+    #[fail(display = "unable to spawn new thread for '{}'", _0)]
+    SpawnThread(&'static str),
 }
 
 

@@ -162,7 +162,7 @@ impl Client {
         let timeout = Duration::from_secs(self.config.timeout);
         ZOO_CONNECTION_COUNT.inc();
         let timer = ZOO_OP_DURATION.with_label_values(&["connect"]).start_timer();
-        let keeper = ZooKeeper::connect(&self.config.ensamble, timeout, |_| {})
+        let keeper = ZooKeeper::connect(&self.config.ensemble, timeout, |_| {})
             .map_err(|error| {
                 ZOO_OP_ERRORS_COUNT.with_label_values(&["connect"]).inc();
                 if error == ZkError::OperationTimeout {

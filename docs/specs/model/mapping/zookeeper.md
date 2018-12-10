@@ -6,7 +6,7 @@
 
 * Clustering: zookeeper processes forming an ensable.
 
-* Sharding: (A shard is the entire ensamble)
+* Sharding: (A shard is the entire ensemble)
   * A shard ID: the cluster name.
   * [Optional] An indicator of when the last write operation happened (commit offset):
     * The replication lag unit (i.e, seconds, commits, ...): offset/zkid.
