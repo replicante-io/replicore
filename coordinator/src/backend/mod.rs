@@ -1,5 +1,6 @@
 use super::NodeId;
 use super::Result;
+use super::lock::NonBlockingLock;
 
 
 pub mod zookeeper;
@@ -9,6 +10,9 @@ pub mod zookeeper;
 pub trait Backend : Send + Sync {
     /// Get the ID of the current node.
     fn node_id(&self) -> &NodeId;
+
+    /// Return a non-blocking lock that can be acquired/released as needed.
+    fn non_blocking_lock(&self, lock: String) -> NonBlockingLock;
 }
 
 
@@ -33,4 +37,20 @@ impl Iterator for Nodes {
     fn next(&mut self) -> Option<Self::Item> {
         self.0.next()
     }
+}
+
+
+/// Backend specific non-blocking lock behaviours.
+pub trait NonBlockingLockBehaviour {
+    /// Attempt to acquire a non-blocking lock.
+    fn acquire(&self) -> Result<()>;
+
+    /// Lightweight check if the lock is held by us.
+    fn check(&self) -> bool;
+
+    /// Attempt to release a non-blocking lock.
+    fn release(&self) -> Result<()>;
+
+    /// Attempt to release a non-blocking lock when it is dropped.
+    fn release_on_drop(&self) -> ();
 }

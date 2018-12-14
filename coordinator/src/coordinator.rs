@@ -8,6 +8,7 @@ use super::NodeId;
 use super::Result;
 use super::backend;
 use super::backend::Backend;
+use super::lock::NonBlockingLock;
 
 
 /// Interface to access distributed coordination services.
@@ -39,5 +40,20 @@ impl Coordinator {
     /// Get the ID of the current node.
     pub fn node_id(&self) -> &NodeId {
         self.0.node_id()
+    }
+
+    /// Return a non-blocking lock that can be acquaired/released as needed.
+    ///
+    /// If a lock is alreadt held by a process (including the current process)
+    /// any acquire operation will fail.
+    /// Only locks that are currently held can be released.
+    ///
+    /// Locks are automatically released if the process that holds them crashes 
+    /// (or is no longer able to talk to the coordination system).
+    /// 
+    /// If a lock is lost (the coordinator is no longer reachable or thinks we no longer
+    /// hold the lock for any reason) the state is changed and applications can check this.
+    pub fn non_blocking_lock<S: Into<String>>(&self, lock: S) -> NonBlockingLock {
+        self.0.non_blocking_lock(lock.into())
     }
 }

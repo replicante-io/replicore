@@ -4,6 +4,8 @@ use failure::Backtrace;
 use failure::Context;
 use failure::Fail;
 
+use super::NodeId;
+
 
 /// Error information returned by the `Coordinator` API in case of errors.
 #[derive(Debug)]
@@ -11,7 +13,7 @@ pub struct Error(Context<ErrorKind>);
 
 impl Error {
     pub fn kind(&self) -> ErrorKind {
-        *self.0.get_context()
+        self.0.get_context().clone()
     }
 }
 
@@ -45,7 +47,7 @@ impl fmt::Display for Error {
 
 
 /// Exhaustive list of possible errors emitted by this crate.
-#[derive(Clone, Copy, Eq, PartialEq, Hash, Debug, Fail)]
+#[derive(Clone, Eq, PartialEq, Hash, Debug, Fail)]
 pub enum ErrorKind {
     #[fail(display = "connection to coordinator failed")]
     BackendConnect,
@@ -58,6 +60,15 @@ pub enum ErrorKind {
 
     #[fail(display = "failed to encode {}", _0)]
     Encode(&'static str),
+
+    #[fail(display = "lock '{}' is already held by process '{}'", _0, _1)]
+    LockHeld(String, NodeId),
+
+    #[fail(display = "lock '{}' not found", _0)]
+    LockNotFound(String),
+
+    #[fail(display = "lock '{}' is held by process '{}'", _0, _1)]
+    LockNotHeld(String, NodeId),
 
     #[fail(display = "unable to spawn new thread for '{}'", _0)]
     SpawnThread(&'static str),

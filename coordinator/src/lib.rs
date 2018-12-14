@@ -1,6 +1,5 @@
 extern crate crossbeam_channel;
 extern crate failure;
-#[macro_use]
 extern crate failure_derive;
 #[macro_use]
 extern crate lazy_static;
@@ -24,6 +23,7 @@ mod backend;
 mod config;
 mod coordinator;
 mod error;
+mod lock;
 mod metrics;
 mod node_id;
 
@@ -38,5 +38,6 @@ pub use self::coordinator::Coordinator;
 pub use self::error::Error;
 pub use self::error::ErrorKind;
 pub use self::error::Result;
+pub use self::lock::NonBlockingLock;
 pub use self::metrics::register_metrics;
 pub use self::node_id::NodeId;

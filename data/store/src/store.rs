@@ -253,7 +253,7 @@ impl Store {
     /// Return an iterator over events in the store.
     ///
     /// Pass `filters` to tune the events that will be returned and `options` to
-    /// control result behavior like limit of items or order (old to new/new to old).
+    /// control result behaviour like limit of items or order (old to new/new to old).
     pub fn events(&self, filters: EventsFilters, options: EventsOptions) -> Result<Cursor<Event>> {
         self.0.events(filters, options)
     }

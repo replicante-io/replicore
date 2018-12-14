@@ -5,6 +5,7 @@ use slog::Logger;
 use super::super::super::NodeId;
 use super::super::super::Result;
 use super::super::super::config::ZookeeperConfig;
+use super::super::super::lock::NonBlockingLock;
 use super::super::Backend;
 use super::client::Client;
 
@@ -34,6 +35,10 @@ impl Zookeeper {
 }
 
 impl Backend for Zookeeper {
+    fn non_blocking_lock(&self, _lock: String) -> NonBlockingLock {
+        panic!("TODO: Zookeeper::non_blocking_lock");
+    }
+
     fn node_id(&self) -> &NodeId {
         &self.node_id
     }
