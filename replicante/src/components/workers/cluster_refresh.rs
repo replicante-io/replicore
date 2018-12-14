@@ -1,11 +1,10 @@
-use failure::ResultExt;
 use slog::Logger;
 
 use replicante_coordinator::Coordinator;
 use replicante_data_models::ClusterDiscovery;
 use replicante_tasks::TaskHandler;
 
-use super::super::super::ErrorKind;
+//use super::super::super::ErrorKind;
 use super::super::super::Result;
 use super::Interfaces;
 use super::ReplicanteQueues;
@@ -14,7 +13,7 @@ use super::Task;
 
 /// Task handler for `ReplicanteQueues::Discovery` tasks.
 pub struct Handler {
-    coordinator: Coordinator,
+    _coordinator: Coordinator,
     logger: Logger,
 }
 
@@ -22,7 +21,7 @@ impl Handler {
     pub fn new(interfaces: &Interfaces, logger: Logger) -> Handler {
         let coordinator = interfaces.coordinator.clone();
         Handler {
-            coordinator,
+            _coordinator: coordinator,
             logger,
         }
     }
@@ -30,24 +29,24 @@ impl Handler {
     fn do_handle(&self, task: Task) -> Result<()> {
         let discovery: ClusterDiscovery = task.deserialize()?;
 
-        // Skip processing if a tombstone exists for the cluster.
-        let tombstone = self.coordinator.tombstone(format!("discovery/{}", discovery.cluster));
-        match tombstone.check().context(ErrorKind::Coordination) {
-            Err(err) => {
-                task.fail()?;
-                return Err(err)?;
-            },
-            Ok(Some(node)) => {
-                info!(
-                    self.logger, "Cluster refresh task throttled";
-                    "cluster" => discovery.cluster, "by_node" => %node,
-                    "this_node" => %self.coordinator.node_id()
-                );
-                task.success()?;
-                return Ok(());
-            },
-            _ => (),
-        };
+        // TODO(stefano): Skip processing if a tombstone exists for the cluster.
+        //let tombstone = self.coordinator.tombstone(format!("discovery/{}", discovery.cluster));
+        //match tombstone.check().context(ErrorKind::Coordination) {
+        //    Err(err) => {
+        //        task.fail()?;
+        //        return Err(err)?;
+        //    },
+        //    Ok(Some(node)) => {
+        //        info!(
+        //            self.logger, "Cluster refresh task throttled";
+        //            "cluster" => discovery.cluster, "by_node" => %node,
+        //            "this_node" => %self.coordinator.node_id()
+        //        );
+        //        task.success()?;
+        //        return Ok(());
+        //    },
+        //    _ => (),
+        //};
 
         // Refresh cluster state.
         debug!(

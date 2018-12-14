@@ -7,6 +7,8 @@ use std::time::Duration;
 
 use failure::ResultExt;
 use serde_json;
+use sha2::Digest;
+use sha2::Sha256;
 use slog::Logger;
 
 use zookeeper::Acl;
@@ -97,6 +99,21 @@ impl Client {
             },
         };
         Ok(())
+    }
+
+    /// Return the full path for the given key.
+    ///
+    /// The key is hashed first to ensure uniform distribution of keys.
+    /// The hashing is also useful to avoid having to deal with string escaping.
+    ///
+    /// # Panics
+    /// If the given hash is not at least `HASH_MIN_LEGTH` characters.
+    pub fn path_from_key(root: &str, key: &str) -> String {
+        let mut hasher = Sha256::new();
+        hasher.input(key);
+        let hash = hasher.result();
+        let hash = format!("{:x}", hash);
+        Client::path_from_hash(root, &hash)
     }
 
     /// Return the full path for the given hashed key.
@@ -219,8 +236,6 @@ impl Client {
         self.ensure_persistent("/", &keeper).context(ErrorKind::Backend("ensure '/' exists"))?;
         self.ensure_persistent("/nodes", &keeper)
             .context(ErrorKind::Backend("ensure '/nodes' exists"))?;
-        self.ensure_persistent("/tombstones", &keeper)
-            .context(ErrorKind::Backend("ensure '/tombstones' exists"))?;
 
         // Register node_id for debugging (if provided).
         if let Some(registry) = self.registry.as_ref() {
@@ -294,4 +309,34 @@ impl CurrentClient {
 struct RegistryData {
     data: Vec<u8>,
     key: String,
+}
+
+
+#[cfg(test)]
+mod tests {
+    use super::Client;
+
+    #[test]
+    fn path_for_key() {
+        let key = "discovery/some.cluster.id";
+        let path = Client::path_from_key("/nodes", key);
+        assert_eq!(
+            path,
+            "/nodes/22db/22db2cab3cb041408a0d3137b5563e82570bd26eb237b1c7cb998292a709d10c"
+        );
+    }
+
+    #[test]
+    fn path_for_node_id() {
+        let hash = "3bb728ac2ca63e8f3be0d39195b09b76";
+        let path = Client::path_from_hash("/nodes", hash);
+        assert_eq!(path, "/nodes/3bb7/3bb728ac2ca63e8f3be0d39195b09b76");
+    }
+
+    #[test]
+    #[should_panic(expected = "hash must have at least 4 characters")]
+    fn path_too_short() {
+        let hash = "3bb";
+        Client::path_from_hash("/nodes", hash);
+    }
 }

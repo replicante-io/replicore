@@ -6,7 +6,6 @@ use super::BackendConfig;
 use super::Config;
 use super::NodeId;
 use super::Result;
-use super::Tombstone;
 use super::backend;
 use super::backend::Backend;
 
@@ -40,10 +39,5 @@ impl Coordinator {
     /// Get the ID of the current node.
     pub fn node_id(&self) -> &NodeId {
         self.0.node_id()
-    }
-
-    /// Interact with the `Tombstone` with the given `key`.
-    pub fn tombstone(&self, key: String) -> Tombstone {
-        Tombstone::new(Arc::clone(&self.0), key)
     }
 }

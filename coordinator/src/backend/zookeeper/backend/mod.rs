@@ -1,5 +1,4 @@
 use std::sync::Arc;
-use std::time::Duration;
 
 use slog::Logger;
 
@@ -18,7 +17,7 @@ use self::cleaner::Cleaner;
 pub struct Zookeeper {
     // Background thread to clean unused nodes.
     _cleaner: Cleaner,
-    client: Arc<Client>,
+    _client: Arc<Client>,
     node_id: NodeId,
 }
 
@@ -28,7 +27,7 @@ impl Zookeeper {
         let cleaner = Cleaner::new(Arc::clone(&client), config, logger)?;
         Ok(Zookeeper {
             _cleaner: cleaner,
-            client,
+            _client: client,
             node_id,
         })
     }
@@ -37,16 +36,5 @@ impl Zookeeper {
 impl Backend for Zookeeper {
     fn node_id(&self) -> &NodeId {
         &self.node_id
-    }
-
-    fn tombstone_check(&self, _key: &str) -> Result<Option<NodeId>> {
-        let _keeper = self.client.get()?;
-        // TODO: check if the path exists.
-        Ok(None)
-    }
-
-    fn tombstone_ensure(&self, _key: &str, _ttl: Duration) -> Result<NodeId> {
-        let _keeper = self.client.get()?;
-        panic!("TODO: implement zookeeper tombstone_ensure");
     }
 }
