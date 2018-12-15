@@ -12,6 +12,7 @@ use super::super::super::Result;
 use super::super::super::config::ZookeeperConfig;
 use super::super::BackendAdmin;
 use super::super::Nodes;
+use super::super::NonBlockingLocks;
 
 use super::client::Client;
 use super::metrics::ZOO_OP_DURATION;
@@ -41,6 +42,10 @@ impl BackendAdmin for ZookeeperAdmin {
             client: Arc::clone(&self.client),
             nodes: None,
         })
+    }
+
+    fn non_blocking_locks(&self) -> NonBlockingLocks {
+        panic!("TODO: ZookeeperAdmin::non_blocking_locks");
     }
 }
 

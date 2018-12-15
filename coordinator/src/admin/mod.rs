@@ -4,11 +4,16 @@ use slog::Logger;
 
 use super::BackendConfig;
 use super::Config;
+use super::NodeId;
 use super::Result;
-use super::backend;
 
+use super::backend;
 use super::backend::BackendAdmin;
-use super::backend::Nodes;
+
+mod lock;
+
+pub use self::lock::NonBlockingLock;
+pub use self::lock::NonBlockingLocks;
 
 
 /// Interface to admin distributed coordination services.
@@ -35,5 +40,27 @@ impl Admin {
     /// Iterate over registered nodes.
     pub fn nodes(&self) -> Nodes {
         self.0.nodes()
+    }
+
+    /// Iterate over held non-blocking locks.
+    pub fn non_blocking_locks(&self) -> NonBlockingLocks {
+        self.0.non_blocking_locks()
+    }
+}
+
+
+/// Iterator over nodes registered in the coordinator.
+pub struct Nodes(Box<dyn Iterator<Item=Result<NodeId>>>);
+
+impl Nodes {
+    pub(crate) fn new<I: Iterator<Item=Result<NodeId>> + 'static>(iter: I) -> Nodes {
+        Nodes(Box::new(iter))
+    }
+}
+
+impl Iterator for Nodes {
+    type Item = Result<NodeId>;
+    fn next(&mut self) -> Option<Self::Item> {
+        self.0.next()
     }
 }

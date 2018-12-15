@@ -8,7 +8,10 @@ use super::NodeId;
 use super::Result;
 use super::backend;
 use super::backend::Backend;
-use super::lock::NonBlockingLock;
+
+mod lock;
+
+pub use self::lock::NonBlockingLock;
 
 
 /// Interface to access distributed coordination services.

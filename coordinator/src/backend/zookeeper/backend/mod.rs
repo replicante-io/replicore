@@ -5,7 +5,7 @@ use slog::Logger;
 use super::super::super::NodeId;
 use super::super::super::Result;
 use super::super::super::config::ZookeeperConfig;
-use super::super::super::lock::NonBlockingLock;
+use super::super::super::coordinator::NonBlockingLock;
 use super::super::Backend;
 use super::client::Client;
 

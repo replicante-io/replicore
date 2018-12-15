@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
-use super::Result;
-use super::backend::NonBlockingLockBehaviour;
+use super::super::Result;
+use super::super::backend::NonBlockingLockBehaviour;
 
 
 /// A non-blocking lock that can be acquired/released as needed.
@@ -53,8 +53,8 @@ impl Drop for NonBlockingLock {
 
 #[cfg(test)]
 mod tests {
-    use super::super::mock::MockCoordinator;
-    use super::super::ErrorKind;
+    use super::super::super::mock::MockCoordinator;
+    use super::super::super::ErrorKind;
 
     fn mock_coordinator() -> MockCoordinator {
         let logger = ::slog::Logger::root(::slog::Discard, o!());

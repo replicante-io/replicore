@@ -35,7 +35,7 @@ impl MockCoordinator {
 
     pub fn admin(&self) -> Admin {
         Admin::with_backend(Arc::new(MockAdmin {
-            // TODO
+            nblocks: Arc::clone(&self.nblocks),
         }))
     }
 
@@ -92,6 +92,10 @@ impl MockNonBlockingLock {
 
     pub fn locked(&self) -> bool {
         self.locked.load(Ordering::Relaxed)
+    }
+
+    pub fn node_id(&self) -> NodeId {
+        self.node_id.clone()
     }
 
     pub fn release(&self) -> Result<()> {

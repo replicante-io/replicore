@@ -6,7 +6,7 @@ use super::super::NodeId;
 use super::super::Result;
 use super::super::backend::Backend;
 use super::super::backend::NonBlockingLockBehaviour;
-use super::super::lock::NonBlockingLock;
+use super::super::coordinator::NonBlockingLock;
 use super::MockNonBlockingLock;
 
 
