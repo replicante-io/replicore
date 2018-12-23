@@ -7,6 +7,7 @@ use super::super::Result;
 use super::super::backend::Backend;
 use super::super::backend::NonBlockingLockBehaviour;
 use super::super::coordinator::NonBlockingLock;
+use super::super::coordinator::NonBlockingLockWatcher;
 use super::MockNonBlockingLock;
 
 
@@ -19,7 +20,7 @@ pub struct MockBackend {
 
 impl Backend for MockBackend {
     fn non_blocking_lock(&self, lock: String) -> NonBlockingLock {
-        NonBlockingLock::new(Arc::new(MockNBL {
+        NonBlockingLock::new(Box::new(MockNBL {
             lock,
             nblocks: Arc::clone(&self.nblocks),
             node_id: self.node_id.clone(),
@@ -40,7 +41,7 @@ struct MockNBL {
 }
 
 impl NonBlockingLockBehaviour for MockNBL {
-    fn acquire(&self) -> Result<()> {
+    fn acquire(&mut self) -> Result<()> {
         let mut guard = self.nblocks.lock().expect("MockBackend::nblocks poisoned");
         let mock = guard.get(&self.lock).map(Clone::clone);
         match mock {
@@ -63,7 +64,7 @@ impl NonBlockingLockBehaviour for MockNBL {
         }
     }
 
-    fn release(&self) -> Result<()> {
+    fn release(&mut self) -> Result<()> {
         let mut guard = self.nblocks.lock().expect("MockBackend::nblocks poisoned");
         let mock = guard.get(&self.lock).map(Clone::clone);
         match mock {
@@ -76,7 +77,7 @@ impl NonBlockingLockBehaviour for MockNBL {
         }
     }
 
-    fn release_on_drop(&self) -> () {
+    fn release_on_drop(&mut self) -> () {
         let guard = self.nblocks.lock().expect("MockBackend::nblocks poisoned");
         let mock = guard.get(&self.lock).map(Clone::clone);
         match mock {
@@ -85,5 +86,20 @@ impl NonBlockingLockBehaviour for MockNBL {
                 let _ = mock.release();
             },
         }
+    }
+
+    fn watch(&self) -> NonBlockingLockWatcher {
+        let mut guard = self.nblocks.lock().expect("MockBackend::nblocks poisoned");
+        let mock = guard.get(&self.lock).map(Clone::clone);
+        let arc = match mock {
+            None => {
+                let mock = MockNonBlockingLock::new(self.lock.clone(), self.node_id.clone());
+                let arc = Arc::clone(&mock.locked);
+                guard.insert(self.lock.clone(), mock);
+                arc
+            },
+            Some(mock) => Arc::clone(&mock.locked),
+        };
+        NonBlockingLockWatcher::new(arc)
     }
 }

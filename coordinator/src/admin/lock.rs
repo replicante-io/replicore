@@ -1,5 +1,3 @@
-use std::sync::Arc;
-
 use super::super::NodeId;
 use super::super::Result;
 use super::super::backend::NonBlockingLockAdminBehaviour;
@@ -7,13 +5,13 @@ use super::super::backend::NonBlockingLockAdminBehaviour;
 
 /// Admin tools for a non-blocking lock.
 pub struct NonBlockingLock {
-    behaviour: Arc<dyn NonBlockingLockAdminBehaviour>,
+    behaviour: Box<dyn NonBlockingLockAdminBehaviour>,
     name: String,
 }
 
 impl NonBlockingLock {
     pub(crate) fn new(
-        name: String, behaviour: Arc<dyn NonBlockingLockAdminBehaviour>
+        name: String, behaviour: Box<dyn NonBlockingLockAdminBehaviour>
     ) -> NonBlockingLock {
         NonBlockingLock {
             behaviour,
@@ -23,7 +21,7 @@ impl NonBlockingLock {
 }
 
 impl NonBlockingLock {
-    pub fn force_release(&self) -> Result<()> {
+    pub fn force_release(&mut self) -> Result<()> {
         self.behaviour.force_release()
     }
 
@@ -67,11 +65,11 @@ mod tests {
     fn force_remove() {
         let mock_coordinator = mock_coordinator();
         let coordinator = mock_coordinator.mock();
-        let held_lock = coordinator.non_blocking_lock("some/test/lock");
+        let mut held_lock = coordinator.non_blocking_lock("some/test/lock");
         held_lock.acquire().unwrap();
         let admin = mock_coordinator.admin();
         let mut locks = admin.non_blocking_locks();
-        let lock = locks.next().unwrap().unwrap();
+        let mut lock = locks.next().unwrap().unwrap();
         assert_eq!("some/test/lock", lock.name());
         lock.force_release().unwrap();
         assert_eq!(false, held_lock.check());
@@ -83,7 +81,7 @@ mod tests {
         let mock_coordinator = mock_coordinator();
         let coordinator = mock_coordinator.mock();
         let node_id = coordinator.node_id().clone();
-        let held_lock = coordinator.non_blocking_lock("some/test/lock");
+        let mut held_lock = coordinator.non_blocking_lock("some/test/lock");
         held_lock.acquire().unwrap();
         let admin = mock_coordinator.admin();
         let mut locks = admin.non_blocking_locks();

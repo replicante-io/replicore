@@ -12,6 +12,7 @@ use super::backend::Backend;
 mod lock;
 
 pub use self::lock::NonBlockingLock;
+pub use self::lock::NonBlockingLockWatcher;
 
 
 /// Interface to access distributed coordination services.

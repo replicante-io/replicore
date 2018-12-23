@@ -64,6 +64,9 @@ pub enum ErrorKind {
     #[fail(display = "lock '{}' is already held by process '{}'", _0, _1)]
     LockHeld(String, NodeId),
 
+    #[fail(display = "lock '{}' was lost", _0)]
+    LockLost(String),
+
     #[fail(display = "lock '{}' not found", _0)]
     LockNotFound(String),
 

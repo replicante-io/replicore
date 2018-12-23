@@ -1,4 +1,6 @@
 use std::sync::Arc;
+use std::sync::atomic::AtomicBool;
+use std::sync::atomic::Ordering;
 
 use super::super::Result;
 use super::super::backend::NonBlockingLockBehaviour;
@@ -15,12 +17,16 @@ use super::super::backend::NonBlockingLockBehaviour;
 /// 
 /// If a lock is lost (the coordinator is no longer reachable or thinks we no longer
 /// hold the lock for any reason) the state is changed and applications can check this.
+///
+/// # A note on CAP
+/// Please note that locks prefer strong consistency over availability.
+/// As such, if the coordinator system fails and remains unavailable the lock will be released.
 pub struct NonBlockingLock {
-    behaviour: Arc<dyn NonBlockingLockBehaviour>,
+    behaviour: Box<dyn NonBlockingLockBehaviour>,
 }
 
 impl NonBlockingLock {
-    pub(crate) fn new(behaviour: Arc<dyn NonBlockingLockBehaviour>) -> NonBlockingLock {
+    pub(crate) fn new(behaviour: Box<dyn NonBlockingLockBehaviour>) -> NonBlockingLock {
         NonBlockingLock {
             behaviour,
         }
@@ -29,7 +35,7 @@ impl NonBlockingLock {
 
 impl NonBlockingLock {
     /// Attempt to acquire the named lock.
-    pub fn acquire(&self) -> Result<()> {
+    pub fn acquire(&mut self) -> Result<()> {
         self.behaviour.acquire()
     }
 
@@ -39,14 +45,40 @@ impl NonBlockingLock {
     }
 
     /// Attempt to release the named lock.
-    pub fn release(&self) -> Result<()> {
+    pub fn release(&mut self) -> Result<()> {
         self.behaviour.release()
+    }
+
+    /// Return a watcher that is kept in sync with the state of the lock.
+    ///
+    /// This can be used by applications to pass around a "flag" that matches the state of the
+    /// lock and can be used to change course of action in case the lock is lost.
+    pub fn watch(&self) -> NonBlockingLockWatcher {
+        self.behaviour.watch()
     }
 }
 
 impl Drop for NonBlockingLock {
     fn drop(&mut self) {
         self.behaviour.release_on_drop();
+    }
+}
+
+
+/// Watcher of a non-blocking lock returned by `NonBlockingLock::watch`.
+pub struct NonBlockingLockWatcher(Arc<AtomicBool>);
+
+impl NonBlockingLockWatcher {
+    pub(crate) fn new(watcher: Arc<AtomicBool>) -> NonBlockingLockWatcher {
+        NonBlockingLockWatcher(watcher)
+    }
+
+    /// Inspect the state of the lock.
+    ///
+    ///   * A `true` value indicates the lock is held.
+    ///   * A `false` value indicates the lock is NOT held.
+    pub fn inspect(&self) -> bool {
+        self.0.load(Ordering::Relaxed)
     }
 }
 
@@ -65,7 +97,7 @@ mod tests {
     fn acquire() {
         let mock_coordinator = mock_coordinator();
         let coordinator = mock_coordinator.mock();
-        let lock = coordinator.non_blocking_lock("some/test/lock");
+        let mut lock = coordinator.non_blocking_lock("some/test/lock");
         let mock = mock_coordinator.non_blocking_lock("some/test/lock");
         assert_eq!(mock.locked(), false);
         lock.acquire().expect("lock to be acquired successfully");
@@ -76,8 +108,8 @@ mod tests {
     fn acquire_locked_fails() {
         let mock_coordinator = mock_coordinator();
         let coordinator = mock_coordinator.mock();
-        let lock1 = coordinator.non_blocking_lock("some/test/lock");
-        let lock2 = coordinator.non_blocking_lock("some/test/lock");
+        let mut lock1 = coordinator.non_blocking_lock("some/test/lock");
+        let mut lock2 = coordinator.non_blocking_lock("some/test/lock");
         let mock = mock_coordinator.non_blocking_lock("some/test/lock");
         assert_eq!(mock.locked(), false);
         lock1.acquire().expect("lock to be acquired successfully");
@@ -97,7 +129,7 @@ mod tests {
     fn check() {
         let mock_coordinator = mock_coordinator();
         let coordinator = mock_coordinator.mock();
-        let lock = coordinator.non_blocking_lock("some/test/lock");
+        let mut lock = coordinator.non_blocking_lock("some/test/lock");
         let mock = mock_coordinator.non_blocking_lock("some/test/lock");
         assert_eq!(mock.locked(), false);
         assert_eq!(false, lock.check());
@@ -113,7 +145,7 @@ mod tests {
     fn release() {
         let mock_coordinator = mock_coordinator();
         let coordinator = mock_coordinator.mock();
-        let lock = coordinator.non_blocking_lock("some/test/lock");
+        let mut lock = coordinator.non_blocking_lock("some/test/lock");
         let mock = mock_coordinator.non_blocking_lock("some/test/lock");
         assert_eq!(mock.locked(), false);
         lock.acquire().expect("lock to be acquired successfully");
@@ -128,7 +160,7 @@ mod tests {
         let coordinator = mock_coordinator.mock();
         let mock = mock_coordinator.non_blocking_lock("some/test/lock");
         {
-            let lock = coordinator.non_blocking_lock("some/test/lock");
+            let mut lock = coordinator.non_blocking_lock("some/test/lock");
             assert_eq!(mock.locked(), false);
             lock.acquire().expect("lock to be acquired successfully");
             assert_eq!(mock.locked(), true);
@@ -140,7 +172,7 @@ mod tests {
     fn release_unlocked_fails() {
         let mock_coordinator = mock_coordinator();
         let coordinator = mock_coordinator.mock();
-        let lock = coordinator.non_blocking_lock("some/test/lock");
+        let mut lock = coordinator.non_blocking_lock("some/test/lock");
         let mock = mock_coordinator.non_blocking_lock("some/test/lock");
         assert_eq!(mock.locked(), false);
         lock.acquire().expect("lock to be acquired successfully");

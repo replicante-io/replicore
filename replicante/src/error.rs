@@ -82,7 +82,7 @@ impl fmt::Display for Error {
 //#[derive(Clone, Eq, PartialEq, Hash, Debug, Fail)]
 #[derive(Debug, Fail)]
 pub enum ErrorKind {
-    #[fail(display = "coordination error")]
+    #[fail(display = "could not coordinate with other processes")]
     Coordination,
 
     #[fail(display = "failed to initialise {} interface", _0)]

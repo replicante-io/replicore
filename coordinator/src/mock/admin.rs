@@ -26,7 +26,7 @@ impl BackendAdmin for MockAdmin {
     fn non_blocking_locks(&self) -> NonBlockingLocks {
         let nblocks: Vec<_> = self.nblocks.lock().expect("MockAdmin::nblocks poisoned")
             .iter()
-            .map(|(k, v)| NonBlockingLock::new(k.to_string(), Arc::new(MockNBLAdmin {
+            .map(|(k, v)| NonBlockingLock::new(k.to_string(), Box::new(MockNBLAdmin {
                 lock: v.clone(),
             })))
             .collect();
@@ -55,7 +55,7 @@ struct MockNBLAdmin {
 }
 
 impl NonBlockingLockAdminBehaviour for MockNBLAdmin {
-    fn force_release(&self) -> Result<()> {
+    fn force_release(&mut self) -> Result<()> {
         self.lock.release()
     }
 

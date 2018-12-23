@@ -164,12 +164,24 @@ impl InnerCleaner {
     /// Perform a single zookeeper cleanup cycle.
     fn cycle(&self) -> Result<()> {
         let limit = self.config.cleanup.limit;
+        let limit = self.clean("/locks", limit)?;
+        if self.cycle_limit(limit) {
+            return Ok(());
+        }
         let limit = self.clean("/nodes", limit)?;
-        if limit == 0 {
-            info!(self.logger, "Reached limit of nodes to clean for one cycle");
+        if self.cycle_limit(limit) {
             return Ok(());
         }
         Ok(())
+    }
+
+    /// Check if the limit of deletes for this cycle has been reached.
+    fn cycle_limit(&self, limit: usize) -> bool {
+        if limit == 0 {
+            info!(self.logger, "Reached limit of nodes to clean for one cycle");
+            return true;
+        }
+        false
     }
 
     /// Determine how long to wait before a new cleaner cycle should run.

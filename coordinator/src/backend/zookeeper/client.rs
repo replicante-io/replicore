@@ -13,6 +13,8 @@ use slog::Logger;
 
 use zookeeper::Acl;
 use zookeeper::CreateMode;
+use zookeeper::Stat;
+use zookeeper::Watcher;
 use zookeeper::ZkError;
 use zookeeper::ZkResult;
 use zookeeper::ZkState;
@@ -79,6 +81,32 @@ impl Client {
         let path = Path::new(path);
         let path = path.parent().expect("path to Client::container_path must have a parent");
         path.to_str().expect("path to Client::container_path must be UTF8").to_string()
+    }
+
+    /// Wrapper for `ZooKeeper::exists` to track metrics.
+    pub fn exists(keeper: &ZooKeeper, path: &str, watch: bool) -> ZkResult<Option<Stat>> {
+        let _timer = ZOO_OP_DURATION.with_label_values(&["exists"]).start_timer();
+        keeper.exists(path, watch).map_err(|error| {
+            ZOO_OP_ERRORS_COUNT.with_label_values(&["exists"]).inc();
+            if error == ZkError::OperationTimeout {
+                ZOO_TIMEOUTS_COUNT.inc();
+            }
+            error
+        })
+    }
+
+    /// Wrapper for `ZooKeeper::exists_w` to track metrics.
+    pub fn exists_w<W>(keeper: &ZooKeeper, path: &str, watcher: W) -> ZkResult<Option<Stat>>
+        where W: Watcher + 'static
+    {
+        let _timer = ZOO_OP_DURATION.with_label_values(&["exists_w"]).start_timer();
+        keeper.exists_w(path, watcher).map_err(|error| {
+            ZOO_OP_ERRORS_COUNT.with_label_values(&["exists_w"]).inc();
+            if error == ZkError::OperationTimeout {
+                ZOO_TIMEOUTS_COUNT.inc();
+            }
+            error
+        })
     }
 
     /// Create the given path as an empty persistent node.
@@ -234,6 +262,8 @@ impl Client {
 
         // Make root if needed.
         self.ensure_persistent("/", &keeper).context(ErrorKind::Backend("ensure '/' exists"))?;
+        self.ensure_persistent("/locks", &keeper)
+            .context(ErrorKind::Backend("ensure '/locks' exists"))?;
         self.ensure_persistent("/nodes", &keeper)
             .context(ErrorKind::Backend("ensure '/nodes' exists"))?;
 
@@ -269,7 +299,7 @@ impl Client {
                     false
                 },
                 event => {
-                    debug!(logger, "Ignoring deprecated zookeeper event"; "event" => ?event);
+                    trace!(logger, "Ignoring deprecated zookeeper event"; "event" => ?event);
                     false
                 },
             };
