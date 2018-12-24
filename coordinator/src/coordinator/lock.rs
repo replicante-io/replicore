@@ -5,6 +5,11 @@ use std::sync::atomic::Ordering;
 use super::super::Result;
 use super::super::backend::NonBlockingLockBehaviour;
 
+use super::super::metrics::NB_LOCK_ACQUIRE_FAIL;
+use super::super::metrics::NB_LOCK_ACQUIRE_TOTAL;
+use super::super::metrics::NB_LOCK_RELEASE_FAIL;
+use super::super::metrics::NB_LOCK_RELEASE_TOTAL;
+
 
 /// A non-blocking lock that can be acquired/released as needed.
 ///
@@ -36,7 +41,11 @@ impl NonBlockingLock {
 impl NonBlockingLock {
     /// Attempt to acquire the named lock.
     pub fn acquire(&mut self) -> Result<()> {
-        self.behaviour.acquire()
+        NB_LOCK_ACQUIRE_TOTAL.inc();
+        self.behaviour.acquire().map_err(|error| {
+            NB_LOCK_ACQUIRE_FAIL.inc();
+            error
+        })
     }
 
     /// Lightweight check if the lock is held by us.
@@ -46,7 +55,11 @@ impl NonBlockingLock {
 
     /// Attempt to release the named lock.
     pub fn release(&mut self) -> Result<()> {
-        self.behaviour.release()
+        NB_LOCK_RELEASE_TOTAL.inc();
+        self.behaviour.release().map_err(|error| {
+            NB_LOCK_RELEASE_FAIL.inc();
+            error
+        })
     }
 
     /// Return a watcher that is kept in sync with the state of the lock.

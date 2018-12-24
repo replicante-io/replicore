@@ -21,10 +21,17 @@ use super::super::super::super::ErrorKind;
 use super::super::super::super::NodeId;
 use super::super::super::super::Result;
 use super::super::super::super::coordinator::NonBlockingLockWatcher;
+
+use super::super::super::super::metrics::NB_LOCK_LOST;
+use super::super::super::super::metrics::NB_LOCK_DROP_FAIL;
+use super::super::super::super::metrics::NB_LOCK_DROP_TOTAL;
+
 use super::super::super::NonBlockingLockBehaviour;
 use super::super::NBLockInfo;
 use super::super::client::Client;
 
+use super::super::metrics::ZOO_NB_LOCK_DELETED;
+use super::super::metrics::ZOO_NB_LOCK_LOST;
 use super::super::metrics::ZOO_OP_DURATION;
 use super::super::metrics::ZOO_OP_ERRORS_COUNT;
 use super::super::metrics::ZOO_TIMEOUTS_COUNT;
@@ -80,6 +87,8 @@ impl ZookeeperNBLock {
                 "lock" => &context.state.lock
             );
             context.state.release();
+            ZOO_NB_LOCK_DELETED.inc();
+            NB_LOCK_LOST.inc();
             return;
         }
         
@@ -105,10 +114,14 @@ impl ZookeeperNBLock {
                 "lock" => &context.state.lock
             );
             context.state.release();
+            ZOO_NB_LOCK_DELETED.inc();
+            NB_LOCK_LOST.inc();
             Ok(())
         };
         if let Err(error) = block() {
             context.state.release();
+            ZOO_NB_LOCK_LOST.inc();
+            NB_LOCK_LOST.inc();
             error!(
                 context.logger, "Lock lost, failed to reattach change watcher";
                 failure_info(&error)
@@ -127,6 +140,8 @@ impl ZookeeperNBLock {
                 "lock" => &context.state.lock
             );
             context.state.release();
+            ZOO_NB_LOCK_LOST.inc();
+            NB_LOCK_LOST.inc();
         }
     }
 }
@@ -225,44 +240,51 @@ impl NonBlockingLockBehaviour for ZookeeperNBLock {
     fn release(&mut self) -> Result<()> {
         self.unsubscribe();
         let (acquired, czxid, _) = self.context.state.inspect();
-        if acquired {
-            // Grab the session ID we used to create the lock.
-            let czxid = czxid.expect("have an acquired lock without czxid");
-
-            // Ensure we actually own the lock even though we shold release it if ever lost.
-            let keeper = self.context.client.get()?;
-            let stats = Client::exists(&keeper, &self.context.path, false)
-                .context(ErrorKind::Backend("lock stats fetching"))?;
-            self.context.state.release();
-            match stats {
-                None => (),
-                Some(ref stats) if stats.czxid == czxid => {
-                    // Delete the lock znode and release the internal state.
-                    match keeper.delete(&self.context.path, None) {
-                        Ok(()) => (),
-                        Err(ZkError::NoNode) => (),
-                        Err(error) => {
-                            return Err(error).context(ErrorKind::Backend("lock release"))?;
-                        }
-                    };
-                },
-                Some(_) => {
-                    // Lock exists, we think we own it but is not the one we created.
-                    let payload = self.read(&keeper, &self.context.path)?;
-                    let payload: NBLockInfo = serde_json::from_slice(&payload)
-                        .context(ErrorKind::Decode("zookeeper non-blocking lock"))?;
-                    warn!(
-                        self.context.logger, "Attempted lock release but we seem not to be owners";
-                        "lock" => &self.context.state.lock, "owner" => %payload.owner
-                    );
-                }
-            };
+        if !acquired {
+            return Ok(());
         }
+
+        // Grab the session ID we used to create the lock.
+        let czxid = czxid.expect("have an acquired lock without czxid");
+
+        // Ensure we actually own the lock even though we shold release it if ever lost.
+        let keeper = self.context.client.get()?;
+        let stats = Client::exists(&keeper, &self.context.path, false)
+            .context(ErrorKind::Backend("lock stats fetching"))?;
+        self.context.state.release();
+        match stats {
+            None => (),
+            Some(ref stats) if stats.czxid == czxid => {
+                // Delete the lock znode and release the internal state.
+                match keeper.delete(&self.context.path, None) {
+                    Ok(()) => (),
+                    Err(ZkError::NoNode) => (),
+                    Err(error) => {
+                        return Err(error).context(ErrorKind::Backend("lock release"))?;
+                    }
+                };
+            },
+            Some(_) => {
+                // Lock exists, we think we own it but is not the one we created.
+                let payload = self.read(&keeper, &self.context.path)?;
+                let payload: NBLockInfo = serde_json::from_slice(&payload)
+                    .context(ErrorKind::Decode("zookeeper non-blocking lock"))?;
+                warn!(
+                    self.context.logger, "Attempted lock release but we seem not to be owners";
+                    "lock" => &self.context.state.lock, "owner" => %payload.owner
+                );
+            }
+        };
         Ok(())
     }
 
     fn release_on_drop(&mut self) -> () {
+        let (acquired, _, _) = self.context.state.inspect();
+        if acquired {
+            NB_LOCK_DROP_TOTAL.inc();
+        }
         if let Err(error) = self.release() {
+            NB_LOCK_DROP_FAIL.inc();
             error!(
                 self.context.logger, "Unable to release lock from destructor";
                 failure_info(&error)
