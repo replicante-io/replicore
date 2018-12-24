@@ -69,7 +69,7 @@ impl Iterator for ZookeeperNBLocks {
             let lock: NBLockInfo = match serde_json::from_slice(&lock) {
                 Ok(lock) => lock,
                 Err(error) => {
-                    let error = Err(error).context(ErrorKind::Decode("node info"));
+                    let error = Err(error).context(ErrorKind::Decode("lock info"));
                     return Some(error.map_err(|e| e.into()));
                 },
             };
@@ -84,8 +84,8 @@ impl Iterator for ZookeeperNBLocks {
 
 
 /// Admin behaviour for zookeeper non-blocking locks.
-struct ZookeeperNBLBehaviour {
-    info: NBLockInfo,
+pub struct ZookeeperNBLBehaviour {
+    pub(super) info: NBLockInfo,
 }
 
 impl NonBlockingLockAdminBehaviour for ZookeeperNBLBehaviour {

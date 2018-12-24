@@ -1,6 +1,7 @@
 use super::NodeId;
 use super::Result;
 use super::admin::Nodes;
+use super::admin::NonBlockingLock as AdminNonBlockingLock;
 use super::admin::NonBlockingLocks;
 use super::coordinator::NonBlockingLock;
 use super::coordinator::NonBlockingLockWatcher;
@@ -23,6 +24,9 @@ pub trait Backend : Send + Sync {
 pub trait BackendAdmin : Send + Sync {
     /// Iterate over registered nodes.
     fn nodes(&self) -> Nodes;
+
+    /// Model a non-blocking lock.
+    fn non_blocking_lock(&self, lock: &str) -> Result<AdminNonBlockingLock>;
 
     /// Iterate over held non-blocking locks.
     fn non_blocking_locks(&self) -> NonBlockingLocks;

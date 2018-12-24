@@ -3,6 +3,7 @@ use std::sync::Arc;
 use std::sync::Mutex;
 
 use super::super::NodeId;
+use super::super::ErrorKind;
 use super::super::Result;
 use super::super::admin::Nodes;
 use super::super::admin::NonBlockingLock;
@@ -21,6 +22,17 @@ pub struct MockAdmin {
 impl BackendAdmin for MockAdmin {
     fn nodes(&self) -> Nodes {
         Nodes::new(MockNodes {})
+    }
+
+    fn non_blocking_lock(&self, lock: &str) -> Result<NonBlockingLock> {
+        let nblocks = self.nblocks.lock().expect("MockAdmin::nblocks poisoned");
+        let info = nblocks.get(lock);
+        match info {
+            None => Err(ErrorKind::LockNotFound(lock.to_string()).into()),
+            Some(info) => Ok(NonBlockingLock::new(lock.to_string(), Box::new(MockNBLAdmin {
+                lock: info.clone()
+            }))),
+        }
     }
 
     fn non_blocking_locks(&self) -> NonBlockingLocks {

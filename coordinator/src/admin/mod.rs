@@ -42,6 +42,11 @@ impl Admin {
         self.0.nodes()
     }
 
+    /// Model a non-blocking lock.
+    pub fn non_blocking_lock(&self, lock: &str) -> Result<NonBlockingLock> {
+        self.0.non_blocking_lock(lock)
+    }
+
     /// Iterate over held non-blocking locks.
     pub fn non_blocking_locks(&self) -> NonBlockingLocks {
         self.0.non_blocking_locks()

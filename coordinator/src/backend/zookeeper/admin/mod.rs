@@ -9,11 +9,13 @@ use super::super::super::Error;
 use super::super::super::ErrorKind;
 use super::super::super::NodeId;
 use super::super::super::Result;
+use super::super::super::admin::NonBlockingLock;
 use super::super::super::config::ZookeeperConfig;
 use super::super::BackendAdmin;
 use super::super::Nodes;
 use super::super::NonBlockingLocks;
 
+use super::NBLockInfo;
 use super::client::Client;
 
 
@@ -42,6 +44,31 @@ impl BackendAdmin for ZookeeperAdmin {
             client: Arc::clone(&self.client),
             nodes: None,
         })
+    }
+
+    fn non_blocking_lock(&self, lock: &str) -> Result<NonBlockingLock> {
+        let keeper = self.client.get()?;
+        let path = Client::path_from_key("/locks", lock);
+        let payload = Client::get_data(&keeper, &path, false);
+        let payload = match payload {
+            Ok((payload, _)) => payload,
+            Err(ZkError::NoNode) => return Err(ErrorKind::LockNotFound(lock.to_string()).into()),
+            Err(error) => {
+                let error = Err(error).context(ErrorKind::Backend("non-blocking lock lookup"));
+                return error.map_err(Error::from);
+            },
+        };
+        let info: NBLockInfo = match serde_json::from_slice(&payload) {
+            Ok(info) => info,
+            Err(error) => {
+                let error = Err(error).context(ErrorKind::Decode("lock info"));
+                return error.map_err(Error::from);
+            },
+        };
+        let name = info.name.clone();
+        let behaviour = lock::ZookeeperNBLBehaviour { info };
+        let lock = NonBlockingLock::new(name, Box::new(behaviour));
+        return Ok(lock);
     }
 
     fn non_blocking_locks(&self) -> NonBlockingLocks {
