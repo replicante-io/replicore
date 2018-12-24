@@ -19,6 +19,24 @@ use super::super::super::outcome::Outcomes;
 pub const COMMAND: &str = "coordinator";
 
 
+/// Iterate over non-blocking locks to ensure they can be read.
+fn check_nblocks(
+    admin: &Admin, outcomes: &mut Outcomes, interfaces: &Interfaces, logger: &Logger
+) -> Result<()> {
+    info!(logger, "Checking held non-blocking locks");
+    let mut tracker = interfaces.progress("Processed more non-blocking locks");
+    for lock in admin.non_blocking_locks() {
+        if let Err(error) = lock {
+            let error = error.to_string();
+            outcomes.error(Error::GenericError(error));
+        }
+        tracker.track();
+    }
+    outcomes.report(logger);
+    Ok(())
+}
+
+
 /// Iterate over registered nodes to ensure they can be read.
 fn check_registry(
     admin: &Admin, outcomes: &mut Outcomes, interfaces: &Interfaces, logger: &Logger
@@ -67,6 +85,7 @@ pub fn run<'a>(args: &ArgMatches<'a>, interfaces: &Interfaces) -> Result<()> {
 
     // Check things.
     check_registry(&admin, &mut outcomes, interfaces, &logger)?;
+    check_nblocks(&admin, &mut outcomes, interfaces, &logger)?;
 
     // Report results.
     if outcomes.has_errors() {
