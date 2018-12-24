@@ -98,18 +98,8 @@ impl InnerCleaner {
         let client = self.client.get()?;
         let mut limit = limit;
 
-        let timer = ZOO_OP_DURATION.with_label_values(&["get_children"]).start_timer();
-        let children = client.get_children(path, false)
-            .map_err(|error| {
-                ZOO_OP_ERRORS_COUNT.with_label_values(&["get_children"]).inc();
-                if error == ZkError::OperationTimeout {
-                    ZOO_TIMEOUTS_COUNT.inc();
-                }
-                error
-            })
+        let children = Client::get_children(&client, path, false)
             .context(ErrorKind::Backend("children lookup"))?;
-        timer.observe_duration();
-
         for child in children {
             let child = format!("{}/{}", path, child);
             let timer = ZOO_OP_DURATION.with_label_values(&["exists"]).start_timer();

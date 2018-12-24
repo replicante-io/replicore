@@ -109,6 +109,32 @@ impl Client {
         })
     }
 
+    /// Wrapper for `ZooKeeper::get_children` to track metrics.
+    pub fn get_children(keeper: &ZooKeeper, path: &str, watch: bool) -> ZkResult<Vec<String>> {
+        let _timer = ZOO_OP_DURATION.with_label_values(&["get_children"]).start_timer();
+        keeper.get_children(path, watch)
+            .map_err(|error| {
+                ZOO_OP_ERRORS_COUNT.with_label_values(&["get_children"]).inc();
+                if error == ZkError::OperationTimeout {
+                    ZOO_TIMEOUTS_COUNT.inc();
+                }
+                error
+            })
+    }
+
+    /// Wrapper for `ZooKeeper::get_data` to track metrics.
+    pub fn get_data(keeper: &ZooKeeper, path: &str, watch: bool) -> ZkResult<(Vec<u8>, Stat)> {
+        let _timer = ZOO_OP_DURATION.with_label_values(&["get_data"]).start_timer();
+        keeper.get_data(path, watch)
+            .map_err(|error| {
+                ZOO_OP_ERRORS_COUNT.with_label_values(&["get_data"]).inc();
+                if error == ZkError::OperationTimeout {
+                    ZOO_TIMEOUTS_COUNT.inc();
+                }
+                error
+            })
+    }
+
     /// Create the given path as an empty persistent node.
     ///
     /// `CreateMode::Container` requires Zookeeper 3.5.3+ and does not seem to be reliable

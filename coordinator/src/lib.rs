@@ -18,7 +18,8 @@ extern crate replicante_util_failure;
 extern crate replicante_util_rndid;
 
 
-mod admin;
+pub mod admin;
+
 mod backend;
 mod config;
 mod coordinator;
@@ -34,7 +35,7 @@ pub use self::admin::Admin;
 pub use self::config::Backend as BackendConfig;
 pub use self::config::Config;
 pub use self::coordinator::Coordinator;
-//pub use self::coordinator::NonBlockingLock;
+pub use self::coordinator::NonBlockingLock;
 pub use self::error::Error;
 pub use self::error::ErrorKind;
 pub use self::error::Result;

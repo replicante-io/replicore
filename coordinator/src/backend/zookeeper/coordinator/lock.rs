@@ -165,17 +165,8 @@ impl ZookeeperNBLock {
 
     /// Read the content of a znode.
     fn read(&self, keeper: &ZooKeeper, path: &str) -> Result<Vec<u8>> {
-        let timer = ZOO_OP_DURATION.with_label_values(&["get_data"]).start_timer();
-        let (data, _) = keeper.get_data(path, false)
-            .map_err(|error| {
-                ZOO_OP_ERRORS_COUNT.with_label_values(&["get_data"]).inc();
-                if error == ZkError::OperationTimeout {
-                    ZOO_TIMEOUTS_COUNT.inc();
-                }
-                error
-            })
+        let (data, _) = Client::get_data(keeper, path, false)
             .context(ErrorKind::Backend("lock read"))?;
-        timer.observe_duration();
         Ok(data)
     }
 

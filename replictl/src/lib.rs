@@ -42,6 +42,7 @@ pub use self::error::ErrorKind;
 pub use self::error::Result;
 
 use self::commands::check;
+use self::commands::coordinator;
 use self::commands::versions;
 
 use self::interfaces::Interfaces;
@@ -98,6 +99,7 @@ pub fn run() -> Result<()> {
              .help("Specifies the URL of the Replicante API to use")
         )
         .subcommand(check::command())
+        .subcommand(coordinator::command())
         .subcommand(versions::command())
         .get_matches();
 
@@ -122,6 +124,7 @@ pub fn run() -> Result<()> {
 fn run_command(args: &ArgMatches, interfaces: &Interfaces) -> Result<()> {
     match args.subcommand_name() {
         Some(check::COMMAND) => check::run(args, interfaces),
+        Some(coordinator::COMMAND) => coordinator::run(args, interfaces),
         Some(versions::COMMAND) => versions::run(args, interfaces),
         None => Err(ErrorKind::Legacy(err_msg("need a command to run")).into()),
         _ => Err(ErrorKind::Legacy(err_msg("received unrecognised command")).into()),

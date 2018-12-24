@@ -48,7 +48,7 @@ impl Versions {
 }
 
 
-/// Configure the `replictl check` command parser.
+/// Configure the `replictl version` command parser.
 pub fn command() -> App<'static, 'static> {
     SubCommand::with_name(COMMAND)
         .about("Reports version information for various systems")

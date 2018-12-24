@@ -15,9 +15,9 @@ use super::super::Nodes;
 use super::super::NonBlockingLocks;
 
 use super::client::Client;
-use super::metrics::ZOO_OP_DURATION;
-use super::metrics::ZOO_OP_ERRORS_COUNT;
-use super::metrics::ZOO_TIMEOUTS_COUNT;
+
+
+mod lock;
 
 
 /// Admin backend for zookeeper distributed coordination.
@@ -45,7 +45,10 @@ impl BackendAdmin for ZookeeperAdmin {
     }
 
     fn non_blocking_locks(&self) -> NonBlockingLocks {
-        panic!("TODO: ZookeeperAdmin::non_blocking_locks");
+        NonBlockingLocks::new(lock::ZookeeperNBLocks {
+            client: Arc::clone(&self.client),
+            locks: None,
+        })
     }
 }
 
@@ -83,15 +86,7 @@ impl ZookeeperNodes {
 
     /// Wrapper to get children and track stats.
     fn get_children(&self, keeper: &ZooKeeper, path: &str) -> Result<Vec<String>> {
-        let _timer = ZOO_OP_DURATION.with_label_values(&["get_children"]).start_timer();
-        let nodes = keeper.get_children(path, false)
-            .map_err(|error| {
-                ZOO_OP_ERRORS_COUNT.with_label_values(&["get_children"]).inc();
-                if error == ZkError::OperationTimeout {
-                    ZOO_TIMEOUTS_COUNT.inc();
-                }
-                error
-            })
+        let nodes = Client::get_children(keeper, path, false)
             .context(ErrorKind::Backend("nodes lookup"))?;
         Ok(nodes)
     }
@@ -113,15 +108,7 @@ impl Iterator for ZookeeperNodes {
 
         // Ignore nodes that return ZkError::NoNode.
         while let Some(node) = nodes.pop() {
-            let timer = ZOO_OP_DURATION.with_label_values(&["get_data"]).start_timer();
-            let result = keeper.get_data(&node, false).map_err(|error| {
-                ZOO_OP_ERRORS_COUNT.with_label_values(&["get_data"]).inc();
-                if error == ZkError::OperationTimeout {
-                    ZOO_TIMEOUTS_COUNT.inc();
-                }
-                error
-            });
-            timer.observe_duration();
+            let result = Client::get_data(&keeper, &node, false);
             let node = match result {
                 Err(ZkError::NoNode) => continue,
                 Err(error) => {
