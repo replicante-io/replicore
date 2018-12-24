@@ -60,7 +60,7 @@ impl Handler {
             self.logger, "TODO: implement discovery task";
             "discovery" => ?discovery, "task-id" => %task.id()
         );
-        ::std::thread::sleep(::std::time::Duration::from_secs(50));
+        ::std::thread::sleep(::std::time::Duration::from_secs(10));
 
         // Done.
         lock.release().context(ErrorKind::Coordination)?;

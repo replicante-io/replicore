@@ -51,13 +51,13 @@ impl Iterator for ZookeeperNBLocks {
 
         // Process locks until all have been returned.
         // Locks for which a NoNode error is returned are ignored.
+        let keeper = match self.client.get() {
+            Ok(keeper) => keeper,
+            Err(error) => return Some(Err(error)),
+        };
         let locks = self.locks.as_mut().expect("ZookeeperNBLocks::locks must be Some(Vec)");
-        while let Some(lock) = locks.pop() {
-            let keeper = match self.client.get() {
-                Ok(keeper) => keeper,
-                Err(error) => return Some(Err(error)),
-            };
-            let lock = Client::get_data(&keeper, &lock, false);
+        while let Some(path) = locks.pop() {
+            let lock = Client::get_data(&keeper, &path, false);
             let lock = match lock {
                 Ok((lock, _)) => lock,
                 Err(ZkError::NoNode) => continue,
@@ -74,7 +74,11 @@ impl Iterator for ZookeeperNBLocks {
                 },
             };
             let name = lock.name.clone();
-            let behaviour = ZookeeperNBLBehaviour { info: lock };
+            let behaviour = ZookeeperNBLBehaviour {
+                client: Arc::clone(&self.client),
+                info: lock,
+                path,
+            };
             let lock = NonBlockingLock::new(name, Box::new(behaviour));
             return Some(Ok(lock));
         }
@@ -85,12 +89,23 @@ impl Iterator for ZookeeperNBLocks {
 
 /// Admin behaviour for zookeeper non-blocking locks.
 pub struct ZookeeperNBLBehaviour {
+    pub(super) client: Arc<Client>,
     pub(super) info: NBLockInfo,
+    pub(super) path: String,
 }
 
 impl NonBlockingLockAdminBehaviour for ZookeeperNBLBehaviour {
     fn force_release(&mut self) -> Result<()> {
-        panic!("TODO: ZookeeperNBLBehaviour::force_release");
+        let keeper = self.client.get()?;
+        match Client::delete(&keeper, &self.path, None) {
+            Ok(()) => (),
+            Err(ZkError::NoNode) => (),
+            Err(error) => {
+                let error = Err(error).context(ErrorKind::Backend("force-releasing lock"));
+                return error.map_err(|e| e.into());
+            }
+        }
+        Ok(())
     }
 
     fn owner(&self) -> Result<NodeId> {

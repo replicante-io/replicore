@@ -83,6 +83,19 @@ impl Client {
         path.to_str().expect("path to Client::container_path must be UTF8").to_string()
     }
 
+    /// Wrapper for `ZooKeeper::delete` to track metrics.
+    pub fn delete(keeper: &ZooKeeper, path: &str, version: Option<i32>) -> ZkResult<()> {
+        let _timer = ZOO_OP_DURATION.with_label_values(&["delete"]).start_timer();
+        keeper.delete(path, version)
+            .map_err(|error| {
+                ZOO_OP_ERRORS_COUNT.with_label_values(&["delete"]).inc();
+                if error == ZkError::OperationTimeout {
+                    ZOO_TIMEOUTS_COUNT.inc();
+                }
+                error
+            })
+    }
+
     /// Wrapper for `ZooKeeper::exists` to track metrics.
     pub fn exists(keeper: &ZooKeeper, path: &str, watch: bool) -> ZkResult<Option<Stat>> {
         let _timer = ZOO_OP_DURATION.with_label_values(&["exists"]).start_timer();

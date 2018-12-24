@@ -126,21 +126,12 @@ impl InnerCleaner {
             }
 
             // Delete and count.
-            let timer = ZOO_OP_DURATION.with_label_values(&["delete"]).start_timer();
-            match client.delete(&child, Some(stats.version)) {
+            match Client::delete(&client, &child, Some(stats.version)) {
                 Err(ZkError::NoNode) |
                     Err(ZkError::NotEmpty) |
                     Ok(()) => (),
-                Err(error) => {
-                    timer.observe_duration();
-                    ZOO_OP_ERRORS_COUNT.with_label_values(&["delete"]).inc();
-                    if error == ZkError::OperationTimeout {
-                        ZOO_TIMEOUTS_COUNT.inc();
-                    }
-                    return Err(error).context(ErrorKind::Backend("node delete"))?;
-                },
+                Err(error) => return Err(error).context(ErrorKind::Backend("node delete"))?,
             };
-            timer.observe_duration();
             ZOO_CLEANUP_COUNT.inc();
             limit = limit - 1;
             if limit == 0 {

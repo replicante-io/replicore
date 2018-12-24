@@ -66,7 +66,11 @@ impl BackendAdmin for ZookeeperAdmin {
             },
         };
         let name = info.name.clone();
-        let behaviour = lock::ZookeeperNBLBehaviour { info };
+        let behaviour = lock::ZookeeperNBLBehaviour {
+            client: Arc::clone(&self.client),
+            info,
+            path,
+        };
         let lock = NonBlockingLock::new(name, Box::new(behaviour));
         return Ok(lock);
     }
