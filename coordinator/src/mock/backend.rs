@@ -6,6 +6,7 @@ use super::super::NodeId;
 use super::super::Result;
 use super::super::backend::Backend;
 use super::super::backend::NonBlockingLockBehaviour;
+use super::super::coordinator::Election;
 use super::super::coordinator::NonBlockingLock;
 use super::super::coordinator::NonBlockingLockWatcher;
 use super::MockNonBlockingLock;
@@ -19,6 +20,10 @@ pub struct MockBackend {
 }
 
 impl Backend for MockBackend {
+    fn election(&self, _id: String) -> Election {
+        panic!("TODO: MockBackend::election");
+    }
+
     fn non_blocking_lock(&self, lock: String) -> NonBlockingLock {
         NonBlockingLock::new(Box::new(MockNBL {
             lock,

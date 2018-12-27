@@ -18,6 +18,11 @@ use replicante_util_failure::failure_info;
 use super::super::super::super::ErrorKind;
 use super::super::super::super::Result;
 use super::super::super::super::config::ZookeeperConfig;
+
+use super::super::constants::PREFIX_ELECTION;
+use super::super::constants::PREFIX_LOCK;
+use super::super::constants::PREFIX_NODE;
+
 use super::super::metrics::ZOO_CLEANUP_COUNT;
 use super::super::metrics::ZOO_OP_DURATION;
 use super::super::metrics::ZOO_OP_ERRORS_COUNT;
@@ -145,11 +150,15 @@ impl InnerCleaner {
     /// Perform a single zookeeper cleanup cycle.
     fn cycle(&self) -> Result<()> {
         let limit = self.config.cleanup.limit;
-        let limit = self.clean("/locks", limit)?;
+        let limit = self.clean(PREFIX_ELECTION, limit)?;
         if self.cycle_limit(limit) {
             return Ok(());
         }
-        let limit = self.clean("/nodes", limit)?;
+        let limit = self.clean(PREFIX_LOCK, limit)?;
+        if self.cycle_limit(limit) {
+            return Ok(());
+        }
+        let limit = self.clean(PREFIX_NODE, limit)?;
         if self.cycle_limit(limit) {
             return Ok(());
         }

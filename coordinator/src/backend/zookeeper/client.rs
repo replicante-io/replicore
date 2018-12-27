@@ -25,6 +25,10 @@ use super::super::super::NodeId;
 use super::super::super::Result;
 use super::super::super::config::ZookeeperConfig;
 
+use super::constants::PREFIX_ELECTION;
+use super::constants::PREFIX_LOCK;
+use super::constants::PREFIX_NODE;
+
 use super::metrics::ZOO_CONNECTION_COUNT;
 use super::metrics::ZOO_OP_DURATION;
 use super::metrics::ZOO_OP_ERRORS_COUNT;
@@ -48,7 +52,7 @@ impl Client {
             None => None,
             Some(node_id) => {
                 let data = serde_json::to_vec(node_id).context(ErrorKind::Encode("node id"))?;
-                let key = Client::path_from_hash("/nodes", &node_id.to_string());
+                let key = Client::path_from_hash(PREFIX_NODE, &node_id.to_string());
                 Some(RegistryData {
                     data,
                     key,
@@ -81,6 +85,21 @@ impl Client {
         let path = Path::new(path);
         let path = path.parent().expect("path to Client::container_path must have a parent");
         path.to_str().expect("path to Client::container_path must be UTF8").to_string()
+    }
+
+    /// Wrapper for `ZooKeeper::create` to track metrics.
+    pub fn create(
+        keeper: &ZooKeeper, path: &str, payload: Vec<u8>, acl: Vec<Acl>, mode: CreateMode
+    ) -> ZkResult<String> {
+        let _timer = ZOO_OP_DURATION.with_label_values(&["create"]).start_timer();
+        keeper.create(path, payload, acl, mode)
+            .map_err(|error| {
+                ZOO_OP_ERRORS_COUNT.with_label_values(&["create"]).inc();
+                if error == ZkError::OperationTimeout {
+                    ZOO_TIMEOUTS_COUNT.inc();
+                }
+                error
+            })
     }
 
     /// Wrapper for `ZooKeeper::delete` to track metrics.
@@ -135,6 +154,21 @@ impl Client {
             })
     }
 
+    /// Wrapper for `ZooKeeper::get_children_w` to track metrics.
+    pub fn get_children_w<W>(keeper: &ZooKeeper, path: &str, watcher: W) -> ZkResult<Vec<String>>
+        where W: Watcher + 'static
+    {
+        let _timer = ZOO_OP_DURATION.with_label_values(&["get_children_w"]).start_timer();
+        keeper.get_children_w(path, watcher)
+            .map_err(|error| {
+                ZOO_OP_ERRORS_COUNT.with_label_values(&["get_children_w"]).inc();
+                if error == ZkError::OperationTimeout {
+                    ZOO_TIMEOUTS_COUNT.inc();
+                }
+                error
+            })
+    }
+
     /// Wrapper for `ZooKeeper::get_data` to track metrics.
     pub fn get_data(keeper: &ZooKeeper, path: &str, watch: bool) -> ZkResult<(Vec<u8>, Stat)> {
         let _timer = ZOO_OP_DURATION.with_label_values(&["get_data"]).start_timer();
@@ -148,20 +182,26 @@ impl Client {
             })
     }
 
+    /// Hash a key to return a unique, escaped, identifier.
+    pub fn hash_from_key(key: &str) -> String {
+        let mut hasher = Sha256::new();
+        hasher.input(key);
+        let hash = hasher.result();
+        format!("{:x}", hash)
+    }
+
     /// Create the given path as an empty persistent node.
     ///
     /// `CreateMode::Container` requires Zookeeper 3.5.3+ and does not seem to be reliable
     /// (or maybe I failed to configure the server).
     pub fn mkcontaner(keeper: &ZooKeeper, path: &str) -> Result<()> {
-        let _timer = ZOO_OP_DURATION.with_label_values(&["create"]).start_timer();
-        match keeper.create(path, Vec::new(), Acl::open_unsafe().clone(), CreateMode::Persistent) {
+        let result = Client::create(
+            keeper, path, Vec::new(), Acl::open_unsafe().clone(), CreateMode::Persistent
+        );
+        match result {
             Ok(_) => (),
             Err(ZkError::NodeExists) => (),
             Err(error) => {
-                ZOO_OP_ERRORS_COUNT.with_label_values(&["create"]).inc();
-                if error == ZkError::OperationTimeout {
-                    ZOO_TIMEOUTS_COUNT.inc();
-                }
                 return Err(error).context(ErrorKind::Backend("container creation"))?;
             },
         };
@@ -176,10 +216,7 @@ impl Client {
     /// # Panics
     /// If the given hash is not at least `HASH_MIN_LEGTH` characters.
     pub fn path_from_key(root: &str, key: &str) -> String {
-        let mut hasher = Sha256::new();
-        hasher.input(key);
-        let hash = hasher.result();
-        let hash = format!("{:x}", hash);
+        let hash = Client::hash_from_key(key);
         Client::path_from_hash(root, &hash)
     }
 
@@ -300,11 +337,14 @@ impl Client {
         timer.observe_duration();
 
         // Make root if needed.
-        self.ensure_persistent("/", &keeper).context(ErrorKind::Backend("ensure '/' exists"))?;
-        self.ensure_persistent("/locks", &keeper)
-            .context(ErrorKind::Backend("ensure '/locks' exists"))?;
-        self.ensure_persistent("/nodes", &keeper)
-            .context(ErrorKind::Backend("ensure '/nodes' exists"))?;
+        self.ensure_persistent("/", &keeper)
+            .context(ErrorKind::Backend("ensure root container exists"))?;
+        self.ensure_persistent(PREFIX_ELECTION, &keeper)
+            .context(ErrorKind::Backend("ensure elections container exists"))?;
+        self.ensure_persistent(PREFIX_LOCK, &keeper)
+            .context(ErrorKind::Backend("ensure locks container exists"))?;
+        self.ensure_persistent(PREFIX_NODE, &keeper)
+            .context(ErrorKind::Backend("ensure nodes container exists"))?;
 
         // Register node_id for debugging (if provided).
         if let Some(registry) = self.registry.as_ref() {
@@ -383,12 +423,13 @@ struct RegistryData {
 
 #[cfg(test)]
 mod tests {
+    use super::PREFIX_NODE;
     use super::Client;
 
     #[test]
     fn path_for_key() {
         let key = "discovery/some.cluster.id";
-        let path = Client::path_from_key("/nodes", key);
+        let path = Client::path_from_key(PREFIX_NODE, key);
         assert_eq!(
             path,
             "/nodes/22db/22db2cab3cb041408a0d3137b5563e82570bd26eb237b1c7cb998292a709d10c"
@@ -398,7 +439,7 @@ mod tests {
     #[test]
     fn path_for_node_id() {
         let hash = "3bb728ac2ca63e8f3be0d39195b09b76";
-        let path = Client::path_from_hash("/nodes", hash);
+        let path = Client::path_from_hash(PREFIX_NODE, hash);
         assert_eq!(path, "/nodes/3bb7/3bb728ac2ca63e8f3be0d39195b09b76");
     }
 
@@ -406,6 +447,6 @@ mod tests {
     #[should_panic(expected = "hash must have at least 4 characters")]
     fn path_too_short() {
         let hash = "3bb";
-        Client::path_from_hash("/nodes", hash);
+        Client::path_from_hash(PREFIX_NODE, hash);
     }
 }

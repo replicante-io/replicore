@@ -3,6 +3,9 @@ use super::Result;
 use super::admin::Nodes;
 use super::admin::NonBlockingLock as AdminNonBlockingLock;
 use super::admin::NonBlockingLocks;
+use super::coordinator::Election;
+use super::coordinator::ElectionStatus;
+use super::coordinator::ElectionWatch;
 use super::coordinator::NonBlockingLock;
 use super::coordinator::NonBlockingLockWatcher;
 
@@ -12,6 +15,9 @@ pub mod zookeeper;
 
 /// Distributed coordination backend interface.
 pub trait Backend : Send + Sync {
+    /// Election for a single primary with secondaries ready to take over.
+    fn election(&self, id: String) -> Election;
+
     /// Get the ID of the current node.
     fn node_id(&self) -> &NodeId;
 
@@ -30,6 +36,25 @@ pub trait BackendAdmin : Send + Sync {
 
     /// Iterate over held non-blocking locks.
     fn non_blocking_locks(&self) -> NonBlockingLocks;
+}
+
+
+/// Backend specific elections behaviours.
+pub trait ElectionBehaviour {
+    /// Run for election.
+    fn run(&mut self) -> Result<()>;
+
+    /// Check the current election status.
+    fn status(&self) -> ElectionStatus;
+
+    /// Relinquish primary role, if primary, and remove itself from the election.
+    fn step_down(&mut self) -> Result<()>;
+
+    /// Step down logic called when the election instance is `Drop::drop`ed.
+    fn step_down_on_drop(&mut self);
+
+    /// Watch the election for changes.
+    fn watch(&self) -> ElectionWatch;
 }
 
 

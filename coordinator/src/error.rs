@@ -61,6 +61,12 @@ pub enum ErrorKind {
     #[fail(display = "failed to encode {}", _0)]
     Encode(&'static str),
 
+    #[fail(display = "election '{}' is no longer available", _0)]
+    ElectionLost(String),
+
+    #[fail(display = "election '{}' already running", _0)]
+    ElectionRunning(String),
+
     #[fail(display = "lock '{}' is already held by process '{}'", _0, _1)]
     LockHeld(String, NodeId),
 

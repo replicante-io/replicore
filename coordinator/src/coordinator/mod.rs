@@ -9,8 +9,12 @@ use super::Result;
 use super::backend;
 use super::backend::Backend;
 
+mod election;
 mod lock;
 
+pub use self::election::Election;
+pub use self::election::ElectionStatus;
+pub use self::election::ElectionWatch;
 pub use self::lock::NonBlockingLock;
 pub use self::lock::NonBlockingLockWatcher;
 
@@ -41,6 +45,11 @@ impl Coordinator {
 }
 
 impl Coordinator {
+    /// Election for a single primary with secondaries ready to take over.
+    pub fn election<S: Into<String>>(&self, id: S) -> Election {
+        self.0.election(id.into())
+    }
+
     /// Get the ID of the current node.
     pub fn node_id(&self) -> &NodeId {
         self.0.node_id()

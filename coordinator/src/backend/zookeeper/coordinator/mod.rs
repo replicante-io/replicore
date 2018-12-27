@@ -5,11 +5,13 @@ use slog::Logger;
 use super::super::super::NodeId;
 use super::super::super::Result;
 use super::super::super::config::ZookeeperConfig;
+use super::super::super::coordinator::Election;
 use super::super::super::coordinator::NonBlockingLock;
 use super::super::Backend;
 use super::client::Client;
 
 mod cleaner;
+mod election;
 mod lock;
 
 use self::cleaner::Cleaner;
@@ -38,6 +40,12 @@ impl Zookeeper {
 }
 
 impl Backend for Zookeeper {
+    fn election(&self, id: String) -> Election {
+        Election::new(Box::new(self::election::ZookeeperElection::new(
+            Arc::clone(&self.client), id, self.node_id.clone(), self.logger.clone()
+        )))
+    }
+
     fn non_blocking_lock(&self, lock: String) -> NonBlockingLock {
         NonBlockingLock::new(Box::new(self::lock::ZookeeperNBLock::new(
             Arc::clone(&self.client), lock, self.node_id.clone(), self.logger.clone()

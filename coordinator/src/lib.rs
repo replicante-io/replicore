@@ -35,6 +35,8 @@ pub use self::admin::Admin;
 pub use self::config::Backend as BackendConfig;
 pub use self::config::Config;
 pub use self::coordinator::Coordinator;
+pub use self::coordinator::ElectionStatus;
+pub use self::coordinator::ElectionWatch;
 pub use self::coordinator::NonBlockingLock;
 pub use self::error::Error;
 pub use self::error::ErrorKind;
