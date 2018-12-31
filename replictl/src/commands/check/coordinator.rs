@@ -19,6 +19,24 @@ use super::super::super::outcome::Outcomes;
 pub const COMMAND: &str = "coordinator";
 
 
+/// Iterate over elections to ensure the can be read.
+fn check_elections(
+    admin: &Admin, outcomes: &mut Outcomes, interfaces: &Interfaces, logger: &Logger
+) -> Result<()> {
+    info!(logger, "Checking elections");
+    let mut tracker = interfaces.progress("Processed more elections");
+    for election in admin.elections() {
+        if let Err(error) = election {
+            let error = error.to_string();
+            outcomes.error(Error::GenericError(error));
+        }
+        tracker.track();
+    }
+    outcomes.report(logger);
+    Ok(())
+}
+
+
 /// Iterate over non-blocking locks to ensure they can be read.
 fn check_nblocks(
     admin: &Admin, outcomes: &mut Outcomes, interfaces: &Interfaces, logger: &Logger
@@ -85,6 +103,7 @@ pub fn run<'a>(args: &ArgMatches<'a>, interfaces: &Interfaces) -> Result<()> {
 
     // Check things.
     check_registry(&admin, &mut outcomes, interfaces, &logger)?;
+    check_elections(&admin, &mut outcomes, interfaces, &logger)?;
     check_nblocks(&admin, &mut outcomes, interfaces, &logger)?;
 
     // Report results.

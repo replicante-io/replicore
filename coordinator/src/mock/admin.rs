@@ -5,6 +5,8 @@ use std::sync::Mutex;
 use super::super::NodeId;
 use super::super::ErrorKind;
 use super::super::Result;
+use super::super::admin::Election;
+use super::super::admin::Elections;
 use super::super::admin::Nodes;
 use super::super::admin::NonBlockingLock;
 use super::super::admin::NonBlockingLocks;
@@ -20,6 +22,14 @@ pub struct MockAdmin {
 }
 
 impl BackendAdmin for MockAdmin {
+    fn election(&self, _: &str) -> Result<Election> {
+        panic!("TODO MockAdmin::election");
+    }
+
+    fn elections(&self) -> Elections {
+        panic!("TODO MockAdmin::elections");
+    }
+
     fn nodes(&self) -> Nodes {
         Nodes::new(MockNodes {})
     }

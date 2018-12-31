@@ -45,6 +45,8 @@ impl Iterator for ZookeeperNBLocks {
         // Enumerate locks on the server.
         if self.locks.is_none() {
             if let Err(error) = self.load_locks() {
+                // Cache an empty list to avoid endlessly attempting load after error.
+                self.locks = Some(Vec::new());
                 return Some(Err(error));
             }
         }

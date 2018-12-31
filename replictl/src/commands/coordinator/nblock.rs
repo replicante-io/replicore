@@ -5,12 +5,10 @@ use clap::SubCommand;
 use failure::ResultExt;
 use failure::err_msg;
 
-use replicante::Config;
-use replicante_coordinator::Admin;
-
 use super::super::super::ErrorKind;
 use super::super::super::Interfaces;
 use super::super::super::Result;
+use super::admin_interface;
 
 
 pub const COMMAND: &str = "nb-lock";
@@ -19,7 +17,7 @@ const COMMAND_INFO: &str = "info";
 const COMMAND_LS: &str = "ls";
 
 
-/// Configure the `replictl coordinator` command parser.
+/// Configure the `replictl coordinator nb-lock` command parser.
 pub fn command() -> App<'static, 'static> {
     SubCommand::with_name(COMMAND)
         .about("Inspect and manage distributed non-blocking locks")
@@ -47,18 +45,6 @@ pub fn command() -> App<'static, 'static> {
             SubCommand::with_name(COMMAND_LS)
             .about("List currently held non-blocking locks")
         )
-}
-
-
-/// Helper function to configure and instantiate an Admin interface.
-fn admin_interface<'a>(args: &ArgMatches<'a>, interfaces: &Interfaces) -> Result<Admin> {
-    let logger = interfaces.logger().clone();
-    let config = args.value_of("config").unwrap();
-    let config = Config::from_file(config)
-        .context(ErrorKind::Legacy(err_msg("failed to initialise coordinator interface")))?;
-    let admin = Admin::new(config.coordinator, logger)
-        .context(ErrorKind::Legacy(err_msg("failed to initialise coordinator interface")))?;
-    Ok(admin)
 }
 
 
@@ -92,6 +78,7 @@ fn force_release<'a>(args: &ArgMatches<'a>, interfaces: &Interfaces) -> Result<(
     println!("==> Lock released by force");
     Ok(())
 }
+
 
 /// Show information about a non-blocking lock.
 fn info<'a>(args: &ArgMatches<'a>, interfaces: &Interfaces) -> Result<()> {

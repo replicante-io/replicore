@@ -9,6 +9,8 @@ use super::super::super::Error;
 use super::super::super::ErrorKind;
 use super::super::super::NodeId;
 use super::super::super::Result;
+use super::super::super::admin::Election;
+use super::super::super::admin::Elections;
 use super::super::super::admin::NonBlockingLock;
 use super::super::super::config::ZookeeperConfig;
 use super::super::BackendAdmin;
@@ -17,28 +19,42 @@ use super::super::NonBlockingLocks;
 
 use super::NBLockInfo;
 use super::client::Client;
+use super::constants::PREFIX_LOCK;
 
 
+mod election;
 mod lock;
 
 
 /// Admin backend for zookeeper distributed coordination.
 pub struct ZookeeperAdmin {
     client: Arc<Client>,
-    //logger: Logger,
 }
 
 impl ZookeeperAdmin {
     pub fn new(config: ZookeeperConfig, logger: Logger) -> Result<ZookeeperAdmin> {
-        let client = Arc::new(Client::new(config, None, logger.clone())?);
+        let client = Arc::new(Client::new(config, None, logger)?);
         Ok(ZookeeperAdmin {
             client,
-            //logger,
         })
     }
 }
 
 impl BackendAdmin for ZookeeperAdmin {
+    fn election(&self, name: &str) -> Result<Election> {
+        match election::ZooKeeperElectionAdmin::from_name(Arc::clone(&self.client), name) {
+            Err(error) => Err(error),
+            Ok(Some(election)) => Ok(election),
+            Ok(None) => Err(ErrorKind::ElectionNotFound(name.into()).into()),
+        }
+    }
+
+    fn elections(&self) -> Elections {
+        Elections::new(election::ZooKeeperElections::new(
+            Arc::clone(&self.client)
+        ))
+    }
+
     fn nodes(&self) -> Nodes {
         Nodes::new(ZookeeperNodes {
             client: Arc::clone(&self.client),
@@ -48,7 +64,7 @@ impl BackendAdmin for ZookeeperAdmin {
 
     fn non_blocking_lock(&self, lock: &str) -> Result<NonBlockingLock> {
         let keeper = self.client.get()?;
-        let path = Client::path_from_key("/locks", lock);
+        let path = Client::path_from_key(PREFIX_LOCK, lock);
         let payload = Client::get_data(&keeper, &path, false);
         let payload = match payload {
             Ok((payload, _)) => payload,

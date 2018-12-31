@@ -10,8 +10,11 @@ use super::Result;
 use super::backend;
 use super::backend::BackendAdmin;
 
+mod election;
 mod lock;
 
+pub use self::election::Election;
+pub use self::election::Elections;
 pub use self::lock::NonBlockingLock;
 pub use self::lock::NonBlockingLocks;
 
@@ -37,12 +40,22 @@ impl Admin {
 }
 
 impl Admin {
+    /// Lookup an election.
+    pub fn election(&self, name: &str) -> Result<Election> {
+        self.0.election(name)
+    }
+
+    /// Iterate over elections.
+    pub fn elections(&self) -> Elections {
+        self.0.elections()
+    }
+
     /// Iterate over registered nodes.
     pub fn nodes(&self) -> Nodes {
         self.0.nodes()
     }
 
-    /// Model a non-blocking lock.
+    /// Lookup a non-blocking lock.
     pub fn non_blocking_lock(&self, lock: &str) -> Result<NonBlockingLock> {
         self.0.non_blocking_lock(lock)
     }

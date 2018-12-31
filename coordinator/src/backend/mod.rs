@@ -1,5 +1,7 @@
 use super::NodeId;
 use super::Result;
+use super::admin::Election as AdminElection;
+use super::admin::Elections as AdminElections;
 use super::admin::Nodes;
 use super::admin::NonBlockingLock as AdminNonBlockingLock;
 use super::admin::NonBlockingLocks;
@@ -28,14 +30,33 @@ pub trait Backend : Send + Sync {
 
 /// Distributed coordination admin backend interface.
 pub trait BackendAdmin : Send + Sync {
+    /// Lookup an election.
+    fn election(&self, &str) -> Result<AdminElection>;
+
+    /// Iterate over elections.
+    fn elections(&self) -> AdminElections;
+
     /// Iterate over registered nodes.
     fn nodes(&self) -> Nodes;
 
-    /// Model a non-blocking lock.
+    /// Lookup a non-blocking lock.
     fn non_blocking_lock(&self, lock: &str) -> Result<AdminNonBlockingLock>;
 
     /// Iterate over held non-blocking locks.
     fn non_blocking_locks(&self) -> NonBlockingLocks;
+}
+
+
+/// Backend specific elections admin behaviour.
+pub trait ElectionAdminBehaviour {
+    /// Fetch the `NodeId` of the primary for this election, if a primary is elected.
+    fn primary(&self) -> Result<Option<NodeId>>;
+
+    /// The number of secondary nodes waiting to take over if needed.
+    fn secondaries_count(&self) -> Result<usize>;
+
+    /// Strip the current primary of its role and forces a new election.
+    fn step_down(&self) -> Result<bool>;
 }
 
 

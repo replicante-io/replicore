@@ -64,6 +64,9 @@ pub enum ErrorKind {
     #[fail(display = "election '{}' is no longer available", _0)]
     ElectionLost(String),
 
+    #[fail(display = "election '{}' not found", _0)]
+    ElectionNotFound(String),
+
     #[fail(display = "election '{}' already running", _0)]
     ElectionRunning(String),
 
