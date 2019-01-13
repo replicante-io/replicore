@@ -7,39 +7,52 @@ use super::super::backend::ElectionBehaviour;
 
 
 /// Election for a single primary with secondaries ready to take over.
-pub struct Election(Box<dyn ElectionBehaviour>);
+pub struct Election {
+    inner: Box<dyn ElectionBehaviour>,
+    name: String,
+}
 
 impl Election {
-    pub(crate) fn new(inner: Box<dyn ElectionBehaviour>) -> Self {
-        Election(inner)
+    pub(crate) fn new<S>(name: S, inner: Box<dyn ElectionBehaviour>) -> Self
+        where S: Into<String>,
+    {
+        Election {
+            inner,
+            name: name.into(),
+        }
     }
 }
 
 impl Election {
+    /// Name of this election.
+    pub fn name(&self) -> &str {
+        &self.name
+    }
+
     /// Run for election.
     pub fn run(&mut self) -> Result<()> {
-        self.0.run()
+        self.inner.run()
     }
 
     /// Check the current election status.
     pub fn status(&self) -> ElectionStatus {
-        self.0.status()
+        self.inner.status()
     }
 
     /// Relinquish primary role, if primary, and remove itself from the election.
     pub fn step_down(&mut self) -> Result<()> {
-        self.0.step_down()
+        self.inner.step_down()
     }
 
     /// Watch the election for changes.
     pub fn watch(&self) -> ElectionWatch {
-        self.0.watch()
+        self.inner.watch()
     }
 }
 
 impl Drop for Election {
     fn drop(&mut self) {
-        self.0.step_down_on_drop()
+        self.inner.step_down_on_drop()
     }
 }
 

@@ -11,6 +11,9 @@ use super::Coordinator;
 use super::ErrorKind;
 use super::NodeId;
 use super::Result;
+use super::backend::ElectionBehaviour;
+use super::coordinator::ElectionStatus;
+use super::coordinator::ElectionWatch;
 
 mod admin;
 mod backend;
@@ -21,6 +24,7 @@ use self::backend::MockBackend;
 
 /// Helper to mock distributed coordination services.
 pub struct MockCoordinator {
+    pub elections: Arc<Mutex<HashMap<String, MockElection>>>,
     pub nblocks: Arc<Mutex<HashMap<String, MockNonBlockingLock>>>,
     pub node_id: NodeId,
 }
@@ -28,6 +32,7 @@ pub struct MockCoordinator {
 impl MockCoordinator {
     pub fn new(_logger: Logger) -> MockCoordinator {
         MockCoordinator {
+            elections: Arc::new(Mutex::new(HashMap::new())),
             nblocks: Arc::new(Mutex::new(HashMap::new())),
             node_id: NodeId::new(),
         }
@@ -39,9 +44,17 @@ impl MockCoordinator {
         }))
     }
 
+    pub fn election<S: Into<String>>(&self, name: S) -> MockElection {
+        let name: String = name.into();
+        let mut elections = self.elections.lock()
+            .expect("MockCoordinator::elections lock poisoned");
+        elections.entry(name.clone()).or_insert_with(|| MockElection::new(name)).clone()
+    }
+
     pub fn mock(&self) -> Coordinator {
         Coordinator::with_backend(Arc::new(MockBackend {
-            nblocks: self.nblocks.clone(),
+            elections: Arc::clone(&self.elections),
+            nblocks: Arc::clone(&self.nblocks),
             node_id: self.node_id.clone(),
         }))
     }
@@ -59,6 +72,62 @@ impl MockCoordinator {
             },
             Some(mock) => mock,
         }
+    }
+}
+
+
+/// Election mock behaviour.
+#[derive(Clone)]
+pub struct MockElection {
+    name: String,
+    pub primary: Arc<Mutex<Option<NodeId>>>,
+    pub secondaries: Arc<Mutex<usize>>,
+    pub status: Arc<Mutex<ElectionStatus>>,
+}
+
+impl MockElection {
+    fn new(name: String) -> MockElection {
+        MockElection {
+            name,
+            primary: Arc::new(Mutex::new(None)),
+            secondaries: Arc::new(Mutex::new(0)),
+            status: Arc::new(Mutex::new(ElectionStatus::NotCandidate)),
+        }
+    }
+}
+
+impl ElectionBehaviour for MockElection {
+    fn run(&mut self) -> Result<()> {
+        let primary = self.primary.lock().expect("MockElection::primary lock poisoned");
+        let primary = primary.is_some();
+        let status = if primary {
+            ElectionStatus::Primary
+        } else {
+            ElectionStatus::Secondary
+        };
+        let mut lock = self.status.lock().expect("MockElection::status lock poisoned");
+        *lock = status;
+        Ok(())
+    }
+
+    fn status(&self) -> ElectionStatus {
+        let lock = self.status.lock().expect("MockElection::status lock poisoned");
+        lock.clone()
+    }
+
+    fn step_down(&mut self) -> Result<()> {
+        let mut lock = self.status.lock().expect("MockElection::status lock poisoned");
+        *lock = ElectionStatus::NotCandidate;
+        Ok(())
+    }
+
+    fn step_down_on_drop(&mut self) {
+        self.step_down().expect("MockElection::step_down failed")
+    }
+
+    fn watch(&self) -> ElectionWatch {
+        // TODO
+        panic!("TODO: MockElection::watch");
     }
 }
 

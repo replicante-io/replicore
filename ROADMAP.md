@@ -1,7 +1,7 @@
 ## 0.2.0 - High Availability (Work In Progress)
 - Introduce distibuted coordinator.
-- Move agent fetch and aggregation to tasks.
 - Make discovery worker HA (by using elections).
+- Move agent fetch and aggregation to tasks.
 
 
 ## 0.2.1 - Small Improvements

@@ -11,12 +11,17 @@ use super::backend::Backend;
 
 mod election;
 mod lock;
+mod looping_election;
 
 pub use self::election::Election;
 pub use self::election::ElectionStatus;
 pub use self::election::ElectionWatch;
 pub use self::lock::NonBlockingLock;
 pub use self::lock::NonBlockingLockWatcher;
+pub use self::looping_election::LoopingElection;
+pub use self::looping_election::LoopingElectionControl;
+pub use self::looping_election::LoopingElectionLogic;
+pub use self::looping_election::LoopingElectionOpts;
 
 
 /// Interface to access distributed coordination services.

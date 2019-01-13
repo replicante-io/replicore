@@ -9,19 +9,24 @@ use super::super::backend::NonBlockingLockBehaviour;
 use super::super::coordinator::Election;
 use super::super::coordinator::NonBlockingLock;
 use super::super::coordinator::NonBlockingLockWatcher;
+use super::MockElection;
 use super::MockNonBlockingLock;
 
 
 
 /// Proxy synchronized access to mock attributes.
 pub struct MockBackend {
+    pub elections: Arc<Mutex<HashMap<String, MockElection>>>,
     pub nblocks: Arc<Mutex<HashMap<String, MockNonBlockingLock>>>,
     pub node_id: NodeId,
 }
 
 impl Backend for MockBackend {
-    fn election(&self, _id: String) -> Election {
-        panic!("TODO: MockBackend::election");
+    fn election(&self, id: String) -> Election {
+        let name = id.clone();
+        let mut elections = self.elections.lock().expect("MockBackend::elections lock poisoned");
+        let mock = elections.entry(id.clone()).or_insert_with(|| MockElection::new(id)).clone();
+        Election::new(name, Box::new(mock))
     }
 
     fn non_blocking_lock(&self, lock: String) -> NonBlockingLock {

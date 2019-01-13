@@ -45,4 +45,4 @@ replicante_util_failure = { path = "../common/util/failure" }
 
 
 [build-dependencies]
-git2 = "^0.7.0"
+git2 = "^0.8.0"

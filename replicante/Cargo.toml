@@ -60,7 +60,7 @@ replicante_util_tracing = { path = "../common/util/tracing" }
 
 
 [build-dependencies]
-git2 = "^0.7.0"
+git2 = "^0.8.0"
 
 
 [dev-dependencies]
