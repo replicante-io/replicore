@@ -294,6 +294,20 @@ struct ElectionContext {
 /// This election has a small window where two nodes can be primary at the same time.
 /// This happens when a node is no longer primary and a secondary is promoted before
 /// the "original" primary realises it needs to stop working.
+///
+/// # Potential herd effect
+/// This implementation is similar to the
+/// [official recipie](https://zookeeper.apache.org/doc/r3.4.13/recipes.html#sc_leaderElection)
+/// with one difference: this implelementation uses a watcher on the election node instead of
+/// watching the next candidate.
+///
+/// This keeps the implementation simpler and allows extentions like priority (by prefixing
+/// nodes) but may lead to scalability issues with large clusters.
+///
+/// If this is a problem, rework the implementation to use more specific watcher as
+/// suggested by the official recipe.
+/// If priorities are needed they can still be added with an additional delete of the
+/// current master if a node is added with lower priority.
 pub struct ZookeeperElection {
     state: AtomicState,
 }

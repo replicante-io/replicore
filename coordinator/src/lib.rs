@@ -42,6 +42,8 @@ pub use self::coordinator::LoopingElectionControl;
 pub use self::coordinator::LoopingElectionLogic;
 pub use self::coordinator::LoopingElectionOpts;
 pub use self::coordinator::NonBlockingLock;
+pub use self::coordinator::ShutdownReceiver;
+pub use self::coordinator::ShutdownSender;
 pub use self::error::Error;
 pub use self::error::ErrorKind;
 pub use self::error::Result;

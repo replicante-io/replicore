@@ -1,5 +1,9 @@
 use std::time::Duration;
 
+use crossbeam_channel::Receiver;
+use crossbeam_channel::RecvTimeoutError;
+use crossbeam_channel::Sender;
+use crossbeam_channel::bounded;
 use slog::Logger;
 
 use super::super::Error;
@@ -19,6 +23,7 @@ pub struct LoopingElection {
     logger: Logger,
     logic: Box<dyn LoopingElectionLogic>,
     loop_delay: Duration,
+    shutdown_receiver: Option<ShutdownReceiver>,
 }
 
 impl LoopingElection {
@@ -31,6 +36,7 @@ impl LoopingElection {
             logger,
             logic: options.logic,
             loop_delay: options.loop_delay,
+            shutdown_receiver: options.shutdown_receiver,
         }
     }
 
@@ -62,7 +68,17 @@ impl LoopingElection {
                 LoopingElectionControl::Proceed => (),
                 flow => panic!("unexpected control flow requested: {:?}", flow),
             }
-            ::std::thread::sleep(self.loop_delay.clone());
+            
+            // Susped the thread for a bit to avoid busy looping.
+            let loop_delay = self.loop_delay.clone();
+            match self.shutdown_receiver.as_ref() {
+                None => ::std::thread::sleep(loop_delay),
+                Some(receiver) => match receiver.recv_timeout(loop_delay) {
+                    Ok(()) => break,
+                    Err(RecvTimeoutError::Disconnected) => break,
+                    Err(RecvTimeoutError::Timeout) => (),
+                },
+            };
         }
 
         // Once out of the loop, step down to make sure we are not holding onto an election.
@@ -115,7 +131,7 @@ impl LoopingElection {
                 flow => return flow,
             },
         };
-        LoopingElectionControl::Continue
+        LoopingElectionControl::Proceed
     }
 }
 
@@ -242,10 +258,14 @@ pub trait LoopingElectionLogic {
     }
 
     /// Called at the end of each cycle.
-    fn post_check(&self, election: &Election) -> Result<LoopingElectionControl>;
+    fn post_check(&self, _election: &Election) -> Result<LoopingElectionControl> {
+        Ok(LoopingElectionControl::Proceed)
+    }
 
     /// Called at the beginning of each cycle.
-    fn pre_check(&self, election: &Election) -> Result<LoopingElectionControl>;
+    fn pre_check(&self, _election: &Election) -> Result<LoopingElectionControl> {
+        Ok(LoopingElectionControl::Proceed)
+    }
 
     /// Called when the election state is `ElectionStatus::Primary`.
     fn primary(&self, election: &Election) -> Result<LoopingElectionControl>;
@@ -268,6 +288,15 @@ pub struct LoopingElectionOpts {
     election_term: Option<u64>,
     logic: Box<dyn LoopingElectionLogic>,
     loop_delay: Duration,
+    shutdown_receiver: Option<ShutdownReceiver>,
+}
+
+impl LoopingElectionOpts {
+    /// Return a channel to request asynchronous shutdown.
+    pub fn shutdown_channel() -> (ShutdownSender, ShutdownReceiver) {
+        let (sender, receiver) = bounded(0);
+        (ShutdownSender(sender), ShutdownReceiver(receiver))
+    }
 }
 
 impl LoopingElectionOpts {
@@ -279,6 +308,7 @@ impl LoopingElectionOpts {
             election_term: None,
             logic: Box::new(logic),
             loop_delay: Duration::from_secs(60),
+            shutdown_receiver: None,
         }
     }
 
@@ -307,6 +337,42 @@ impl LoopingElectionOpts {
     pub fn loop_delay(mut self, delay: Duration) -> LoopingElectionOpts {
         self.loop_delay = delay;
         self
+    }
+
+    /// Set a receiver for a shutdown signal.
+    ///
+    /// Once a receiver is set, loop delays can be interrupted with a signal or by closing the
+    /// sender side of the shurdown channel.
+    ///
+    /// If a loop delay is interrupted, `LoopingElection::loop_forever` will step down
+    /// the election and terminate.
+    pub fn shutdown_receiver(mut self, receiver: ShutdownReceiver) -> LoopingElectionOpts {
+        self.shutdown_receiver = Some(receiver);
+        self
+    }
+}
+
+
+/// Type of receivers of shutdown requests for `LoopingElection`.
+pub struct ShutdownReceiver(Receiver<()>);
+
+impl ShutdownReceiver {
+    /// Wait for a message to be received, the channel to be closed, or the timeout to expire.
+    fn recv_timeout(&self, duration: Duration) -> ::std::result::Result<(), RecvTimeoutError> {
+        self.0.recv_timeout(duration)
+    }
+}
+
+
+/// Type of senders of shutdown requests for `LoopingElection`.
+#[derive(Clone)]
+pub struct ShutdownSender(Sender<()>);
+
+impl ShutdownSender {
+    /// Request the shutdown of the associated `LoopingElection`.
+    pub fn request(&self) {
+        // Ignore disconnected channels.
+        let _ = self.0.send(());
     }
 }
 
@@ -431,7 +497,7 @@ mod tests {
                 ref status => panic!("unexpected election status, status is {:?}", status),
             }
         }
-        assert_eq!(LoopingElectionControl::Continue, flow);
+        assert_eq!(LoopingElectionControl::Proceed, flow);
         assert_eq!(0, *logic.handle_error.borrow());
         assert_eq!(0, *logic.in_progress.borrow());
         assert_eq!(1, *logic.not_candidate.borrow());
@@ -461,7 +527,7 @@ mod tests {
                 ref status => panic!("unexpected election status, status is {:?}", status),
             }
         }
-        assert_eq!(LoopingElectionControl::Continue, flow);
+        assert_eq!(LoopingElectionControl::Proceed, flow);
         assert_eq!(0, *logic.handle_error.borrow());
         assert_eq!(0, *logic.in_progress.borrow());
         assert_eq!(0, *logic.not_candidate.borrow());
@@ -491,7 +557,7 @@ mod tests {
                 ref status => panic!("unexpected election status, status is {:?}", status),
             }
         }
-        assert_eq!(LoopingElectionControl::Continue, flow);
+        assert_eq!(LoopingElectionControl::Proceed, flow);
         assert_eq!(0, *logic.handle_error.borrow());
         assert_eq!(0, *logic.in_progress.borrow());
         assert_eq!(0, *logic.not_candidate.borrow());
@@ -521,7 +587,7 @@ mod tests {
                 ref status => panic!("unexpected election status, status is {:?}", status),
             }
         }
-        assert_eq!(LoopingElectionControl::Continue, flow);
+        assert_eq!(LoopingElectionControl::Proceed, flow);
         assert_eq!(0, *logic.handle_error.borrow());
         assert_eq!(0, *logic.in_progress.borrow());
         assert_eq!(0, *logic.not_candidate.borrow());
@@ -539,7 +605,7 @@ mod tests {
         let opts = LoopingElectionOpts::new(election, logic.clone());
         let mut looper = LoopingElection::new(opts, Logger::root(Discard, o!()));
         let flow = looper.loop_once();
-        assert_eq!(LoopingElectionControl::Continue, flow);
+        assert_eq!(LoopingElectionControl::Proceed, flow);
         assert_eq!(0, *logic.handle_error.borrow());
         assert_eq!(0, *logic.in_progress.borrow());
         assert_eq!(1, *logic.not_candidate.borrow());
@@ -575,7 +641,7 @@ mod tests {
                 ref status => panic!("unexpected election status, status is {:?}", status),
             }
         }
-        assert_eq!(LoopingElectionControl::Continue, flow);
+        assert_eq!(LoopingElectionControl::Proceed, flow);
         assert_eq!(0, *logic.handle_error.borrow());
         assert_eq!(0, *logic.in_progress.borrow());
         assert_eq!(0, *logic.not_candidate.borrow());
@@ -605,7 +671,7 @@ mod tests {
                 ref status => panic!("unexpected election status, status is {:?}", status),
             }
         }
-        assert_eq!(LoopingElectionControl::Continue, flow);
+        assert_eq!(LoopingElectionControl::Proceed, flow);
         assert_eq!(0, *logic.handle_error.borrow());
         assert_eq!(0, *logic.in_progress.borrow());
         assert_eq!(0, *logic.not_candidate.borrow());
@@ -651,5 +717,36 @@ mod tests {
         assert_eq!(5, *logic.primary.borrow());
         assert_eq!(16, *logic.secondary.borrow());
         assert_eq!(0, *logic.terminated.borrow());
+    }
+
+    #[test]
+    fn shutdown_signal() {
+        let mock_coordinator = mock_coordinator();
+        let coordinator = mock_coordinator.mock();
+        let (shutdown, receiver) = LoopingElectionOpts::shutdown_channel();
+        let handle = ::std::thread::spawn(move || {
+            let election = coordinator.election("test");
+            let logic = {
+                let mut logic = TestLogic::new();
+                *logic.max_loops.borrow_mut() = 1;
+                logic
+            };
+            let opts = LoopingElectionOpts::new(election, logic.clone())
+                .election_term(5)
+                .loop_delay(Duration::from_secs(2))
+                .shutdown_receiver(receiver);
+            let mut looper = LoopingElection::new(opts, Logger::root(Discard, o!()));
+            looper.loop_forever();
+            assert_eq!(0, *logic.handle_error.borrow());
+            assert_eq!(0, *logic.in_progress.borrow());
+            assert_eq!(1, *logic.not_candidate.borrow());
+            assert_eq!(1, *logic.post_check.borrow());
+            assert_eq!(1, *logic.pre_check.borrow());
+            assert_eq!(0, *logic.primary.borrow());
+            assert_eq!(0, *logic.secondary.borrow());
+            assert_eq!(0, *logic.terminated.borrow());
+        });
+        shutdown.request();
+        handle.join().unwrap();
     }
 }

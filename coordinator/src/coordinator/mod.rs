@@ -22,6 +22,8 @@ pub use self::looping_election::LoopingElection;
 pub use self::looping_election::LoopingElectionControl;
 pub use self::looping_election::LoopingElectionLogic;
 pub use self::looping_election::LoopingElectionOpts;
+pub use self::looping_election::ShutdownReceiver;
+pub use self::looping_election::ShutdownSender;
 
 
 /// Interface to access distributed coordination services.
