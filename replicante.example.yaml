@@ -108,9 +108,9 @@ coordinator:
       # Having the system re-run elections continuously ensures that failover procedures are
       # exercised constantly and not just in case of errors.
       # You do not want to discover that failover does not work when a primary fails
-      # and nothing picks it up.
+      # and nothing picks up after it.
       #
-      # With the default interval, this will cause a re-election approximately every 6 hours.
+      # With the default interval, this default will cause a re-election about every 6 hours.
       term: 6
 
     # Zookeeper session timeout (in seconds).
@@ -122,9 +122,6 @@ coordinator:
 # Discovery is the way the agents that should be managed are found.
 # Replicante core then interact with agents by initiating connections out to them.
 discovery:
-  # Interval (in seconds) to wait between agent discovery runs.
-  interval: 60
-
   # Discovery backends configuration.
   #
   # Backends are a way to support an extensible set of discovery systems.
@@ -141,6 +138,19 @@ discovery:
     #
     # This is a list of files that are periodically read to perform discovery.
     files: []
+
+  # Interval (in seconds) to wait between agent discovery runs.
+  interval: 60
+
+  # Number of cycles before this node will re-run an election, 0 to disable re-runs.
+  #
+  # Having the system re-run elections continuously ensures that failover procedures are
+  # exercised constantly and not just in case of errors.
+  # You do not want to discover that failover does not work when a primary fails
+  # and nothing picks up after it.
+  #
+  # With the default interval, this default will cause a re-election about every 3 hours.
+  term: 10800
 
 
 # The section below is for events related configuration.

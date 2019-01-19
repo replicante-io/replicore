@@ -1,4 +1,3 @@
-use std::time::Duration;
 use prometheus::Registry;
 use slog::Logger;
 
@@ -83,12 +82,8 @@ impl Components {
     /// Creates and configures components.
     pub fn new(config: &Config, logger: Logger, interfaces: &mut Interfaces) -> Result<Components> {
         let discovery = component_new(
-            "discovery", "required", config.components.discovery(), &logger, || {
-                Discovery::new(
-                    config.discovery.clone(), config.events.snapshots.clone(),
-                    Duration::from_secs(config.timeouts.agents_api), logger.clone(), interfaces
-                )
-            }
+            "discovery", "required", config.components.discovery(), &logger,
+            || Discovery::new(config.discovery.clone(), logger.clone(), interfaces)
         );
         let grafana = component_new(
             "grafana", "optional", config.components.grafana(), &logger,

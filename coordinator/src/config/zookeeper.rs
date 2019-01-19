@@ -14,7 +14,7 @@ pub struct CleanupConfig {
     /// Having the system re-run elections continuously ensures that failover procedures are
     /// exercised constantly and not just in case of errors.
     /// You do not want to discover that failover does not work when a primary fails
-    /// and nothing picks it up.
+    /// and nothing picks up after it.
     #[serde(default = "CleanupConfig::default_term")]
     pub term: u64,
 }
