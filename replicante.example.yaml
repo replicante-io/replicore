@@ -100,11 +100,18 @@ coordinator:
       # Maximum number of nodes to delete in a single cleanup cycle.
       limit: 1000
 
-      # Maximum amount of time to wait between cleanup cycles.
-      interval_max: 10800
+      # Seconds to wait between cleanup cycles.
+      interval: 3600
 
-      # Minimum amount of time to wait between cleanup cycles.
-      interval_min: 3600
+      # Number of cycles before this node will re-run an election, 0 to disable re-runs.
+      #
+      # Having the system re-run elections continuously ensures that failover procedures are
+      # exercised constantly and not just in case of errors.
+      # You do not want to discover that failover does not work when a primary fails
+      # and nothing picks it up.
+      #
+      # With the default interval, this will cause a re-election approximately every 6 hours.
+      term: 6
 
     # Zookeeper session timeout (in seconds).
     timeout: 10

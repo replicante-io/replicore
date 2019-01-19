@@ -45,7 +45,22 @@ impl LoopingElection {
     /// This method blocks until the election is terminated by one of the logic method
     /// returning `LoopingElectionControl::Exit`.
     pub fn loop_forever(&mut self) {
+        let mut first = true;
         loop {
+            // After the first loop, susped the thread for a bit to avoid busy looping.
+            if !first {
+                let loop_delay = self.loop_delay.clone();
+                match self.shutdown_receiver.as_ref() {
+                    None => ::std::thread::sleep(loop_delay),
+                    Some(receiver) => match receiver.recv_timeout(loop_delay) {
+                        Ok(()) => break,
+                        Err(RecvTimeoutError::Disconnected) => break,
+                        Err(RecvTimeoutError::Timeout) => (),
+                    },
+                };
+            }
+            first = false;
+
             // If the term expired, rerun election.
             if self.election_term.is_some() {
                 if self.election_term_current == 0 {
@@ -68,17 +83,6 @@ impl LoopingElection {
                 LoopingElectionControl::Proceed => (),
                 flow => panic!("unexpected control flow requested: {:?}", flow),
             }
-            
-            // Susped the thread for a bit to avoid busy looping.
-            let loop_delay = self.loop_delay.clone();
-            match self.shutdown_receiver.as_ref() {
-                None => ::std::thread::sleep(loop_delay),
-                Some(receiver) => match receiver.recv_timeout(loop_delay) {
-                    Ok(()) => break,
-                    Err(RecvTimeoutError::Disconnected) => break,
-                    Err(RecvTimeoutError::Timeout) => (),
-                },
-            };
         }
 
         // Once out of the loop, step down to make sure we are not holding onto an election.
@@ -104,7 +108,6 @@ impl LoopingElection {
 
         // Run logic based on the election state.
         let status = self.election.status();
-        debug!(self.logger, "Election status: {:?}", status; "election" => self.election.name());
         let flow = match status {
             ElectionStatus::NotCandidate => self.not_candidate(),
             ElectionStatus::InProgress => {
@@ -328,7 +331,14 @@ impl LoopingElectionOpts {
     ///
     /// The usefulness of and election term is to make failovers part of the norm and not an
     /// occasional, unpredictable event.
+    ///
+    /// # Panics
+    /// The election terms must be at least one.
+    /// This method panics if `term` is 0.
     pub fn election_term(mut self, term: u64) -> LoopingElectionOpts {
+        if term == 0 {
+            panic!("LoopingElectionOpts::election_term requires at least 1 term");
+        }
         self.election_term = Some(term);
         self
     }

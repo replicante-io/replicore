@@ -29,6 +29,7 @@ use super::super::super::super::metrics::NB_LOCK_DROP_TOTAL;
 use super::super::super::NonBlockingLockBehaviour;
 use super::super::NBLockInfo;
 use super::super::client::Client;
+use super::super::constants::PREFIX_LOCK;
 
 use super::super::metrics::ZOO_NB_LOCK_DELETED;
 use super::super::metrics::ZOO_NB_LOCK_LOST;
@@ -48,7 +49,7 @@ impl ZookeeperNBLock {
     pub fn new(
         client: Arc<Client>, lock: String, owner: NodeId, logger: Logger
     ) -> ZookeeperNBLock {
-        let path = Client::path_from_key("/locks", &lock);
+        let path = Client::path_from_key(PREFIX_LOCK, &lock);
         let payload = NBLockInfo {
             name: lock.clone(),
             owner,

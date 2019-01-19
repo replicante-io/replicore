@@ -3,20 +3,22 @@ use std::thread::Builder;
 use std::thread::JoinHandle;
 use std::time::Duration;
 
-use crossbeam_channel::RecvTimeoutError;
-use crossbeam_channel::Sender;
-use crossbeam_channel::bounded;
-
 use failure::ResultExt;
-use rand::Rng;
-use rand::thread_rng;
 use slog::Logger;
 use zookeeper::ZkError;
 
 use replicante_util_failure::failure_info;
 
+use super::super::super::super::Election;
+use super::super::super::super::Error;
 use super::super::super::super::ErrorKind;
+use super::super::super::super::LoopingElection;
+use super::super::super::super::LoopingElectionControl;
+use super::super::super::super::LoopingElectionLogic;
+use super::super::super::super::LoopingElectionOpts;
+use super::super::super::super::NodeId;
 use super::super::super::super::Result;
+use super::super::super::super::ShutdownSender;
 use super::super::super::super::config::ZookeeperConfig;
 
 use super::super::constants::PREFIX_ELECTION;
@@ -28,6 +30,7 @@ use super::super::metrics::ZOO_OP_DURATION;
 use super::super::metrics::ZOO_OP_ERRORS_COUNT;
 use super::super::metrics::ZOO_TIMEOUTS_COUNT;
 use super::Client;
+use super::election::ZookeeperElection;
 
 
 /// Background thread to cleanup unused nodes.
@@ -37,36 +40,35 @@ use super::Client;
 pub struct Cleaner {
     handle: Option<JoinHandle<()>>,
     logger: Logger,
-    shutdown_signal: Option<Sender<()>>,
+    shutdown_signal: Option<ShutdownSender>,
 }
 
 impl Cleaner {
-    pub fn new(client: Arc<Client>, config: ZookeeperConfig, logger: Logger) -> Result<Cleaner> {
-        let (sender, receiver) = bounded(0);
+    pub fn new(
+        client: Arc<Client>, config: ZookeeperConfig, node_id: NodeId, logger: Logger
+    ) -> Result<Cleaner> {
+        let (sender, receiver) = LoopingElectionOpts::shutdown_channel();
         let inner_logger = logger.clone();
         let handle = Builder::new().name("r:coordinator:zoo:cleaner".into()).spawn(move || {
             let logger = inner_logger;
             let cleaner = InnerCleaner {
-                client,
-                config,
+                cleanup_limit: config.cleanup.limit,
+                client: Arc::clone(&client),
                 logger: logger.clone(),
             };
-            loop {
-                info!(logger, "Running zookeeper cleanup cycle");
-                if let Err(error) = cleaner.cycle() {
-                    error!(logger, "Zookeeper cleanup cycle failed"; failure_info(&error));
-                }
-                debug!(logger, "Zookeeper cleanup cycle ended");
-
-                // Wait for the quiet period to be over or exit when signaled.
-                let timeout = cleaner.interval();
-                debug!(logger, "Zookeeper cleanup cycle sleeping"; "timeout" => ?timeout);
-                match receiver.recv_timeout(timeout) {
-                    Ok(()) => return,
-                    Err(RecvTimeoutError::Disconnected) => return,
-                    Err(RecvTimeoutError::Timeout) => (),
-                };
-            }
+            let id = "zookeeper-cleaner".to_string();
+            let election = Election::new(id.clone(), Box::new(ZookeeperElection::new(
+                client, id, node_id, logger.clone()
+            )));
+            let opts = LoopingElectionOpts::new(election, cleaner)
+                .loop_delay(Duration::from_secs(config.cleanup.interval))
+                .shutdown_receiver(receiver);
+            let opts = match config.cleanup.term {
+                0 => opts,
+                term => opts.election_term(term),
+            };
+            let mut election = LoopingElection::new(opts, logger);
+            election.loop_forever();
         }).context(ErrorKind::SpawnThread("zookeeper cleaner"))?;
         Ok(Cleaner {
             handle: Some(handle),
@@ -93,7 +95,7 @@ impl Drop for Cleaner {
 /// Helper class to collect worker thread context.
 struct InnerCleaner {
     client: Arc<Client>,
-    config: ZookeeperConfig,
+    cleanup_limit: usize,
     logger: Logger,
 }
 
@@ -149,7 +151,7 @@ impl InnerCleaner {
 
     /// Perform a single zookeeper cleanup cycle.
     fn cycle(&self) -> Result<()> {
-        let limit = self.config.cleanup.limit;
+        let limit = self.cleanup_limit;
         let limit = self.clean(PREFIX_ELECTION, limit)?;
         if self.cycle_limit(limit) {
             return Ok(());
@@ -173,13 +175,25 @@ impl InnerCleaner {
         }
         false
     }
+}
 
-    /// Determine how long to wait before a new cleaner cycle should run.
-    fn interval(&self) -> Duration {
-        let mut rng = thread_rng();
-        let timeout: u64 = rng.gen_range(
-            self.config.cleanup.interval_min, self.config.cleanup.interval_max
-        );
-        Duration::from_secs(timeout)
+impl LoopingElectionLogic for InnerCleaner {
+    fn handle_error(&self, error: Error) -> LoopingElectionControl {
+        error!(self.logger, "Zookeeper background cleaner election error"; failure_info(&error));
+        LoopingElectionControl::Continue
+    }
+
+    fn primary(&self, _: &Election) -> Result<LoopingElectionControl> {
+        info!(self.logger, "Running zookeeper cleanup cycle");
+        if let Err(error) = self.cycle() {
+            error!(self.logger, "Zookeeper cleanup cycle failed"; failure_info(&error));
+        }
+        debug!(self.logger, "Zookeeper cleanup cycle ended");
+        Ok(LoopingElectionControl::Proceed)
+    }
+
+    fn secondary(&self, _: &Election) -> Result<LoopingElectionControl> {
+        debug!(self.logger, "Zookeeper background cleaner is secondary");
+        Ok(LoopingElectionControl::Proceed)
     }
 }

@@ -5,29 +5,34 @@ pub struct CleanupConfig {
     #[serde(default = "CleanupConfig::default_limit")]
     pub limit: usize,
 
-    /// Maximum amount of time to wait between cleanup cycles.
-    #[serde(default = "CleanupConfig::default_interval_max")]
-    pub interval_max: u64,
+    /// Seconds to wait between cleanup cycles.
+    #[serde(default = "CleanupConfig::default_interval")]
+    pub interval: u64,
 
-    /// Minimum amount of time to wait between cleanup cycles.
-    #[serde(default = "CleanupConfig::default_interval_min")]
-    pub interval_min: u64,
+    /// Number of cycles before this node will re-run an election, 0 to disable re-runs.
+    ///
+    /// Having the system re-run elections continuously ensures that failover procedures are
+    /// exercised constantly and not just in case of errors.
+    /// You do not want to discover that failover does not work when a primary fails
+    /// and nothing picks it up.
+    #[serde(default = "CleanupConfig::default_term")]
+    pub term: u64,
 }
 
 impl Default for CleanupConfig {
     fn default() -> CleanupConfig {
         CleanupConfig {
             limit: CleanupConfig::default_limit(),
-            interval_max: CleanupConfig::default_interval_max(),
-            interval_min: CleanupConfig::default_interval_min(),
+            interval: CleanupConfig::default_interval(),
+            term: CleanupConfig::default_term(),
         }
     }
 }
 
 impl CleanupConfig {
     fn default_limit() -> usize { 1000 }
-    fn default_interval_max() -> u64 { 10800 }  // 3 hours
-    fn default_interval_min() -> u64 { 3600 }  // 1 hour
+    fn default_interval() -> u64 { 3600 }  // 1 hour
+    fn default_term() -> u64 { 6 }  // using defaults, a re-election every ~6 hours
 }
 
 

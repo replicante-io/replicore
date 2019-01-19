@@ -4,7 +4,6 @@ extern crate failure_derive;
 #[macro_use]
 extern crate lazy_static;
 extern crate prometheus;
-extern crate rand;
 extern crate serde;
 #[macro_use]
 extern crate serde_derive;
@@ -35,6 +34,7 @@ pub use self::admin::Admin;
 pub use self::config::Backend as BackendConfig;
 pub use self::config::Config;
 pub use self::coordinator::Coordinator;
+pub use self::coordinator::Election;
 pub use self::coordinator::ElectionStatus;
 pub use self::coordinator::ElectionWatch;
 pub use self::coordinator::LoopingElection;

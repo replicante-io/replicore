@@ -1678,7 +1678,6 @@ dependencies = [
  "failure_derive 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)",
  "lazy_static 1.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "prometheus 0.5.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "rand 0.6.4 (registry+https://github.com/rust-lang/crates.io-index)",
  "replicante_util_failure 0.1.0",
  "replicante_util_rndid 0.1.0",
  "serde 1.0.84 (registry+https://github.com/rust-lang/crates.io-index)",

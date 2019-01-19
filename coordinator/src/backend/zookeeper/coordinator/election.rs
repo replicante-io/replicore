@@ -20,8 +20,16 @@ use super::super::super::super::NodeId;
 use super::super::super::super::Result;
 use super::super::super::super::coordinator::ElectionStatus;
 use super::super::super::super::coordinator::ElectionWatch;
-use super::super::super::ElectionBehaviour;
 
+use super::super::super::super::metrics::ELECTION_DROP_FAIL;
+use super::super::super::super::metrics::ELECTION_DROP_TOTAL;
+use super::super::super::super::metrics::ELECTION_RUN_FAIL;
+use super::super::super::super::metrics::ELECTION_RUN_TOTAL;
+use super::super::super::super::metrics::ELECTION_STEPDOWN_FAIL;
+use super::super::super::super::metrics::ELECTION_STEPDOWN_TOTAL;
+use super::super::super::super::metrics::ELECTION_TERMINATED;
+
+use super::super::super::ElectionBehaviour;
 use super::super::ElectionCandidateInfo;
 use super::super::ElectionInfo;
 use super::super::client::Client;
@@ -171,6 +179,7 @@ impl AtomicState {
         let logger = &self.context.logger;
         let name = &self.context.name;
         let reason: String = reason.into();
+        ELECTION_TERMINATED.inc();
         debug!(logger, "Terminating election"; "election" => name, "reason" => &reason);
 
         let mut lock = self.state.lock().expect("AtomicState lock poisoned");
@@ -484,15 +493,37 @@ impl ElectionBehaviour for ZookeeperElection {
         }
 
         // Register node and attach subscriptions.
-        let keeper = context.client.get()?;
-        let candidate_znode = self.register(&keeper)?;
+        ELECTION_RUN_TOTAL.inc();
+        let keeper = context.client.get().map_err(|error| {
+            ELECTION_RUN_FAIL.inc();
+            error
+        })?;
+        let candidate_znode = self.register(&keeper).map_err(|error| {
+            ELECTION_RUN_FAIL.inc();
+            error
+        })?;
         let closure_state = self.state.clone();
         let subscription = keeper.add_listener(move |zk_state| {
             if let ZkState::Closed = zk_state {
                 ZookeeperElection::session_closed(&closure_state);
             }
         });
-        self.state.register(state, candidate_znode, subscription)?;
+        self.state.register(state, candidate_znode.clone(), subscription).map_err(|error| {
+            // Delete the candidate_znode if we failed to update the state.
+            match Client::delete(&keeper, &candidate_znode, None) {
+                Ok(()) => (),
+                Err(ZkError::NoNode) => (),
+                Err(error) => {
+                    error!(
+                        self.state.context.logger,
+                        "Failed to delete cancidate znode for election in invalid state";
+                        "election" => &context.name, failure_info(&error)
+                    );
+                },
+            };
+            ELECTION_RUN_FAIL.inc();
+            error
+        })?;
 
         // Refresh election state and transition to election results.
         ZookeeperElection::election_changed(&self.state);
@@ -504,11 +535,17 @@ impl ElectionBehaviour for ZookeeperElection {
     }
 
     fn step_down(&mut self) -> Result<()> {
-        self.state.step_down()
+        ELECTION_STEPDOWN_TOTAL.inc();
+        self.state.step_down().map_err(|error| {
+            ELECTION_STEPDOWN_FAIL.inc();
+            error
+        })
     }
 
     fn step_down_on_drop(&mut self) {
-        if let Err(error) = self.step_down() {
+        ELECTION_DROP_TOTAL.inc();
+        if let Err(error) = self.state.step_down() {
+            ELECTION_DROP_FAIL.inc();
             error!(
                 self.state.context.logger, "Failed to automatically step down election";
                 "election" => &self.state.context.name, failure_info(&error)

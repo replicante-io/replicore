@@ -29,7 +29,7 @@ pub struct Zookeeper {
 impl Zookeeper {
     pub fn new(node_id: NodeId, config: ZookeeperConfig, logger: Logger) -> Result<Zookeeper> {
         let client = Arc::new(Client::new(config.clone(), Some(&node_id), logger.clone())?);
-        let cleaner = Cleaner::new(Arc::clone(&client), config, logger.clone())?;
+        let cleaner = Cleaner::new(Arc::clone(&client), config, node_id.clone(), logger.clone())?;
         Ok(Zookeeper {
             _cleaner: cleaner,
             client,

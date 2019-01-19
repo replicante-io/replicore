@@ -10,6 +10,7 @@ use super::super::super::super::admin::NonBlockingLock;
 use super::super::super::NonBlockingLockAdminBehaviour;
 use super::super::NBLockInfo;
 use super::super::client::Client;
+use super::super::constants::PREFIX_LOCK;
 
 
 /// Iterate over registered non-blocking locks.
@@ -22,15 +23,15 @@ impl ZookeeperNBLocks {
     /// Enumerate all locks currently held in the coordinator.
     fn load_locks(&mut self) -> Result<()> {
         let keeper = self.client.get()?;
-        let mut prefixes = Client::get_children(&keeper, "/locks", false)
+        let mut prefixes = Client::get_children(&keeper, PREFIX_LOCK, false)
             .context(ErrorKind::Backend("iterating over locks"))?;
         let mut locks = Vec::new();
         while let Some(prefix) = prefixes.pop() {
-            let path = format!("/locks/{}", prefix);
+            let path = format!("{}/{}", PREFIX_LOCK, prefix);
             let mut nodes = Client::get_children(&keeper, &path, false)
                 .context(ErrorKind::Backend("iterating over locks"))?;
             while let Some(node) = nodes.pop() {
-                let lock = format!("/locks/{}/{}", prefix, node);
+                let lock = format!("{}/{}/{}", PREFIX_LOCK, prefix, node);
                 locks.push(lock);
             }
         }

@@ -20,6 +20,7 @@ use super::super::NonBlockingLocks;
 use super::NBLockInfo;
 use super::client::Client;
 use super::constants::PREFIX_LOCK;
+use super::constants::PREFIX_NODE;
 
 
 mod election;
@@ -114,11 +115,11 @@ impl ZookeeperNodes {
     fn fill_cache(&mut self) -> Result<()> {
         let keeper = self.client.get()?;
         let mut all_nodes = Vec::new();
-        let top_level = self.get_children(&keeper, "/nodes")?;
+        let top_level = self.get_children(&keeper, PREFIX_NODE)?;
 
         // Load nested children.
         for top in top_level {
-            let path = format!("/nodes/{}", top);
+            let path = format!("{}/{}", PREFIX_NODE, top);
             let nodes = self.get_children(&keeper, &path)?;
             for node in nodes {
                 let node = format!("{}/{}", path, node);
