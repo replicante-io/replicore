@@ -4,6 +4,9 @@ use std::time::Duration;
 use replicante_tasks::TaskQueue;
 
 
+pub mod payload;
+
+
 /// Enumerate all queues used in Replicante.
 #[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug)]
 pub enum ReplicanteQueues {

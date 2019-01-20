@@ -7,7 +7,7 @@ use slog::Logger;
 
 use replicante::Config;
 use replicante::ReplicanteQueues;
-use replicante_data_models::ClusterDiscovery;
+use replicante::task_payload::ClusterRefreshPayload;
 use replicante_tasks::TaskQueue;
 use replicante_tasks::admin::TasksAdmin;
 
@@ -38,9 +38,9 @@ fn check_cluster_refresh(
                 outcomes.error(Error::GenericError(error));
             },
             Ok(task) => {
-                if let Err(error) = task.deserialize::<ClusterDiscovery>() {
+                if let Err(error) = task.deserialize::<ClusterRefreshPayload>() {
                     outcomes.error(Error::UnableToParseModel(
-                        "ClusterDiscovery".into(), task.id().to_string(), error.to_string()
+                        "ClusterRefreshPayload".into(), task.id().to_string(), error.to_string()
                     ));
                 }
             },

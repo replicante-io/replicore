@@ -3,15 +3,20 @@ use failure::ResultExt;
 use slog::Logger;
 
 use replicante_coordinator::Coordinator;
-use replicante_data_models::ClusterDiscovery;
 use replicante_tasks::TaskHandler;
 // TODO(stefano): once error_chain is gone use replicante_util_failure::failure_info;
 
 use super::super::super::ErrorKind;
 use super::super::super::Result;
+use super::super::super::task_payload::ClusterRefreshPayload;
 use super::Interfaces;
 use super::ReplicanteQueues;
 use super::Task;
+
+
+mod metrics;
+
+pub use self::metrics::register_metrics;
 
 
 /// Task handler for `ReplicanteQueues::Discovery` tasks.
@@ -30,7 +35,9 @@ impl Handler {
     }
 
     fn do_handle(&self, task: &Task) -> Result<()> {
-        let discovery: ClusterDiscovery = task.deserialize()?;
+        let payload: ClusterRefreshPayload = task.deserialize()?;
+        let discovery = payload.cluster;
+        let snapshot = payload.snapshot;
 
         // Ensure only one refresh at the same time.
         let mut lock = self.coordinator.non_blocking_lock(
@@ -58,7 +65,7 @@ impl Handler {
         // Refresh cluster state.
         debug!(
             self.logger, "TODO: implement discovery task";
-            "discovery" => ?discovery, "task-id" => %task.id()
+            "discovery" => ?discovery, "snapshot" => snapshot, "task-id" => %task.id()
         );
         ::std::thread::sleep(::std::time::Duration::from_secs(10));
 

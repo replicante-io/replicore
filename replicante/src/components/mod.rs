@@ -82,8 +82,9 @@ impl Components {
     /// Creates and configures components.
     pub fn new(config: &Config, logger: Logger, interfaces: &mut Interfaces) -> Result<Components> {
         let discovery = component_new(
-            "discovery", "required", config.components.discovery(), &logger,
-            || Discovery::new(config.discovery.clone(), logger.clone(), interfaces)
+            "discovery", "required", config.components.discovery(), &logger, || Discovery::new(
+                config.discovery.clone(), config.events.snapshots.clone(), logger.clone(), interfaces
+            )
         );
         let grafana = component_new(
             "grafana", "optional", config.components.grafana(), &logger,
@@ -115,6 +116,7 @@ impl Components {
     /// Metrics that fail to register are logged and ignored.
     pub fn register_metrics(logger: &Logger, registry: &Registry) {
         self::discovery::register_metrics(logger, registry);
+        self::workers::register_metrics(logger, registry);
         AgentHttpClient::register_metrics(logger, registry);
         Aggregator::register_metrics(logger, registry);
         Fetcher::register_metrics(logger, registry);

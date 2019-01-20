@@ -1,4 +1,5 @@
 use failure::err_msg;
+use prometheus::Registry;
 use slog::Logger;
 
 use replicante_tasks::Config;
@@ -15,6 +16,14 @@ use super::super::tasks::Task;
 
 
 mod cluster_refresh;
+
+
+/// Attemps to register metrics with the Registry.
+///
+/// Metrics that fail to register are logged and ignored.
+pub fn register_metrics(logger: &Logger, registry: &Registry) {
+    self::cluster_refresh::register_metrics(logger, registry);
+}
 
 
 /// Store the state of the WorkerSet.

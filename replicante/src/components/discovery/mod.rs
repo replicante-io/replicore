@@ -11,6 +11,7 @@ use replicante_coordinator::LoopingElectionOpts;
 
 use super::super::Error;
 use super::super::ErrorKind;
+use super::super::config::EventsSnapshotsConfig;
 use super::super::tasks::Tasks;
 use super::Interfaces;
 use super::Result;
@@ -19,6 +20,7 @@ use super::Result;
 mod config;
 mod election;
 mod metrics;
+mod snapshot;
 
 
 pub use self::config::Config;
@@ -32,6 +34,7 @@ pub struct DiscoveryComponent {
     coordinator: Coordinator,
     interval: Duration,
     logger: Logger,
+    snapshots_config: EventsSnapshotsConfig,
     tasks: Tasks,
     worker: Option<JoinHandle<()>>,
 }
@@ -39,7 +42,8 @@ pub struct DiscoveryComponent {
 impl DiscoveryComponent {
     /// Creates a new agent discovery component.
     pub fn new(
-        discovery_config: Config, logger: Logger, interfaces: &Interfaces
+        discovery_config: Config, snapshots_config: EventsSnapshotsConfig,
+        logger: Logger, interfaces: &Interfaces
     ) -> DiscoveryComponent {
         let interval = Duration::from_secs(discovery_config.interval);
         DiscoveryComponent {
@@ -47,6 +51,7 @@ impl DiscoveryComponent {
             coordinator: interfaces.coordinator.clone(),
             interval,
             logger,
+            snapshots_config,
             tasks: interfaces.tasks.clone(),
             worker: None,
         }
@@ -58,13 +63,14 @@ impl DiscoveryComponent {
         let coordinator = self.coordinator.clone();
         let interval = self.interval;
         let logger = self.logger.clone();
+        let snapshots_config = self.snapshots_config.clone();
         let tasks = self.tasks.clone();
         let term = self.config.term;
 
         info!(self.logger, "Starting Agent Discovery thread");
         let thread = ThreadBuilder::new().name("r:c:discovery".into()).spawn(move || {
             let election = coordinator.election("discovery");
-            let logic = DiscoveryElection::new(config, logger.clone(), tasks);
+            let logic = DiscoveryElection::new(config, snapshots_config, logger.clone(), tasks);
             let opts = LoopingElectionOpts::new(election, logic)
                 .loop_delay(interval);
             let opts = match term {

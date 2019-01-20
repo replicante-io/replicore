@@ -11,26 +11,32 @@ use replicante_data_models::ClusterDiscovery;
 use replicante_tasks::TaskRequest;
 use replicante_util_failure::failure_info;
 
+use super::super::super::config::EventsSnapshotsConfig;
+use super::super::super::task_payload::ClusterRefreshPayload;
 use super::super::super::tasks::ReplicanteQueues;
 use super::super::super::tasks::Tasks;
 use super::metrics::DISCOVERY_COUNT;
 use super::metrics::DISCOVERY_DURATION;
 use super::metrics::DISCOVERY_ERRORS;
+use super::snapshot::EmissionTracker;
 
 
 /// Main discovery logic with primary/secondaries HA support.
 pub struct DiscoveryElection {
     discovery_config: DiscoveryConfig,
+    emissions: EmissionTracker,
     logger: Logger,
     tasks: Tasks,
 }
 
 impl DiscoveryElection {
     pub fn new(
-        discovery_config: DiscoveryConfig, logger: Logger, tasks: Tasks
+        discovery_config: DiscoveryConfig, snapshots_config: EventsSnapshotsConfig,
+        logger: Logger, tasks: Tasks
     ) -> DiscoveryElection {
         DiscoveryElection {
             discovery_config,
+            emissions: EmissionTracker::new(snapshots_config),
             logger,
             tasks,
         }
@@ -41,8 +47,10 @@ impl DiscoveryElection {
     /// Emit a cluster refresh task for the discovery.
     fn emit(&self, cluster: ClusterDiscovery) {
         let name = cluster.cluster.clone();
+        let snapshot = self.emissions.snapshot(name.clone());
+        let payload = ClusterRefreshPayload::new(cluster, snapshot);
         let task = TaskRequest::new(ReplicanteQueues::ClusterRefresh);
-        if let Err(error) = self.tasks.request(task, cluster) {
+        if let Err(error) = self.tasks.request(task, payload) {
             error!(
                 self.logger, "Failed to request cluster refresh";
                 "cluster" => name,
@@ -82,6 +90,7 @@ impl LoopingElectionLogic for DiscoveryElection {
 
     fn secondary(&self, _: &Election) -> CoordinatorResult<LoopingElectionControl> {
         debug!(self.logger, "Discovery election is secondary");
+        self.emissions.reset();
         Ok(LoopingElectionControl::Proceed)
     }
 }
