@@ -1,11 +1,18 @@
 use failure::Fail;
 use failure::ResultExt;
+use failure::err_msg;
 use slog::Logger;
 
 use replicante_coordinator::Coordinator;
+use replicante_data_fetcher::Snapshotter;
+use replicante_data_models::ClusterDiscovery;
+use replicante_data_models::Event;
+use replicante_data_store::Store;
+use replicante_streams_events::EventsStream;
 use replicante_tasks::TaskHandler;
 // TODO(stefano): once error_chain is gone use replicante_util_failure::failure_info;
 
+use super::super::super::Error;
 use super::super::super::ErrorKind;
 use super::super::super::Result;
 use super::super::super::task_payload::ClusterRefreshPayload;
@@ -17,20 +24,31 @@ use super::Task;
 mod metrics;
 
 pub use self::metrics::register_metrics;
+use self::metrics::REFRESH_DURATION;
+use self::metrics::REFRESH_LOCKED;
+
+
+const FAIL_PERSIST_DISCOVERY: &str = "Failed to persist cluster discovery";
 
 
 /// Task handler for `ReplicanteQueues::Discovery` tasks.
 pub struct Handler {
     coordinator: Coordinator,
+    events: EventsStream,
     logger: Logger,
+    store: Store,
 }
 
 impl Handler {
     pub fn new(interfaces: &Interfaces, logger: Logger) -> Handler {
         let coordinator = interfaces.coordinator.clone();
+        let events = interfaces.streams.events.clone();
+        let store = interfaces.store.clone();
         Handler {
             coordinator,
+            events,
             logger,
+            store,
         }
     }
 
@@ -48,7 +66,7 @@ impl Handler {
             Err(error) => {
                 match error.kind() {
                     ::replicante_coordinator::ErrorKind::LockHeld(_, owner) => {
-                        // TODO: increment per-cluster counter of locked clusters.
+                        REFRESH_LOCKED.with_label_values(&[&discovery.cluster]).inc();
                         info!(
                             self.logger,
                             "Skipped cluster refresh because another task is in progress";
@@ -63,14 +81,58 @@ impl Handler {
         };
 
         // Refresh cluster state.
-        debug!(
-            self.logger, "TODO: implement discovery task";
-            "discovery" => ?discovery, "snapshot" => snapshot, "task-id" => %task.id()
-        );
-        ::std::thread::sleep(::std::time::Duration::from_secs(10));
+        let timer = REFRESH_DURATION.with_label_values(&[&discovery.cluster]).start_timer();
+        self.emit_snapshots(&discovery.cluster, snapshot)?;
+        self.refresh_discovery(discovery.clone())?;
+        // TODO: self.fatcher.progress(discovery.clone(), lock.notify());
+        // TODO: self.aggregator.process(discovery, lock.notify());
 
         // Done.
+        timer.observe_duration();
         lock.release().context(ErrorKind::Coordination)?;
+        Ok(())
+    }
+
+    /// Emit cluster state snapshots, if needed by this task.
+    fn emit_snapshots(&self, name: &str, snapshot: bool) -> Result<()> {
+        if !snapshot {
+            return Ok(());
+        }
+        debug!(self.logger, "Emitting cluster snapshot"; "cluster" => name);
+        let snapshotter = Snapshotter::new(name.into(), self.events.clone(), self.store.clone());
+        if let Err(error) = snapshotter.run() {
+            error!(
+                self.logger, "Failed to emit snapshots";
+                "cluster" => name, "error" => %error
+                // TODO: failure_info(&error)
+            );
+        }
+        Ok(())
+    }
+
+    /// Refresh the state of the cluster discovery.
+    ///
+    /// Refresh is performed based on the current state or luck of state.
+    /// This method emits events as needed (and before the state is updated).
+    fn refresh_discovery(&self, discovery: ClusterDiscovery) -> Result<()> {
+        let current_state = self.store.cluster_discovery(discovery.cluster.clone())?;
+        if let Some(current_state) = current_state {
+            if discovery == current_state {
+                return Ok(());
+            }
+            let event = Event::builder().cluster().changed(current_state, discovery.clone());
+            self.events.emit(event).map_err(Error::from)
+                .context(ErrorKind::Legacy(err_msg(FAIL_PERSIST_DISCOVERY)))
+                .map_err(Error::from)?;
+        } else {
+            let event = Event::builder().cluster().cluster_new(discovery.clone());
+            self.events.emit(event).map_err(Error::from)
+                .context(ErrorKind::Legacy(err_msg(FAIL_PERSIST_DISCOVERY)))
+                .map_err(Error::from)?;
+        }
+        self.store.persist_discovery(discovery).map_err(Error::from)
+            .context(ErrorKind::Legacy(err_msg(FAIL_PERSIST_DISCOVERY)))
+            .map_err(Error::from)?;
         Ok(())
     }
 }
