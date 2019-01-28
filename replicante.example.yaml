@@ -373,7 +373,7 @@ tasks:
 
 # Timeouts configured here are used throughout the system for various reasons.
 timeouts:
-  # Time after which API requests to agents are failed.
+  # Time (in seconds) after which API requests to agents are failed.
   agents_api: 15
 
       

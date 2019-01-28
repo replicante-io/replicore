@@ -1,15 +1,16 @@
+use std::time::Duration;
+
 use failure::err_msg;
 use prometheus::Registry;
 use slog::Logger;
 
-use replicante_tasks::Config;
 use replicante_tasks::TaskHandler;
 use replicante_tasks::WorkerSet;
 use replicante_tasks::WorkerSetPool;
 
 use super::super::ErrorKind;
 use super::super::Result;
-use super::super::config::TaskWorkers;
+use super::super::config::Config;
 use super::super::interfaces::Interfaces;
 use super::super::tasks::ReplicanteQueues;
 use super::super::tasks::Task;
@@ -63,12 +64,13 @@ impl Workers {
     ///
     /// The tasks that are processed by this node are defined in the configuration file.
     pub fn new(
-        interfaces: &mut Interfaces, logger: Logger, config: Config, task_workers: TaskWorkers
+        interfaces: &mut Interfaces, logger: Logger, config: Config
     ) -> Result<Workers> {
-        let worker_set = WorkerSet::new(logger.clone(), config)?;
+        let agents_timeout = Duration::from_secs(config.timeouts.agents_api);
+        let worker_set = WorkerSet::new(logger.clone(), config.tasks)?;
         let worker_set = configure_worker(
-            worker_set, ReplicanteQueues::ClusterRefresh, task_workers.cluster_refresh(),
-            || self::cluster_refresh::Handler::new(interfaces, logger.clone())
+            worker_set, ReplicanteQueues::ClusterRefresh, config.task_workers.cluster_refresh(),
+            || self::cluster_refresh::Handler::new(interfaces, logger.clone(), agents_timeout)
         )?;
         Ok(Workers {
             state: Some(State::Configured(worker_set)),

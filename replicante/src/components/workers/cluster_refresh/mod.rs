@@ -1,9 +1,13 @@
+use std::time::Duration;
+
 use failure::Fail;
 use failure::ResultExt;
 use failure::err_msg;
 use slog::Logger;
 
 use replicante_coordinator::Coordinator;
+use replicante_data_aggregator::Aggregator;
+use replicante_data_fetcher::Fetcher;
 use replicante_data_fetcher::Snapshotter;
 use replicante_data_models::ClusterDiscovery;
 use replicante_data_models::Event;
@@ -33,20 +37,29 @@ const FAIL_PERSIST_DISCOVERY: &str = "Failed to persist cluster discovery";
 
 /// Task handler for `ReplicanteQueues::Discovery` tasks.
 pub struct Handler {
+    aggregator: Aggregator,
     coordinator: Coordinator,
     events: EventsStream,
+    fetcher: Fetcher,
     logger: Logger,
     store: Store,
 }
 
 impl Handler {
-    pub fn new(interfaces: &Interfaces, logger: Logger) -> Handler {
+    pub fn new(interfaces: &Interfaces, logger: Logger, agents_timeout: Duration) -> Handler {
+        let aggregator = Aggregator::new(logger.clone(), interfaces.store.clone());
         let coordinator = interfaces.coordinator.clone();
         let events = interfaces.streams.events.clone();
+        let fetcher = Fetcher::new(
+            logger.clone(), interfaces.streams.events.clone(), interfaces.store.clone(),
+            agents_timeout
+        );
         let store = interfaces.store.clone();
         Handler {
+            aggregator,
             coordinator,
             events,
+            fetcher,
             logger,
             store,
         }
@@ -84,8 +97,8 @@ impl Handler {
         let timer = REFRESH_DURATION.with_label_values(&[&discovery.cluster]).start_timer();
         self.emit_snapshots(&discovery.cluster, snapshot)?;
         self.refresh_discovery(discovery.clone())?;
-        // TODO: self.fatcher.progress(discovery.clone(), lock.notify());
-        // TODO: self.aggregator.process(discovery, lock.notify());
+        self.fetcher.process(discovery.clone(), lock.watch());
+        self.aggregator.process(discovery, lock.watch());
 
         // Done.
         timer.observe_duration();

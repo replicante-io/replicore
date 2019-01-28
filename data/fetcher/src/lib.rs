@@ -9,6 +9,7 @@ extern crate prometheus;
 extern crate slog;
 
 extern crate replicante_agent_client;
+extern crate replicante_coordinator;
 extern crate replicante_data_models;
 extern crate replicante_data_store;
 extern crate replicante_streams_events;
@@ -19,10 +20,10 @@ use prometheus::Registry;
 use slog::Logger;
 
 use replicante_agent_client::HttpClient;
+use replicante_coordinator::NonBlockingLockWatcher;
 use replicante_data_models::Agent;
 use replicante_data_models::AgentStatus;
 use replicante_data_models::ClusterDiscovery;
-
 use replicante_data_store::Store;
 use replicante_streams_events::EventsStream;
 
@@ -94,18 +95,27 @@ impl Fetcher {
         register_metrics(logger, registry)
     }
 
-    pub fn process(&self, cluster: ClusterDiscovery) {
+    pub fn process(&self, cluster: ClusterDiscovery, lock: NonBlockingLockWatcher) {
         let name = cluster.cluster.clone();
         let mut meta = ClusterMetaBuilder::new(cluster.cluster);
 
         for node in cluster.nodes {
+            // Exit early if lock was lost.
+            if !lock.inspect() {
+                warn!(
+                    self.logger, "Cluster fetcher lock lost, skipping futher nodes";
+                    "cluster" => &name
+                );
+                return;
+            }
+
             let result = self.process_target(&name, &node, &mut meta);
             if let Err(error) = result {
                 FETCHER_ERRORS_COUNT.with_label_values(&[&name]).inc();
                 let error = error.display_chain().to_string();
                 error!(
                     self.logger, "Failed to process cluster node";
-                    "cluster" => name.clone(), "node" => node,
+                    "cluster" => &name, "node" => node,
                     "error" => error
                 );
             }

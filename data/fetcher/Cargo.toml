@@ -22,6 +22,7 @@ prometheus = "^0.5.0"
 slog = "^2.1.1"
 
 replicante_agent_client = { path = "../../agent/client" }
+replicante_coordinator = { path = "../../coordinator" }
 replicante_data_models = { path = "../models" }
 replicante_data_store = { path = "../store" }
 replicante_streams_events = { path = "../../streams/events" }
