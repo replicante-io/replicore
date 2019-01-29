@@ -1,4 +1,9 @@
-## MongoDB Replica Set
+---
+id: example-mongodb
+title: MongoDB
+sidebar_label: MongoDB
+---
+
 * Administration:
   * A cluster name shared by all nodes: name field from [`replSetGetStatus`](https://docs.mongodb.com/manual/reference/command/replSetGetStatus/).
   * A cluster-unique name for the node: name field from [`replSetGetStatus`](https://docs.mongodb.com/manual/reference/command/replSetGetStatus/).

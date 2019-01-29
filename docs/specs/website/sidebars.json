@@ -1,0 +1,24 @@
+{
+  "docs": {
+    "Introduction": [
+      "intro"
+    ],
+    "The Datastore Model": [
+      "model"
+    ],
+    "Examples: mapping DBs to the Model": [
+      "example",
+      "example-kafka",
+      "example-mongodb",
+      "example-zookeeper"
+    ],
+    "The Agent Protocol": [
+      "agent",
+      "agent-info",
+      "agent-shards"
+    ],
+    "Model ChangeLog": [
+      "changelog"
+    ]
+  }
+}

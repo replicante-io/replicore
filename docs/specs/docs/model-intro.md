@@ -1,10 +1,17 @@
-# The Datastore Model
-{% hint style="working" %}
+---
+id: model
+title: The Datastore Model
+sidebar_label: The Datastore Model
+---
+
+<blockquote class="warning">
+
 **Alpha state disclaimer**
 
 The model defined below is in early development cycle
 and is subject to (potentially breaking) change.
-{% endhint %}
+
+</blockquote>
 
 Any (collection of) software that fulfils the requirements and expectations
 of the model defined in this document is considered a datastore.
@@ -34,7 +41,7 @@ The datastore MUST provide the following administration information:
 
 ## Clustering
 The datastore MUST support clustering by running a process on one or more (virtual or physical)
-machines.
+machine.
 Each process in the cluster is a node.
 
 Note that there is no requirement for the process be the same everywere in the cluster
@@ -46,8 +53,8 @@ This allows the cluster to have heterogeneous components as long as they all fol
 The datastore MUST organize the data in one or more shard.
 Shards are independent units of data, each with their own primary and secondaries nodes.
 
-All datastores have at least one shard.
-For datastores that do not support sharding this is the entire dataset.
+All datastores have at least one shard.  
+For datastores that do not support sharding, the entire dataset can be seen as a single shard.
 
 For each shard in the cluster the datastore MUST provide the following information:
 

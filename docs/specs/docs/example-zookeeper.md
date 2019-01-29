@@ -1,4 +1,9 @@
-## Zookeeper
+---
+id: example-zookeeper
+title: Zookeeper
+sidebar_label: Zookeeper
+---
+
 * Administration:
   * A cluster name shared by all nodes: user defined in agent configuration.
   * A cluster-unique name for the node: `serverId` value of the [`conf`](https://zookeeper.apache.org/doc/current/zookeeperAdmin.html#sc_zkCommands) command output.

@@ -1,17 +1,25 @@
-# Agent information
-{% hint style="working" %}
+---
+id: agent-info
+title: Agent Information
+sidebar_label: Agent Information
+---
+
+<blockquote class="warning">
+
 **Alpha state disclaimer**
 
 The protocol defined below is in early development cycle
 and is subject to (potentially breaking) change.
-{% endhint %}
+
+</blockquote>
 
 
-{% rest %}
-  {% get "/api/v1/info/agent" %}
-    Returns information about the agent itself
-{% endrest %}
-{% method %}
+<div class="rest">
+  <div class="method get">GET</div>
+  <div class="url get">/api/v1/info/agent</div>
+  <div class="desc get rtl">Returns information about the agent itself</div>
+</div>
+
 The following agent information MUST be included:
 
   * `version` information:
@@ -19,7 +27,6 @@ The following agent information MUST be included:
     * Version control `checkout`: VCS ID of the agent code that is running.
     * Version control `taint` status: indicates uncommitted changes to the code.
 
-{% common %}
 Example:
 ```json
 {
@@ -30,14 +37,14 @@ Example:
   }
 }
 ```
-{% endmethod %}
 
 
-{% rest %}
-  {% get "/api/v1/info/datastore" %}
-    Returns information about the datastore
-{% endrest %}
-{% method %}
+<div class="rest">
+  <div class="method get">GET</div>
+  <div class="url get">/api/v1/info/datastore</div>
+  <div class="desc get rtl">Returns information about the datastore</div>
+</div>
+
 The following datastore information MUST be included:
 
   * `cluster`: datastore determined cluster name.
@@ -45,7 +52,6 @@ The following datastore information MUST be included:
   * `name`: datastore determined, cluster unique, node name.
   * `version`: the [SemVer](https://semver.org/) datastore version.
 
-{% common %}
 Example:
 ```json
 {
@@ -55,4 +61,3 @@ Example:
   "version": "3.4.5"
 }
 ```
-{% endmethod %}

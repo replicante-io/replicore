@@ -1,4 +1,9 @@
-# Examples: mapping DBs to the Model
+---
+id: example
+title: Examples: mapping DBs to the Model
+sidebar_label: Examples: mapping DBs to the Model
+---
+
 The sections below shows examples of how some popular software map onto the datastore model.
 
 
@@ -10,6 +15,6 @@ This section has two purposes:
 
 ## Examples
 
-  * [MongoDB](./mongodb.md)
-  * [Kafka](./kafka.md)
-  * [Zookeeper](./zookeeper.md)
+  * [MongoDB](example-mongodb.md)
+  * [Kafka](example-kafka.md)
+  * [Zookeeper](example-zookeeper.md)

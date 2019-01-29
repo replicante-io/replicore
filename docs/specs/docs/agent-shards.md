@@ -1,17 +1,25 @@
-# Shards information
-{% hint style="working" %}
+---
+id: agent-shards
+title: Shards Information
+sidebar_label: Shards Information
+---
+
+<blockquote class="warning">
+
 **Alpha state disclaimer**
 
 The protocol defined below is in early development cycle
 and is subject to (potentially breaking) change.
-{% endhint %}
+
+</blockquote>
 
 
-{% rest %}
-  {% get "/api/v1/shards" %}
-    Returns detailed information about shards
-{% endrest %}
-{% method %}
+<div class="rest">
+  <div class="method get">GET</div>
+  <div class="url get">/api/v1/shards</div>
+  <div class="desc get rtl">Returns detailed information about shards</div>
+</div>
+
 The following information MUST be included:
 
   * A list of `shards` on the node:
@@ -24,7 +32,6 @@ The following information MUST be included:
       * The lag `unit`.
       * The lag `value` (as a 64-bits integer).
 
-{% common %}
 Example:
 ```json
 {
@@ -42,4 +49,3 @@ Example:
   }]
 }
 ```
-{% endmethod %}
