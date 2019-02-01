@@ -1,0 +1,40 @@
+{
+  "docs": {
+    "First steps": [
+      "intro",
+      "quick-start",
+      "architecture"
+    ],
+    "Administration": [
+      "admin-deps",
+      "admin-install",
+      "admin-config"
+    ],
+    "Features": [
+      "features",
+      "features-discovery",
+      "features-events",
+      "features-webui",
+      "features-introspection"
+    ],
+    "Security": [
+      "security",
+      "security-transport"
+    ],
+    "Upgrades": [
+      "upgrades-rolling",
+      "upgrades-versions",
+      "upgrades-notes",
+      "upgrades-changelog"
+    ],
+    "replictl": [
+      "replictl-intro",
+      "replictl-check",
+      "replictl-versions"
+    ],
+    "API Reference": [
+      "api",
+      "api-monitoring"
+    ]
+  }
+}
