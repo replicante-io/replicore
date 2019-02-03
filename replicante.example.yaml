@@ -35,17 +35,15 @@ api:
 # Separating them from other comonents means that users can use all resources without background
 # tasks impacting them as well as having other components not impacted by user requests.
 #
-# ```
-# # For the API/Web nodes
-# components:
-#   _default: false
-#   webui: true
+#     # For the API/Web nodes
+#     components:
+#       _default: false
+#       webui: true
 #
-# # For all other nodes
-# components:
-#   _default: true
-#   webui: false
-# ```
+#     # For all other nodes
+#     components:
+#       _default: true
+#       webui: false
 #
 # ## Fully dedicated components
 # Here each node runs only one component at a time.
@@ -238,11 +236,9 @@ logging:
   #
   # Example:
   #
-  # ```yaml
-  # modules:
-  #   'hyper::server': debug
-  #   'rdkafka': error
-  # ```
+  #     modules:
+  #       'hyper::server': debug
+  #       'rdkafka': error
   #
   # To find out what modules are available you can set `level` to DEBUG
   # and enable `verbose` logging to see all logs.
