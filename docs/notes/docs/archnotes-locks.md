@@ -41,19 +41,3 @@ If the lock is already taken by another executor, the task is dropped.
 ### Uses for exclusive tasks
 
   * Cluster state refresh tasks (exclusive per cluster).
-
-
-## Overload mitigation
-Some tasks and/or operations may be expensive for the system.
-Worse, they may be expensive for the agents!
-
-To avoid expensive features over-scheduling leading to agent node failures or denial of service
-any feature this expensive is limited in frequency.
-Once such task is processed (usually successfully, at time even on failure) a self-destruct lock
-is created for the parameters of the expensive task/operation.
-Any task that is executed while this self-destruct lock exists is dropped.
-
-### Uses for overload mitigation
-
-  * The cluster state refresh task may impose performance penalties on cluster nodes.
-    To avoid over-refreshing, a quiet period is introduced using the above technique.

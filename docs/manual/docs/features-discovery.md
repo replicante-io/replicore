@@ -50,3 +50,10 @@ The content of the file is a list of objects as follows:
     - 'http://node5.example.com:37017'
     - 'http://node6.example.com:37017'
 ```
+
+
+## Interval
+Replicante periodically scans configured backends to detect changes to the set of agents
+that should be monitored.
+
+The `discovery.interval` option sets the delay, in seconds, between each scan.

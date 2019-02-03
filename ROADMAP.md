@@ -3,22 +3,16 @@
 - Release 0.2.0
 
 
-## 0.2.1 - Small Improvements
-- Improve generated cluster data.
-
-
-## 0.2.2 - Internal refactor
-- Replace `error-chain` with `failure`.
-
-
-## 0.2.3 - Project improvements
+## 0.2.1 - Project improvements
 - Automate docker-based dev setup.
 - Build docker images.
 - Code of conduct for all repos.
-- Pre-built binaries?
-- TrevisCI?
+- Improve generated cluster data.
+- Replace `error-chain` with `failure`.
 - DCO requirement?
 - Dual license?
+- Pre-built binaries?
+- TrevisCI?
 
 
 ## 0.3.0 - Split "view" database
@@ -44,3 +38,7 @@
 
 
 ## ??? - Actions?
+
+## ??? - Organisations/teams?
+
+## ??? - Rate limits?

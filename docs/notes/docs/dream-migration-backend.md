@@ -1,6 +1,6 @@
 ---
 id: migration-backend
-title: Insane in the migration brain (a store migration backend)
+title: Store migration backend
 ---
 
 Provide a special store backend that wraps two other stores.
