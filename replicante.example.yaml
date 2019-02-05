@@ -38,11 +38,13 @@ api:
 #     # For the API/Web nodes
 #     components:
 #       _default: false
+#       grafana: true  # Optional
 #       webui: true
 #
 #     # For all other nodes
 #     components:
 #       _default: true
+#       grafana: false
 #       webui: false
 #
 # ## Fully dedicated components
@@ -306,7 +308,7 @@ task_workers:
   _default: true
 
   # Enable cluster state refresh and aggregation task processing.
-  cluster_refresh: ~
+  cluster_refresh: null
 
 
 # The section below is for the tasks system configuration.

@@ -5,6 +5,7 @@ use prometheus::Registry;
 use slog::Logger;
 
 use replicante_tasks::TaskHandler;
+use replicante_tasks::TaskQueue;
 use replicante_tasks::WorkerSet;
 use replicante_tasks::WorkerSetPool;
 
@@ -12,6 +13,7 @@ use super::super::ErrorKind;
 use super::super::Result;
 use super::super::config::Config;
 use super::super::interfaces::Interfaces;
+use super::super::metrics::WORKERS_ENABLED;
 use super::super::tasks::ReplicanteQueues;
 use super::super::tasks::Task;
 
@@ -45,11 +47,14 @@ fn configure_worker<F, H>(
     where F: Fn() -> H,
           H: TaskHandler<ReplicanteQueues>,
 {
+    let name = queue.name();
     if enabled {
+        WORKERS_ENABLED.with_label_values(&[&name]).set(1.0);
         let handler = factory();
         let workers = workers.worker(queue, handler)?;
         return Ok(workers);
     }
+    WORKERS_ENABLED.with_label_values(&[&name]).set(0.0);
     Ok(workers)
 }
 
