@@ -1,0 +1,24 @@
+{
+  "version-0.1.0-docs": {
+    "Introduction": [
+      "version-0.1.0-intro"
+    ],
+    "The Datastore Model": [
+      "version-0.1.0-model"
+    ],
+    "Examples: mapping DBs to the Model": [
+      "version-0.1.0-example",
+      "version-0.1.0-example-kafka",
+      "version-0.1.0-example-mongodb",
+      "version-0.1.0-example-zookeeper"
+    ],
+    "The Agent Protocol": [
+      "version-0.1.0-agent",
+      "version-0.1.0-agent-info",
+      "version-0.1.0-agent-shards"
+    ],
+    "Model ChangeLog": [
+      "version-0.1.0-changelog"
+    ]
+  }
+}

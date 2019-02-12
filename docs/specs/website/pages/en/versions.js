@@ -29,7 +29,7 @@ function Versions(props) {
             <h1>{siteConfig.title} Versions</h1>
           </header>
           <h3 id="latest">Current version (Stable)</h3>
-          <p>Latest version of Replicante.</p>
+          <p>Latest version of the specification.</p>
           <table className="versions">
             <tbody>
               <tr>
@@ -48,7 +48,7 @@ function Versions(props) {
             </tbody>
           </table>
           <h3 id="rc">Latest Version</h3>
-          Here you can find the latest documentation and unreleased code.
+          Here you can find the latest specification and unreleased code.
           <table className="versions">
             <tbody>
               <tr>
