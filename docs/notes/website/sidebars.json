@@ -6,7 +6,8 @@
       "cluster-view",
       "data-storage-format",
       "scaling",
-      "coordinator"
+      "coordinator",
+      "archnotes-fail-locks"
     ],
     "Premature Optimisations": [
       "optimizations",

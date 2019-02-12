@@ -35,12 +35,12 @@ Replicante tries to avoid the need for migrations by gradually rolling out chang
 When the data schema needs to change:
 
   1. A minor version is released to introduce the changes as optional:
-    * New attributes are added and always set but expected to be missing.
-    * Deprecated attributes are no longer used but still set.
+     * New attributes are added and always set but expected to be missing.
+     * Deprecated attributes are no longer used but still set.
   2. As clusters are updated collected and generated data will have the new schema.
   3. A major version is released expecting the data to have the new schema:
-    * New attributes are no longer optional and decoding data without them fails.
-    * Deprecated attributes are no longer used or set.
+     * New attributes are no longer optional and decoding data without them fails.
+     * Deprecated attributes are no longer used or set.
 
 
 <blockquote class="info">
@@ -51,7 +51,7 @@ Always run the latest minor release before upgrades to the next major release.
 
 The approach above works because replicante expires historical data and refreshes monitoring data.
 You may need to run the latest minor release until all data items are expired or refreshed.
-The [`replictl check upgrade`](replictl-check.md) command can scan your dataset
+The [`replictl check update`](replictl-check.md#update) command can scan your dataset
 to ensure all items are compatible with the new format.
 
 </blockquote>

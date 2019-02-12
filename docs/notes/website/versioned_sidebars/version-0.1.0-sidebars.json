@@ -1,0 +1,45 @@
+{
+  "version-0.1.0-docs": {
+    "Architectural Notes": [
+      "version-0.1.0-architecture",
+      "version-0.1.0-from-discovery-to-events",
+      "version-0.1.0-cluster-view",
+      "version-0.1.0-data-storage-format",
+      "version-0.1.0-scaling",
+      "version-0.1.0-coordinator"
+    ],
+    "Premature Optimisations": [
+      "version-0.1.0-optimizations",
+      "version-0.1.0-concurrent-agent-fetch",
+      "version-0.1.0-dynamic-config",
+      "version-0.1.0-layered-config",
+      "version-0.1.0-lock-validation-writes",
+      "version-0.1.0-multi-cache",
+      "version-0.1.0-optimisable-store-methods"
+    ],
+    "Dreamland": [
+      "version-0.1.0-dreamland",
+      "version-0.1.0-actions",
+      "version-0.1.0-auditing",
+      "version-0.1.0-best-checklists",
+      "version-0.1.0-cluster-groups",
+      "version-0.1.0-cluster-playbooks",
+      "version-0.1.0-cluster-tags",
+      "version-0.1.0-core-bootstrap",
+      "version-0.1.0-failure-trigger-recognition",
+      "version-0.1.0-generic-backends",
+      "version-0.1.0-metrics-insight",
+      "version-0.1.0-migration-backend",
+      "version-0.1.0-multiple-transports",
+      "version-0.1.0-node-events",
+      "version-0.1.0-organisations",
+      "version-0.1.0-provisioners",
+      "version-0.1.0-rate-limits",
+      "version-0.1.0-read-only-mode",
+      "version-0.1.0-replication-window",
+      "version-0.1.0-resync-webui",
+      "version-0.1.0-secrets",
+      "version-0.1.0-tls-rotation"
+    ]
+  }
+}

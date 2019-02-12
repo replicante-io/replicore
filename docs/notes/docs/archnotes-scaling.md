@@ -12,7 +12,7 @@ interfere with each other and that tasks assigned to failed process are taken ov
 
 
 ## Scaling
-Replicante using sharding techniques to scale: each cluster is a "shard" of data.
+Replicante uses sharding techniques to scale: each cluster is a "shard" operated on independently.
 
 Replicante assumes a cluster can be managed by a single process.
 The code attempts to process each node individuality in a lazy fashion.

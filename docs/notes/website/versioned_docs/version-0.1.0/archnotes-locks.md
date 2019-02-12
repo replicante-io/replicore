@@ -1,6 +1,7 @@
 ---
-id: coordinator
+id: version-0.1.0-coordinator
 title: Distributed Coordination
+original_id: coordinator
 ---
 
 Replicante uses a distributed coordinator for a variety of reasons.
@@ -29,7 +30,7 @@ The implementation details may very over time and based on backends (i.e, Consul
   * Cluster discovery process (periodically discovers clusters and pushes tasks to workers).
 
 
-## Exclusive operations (locks)
+## Exclusive tasks
 Some tasks may be scheduled too frequently or otherwise enqueued too often.
 While in general this is not a problem, some tasks with side effects may cause issues
 when run in parallel on the same inputs.
@@ -38,6 +39,6 @@ For these cases, tasks that should not be run in parallel acquire a lock at the 
 If the lock is acquired, the task proceeds as normal.
 If the lock is already taken by another executor, the task is dropped.
 
-### Uses for exclusive operations
+### Uses for exclusive tasks
 
   * Cluster state refresh tasks (exclusive per cluster).

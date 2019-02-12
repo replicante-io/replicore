@@ -37,6 +37,13 @@
     "API Reference": [
       "api",
       "api-monitoring"
+    ],
+    "Scaling": [
+      "scaling",
+      "scaling-store",
+      "scaling-tasks",
+      "scaling-events",
+      "scaling-coordinator"
     ]
   }
 }
