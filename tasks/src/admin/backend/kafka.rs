@@ -131,7 +131,7 @@ impl<Q: TaskQueue> KafkaIter<Q> {
             message: payload,
             processed: true,
             queue,
-            retry_count: retry_count,
+            retry_count,
         })
     }
 }

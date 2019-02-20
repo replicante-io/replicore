@@ -1,5 +1,4 @@
 ## 0.2.0 - High Availability (Work In Progress)
-- Update documentation.
 - Release 0.2.0
 
 

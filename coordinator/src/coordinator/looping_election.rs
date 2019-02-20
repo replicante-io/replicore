@@ -28,7 +28,7 @@ pub struct LoopingElection {
 
 impl LoopingElection {
     pub fn new(options: LoopingElectionOpts, logger: Logger) -> LoopingElection {
-        let election_term_current = options.election_term.clone().unwrap_or(0);
+        let election_term_current = options.election_term.unwrap_or(0);
         LoopingElection {
             election: options.election,
             election_term: options.election_term,
@@ -49,7 +49,7 @@ impl LoopingElection {
         loop {
             // After the first loop, susped the thread for a bit to avoid busy looping.
             if !first {
-                let loop_delay = self.loop_delay.clone();
+                let loop_delay = self.loop_delay;
                 match self.shutdown_receiver.as_ref() {
                     None => ::std::thread::sleep(loop_delay),
                     Some(receiver) => match receiver.recv_timeout(loop_delay) {
@@ -200,7 +200,7 @@ impl LoopingElection {
             Ok(()) => LoopingElectionControl::Proceed,
             Err(error) => self.logic.handle_error(error),
         };
-        self.election_term_current = self.election_term.clone().unwrap_or(0);
+        self.election_term_current = self.election_term.unwrap_or(0);
         flow
     }
 

@@ -89,7 +89,7 @@ impl BackendAdmin for ZookeeperAdmin {
             path,
         };
         let lock = NonBlockingLock::new(name, Box::new(behaviour));
-        return Ok(lock);
+        Ok(lock)
     }
 
     fn non_blocking_locks(&self) -> NonBlockingLocks {

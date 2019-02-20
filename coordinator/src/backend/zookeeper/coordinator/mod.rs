@@ -42,7 +42,7 @@ impl Zookeeper {
 impl Backend for Zookeeper {
     fn election(&self, id: String) -> Election {
         Election::new(id.clone(), Box::new(self::election::ZookeeperElection::new(
-            Arc::clone(&self.client), id, self.node_id.clone(), self.logger.clone()
+            Arc::clone(&self.client), &id, self.node_id.clone(), self.logger.clone()
         )))
     }
 

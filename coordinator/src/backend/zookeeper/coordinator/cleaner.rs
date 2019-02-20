@@ -56,8 +56,8 @@ impl Cleaner {
                 client: Arc::clone(&client),
                 logger: logger.clone(),
             };
-            let id = "zookeeper-cleaner".to_string();
-            let election = Election::new(id.clone(), Box::new(ZookeeperElection::new(
+            let id = "zookeeper-cleaner";
+            let election = Election::new(id.to_string(), Box::new(ZookeeperElection::new(
                 client, id, node_id, logger.clone()
             )));
             let opts = LoopingElectionOpts::new(election, cleaner)

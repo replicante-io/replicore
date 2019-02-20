@@ -87,7 +87,7 @@ impl NonBlockingLockBehaviour for MockNBL {
         }
     }
 
-    fn release_on_drop(&mut self) -> () {
+    fn release_on_drop(&mut self) {
         let guard = self.nblocks.lock().expect("MockBackend::nblocks poisoned");
         let mock = guard.get(&self.lock).map(Clone::clone);
         match mock {

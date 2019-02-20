@@ -74,7 +74,7 @@ impl ZookeeperNBLock {
     ///
     /// If the lock znode was delete, release the lock.
     /// Otherwise reset the watcher on the node to be notified of new events.
-    fn callback_event(context: &NblCallbackContext, event: WatchedEvent) {
+    fn callback_event(context: &NblCallbackContext, event: &WatchedEvent) {
         // Do nothing if the lock is not acquired on znode delete (we released the lock).
         let (acquired, _, _) = context.state.inspect();
         if !acquired {
@@ -98,12 +98,12 @@ impl ZookeeperNBLock {
             let keeper = context.client.get()?;
             let inner_context = context.clone();
             let stats = keeper.exists_w(&context.path, move |event| {
-                ZookeeperNBLock::callback_event(&inner_context, event);
+                ZookeeperNBLock::callback_event(&inner_context, &event);
             })
             .context(ErrorKind::Backend("lock watching"))?;
 
             // If the node was deleted before watching, release the lock.
-            if let Some(_) = stats {
+            if stats.is_some() {
                 debug!(
                     context.logger, "Refreshed non-blocking lock watcher";
                     "lock" => &context.state.lock
@@ -224,7 +224,7 @@ impl NonBlockingLockBehaviour for ZookeeperNBLock {
         // Check node and install delete + disconnect watcher.
         let context = self.context.clone();
         let stats = Client::exists_w(&keeper, &self.context.path, move |event| {
-            ZookeeperNBLock::callback_event(&context, event);
+            ZookeeperNBLock::callback_event(&context, &event);
         })
         .context(ErrorKind::Backend("lock watching"))?;
         let stats = match stats {
@@ -279,7 +279,7 @@ impl NonBlockingLockBehaviour for ZookeeperNBLock {
         Ok(())
     }
 
-    fn release_on_drop(&mut self) -> () {
+    fn release_on_drop(&mut self) {
         let (acquired, _, _) = self.context.state.inspect();
         if acquired {
             NB_LOCK_DROP_TOTAL.inc();
@@ -336,7 +336,7 @@ impl NblSyncState {
 
     fn inspect(&self) -> (bool, Option<i64>, u64) {
         let inner = self.inner.lock().expect("internal lock state poisoned");
-        (inner.acquired.load(Ordering::Relaxed), inner.czxid.clone(), inner.version)
+        (inner.acquired.load(Ordering::Relaxed), inner.czxid, inner.version)
     }
 
     fn release(&self) {

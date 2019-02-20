@@ -9,7 +9,7 @@ use replicante_util_rndid::RndId;
 /// Node IDs are primarily used for debugging and introspection purposes.
 /// They are meant to be used as a way to relate events or records back
 /// to the node that owns or generate them.
-#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
+#[derive(Clone, Default, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
 pub struct NodeId {
     extra: BTreeMap<String, String>,
     id: RndId,

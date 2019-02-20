@@ -2,6 +2,7 @@ use std::collections::HashMap;
 use std::sync::Arc;
 use std::sync::Mutex;
 use std::sync::atomic::AtomicBool;
+use std::sync::atomic::AtomicUsize;
 use std::sync::atomic::Ordering;
 
 use slog::Logger;
@@ -30,6 +31,7 @@ pub struct MockCoordinator {
 }
 
 impl MockCoordinator {
+    #[allow(clippy::needless_pass_by_value)]
     pub fn new(_logger: Logger) -> MockCoordinator {
         MockCoordinator {
             elections: Arc::new(Mutex::new(HashMap::new())),
@@ -81,7 +83,7 @@ impl MockCoordinator {
 pub struct MockElection {
     name: String,
     pub primary: Arc<Mutex<Option<NodeId>>>,
-    pub secondaries: Arc<Mutex<usize>>,
+    pub secondaries: Arc<AtomicUsize>,
     pub status: Arc<Mutex<ElectionStatus>>,
 }
 
@@ -90,7 +92,7 @@ impl MockElection {
         MockElection {
             name,
             primary: Arc::new(Mutex::new(None)),
-            secondaries: Arc::new(Mutex::new(0)),
+            secondaries: Arc::new(AtomicUsize::new(0)),
             status: Arc::new(Mutex::new(ElectionStatus::NotCandidate)),
         }
     }

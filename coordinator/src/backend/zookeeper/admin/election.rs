@@ -106,7 +106,7 @@ impl ZooKeeperElectionAdmin {
             client,
             path: path.to_string(),
         });
-        return Ok(Some(Election::new(info.name, behaviour)));
+        Ok(Some(Election::new(info.name, behaviour)))
     }
 }
 

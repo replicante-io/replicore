@@ -322,9 +322,9 @@ pub struct ZookeeperElection {
 }
 
 impl ZookeeperElection {
-    pub fn new(client: Arc<Client>, id: String, owner: NodeId, logger: Logger) -> Self {
-        let name = id.clone();
-        let id = Client::hash_from_key(&id);
+    pub fn new(client: Arc<Client>, id: &str, owner: NodeId, logger: Logger) -> Self {
+        let name = id.to_string();
+        let id = Client::hash_from_key(id);
         let path_candidate = format!("{}/{}/candidate-", PREFIX_ELECTION, id);
         let path_election = format!("{}/{}", PREFIX_ELECTION, id);
         let payload_candidate = ElectionCandidateInfo { owner };
@@ -453,7 +453,7 @@ impl ZookeeperElection {
             Acl::read_unsafe().clone(), CreateMode::EphemeralSequential
         );
         match result {
-            Ok(candidate) => return Ok(candidate),
+            Ok(candidate) => Ok(candidate),
             Err(ZkError::NoNode) => {
                 // Create the election container and try to register agian.
                 let payload_election = serde_json::to_vec(&context.payload_election)
@@ -474,13 +474,13 @@ impl ZookeeperElection {
                     &keeper, &context.path_candidate, payload_candidate,
                     Acl::read_unsafe().clone(), CreateMode::EphemeralSequential
                 ).context(ErrorKind::Backend("election registration"))?;
-                return Ok(znode);
+                Ok(znode)
             },
             Err(error) => {
                 let error = Err(error).context(ErrorKind::Backend("election registration"));
-                return error.map_err(|e| e.into());
+                error.map_err(|e| e.into())
             },
-        };
+        }
     }
 }
 

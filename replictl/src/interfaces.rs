@@ -92,7 +92,7 @@ impl ProgressTracker {
             return;
         }
         self.state -= 1;
-        if self.state <= 0 {
+        if self.state == 0 {
             self.state = self.chunk;
             info!(self.logger, "{}", self.message; "chunk" => self.chunk);
         }
