@@ -1,13 +1,28 @@
 ## 0.2.1 - Project improvements
-- Automate docker-based dev setup.
-- Build docker images.
+- Docker images.
+- Improve playgrounds.
 - Code of conduct for all repos.
-- Improve generated cluster data.
+- TrevisCI
 - Replace `error-chain` with `failure`.
+- Automate docker-based dev setup.
+- Standardise logging across core and agents.
 - DCO requirement?
 - Dual license?
 - Pre-built binaries?
-- TrevisCI?
+
+
+## 0.2.2 - Introspection
+- Improve generated cluster data.
+- Improve metrics names.
+- Sentry integration.
+- Trace agent discovery.
+- Trace state fetching.
+
+
+## 0.2.3 - Kafka events stream
+- Emit events to stream (and not store).
+- Follow/consume streams by group.
+- Relay events from stream to store.
 
 
 ## 0.3.0 - Split "view" database
@@ -25,15 +40,12 @@
 - Expandable event payload box with easier to read JSON.
 
 
-## 0.3.2 - Introspection
-- Improve metrics names.
-- Sentry integration.
-- Trace agent discovery.
-- Trace state fetching.
+## 0.3.2 - More agents?
+- Redis?
+- Cassandra?
 
+## 0.?.? - Actions?
 
-## ??? - Actions?
+## 0.?.? - Organisations/teams?
 
-## ??? - Organisations/teams?
-
-## ??? - Rate limits?
+## 0.?.? - Rate limits?
