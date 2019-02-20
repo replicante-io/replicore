@@ -1,7 +1,3 @@
-## 0.2.0 - High Availability (Work In Progress)
-- Release 0.2.0
-
-
 ## 0.2.1 - Project improvements
 - Automate docker-based dev setup.
 - Build docker images.
