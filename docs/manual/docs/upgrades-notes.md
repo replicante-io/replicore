@@ -4,4 +4,6 @@ title: Upgrade Notes
 sidebar_label: Upgrade Notes
 ---
 
-There are no special notes at this time.
+## Upgrading to 0.2.0
+Upgrade to version 0.2.0 is not supported.  
+Users can install version 0.2.0 in parallel to 0.1.0 and switch over when ready.

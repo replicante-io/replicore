@@ -1,7 +1,7 @@
 ---
 id: features
 title: Features Overview
-sidebar_label: Features Overview
+sidebar_label: Overview
 ---
 
 ## Agent discovery
@@ -26,4 +26,4 @@ tools and integrations to let users monitor and understand what the system is do
 
 
 ## WebUI
-Comfortably monitor and manage clusters from your browser through the [WebUI](features-webui.md) component.
+Comfortably monitor and manage clusters from your browser through the [WebUI](features-webui.md).

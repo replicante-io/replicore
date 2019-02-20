@@ -20,9 +20,9 @@ are installed and configured in highly available mode.
 
 When using the recommended set of dependencies these guides may be of help:
 
-  * Storage layer: MongoDB - https://docs.mongodb.com/v3.6/installation/
-  * Distributed coordinator: Zookeeper - http://zookeeper.apache.org/doc/r3.4.12/zookeeperAdmin.html#sc_zkMulitServerSetup
-  * Event streaming platform: Kafka - https://kafka.apache.org/11/documentation.html#quickstart
+  * Storage layer: MongoDB - https://docs.mongodb.com/manual/installation/
+  * Distributed coordinator: Zookeeper - http://zookeeper.apache.org/doc/current/zookeeperAdmin.html#sc_zkMulitServerSetup
+  * Event streaming platform: Kafka - https://kafka.apache.org/documentation/#quickstart
 
 
 ## 2. Installing from code
@@ -31,7 +31,7 @@ Linux system given the correct package manager and package names:
 
 ```bash
 # Install needed tools and dependencies.
-dnf install cmake gcc git make openssl-devel
+dnf install -y cmake gcc gcc-c++ git make openssl-devel
 
 # Install rust and cargo with rustup.
 curl https://sh.rustup.rs -sSf | sh
@@ -56,7 +56,7 @@ Whatever your choice, the store needs some initialisation before it can be used.
 The requirements depend on the selected store and are documented in the code:
 
   * MongoDB:
-    * Requirements: https://github.com/replicante-io/replicante/blob/master/data/store/src/backend/mongo/mod.rs#L47
+    * Requirements: https://github.com/replicante-io/replicante/blob/master/data/store/src/backend/mongo/mod.rs#L50
     * Playground example: https://github.com/replicante-io/playgrounds/blob/master/images/replicante/indexes.js
 
 It is possible to verify the store configuration with [`replictl check store schema`](replictl-check.md).

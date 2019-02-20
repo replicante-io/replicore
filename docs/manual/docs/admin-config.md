@@ -29,7 +29,7 @@ As mentioned above, common use cases should be able to ignore most options if us
 
 In most cases, details of these options are documented in the features they influence.
 
-Options that don't directly relate to a single feature are instead documented below.
+Options that don't directly relate to a single feature are instead documented below the example file.
 
 </blockquote>
 
@@ -53,11 +53,14 @@ api:
 # While this allows the configuration to stay simple (all nodes in the cluster are identical),
 # more advanced configuration options based around specialised nodes roles can be used to
 # scale to larger clusters in a more efficient way (because roles can be scaled based on
-# each role needs rather then scaling all roles to the needs of the biggest role).
+# each role needs rather then scaling all roles based on the bottleneck).
 #
 # # Exceptions to the ALL components rule
 # Some components are not required for essential operations.
-# Examples of these are new features being beta-tested or features that you may not need.
+# These include new features being beta-tested or features that you may not need.
+#
+# For example the `grafana` component can be used to enable grafana endpoints annotations.
+# If these are not needed, the endpoint can be left disabled.
 #
 # # Advanced configurations
 # Advanced configurations are aimed at large clusters or other specialised needs.
@@ -65,24 +68,30 @@ api:
 #
 # ## Dedicated Web/API nodes
 # The first thing to split aside are the API and Web nodes.
-# API/Web nodes are the ones that recieve requests from users and have a less predictable
-# resource requirements.
+# API/Web nodes are the ones that receive requests from users and have less
+# predictable resource requirements.
 #
-# Separating them from other comonents means that users can use all resources without background
-# tasks impacting them as well as having other components not impacted by user requests.
+# Separating them from other components means that:
+#
+#   * Users can use all resources without background tasks impacting them.
+#   * Having other components not impacted by user requests.
 #
 #     # For the API/Web nodes
 #     components:
 #       _default: false
+#       grafana: true  # Optional
 #       webui: true
 #
 #     # For all other nodes
 #     components:
 #       _default: true
+#       grafana: false
 #       webui: false
 #
 # ## Fully dedicated components
-# Here each node runs only one component at a time.
+# If more control is needed, further roles can be defined by disabling components in the
+# general case (named "all other nodes" in the example above) and enabling on their own
+# in a new, specialised, role.
 components:
   # Default status for all components that are not explicitly enabled/disabled.
   _default: true
@@ -95,7 +104,7 @@ components:
 
   # Enable the WebUI API endpoints (optional).
   #
-  # Without it the node.js WebUI will NOT work.
+  # Without them, the nodejs WebUI will NOT work.
   webui: null
 
   # Enable the task workers component to process tasks.
@@ -130,6 +139,9 @@ coordinator:
     ensemble: 'localhost:2181/replicante'
 
     # Zookeeper background cleaner configuration.
+    #
+    # The background cleaner thread ensures that znodes no longer needed are removed
+    # from zookeeper to keep the number of znodes to a minimum.
     cleanup:
       # Maximum number of nodes to delete in a single cleanup cycle.
       limit: 1000
@@ -154,7 +166,7 @@ coordinator:
 # The section below is for agent discovery configuration.
 #
 # Discovery is the way the agents that should be managed are found.
-# Replicante core then interact with agents by initiating connections out to them.
+# Replicante Core then interacts with agents by initiating connections out to them.
 discovery:
   # Discovery backends configuration.
   #
@@ -165,12 +177,13 @@ discovery:
   #
   #   * `files`: discover agents from local configuration files.
   backends:
-    # The `files` backend discover agents from files.
+    # The `files` backend discovers agents from files.
     #
-    # The `files` backend can be useful to delegate discovery to unsupported systems.
+    # It can be useful to delegate discovery to unsupported systems.
     # Examples are configuration management tools (ansible, chef, puppet, ...).
     #
     # This is a list of files that are periodically read to perform discovery.
+    # When running replicated nodes for HA users must ensure every node has the same set of files.
     files: []
 
   # Interval (in seconds) to wait between agent discovery runs.
@@ -204,6 +217,10 @@ events:
   # Configuration of the streaming platform events are emitted to.
   stream:
     # The backend to emit events to.
+    # 
+    # !!! DO NOT CHANGE AFTER INITIAL CONFIGURATION !!!
+    # This option is to allow users to choose a supported software that best fits
+    # their use and environment.
     #
     # Available options are:
     #
@@ -284,8 +301,8 @@ logging:
 
   # Enable verbose debug logs.
   #
-  # When DEBUG level is enbabled, things can get loud pretty easily.
-  # To allow DEBUG level to be more usefull, only application events are emitted at
+  # When DEBUG level is enabled, things can get loud pretty easily.
+  # To allow DEBUG level to be more useful, only application events are emitted at
   # DEBUG level while dependency events are emitted at INFO level.
   #
   # Verbose mode can be used in cases where DEBUG level should be enabled by default
@@ -313,10 +330,6 @@ storage:
   options:
     # Name of the MongoDB database to use for persistence.
     #
-    # !!! DO NOT CHANGE AFTER INITIAL CONFIGURATION !!!
-    # This option is to allow users to choose a supported database that best fits
-    # their use and environment.
-    #
     # To change this option you will need to "Update by rebuild".
     # See the documentation for more details on this process.
     db: replicante  # (recommended)
@@ -342,7 +355,7 @@ task_workers:
   _default: true
 
   # Enable cluster state refresh and aggregation task processing.
-  cluster_refresh: ~
+  cluster_refresh: null
 
 
 # The section below is for the tasks system configuration.
@@ -379,7 +392,7 @@ tasks:
     # Number of attempts to commit offsets before giving up and recreating the client.
     commit_retries: 10
 
-    # Worker session keepalive heartbeat interval.
+    # Worker session keepalive heartbeat interval (in milliseconds).
     heartbeat: 3000
 
     # Prefix to be placed in front of queue names to derive topic names.
@@ -440,15 +453,15 @@ tracing:
 ### Timeouts
 Replicante is an event-based, distributed, system.
 As such we often expect things to happen within time limits but there is no guarantee that
-they will in fact happen.
+they will in fact happen at all.
 
-To ensure the system remains functional in the presence of miss-functioning or slow systems
-timeouts are used to ensure unresponsive systems are detected.
+Timeouts are used to ensure that miss-functioning, slow, or unresponsive elements
+(agents, processes, dependencies, ...) do not permanently or severely impact the entire system.
 
 The timeout related options allow operators to tune the level of sensibility:
 
-  * Low timeouts improve system responsivness but require more reliable components.
-  * High timeouts are more forgiving of transint issues at the expense of responsivness.
+  * Low timeouts improve system responsiveness but require more reliable elements.
+  * High timeouts are more forgiving of transient issues at the expense of responsiveness.
 
 
 Available timeout options:

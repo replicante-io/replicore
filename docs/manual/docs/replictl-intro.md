@@ -6,7 +6,7 @@ sidebar_label: Introduction
 
 Replicante comes with a command line tool to help with maintenance and one-off tasks.
 
-<blockquote class="info">
+<blockquote class="warning">
 
 The features described in this section strongly depend on the version
 of `replictl` being the same as the version of Replicante core.
@@ -27,7 +27,7 @@ and [cargo](https://doc.rust-lang.org/cargo/index.html):
 
 ```text
 $ replictl help
-replictl 0.1.0 [b73969f8b19a17cd881f4e04741cdc764757b7ef; index and working directory tainted]
+replictl 0.2.0 [b6f6fabed66cc046746cbb7a1cfa59f50cf666c1; index and working directory tainted]
 Replicante command line tool
 
 USAGE:
@@ -39,16 +39,21 @@ FLAGS:
     -V, --version        Prints version information
 
 OPTIONS:
-    -c, --config <FILE>        Specifies the configuration file to use [default: replicante.yaml]
-        --log-level <LEVEL>    Specifies the logging verbosity [possible values: Critical, Error, Warning, Info, Debug]
+    -c, --config <FILE>             Specifies the configuration file to use [default: replicante.yaml]
+        --log-level <LEVEL>         Specifies the logging verbosity [possible values: Critical, Error, Warning, Info,
+                                    Debug]
+        --progress-chunk <CHUNK>    Specifies how frequently to show progress messages [default: 500]
+        --url <URL>                 Specifies the URL of the Replicante API to use [default: http://localhost:16016/]
 
 SUBCOMMANDS:
-    check       Perform checks on the system to find issues
-    help        Prints this message or the help of the given subcommand(s)
-    versions    Reports version information for various systems
+    check          Perform checks on the system to find issues
+    coordinator    Inspect and manage cluster coordination
+    help           Prints this message or the help of the given subcommand(s)
+    versions       Reports version information for various systems
 ```
 
 ## Subcommands
 
   * [`replictl check`](replictl-check.md)
+  * [`replictl coordinator`](replictl-coordinator.md)
   * [`replictl versions`](replictl-versions.md)

@@ -7,7 +7,7 @@ sidebar_label: Security Considerations
 This section covers Replicante security design and features.
 
 Replicante aims to provide a reasonable level of security by default but will require tuning
-to ensure the configuration meats your requirements.
+to ensure that configuration meats users requirements.
 
 
 ## Design expectations

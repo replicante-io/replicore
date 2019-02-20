@@ -19,7 +19,7 @@ The exception are components providing experimental or deprecated functionality.
 As a result of these defaults, Replicante Core runs as a *uniform deployment*:
 each node is equivalent to all other nodes and capable of performing the same functions.
 
-The main advantages of a uniform deployment is simplicity:
+The main advantage of a uniform deployment is simplicity:
 
   * Each node is the same as all others.
   * The system is simpler to understand: no "who does what?" scenarios.
@@ -28,7 +28,7 @@ This simplicity comes at a cost:
 
   * One component miss-behaving on a node can impact all other components on the same node.
   * Expensive API requests can impact system functionality and system functionality can impact API requests.
-  * Scaling the system is less regular: the bottleneck sets the "size" for all components.
+  * Scaling the system is less granular: the bottleneck sets the "size" for all components.
 
 
 ## Dedicated API servers
@@ -58,18 +58,18 @@ components:
 ```
 
 While this approach isolates API requests from all other system functionality
-it does not really address any of the other limitations of a uniform deployment.
+it does not address any of the other limitations of a uniform deployment.
 
 
 ## Dedicated everything
-The approach of dedicated roles can be extended from API vs everything else can be extended
+The approach of dedicated roles can be extended from API vs everything else
 to the extreme of a role for each component.
 
-It is time to mention that replicante also has `workers` component that runs asynchronous tasks.
+It is time to mention that replicante also has a `workers` component that runs asynchronous tasks.
 To pick which tasks a node should be working on the `task_workers.*` configuration options
 can be used in a similar way to `components.*`.
 
-To define a role for a component use the following cofngiration snippet:
+To define a role for a component use the following configuration snippet:
 ```yaml
 components:
   _default: false
@@ -97,7 +97,7 @@ While such a diverse deployment requires a bit more effort to manage it does hav
 From the configuration snippets above is should be clear that a spectrum of deployments is possible.
 Users are free to configure different nodes to best fit their needs.
 
-To ensure that all required components are configured and avialable somewhere in the cluster
+To ensure that all required components are configured and available somewhere in the cluster
 replicante exposes metrics for which components are enabled on each node.
 
 The following prometheus queries can aid operators monitor components and task workers across

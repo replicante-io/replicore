@@ -38,7 +38,7 @@ and depends on the exact schema of the data stored in each collection.
 Once a key is selected it is not possible (read: complex and expensive) to change the shard
 key of a collection.
 
-As Replicante Core is at the beginning of its path, several changes are likely to result in
+As Replicante Core is at the beginning of its path, several features are likely to result in
 changes to the schema of the stored data, **including to the optimal sharding key**.
 
 Installations that want to make use of sharded clusters should carefully consider what their

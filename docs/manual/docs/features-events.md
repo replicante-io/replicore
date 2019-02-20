@@ -11,6 +11,7 @@ These events are internally used to drive features but are also recoded for the 
 
 Having access to historical events can provide valuable insight.
 Increase error rates? Is/was the datastore down or in the middle of a failover?
+
 Being able to correlate datastore events with application errors, performance issues,
 or other unusual activity is key into improving your own code.
 
@@ -76,7 +77,7 @@ The system does not currently guarantee an upper bound to the time between inter
 
 
 ## Grafana annotations
-Building on the events stream mentioned above, Replicante core offers [Grafana](https://grafana.com/)
+Building on the events stream mentioned above, Replicante Core offers [Grafana](https://grafana.com/)
 [annotations](http://docs.grafana.org/reference/annotations/) integration!
 
 ![Annotation of an Agent Up event close up](assets/grafana-agent-up-zoom.png)
@@ -85,7 +86,8 @@ Building on the events stream mentioned above, Replicante core offers [Grafana](
 
 ![Annotation of an Agent Down event](assets/grafana-agent-down.png)
 
-This feature required the Grafana component to be enabled enabled (`components.grafana` config option; enabled by default).
+This feature requires the Grafana component to be enabled enabled
+(`components.grafana` configuration option; enabled by default).
 
 A set of endpoints compatible with the
 [simple JSON datasource](https://grafana.com/plugins/grafana-simple-json-datasource)
@@ -98,7 +100,7 @@ so most of the configuration is on the Grafana side:
 
   1. Install the [simple JSON datasource](https://grafana.com/plugins/grafana-simple-json-datasource)
      plugin if not already installed.
-  2. Configure a new `simple JSON` datasource point to `http://REPLICANTE_HOST:REPLICANTE_PORT/api/v1/grafana`
+  2. Configure a new `simple JSON` datasource to point to `http://REPLICANTE_HOST:REPLICANTE_PORT/api/v1/grafana`
      if not already available.
   3. On a dashboard, configure a new annotation query using the newly created datesource.
   4. (Optional) Filter events by adding JSON encoded filters as the query text.

@@ -10,7 +10,7 @@ Of course reality tells a different story.
 Software bugs and evolution, transient network issues, miss-configurations ...
 Many things can go wrong and the symptoms are often unclear.
 Distributed systems also mean that errors often propagate across processes
-and servers so the error location is far from the error origin.
+and servers so the location an error is reported is far from the location of the error origin.
 
 On top of all that, distributed systems are complex to follow and
 simple questions about correct functioning become hard to answer.

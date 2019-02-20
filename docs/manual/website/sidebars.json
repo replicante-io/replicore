@@ -32,6 +32,7 @@
     "replictl": [
       "replictl-intro",
       "replictl-check",
+      "replictl-coordinator",
       "replictl-versions"
     ],
     "API Reference": [

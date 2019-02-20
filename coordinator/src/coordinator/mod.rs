@@ -46,6 +46,7 @@ impl Coordinator {
     }
 
     /// Internal method to create a `Coordinator` from the given backend.
+    #[cfg(debug_assertions)]
     pub(crate) fn with_backend(backend: Arc<Backend>) -> Coordinator {
         Coordinator(backend)
     }

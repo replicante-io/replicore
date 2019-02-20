@@ -43,6 +43,7 @@ impl Tracing {
     /// Access the stored [`Tracer`]
     ///
     /// [`Tracer`]: opentracingrust/struct.Tracer.html
+    #[allow(unused)]
     pub fn tracer(&self) -> &Tracer {
         &self.tracer
     }

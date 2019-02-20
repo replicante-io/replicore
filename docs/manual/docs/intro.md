@@ -16,10 +16,10 @@ While very powerful, this approach means it is up to the user to implement autom
 as well as monitoring triggers.
 The result often is overly-specific, fragile, set-ups that are hard to manage and share.
 
-Replicante aims to avoid some of these shot-comings at the expense of generalisation:
-a [well defined specification](https://www.replicante.io/docs/specs/) document determines
+Replicante aims to avoid some of these shortcomings at the expense of generalisation:
+a [well defined specification](https://www.replicante.io/docs/specs/docs/intro/) document determines
 what a datastore is and can do.
-Armed with this knowledge replicante can natively emit events with useful and consistent context
+Armed with this knowledge Replicante can natively emit events with useful and consistent context
 regardless of software in use or its version.
 
 

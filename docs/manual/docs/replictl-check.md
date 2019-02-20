@@ -8,7 +8,6 @@ Perform various checks on different aspects of the system.
 
 ```text
 $ replictl check help
-replictl-check
 Perform checks on the system to find issues
 
 USAGE:
@@ -20,16 +19,22 @@ FLAGS:
     -V, --version        Prints version information
 
 OPTIONS:
-    -c, --config <FILE>        Specifies the configuration file to use [default: replicante.yaml]
-        --log-level <LEVEL>    Specifies the logging verbosity [possible values: Critical, Error, Warning, Info, Debug]
+    -c, --config <FILE>             Specifies the configuration file to use [default: replicante.yaml]
+        --log-level <LEVEL>         Specifies the logging verbosity [possible values: Critical, Error, Warning, Info,
+                                    Debug]
+        --progress-chunk <CHUNK>    Specifies how frequently to show progress messages [default: 500]
+        --url <URL>                 Specifies the URL of the Replicante API to use [default: http://localhost:16016/]
 
 SUBCOMMANDS:
-    config    Check the replicante configuration for errors
-    deep      Run all checks INCLUDING the ones that iterate over ALL data
-    help      Prints this message or the help of the given subcommand(s)
-    quick     Run all checks that do NOT iterate over data (default command)
-    store     Check the primary store for incompatibilities
-    update    Run all checks to confirm an update is possible (iterates over ALL data!)
+    config         Check the replicante configuration for errors
+    coordinator    Check all coordination data for incompatibilities
+    deep           Run all checks INCLUDING the ones that iterate over ALL data
+    help           Prints this message or the help of the given subcommand(s)
+    quick          Run all checks that do NOT iterate over data (default command)
+    store          Check the primary store for incompatibilities
+    streams        Check all streams for incompatibilities
+    tasks          Check commands for the tasks subsystem
+    update         Run all checks to confirm an update is possible (iterates over ALL data!)
 ```
 
 
@@ -39,6 +44,26 @@ Parse the given replicante configuration to check all attributes and referenced 
 ```bash
 replictl check config
 ```
+
+
+## coordinator
+Scan every item in the coordinator to look for schema incompatibilities.
+
+Useful to reveal schema conflicts between the version of the currently running Replicante cluster
+and the version of Replicante compiled against the `replictl` version.
+
+```bash
+replictl check coordinator
+```
+
+<blockquote class="danger">
+
+**This check will scan the full content of the coordinator layer**
+
+As a result it may take a while to complete and could impact performance on large instances.  
+Be careful when using this command against an active replicante system.
+
+</blockquote>
 
 
 ## deep
@@ -68,7 +93,9 @@ replictl check quick
 
 ## store data
 Scan every item in the store to look for incompatible data.
-This can reveal issues linked to running a version of replicante incompatible with the data.
+
+Useful to reveal schema conflicts between the version of the currently running Replicante cluster
+and the version of Replicante compiled against the `replictl` version.
 
 ```bash
 replictl check store data
@@ -91,6 +118,46 @@ Also checks for the existence of items (collections, indexes, tables, ...) that 
 ```bash
 replictl check store schema
 ```
+
+
+## streams events
+Scan every item in the `events` stream to look for schema incompatibilities.
+
+Useful to reveal schema conflicts between the version of the currently running Replicante cluster
+and the version of Replicante compiled against the `replictl` version.
+
+```bash
+replictl check streams events
+```
+
+<blockquote class="danger">
+
+**This check will scan the full content of the `events` stream layer**
+
+As a result it may take a while to complete and could impact performance on large instances.  
+Be careful when using this command against an active replicante system.
+
+</blockquote>
+
+
+## tasks data
+Scan every item in the task queues to look for schema incompatibilities.
+
+Useful to reveal schema conflicts between the version of the currently running Replicante cluster
+and the version of Replicante compiled against the `replictl` version.
+
+```bash
+replictl check tasks data
+```
+
+<blockquote class="danger">
+
+**This check will scan the full content of the task queues layer**
+
+As a result it may take a while to complete and could impact performance on large instances.  
+Be careful when using this command against an active replicante system.
+
+</blockquote>
 
 
 ## update

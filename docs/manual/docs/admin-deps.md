@@ -10,12 +10,8 @@ On the other hand it is unwise to re-implement complex systems (such as database
 In order to run, replicante requires the following:
 
   * A storage layer.
-  * A distributed coordinator (not needed yet).
-  * An event streaming platform (not needed yet).
-
-**Note**: while the distributed coordinator and event streaming platform are not needed in the
-first release, they are mentioned because they will be required from the next release.
-If you are assessing your ability to manage an installation you should account for them.
+  * A distributed coordinator.
+  * An event streaming platform.
 
 
 ## Storage layer
@@ -28,11 +24,11 @@ Supported systems:
 
 
 ## Distributed coordinator
-Replcante (will) support high availability, machine failure tolerance, and horizontal scaling.
-To achieve all this replicante runs multiple instances of the same process on different machines (or VMs).
+Replcante supports high availability, machine failure tolerance, and horizontal scaling.  
+To achieve this replicante runs multiple instances of the same process on different machines (or VMs).
 
-The coordinator is a component (itself also highly available) that allows the coordination of work
-distributed across all processes as well as the re-distribution of work assigned to failed processes.
+A distributed coordinator is a system (itself also highly available) that allows the coordination
+of work across all processes as well as the re-distribution of work assigned to failed processes.
 
 Supported systems:
 
@@ -52,7 +48,7 @@ Supported systems:
 
 
 ## Optional dependencies
-Some features rely on additional runtime dependencies.
+Some features may rely on additional runtime dependencies.
 To keep the set of required dependencies to a minimum these features must be enabled explicitly.
 
 The needed systems and configuration details are documented within the features that need them.

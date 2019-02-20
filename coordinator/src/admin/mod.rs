@@ -34,6 +34,7 @@ impl Admin {
     }
 
     /// Internal method to create an `Admin` from the given backend.
+    #[cfg(debug_assertions)]
     pub(crate) fn with_backend(backend: Arc<dyn BackendAdmin>) -> Admin {
         Admin(backend)
     }

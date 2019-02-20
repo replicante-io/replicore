@@ -14,7 +14,7 @@ An agent process is deployed along-side each datastore process.
 Agents are intermediaries between the central system and the datastore nodes themselves.
 They perform the following tasks:
 
-  * Interface adaption between Replicante's datastore model and the software itself.
+  * Interface adaptation between Replicante's datastore model and the software itself.
   * Monitoring of the datastore process.
   * Performing actions as instructed by the central system.
 

@@ -5,7 +5,7 @@ sidebar_label: Quick Start
 ---
 
 This guide will go through the steps needed to setup a local, docker based, playground
-to test out replicante core and the official agents.
+to test out Replicante Core and the official agents.
 By the end you should have a full system running that can be used to experiment with and
 demo all replicante features and behaviours.
 
