@@ -3,7 +3,7 @@
 
 /target/
 ci/tmp/
-node_modules/
+**/node_modules/
 
 # Ingore nested cargo locks but keep the root one.
 **/Cargo.lock

@@ -1,14 +1,13 @@
 ## 0.2.1 - Project improvements
-- Docker images.
 - Improve playgrounds.
 - Code of conduct for all repos.
 - TrevisCI
 - Replace `error-chain` with `failure`.
 - Automate docker-based dev setup.
 - Standardise logging across core and agents.
+- Pre-built binaries?
 - DCO requirement?
 - Dual license?
-- Pre-built binaries?
 
 
 ## 0.2.2 - Introspection
