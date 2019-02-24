@@ -1,5 +1,5 @@
 # Overview
-[Replicante](https://www.replicante.io/) is a centralised monitoring and managment tool.
+[Replicante](https://www.replicante.io/) is a centralised monitoring and management tool.
 
 Replicante Core is the HA platform that monitors and orchestrates datastores.
 

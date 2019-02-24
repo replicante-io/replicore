@@ -25,7 +25,9 @@ When using the recommended set of dependencies these guides may be of help:
   * Event streaming platform: Kafka - https://kafka.apache.org/documentation/#quickstart
 
 
-## 2. Installing from code
+## 2. Install
+
+### From code
 The following instructions where executed on a clean Fedora 28 install but should work for any
 Linux system given the correct package manager and package names:
 
@@ -48,6 +50,17 @@ target/release/replictl --version
 
 # Binaries are ready for use!
 cp target/release/replicante target/release/replictl replicante.example.yaml /path/to/install/location/
+```
+
+### With Docker
+A docker image with the pre-compiled core is also available:
+https://hub.docker.com/r/replicanteio/replicante
+
+To check the image works as expected:
+```bash
+docker pull replicanteio/replicante:v0
+docker run --rm -it replicanteio/replicante:v0 replicante --version
+docker run --rm -it replicanteio/replicante:v0 replictl --version
 ```
 
 
