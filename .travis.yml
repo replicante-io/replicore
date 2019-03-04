@@ -4,10 +4,18 @@ branches:
     - master
     - /^v\d+\.\d+\.\d+$/
 
+
 # Use latest available ubuntu (16.04).
 dist: xenial
 
+
 # Configure the build jobs.
-language: minimal
+language: rust
+rust:
+  - stable   # Target rust version.
+  - 1.32.0   # Earliest supported rust version.
+  - nightly  # "The Rust team appreciates" according to Travis.
+
 script:
-  - echo 'TEST'
+  - cargo build --verbose
+  - cargo test --verbose
