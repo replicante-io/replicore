@@ -21,7 +21,13 @@ matrix:
     - rust: nightly
   fast_finish: true
 
+install:
+  - rustup component add clippy
+  - cargo install cargo-audit
+
 script:
   - cargo build --verbose
   - cargo test --verbose
   - cargo clippy --verbose
+  # Check for vulnerable crates but ignore them until they can be updated.
+  - cargo audit || true
