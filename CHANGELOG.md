@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## [Unreleased]
 ### Added
 - Docker images.
+- Travis CI builds.
+
+### Changed
+- Improve playgrounds usability.
 
 ## [0.2.0] - 2019-02-20
 ### Added

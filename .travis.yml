@@ -1,0 +1,13 @@
+# Build master branch and versions tags (on top of PRs).
+branches:
+  only:
+    - master
+    - /^v\d+\.\d+\.\d+$/
+
+# Use latest available ubuntu (16.04).
+dist: xenial
+
+# Configure the build jobs.
+language: minimal
+script:
+  - echo 'TEST'

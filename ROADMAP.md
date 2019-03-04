@@ -1,6 +1,5 @@
 ## 0.2.1 - Project improvements
-- Improve playgrounds.
-- Code of conduct for all repos.
+- Introduce Code of Conduct.
 - TrevisCI
 - Replace `error-chain` with `failure`.
 - Automate docker-based dev setup.
