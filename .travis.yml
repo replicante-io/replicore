@@ -16,6 +16,12 @@ rust:
   - 1.32.0   # Earliest supported rust version.
   - nightly  # "The Rust team appreciates" according to Travis.
 
+matrix:
+  allow_failures:
+    - rust: nightly
+  fast_finish: true
+
 script:
   - cargo build --verbose
   - cargo test --verbose
+  - cargo clippy --verbose
