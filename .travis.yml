@@ -11,23 +11,22 @@ dist: xenial
 
 # Configure the build jobs.
 language: rust
+cache: cargo
 rust:
   - stable   # Target rust version.
   - 1.32.0   # Earliest supported rust version.
   - nightly  # "The Rust team appreciates" according to Travis.
 
+env:
+  - TASK=test
+  - TASK=clippy
+  - TASK=audit
+
+install: ci/travis.sh install "${TASK}"
+script: ci/travis.sh script "${TASK}"
+
 matrix:
   allow_failures:
     - rust: nightly
+    - env: TASK=audit
   fast_finish: true
-
-install:
-  - rustup component add clippy
-  - cargo install cargo-audit
-
-script:
-  - cargo build --verbose
-  - cargo test --verbose
-  - cargo clippy --verbose
-  # Check for vulnerable crates but ignore them until they can be updated.
-  - cargo audit || true
