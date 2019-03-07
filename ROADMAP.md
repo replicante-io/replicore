@@ -1,6 +1,5 @@
 ## 0.2.1 - Project improvements
 - Introduce Code of Conduct.
-- TrevisCI
 - Replace `error-chain` with `failure`.
 - Automate docker-based dev setup.
 - Standardise logging across core and agents.

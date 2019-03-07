@@ -1,4 +1,4 @@
 #!/usr/bin/env sh
 set -ex
 
-cargo install cargo-audit
+cargo install --force cargo-audit
