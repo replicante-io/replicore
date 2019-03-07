@@ -1,0 +1,32 @@
+# Build master branch and versions tags (on top of PRs).
+branches:
+  only:
+    - master
+    - /^v\d+\.\d+\.\d+$/
+
+
+# Use latest available ubuntu (16.04).
+dist: xenial
+
+
+# Configure the build jobs.
+language: rust
+cache: cargo
+rust:
+  - stable   # Target rust version.
+  - 1.32.0   # Earliest supported rust version.
+  - nightly  # "The Rust team appreciates" according to Travis.
+
+env:
+  - TASK=test
+  - TASK=clippy
+  - TASK=audit
+
+install: ci/travis.sh install "${TASK}"
+script: ci/travis.sh script "${TASK}"
+
+matrix:
+  allow_failures:
+    - rust: nightly
+    - env: TASK=audit
+  fast_finish: true
