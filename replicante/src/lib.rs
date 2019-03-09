@@ -152,7 +152,7 @@ pub fn run() -> Result<()> {
     // Initialise and run forever.
     let logger = replicante_logging::configure(config.logging.clone(), &logger_opts);
     let _scope_guard = slog_scope::set_global_logger(logger.clone());
-    let _log_guard = slog_stdlog::init().expect("Failed to initialise log -> slog integration");
+    slog_stdlog::init().expect("Failed to initialise log -> slog integration");
     debug!(logger, "Logging configured");
 
     let result = initialise_and_run(config, logger.clone());

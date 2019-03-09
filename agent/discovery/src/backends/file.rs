@@ -1,10 +1,12 @@
 use std::fs::File;
+
+use failure::ResultExt;
 use serde_yaml;
 
 use replicante_data_models::ClusterDiscovery;
 
+use super::super::ErrorKind;
 use super::super::Result;
-use super::super::ResultExt;
 
 
 /// Serialization format for file discovery.
@@ -28,9 +30,9 @@ impl Iter {
 
     /// Loads the content of the file into memory to iterate over it.
     fn load_content(&mut self) -> Result<()> {
-        let error_message = format!("Failed to open {:?}", self.path);
-        let file = File::open(&self.path).chain_err(|| error_message)?;
-        let mut content: DiscoveryFile = serde_yaml::from_reader(file)?;
+        let file = File::open(&self.path).with_context(|_| ErrorKind::Io(self.path.clone()))?;
+        let mut content: DiscoveryFile = serde_yaml::from_reader(file)
+            .with_context(|_| ErrorKind::YamlFile(self.path.clone()))?;
         content.reverse();
         self.data = Some(content);
         Ok(())
@@ -62,11 +64,9 @@ impl Iterator for Iter {
 mod tests {
     use replicante_data_models::ClusterDiscovery;
 
-    use super::super::super::Error;
     use super::super::super::ErrorKind;
-    use super::Iter;
-
     use super::super::tests::fixture_path;
+    use super::Iter;
 
     #[test]
     fn file_not_found() {
@@ -74,10 +74,10 @@ mod tests {
         match iter.next() {
             None => panic!("Should have returned a Some"),
             Some(Ok(_)) => panic!("Should have returned and Err"),
-            Some(Err(Error(ErrorKind::Msg(msg), _))) => assert_eq!(
-                msg, "Failed to open \"/some/file/that/does/not/exists\""
-            ),
-            Some(Err(error)) => panic!("Invalid error: {:?}", error),
+            Some(Err(error)) => match error.kind() {
+                &ErrorKind::Io(ref path) => assert_eq!(path, "/some/file/that/does/not/exists"),
+                _ => panic!("Invalid error: {:?}", error),
+            }
         };
         assert!(iter.next().is_none());
     }

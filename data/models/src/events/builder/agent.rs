@@ -74,7 +74,7 @@ impl AgentBuilder {
     fn payload_from_after(
         &self, cluster: String, host: String, before: AgentStatus, after: AgentStatus
     ) -> EventPayload {
-        match *(&after) {
+        match after {
             AgentStatus::AgentDown(_) => EventPayload::AgentDown(AgentStatusChange {
                 cluster,
                 host,

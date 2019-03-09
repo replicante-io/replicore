@@ -103,7 +103,7 @@ impl Iterator for Iter {
 /// # Example
 ///
 /// ```
-/// # extern crate error_chain;
+/// # extern crate failure;
 /// # extern crate replicante_agent_discovery;
 /// #
 /// # use replicante_agent_discovery::Config;
@@ -122,10 +122,12 @@ impl Iterator for Iter {
 /// # fn main() {
 /// #     if let Err(ref e) = run() {
 /// #         use std::io::Write;
-/// #         use error_chain::ChainedError; // trait which holds `display_chain`
+/// #         use failure::Fail;
 /// #         let stderr = &mut ::std::io::stderr();
 /// #         let errmsg = "Error writing to stderr";
-/// #         writeln!(stderr, "{}", e.display_chain()).expect(errmsg);
+/// #         for error in Fail::iter_chain(e) {
+/// #             writeln!(stderr, "{}", error.to_string()).expect(errmsg);
+/// #         }
 /// #         ::std::process::exit(1);
 /// #     }
 /// # }

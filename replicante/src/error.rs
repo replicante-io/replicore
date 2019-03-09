@@ -17,12 +17,11 @@ use serde_json;
 #[derive(Debug)]
 pub struct Error(Context<ErrorKind>);
 
-// TODO: re-add once ErrorKind is Copy again.
-//impl Error {
-//    pub fn kind(&self) -> ErrorKind {
-//        *self.0.get_context()
-//    }
-//}
+impl Error {
+    pub fn kind(&self) -> &ErrorKind {
+        self.0.get_context()
+    }
+}
 
 impl From<Context<ErrorKind>> for Error {
     fn from(inner: Context<ErrorKind>) -> Error {
@@ -78,8 +77,6 @@ impl fmt::Display for Error {
 
 
 /// Exhaustive list of possible errors emitted by this crate.
-// TODO: re-add once legacy stuff is gone (also can make copy?).
-//#[derive(Clone, Eq, PartialEq, Hash, Debug, Fail)]
 #[derive(Debug, Fail)]
 pub enum ErrorKind {
     #[fail(display = "could not coordinate with other processes")]

@@ -75,11 +75,7 @@ impl LoopingElectionLogic for DiscoveryElection {
             match cluster {
                 Ok(cluster) => self.emit(cluster),
                 Err(error) => {
-                    error!(
-                        self.logger, "Cluster discovery error";
-                        "error" => %error
-                        // TODO: failure_info(&error)
-                    );
+                    error!(self.logger, "Cluster discovery error"; failure_info(&error));
                     DISCOVERY_ERRORS.inc();
                 }
             }
