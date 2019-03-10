@@ -28,7 +28,7 @@ impl ShardFetcher {
     }
 
     pub fn process_shards(&self, client: &Client, cluster: &str, node: &str) -> Result<()> {
-        let shards = client.shards().map_err(SyncFailure::new)
+        let shards = client.shards()
             .with_context(|_| ErrorKind::AgentRead("shards", client.id().to_string()))?;
         for shard in shards.shards {
             let shard = Shard::new(cluster.to_string(), node.to_string(), shard);

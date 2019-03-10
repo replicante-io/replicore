@@ -1,5 +1,5 @@
-#[macro_use]
-extern crate error_chain;
+extern crate failure;
+extern crate failure_derive;
 #[macro_use]
 extern crate lazy_static;
 extern crate prometheus;
@@ -18,14 +18,18 @@ use replicante_agent_models::DatastoreInfo;
 use replicante_agent_models::Shards;
 
 
-mod errors;
+mod error;
 mod http;
+mod metrics;
 
 #[cfg(test)]
 pub mod mock;
 
-pub use self::errors::*;
+pub use self::error::Error;
+pub use self::error::ErrorKind;
+pub use self::error::Result;
 pub use self::http::HttpClient;
+pub use self::metrics::register_metrics;
 
 
 /// Interface to interact with (remote) agents.

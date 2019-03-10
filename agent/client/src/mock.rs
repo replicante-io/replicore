@@ -80,7 +80,6 @@ mod tests {
     }
 
     mod agent {
-        use super::super::super::Error;
         use super::super::super::ErrorKind;
         use super::super::Client;
         use super::super::MockClient;
@@ -89,13 +88,15 @@ mod tests {
         #[test]
         fn err() {
             let client = MockClient::new(
-                || Err("TestError".into()),
-                || Err("Skipped".into()),
-                || Err("Skipped".into())
+                || Err(ErrorKind::Remote("TestError".into()).into()),
+                || Err(ErrorKind::Remote("Skipped".into()).into()),
+                || Err(ErrorKind::Remote("Skipped".into()).into()),
             );
             match client.agent_info() {
-                Err(Error(ErrorKind::Msg(error), _)) => assert_eq!("TestError", error),
-                Err(_) => panic!("Unexpected Err result"),
+                Err(error) => match error.kind() {
+                    &ErrorKind::Remote(ref msg) => assert_eq!("TestError", msg),
+                    _ => panic!("Unexpected Err result: {:?}", error),
+                },
                 Ok(_) => panic!("Unexpected Ok result")
             };
         }
@@ -105,15 +106,14 @@ mod tests {
             let info = mock_agent_info();
             let client = MockClient::new(
                 || Ok(mock_agent_info()),
-                || Err("Skipped".into()),
-                || Err("Skipped".into())
+                || Err(ErrorKind::Remote("Skipped".into()).into()),
+                || Err(ErrorKind::Remote("Skipped".into()).into()),
             );
             assert_eq!(info, client.agent_info().unwrap());
         }
     }
 
     mod datastore {
-        use super::super::super::Error;
         use super::super::super::ErrorKind;
         use super::super::Client;
         use super::super::MockClient;
@@ -122,13 +122,15 @@ mod tests {
         #[test]
         fn err() {
             let client = MockClient::new(
-                || Err("Skipped".into()),
-                || Err("TestError".into()),
-                || Err("Skipped".into())
+                || Err(ErrorKind::Remote("Skipped".into()).into()),
+                || Err(ErrorKind::Remote("TestError".into()).into()),
+                || Err(ErrorKind::Remote("Skipped".into()).into()),
             );
             match client.datastore_info() {
-                Err(Error(ErrorKind::Msg(error), _)) => assert_eq!("TestError", error),
-                Err(_) => panic!("Unexpected Err result"),
+                Err(error) => match error.kind() {
+                    &ErrorKind::Remote(ref msg) => assert_eq!("TestError", msg),
+                    _ => panic!("Unexpected Err result: {:?}", error),
+                },
                 Ok(_) => panic!("Unexpected Ok result")
             };
         }
@@ -137,16 +139,15 @@ mod tests {
         fn ok() {
             let info = mock_datastore_info();
             let client = MockClient::new(
-                || Err("Skipped".into()),
+                || Err(ErrorKind::Remote("Skipped".into()).into()),
                 || Ok(mock_datastore_info()),
-                || Err("Skipped".into())
+                || Err(ErrorKind::Remote("Skipped".into()).into()),
             );
             assert_eq!(info, client.datastore_info().unwrap());
         }
     }
 
     mod shards {
-        use super::super::super::Error;
         use super::super::super::ErrorKind;
         use super::super::Client;
         use super::super::MockClient;
@@ -155,13 +156,15 @@ mod tests {
         #[test]
         fn err() {
             let client = MockClient::new(
-                || Err("Skipped".into()),
-                || Err("Skipped".into()),
-                || Err("TestError".into())
+                || Err(ErrorKind::Remote("Skipped".into()).into()),
+                || Err(ErrorKind::Remote("Skipped".into()).into()),
+                || Err(ErrorKind::Remote("TestError".into()).into()),
             );
             match client.shards() {
-                Err(Error(ErrorKind::Msg(error), _)) => assert_eq!("TestError", error),
-                Err(_) => panic!("Unexpected Err result"),
+                Err(error) => match error.kind() {
+                    &ErrorKind::Remote(ref msg) => assert_eq!("TestError", msg),
+                    _ => panic!("Unexpected Err result: {:?}", error),
+                },
                 Ok(_) => panic!("Unexpected Ok result")
             };
         }
@@ -170,8 +173,8 @@ mod tests {
         fn ok() {
             let info = mock_shards();
             let client = MockClient::new(
-                || Err("Skipped".into()),
-                || Err("Skipped".into()),
+                || Err(ErrorKind::Remote("Skipped".into()).into()),
+                || Err(ErrorKind::Remote("Skipped".into()).into()),
                 || Ok(mock_shards())
             );
             assert_eq!(info, client.shards().unwrap());

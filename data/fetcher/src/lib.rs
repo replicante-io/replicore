@@ -16,7 +16,6 @@ extern crate replicante_util_failure;
 
 use std::time::Duration;
 
-use failure::SyncFailure;
 use failure::ResultExt;
 use prometheus::Registry;
 use slog::Logger;
@@ -138,7 +137,6 @@ impl Fetcher {
     ) -> Result<()> {
         meta.node_inc();
         let client = HttpClient::new(node.to_string(), self.timeout.clone())
-            .map_err(SyncFailure::new)
             .with_context(|_| ErrorKind::AgentConnect(node.to_string()))?;
         let mut agent = Agent::new(cluster.to_string(), node.to_string(), AgentStatus::Up);
 

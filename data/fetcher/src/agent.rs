@@ -39,7 +39,7 @@ impl AgentFetcher {
     }
 
     pub fn process_agent_info(&self, client: &Client, cluster: String, node: String) -> Result<()> {
-        let info = client.agent_info().map_err(SyncFailure::new)
+        let info = client.agent_info()
             .with_context(|_| ErrorKind::AgentRead("agent info", client.id().to_string()))?;
         let info = AgentInfo::new(cluster, node, info);
         match self.store.agent_info(info.cluster.clone(), info.host.clone()) {

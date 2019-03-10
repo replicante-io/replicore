@@ -29,7 +29,7 @@ impl NodeFetcher {
     }
 
     pub fn process_node(&self, client: &Client, meta: &mut ClusterMetaBuilder) -> Result<()> {
-        let info = client.datastore_info().map_err(SyncFailure::new)
+        let info = client.datastore_info()
             .with_context(|_| ErrorKind::AgentRead("datastore info", client.id().to_string()))?;
         let node = Node::new(info);
         meta.node_kind(node.kind.clone());
