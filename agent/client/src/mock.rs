@@ -15,6 +15,7 @@ pub struct MockClient<A, D, S>
     agent_info: A,
     datastore_info: D,
     shards: S,
+    pub id: String,
 }
 
 impl<A, D, S> Client for MockClient<A, D, S>
@@ -30,6 +31,10 @@ impl<A, D, S> Client for MockClient<A, D, S>
         (self.datastore_info)()
     }
 
+    fn id(&self) -> &str {
+        &self.id
+    }
+
     fn shards(&self) -> Result<Shards> {
         (self.shards)()
     }
@@ -42,7 +47,8 @@ impl<A, D, S> MockClient<A, D, S>
 {
     /// Creates a new `MockClient`.
     pub fn new(agent_info: A, datastore_info: D, shards: S) -> MockClient<A, D, S> {
-        MockClient { agent_info, datastore_info, shards }
+        let id = "mock://agent".to_string();
+        MockClient { agent_info, datastore_info, id, shards }
     }
 }
 

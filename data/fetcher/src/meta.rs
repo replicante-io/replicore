@@ -1,13 +1,14 @@
+use failure::ResultExt;
+use failure::SyncFailure;
+
 use std::collections::HashSet;
 
 use replicante_data_models::ClusterMeta;
 use replicante_data_store::Store;
 
+use super::Error;
+use super::ErrorKind;
 use super::Result;
-use super::ResultExt;
-
-
-const FAIL_PERSIST_META: &str = "Failed to persist agent meta";
 
 
 pub struct ClusterMetaBuilder {
@@ -54,6 +55,8 @@ impl MetaFetcher {
     }
 
     pub fn persist_meta(&self, meta: ClusterMeta) -> Result<()> {
-        self.store.persist_cluster_meta(meta).chain_err(|| FAIL_PERSIST_META)
+        self.store.persist_cluster_meta(meta).map_err(SyncFailure::new)
+            .with_context(|_| ErrorKind::StoreWrite("cluster metadata update"))
+            .map_err(Error::from)
     }
 }

@@ -39,6 +39,11 @@ pub trait Client {
     /// Returns general datastore information.
     fn datastore_info(&self) -> Result<DatastoreInfo>;
 
+    /// Returns an ID that can be used to identify the agent.
+    ///
+    /// Mainly intended for context in error messages and introspection.
+    fn id(&self) -> &str;
+
     /// Returns status information for the node.
     fn shards(&self) -> Result<Shards>;
 }

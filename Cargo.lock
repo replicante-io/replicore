@@ -1732,7 +1732,8 @@ dependencies = [
 name = "replicante_data_fetcher"
 version = "0.1.0"
 dependencies = [
- "error-chain 0.12.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "failure 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)",
+ "failure_derive 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)",
  "lazy_static 1.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "prometheus 0.5.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "replicante_agent_client 0.2.0",
@@ -1740,6 +1741,7 @@ dependencies = [
  "replicante_data_models 0.2.0",
  "replicante_data_store 0.2.0",
  "replicante_streams_events 0.1.0",
+ "replicante_util_failure 0.1.0",
  "slog 2.4.1 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 

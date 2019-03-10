@@ -21,9 +21,10 @@ Reversing the dependency order gives the migration order.
 ### Core
 
   1. [x] replicante_agent_discovery
-  2. [ ] replicante_data_fetcher
-  3. [ ] replicante_agent_client
-  4. [ ] replicante_data_store
+  2. [x] replicante_data_fetcher
+  3. [ ] replicante_agent_client (+ rearrange metrics code)
+  4. [ ] replicante_streams_events
+  5. [ ] replicante_data_store
 
 ### Agents
 
@@ -35,6 +36,11 @@ Reversing the dependency order gives the migration order.
 ### Common
 
   1. [ ] replicante_util_tracing
+
+### Finally
+
+  1. [ ] Remove any unnecessary `SyncFailure`s
+  2. [ ] Always use `failure_info` to log error information
 
 
 ## MVP Plan

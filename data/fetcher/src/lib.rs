@@ -1,9 +1,8 @@
-#[macro_use]
-extern crate error_chain;
+extern crate failure;
+extern crate failure_derive;
 
 #[macro_use]
 extern crate lazy_static;
-
 extern crate prometheus;
 #[macro_use]
 extern crate slog;
@@ -13,9 +12,12 @@ extern crate replicante_coordinator;
 extern crate replicante_data_models;
 extern crate replicante_data_store;
 extern crate replicante_streams_events;
+extern crate replicante_util_failure;
 
 use std::time::Duration;
-use error_chain::ChainedError;
+
+use failure::SyncFailure;
+use failure::ResultExt;
 use prometheus::Registry;
 use slog::Logger;
 
@@ -26,10 +28,12 @@ use replicante_data_models::AgentStatus;
 use replicante_data_models::ClusterDiscovery;
 use replicante_data_store::Store;
 use replicante_streams_events::EventsStream;
+use replicante_util_failure::failure_info;
+use replicante_util_failure::format_fail;
 
 
 mod agent;
-mod errors;
+mod error;
 mod meta;
 mod metrics;
 mod node;
@@ -46,10 +50,9 @@ use self::metrics::register_metrics;
 use self::node::NodeFetcher;
 use self::shard::ShardFetcher;
 
-pub use self::errors::Error;
-pub use self::errors::ErrorKind;
-pub use self::errors::ResultExt;
-pub use self::errors::Result;
+pub use self::error::Error;
+pub use self::error::ErrorKind;
+pub use self::error::Result;
 pub use self::snapshotter::Snapshotter;
 
 
@@ -112,21 +115,18 @@ impl Fetcher {
             let result = self.process_target(&name, &node, &mut meta);
             if let Err(error) = result {
                 FETCHER_ERRORS_COUNT.with_label_values(&[&name]).inc();
-                let error = error.display_chain().to_string();
                 error!(
                     self.logger, "Failed to process cluster node";
-                    "cluster" => &name, "node" => node,
-                    "error" => error
+                    "cluster" => &name, "node" => node, failure_info(&error)
                 );
             }
         }
 
         if let Err(error) = self.meta.persist_meta(meta.build()) {
             FETCHER_ERRORS_COUNT.with_label_values(&[&name]).inc();
-            let error = error.display_chain().to_string();
             error!(
                 self.logger, "Failed to persist cluster metadata";
-                "cluster" => name, "error" => error
+                "cluster" => name, failure_info(&error)
             );
         }
     }
@@ -137,12 +137,14 @@ impl Fetcher {
         &self, cluster: &str, node: &str, meta: &mut ClusterMetaBuilder
     ) -> Result<()> {
         meta.node_inc();
-        let client = HttpClient::new(node.to_string(), self.timeout.clone())?;
+        let client = HttpClient::new(node.to_string(), self.timeout.clone())
+            .map_err(SyncFailure::new)
+            .with_context(|_| ErrorKind::AgentConnect(node.to_string()))?;
         let mut agent = Agent::new(cluster.to_string(), node.to_string(), AgentStatus::Up);
 
         let result = self.agent.process_agent_info(&client, cluster.to_string(), node.to_string());
         if let Err(error) = result {
-            let message = error.display_chain().to_string();
+            let message = format_fail(&error);
             agent.status = AgentStatus::AgentDown(message);
             self.agent.process_agent(agent)?;
             return Err(error);
@@ -150,7 +152,7 @@ impl Fetcher {
 
         let result = self.node.process_node(&client, meta);
         if let Err(error) = result {
-            let message = error.display_chain().to_string();
+            let message = format_fail(&error);
             agent.status = AgentStatus::NodeDown(message);
             self.agent.process_agent(agent)?;
             return Err(error);
@@ -158,7 +160,7 @@ impl Fetcher {
 
         let result = self.shard.process_shards(&client, cluster, node);
         if let Err(error) = result {
-            let message = error.display_chain().to_string();
+            let message = format_fail(&error);
             agent.status = AgentStatus::NodeDown(message);
             self.agent.process_agent(agent)?;
             return Err(error);

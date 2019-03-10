@@ -17,8 +17,7 @@ lazy_static! {
 ///
 /// Metrics that fail to register are logged and ignored.
 pub fn register_metrics(logger: &Logger, registry: &Registry) {
-    if let Err(err) = registry.register(Box::new(FETCHER_ERRORS_COUNT.clone())) {
-        let error = format!("{:?}", err);
-        debug!(logger, "Failed to register FETCHER_ERRORS_COUNT"; "error" => error);
+    if let Err(error) = registry.register(Box::new(FETCHER_ERRORS_COUNT.clone())) {
+        debug!(logger, "Failed to register FETCHER_ERRORS_COUNT"; "error" => ?error);
     }
 }

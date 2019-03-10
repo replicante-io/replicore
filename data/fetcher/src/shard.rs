@@ -1,3 +1,6 @@
+use failure::ResultExt;
+use failure::SyncFailure;
+
 use replicante_agent_client::Client;
 use replicante_data_models::Event;
 use replicante_data_models::Shard;
@@ -5,12 +8,9 @@ use replicante_data_models::Shard;
 use replicante_data_store::Store;
 use replicante_streams_events::EventsStream;
 
+use super::Error;
+use super::ErrorKind;
 use super::Result;
-use super::ResultExt;
-
-
-const FAIL_FIND_SHARD: &str = "Failed to fetch shard";
-const FAIL_PERSIST_SHARD: &str = "Failed to persist shard";
 
 
 /// Subset of fetcher logic that deals specifically with shards.
@@ -28,7 +28,8 @@ impl ShardFetcher {
     }
 
     pub fn process_shards(&self, client: &Client, cluster: &str, node: &str) -> Result<()> {
-        let shards = client.shards()?;
+        let shards = client.shards().map_err(SyncFailure::new)
+            .with_context(|_| ErrorKind::AgentRead("shards", client.id().to_string()))?;
         for shard in shards.shards {
             let shard = Shard::new(cluster.to_string(), node.to_string(), shard);
             // TODO(stefano): should an error prevent all following shards from being processed?
@@ -44,7 +45,9 @@ impl ShardFetcher {
         let node = shard.node.clone();
         let id = shard.id.clone();
         match self.store.shard(cluster.clone(), node.clone(), id.clone()) {
-            Err(error) => Err(error).chain_err(|| FAIL_FIND_SHARD),
+            Err(error) => Err(error).map_err(SyncFailure::new)
+                .with_context(|_| ErrorKind::StoreRead("shard"))
+                .map_err(Error::from),
             Ok(None) => self.process_shard_new(shard),
             Ok(Some(old)) => self.process_shard_existing(shard, old)
         }
@@ -59,17 +62,23 @@ impl ShardFetcher {
         // If anything other then offset or lag changed emit and event.
         if self.shard_changed(&shard, &old) {
             let event = Event::builder().shard().allocation_changed(old, shard.clone());
-            self.events.emit(event).chain_err(|| FAIL_PERSIST_SHARD)?;
+            let code = event.code();
+            self.events.emit(event).map_err(SyncFailure::new)
+                .with_context(|_| ErrorKind::EventEmit(code))?;
         }
 
         // Persist the model so the latest offset and lag information are available.
-        self.store.persist_shard(shard).chain_err(|| FAIL_PERSIST_SHARD)
+        self.store.persist_shard(shard).map_err(SyncFailure::new)
+            .with_context(|_| ErrorKind::StoreWrite("shard update")).map_err(Error::from)
     }
 
     fn process_shard_new(&self, shard: Shard) -> Result<()> {
         let event = Event::builder().shard().shard_allocation_new(shard.clone());
-        self.events.emit(event).chain_err(|| FAIL_PERSIST_SHARD)?;
-        self.store.persist_shard(shard).chain_err(|| FAIL_PERSIST_SHARD)
+        let code = event.code();
+        self.events.emit(event).map_err(SyncFailure::new)
+            .with_context(|_| ErrorKind::EventEmit(code))?;
+        self.store.persist_shard(shard).map_err(SyncFailure::new)
+            .with_context(|_| ErrorKind::StoreWrite("new shard")).map_err(Error::from)
     }
 
     /// Checks if a shard has changed since the last fetch.

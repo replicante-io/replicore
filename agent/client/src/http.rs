@@ -90,6 +90,10 @@ impl Client for HttpClient {
             .chain_err(|| FAIL_INFO_FETCH)
     }
 
+    fn id(&self) -> &str {
+        &self.root_url
+    }
+
     fn shards(&self) -> Result<Shards> {
         let endpoint = self.endpoint("/api/v1/shards");
         let request = self.client.get(&endpoint);

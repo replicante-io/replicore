@@ -14,7 +14,7 @@ use replicante_data_models::Event;
 use replicante_data_store::Store;
 use replicante_streams_events::EventsStream;
 use replicante_tasks::TaskHandler;
-// TODO(stefano): once error_chain is gone use replicante_util_failure::failure_info;
+use replicante_util_failure::failure_info;
 
 use super::super::super::Error;
 use super::super::super::ErrorKind;
@@ -95,7 +95,7 @@ impl Handler {
 
         // Refresh cluster state.
         let timer = REFRESH_DURATION.with_label_values(&[&discovery.cluster]).start_timer();
-        self.emit_snapshots(&discovery.cluster, snapshot)?;
+        self.emit_snapshots(&discovery.cluster, snapshot);
         self.refresh_discovery(discovery.clone())?;
         self.fetcher.process(discovery.clone(), lock.watch());
         self.aggregator.process(discovery, lock.watch());
@@ -107,20 +107,18 @@ impl Handler {
     }
 
     /// Emit cluster state snapshots, if needed by this task.
-    fn emit_snapshots(&self, name: &str, snapshot: bool) -> Result<()> {
+    fn emit_snapshots(&self, name: &str, snapshot: bool) {
         if !snapshot {
-            return Ok(());
+            return;
         }
         debug!(self.logger, "Emitting cluster snapshot"; "cluster" => name);
         let snapshotter = Snapshotter::new(name.into(), self.events.clone(), self.store.clone());
         if let Err(error) = snapshotter.run() {
             error!(
                 self.logger, "Failed to emit snapshots";
-                "cluster" => name, "error" => %error
-                // TODO: failure_info(&error)
+                "cluster" => name, failure_info(&error)
             );
         }
-        Ok(())
     }
 
     /// Refresh the state of the cluster discovery.
@@ -164,9 +162,7 @@ impl TaskHandler<ReplicanteQueues> for Handler {
             },
             Err(error) => {
                 error!(
-                    self.logger, "Failed to handle cluster discovery task";
-                    "error" => ?error
-                    // TODO(stefano): once error_chain is gone: failure_info(&error)
+                    self.logger, "Failed to handle cluster discovery task"; failure_info(&error)
                 );
                 if let Err(error) = task.fail() {
                     error!(
