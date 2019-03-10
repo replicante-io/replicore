@@ -1,6 +1,6 @@
 extern crate chrono;
-#[macro_use]
-extern crate error_chain;
+extern crate failure;
+extern crate failure_derive;
 extern crate prometheus;
 extern crate serde;
 #[macro_use]
@@ -23,7 +23,7 @@ use replicante_data_store::Store;
 
 mod backend;
 mod config;
-mod errors;
+mod error;
 mod interface;
 
 // Cargo builds dependencies in debug mode instead of test mode.
@@ -33,7 +33,10 @@ pub mod mock;
 
 
 pub use self::config::Config;
-pub use self::errors::*;
+
+pub use self::error::Error;
+pub use self::error::ErrorKind;
+pub use self::error::Result;
 
 pub use self::interface::Iter;
 pub use self::interface::ScanFilters;

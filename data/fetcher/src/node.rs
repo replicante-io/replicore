@@ -52,8 +52,7 @@ impl NodeFetcher {
         }
         let event = Event::builder().node().changed(old, node.clone());
         let code = event.code();
-        self.events.emit(event).map_err(SyncFailure::new)
-            .with_context(|_| ErrorKind::EventEmit(code))?;
+        self.events.emit(event).with_context(|_| ErrorKind::EventEmit(code))?;
         self.store.persist_node(node).map_err(SyncFailure::new)
             .with_context(|_| ErrorKind::StoreWrite("node update")).map_err(Error::from)
     }
@@ -61,8 +60,7 @@ impl NodeFetcher {
     fn process_node_new(&self, node: Node) -> Result<()> {
         let event = Event::builder().node().node_new(node.clone());
         let code = event.code();
-        self.events.emit(event).map_err(SyncFailure::new)
-            .with_context(|_| ErrorKind::EventEmit(code))?;
+        self.events.emit(event).with_context(|_| ErrorKind::EventEmit(code))?;
         self.store.persist_node(node).map_err(SyncFailure::new)
             .with_context(|_| ErrorKind::StoreWrite("new node")).map_err(Error::from)
     }

@@ -1792,7 +1792,8 @@ name = "replicante_streams_events"
 version = "0.1.0"
 dependencies = [
  "chrono 0.4.6 (registry+https://github.com/rust-lang/crates.io-index)",
- "error-chain 0.12.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "failure 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)",
+ "failure_derive 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)",
  "prometheus 0.5.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "replicante_data_models 0.2.0",
  "replicante_data_store 0.2.0",

@@ -10,12 +10,11 @@ use failure::SyncFailure;
 #[derive(Debug)]
 pub struct Error(Context<ErrorKind>);
 
-// TODO: re-add once ErrorKind is Copy again.
-//impl Error {
-//    pub fn kind(&self) -> ErrorKind {
-//        *self.0.get_context()
-//    }
-//}
+impl Error {
+    pub fn kind(&self) -> &ErrorKind {
+        self.0.get_context()
+    }
+}
 
 impl Fail for Error {
     fn cause(&self) -> Option<&Fail> {
@@ -59,14 +58,12 @@ impl From<::replicante_data_store::Error> for Error {
 
 impl From<::replicante_streams_events::Error> for Error {
     fn from(error: ::replicante_streams_events::Error) -> Error {
-        ErrorKind::LegacyStreamEvent(SyncFailure::new(error)).into()
+        ErrorKind::LegacyStreamEvent(error).into()
     }
 }
 
 
 /// Exhaustive list of possible errors emitted by this crate.
-// TODO: re-add once legacy stuff is gone (also can make copy?).
-//#[derive(Clone, Eq, PartialEq, Hash, Debug, Fail)]
 #[derive(Debug, Fail)]
 pub enum ErrorKind {
     // TODO: drop once all uses are removed.
@@ -77,7 +74,8 @@ pub enum ErrorKind {
     LegacyStore(#[cause] SyncFailure<::replicante_data_store::Error>),
 
     #[fail(display = "{}", _0)]
-    LegacyStreamEvent(#[cause] SyncFailure<::replicante_streams_events::Error>),
+    #[deprecated(since = "0.1.0", note = "Event stream was convered to failures")]
+    LegacyStreamEvent(#[cause] ::replicante_streams_events::Error),
 }
 
 

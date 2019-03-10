@@ -49,7 +49,7 @@ impl From<::replicante_data_store::Error> for Error {
 
 impl From<::replicante_streams_events::Error> for Error {
     fn from(error: ::replicante_streams_events::Error) -> Error {
-        ErrorKind::LegacyStreamEvent(SyncFailure::new(error)).into()
+        ErrorKind::LegacyStreamEvent(error).into()
     }
 }
 
@@ -96,7 +96,8 @@ pub enum ErrorKind {
     LegacyStore(#[cause] SyncFailure<::replicante_data_store::Error>),
 
     #[fail(display = "{}", _0)]
-    LegacyStreamEvent(#[cause] SyncFailure<::replicante_streams_events::Error>),
+    #[deprecated(since = "0.1.0", note = "Event stream was convered to failures")]
+    LegacyStreamEvent(#[cause] ::replicante_streams_events::Error),
 
     #[fail(display = "{}", _0)]
     LegacyTracing(#[cause] SyncFailure<::replicante_util_tracing::Error>),

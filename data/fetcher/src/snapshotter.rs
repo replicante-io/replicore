@@ -45,8 +45,7 @@ impl Snapshotter {
                 .with_context(|_| ErrorKind::StoreRead("agent status"))?;
             let event = Event::builder().snapshot().agent(status);
             let code = event.code();
-            self.events.emit(event).map_err(SyncFailure::new)
-                .with_context(|_| ErrorKind::EventEmit(code))?;
+            self.events.emit(event).with_context(|_| ErrorKind::EventEmit(code))?;
         }
         let infos = self.store.cluster_agents_info(self.cluster.clone())
             .map_err(SyncFailure::new).with_context(|_| ErrorKind::StoreRead("agents info"))?;
@@ -55,8 +54,7 @@ impl Snapshotter {
                 .with_context(|_| ErrorKind::StoreRead("agent info"))?;
             let event = Event::builder().snapshot().agent_info(info);
             let code = event.code();
-            self.events.emit(event).map_err(SyncFailure::new)
-                .with_context(|_| ErrorKind::EventEmit(code))?;
+            self.events.emit(event).with_context(|_| ErrorKind::EventEmit(code))?;
         }
         Ok(())
     }
@@ -67,8 +65,7 @@ impl Snapshotter {
         if let Some(discovery) = discovery {
             let event = Event::builder().snapshot().discovery(discovery);
             let code = event.code();
-            self.events.emit(event).map_err(SyncFailure::new)
-                .with_context(|_| ErrorKind::EventEmit(code))?;
+            self.events.emit(event).with_context(|_| ErrorKind::EventEmit(code))?;
         }
         Ok(())
     }
@@ -81,8 +78,7 @@ impl Snapshotter {
                 .with_context(|_| ErrorKind::StoreRead("node"))?;
             let event = Event::builder().snapshot().node(node);
             let code = event.code();
-            self.events.emit(event).map_err(SyncFailure::new)
-                .with_context(|_| ErrorKind::EventEmit(code))?;
+            self.events.emit(event).with_context(|_| ErrorKind::EventEmit(code))?;
         }
         Ok(())
     }
@@ -95,8 +91,7 @@ impl Snapshotter {
                 .with_context(|_| ErrorKind::StoreRead("shard"))?;
             let event = Event::builder().snapshot().shard(shard);
             let code = event.code();
-            self.events.emit(event).map_err(SyncFailure::new)
-                .with_context(|_| ErrorKind::EventEmit(code))?;
+            self.events.emit(event).with_context(|_| ErrorKind::EventEmit(code))?;
         }
         Ok(())
     }

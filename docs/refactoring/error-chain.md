@@ -29,7 +29,7 @@ Reversing the dependency order gives the migration order.
   1. [x] replicante_agent_discovery
   2. [x] replicante_data_fetcher
   3. [x] replicante_agent_client (+ rearrange metrics code)
-  4. [ ] replicante_streams_events
+  4. [x] replicante_streams_events
   5. [ ] replicante_data_store
 
 ### Agents
@@ -47,6 +47,7 @@ Reversing the dependency order gives the migration order.
 
   1. [ ] Remove any unnecessary `SyncFailure`s
   2. [ ] Always use `failure_info` to log error information
+  3. [ ] Deprecate legacy error variants and start removing them
 
 
 ## Plan

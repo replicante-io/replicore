@@ -63,8 +63,7 @@ impl ShardFetcher {
         if self.shard_changed(&shard, &old) {
             let event = Event::builder().shard().allocation_changed(old, shard.clone());
             let code = event.code();
-            self.events.emit(event).map_err(SyncFailure::new)
-                .with_context(|_| ErrorKind::EventEmit(code))?;
+            self.events.emit(event).with_context(|_| ErrorKind::EventEmit(code))?;
         }
 
         // Persist the model so the latest offset and lag information are available.
@@ -75,8 +74,7 @@ impl ShardFetcher {
     fn process_shard_new(&self, shard: Shard) -> Result<()> {
         let event = Event::builder().shard().shard_allocation_new(shard.clone());
         let code = event.code();
-        self.events.emit(event).map_err(SyncFailure::new)
-            .with_context(|_| ErrorKind::EventEmit(code))?;
+        self.events.emit(event).with_context(|_| ErrorKind::EventEmit(code))?;
         self.store.persist_shard(shard).map_err(SyncFailure::new)
             .with_context(|_| ErrorKind::StoreWrite("new shard")).map_err(Error::from)
     }

@@ -1,5 +1,6 @@
 ## 0.2.1 - Project improvements
 - Replace `error-chain` with `failure`.
+- Add milestones list to roadmap page.
 - Automate docker-based dev setup.
 - Standardise logging across core and agents.
 - Pre-built binaries?

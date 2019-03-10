@@ -60,8 +60,7 @@ impl AgentFetcher {
         if agent.status != old.status {
             let event = Event::builder().agent().transition(old, agent.clone());
             let code = event.code();
-            self.events.emit(event).map_err(SyncFailure::new)
-                .with_context(|_| ErrorKind::EventEmit(code))?;
+            self.events.emit(event).with_context(|_| ErrorKind::EventEmit(code))?;
         }
         self.store.persist_agent(agent).map_err(SyncFailure::new)
             .with_context(|_| ErrorKind::StoreWrite("agent update")).map_err(Error::from)
@@ -70,16 +69,14 @@ impl AgentFetcher {
     fn process_agent_new(&self, agent: Agent) -> Result<()> {
         let event = Event::builder().agent().agent_new(agent.cluster.clone(), agent.host.clone());
         let code = event.code();
-        self.events.emit(event).map_err(SyncFailure::new)
-            .with_context(|_| ErrorKind::EventEmit(code))?;
+        self.events.emit(event).with_context(|_| ErrorKind::EventEmit(code))?;
 
         // Emit a synthetic transition to up.
         let before = AgentStatus::AgentDown("Newly discovered agent".into());
         let before = Agent::new(agent.cluster.clone(), agent.host.clone(), before);
         let event = Event::builder().agent().transition(before, agent.clone());
         let code = event.code();
-        self.events.emit(event).map_err(SyncFailure::new)
-            .with_context(|_| ErrorKind::EventEmit(code))?;
+        self.events.emit(event).with_context(|_| ErrorKind::EventEmit(code))?;
 
         self.store.persist_agent(agent).map_err(SyncFailure::new)
             .with_context(|_| ErrorKind::StoreWrite("new agent")).map_err(Error::from)
@@ -91,8 +88,7 @@ impl AgentFetcher {
         }
         let event = Event::builder().agent().info().changed(old, agent.clone());
         let code = event.code();
-        self.events.emit(event).map_err(SyncFailure::new)
-            .with_context(|_| ErrorKind::EventEmit(code))?;
+        self.events.emit(event).with_context(|_| ErrorKind::EventEmit(code))?;
         self.store.persist_agent_info(agent).map_err(SyncFailure::new)
             .with_context(|_| ErrorKind::StoreWrite("agent info update")).map_err(Error::from)
     }
@@ -100,8 +96,7 @@ impl AgentFetcher {
     fn process_agent_info_new(&self, agent: AgentInfo) -> Result<()> {
         let event = Event::builder().agent().info().info_new(agent.clone());
         let code = event.code();
-        self.events.emit(event).map_err(SyncFailure::new)
-            .with_context(|_| ErrorKind::EventEmit(code))?;
+        self.events.emit(event).with_context(|_| ErrorKind::EventEmit(code))?;
         self.store.persist_agent_info(agent).map_err(SyncFailure::new)
             .with_context(|_| ErrorKind::StoreWrite("new agent info")).map_err(Error::from)
     }
