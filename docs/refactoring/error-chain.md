@@ -1,4 +1,10 @@
-# Task
+# Error Chain deprecation
+Status: **ONGOING**
+Reason: Access to new featues, keep up with community
+Bloking something: YES (sentry integration, better error reporting)
+
+
+## Task
 Remove all uses of the `error-chain` crate in favour of the `failure` crate.
 
 Requirements:
@@ -43,7 +49,7 @@ Reversing the dependency order gives the migration order.
   2. [ ] Always use `failure_info` to log error information
 
 
-## MVP Plan
+## Plan
 These steps are repeased for each create that needs to be migrated:
 
   1. Remove `error-chain` from Cargo.toml file and `extern crate`.
@@ -63,23 +69,3 @@ REVIEW THIS IF/WHEN NEEDED.
   * Convert an `error-chain` into a chain of `Base(String) | Chain(String, Box<Self>)`.
   * Convert the full chain into a string.
   * Convert the full chain into a string.
-
-
-## Improving errors
-There are a couple of issues with the way errors are in replicante:
-
-  * Nested error are too lengthty to log.
-  * Top errors are often too generic.
-
-Improvements are needed overall but are a large task so maybe delay to later?
-
-
-### Reporting
-The main problem with reporting is the full context is too long to spew on the screen and only
-one massage is too little: top is too generic, leaf is too specific.
-
-One possible solution:
-
-  * Log already uses `error_message`, `error_cause` and layers.
-  * Print to console the full trace (already done by `format_fail`).
-  * Emit events to sentry for all other cases.
