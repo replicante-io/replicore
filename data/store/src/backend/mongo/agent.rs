@@ -1,5 +1,6 @@
 use bson;
 use bson::Bson;
+use failure::ResultExt;
 
 use mongodb::Client;
 use mongodb::ThreadedClient;
@@ -11,17 +12,11 @@ use replicante_data_models::Agent;
 use replicante_data_models::AgentInfo;
 
 use super::super::super::Cursor;
+use super::super::super::ErrorKind;
 use super::super::super::Result;
-use super::super::super::ResultExt;
 
 use super::constants::COLLECTION_AGENTS;
 use super::constants::COLLECTION_AGENTS_INFO;
-
-use super::constants::FAIL_FIND_AGENT;
-use super::constants::FAIL_FIND_AGENTS;
-use super::constants::FAIL_FIND_AGENT_INFO;
-use super::constants::FAIL_PERSIST_AGENT;
-use super::constants::FAIL_PERSIST_AGENT_INFO;
 
 use super::metrics::MONGODB_OPS_COUNT;
 use super::metrics::MONGODB_OPS_DURATION;
@@ -52,14 +47,14 @@ impl AgentStore {
                 MONGODB_OP_ERRORS_COUNT.with_label_values(&["findOne"]).inc();
                 error
             })
-            .chain_err(|| FAIL_FIND_AGENT)?;
+            .with_context(|_| ErrorKind::MongoDBOperation("findOne"))?;
         timer.observe_duration();
         if agent.is_none() {
             return Ok(None);
         }
         let agent = agent.unwrap();
         let agent = bson::from_bson::<Agent>(bson::Bson::Document(agent))
-            .chain_err(|| FAIL_FIND_AGENT)?;
+            .with_context(|_| ErrorKind::MongoDBBsonDecode)?;
         Ok(Some(agent))
     }
 
@@ -76,14 +71,14 @@ impl AgentStore {
                 MONGODB_OP_ERRORS_COUNT.with_label_values(&["findOne"]).inc();
                 error
             })
-            .chain_err(|| FAIL_FIND_AGENT_INFO)?;
+            .with_context(|_| ErrorKind::MongoDBOperation("findOne"))?;
         timer.observe_duration();
         if agent_info.is_none() {
             return Ok(None);
         }
         let agent_info = agent_info.unwrap();
         let agent_info = bson::from_bson::<AgentInfo>(bson::Bson::Document(agent_info))
-            .chain_err(|| FAIL_FIND_AGENT_INFO)?;
+            .with_context(|_| ErrorKind::MongoDBBsonDecode)?;
         Ok(Some(agent_info))
     }
 
@@ -97,12 +92,12 @@ impl AgentStore {
                 MONGODB_OP_ERRORS_COUNT.with_label_values(&["find"]).inc();
                 error
             })
-            .chain_err(|| FAIL_FIND_AGENTS)?;
+            .with_context(|_| ErrorKind::MongoDBOperation("find"))?;
         timer.observe_duration();
         let iter = cursor.map(|doc| {
-            let doc = doc.chain_err(|| FAIL_FIND_AGENTS)?;
+            let doc = doc.with_context(|_| ErrorKind::MongoDBCursor("find"))?;
             let agent = bson::from_bson::<Agent>(bson::Bson::Document(doc))
-                .chain_err(|| FAIL_FIND_AGENTS)?;
+                .with_context(|_| ErrorKind::MongoDBBsonDecode)?;
             Ok(agent.into())
         });
         Ok(Cursor(Box::new(iter)))
@@ -118,19 +113,19 @@ impl AgentStore {
                 MONGODB_OP_ERRORS_COUNT.with_label_values(&["find"]).inc();
                 error
             })
-            .chain_err(|| FAIL_FIND_AGENTS)?;
+            .with_context(|_| ErrorKind::MongoDBOperation("find"))?;
         timer.observe_duration();
         let iter = cursor.map(|doc| {
-            let doc = doc.chain_err(|| FAIL_FIND_AGENTS)?;
+            let doc = doc.with_context(|_| ErrorKind::MongoDBCursor("find"))?;
             let agent = bson::from_bson::<AgentInfo>(bson::Bson::Document(doc))
-                .chain_err(|| FAIL_FIND_AGENTS)?;
+                .with_context(|_| ErrorKind::MongoDBBsonDecode)?;
             Ok(agent.into())
         });
         Ok(Cursor(Box::new(iter)))
     }
 
     pub fn persist_agent(&self, agent: Agent) -> Result<()> {
-        let replacement = bson::to_bson(&agent).chain_err(|| FAIL_PERSIST_AGENT)?;
+        let replacement = bson::to_bson(&agent).with_context(|_| ErrorKind::MongoDBBsonEncode)?;
         let replacement = match replacement {
             Bson::Document(replacement) => replacement,
             _ => panic!("Agent failed to encode as BSON document")
@@ -149,12 +144,12 @@ impl AgentStore {
                 MONGODB_OP_ERRORS_COUNT.with_label_values(&["replaceOne"]).inc();
                 error
             })
-            .chain_err(|| FAIL_PERSIST_AGENT)?;
+            .with_context(|_| ErrorKind::MongoDBOperation("replaceOne"))?;
         Ok(())
     }
 
     pub fn persist_agent_info(&self, agent: AgentInfo) -> Result<()> {
-        let replacement = bson::to_bson(&agent).chain_err(|| FAIL_PERSIST_AGENT_INFO)?;
+        let replacement = bson::to_bson(&agent).with_context(|_| ErrorKind::MongoDBBsonEncode)?;
         let replacement = match replacement {
             Bson::Document(replacement) => replacement,
             _ => panic!("AgentInfo failed to encode as BSON document")
@@ -173,7 +168,7 @@ impl AgentStore {
                 MONGODB_OP_ERRORS_COUNT.with_label_values(&["replaceOne"]).inc();
                 error
             })
-            .chain_err(|| FAIL_PERSIST_AGENT_INFO)?;
+            .with_context(|_| ErrorKind::MongoDBOperation("replaceOne"))?;
         Ok(())
     }
 

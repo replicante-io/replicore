@@ -1,3 +1,5 @@
+use failure::ResultExt;
+
 use mongodb::Client;
 use mongodb::ThreadedClient;
 use mongodb::db::ThreadedDatabase;
@@ -17,8 +19,8 @@ use super::super::Cursor;
 use super::super::EventsFilters;
 use super::super::EventsOptions;
 
+use super::super::ErrorKind;
 use super::super::Result;
-use super::super::ResultExt;
 use super::super::ValidationResult;
 use super::super::config::MongoDBConfig;
 use super::super::store::InnerStore;
@@ -39,7 +41,6 @@ pub use self::metrics::register_metrics;
 use self::agent::AgentStore;
 use self::datastore::DatastoreStore;
 use self::cluster::ClusterStore;
-use self::constants::FAIL_CLIENT;
 use self::event::EventStore;
 
 use self::validator::DataValidator;
@@ -157,7 +158,8 @@ impl MongoStore {
     pub fn new(config: MongoDBConfig, logger: Logger) -> Result<MongoStore> {
         info!(logger, "Configuring MongoDB as storage layer");
         let db = config.db.clone();
-        let client = Client::with_uri(&config.uri).chain_err(|| FAIL_CLIENT)?;
+        let client = Client::with_uri(&config.uri)
+            .with_context(|_| ErrorKind::MongoDBConnect(config.uri.clone()))?;
         let agents = AgentStore::new(client.clone(), db.clone());
         let clusters = ClusterStore::new(client.clone(), db.clone(), logger);
         let datastores = DatastoreStore::new(client.clone(), db.clone());
@@ -253,7 +255,7 @@ impl InnerValidator for MongoValidator {
 
     fn version(&self) -> Result<String> {
         let db = self.client.db(&self.db);
-        let version = db.version()?;
+        let version = db.version().with_context(|_| ErrorKind::MongoDBOperation("version"))?;
         let version = format!("MongoDB {}", version);
         Ok(version)
     }
@@ -265,7 +267,8 @@ impl MongoValidator {
     pub fn new(config: MongoDBConfig, logger: Logger, registry: &Registry) -> Result<MongoValidator> {
         info!(logger, "Configuring MongoDB as storage validator");
         let db = config.db.clone();
-        let client = Client::with_uri(&config.uri).chain_err(|| FAIL_CLIENT)?;
+        let client = Client::with_uri(&config.uri)
+            .with_context(|_| ErrorKind::MongoDBConnect(config.uri.clone()))?;
         let data = DataValidator::new(db.clone(), client.clone());
         let index = IndexValidator::new(db.clone(), client.clone());
         let schema = SchemaValidator::new(db.clone(), client.clone());

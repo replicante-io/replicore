@@ -1,10 +1,9 @@
 use std::sync::Arc;
+
 use failure::ResultExt;
-use failure::SyncFailure;
 use slog::Logger;
 
 use replicante_data_models::Event;
-
 use replicante_data_store::EventsFilters;
 use replicante_data_store::EventsOptions;
 use replicante_data_store::Store;
@@ -33,17 +32,16 @@ impl StoreInterface {
 
 impl StreamInterface for StoreInterface {
     fn emit(&self, event: Event) -> Result<()> {
-        self.store.persist_event(event).map_err(SyncFailure::new)
+        self.store.persist_event(event)
             .with_context(|_| ErrorKind::StoreWrite("event")).map_err(Error::from)
     }
 
     fn scan(&self, filters: ScanFilters, options: ScanOptions) -> Result<Iter> {
         let filters = into_store_filters(filters);
         let options = into_store_options(options);
-        let iter = self.store.events(filters, options).map_err(SyncFailure::new)
+        let iter = self.store.events(filters, options)
             .with_context(|_| ErrorKind::StoreRead("events"))?;
         let iter = iter.map(|event| {
-            let event = event.map_err(SyncFailure::new);
             event.with_context(|_| ErrorKind::StoreRead("event")).map_err(Error::from)
         });
         Ok(Iter::new(iter))

@@ -3,7 +3,6 @@ use std::fmt;
 use failure::Backtrace;
 use failure::Context;
 use failure::Fail;
-use failure::SyncFailure;
 
 
 /// Error information returned by functions in case of errors.
@@ -52,7 +51,7 @@ impl From<::failure::Error> for Error {
 
 impl From<::replicante_data_store::Error> for Error {
     fn from(error: ::replicante_data_store::Error) -> Error {
-        ErrorKind::LegacyStore(SyncFailure::new(error)).into()
+        ErrorKind::LegacyStore(error).into()
     }
 }
 
@@ -71,10 +70,11 @@ pub enum ErrorKind {
     Legacy(#[cause] ::failure::Error),
 
     #[fail(display = "{}", _0)]
-    LegacyStore(#[cause] SyncFailure<::replicante_data_store::Error>),
+    #[deprecated(since = "0.1.0", note = "store was convered to failure")]
+    LegacyStore(#[cause] ::replicante_data_store::Error),
 
     #[fail(display = "{}", _0)]
-    #[deprecated(since = "0.1.0", note = "Event stream was convered to failures")]
+    #[deprecated(since = "0.1.0", note = "event stream was convered to failure")]
     LegacyStreamEvent(#[cause] ::replicante_streams_events::Error),
 }
 

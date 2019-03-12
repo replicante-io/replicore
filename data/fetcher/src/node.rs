@@ -1,5 +1,4 @@
 use failure::ResultExt;
-use failure::SyncFailure;
 
 use replicante_agent_client::Client;
 use replicante_data_models::Event;
@@ -37,7 +36,7 @@ impl NodeFetcher {
         let cluster = node.cluster.clone();
         let name = node.name.clone();
         match self.store.node(cluster, name) {
-            Err(error) => Err(error).map_err(SyncFailure::new)
+            Err(error) => Err(error)
                 .with_context(|_| ErrorKind::StoreRead("node")).map_err(Error::from),
             Ok(None) => self.process_node_new(node),
             Ok(Some(old)) => self.process_node_existing(node, old),
@@ -53,7 +52,7 @@ impl NodeFetcher {
         let event = Event::builder().node().changed(old, node.clone());
         let code = event.code();
         self.events.emit(event).with_context(|_| ErrorKind::EventEmit(code))?;
-        self.store.persist_node(node).map_err(SyncFailure::new)
+        self.store.persist_node(node)
             .with_context(|_| ErrorKind::StoreWrite("node update")).map_err(Error::from)
     }
 
@@ -61,7 +60,7 @@ impl NodeFetcher {
         let event = Event::builder().node().node_new(node.clone());
         let code = event.code();
         self.events.emit(event).with_context(|_| ErrorKind::EventEmit(code))?;
-        self.store.persist_node(node).map_err(SyncFailure::new)
+        self.store.persist_node(node)
             .with_context(|_| ErrorKind::StoreWrite("new node")).map_err(Error::from)
     }
 }

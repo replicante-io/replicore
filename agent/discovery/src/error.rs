@@ -50,7 +50,7 @@ pub enum ErrorKind {
     #[fail(display = "I/O Error for '{}'", _0)]
     Io(String),
 
-    #[fail(display = "Invalid YAML read from '{}'", _0)]
+    #[fail(display = "invalid YAML read from '{}'", _0)]
     YamlFile(String),
 }
 

@@ -47,19 +47,19 @@ impl fmt::Display for Error {
 /// Exhaustive list of possible errors emitted by this crate.
 #[derive(Debug, Fail)]
 pub enum ErrorKind {
-    #[fail(display = "Error connecting to agent {}", _0)]
+    #[fail(display = "error connecting to agent {}", _0)]
     AgentConnect(String),
 
-    #[fail(display = "Error fetching {} from agent {}", _0, _1)]
+    #[fail(display = "error fetching {} from agent {}", _0, _1)]
     AgentRead(&'static str, String),
 
-    #[fail(display = "Error emitting {} event", _0)]
+    #[fail(display = "error emitting {} event", _0)]
     EventEmit(&'static str),
 
-    #[fail(display = "Error fetching {} from the store", _0)]
+    #[fail(display = "error fetching {} from the store", _0)]
     StoreRead(&'static str),
 
-    #[fail(display = "Error persisting {} to the store", _0)]
+    #[fail(display = "error persisting {} to the store", _0)]
     StoreWrite(&'static str),
 }
 

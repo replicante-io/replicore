@@ -30,7 +30,7 @@ Reversing the dependency order gives the migration order.
   2. [x] replicante_data_fetcher
   3. [x] replicante_agent_client (+ rearrange metrics code)
   4. [x] replicante_streams_events
-  5. [ ] replicante_data_store
+  5. [x] replicante_data_store
 
 ### Agents
 

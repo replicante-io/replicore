@@ -13,6 +13,7 @@ use super::super::super::Cursor;
 use super::super::super::EventsFilters;
 use super::super::super::EventsOptions;
 
+use super::super::super::ErrorKind;
 use super::super::super::Result;
 use super::super::super::store::InnerStore;
 
@@ -43,11 +44,11 @@ impl InnerStore for MockStore {
     }
 
     fn cluster_agents(&self, _cluster: String) -> Result<Cursor<Agent>> {
-        Err("Not yet implemented".into())
+        Err(ErrorKind::MockNotYetImplemented("cluster agents").into())
     }
 
     fn cluster_agents_info(&self, _cluster: String) -> Result<Cursor<AgentInfo>> {
-        Err("Not yet implemented".into())
+        Err(ErrorKind::MockNotYetImplemented("cluster agents info").into())
     }
 
     fn cluster_discovery(&self, cluster: String) -> Result<Option<ClusterDiscovery>> {
@@ -63,11 +64,11 @@ impl InnerStore for MockStore {
     }
 
     fn cluster_nodes(&self, _cluster: String) -> Result<Cursor<Node>> {
-        Err("Not yet implemented".into())
+        Err(ErrorKind::MockNotYetImplemented("cluster nodes").into())
     }
 
     fn cluster_shards(&self, _cluster: String) -> Result<Cursor<Shard>> {
-        Err("Not yet implemented".into())
+        Err(ErrorKind::MockNotYetImplemented("cluster shards").into())
     }
 
     fn events(&self, _filters: EventsFilters, _options: EventsOptions) -> Result<Cursor<Event>> {

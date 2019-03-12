@@ -1,7 +1,6 @@
-use failure::ResultExt;
-use failure::SyncFailure;
-
 use std::collections::HashSet;
+
+use failure::ResultExt;
 
 use replicante_data_models::ClusterMeta;
 use replicante_data_store::Store;
@@ -55,7 +54,7 @@ impl MetaFetcher {
     }
 
     pub fn persist_meta(&self, meta: ClusterMeta) -> Result<()> {
-        self.store.persist_cluster_meta(meta).map_err(SyncFailure::new)
+        self.store.persist_cluster_meta(meta)
             .with_context(|_| ErrorKind::StoreWrite("cluster metadata update"))
             .map_err(Error::from)
     }

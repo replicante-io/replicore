@@ -47,10 +47,10 @@ impl fmt::Display for Error {
 /// Exhaustive list of possible errors emitted by this crate.
 #[derive(Debug, Fail)]
 pub enum ErrorKind {
-    #[fail(display = "Unable to decode JSON data")]
+    #[fail(display = "unable to decode JSON data")]
     JsonDecode,
 
-    #[fail(display = "Remote error: {}", _0)]
+    #[fail(display = "remote error: {}", _0)]
     Remote(String),
 
     #[fail(display = "{} transport error", _0)]

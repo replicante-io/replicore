@@ -8,10 +8,10 @@ use prometheus::Registry;
 
 use replicante::Config;
 use replicante_data_store::Cursor;
-use replicante_data_store::Error as StoreError;
 use replicante_data_store::ErrorKind as StoreErrorKind;
 use replicante_data_store::ValidationResult;
 use replicante_data_store::Validator;
+use replicante_util_failure::format_fail;
 
 use super::super::super::ErrorKind;
 use super::super::super::Interfaces;
@@ -153,12 +153,15 @@ fn scan_collection<Model: ::std::fmt::Debug>(
     let mut tracker = interfaces.progress(format!("Scanned more {} documents", collection));
     for item in cursor {
         match item {
-            Err(StoreError(StoreErrorKind::UnableToParseModel(id, msg), _)) => {
-                outcomes.error(Error::UnableToParseModel(collection.to_string(), id, msg));
-            },
-            Err(error) => {
-                let error = error.to_string();
-                outcomes.error(Error::GenericError(error));
+            Err(error) => match error.kind() {
+                &StoreErrorKind::UnableToParseModel(ref id, ref msg) =>
+                    outcomes.error(Error::UnableToParseModel(
+                        collection.to_string(), id.to_string(), msg.to_string()
+                    )),
+                _ => {
+                    let error = format_fail(&error);
+                    outcomes.error(Error::GenericError(error));
+                }
             },
             Ok(_) => (),
         };

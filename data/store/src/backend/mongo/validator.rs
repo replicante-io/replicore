@@ -4,8 +4,8 @@ use std::collections::HashSet;
 use bson;
 use bson::Bson;
 use bson::Document;
-use error_chain::ChainedError;
 
+use failure::ResultExt;
 use mongodb::Client;
 use mongodb::ThreadedClient;
 use mongodb::coll::options::FindOptions;
@@ -19,13 +19,13 @@ use replicante_data_models::ClusterDiscovery;
 use replicante_data_models::Event;
 use replicante_data_models::Node;
 use replicante_data_models::Shard;
+use replicante_util_failure::format_fail;
 
 use super::super::super::Cursor;
 use super::super::super::Error;
 use super::super::super::ErrorKind;
 
 use super::Result;
-use super::ResultExt;
 use super::ValidationResult;
 
 use super::constants::COLLECTION_AGENTS;
@@ -215,10 +215,13 @@ impl DataValidator {
         let collection = db.collection(collection);
         MONGODB_OPS_COUNT.with_label_values(&["count"]).inc();
         let _timer = MONGODB_OPS_DURATION.with_label_values(&["count"]).start_timer();
-        collection.count(None, None).map(|count| count as u64).map_err(|error| {
-            MONGODB_OP_ERRORS_COUNT.with_label_values(&["count"]).inc();
-            error
-        }).chain_err(|| "Failed to count agents info")
+        collection.count(None, None).map(|count| count as u64)
+            .map_err(|error| {
+                MONGODB_OP_ERRORS_COUNT.with_label_values(&["count"]).inc();
+                error
+            })
+            .with_context(|_| ErrorKind::MongoDBOperation("count"))
+            .map_err(Error::from)
     }
 
     /// Generic method to scan items in a collection.
@@ -235,9 +238,10 @@ impl DataValidator {
         let cursor = collection.find(None, Some(options)).map_err(|error| {
             MONGODB_OP_ERRORS_COUNT.with_label_values(&["find"]).inc();
             error
-        })?;
+        }).with_context(|_| ErrorKind::MongoDBOperation("find"))?;
         let cursor = cursor.map(|item| match item {
-            Err(error) => Err(error.into()),
+            Err(error) => Err(error)
+                .with_context(|_| ErrorKind::MongoDBCursor("find")).map_err(Error::from),
             Ok(item) => {
                 let id = item.get_object_id("_id")
                     .map(|id| id.to_hex())
@@ -245,8 +249,7 @@ impl DataValidator {
                 match bson::from_bson::<Model>(bson::Bson::Document(item)) {
                     Ok(item) => Ok(item),
                     Err(error) => {
-                        let error: Error = error.into();
-                        let error = error.display_chain().to_string();
+                        let error = format_fail(&error);
                         Err(ErrorKind::UnableToParseModel(id, error).into())
                     }
                 }
@@ -347,9 +350,10 @@ impl IndexValidator {
         let cursor = collection.list_indexes().map_err(|error| {
             MONGODB_OP_ERRORS_COUNT.with_label_values(&["listIndexes"]).inc();
             error
-        })?;
+        }).with_context(|_| ErrorKind::MongoDBOperation("listIndexes"))?;
         for index in cursor {
-            let index = IndexInfo::parse(&(index?))?;
+            let index = index.with_context(|_| ErrorKind::MongoDBCursor("listIndexes"))?;
+            let index = IndexInfo::parse(&index)?;
             indexes.insert(index);
         }
         Ok(indexes)
@@ -372,8 +376,7 @@ impl SchemaValidator {
     ///
     /// Also looks to see if the `events` collection is capped or TTL indexed.
     pub fn schema(&self) -> Result<Vec<ValidationResult>> {
-        let collections = self.collections()
-            .chain_err(|| "Failed to list collections")?;
+        let collections = self.collections()?;
         let mut results = Vec::new();
 
         // Check all needed collections exist and are writable.
@@ -408,7 +411,7 @@ impl SchemaValidator {
             let capped = collection.capped;
             match self.has_ttl_index(COLLECTION_EVENTS) {
                 Err(error) => {
-                    let error = error.display_chain().to_string();
+                    let error = format_fail(&error);
                     results.push(ValidationResult::result(
                         COLLECTION_EVENTS, format!("failed to check indexes: {}", error),
                         GROUP_STORE_ERROR
@@ -440,9 +443,10 @@ impl SchemaValidator {
         let cursor = db.list_collections(None).map_err(|error| {
             MONGODB_OP_ERRORS_COUNT.with_label_values(&["listCollections"]).inc();
             error
-        })?;
+        }).with_context(|_| ErrorKind::MongoDBOperation("listCollections"))?;
         for collection in cursor {
-            let collection = collection?;
+            let collection = collection
+                .with_context(|_| ErrorKind::MongoDBCursor("listCollections"))?;
             let name = collection
                 .get_str("name").expect("Unable to determine collection name")
                 .into();
@@ -486,9 +490,10 @@ impl SchemaValidator {
         let cursor = collection.list_indexes().map_err(|error| {
             MONGODB_OP_ERRORS_COUNT.with_label_values(&["listIndexes"]).inc();
             error
-        })?;
+        }).with_context(|_| ErrorKind::MongoDBOperation("listIndexes"))?;
         for index in cursor {
-            indexes.push(index?);
+            let index = index.with_context(|_| ErrorKind::MongoDBCursor("listIndexes"))?;
+            indexes.push(index);
         }
         Ok(indexes)
     }

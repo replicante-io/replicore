@@ -1,5 +1,6 @@
 use bson;
 use bson::Bson;
+use failure::ResultExt;
 
 use mongodb::Client;
 use mongodb::ThreadedClient;
@@ -14,20 +15,12 @@ use slog::Logger;
 use replicante_data_models::ClusterDiscovery;
 use replicante_data_models::ClusterMeta;
 
+use super::super::super::ErrorKind;
 use super::super::super::Result;
-use super::super::super::ResultExt;
 
 use super::constants::COLLECTION_CLUSTER_META;
 use super::constants::COLLECTION_DISCOVERIES;
 
-use super::constants::FAIL_FIND_CLUSTERS;
-use super::constants::FAIL_FIND_CLUSTER_DISCOVERY;
-use super::constants::FAIL_FIND_CLUSTER_META;
-
-use super::constants::FAIL_PERSIST_CLUSTER_DISCOVERY;
-use super::constants::FAIL_PERSIST_CLUSTER_META;
-
-use super::constants::FAIL_TOP_CLUSTERS;
 use super::constants::TOP_CLUSTERS_LIMIT;
 
 use super::metrics::MONGODB_OPS_COUNT;
@@ -57,14 +50,14 @@ impl ClusterStore {
                 MONGODB_OP_ERRORS_COUNT.with_label_values(&["findOne"]).inc();
                 error
             })
-            .chain_err(|| FAIL_FIND_CLUSTER_DISCOVERY)?;
+            .with_context(|_| ErrorKind::MongoDBOperation("findOne"))?;
         timer.observe_duration();
         if discovery.is_none() {
             return Ok(None);
         }
         let discovery = discovery.unwrap();
         let discovery = bson::from_bson::<ClusterDiscovery>(bson::Bson::Document(discovery))
-            .chain_err(|| FAIL_FIND_CLUSTER_DISCOVERY)?;
+            .with_context(|_| ErrorKind::MongoDBBsonDecode)?;
         Ok(Some(discovery))
     }
 
@@ -78,14 +71,14 @@ impl ClusterStore {
                 MONGODB_OP_ERRORS_COUNT.with_label_values(&["findOne"]).inc();
                 error
             })
-            .chain_err(|| FAIL_FIND_CLUSTER_META)?;
+            .with_context(|_| ErrorKind::MongoDBOperation("findOne"))?;
         timer.observe_duration();
         if meta.is_none() {
             return Ok(None);
         }
         let meta = meta.unwrap();
         let meta = bson::from_bson::<ClusterMeta>(bson::Bson::Document(meta))
-            .chain_err(|| FAIL_FIND_CLUSTER_META)?;
+            .with_context(|_| ErrorKind::MongoDBBsonDecode)?;
         Ok(Some(meta))
     }
 
@@ -103,13 +96,12 @@ impl ClusterStore {
                 MONGODB_OP_ERRORS_COUNT.with_label_values(&["find"]).inc();
                 error
             })
-            .chain_err(|| FAIL_FIND_CLUSTERS)?;
-
+            .with_context(|_| ErrorKind::MongoDBOperation("find"))?;
         let mut clusters = Vec::new();
         for doc in cursor {
-            let doc = doc.chain_err(|| FAIL_FIND_CLUSTERS)?;
+            let doc = doc.with_context(|_| ErrorKind::MongoDBCursor("find"))?;
             let cluster = bson::from_bson::<ClusterMeta>(bson::Bson::Document(doc))
-                .chain_err(|| FAIL_FIND_CLUSTERS)?;
+                .with_context(|_| ErrorKind::MongoDBBsonDecode)?;
             clusters.push(cluster);
         }
         Ok(clusters)
@@ -131,20 +123,19 @@ impl ClusterStore {
                 MONGODB_OP_ERRORS_COUNT.with_label_values(&["find"]).inc();
                 error
             })
-            .chain_err(|| FAIL_TOP_CLUSTERS)?;
-
+            .with_context(|_| ErrorKind::MongoDBOperation("find"))?;
         let mut clusters = Vec::new();
         for doc in cursor {
-            let doc = doc.chain_err(|| FAIL_TOP_CLUSTERS)?;
+            let doc = doc.with_context(|_| ErrorKind::MongoDBCursor("find"))?;
             let cluster = bson::from_bson::<ClusterMeta>(bson::Bson::Document(doc))
-                .chain_err(|| FAIL_TOP_CLUSTERS)?;
+                .with_context(|_| ErrorKind::MongoDBBsonDecode)?;
             clusters.push(cluster);
         }
         Ok(clusters)
     }
 
     pub fn persist_cluster_meta(&self, meta: ClusterMeta) -> Result<()> {
-        let replacement = bson::to_bson(&meta).chain_err(|| FAIL_PERSIST_CLUSTER_META)?;
+        let replacement = bson::to_bson(&meta).with_context(|_| ErrorKind::MongoDBBsonEncode)?;
         let replacement = match replacement {
             Bson::Document(replacement) => replacement,
             _ => panic!("ClusterMeta failed to encode as BSON document")
@@ -160,12 +151,12 @@ impl ClusterStore {
                 MONGODB_OP_ERRORS_COUNT.with_label_values(&["replaceOne"]).inc();
                 error
             })
-            .chain_err(|| FAIL_PERSIST_CLUSTER_META)?;
+            .with_context(|_| ErrorKind::MongoDBOperation("replaceOne"))?;
         Ok(())
     }
 
     pub fn persist_discovery(&self, cluster: ClusterDiscovery) -> Result<()> {
-        let replacement = bson::to_bson(&cluster).chain_err(|| FAIL_PERSIST_CLUSTER_DISCOVERY)?;
+        let replacement = bson::to_bson(&cluster).with_context(|_| ErrorKind::MongoDBBsonEncode)?;
         let replacement = match replacement {
             Bson::Document(replacement) => replacement,
             _ => panic!("ClusterDiscovery failed to encode as BSON document")
@@ -181,7 +172,7 @@ impl ClusterStore {
                 MONGODB_OP_ERRORS_COUNT.with_label_values(&["replaceOne"]).inc();
                 error
             })
-            .chain_err(|| FAIL_PERSIST_CLUSTER_DISCOVERY)?;
+            .with_context(|_| ErrorKind::MongoDBOperation("replaceOne"))?;
         timer.observe_duration();
         debug!(
             self.logger, "Persisted cluster discovery";

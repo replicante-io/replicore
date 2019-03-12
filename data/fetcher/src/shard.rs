@@ -1,5 +1,4 @@
 use failure::ResultExt;
-use failure::SyncFailure;
 
 use replicante_agent_client::Client;
 use replicante_data_models::Event;
@@ -45,7 +44,7 @@ impl ShardFetcher {
         let node = shard.node.clone();
         let id = shard.id.clone();
         match self.store.shard(cluster.clone(), node.clone(), id.clone()) {
-            Err(error) => Err(error).map_err(SyncFailure::new)
+            Err(error) => Err(error)
                 .with_context(|_| ErrorKind::StoreRead("shard"))
                 .map_err(Error::from),
             Ok(None) => self.process_shard_new(shard),
@@ -67,7 +66,7 @@ impl ShardFetcher {
         }
 
         // Persist the model so the latest offset and lag information are available.
-        self.store.persist_shard(shard).map_err(SyncFailure::new)
+        self.store.persist_shard(shard)
             .with_context(|_| ErrorKind::StoreWrite("shard update")).map_err(Error::from)
     }
 
@@ -75,7 +74,7 @@ impl ShardFetcher {
         let event = Event::builder().shard().shard_allocation_new(shard.clone());
         let code = event.code();
         self.events.emit(event).with_context(|_| ErrorKind::EventEmit(code))?;
-        self.store.persist_shard(shard).map_err(SyncFailure::new)
+        self.store.persist_shard(shard)
             .with_context(|_| ErrorKind::StoreWrite("new shard")).map_err(Error::from)
     }
 

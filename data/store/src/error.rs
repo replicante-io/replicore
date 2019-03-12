@@ -47,14 +47,26 @@ impl fmt::Display for Error {
 /// Exhaustive list of possible errors emitted by this crate.
 #[derive(Debug, Fail)]
 pub enum ErrorKind {
-    #[fail(display = "mock {} not yet implmemented", _0)]
+    #[fail(display = "mock {} not yet implemented", _0)]
     MockNotYetImplemented(&'static str),
 
-    #[fail(display = "error fetching {} from the store", _0)]
-    StoreRead(&'static str),
+    #[fail(display = "failed to connect to MongoDB URI '{}'", _0)]
+    MongoDBConnect(String),
 
-    #[fail(display = "error persisting {} to the store", _0)]
-    StoreWrite(&'static str),
+    #[fail(display = "failed to read MongoDB cursor for {} operation", _0)]
+    MongoDBCursor(&'static str),
+
+    #[fail(display = "MongoDB BSON decode failed")]
+    MongoDBBsonDecode,
+
+    #[fail(display = "MongoDB BSON encode failed")]
+    MongoDBBsonEncode,
+
+    #[fail(display = "MongoDB {} operation failed", _0)]
+    MongoDBOperation(&'static str),
+
+    #[fail(display = "unable to parse model with id '{}': {}", _0, _1)]
+    UnableToParseModel(String, String),
 }
 
 

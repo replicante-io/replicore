@@ -1,6 +1,7 @@
 use bson;
 use bson::Bson;
 use bson::UtcDateTime;
+use failure::ResultExt;
 
 use mongodb::Client;
 use mongodb::ThreadedClient;
@@ -12,14 +13,12 @@ use replicante_data_models::Event;
 use replicante_data_models::EventPayload;
 
 use super::super::super::Cursor;
+use super::super::super::ErrorKind;
 use super::super::super::Result;
-use super::super::super::ResultExt;
 
 use super::EventsFilters;
 use super::EventsOptions;
 
-use super::constants::FAIL_PERSIST_EVENT;
-use super::constants::FAIL_RECENT_EVENTS;
 use super::constants::COLLECTION_EVENTS;
 
 use super::metrics::MONGODB_OPS_COUNT;
@@ -98,12 +97,12 @@ impl EventStore {
                 MONGODB_OP_ERRORS_COUNT.with_label_values(&["find"]).inc();
                 error
             })
-            .chain_err(|| FAIL_RECENT_EVENTS)?;
+            .with_context(|_| ErrorKind::MongoDBOperation("find"))?;
         timer.observe_duration();
         let iter = cursor.map(|doc| {
-            let doc = doc.chain_err(|| FAIL_RECENT_EVENTS)?;
+            let doc = doc.with_context(|_| ErrorKind::MongoDBCursor("find"))?;
             let event = bson::from_bson::<EventWrapper>(bson::Bson::Document(doc))
-                .chain_err(|| FAIL_RECENT_EVENTS)?;
+                .with_context(|_| ErrorKind::MongoDBBsonDecode)?;
             Ok(event.into())
         });
         Ok(Cursor(Box::new(iter)))
@@ -111,7 +110,7 @@ impl EventStore {
 
     pub fn persist_event(&self, event: Event) -> Result<()> {
         let event: EventWrapper = event.into();
-        let document = bson::to_bson(&event).chain_err(|| FAIL_PERSIST_EVENT)?;
+        let document = bson::to_bson(&event).with_context(|_| ErrorKind::MongoDBBsonEncode)?;
         let document = match document {
             Bson::Document(document) => document,
             _ => panic!("Event failed to encode as BSON document")
@@ -124,7 +123,7 @@ impl EventStore {
                 MONGODB_OP_ERRORS_COUNT.with_label_values(&["insertOne"]).inc();
                 error
             })
-            .chain_err(|| FAIL_PERSIST_EVENT)?;
+            .with_context(|_| ErrorKind::MongoDBOperation("insertOne"))?;
         Ok(())
     }
 

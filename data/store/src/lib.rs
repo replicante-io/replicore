@@ -1,8 +1,8 @@
 #[macro_use]
 extern crate bson;
 extern crate chrono;
-#[macro_use]
-extern crate error_chain;
+extern crate failure;
+extern crate failure_derive;
 #[macro_use]
 extern crate lazy_static;
 extern crate mongodb;
@@ -19,11 +19,12 @@ extern crate slog;
 #[cfg(test)]
 extern crate replicante_agent_models;
 extern crate replicante_data_models;
+extern crate replicante_util_failure;
 
 
 mod backend;
 mod config;
-mod errors;
+mod error;
 mod store;
 mod validator;
 
@@ -33,7 +34,9 @@ mod validator;
 pub use self::backend::mock;
 
 pub use self::config::Config;
-pub use self::errors::*;
+pub use self::error::Error;
+pub use self::error::ErrorKind;
+pub use self::error::Result;
 
 pub use self::store::EventsFilters;
 pub use self::store::EventsOptions;

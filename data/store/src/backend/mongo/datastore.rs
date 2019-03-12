@@ -1,5 +1,6 @@
 use bson;
 use bson::Bson;
+use failure::ResultExt;
 
 use mongodb::Client;
 use mongodb::ThreadedClient;
@@ -11,15 +12,11 @@ use replicante_data_models::Node;
 use replicante_data_models::Shard;
 
 use super::super::super::Cursor;
+use super::super::super::ErrorKind;
 use super::super::super::Result;
-use super::super::super::ResultExt;
 
 use super::constants::COLLECTION_NODES;
 use super::constants::COLLECTION_SHARDS;
-use super::constants::FAIL_FIND_NODE;
-use super::constants::FAIL_FIND_SHARD;
-use super::constants::FAIL_PERSIST_NODE;
-use super::constants::FAIL_PERSIST_SHARD;
 
 use super::metrics::MONGODB_OP_ERRORS_COUNT;
 use super::metrics::MONGODB_OPS_COUNT;
@@ -47,12 +44,12 @@ impl DatastoreStore {
                 MONGODB_OP_ERRORS_COUNT.with_label_values(&["find"]).inc();
                 error
             })
-            .chain_err(|| FAIL_FIND_NODE)?;
+            .with_context(|_| ErrorKind::MongoDBOperation("find"))?;
         timer.observe_duration();
         let iter = cursor.map(|doc| {
-            let doc = doc.chain_err(|| FAIL_FIND_NODE)?;
+            let doc = doc.with_context(|_| ErrorKind::MongoDBCursor("find"))?;
             let node = bson::from_bson::<Node>(bson::Bson::Document(doc))
-                .chain_err(|| FAIL_FIND_NODE)?;
+                .with_context(|_| ErrorKind::MongoDBBsonDecode)?;
             Ok(node.into())
         });
         Ok(Cursor(Box::new(iter)))
@@ -68,12 +65,12 @@ impl DatastoreStore {
                 MONGODB_OP_ERRORS_COUNT.with_label_values(&["find"]).inc();
                 error
             })
-            .chain_err(|| FAIL_FIND_SHARD)?;
+            .with_context(|_| ErrorKind::MongoDBOperation("find"))?;
         timer.observe_duration();
         let iter = cursor.map(|doc| {
-            let doc = doc.chain_err(|| FAIL_FIND_SHARD)?;
+            let doc = doc.with_context(|_| ErrorKind::MongoDBCursor("find"))?;
             let shard = bson::from_bson::<Shard>(bson::Bson::Document(doc))
-                .chain_err(|| FAIL_FIND_SHARD)?;
+                .with_context(|_| ErrorKind::MongoDBBsonDecode)?;
             Ok(shard.into())
         });
         Ok(Cursor(Box::new(iter)))
@@ -92,19 +89,19 @@ impl DatastoreStore {
                 MONGODB_OP_ERRORS_COUNT.with_label_values(&["findOne"]).inc();
                 error
             })
-            .chain_err(|| FAIL_FIND_NODE)?;
+            .with_context(|_| ErrorKind::MongoDBOperation("findOne"))?;
         timer.observe_duration();
         if node.is_none() {
             return Ok(None);
         }
         let node = node.unwrap();
         let node = bson::from_bson::<Node>(bson::Bson::Document(node))
-            .chain_err(|| FAIL_FIND_NODE)?;
+            .with_context(|_| ErrorKind::MongoDBBsonDecode)?;
         Ok(Some(node))
     }
 
     pub fn persist_node(&self, node: Node) -> Result<()> {
-        let replacement = bson::to_bson(&node).chain_err(|| FAIL_PERSIST_NODE)?;
+        let replacement = bson::to_bson(&node).with_context(|_| ErrorKind::MongoDBBsonEncode)?;
         let replacement = match replacement {
             Bson::Document(replacement) => replacement,
             _ => panic!("Node failed to encode as BSON document")
@@ -123,12 +120,12 @@ impl DatastoreStore {
                 MONGODB_OP_ERRORS_COUNT.with_label_values(&["replaceOne"]).inc();
                 error
             })
-            .chain_err(|| FAIL_PERSIST_NODE)?;
+            .with_context(|_| ErrorKind::MongoDBOperation("replaceOne"))?;
         Ok(())
     }
 
     pub fn persist_shard(&self, shard: Shard) -> Result<()> {
-        let replacement = bson::to_bson(&shard).chain_err(|| FAIL_PERSIST_SHARD)?;
+        let replacement = bson::to_bson(&shard).with_context(|_| ErrorKind::MongoDBBsonEncode)?;
         let replacement = match replacement {
             Bson::Document(replacement) => replacement,
             _ => panic!("Shard failed to encode as BSON document")
@@ -148,7 +145,7 @@ impl DatastoreStore {
                 MONGODB_OP_ERRORS_COUNT.with_label_values(&["replaceOne"]).inc();
                 error
             })
-            .chain_err(|| FAIL_PERSIST_SHARD)?;
+            .with_context(|_| ErrorKind::MongoDBOperation("replaceOne"))?;
         Ok(())
     }
 
@@ -166,14 +163,14 @@ impl DatastoreStore {
                 MONGODB_OP_ERRORS_COUNT.with_label_values(&["findOne"]).inc();
                 error
             })
-            .chain_err(|| FAIL_FIND_SHARD)?;
+            .with_context(|_| ErrorKind::MongoDBOperation("findOne"))?;
         timer.observe_duration();
         if shard.is_none() {
             return Ok(None);
         }
         let shard = shard.unwrap();
         let shard = bson::from_bson::<Shard>(bson::Bson::Document(shard))
-            .chain_err(|| FAIL_FIND_SHARD)?;
+            .with_context(|_| ErrorKind::MongoDBBsonDecode)?;
         Ok(Some(shard))
     }
 
