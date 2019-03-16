@@ -34,20 +34,20 @@ Reversing the dependency order gives the migration order.
 
 ### Agents
 
-  1. [ ] replicante_agent_mongodb
-  2. [ ] replicante_agent_zookeeper
-  3. [ ] replicante_agent_kafka
-  4. [ ] replicante_agent
+  1. [x] replicante_agent
+  2. [x] replicante_agent_mongodb
+  3. [x] replicante_agent_zookeeper
+  4. [x] replicante_agent_kafka
 
 ### Common
 
-  1. [ ] replicante_util_tracing
+  1. [x] replicante_util_tracing
 
 ### Finally
 
-  1. [ ] Remove any unnecessary `SyncFailure`s
-  2. [ ] Always use `failure_info` to log error information
-  3. [ ] Deprecate legacy error variants and start removing them
+  1. [x] Always use `failure_info` to log error information
+  2. [ ] Deprecate legacy error variants and start removing them
+  3. [ ] Remove any unnecessary `SyncFailure`s
 
 
 ## Plan

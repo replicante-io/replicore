@@ -23,6 +23,22 @@ impl Error {
     }
 }
 
+impl Fail for Error {
+    fn cause(&self) -> Option<&Fail> {
+        self.0.cause()
+    }
+
+    fn backtrace(&self) -> Option<&Backtrace> {
+        self.0.backtrace()
+    }
+}
+
+impl fmt::Display for Error {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        fmt::Display::fmt(&self.0, f)
+    }
+}
+
 impl From<Context<ErrorKind>> for Error {
     fn from(inner: Context<ErrorKind>) -> Error {
         Error(inner)
@@ -53,28 +69,6 @@ impl From<::replicante_streams_events::Error> for Error {
     }
 }
 
-impl From<::replicante_util_tracing::Error> for Error {
-    fn from(error: ::replicante_util_tracing::Error) -> Error {
-        ErrorKind::LegacyTracing(SyncFailure::new(error)).into()
-    }
-}
-
-impl Fail for Error {
-    fn cause(&self) -> Option<&Fail> {
-        self.0.cause()
-    }
-
-    fn backtrace(&self) -> Option<&Backtrace> {
-        self.0.backtrace()
-    }
-}
-
-impl fmt::Display for Error {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        fmt::Display::fmt(&self.0, f)
-    }
-}
-
 
 /// Exhaustive list of possible errors emitted by this crate.
 #[derive(Debug, Fail)]
@@ -99,9 +93,6 @@ pub enum ErrorKind {
     #[fail(display = "{}", _0)]
     #[deprecated(since = "0.1.0", note = "event stream was convered to failure")]
     LegacyStreamEvent(#[cause] ::replicante_streams_events::Error),
-
-    #[fail(display = "{}", _0)]
-    LegacyTracing(#[cause] SyncFailure<::replicante_util_tracing::Error>),
 }
 
 
@@ -120,7 +111,7 @@ impl From<Error> for IronError {
         let wrapper = JsonErrorWrapper {
             cause: error.cause().map(|cause| cause.find_root_cause().to_string()),
             error: error.to_string(),
-            layer: Fail::iter_chain(&error).count(),
+            layers: Fail::iter_chain(&error).count(),
             trace,
         };
         let mut response = Response::with((
@@ -167,7 +158,7 @@ impl ::iron::Error for ErrorWrapper {
 struct JsonErrorWrapper {
     cause: Option<String>,
     error: String,
-    layer: usize,
+    layers: usize,
     trace: Option<String>,
 }
 
@@ -210,6 +201,6 @@ mod tests {
 
         let result_body = response::extract_body_to_bytes(response);
         let result_body = String::from_utf8(result_body).unwrap();
-        assert_eq!(result_body, r#"{"cause":"test","error":"failures","layer":3,"trace":null}"#);
+        assert_eq!(result_body, r#"{"cause":"test","error":"failures","layers":3,"trace":null}"#);
     }
 }

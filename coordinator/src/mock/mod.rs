@@ -128,7 +128,6 @@ impl ElectionBehaviour for MockElection {
     }
 
     fn watch(&self) -> ElectionWatch {
-        // TODO
         panic!("TODO: MockElection::watch");
     }
 }

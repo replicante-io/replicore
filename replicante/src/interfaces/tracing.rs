@@ -1,12 +1,13 @@
+use failure::ResultExt;
 use opentracingrust::Tracer;
 use opentracingrust::utils::ReporterThread;
-
 use slog::Logger;
 
 use replicante_util_tracing::Config;
 use replicante_util_tracing::TracerExtra;
 use replicante_util_tracing::tracer;
 
+use super::ErrorKind;
 use super::Result;
 
 
@@ -24,7 +25,8 @@ impl Tracing {
     /// Configuring the tracer usually also start the
     /// reporting thread but this is backend dependent.
     pub fn new(config: Config, logger: Logger) -> Result<Tracing> {
-        let (tracer, extra) = tracer(config, logger)?;
+        let (tracer, extra) = tracer(config, logger)
+            .with_context(|_| ErrorKind::InterfaceInit("tracing"))?;
         let reporter = match extra {
             TracerExtra::Nothing => None,
             TracerExtra::ReporterThread(reporter) => Some(reporter),
