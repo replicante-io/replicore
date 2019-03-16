@@ -1,7 +1,7 @@
 {
   "connections": {
     "replistore": {
-      "connection_string": "mongodb://mongo:27017/replicante",
+      "connection_string": "mongodb://mongo:27017/replistore",
       "connection_options": {}
     }
   }

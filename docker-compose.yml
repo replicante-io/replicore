@@ -7,12 +7,13 @@ version: '3.5'
 services:
   kafka:
     environment:
+      JMX_PORT: 9999
       KAFKA_BROKER_ID: 1
       KAFKA_LISTENERS: PLAINTEXT://172.128.0.30:9092
       KAFKA_LOG_FLUSH_SCHEDULER_INTERVAL_MS: 60000
+      KAFKA_NUM_PARTITIONS: 128
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_ZOOKEEPER_CONNECT: 'zookeeper:2181/kafka'
-      JMX_PORT: 9999
     hostname: kafka
     image: wurstmeister/kafka:2.11-2.0.0
     links:
@@ -42,6 +43,10 @@ services:
       - type: volume
         source: mongo
         target: '/data/db'
+      - type: bind
+        source: './devtools/provisioning/mongo'
+        target: '/replicore'
+        read_only: true
 
   zookeeper:
     environment:

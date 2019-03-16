@@ -35,6 +35,6 @@ impl Default for MongoDBConfig {
 }
 
 impl MongoDBConfig {
-    fn default_db() -> String { String::from("replicante") }
+    fn default_db() -> String { String::from("replicore") }
     fn default_uri() -> String { String::from("mongodb://localhost:27017/") }
 }

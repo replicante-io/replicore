@@ -296,7 +296,7 @@ storage:
     #
     # To change this option you will need to "Update by rebuild".
     # See the documentation for more details on this process.
-    db: replicante  # (recommended)
+    db: replicore  # (recommended)
 
     # URI of the MongoDB Replica Set or sharded cluster to connect to.
     uri: mongodb://localhost:27017/

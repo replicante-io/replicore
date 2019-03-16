@@ -11,33 +11,29 @@ stopped/recreated without loosing all development data.
 These services are:
 
   * [Kafka](https://kafka.apache.org/) 1.0+ for events streaming and task queues.
-  * [MongoDB](https://www.mongodb.com/) 3.4+ for the storage layer.
-  * [Zookeeper](https://zookeeper.apache.org/) 3.4+ for cluster coordination (and for use by kafka).
+  * [MongoDB](https://www.mongodb.com/) 4.0 for the storage layer.
+  * [Zookeeper](https://zookeeper.apache.org/) 3.4 for cluster coordination (and for use by kafka).
 
-The project also comes with tools to inspect the services to see what is in them:
+Additional services to support develoment and debugging are provided as additional
+docker-compose configuration files located under `devtools/`.
+Check them out to see what additional services are available.
 
-  * [adminMongo](https://adminmongo.markmoffat.com/): manage MongoDB store at http://localhost:4321/
-  * [kafka-topics-ui](https://github.com/Landoop/kafka-topics-ui): inspect the content of kafka topics at http://localhost:8001/
-  * [Prometheus](https://prometheus.io/): monitoring server at http://localhost:9090/
-  * [ZooNavigator](https://github.com/elkozmon/zoonavigator): manage Zookeeper at http://localhost:8000/
-
-Extra services that may not be useful for day to day work but may be helpful on occasions
-are prodived by the `docker-compose-exta.yml` docker-compose override file.
-These services are:
-
-  * [Grafana](https://grafana.com/): dashboards and visualisation at http://localhost:3000/
-
+To avoid typing the configuration files you need every times, docker-compose
+provides a `.env` file where the `COMPOSE_FILE` can be set to a list of files.
+This list indicates which services are "active".
+In `.env.example` and in the snippet below the required dependences and monitoring
+tools are active, everything else is optional.
 
 To start and initialise the services:
 ```bash
-$ docker-compose up
-# Use this INSTEAD to also run the extra services:
-# docker-compose -f docker-compose.yml -f docker-compose-extra.yml up
+# Create the .env file (the first time).
+$ cp .env.example .env
 
-# Initialise MongoDB store
-$ docker-compose exec mongo mongo
-> rs.initiate({_id: 'replistore', members: [{_id: 0, host: 'localhost:27017'}]})
-> // Init script as https://github.com/replicante-io/playgrounds/blob/master/images/replicante/indexes.js
+# Start all the services.
+$ docker-compose up
+
+# Initialise dependences.
+$ devtools/initialise.sh
 ```
 
 ### FAQ
