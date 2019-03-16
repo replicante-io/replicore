@@ -65,6 +65,9 @@ pub enum ErrorKind {
     #[fail(display = "could not fetch {} version", _0)]
     FetchVersion(&'static str),
 
+    #[fail(display = "I/O error on file {}", _0)]
+    Io(String),
+
     // TODO: drop once all uses are removed.
     #[fail(display = "{}", _0)]
     #[deprecated(since = "0.2.0", note = "move to specific ErrorKinds")]

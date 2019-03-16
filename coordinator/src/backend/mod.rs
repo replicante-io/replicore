@@ -44,6 +44,9 @@ pub trait BackendAdmin : Send + Sync {
 
     /// Iterate over held non-blocking locks.
     fn non_blocking_locks(&self) -> NonBlockingLocks;
+
+    /// Return softwre and version of the coordinator in use.
+    fn version(&self) -> Result<String>;
 }
 
 

@@ -9,7 +9,7 @@ use super::ErrorKind;
 use super::Result;
 
 
-const FAIL_REQUEST_VERSION: &str = "Failed to request replicante version";
+const FAIL_REQUEST_VERSION: &str = "Failed to fetch replicante version";
 
 
 /// Replicante core HTTP API client.

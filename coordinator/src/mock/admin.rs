@@ -57,6 +57,10 @@ impl BackendAdmin for MockAdmin {
             nblocks,
         })
     }
+
+    fn version(&self) -> Result<String> {
+        Ok("MockAdmin 0.2.0".into())
+    }
 }
 
 

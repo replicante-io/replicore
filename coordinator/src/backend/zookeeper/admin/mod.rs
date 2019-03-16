@@ -98,6 +98,10 @@ impl BackendAdmin for ZookeeperAdmin {
             locks: None,
         })
     }
+
+    fn version(&self) -> Result<String> {
+        Ok("Zookeeper; Version not reported".into())
+    }
 }
 
 

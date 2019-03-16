@@ -65,6 +65,11 @@ impl Admin {
     pub fn non_blocking_locks(&self) -> NonBlockingLocks {
         self.0.non_blocking_locks()
     }
+
+    /// Return softwre and version of the coordinator in use.
+    pub fn version(&self) -> Result<String> {
+        self.0.version()
+    }
 }
 
 

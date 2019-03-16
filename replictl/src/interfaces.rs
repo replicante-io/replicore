@@ -109,10 +109,9 @@ impl Prompt {
     /// Ask the user for confirmation before something potentially harmful is done.
     pub fn confirm_danger(&self, prompt: &str) -> Result<bool> {
         print!("{} [y/N] ", prompt);
-        io::stdout().flush().context(ErrorKind::Legacy(err_msg("standard output I/O error")))?;
+        io::stdout().flush().with_context(|_| ErrorKind::Io("stdout".into()))?;
         let mut reply = String::new();
-        io::stdin().read_line(&mut reply)
-            .context(ErrorKind::Legacy(err_msg("standard output I/O error")))?;
+        io::stdin().read_line(&mut reply).with_context(|_| ErrorKind::Io("stdin".into()))?;
         match reply.trim() {
             "y" => Ok(true),
             "yes" => Ok(true),

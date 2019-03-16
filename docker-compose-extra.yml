@@ -14,7 +14,7 @@ services:
         source: grafana
         target: '/var/lib/grafana'
       - type: bind
-        source: './devtools/grafana/provisioning'
+        source: './devtools/provisioning/grafana'
         target: '/etc/grafana/provisioning'
 
 
