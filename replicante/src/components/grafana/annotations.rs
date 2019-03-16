@@ -143,12 +143,12 @@ impl Handler for Annotations {
         filters.start_from = Some(request.range.from);
         filters.stop_at = Some(request.range.to);
         options.limit = Some(query.limit);
-        let events = self.events.scan(filters, options).map_err(Error::from)
+        let events = self.events.scan(filters, options)
             .context(ErrorKind::Legacy(err_msg("failed to scan event stream")))
             .map_err(Error::from)?;
         let mut annotations: Vec<Annotation> = Vec::new();
         for event in events {
-            let event = event.map_err(Error::from)
+            let event = event
                 .context(ErrorKind::Legacy(err_msg("failed to decode event from stream")))
                 .map_err(Error::from)?;
             let tags = Annotations::tags(&event);

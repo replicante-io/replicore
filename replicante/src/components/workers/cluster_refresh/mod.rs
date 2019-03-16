@@ -132,12 +132,12 @@ impl Handler {
                 return Ok(());
             }
             let event = Event::builder().cluster().changed(current_state, discovery.clone());
-            self.events.emit(event).map_err(Error::from)
+            self.events.emit(event)
                 .context(ErrorKind::Legacy(err_msg(FAIL_PERSIST_DISCOVERY)))
                 .map_err(Error::from)?;
         } else {
             let event = Event::builder().cluster().cluster_new(discovery.clone());
-            self.events.emit(event).map_err(Error::from)
+            self.events.emit(event)
                 .context(ErrorKind::Legacy(err_msg(FAIL_PERSIST_DISCOVERY)))
                 .map_err(Error::from)?;
         }

@@ -91,8 +91,9 @@ pub fn run<'a>(args: &ArgMatches<'a>, interfaces: &Interfaces) -> Result<()> {
 fn store_version(config: &Config, interfaces: &Interfaces) -> Result<String> {
     let logger = interfaces.logger();
     let registry = Registry::new();
-    let store = Validator::new(config.storage.clone(), logger.clone(), &registry)?;
-    let version = store.version()?;
+    let store = Validator::new(config.storage.clone(), logger.clone(), &registry)
+        .with_context(|_| ErrorKind::AdminInit("store"))?;
+    let version = store.version().with_context(|_| ErrorKind::FetchVersion("store"))?;
     Ok(version)
 }
 

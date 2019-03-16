@@ -57,12 +57,12 @@ pub fn events<'a>(args: &ArgMatches<'a>, interfaces: &Interfaces) -> Result<()> 
     let config = args.value_of("config").unwrap();
     let config = Config::from_file(config)
         .context(ErrorKind::Legacy(err_msg("failed to check events")))?;
-    let store = Store::new(config.storage, logger.clone())?;
+    let store = Store::new(config.storage, logger.clone())
+        .with_context(|_| ErrorKind::ClientInit("store"))?;
     let stream = EventsStream::new(config.events.stream, logger.clone(), store);
 
     info!(logger, "Checking events stream ...");
     let cursor = stream.scan(ScanFilters::all(), ScanOptions::default())
-        .map_err(super::super::super::Error::from)
         .context(ErrorKind::Legacy(err_msg("failed to check events")))?;
     let mut tracker = interfaces.progress("Processed more events");
     for event in cursor {

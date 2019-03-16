@@ -27,7 +27,6 @@ pub const COMMAND: &str = "store";
 const COMMAND_DATA: &str = "data";
 const COMMAND_SCHEMA: &str = "schema";
 const FAILED_CHECK_SCHEMA : &str = "failed to check store schema";
-const FAILED_CHECK_DATA : &str = "failed to check store data";
 
 const MODEL_AGENT: &str = "Agent";
 const MODEL_AGENT_INFO: &str = "AgentInfo";
@@ -92,8 +91,7 @@ pub fn data<'a>(args: &ArgMatches<'a>, interfaces: &Interfaces) -> Result<()> {
         .context(ErrorKind::Legacy(err_msg(FAILED_CHECK_SCHEMA)))?;
     let registry = Registry::new();
     let store = Validator::new(config.storage, logger.clone(), &registry)
-        .map_err(super::super::super::Error::from)
-        .context(ErrorKind::Legacy(err_msg(FAILED_CHECK_DATA)))?;
+        .with_context(|_| ErrorKind::AdminInit("store"))?;
 
     info!(logger, "Checking records for the '{}' model", MODEL_AGENT);
     scan_collection(store.agents(), MODEL_AGENT, &mut outcomes, interfaces);
@@ -186,18 +184,15 @@ pub fn schema<'a>(args: &ArgMatches<'a>, interfaces: &Interfaces) -> Result<()> 
         .context(ErrorKind::Legacy(err_msg(FAILED_CHECK_SCHEMA)))?;
     let registry = Registry::new();
     let store = Validator::new(config.storage, logger.clone(), &registry)
-        .map_err(super::super::super::Error::from)
-        .context(ErrorKind::Legacy(err_msg(FAILED_CHECK_SCHEMA)))?;
+        .with_context(|_| ErrorKind::AdminInit("store"))?;
     let mut outcomes = Outcomes::new();
 
     debug!(logger, "Checking schema");
     match store.schema() {
         Ok(results) => consume_results(results, &mut outcomes),
         Err(error) => {
-            let error = super::super::super::Error::from(error)
-                .context(ErrorKind::Legacy(err_msg("failed to validate store schema")))
-                .to_string();
-            outcomes.error(Error::GenericError(error));
+            let error = error.context(ErrorKind::CheckFailed("current schema"));
+            outcomes.error(Error::GenericError(format_fail(&error)));
         }
     };
     outcomes.report(&logger);
@@ -206,10 +201,8 @@ pub fn schema<'a>(args: &ArgMatches<'a>, interfaces: &Interfaces) -> Result<()> 
     match store.indexes() {
         Ok(results) => consume_results(results, &mut outcomes),
         Err(error) => {
-            let error = super::super::super::Error::from(error)
-                .context(ErrorKind::Legacy(err_msg("failed to validate store indexes")))
-                .to_string();
-            outcomes.error(Error::GenericError(error));
+            let error = error.context(ErrorKind::CheckFailed("existing indexes"));
+            outcomes.error(Error::GenericError(format_fail(&error)));
         }
     };
     outcomes.report(&logger);
@@ -218,11 +211,8 @@ pub fn schema<'a>(args: &ArgMatches<'a>, interfaces: &Interfaces) -> Result<()> 
     match store.removed() {
         Ok(results) => consume_results(results, &mut outcomes),
         Err(error) => {
-            let error = super::super::super::Error::from(error)
-                .context(ErrorKind::Legacy(
-                    err_msg("failed to check for removed collections or indexes")
-                )).to_string();
-            outcomes.error(Error::GenericError(error));
+            let error = error.context(ErrorKind::CheckFailed("removed collections or indexes"));
+            outcomes.error(Error::GenericError(format_fail(&error)));
         }
     };
     outcomes.report(&logger);
