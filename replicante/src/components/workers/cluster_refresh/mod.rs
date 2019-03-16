@@ -126,7 +126,8 @@ impl Handler {
     /// Refresh is performed based on the current state or luck of state.
     /// This method emits events as needed (and before the state is updated).
     fn refresh_discovery(&self, discovery: ClusterDiscovery) -> Result<()> {
-        let current_state = self.store.cluster_discovery(discovery.cluster.clone())?;
+        let current_state = self.store.cluster_discovery(discovery.cluster.clone())
+            .with_context(|_| ErrorKind::PrimaryStorePersist("cluster_discovery"))?;
         if let Some(current_state) = current_state {
             if discovery == current_state {
                 return Ok(());
@@ -141,9 +142,8 @@ impl Handler {
                 .context(ErrorKind::Legacy(err_msg(FAIL_PERSIST_DISCOVERY)))
                 .map_err(Error::from)?;
         }
-        self.store.persist_discovery(discovery).map_err(Error::from)
-            .context(ErrorKind::Legacy(err_msg(FAIL_PERSIST_DISCOVERY)))
-            .map_err(Error::from)?;
+        self.store.persist_discovery(discovery)
+            .with_context(|_| ErrorKind::PrimaryStorePersist("cluster_discovery"))?;
         Ok(())
     }
 }

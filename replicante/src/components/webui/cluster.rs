@@ -30,10 +30,10 @@ impl Handler for Discovery {
             .map(String::from)
             .ok_or_else(|| ErrorKind::Legacy(err_msg("missing `cluster` parameter")))
             .map_err(Error::from)?;
-        let discovery = self.store.cluster_discovery(cluster).map_err(Error::from)
-            .context(ErrorKind::Legacy(err_msg("failed to fetch cluster discovery")))
+        let discovery = self.store.cluster_discovery(cluster.clone())
+            .with_context(|_| ErrorKind::PrimaryStoreQuery("cluster_discovery"))
             .map_err(Error::from)?
-            .ok_or_else(|| ErrorKind::Legacy(err_msg("cluster not found")))
+            .ok_or_else(|| ErrorKind::ModelNotFound("cluster_discovery", cluster))
             .map_err(Error::from)?;
         let mut resp = Response::new();
         resp.set_mut(JsonResponse::json(discovery)).set_mut(status::Ok);
@@ -62,10 +62,10 @@ impl Handler for Meta {
             .map(String::from)
             .ok_or_else(|| ErrorKind::Legacy(err_msg("missing `cluster` parameter")))
             .map_err(Error::from)?;
-        let meta = self.store.cluster_meta(cluster).map_err(Error::from)
-            .context(ErrorKind::Legacy(err_msg("failed to fetch cluster metadata")))
+        let meta = self.store.cluster_meta(cluster.clone())
+            .with_context(|_| ErrorKind::PrimaryStoreQuery("cluster_meta"))
             .map_err(Error::from)?
-            .ok_or_else(|| ErrorKind::Legacy(err_msg("cluster not found")))
+            .ok_or_else(|| ErrorKind::ModelNotFound("cluster_meta", cluster))
             .map_err(Error::from)?;
         let mut resp = Response::new();
         resp.set_mut(JsonResponse::json(meta)).set_mut(status::Ok);

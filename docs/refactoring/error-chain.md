@@ -46,8 +46,8 @@ Reversing the dependency order gives the migration order.
 ### Finally
 
   1. [x] Always use `failure_info` to log error information
-  2. [ ] Deprecate legacy error variants and start removing them
-  3. [ ] Remove any unnecessary `SyncFailure`s
+  2. [x] Remove any unnecessary `SyncFailure`s
+  3. [ ] Deprecate legacy error variants and start removing them
 
 
 ## Plan

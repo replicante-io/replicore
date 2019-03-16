@@ -1,6 +1,5 @@
 //! Module to define cluster related WebUI endpoints.
 use failure::ResultExt;
-use failure::err_msg;
 
 use iron::Handler;
 use iron::IronResult;
@@ -30,8 +29,7 @@ impl Handler for Find {
     fn handle(&self, req: &mut Request) -> IronResult<Response> {
         let query = req.extensions.get::<Router>().unwrap().find("query").unwrap_or("");
         let clusters = self.store.find_clusters(query, FIND_CLUSTERS_LIMIT)
-            .map_err(Error::from)
-            .context(ErrorKind::Legacy(err_msg("failed to search clusters")))
+            .with_context(|_| ErrorKind::PrimaryStoreQuery("find_clusters"))
             .map_err(Error::from)?;
         let mut resp = Response::new();
         resp.set_mut(JsonResponse::json(clusters)).set_mut(status::Ok);
@@ -58,8 +56,8 @@ pub struct Top {
 
 impl Handler for Top {
     fn handle(&self, _: &mut Request) -> IronResult<Response> {
-        let clusters = self.store.top_clusters().map_err(Error::from)
-            .context(ErrorKind::Legacy(err_msg("could not fetch top clusters")))
+        let clusters = self.store.top_clusters()
+            .with_context(|_| ErrorKind::PrimaryStoreQuery("top_clusters"))
             .map_err(Error::from)?;
         let mut resp = Response::new();
         resp.set_mut(JsonResponse::json(clusters)).set_mut(status::Ok);

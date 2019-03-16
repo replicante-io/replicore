@@ -67,6 +67,7 @@ pub enum ErrorKind {
 
     // TODO: drop once all uses are removed.
     #[fail(display = "{}", _0)]
+    #[deprecated(since = "0.2.0", note = "move to specific ErrorKinds")]
     Legacy(#[cause] ::failure::Error),
 }
 

@@ -56,32 +56,35 @@ impl From<::failure::Error> for Error {
     }
 }
 
-impl From<::replicante_data_store::Error> for Error {
-    fn from(error: ::replicante_data_store::Error) -> Error {
-        ErrorKind::LegacyStore(error).into()
-    }
-}
-
 
 /// Exhaustive list of possible errors emitted by this crate.
 #[derive(Debug, Fail)]
 pub enum ErrorKind {
+    #[fail(display = "could not initialise client interface for {}", _0)]
+    ClientInit(&'static str),
+
     #[fail(display = "could not coordinate with other processes")]
     Coordination,
 
-    #[fail(display = "failed to initialise {} interface", _0)]
+    #[fail(display = "could not initialise {} interface", _0)]
     InterfaceInit(&'static str),
+
+    #[fail(display = "could not find model {} with ID {}", _0, _1)]
+    ModelNotFound(&'static str, String),
+
+    #[fail(display = "could not query {} from the primary store", _0)]
+    PrimaryStoreQuery(&'static str),
+
+    #[fail(display = "could not persist {} model to primary store", _0)]
+    PrimaryStorePersist(&'static str),
 
     #[fail(display = "unable to spawn new thread for '{}'", _0)]
     SpawnThread(&'static str),
 
     // TODO: drop once all uses are removed.
     #[fail(display = "{}", _0)]
+    #[deprecated(since = "0.2.0", note = "move to specific ErrorKinds")]
     Legacy(#[cause] ::failure::Error),
-
-    #[fail(display = "{}", _0)]
-    #[deprecated(since = "0.1.0", note = "store was convered to failure")]
-    LegacyStore(#[cause] ::replicante_data_store::Error),
 }
 
 

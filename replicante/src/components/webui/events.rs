@@ -34,13 +34,11 @@ impl Handler for Events {
         options.limit = Some(RECENT_EVENTS_LIMIT);
         options.reverse = true;
         let iter = self.store.events(EventsFilters::all(), options)
-            .map_err(Error::from)
-            .context(ErrorKind::Legacy(err_msg(FAIL_FETCH_EVENTS)))
+            .with_context(|_| ErrorKind::PrimaryStoreQuery("events"))
             .map_err(Error::from)?;
-
         let mut events = Vec::new();
         for event in iter {
-            let event = event.map_err(Error::from)
+            let event = event
                 .context(ErrorKind::Legacy(err_msg(FAIL_FETCH_EVENTS)))
                 .map_err(Error::from)?;
             events.push(event);
