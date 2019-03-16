@@ -77,6 +77,10 @@ impl<Q: TaskQueue> AdminBackend<Q> for Kafka {
             prefix: self.config.queue_prefix.clone(),
         })))
     }
+
+    fn version(&self) -> Result<String> {
+        Ok("Kafka (version not reported)".into())
+    }
 }
 
 

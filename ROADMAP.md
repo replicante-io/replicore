@@ -24,7 +24,6 @@
 ## 0.3.0 - Split "view" database
 - Move the indexed event collection to dedicated interface (still in mongo but different DB).
 - Emit messages to kafka instead of the store.
-- Generate tasks out of events.
 - Store every event in the "view" database.
 
 

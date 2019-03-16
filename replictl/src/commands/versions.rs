@@ -7,9 +7,11 @@ use prometheus::Registry;
 use slog::Logger;
 
 use replicante::Config;
+use replicante::ReplicanteQueues;
 use replicante::VERSION as REPLICANTE_VERSION;
 use replicante_coordinator::Admin as CoordinatorAdmin;
 use replicante_data_store::Validator as StoreAdmin;
+use replicante_tasks::Admin as TasksAdmin;
 use replicante_util_failure::failure_info;
 
 use super::super::Error;
@@ -65,6 +67,7 @@ pub fn run<'a>(args: &ArgMatches<'a>, interfaces: &Interfaces) -> Result<()> {
     replicante_versions(args, logger)?;
     coordinator_version(&config, logger)?;
     primary_store_version(&config, logger)?;
+    task_queue_version(&config, logger)?;
     Ok(())
 }
 
@@ -84,10 +87,21 @@ fn coordinator_version(config: &Config, logger: &Logger) -> Result<()> {
 fn primary_store_version(config: &Config, logger: &Logger) -> Result<()> {
     let registry = Registry::new();
     let version = StoreAdmin::new(config.storage.clone(), logger.clone(), &registry)
-        .with_context(|_| ErrorKind::AdminInit("store"))
+        .with_context(|_| ErrorKind::AdminInit("primary store"))
         .and_then(|store| store.version().with_context(|_| ErrorKind::FetchVersion("store")))
         .map_err(Error::from);
     println!("Primary Store: {}", value_or_error(logger, "primary store", version));
+    Ok(())
+}
+
+
+/// Collect version information for the configured tasks queue.
+fn task_queue_version(config: &Config, logger: &Logger) -> Result<()> {
+    let version = TasksAdmin::<ReplicanteQueues>::new(logger.clone(), config.tasks.clone())
+        .with_context(|_| ErrorKind::AdminInit("tasks queue"))
+        .and_then(|tasks| tasks.version().with_context(|_| ErrorKind::FetchVersion("tasks queue")))
+        .map_err(Error::from);
+    println!("Tasks Queue: {}", value_or_error(logger, "tasks queue", version));
     Ok(())
 }
 

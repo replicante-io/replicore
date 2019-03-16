@@ -62,6 +62,9 @@ pub enum ErrorKind {
     #[fail(display = "could not initialise client interface for {}", _0)]
     ClientInit(&'static str),
 
+    #[fail(display = "invalid configuration: {}", _0)]
+    Config(&'static str),
+
     #[fail(display = "could not fetch {} version", _0)]
     FetchVersion(&'static str),
 

@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## [Unreleased]
 ### Added
 - Add coordinator version to `replictl versions`.
-- TODO: Add queue system version to `replictl versions`.
+- Add queue system version to `replictl versions`.
 - Docker images.
 - Introduce Code of Conduct.
 - Travis CI builds.

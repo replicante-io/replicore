@@ -1,5 +1,5 @@
 # Improving errors
-Status: BLOCKED (error-chain)
+Status: BLOCKED (error-chain; warnings)
 Reason: More useful error messages and better error handling code.
 Bloking something: NO
 
@@ -25,4 +25,16 @@ One possible solution:
 
 
 ## Plan
-TODO
+
+  1. [ ] Remove `error-chain` from the equation.
+  2. [ ] Address all error related warnings.
+  3. [ ] Find all uses of generic errors:
+     * replicante: `ErrorKind::Legacy`.
+     * replictl: `ErrorKind::Legacy`.
+     * replicante_tasks: `ErrorKind::Msg`.
+     * ???
+  4. [ ] For each case:
+     * Mark the `ErrorKind` as deprecated.
+     * Address compiler warnings by creating more meaningful errors (as per `warnings.md`).
+     * Remove deprecated `ErrorKind`.
+  5. [ ] Repeat until errors are mostly not `String`.

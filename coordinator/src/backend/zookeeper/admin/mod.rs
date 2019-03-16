@@ -100,7 +100,7 @@ impl BackendAdmin for ZookeeperAdmin {
     }
 
     fn version(&self) -> Result<String> {
-        Ok("Zookeeper; Version not reported".into())
+        Ok("Zookeeper (version not reported)".into())
     }
 }
 

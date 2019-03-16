@@ -21,6 +21,9 @@ use self::backend::kafka::Kafka;
 trait AdminBackend<Q: TaskQueue> {
     /// See `TasksAdmin::scan` for details.
     fn scan(&self, queue: Q) -> Result<TasksIter<Q>>;
+
+    /// Return softwre and version of the task queue in use.
+    fn version(&self) -> Result<String>;
 }
 
 
@@ -38,6 +41,11 @@ impl<Q: TaskQueue> TasksAdmin<Q> {
     /// Iterate over all tasks (including skipped and to be retired tasks) on the given queue.
     pub fn scan(&self, queue: Q) -> Result<TasksIter<Q>> {
         self.0.scan(queue)
+    }
+
+    /// Return softwre and version of the task queue in use.
+    pub fn version(&self) -> Result<String> {
+        self.0.version()
     }
 }
 

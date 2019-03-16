@@ -34,6 +34,7 @@ mod shared;
 mod task_id;
 mod worker;
 
+pub use self::admin::TasksAdmin as Admin;
 pub use self::config::Config;
 pub use self::error::Result;
 pub use self::error::TaskError;

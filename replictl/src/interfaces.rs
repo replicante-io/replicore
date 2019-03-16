@@ -3,7 +3,6 @@ use std::io::Write;
 
 use clap::ArgMatches;
 use failure::ResultExt;
-use failure::err_msg;
 use slog::Logger;
 
 use super::ErrorKind;
@@ -27,11 +26,9 @@ impl Interfaces {
             _logger: logger.clone()
         };
         let progress_chunk = value_t!(args, "progress-chunk", u32)
-            .context(ErrorKind::Legacy(err_msg("progress chunk size is not vaild")))?;
+            .with_context(|_|ErrorKind::Config("progress-chunk is not a positive integer"))?;
         if progress_chunk == 0 {
-            return Err(ErrorKind::Legacy(
-                err_msg("progress chunck size must be grater then 0")
-            ).into());
+            return Err(ErrorKind::Config("progress-chunck must be grater then 0").into());
         }
         Ok(Interfaces {
             logger,
