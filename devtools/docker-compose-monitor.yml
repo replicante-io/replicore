@@ -1,0 +1,27 @@
+############################
+# Monitoring tools and UIs #
+############################
+#
+# Services:
+#   * Prometheus (points at replicante running on dockerhost)
+version: '3.5'
+
+
+services:
+  prometheus:
+    hostname: prometheus
+    image: 'prom/prometheus:v2.4.3'
+    ports:
+      - '9090:9090'
+    volumes:
+      - type: bind
+        source: './devtools/provisioning/prometheus.yml'
+        target: '/etc/prometheus/prometheus.yml'
+        read_only: true
+      - type: volume
+        source: prometheus
+        target: '/prometheus'
+
+
+volumes:
+  prometheus: {}

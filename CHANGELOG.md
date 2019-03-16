@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Travis CI builds.
 
 ### Changed
+- Improve docker-based dev environment and auto-initialise it.
 - Improve playgrounds usability.
 - Replace `error-chain` with `failure`.
 

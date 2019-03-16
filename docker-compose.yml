@@ -1,8 +1,10 @@
+#################################################
+# Essential dependencies to run Replicante Core #
+#################################################
 version: '3.5'
 
 
 services:
-  # Dependencies.
   kafka:
     environment:
       KAFKA_BROKER_ID: 1
@@ -56,91 +58,9 @@ services:
         source: zklog
         target: '/datalog'
       - type: bind
-        source: './devtools/zookeeper.conf'
+        source: './devtools/provisioning/zookeeper.conf'
         target: '/conf/zoo.cfg'
         read_only: false
-
-  # Web UIs for dependencies.
-  kafka-rest:
-    depends_on:
-      - zookeeper
-      - kafka
-    environment:
-      KAFKA_REST_HOST_NAME: '172.128.0.29'
-      KAFKA_REST_LISTENERS: 'http://0.0.0.0:8082'
-      KAFKA_REST_ZOOKEEPER_CONNECT: 'zookeeper:2181/kafka'
-    hostname: 'kafka-rest'
-    image: 'confluentinc/cp-kafka-rest:5.0.0'
-    networks:
-      default:
-        ipv4_address: '172.128.0.29'
-
-  kafka-webui:
-    depends_on:
-      - kafka-rest
-    environment:
-      KAFKA_REST_PROXY_URL: 'http://172.128.0.29:8082'
-      PROXY: 'true'
-    hostname: 'kafka-webui'
-    image: 'landoop/kafka-topics-ui'
-    ports:
-      - '8001:8000'
-
-  mongoui:
-    command:
-      - 'sh'
-      - '-c'
-      - 'sleep 30 && node app.js'
-    depends_on:
-      - mongo
-    environment:
-      HOST: '0.0.0.0'
-      PORT: '4321'
-    hostname: mongoui
-    image: 'mrvautin/adminmongo:latest'
-    ports:
-      - '4321:4321'
-    stop_grace_period: 1s
-    volumes:
-      - type: bind
-        source: './devtools/mongoui.connections.json'
-        target: '/app/user/config/config.json'
-        read_only: true
-
-  zoonavigator-api:
-    environment:
-      API_HTTP_PORT: 9000
-    hostname: zoonavigator-api
-    image: elkozmon/zoonavigator-api:0.5.0
-
-  zoonavigator-web:
-    environment:
-      AUTO_CONNECT_CONNECTION_STRING: 'zookeeper:2181'
-      WEB_HTTP_PORT: 8000
-      API_HOST: 'zoonavigator-api'
-      API_PORT: 9000
-    hostname: zoonavigator-web
-    image: elkozmon/zoonavigator-web:0.5.0
-    links:
-      - zoonavigator-api
-      - zookeeper
-    ports:
-      - '8000:8000'
-
-  # Monitoring and introspection
-  prometheus:
-    hostname: prometheus
-    image: 'prom/prometheus:v2.4.3'
-    ports:
-      - '9090:9090'
-    volumes:
-      - type: bind
-        source: './devtools/prometheus.yml'
-        target: '/etc/prometheus/prometheus.yml'
-        read_only: true
-      - type: volume
-        source: prometheus
-        target: '/prometheus'
 
 
 networks:
@@ -151,8 +71,7 @@ networks:
 
 
 volumes:
-  kafka:
-  mongo:
-  prometheus:
-  zkdata:
-  zklog:
+  kafka: {}
+  mongo: {}
+  zkdata: {}
+  zklog: {}

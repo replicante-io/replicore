@@ -1,6 +1,5 @@
 ## 0.2.1 - Project improvements
-- Add milestones list to roadmap page.
-- Automate docker-based dev setup.
+- Contributing Guidelines.
 - Standardise logging across core and agents.
 - Pre-built binaries?
 - DCO requirement?
@@ -15,7 +14,7 @@
 - Trace state fetching.
 
 
-## 0.2.3 - Kafka events stream
+## 0.2.3 - Events stream
 - Emit events to stream (and not store).
 - Follow/consume streams by group.
 - Relay events from stream to store.
