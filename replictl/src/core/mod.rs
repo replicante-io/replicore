@@ -1,15 +1,11 @@
 use clap::ArgMatches;
 use failure::ResultExt;
-use failure::err_msg;
 use reqwest::Client as ReqwestClient;
 
 use replicante_data_models::api::Version;
 
 use super::ErrorKind;
 use super::Result;
-
-
-const FAIL_REQUEST_VERSION: &str = "Failed to fetch replicante version";
 
 
 /// Replicante core HTTP API client.
@@ -21,8 +17,7 @@ pub struct Client {
 impl Client {
     /// Create a new client that will connect to the given `url`.
     pub fn new<'a>(args: &ArgMatches<'a>) -> Result<Client> {
-        let client = ReqwestClient::builder().build()
-            .context(ErrorKind::Legacy(err_msg("failed to configure HTTP client")))?;
+        let client = ReqwestClient::builder().build().with_context(|_| ErrorKind::HttpClient)?;
         let url = String::from(args.value_of("url").unwrap().trim_right_matches('/'));
         Ok(Client {
             client,
@@ -35,9 +30,9 @@ impl Client {
         let endpoint = self.endpoint("/api/v1/version");
         let request = self.client.get(&endpoint);
         let mut response = request.send()
-            .context(ErrorKind::Legacy(err_msg(FAIL_REQUEST_VERSION)))?;
+            .with_context(|_| ErrorKind::ReplicanteRequest("/api/v1/version"))?;
         let version = response.json()
-            .context(ErrorKind::Legacy(err_msg(FAIL_REQUEST_VERSION)))?;
+            .with_context(|_| ErrorKind::ReplicanteJsonDecode)?;
         Ok(version)
     }
 }

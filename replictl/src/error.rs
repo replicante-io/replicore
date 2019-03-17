@@ -68,8 +68,17 @@ pub enum ErrorKind {
     #[fail(display = "could not fetch {} version", _0)]
     FetchVersion(&'static str),
 
+    #[fail(display = "could not instantiate HTTP client")]
+    HttpClient,
+
     #[fail(display = "I/O error on file {}", _0)]
     Io(String),
+
+    #[fail(display = "could not JSON decode API response from replicante")]
+    ReplicanteJsonDecode,
+
+    #[fail(display = "replicante API request to '{}' failed", _0)]
+    ReplicanteRequest(&'static str),
 
     // TODO: drop once all uses are removed.
     #[fail(display = "{}", _0)]
