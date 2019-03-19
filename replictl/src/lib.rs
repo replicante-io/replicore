@@ -126,7 +126,7 @@ fn run_command(args: &ArgMatches, interfaces: &Interfaces) -> Result<()> {
         Some(check::COMMAND) => check::run(args, interfaces),
         Some(coordinator::COMMAND) => coordinator::run(args, interfaces),
         Some(versions::COMMAND) => versions::run(args, interfaces),
-        None => Err(ErrorKind::Legacy(err_msg("need a command to run")).into()),
-        _ => Err(ErrorKind::Legacy(err_msg("received unrecognised command")).into()),
+        None => Err(ErrorKind::NoCommand("replictl").into()),
+        Some(name) => Err(ErrorKind::UnkownSubcommand("replictl", name.to_string()).into()),
     }
 }

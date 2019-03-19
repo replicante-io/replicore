@@ -74,11 +74,17 @@ pub enum ErrorKind {
     #[fail(display = "I/O error on file {}", _0)]
     Io(String),
 
+    #[fail(display = "need a command to run for '{}'", _0)]
+    NoCommand(&'static str),
+
     #[fail(display = "could not JSON decode API response from replicante")]
     ReplicanteJsonDecode,
 
     #[fail(display = "replicante API request to '{}' failed", _0)]
     ReplicanteRequest(&'static str),
+
+    #[fail(display = "unkown '{}' command for '{}'", _1, _0)]
+    UnkownSubcommand(&'static str, String),
 
     // TODO: drop once all uses are removed.
     #[fail(display = "{}", _0)]
