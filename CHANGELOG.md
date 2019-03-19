@@ -8,7 +8,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Added
 - Add coordinator version to `replictl versions`.
 - Add queue system version to `replictl versions`.
+- Contributing Guidelines.
 - Docker images.
+- GitHub issue template.
 - Introduce Code of Conduct.
 - Travis CI builds.
 
