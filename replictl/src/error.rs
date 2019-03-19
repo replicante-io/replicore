@@ -65,6 +65,9 @@ pub enum ErrorKind {
     #[fail(display = "invalid configuration: {}", _0)]
     Config(&'static str),
 
+    #[fail(display = "could not load configuration")]
+    ConfigLoad,
+
     #[fail(display = "could not fetch {} version", _0)]
     FetchVersion(&'static str),
 

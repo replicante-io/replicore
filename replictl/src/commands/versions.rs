@@ -61,8 +61,7 @@ pub fn run<'a>(args: &ArgMatches<'a>, interfaces: &Interfaces) -> Result<()> {
 
     // Find external systems version.
     let config = args.value_of("config").unwrap();
-    let config = Config::from_file(config)
-        .context(ErrorKind::Legacy(err_msg("failed to load configuration")))?;
+    let config = Config::from_file(config).context(ErrorKind::ConfigLoad)?;
 
     replicante_versions(args, logger)?;
     coordinator_version(&config, logger)?;

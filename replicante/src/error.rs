@@ -63,6 +63,9 @@ pub enum ErrorKind {
     #[fail(display = "could not initialise client interface for {}", _0)]
     ClientInit(&'static str),
 
+    #[fail(display = "could not load configuration")]
+    ConfigLoad,
+
     #[fail(display = "could not coordinate with other processes")]
     Coordination,
 

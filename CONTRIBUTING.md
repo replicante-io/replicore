@@ -4,7 +4,7 @@ We hope you choose to contribute to the Replicante Project as every little help 
 
 Any kind of contribution is welcomed, not just code.
 If you would like to help but you are not a coder, open a
-[new issue](https://github.com/replicante-io/replicante/issues/new) or send an email to
+[new issue](https://github.com/replicante-io/replicante/issues/new/choose) or send an email to
 [stefano@spogliani.net](stefano@spogliani.net) describing how you could help and we will be in touch!
 
 
@@ -52,7 +52,7 @@ to help us better understand and address your needs.
      * If you want an issue to have higher priority add a "+1" reaction to the issue description.
 
 If none of the above provides a solution it is then time to create a
-[new issue](https://github.com/replicante-io/replicante/issues/new).
+[new issue](https://github.com/replicante-io/replicante/issues/new/choose).
 As a reminder: do try your best to **fill out as much** as possible of the relevant
 new issue template.
 
