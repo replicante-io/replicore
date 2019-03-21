@@ -1,9 +1,7 @@
 ## 0.2.1 - Project improvements
+- DCO requirement
 - Standardise logging across core and agents.
-- Add `rustfmt` to CI and move in that direction?
 - Pre-built binaries?
-- DCO requirement?
-- Dual license?
 
 
 ## 0.2.2 - Introspection

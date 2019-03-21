@@ -20,6 +20,7 @@ rust:
 env:
   - TASK=test
   - TASK=clippy
+  - TASK=fmt
   - TASK=audit
 
 install: ci/travis.sh install "${TASK}"
@@ -28,5 +29,6 @@ script: ci/travis.sh script "${TASK}"
 matrix:
   allow_failures:
     - rust: nightly
+    - env: TASK=fmt
     - env: TASK=audit
   fast_finish: true

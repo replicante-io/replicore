@@ -73,8 +73,8 @@ fn force_release<'a>(args: &ArgMatches<'a>, interfaces: &Interfaces) -> Result<(
     }
     let admin = admin_interface(args, interfaces)?;
     let mut lock = admin.non_blocking_lock(&name)
-        .context(ErrorKind::Legacy(err_msg("failed to lookup lock")))?;
-    lock.force_release().context(ErrorKind::Legacy(err_msg("failed to force-release lock")))?;
+        .with_context(|_| ErrorKind::NBLockLookup(name.to_string()))?;
+    lock.force_release().with_context(|_| ErrorKind::NBLockRelease(name.to_string()))?;
     println!("==> Lock released by force");
     Ok(())
 }
@@ -88,9 +88,9 @@ fn info<'a>(args: &ArgMatches<'a>, interfaces: &Interfaces) -> Result<()> {
     let name = command.value_of("LOCK").unwrap();
     let admin = admin_interface(args, interfaces)?;
     let lock = admin.non_blocking_lock(&name)
-        .context(ErrorKind::Legacy(err_msg("failed to lookup lock")))?;
+        .with_context(|_| ErrorKind::NBLockLookup(name.to_string()))?;
     let owner = lock.owner()
-        .context(ErrorKind::Legacy(err_msg("lock owner lookup failed")))?;
+        .with_context(|_| ErrorKind::NBLockOwnerLookup(name.to_string()))?;
     println!("==> Lock name: {}", lock.name());
     println!("==> Node ID currently holding the lock: {}", owner);
     Ok(())
@@ -102,7 +102,7 @@ fn ls<'a>(args: &ArgMatches<'a>, interfaces: &Interfaces) -> Result<()> {
     let admin = admin_interface(args, interfaces)?;
     println!("==> Currently held locks:");
     for lock in admin.non_blocking_locks() {
-        let lock = lock.context(ErrorKind::Legacy(err_msg("failed to list non-blocking locks")))?;
+        let lock = lock.with_context(|_| ErrorKind::NBLockList)?;
         println!("====> {}", lock.name());
     }
     Ok(())
@@ -118,7 +118,9 @@ pub fn run<'a>(args: &ArgMatches<'a>, interfaces: &Interfaces) -> Result<()> {
         Some(COMMAND_FORCE_RELEASE) => force_release(args, interfaces),
         Some(COMMAND_INFO) => info(args, interfaces),
         Some(COMMAND_LS) => ls(args, interfaces),
-        None => Err(ErrorKind::Legacy(err_msg("need a coordinator nb-lock command to run")).into()),
-        _ => Err(ErrorKind::Legacy(err_msg("received unrecognised command")).into()),
+        None => Err(ErrorKind::NoCommand("replictl coordinator nb-lock").into()),
+        Some(name) => Err(
+            ErrorKind::UnkownSubcommand("replictl coordinator nb-lock", name.to_string()).into()
+        )
     }
 }
