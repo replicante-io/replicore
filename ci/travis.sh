@@ -7,9 +7,7 @@ case "$1" in
   install)
     case "$2" in
       audit) ci/travis/audit-install.sh;;
-      clippy) ci/travis/clippy-install.sh;;
-      fmt) ci/travis/fmt-install.sh;;
-      test) ;;
+      build) ci/travis/build-install.sh;;
 
       *)
         echo "Unsupported install task '$2' received"
@@ -20,9 +18,7 @@ case "$1" in
   script)
     case "$2" in
       audit) ci/travis/audit-script.sh;;
-      clippy) ci/travis/clippy-script.sh;;
-      fmt) ci/travis/fmt-script.sh;;
-      test) ci/travis/test-script.sh;;
+      build) ci/travis/build-script.sh;;
 
       *)
         echo "Unsupported script task '$2' received"
