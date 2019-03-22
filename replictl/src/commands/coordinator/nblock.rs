@@ -3,7 +3,6 @@ use clap::Arg;
 use clap::ArgMatches;
 use clap::SubCommand;
 use failure::ResultExt;
-use failure::err_msg;
 
 use super::super::super::ErrorKind;
 use super::super::super::Interfaces;

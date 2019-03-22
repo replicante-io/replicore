@@ -27,7 +27,6 @@ extern crate replicante_util_failure;
 use clap::App;
 use clap::Arg;
 use clap::ArgMatches;
-use failure::err_msg;
 
 
 mod commands;

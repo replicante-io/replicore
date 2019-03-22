@@ -2,7 +2,6 @@ use clap::App;
 use clap::ArgMatches;
 use clap::SubCommand;
 use failure::ResultExt;
-use failure::err_msg;
 use prometheus::Registry;
 use slog::Logger;
 
