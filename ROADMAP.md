@@ -1,5 +1,4 @@
 ## 0.2.1 - Project improvements
-- DCO requirement
 - Standardise logging across core and agents.
 - Pre-built binaries?
 

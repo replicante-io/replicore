@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Add coordinator version to `replictl versions`.
 - Add queue system version to `replictl versions`.
 - Contributing Guidelines.
+- DCO requirement.
 - Docker images.
 - GitHub issue template.
 - Introduce Code of Conduct.
