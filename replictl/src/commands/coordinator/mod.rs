@@ -2,7 +2,6 @@ use clap::App;
 use clap::ArgMatches;
 use clap::SubCommand;
 use failure::ResultExt;
-use failure::err_msg;
 
 use replicante::Config;
 use replicante_coordinator::Admin;
@@ -35,8 +34,10 @@ pub fn run<'a>(args: &ArgMatches<'a>, interfaces: &Interfaces) -> Result<()> {
     match command {
         Some(election::COMMAND) => election::run(args, interfaces),
         Some(nblock::COMMAND) => nblock::run(args, interfaces),
-        None => Err(ErrorKind::Legacy(err_msg("need a coordinator command to run")).into()),
-        _ => Err(ErrorKind::Legacy(err_msg("received unrecognised command")).into()),
+        None => Err(ErrorKind::NoCommand("replictl coordinator").into()),
+        Some(name) => Err(
+            ErrorKind::UnkownSubcommand("replictl coordinator", name.to_string()).into()
+        )
     }
 }
 
@@ -45,9 +46,8 @@ pub fn run<'a>(args: &ArgMatches<'a>, interfaces: &Interfaces) -> Result<()> {
 fn admin_interface<'a>(args: &ArgMatches<'a>, interfaces: &Interfaces) -> Result<Admin> {
     let logger = interfaces.logger().clone();
     let config = args.value_of("config").unwrap();
-    let config = Config::from_file(config)
-        .context(ErrorKind::Legacy(err_msg("failed to initialise coordinator interface")))?;
+    let config = Config::from_file(config).with_context(|_| ErrorKind::ConfigLoad)?;
     let admin = Admin::new(config.coordinator, logger)
-        .context(ErrorKind::Legacy(err_msg("failed to initialise coordinator interface")))?;
+        .with_context(|_| ErrorKind::AdminInit("coordinator"))?;
     Ok(admin)
 }
