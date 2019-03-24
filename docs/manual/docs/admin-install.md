@@ -27,6 +27,35 @@ When using the recommended set of dependencies these guides may be of help:
 
 ## 2. Install
 
+### From pre-built binaries
+Pre-built binaries are helpful for users to get up and running quickly.
+Unfortunately they require a good deal of effort from the community to be available for all
+popular distributions that people my want to use.
+The Replicante Community cannot afford to provide pre-built binaries for all popular
+Linux distributions at this stage but we do want to provide something to make things
+easier on people.
+
+Pre-built binaries are available but they may not work for your system, in which case
+we suggest you use an alternative install method.
+
+```bash
+# Grab the binaries for the version of your choice from GitHub:
+VERSION=vX.Y.Z
+wget https://github.com/replicante-io/replicante/releases/download/$VERSION/checksum.txt
+wget https://github.com/replicante-io/replicante/releases/download/$VERSION/replicante-linux-64bits
+wget https://github.com/replicante-io/replicante/releases/download/$VERSION/replictl-linux-64bits
+
+# Verify the integrity of the binaries:
+sha256sum --check checksum.txt
+
+# Verify the binaries work:
+mv replicante-linux-64bits replicante
+mv replictl-linux-64bits replictl
+chmod +x replicante replictl
+./replicante --version
+./replictl --version
+```
+
 ### From code
 The following instructions where executed on a clean Fedora 28 install but should work for any
 Linux system given the correct package manager and package names:
