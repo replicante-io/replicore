@@ -6,7 +6,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 ### Added
-- Add `rustfmt` to CI and move in that direction
+- Add `rustfmt` to CI and move in that direction.
 - Add coordinator version to `replictl versions`.
 - Add queue system version to `replictl versions`.
 - Contributing Guidelines.
@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Docker images.
 - GitHub issue template.
 - Introduce Code of Conduct.
+- Pre-built binaries.
 - Travis CI builds.
 
 ### Changed

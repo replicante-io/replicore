@@ -1,6 +1,5 @@
 ## 0.2.1 - Project improvements
 - Standardise logging across core and agents.
-- Pre-built binaries?
 
 
 ## 0.2.2 - Introspection

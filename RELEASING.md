@@ -1,5 +1,4 @@
-Releasing Core
-==============
+# Releasing Core
 
 - [ ] Ensure dependences are up to date
 - [ ] Ensure tests and CI checks pass
@@ -10,3 +9,17 @@ Releasing Core
 - [ ] Git commit and tag release
 - [ ] Build and push docker image
 - [ ] Release documentation
+
+
+## Pre-built binaries
+Pre-built binaries can help speed up installations and reduce barrier to entry.
+They **DO NOT** aim to be fully portable across major linux distributions.
+In particular they use a relatively recent version of `glibc` that is unlikely
+to be available on older or "slower" distributions (ubuntu 14.04, CentOS, ...).
+
+To collect the pre-built binaries, once docker images have been published:
+```bash
+ci/gh-releases.sh --clean vX.Y.Z
+ci/gh-releases.sh --clean --repo agents vX.Y.Z
+ci/gh-releases.sh --repo agent-kafka vX.Y.Z
+```
