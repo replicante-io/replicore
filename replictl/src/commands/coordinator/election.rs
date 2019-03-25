@@ -3,7 +3,6 @@ use clap::Arg;
 use clap::ArgMatches;
 use clap::SubCommand;
 use failure::ResultExt;
-use failure::err_msg;
 
 use super::super::super::ErrorKind;
 use super::super::super::Interfaces;
@@ -56,17 +55,17 @@ fn info<'a>(args: &ArgMatches<'a>, interfaces: &Interfaces) -> Result<()> {
     let name = command.value_of("ELECTION").unwrap();
     let admin = admin_interface(args, interfaces)?;
     let election = admin.election(&name)
-        .context(ErrorKind::Legacy(err_msg("failed to lookup election")))?;
+        .with_context(|_| ErrorKind::CoordinatorElectionLookup(name.to_string()))?;
+    println!("==> Election name: {}", election.name());
     let primary = election.primary()
-        .context(ErrorKind::Legacy(err_msg("election primary lookup failed")))?;
+        .with_context(|_| ErrorKind::CoordinatorElectionPrimaryLookup(name.to_string()))?;
     let primary = match primary {
         None => "NONE ELECTED".into(),
         Some(node_id) => node_id.to_string(),
     };
-    let secondaries_count = election.secondaries_count()
-        .context(ErrorKind::Legacy(err_msg("election secondaries count failed")))?;
-    println!("==> Election name: {}", election.name());
     println!("==> Election primary: {}", primary);
+    let secondaries_count = election.secondaries_count()
+        .with_context(|_| ErrorKind::CoordinatorElectionSecondaryCount(name.to_string()))?;
     println!("==> Election secondaries count: {}", secondaries_count);
     Ok(())
 }
@@ -77,7 +76,7 @@ fn ls<'a>(args: &ArgMatches<'a>, interfaces: &Interfaces) -> Result<()> {
     let admin = admin_interface(args, interfaces)?;
     println!("==> Available elections:");
     for election in admin.elections() {
-        let election = election.context(ErrorKind::Legacy(err_msg("failed to list elections")))?;
+        let election = election.with_context(|_| ErrorKind::CoordinatorElectionList)?;
         println!("====> {}", election.name());
     }
     Ok(())
@@ -92,9 +91,9 @@ fn step_down<'a>(args: &ArgMatches<'a>, interfaces: &Interfaces) -> Result<()> {
     let name = command.value_of("ELECTION").unwrap();
     let admin = admin_interface(args, interfaces)?;
     let election = admin.election(&name)
-        .context(ErrorKind::Legacy(err_msg("failed to lookup election")))?;
+        .with_context(|_| ErrorKind::CoordinatorElectionLookup(name.to_string()))?;
     let stepped_down = election.step_down()
-        .context(ErrorKind::Legacy(err_msg("failed to step-down election")))?;
+        .with_context(|_| ErrorKind::CoordinatorElectionStepDown(name.to_string()))?;
     let logger = interfaces.logger();
     if stepped_down {
         info!(logger, "Stepped down election"; "election" => name);
@@ -114,7 +113,9 @@ pub fn run<'a>(args: &ArgMatches<'a>, interfaces: &Interfaces) -> Result<()> {
         Some(COMMAND_INFO) => info(args, interfaces),
         Some(COMMAND_LS) => ls(args, interfaces),
         Some(COMMAND_STEP_DOWN) => step_down(args, interfaces),
-        None => Err(ErrorKind::Legacy(err_msg("need a coordinator election command to run")).into()),
-        _ => Err(ErrorKind::Legacy(err_msg("received unrecognised command")).into()),
+        None => Err(ErrorKind::NoCommand("replictl coordinator election").into()),
+        Some(name) => Err(
+            ErrorKind::UnkownSubcommand("replictl coordinator election", name.to_string()).into()
+        )
     }
 }

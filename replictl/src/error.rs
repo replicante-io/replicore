@@ -68,6 +68,33 @@ pub enum ErrorKind {
     #[fail(display = "could not load configuration")]
     ConfigLoad,
 
+    #[fail(display = "could not list elections from coordinator")]
+    CoordinatorElectionList,
+
+    #[fail(display = "could not lookup election '{}'", _0)]
+    CoordinatorElectionLookup(String),
+
+    #[fail(display = "could not lookup current primary for election '{}'", _0)]
+    CoordinatorElectionPrimaryLookup(String),
+
+    #[fail(display = "could not fetch secondaries count for election '{}'", _0)]
+    CoordinatorElectionSecondaryCount(String),
+
+    #[fail(display = "could not step down election '{}'", _0)]
+    CoordinatorElectionStepDown(String),
+
+    #[fail(display = "could not list non-blocking locks from coordinator")]
+    CoordinatorNBLockList,
+
+    #[fail(display = "could not lookup non-blocking lock '{}'", _0)]
+    CoordinatorNBLockLookup(String),
+
+    #[fail(display = "could not lookup current owner of non-blocking lock '{}'", _0)]
+    CoordinatorNBLockOwnerLookup(String),
+
+    #[fail(display = "could not force-release non-blocking lock '{}'", _0)]
+    CoordinatorNBLockRelease(String),
+
     #[fail(display = "could not fetch {} version", _0)]
     FetchVersion(&'static str),
 
@@ -76,18 +103,6 @@ pub enum ErrorKind {
 
     #[fail(display = "I/O error on file {}", _0)]
     Io(String),
-
-    #[fail(display = "could not list non-blocking locks from coordinator")]
-    NBLockList,
-
-    #[fail(display = "could not lookup non-blocking lock '{}'", _0)]
-    NBLockLookup(String),
-
-    #[fail(display = "could not lookup current owner of non-blocking lock '{}'", _0)]
-    NBLockOwnerLookup(String),
-
-    #[fail(display = "could not force-release non-blocking lock '{}'", _0)]
-    NBLockRelease(String),
 
     #[fail(display = "need a command to run for '{}'", _0)]
     NoCommand(&'static str),

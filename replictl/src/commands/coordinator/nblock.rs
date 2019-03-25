@@ -72,8 +72,8 @@ fn force_release<'a>(args: &ArgMatches<'a>, interfaces: &Interfaces) -> Result<(
     }
     let admin = admin_interface(args, interfaces)?;
     let mut lock = admin.non_blocking_lock(&name)
-        .with_context(|_| ErrorKind::NBLockLookup(name.to_string()))?;
-    lock.force_release().with_context(|_| ErrorKind::NBLockRelease(name.to_string()))?;
+        .with_context(|_| ErrorKind::CoordinatorNBLockLookup(name.to_string()))?;
+    lock.force_release().with_context(|_| ErrorKind::CoordinatorNBLockRelease(name.to_string()))?;
     println!("==> Lock released by force");
     Ok(())
 }
@@ -87,9 +87,9 @@ fn info<'a>(args: &ArgMatches<'a>, interfaces: &Interfaces) -> Result<()> {
     let name = command.value_of("LOCK").unwrap();
     let admin = admin_interface(args, interfaces)?;
     let lock = admin.non_blocking_lock(&name)
-        .with_context(|_| ErrorKind::NBLockLookup(name.to_string()))?;
+        .with_context(|_| ErrorKind::CoordinatorNBLockLookup(name.to_string()))?;
     let owner = lock.owner()
-        .with_context(|_| ErrorKind::NBLockOwnerLookup(name.to_string()))?;
+        .with_context(|_| ErrorKind::CoordinatorNBLockOwnerLookup(name.to_string()))?;
     println!("==> Lock name: {}", lock.name());
     println!("==> Node ID currently holding the lock: {}", owner);
     Ok(())
@@ -101,7 +101,7 @@ fn ls<'a>(args: &ArgMatches<'a>, interfaces: &Interfaces) -> Result<()> {
     let admin = admin_interface(args, interfaces)?;
     println!("==> Currently held locks:");
     for lock in admin.non_blocking_locks() {
-        let lock = lock.with_context(|_| ErrorKind::NBLockList)?;
+        let lock = lock.with_context(|_| ErrorKind::CoordinatorNBLockList)?;
         println!("====> {}", lock.name());
     }
     Ok(())
