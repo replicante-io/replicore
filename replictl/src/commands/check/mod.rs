@@ -1,7 +1,6 @@
 use clap::App;
 use clap::ArgMatches;
 use clap::SubCommand;
-use failure::err_msg;
 
 
 mod config;
@@ -58,7 +57,7 @@ pub fn run<'a>(args: &ArgMatches<'a>, interfaces: &Interfaces) -> Result<()> {
         // Currently update is an alias for `deep` but that may change.
         Some(UPDATE_COMMAND) => run_deep(args, interfaces),
         None => run_quick(args, interfaces),
-        _ => Err(ErrorKind::Legacy(err_msg("Received unrecognised command")).into()),
+        Some(name) => Err(ErrorKind::UnkownSubcommand("replictl check", name.to_string()).into()),
     }
 }
 

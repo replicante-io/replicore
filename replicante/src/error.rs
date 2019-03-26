@@ -3,13 +3,9 @@ use std::fmt;
 use failure::Backtrace;
 use failure::Context;
 use failure::Fail;
-
 use iron::IronError;
-use iron::Response;
-use iron::status;
-use iron::headers::ContentType;
 
-use serde_json;
+use replicante_util_iron::into_ironerror;
 
 
 /// Error information returned by functions in case of errors.
@@ -98,63 +94,8 @@ pub type Result<T> = ::std::result::Result<T, Error>;
 // IronError compatibility code.
 impl From<Error> for IronError {
     fn from(error: Error) -> Self {
-        let trace = match error.backtrace().map(|bt| bt.to_string()) {
-            None => None,
-            Some(ref bt) if bt == "" => None,
-            Some(bt) => Some(bt),
-        };
-        let wrapper = JsonErrorWrapper {
-            cause: error.cause().map(|cause| cause.find_root_cause().to_string()),
-            error: error.to_string(),
-            layers: Fail::iter_chain(&error).count(),
-            trace,
-        };
-        let mut response = Response::with((
-            status::InternalServerError, serde_json::to_string(&wrapper).unwrap()
-        ));
-        response.headers.set(ContentType::json());
-        let error = Box::new(ErrorWrapper::from(error));
-        IronError { error, response }
+        into_ironerror(error)
     }
-}
-
-
-#[derive(Debug)]
-struct ErrorWrapper {
-    display: String,
-    error: Error,
-}
-
-impl fmt::Display for ErrorWrapper {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        fmt::Display::fmt(&self.error, f)
-    }
-}
-
-impl From<Error> for ErrorWrapper {
-    fn from(error: Error) -> ErrorWrapper {
-        let display = error.to_string();
-        ErrorWrapper {
-            display,
-            error,
-        }
-    }
-}
-
-impl ::iron::Error for ErrorWrapper {
-    fn description(&self) -> &str {
-        &self.display
-    }
-}
-
-
-/// JSON format of the error response.
-#[derive(Serialize)]
-struct JsonErrorWrapper {
-    cause: Option<String>,
-    error: String,
-    layers: usize,
-    trace: Option<String>,
 }
 
 
@@ -196,6 +137,6 @@ mod tests {
 
         let result_body = response::extract_body_to_bytes(response);
         let result_body = String::from_utf8(result_body).unwrap();
-        assert_eq!(result_body, r#"{"cause":"test","error":"failures","layers":3,"trace":null}"#);
+        assert_eq!(result_body, r#"{"error":"failures","layers":["failures","chained","test"],"trace":null}"#);
     }
 }
