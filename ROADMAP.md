@@ -1,5 +1,5 @@
 ## 0.2.1 - Project improvements
-- Standardise logging across core and agents.
+- Release 0.2.1
 
 
 ## 0.2.2 - Introspection

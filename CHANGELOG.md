@@ -21,6 +21,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Improve docker-based dev environment and auto-initialise it.
 - Improve playgrounds usability.
 - Replace `error-chain` with `failure`.
+- Standardise logging across core and agents.
 
 ## [0.2.0] - 2019-02-20
 ### Added

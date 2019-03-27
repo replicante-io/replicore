@@ -87,7 +87,7 @@ lazy_static! {
 /// Most, if not all, components start background threads and must join on drop.
 /// Interfaces can work in the same way if they need threads but some may just provide
 /// services to other interfaces and/or components.
-#[cfg_attr(feature = "cargo-clippy", allow(needless_pass_by_value))]
+#[allow(clippy::needless_pass_by_value)]
 fn initialise_and_run(config: Config, logger: Logger) -> Result<()> {
     // TODO: iniialise sentry as soon as possible.
 

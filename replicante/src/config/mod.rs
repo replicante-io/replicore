@@ -123,9 +123,11 @@ impl Config {
     ///
     ///   * Apply verbose debug level logic.
     pub fn transform(mut self) -> Self {
+        // With !verbose logging debug level applies only to replicante crates.
         if self.logging.level == LoggingLevel::Debug && !self.logging.verbose {
             self.logging.level = LoggingLevel::Info;
             self.logging.modules.entry("replicante".into()).or_insert(LoggingLevel::Debug);
+            self.logging.modules.entry("replictl".into()).or_insert(LoggingLevel::Debug);
         }
         self
     }
