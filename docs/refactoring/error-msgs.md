@@ -26,7 +26,7 @@ One possible solution:
 
 ## Plan
 
-  1. [ ] Remove `error-chain` from the equation.
+  1. [x] Remove `error-chain` from the equation.
   2. [ ] Address all error related warnings.
   3. [ ] Find all uses of generic errors:
      * replicante: `ErrorKind::Legacy`.

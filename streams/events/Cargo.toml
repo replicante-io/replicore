@@ -1,6 +1,6 @@
 [package]
 name = "replicante_streams_events"
-version = "0.1.0"
+version = "0.1.1"
 authors = ["Stefano Pogliani <stefano@spogliani.net>"]
 
 description = "Replicante streaming interface for events"

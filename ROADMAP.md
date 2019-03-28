@@ -1,7 +1,3 @@
-## 0.2.1 - Project improvements
-- Release 0.2.1
-
-
 ## 0.2.2 - Introspection
 - Improve generated cluster data.
 - Improve metrics names.

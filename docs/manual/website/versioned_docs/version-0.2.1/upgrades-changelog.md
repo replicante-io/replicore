@@ -1,7 +1,8 @@
 ---
-id: upgrades-changelog
+id: version-0.2.1-upgrades-changelog
 title: Change Log
 sidebar_label: Change Log
+original_id: upgrades-changelog
 ---
 
 All notable changes to this project will be documented in this file.

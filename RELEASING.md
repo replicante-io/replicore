@@ -3,11 +3,14 @@
 - [ ] Ensure dependences are up to date
 - [ ] Ensure tests and CI checks pass
 - [ ] Bump the version number of all crates that need it
-- [ ] Update changelogs with version and date
+- [ ] Update cargo lock file
+- [ ] Update changelog with version and date
+- [ ] Update docs changelog
 - [ ] Version documents
 - [ ] Ensure docker image builds correctly
 - [ ] Git commit and tag release
 - [ ] Build and push docker image
+- [ ] Release pre-built binaries
 - [ ] Release documentation
 
 

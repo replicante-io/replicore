@@ -1,6 +1,6 @@
 [package]
 name = "replicante_agent_discovery"
-version = "0.1.0"
+version = "0.1.1"
 authors = ["Stefano Pogliani <stefano@spogliani.net>"]
 
 description = "Replicante Core component for agent discovery"
