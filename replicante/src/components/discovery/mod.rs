@@ -1,8 +1,8 @@
-use std::thread::Builder as ThreadBuilder;
-use std::thread::JoinHandle;
 use std::time::Duration;
 
 use failure::ResultExt;
+use humthreads::Builder as ThreadBuilder;
+use humthreads::Thread;
 use slog::Logger;
 
 use replicante_coordinator::Coordinator;
@@ -36,7 +36,7 @@ pub struct DiscoveryComponent {
     logger: Logger,
     snapshots_config: EventsSnapshotsConfig,
     tasks: Tasks,
-    worker: Option<JoinHandle<()>>,
+    worker: Option<Thread<()>>,
 }
 
 impl DiscoveryComponent {
@@ -68,18 +68,21 @@ impl DiscoveryComponent {
         let term = self.config.term;
 
         info!(self.logger, "Starting Agent Discovery thread");
-        let thread = ThreadBuilder::new().name("r:c:discovery".into()).spawn(move || {
-            let election = coordinator.election("discovery");
-            let logic = DiscoveryElection::new(config, snapshots_config, logger.clone(), tasks);
-            let opts = LoopingElectionOpts::new(election, logic)
-                .loop_delay(interval);
-            let opts = match term {
-                0 => opts,
-                term => opts.election_term(term),
-            };
-            let mut election = LoopingElection::new(opts, logger);
-            election.loop_forever();
-        }).context(ErrorKind::SpawnThread("agent discovery"))?;
+        let thread = ThreadBuilder::new("r:c:discovery")
+            .full_name("replicore:component:discovery")
+            .spawn(move |_scope| {
+                let election = coordinator.election("discovery");
+                let logic = DiscoveryElection::new(config, snapshots_config, logger.clone(), tasks);
+                let opts = LoopingElectionOpts::new(election, logic)
+                    .loop_delay(interval);
+                let opts = match term {
+                    0 => opts,
+                    term => opts.election_term(term),
+                };
+                let mut election = LoopingElection::new(opts, logger);
+                election.loop_forever();
+            })
+            .context(ErrorKind::SpawnThread("agent discovery"))?;
         self.worker = Some(thread);
         Ok(())
     }
@@ -87,7 +90,7 @@ impl DiscoveryComponent {
     /// Wait for the worker thread to stop.
     pub fn wait(&mut self) -> Result<()> {
         info!(self.logger, "Waiting for Agent Discovery to stop");
-        if let Some(handle) = self.worker.take() {
+        if let Some(mut handle) = self.worker.take() {
             if let Err(error) = handle.join() {
                 let error: Error = format_err!("discovery thread failed: {:?}", error).into();
                 return Err(error);

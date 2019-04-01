@@ -2,6 +2,7 @@ extern crate failure;
 #[macro_use]
 extern crate failure_derive;
 extern crate futures;
+extern crate humthreads;
 #[macro_use]
 extern crate lazy_static;
 extern crate num_cpus;

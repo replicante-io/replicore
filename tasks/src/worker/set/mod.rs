@@ -2,10 +2,10 @@ use std::collections::HashMap;
 use std::sync::Arc;
 use std::sync::atomic::AtomicBool;
 use std::sync::atomic::Ordering;
-use std::thread::Builder;
-use std::thread::JoinHandle;
 use std::time::Duration;
 
+use humthreads::Builder;
+use humthreads::Thread;
 use slog::Logger;
 
 use super::super::Config;
@@ -60,7 +60,9 @@ struct Worker<Q: TaskQueue> {
 
 impl<Q: TaskQueue> Worker<Q> {
     fn new(
-        logger: Logger, backend: Arc<Backend<Q>>, handlers: Arc<HashMap<Q, Box<TaskHandler<Q>>>>
+        logger: Logger,
+        backend: Arc<Backend<Q>>,
+        handlers: Arc<HashMap<Q, Box<TaskHandler<Q>>>>,
     ) -> Worker<Q> {
         Worker {
             backend,
@@ -126,17 +128,20 @@ impl<Q: TaskQueue> WorkerSet<Q> {
 
         for idx in 0..self.config.threads_count {
             let logger = self.logger.clone();
-            let name = format!("r:c:tasks:worker:{}", idx);
+            let name = format!("replicore:tasks:worker:{}", idx);
+            let short_name = format!("r:t:worker:{}", idx);
             let still_running = Arc::clone(&running);
             let thread_backend = Arc::clone(&self.backend);
             let thread_handlers = Arc::clone(&handlers);
 
-            let thread = Builder::new().name(name).spawn(move || {
-                let worker: Worker<Q> = Worker::new(logger, thread_backend, thread_handlers);
-                while still_running.load(Ordering::SeqCst) {
-                    worker.run_once();
-                }
-            });
+            let thread = Builder::new(short_name)
+                .full_name(name)
+                .spawn(move |_scope| {
+                    let worker: Worker<Q> = Worker::new(logger, thread_backend, thread_handlers);
+                    while still_running.load(Ordering::SeqCst) {
+                        worker.run_once();
+                    }
+                });
             threads.push(thread);
         }
 
@@ -144,7 +149,7 @@ impl<Q: TaskQueue> WorkerSet<Q> {
         if threads.iter().any(|t| t.is_err()) {
             running.store(false, Ordering::SeqCst);
             for thread in threads.into_iter() {
-                if let Ok(handle) = thread {
+                if let Ok(mut handle) = thread {
                     // TODO: propagate error when we have a better story?
                     if let Err(error) = handle.join() {
                         error!(self.logger, "WorkerSet pool thread paniced"; "error" => ?error);
@@ -192,14 +197,14 @@ impl<Q: TaskQueue> WorkerSet<Q> {
 pub struct WorkerSetPool {
     logger: Logger,
     running: Arc<AtomicBool>,
-    threads: Vec<JoinHandle<()>>,
+    threads: Vec<Thread<()>>,
 }
 
 impl WorkerSetPool {
     /// Stop the background thread pool and wait for threads to terminate.
     pub fn stop(&mut self) -> Result<()> {
         self.running.store(false, Ordering::SeqCst);
-        while let Some(handle) = self.threads.pop() {
+        while let Some(mut handle) = self.threads.pop() {
             // TODO: propagate error when we have a better story?
             if let Err(error) = handle.join() {
                 error!(self.logger, "WorkerSet pool thread paniced"; "error" => ?error);

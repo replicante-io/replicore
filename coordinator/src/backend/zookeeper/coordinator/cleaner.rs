@@ -1,9 +1,9 @@
 use std::sync::Arc;
-use std::thread::Builder;
-use std::thread::JoinHandle;
 use std::time::Duration;
 
 use failure::ResultExt;
+use humthreads::Builder;
+use humthreads::Thread;
 use slog::Logger;
 use zookeeper::ZkError;
 
@@ -38,7 +38,7 @@ use super::election::ZookeeperElection;
 /// Prevent the prefix nodes that do not contain anything from piling up without value.
 /// Once the new container znode type is stable this code can be dropped in favour of that.
 pub struct Cleaner {
-    handle: Option<JoinHandle<()>>,
+    handle: Option<Thread<()>>,
     logger: Logger,
     shutdown_signal: Option<ShutdownSender>,
 }
@@ -49,27 +49,30 @@ impl Cleaner {
     ) -> Result<Cleaner> {
         let (sender, receiver) = LoopingElectionOpts::shutdown_channel();
         let inner_logger = logger.clone();
-        let handle = Builder::new().name("r:coordinator:zoo:cleaner".into()).spawn(move || {
-            let logger = inner_logger;
-            let cleaner = InnerCleaner {
-                cleanup_limit: config.cleanup.limit,
-                client: Arc::clone(&client),
-                logger: logger.clone(),
-            };
-            let id = "zookeeper-cleaner";
-            let election = Election::new(id.to_string(), Box::new(ZookeeperElection::new(
-                client, id, node_id, logger.clone()
-            )));
-            let opts = LoopingElectionOpts::new(election, cleaner)
-                .loop_delay(Duration::from_secs(config.cleanup.interval))
-                .shutdown_receiver(receiver);
-            let opts = match config.cleanup.term {
-                0 => opts,
-                term => opts.election_term(term),
-            };
-            let mut election = LoopingElection::new(opts, logger);
-            election.loop_forever();
-        }).context(ErrorKind::SpawnThread("zookeeper cleaner"))?;
+        let handle = Builder::new("r:coordinator:zoo:cleaner")
+            .full_name("replicore:coordinator:zookeeper:cleaner")
+            .spawn(move |_scope| {
+                let logger = inner_logger;
+                let cleaner = InnerCleaner {
+                    cleanup_limit: config.cleanup.limit,
+                    client: Arc::clone(&client),
+                    logger: logger.clone(),
+                };
+                let id = "zookeeper-cleaner";
+                let election = Election::new(id.to_string(), Box::new(ZookeeperElection::new(
+                    client, id, node_id, logger.clone()
+                )));
+                let opts = LoopingElectionOpts::new(election, cleaner)
+                    .loop_delay(Duration::from_secs(config.cleanup.interval))
+                    .shutdown_receiver(receiver);
+                let opts = match config.cleanup.term {
+                    0 => opts,
+                    term => opts.election_term(term),
+                };
+                let mut election = LoopingElection::new(opts, logger);
+                election.loop_forever();
+            })
+            .context(ErrorKind::SpawnThread("zookeeper cleaner"))?;
         Ok(Cleaner {
             handle: Some(handle),
             logger,
@@ -83,9 +86,9 @@ impl Drop for Cleaner {
         if let Some(shutdown_signal) = self.shutdown_signal.take() {
             drop(shutdown_signal);
         }
-        if let Some(handle) = self.handle.take() {
+        if let Some(mut handle) = self.handle.take() {
             if let Err(error) = handle.join() {
-                error!(self.logger, "Zookeeper cleaner thread paniced"; "error" => ?error);
+                error!(self.logger, "Zookeeper cleaner thread paniced"; failure_info(&error));
             }
         }
     }

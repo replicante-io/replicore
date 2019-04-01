@@ -1,6 +1,7 @@
 extern crate crossbeam_channel;
 extern crate failure;
 extern crate failure_derive;
+extern crate humthreads;
 #[macro_use]
 extern crate lazy_static;
 extern crate prometheus;

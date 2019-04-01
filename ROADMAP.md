@@ -1,24 +1,32 @@
-## 0.2.2 - Introspection
-- Improve generated cluster data.
-- Improve metrics names.
+## 0.3.0 - Introspection
+- Introduce an `/api/unstable` API "root".
+- Threads introspection API.
+- Rename incorrectly named v1 as unstable (**breaking**).
+- Cluster ID and Friendly name (**breaking**).
+- Graceful shutdown.
 - Sentry integration.
 - Trace agent discovery.
 - Trace state fetching.
+- Standardise metrics names.
+- Investigate yield and harvast.
+- Check for available updates.
+- Status endpoints.
+- Cluster refresh request endpoint.
 
 
-## 0.2.3 - Events stream
+## 0.3.1 - Events stream
 - Emit events to stream (and not store).
 - Follow/consume streams by group.
 - Relay events from stream to store.
 
 
-## 0.3.0 - Split "view" database
+## 0.4.0 - Split "view" database
 - Move the indexed event collection to dedicated interface (still in mongo but different DB).
 - Emit messages to kafka instead of the store.
 - Store every event in the "view" database.
 
 
-## 0.3.1 - Additional data in the UI
+## 0.4.1 - Additional data in the UI
 - Add agents information to the UI.
 - Add shards information to the UI.
 - Add cluster events to cluster view.
@@ -26,7 +34,7 @@
 - Expandable event payload box with easier to read JSON.
 
 
-## 0.3.2 - More agents?
+## 0.4.2 - More agents?
 - Redis?
 - Cassandra?
 

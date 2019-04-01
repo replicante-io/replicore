@@ -4,6 +4,7 @@ extern crate clap;
 #[macro_use]
 extern crate failure;
 extern crate failure_derive;
+extern crate humthreads;
 
 extern crate iron;
 extern crate iron_json_response;
