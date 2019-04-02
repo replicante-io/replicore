@@ -13,9 +13,10 @@ use router::Router;
 
 use replicante_data_store::Store;
 
+use super::super::super::interfaces::api::APIVersion;
+use super::super::super::interfaces::Interfaces;
 use super::super::super::Error;
 use super::super::super::ErrorKind;
-use super::super::super::interfaces::Interfaces;
 
 
 /// Cluster discovery (`/webui/cluster/:cluster/discovery`) handler.
@@ -26,7 +27,8 @@ pub struct Discovery {
 impl Handler for Discovery {
     fn handle(&self, req: &mut Request) -> IronResult<Response> {
         let cluster = req.extensions.get::<Router>()
-            .unwrap().find("cluster")
+            .expect("Iron Router extension not found")
+            .find("cluster")
             .map(String::from)
             .ok_or_else(|| ErrorKind::Legacy(err_msg("missing `cluster` parameter")))
             .map_err(Error::from)?;
@@ -43,7 +45,7 @@ impl Handler for Discovery {
 
 impl Discovery {
     pub fn attach(interfaces: &mut Interfaces) {
-        let router = interfaces.api.router();
+        let mut router = interfaces.api.router_for(APIVersion::Unstable);
         let handler = Discovery { store: interfaces.store.clone() };
         router.get("/webui/cluster/:cluster/discovery", handler, "webui/cluster/discovery");
     }
@@ -58,7 +60,8 @@ pub struct Meta {
 impl Handler for Meta {
     fn handle(&self, req: &mut Request) -> IronResult<Response> {
         let cluster = req.extensions.get::<Router>()
-            .unwrap().find("cluster")
+            .expect("Iron Router extension not found")
+            .find("cluster")
             .map(String::from)
             .ok_or_else(|| ErrorKind::Legacy(err_msg("missing `cluster` parameter")))
             .map_err(Error::from)?;
@@ -75,7 +78,7 @@ impl Handler for Meta {
 
 impl Meta {
     pub fn attach(interfaces: &mut Interfaces) {
-        let router = interfaces.api.router();
+        let mut router = interfaces.api.router_for(APIVersion::Unstable);
         let handler = Meta { store: interfaces.store.clone() };
         router.get("/webui/cluster/:cluster/meta", handler, "webui/cluster/meta");
     }

@@ -12,9 +12,10 @@ use router::Router;
 
 use replicante_data_store::Store;
 
+use super::super::super::interfaces::api::APIVersion;
+use super::super::super::interfaces::Interfaces;
 use super::super::super::Error;
 use super::super::super::ErrorKind;
-use super::super::super::interfaces::Interfaces;
 
 
 static FIND_CLUSTERS_LIMIT: u8 = 25;
@@ -27,7 +28,10 @@ pub struct Find {
 
 impl Handler for Find {
     fn handle(&self, req: &mut Request) -> IronResult<Response> {
-        let query = req.extensions.get::<Router>().unwrap().find("query").unwrap_or("");
+        let query = req.extensions.get::<Router>()
+            .expect("Iron Router extension not found")
+            .find("query")
+            .unwrap_or("");
         let clusters = self.store.find_clusters(query, FIND_CLUSTERS_LIMIT)
             .with_context(|_| ErrorKind::PrimaryStoreQuery("find_clusters"))
             .map_err(Error::from)?;
@@ -40,7 +44,7 @@ impl Handler for Find {
 impl Find {
     /// Attaches the handler for `/webui/clusters/top`.
     pub fn attach(interfaces: &mut Interfaces) {
-        let router = interfaces.api.router();
+        let mut router = interfaces.api.router_for(APIVersion::Unstable);
         let handler_root = Find { store: interfaces.store.clone() };
         let handler_query = Find { store: interfaces.store.clone() };
         router.get("/webui/clusters/find", handler_root, "webui/clusters/find");
@@ -68,7 +72,7 @@ impl Handler for Top {
 impl Top {
     /// Attaches the handler for `/webui/clusters/top`.
     pub fn attach(interfaces: &mut Interfaces) {
-        let router = interfaces.api.router();
+        let mut router = interfaces.api.router_for(APIVersion::Unstable);
         let handler = Top {
             store: interfaces.store.clone()
         };

@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## [Unreleased]
 ### Added
 - A better thread story.
+- Introduce an `/api/unstable` API "version".
+
+### Changed
+- **BREAKING**: Rename incorrectly named v1 as unstable.
 
 ## [0.2.1] - 2019-03-28
 ### Added

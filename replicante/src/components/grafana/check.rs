@@ -5,9 +5,10 @@ use iron::Request;
 use iron::Response;
 use iron::status;
 
+use super::super::super::interfaces::api::APIVersion;
 use super::Interfaces;
 
-/// Grafana check endpoint (`/api/v1/grafana`) handler.
+/// Grafana check endpoint (`/grafana`) handler.
 pub struct Check {}
 
 impl Handler for Check {
@@ -18,8 +19,8 @@ impl Handler for Check {
 
 impl Check {
     pub fn attach(interfaces: &mut Interfaces) {
-        let router = interfaces.api.router();
+        let mut router = interfaces.api.router_for(APIVersion::Unstable);
         let handler = Check {};
-        router.get("/api/v1/grafana", handler, "api/v1/grafana");
+        router.get("/grafana", handler, "/grafana");
     }
 }

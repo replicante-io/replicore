@@ -1,7 +1,5 @@
 ## 0.3.0 - Introspection
-- Introduce an `/api/unstable` API "root".
 - Threads introspection API.
-- Rename incorrectly named v1 as unstable (**breaking**).
 - Cluster ID and Friendly name (**breaking**).
 - Graceful shutdown.
 - Sentry integration.

@@ -25,9 +25,10 @@ mod routes;
 
 pub use self::config::Config;
 pub use self::metrics::register_metrics;
-pub use self::router::RouterBuilder;
+pub use self::router::VersionedRouter;
 
 use self::metrics::MIDDLEWARE;
+use self::router::RouterBuilder;
 
 
 /// The replicante HTTP API interface.
@@ -61,9 +62,12 @@ impl API {
         }
     }
 
-    /// Mutably access the router builder for extension.
-    pub fn router(&mut self) -> &mut RouterBuilder {
-        self.router.as_mut().expect("Unable to access router. Was API::run called already?")
+    /// Register routes for a specific API version.
+    pub fn router_for(&mut self, version: APIVersion) -> VersionedRouter {
+        self.router
+            .as_mut()
+            .expect("Unable to access router. Was API::run called already?")
+            .for_version(version)
     }
 
     /// Creates an Iron server and spawns a thread to serve it.
@@ -99,5 +103,26 @@ impl API {
     pub fn mock(logger: Logger, metrics: &Metrics) -> API {
         let config = Config::default();
         API::new(config, logger, metrics)
+    }
+}
+
+/// Enumerates all possible API versions.
+///
+/// All endpoints must fall under one of these versions and are subject to all restrictions
+/// of that specific version.
+/// The main restriction is that versioned APIs are subject to semver guarantees.
+pub enum APIVersion {
+    /// API version for all endpoints that are not yet stable.
+    ///
+    /// Endpoints in this root are NOT subject to ANY compatibility guarantees!
+    Unstable,
+}
+
+impl APIVersion {
+    /// API version prefix for route globs.
+    fn prefix(&self) -> &'static str {
+        match self {
+            APIVersion::Unstable => "/api/unstable",
+        }
     }
 }

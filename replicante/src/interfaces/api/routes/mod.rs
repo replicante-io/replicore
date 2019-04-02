@@ -3,17 +3,17 @@ use prometheus::Registry;
 
 use replicante_util_iron::MetricsHandler;
 
+use super::APIVersion;
 use super::RouterBuilder;
-
 
 mod index;
 mod version;
 
-
 /// Mount core API route handlers.
 pub fn mount(router: &mut RouterBuilder, registry: Registry) {
     let metrics = MetricsHandler::new(registry);
-    router.get("/", index::handler, "index");
-    router.get("/api/v1/metrics", metrics, "api/v1/metrics");
-    router.get("/api/v1/version", version::handler, "api/v1/version");
+    let mut unstable = router.for_version(APIVersion::Unstable);
+    unstable.get("/", index::handler, "index");
+    unstable.get("/metrics", metrics, "/metrics");
+    unstable.get("/version", version::handler, "/version");
 }
