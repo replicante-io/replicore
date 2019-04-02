@@ -25,8 +25,10 @@ const COMMAND_DATA: &str = "data";
 
 /// Check the `ReplicanteQueues::ClusterRefresh` tasks.
 fn check_cluster_refresh(
-    logger: &Logger, interfaces: &Interfaces, outcomes: &mut Outcomes,
-    tasks: &TasksAdmin<ReplicanteQueues>
+    logger: &Logger,
+    interfaces: &Interfaces,
+    outcomes: &mut Outcomes,
+    tasks: &TasksAdmin<ReplicanteQueues>,
 ) -> Result<()> {
     info!(logger, "Checking tasks queue ..."; "queue" => ReplicanteQueues::ClusterRefresh.name());
     let mut tracker = interfaces.progress("Processed more tasks");
@@ -79,13 +81,12 @@ pub fn data<'a>(args: &ArgMatches<'a>, interfaces: &Interfaces) -> Result<()> {
     )?;
     if !confirm {
         error!(logger, "Cannot check without user confirmation");
-        return Err(ErrorKind::Legacy(err_msg("operation aborded by the user")).into());
+        return Err(ErrorKind::UserAbort.into());
     }
 
     let mut outcomes = Outcomes::new();
     let config = args.value_of("config").unwrap();
-    let config = Config::from_file(config)
-        .context(ErrorKind::Legacy(err_msg("failed to check tasks")))?;
+    let config = Config::from_file(config).with_context(|_| ErrorKind::ConfigLoad)?;
     let tasks: TasksAdmin<ReplicanteQueues> = TasksAdmin::new(logger.clone(), config.tasks)?;
 
     // Check all queues now.
@@ -94,7 +95,7 @@ pub fn data<'a>(args: &ArgMatches<'a>, interfaces: &Interfaces) -> Result<()> {
     // Report results.
     if outcomes.has_errors() {
         error!(logger, "Tasks data checks failed");
-        return Err(ErrorKind::Legacy(err_msg("tasks data checks failed")).into());
+        return Err(ErrorKind::CheckWithErrors("tasks data").into());
     }
     if outcomes.has_warnings() {
         warn!(logger, "Tasks data checks passed with warnings");
@@ -112,7 +113,9 @@ pub fn run<'a>(args: &ArgMatches<'a>, interfaces: &Interfaces) -> Result<()> {
     let command = command.subcommand_name();
     match command {
         Some(COMMAND_DATA) => data(args, interfaces),
-        None => Err(ErrorKind::Legacy(err_msg("need a tasks check to run")).into()),
-        _ => Err(ErrorKind::Legacy(err_msg("received unrecognised command")).into()),
+        None => Err(ErrorKind::NoCommand("replictl check tasks").into()),
+        Some(name) => Err(
+            ErrorKind::UnkownSubcommand("replictl check", name.to_string()).into()
+        )
     }
 }

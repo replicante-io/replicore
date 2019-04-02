@@ -59,6 +59,9 @@ pub enum ErrorKind {
     #[fail(display = "could not check {}", _0)]
     CheckFailed(&'static str),
 
+    #[fail(display = "{} check failed", _0)]
+    CheckWithErrors(&'static str),
+
     #[fail(display = "could not initialise client interface for {}", _0)]
     ClientInit(&'static str),
 
@@ -115,6 +118,9 @@ pub enum ErrorKind {
 
     #[fail(display = "unkown '{}' command for '{}'", _1, _0)]
     UnkownSubcommand(&'static str, String),
+
+    #[fail(display = "operation aborted by the user")]
+    UserAbort,
 
     // TODO: drop once all uses are removed.
     #[fail(display = "{}", _0)]
