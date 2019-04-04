@@ -82,8 +82,9 @@ impl API {
 
         let handle = ThreadBuilder::new("r:i:api")
             .full_name("replicore:interface:api")
-            .spawn(move |_scope| {
+            .spawn(move |scope| {
                 info!(logger, "Starting API server"; "bind" => bind.clone());
+                scope.activity("running https://github.com/iron/iron HTTP server");
                 Iron::new(chain).http(bind).expect("Unable to start API server");
             })
             .context(ErrorKind::SpawnThread("http server"))?;

@@ -10,6 +10,7 @@ use replicante::ReplicanteQueues;
 use replicante::task_payload::ClusterRefreshPayload;
 use replicante_tasks::TaskQueue;
 use replicante_tasks::admin::TasksAdmin;
+use replicante_util_failure::format_fail;
 
 use super::super::super::ErrorKind;
 use super::super::super::Interfaces;
@@ -32,11 +33,12 @@ fn check_cluster_refresh(
 ) -> Result<()> {
     info!(logger, "Checking tasks queue ..."; "queue" => ReplicanteQueues::ClusterRefresh.name());
     let mut tracker = interfaces.progress("Processed more tasks");
-    let iter = tasks.scan(ReplicanteQueues::ClusterRefresh)?;
+    let iter = tasks.scan(ReplicanteQueues::ClusterRefresh)
+        .with_context(|_| ErrorKind::CheckFailed("queued tasks"))?;
     for task in iter {
         match task {
             Err(error) => {
-                let error = error.to_string();
+                let error = format_fail(&error);
                 outcomes.error(Error::GenericError(error));
             },
             Ok(task) => {
@@ -87,7 +89,8 @@ pub fn data<'a>(args: &ArgMatches<'a>, interfaces: &Interfaces) -> Result<()> {
     let mut outcomes = Outcomes::new();
     let config = args.value_of("config").unwrap();
     let config = Config::from_file(config).with_context(|_| ErrorKind::ConfigLoad)?;
-    let tasks: TasksAdmin<ReplicanteQueues> = TasksAdmin::new(logger.clone(), config.tasks)?;
+    let tasks: TasksAdmin<ReplicanteQueues> = TasksAdmin::new(logger.clone(), config.tasks)
+        .with_context(|_| ErrorKind::AdminInit("tasks"))?;
 
     // Check all queues now.
     check_cluster_refresh(&logger, interfaces, &mut outcomes, &tasks)?;

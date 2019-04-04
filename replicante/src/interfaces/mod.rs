@@ -47,11 +47,12 @@ impl Interfaces {
         let metrics = Metrics::new();
         let api = API::new(config.api.clone(), logger.clone(), &metrics);
         let coordinator = Coordinator::new(config.coordinator.clone(), logger.clone())
-            .context(ErrorKind::InterfaceInit("coordinator"))?;
+            .with_context(|_| ErrorKind::InterfaceInit("coordinator"))?;
         let store = Store::new(config.storage.clone(), logger.clone())
             .with_context(|_| ErrorKind::ClientInit("store"))?;
         let streams = Streams::new(config, logger.clone(), store.clone())?;
-        let tasks = Tasks::new(config.tasks.clone())?;
+        let tasks = Tasks::new(config.tasks.clone())
+            .with_context(|_| ErrorKind::ClientInit("tasks"))?;
         let tracing = Tracing::new(config.tracing.clone(), logger.clone())?;
         Ok(Interfaces {
             api,

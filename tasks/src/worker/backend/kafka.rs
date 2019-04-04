@@ -5,11 +5,9 @@ use std::sync::Arc;
 use std::time::Duration;
 use std::time::Instant;
 
+use failure::ResultExt;
 use futures::future::Future;
 
-use rdkafka::Message;
-use rdkafka::Offset::Offset;
-use rdkafka::TopicPartitionList;
 use rdkafka::config::ClientConfig;
 use rdkafka::consumer::CommitMode;
 use rdkafka::consumer::Consumer;
@@ -20,13 +18,13 @@ use rdkafka::message::OwnedHeaders;
 use rdkafka::message::OwnedMessage;
 use rdkafka::producer::future_producer::FutureProducer;
 use rdkafka::producer::future_producer::FutureRecord;
+use rdkafka::Message;
+use rdkafka::Offset::Offset;
+use rdkafka::TopicPartitionList;
 
 use slog::Logger;
 
-use super::super::super::TaskId;
 use super::super::super::config::KafkaConfig;
-use super::super::TaskError;
-
 use super::super::super::shared::kafka::ClientStatsContext;
 use super::super::super::shared::kafka::KAFKA_TASKS_CONSUMER;
 use super::super::super::shared::kafka::KAFKA_TASKS_GROUP;
@@ -39,10 +37,13 @@ use super::super::super::shared::kafka::producer_config;
 use super::super::super::shared::kafka::queue_from_topic;
 use super::super::super::shared::kafka::topic_for_queue;
 use super::super::super::shared::kafka::topic_is_retry;
+use super::super::super::Error;
+use super::super::super::ErrorKind;
+use super::super::super::Result;
+use super::super::super::TaskId;
 
 use super::AckStrategy;
 use super::Backend;
-use super::Result;
 use super::Task;
 use super::TaskQueue;
 
@@ -132,7 +133,8 @@ impl Kafka {
     pub fn new(config: KafkaConfig, logger: Logger) -> Result<Kafka> {
         let kafka_config = consumer_config(&config, KAFKA_TASKS_CONSUMER, KAFKA_TASKS_GROUP);
         let retry_producer = producer_config(&config, KAFKA_TASKS_RETRY_PRODUCER)
-            .create_with_context(ClientStatsContext::new("retry-producer"))?;
+            .create_with_context(ClientStatsContext::new("retry-producer"))
+            .with_context(|_| ErrorKind::BackendClientCreation)?;
         Ok(Kafka {
             commit_retries: config.commit_retries,
             config: kafka_config,
@@ -208,11 +210,12 @@ impl Kafka {
     fn consumer(&self, subscriptions: &Vec<String>) -> Result<BaseStatsConsumer> {
         debug!(self.logger, "Starting new kafka consumer"; "subscriptions" => ?subscriptions);
         let consumer_role = format!("worker-{:?}-consumer", ::std::thread::current().id());
-        let consumer: BaseStatsConsumer = self.config.create_with_context(
-            ClientStatsContext::new(consumer_role)
-        )?;
+        let consumer: BaseStatsConsumer = self.config
+            .create_with_context(ClientStatsContext::new(consumer_role))
+            .with_context(|_| ErrorKind::BackendClientCreation)?;
         let names: Vec<&str> = subscriptions.iter().map(|n|n.as_str()).collect();
-        consumer.subscribe(&names)?;
+        consumer.subscribe(&names)
+            .with_context(|_| ErrorKind::TaskSubscription)?;
         Ok(consumer)
     }
 
@@ -222,16 +225,19 @@ impl Kafka {
     ) -> Result<TaskCache> {
         // Validate the message is on a supported queue.
         // The queue is stored as a string in the end because we cache it as a thread local.
-        let queue: Q = queue_from_topic(&self.prefix, message.topic(), TopicRole::Queue).parse()?;
+        let queue = queue_from_topic(&self.prefix, message.topic(), TopicRole::Queue);
+        let queue = queue
+            .parse::<Q>()
+            .with_context(|_| ErrorKind::QueueNameInvalid(queue))?;
         let queue = queue.name();
 
         // Extract message metadata and payload.
         let topic = message.topic();
         let message_id = format!("{}:{}:{}", topic, message.partition(), message.offset());
-        let payload = message.payload().ok_or_else(|| TaskError::Msg(
-            format!("received task without payload (id: {})", message_id)
-        ))?.to_vec();
-
+        let payload = message
+            .payload()
+            .ok_or_else(|| ErrorKind::TaskNoPayload(message_id))?
+            .to_vec();
         let mut headers = match message.headers() {
             None => HashMap::new(),
             Some(headers) => {
@@ -240,19 +246,31 @@ impl Kafka {
                     let (key, value) = headers.get(idx)
                         .expect("should not decode header that does not exist");
                     let key = String::from(key);
-                    let value = String::from_utf8(value.to_vec())?;
+                    let value = match String::from_utf8(value.to_vec()) {
+                        Ok(value) => value,
+                        Err(error) => return Err(error)
+                            .context(ErrorKind::TaskHeaderInvalid(key, "<not-utf8>".into()))
+                            .map_err(Error::from),
+                    };
                     hdrs.insert(key, value);
                 }
                 hdrs
             }
         };
         let id: TaskId = match headers.remove(KAFKA_TASKS_ID_HEADER) {
-            None => return Err(TaskError::Msg("Found task without ID".into()).into()),
-            Some(id) => id.parse()?,
+            None => return Err(ErrorKind::TaskNoId.into()),
+            Some(id) => id
+                .parse::<TaskId>()
+                .with_context(|_| ErrorKind::TaskInvalidID(id))?,
         };
         let retry_count = match headers.remove(KAFKA_TASKS_RETRY_HEADER) {
             None => 0,
-            Some(retry_count) => retry_count.parse()?,
+            Some(retry_count) => retry_count
+                .parse::<u8>()
+                .with_context(|_| {
+                    let header = KAFKA_TASKS_RETRY_HEADER.to_string();
+                    ErrorKind::TaskHeaderInvalid(header, retry_count)
+                })?,
         };
 
         // Return a TaskCache instead of a task so we can store it as a thread local
@@ -288,7 +306,9 @@ impl Kafka {
         let poll_result = consumer.poll(Some(timeout));
         match poll_result {
             None => Ok(true),
-            Some(Err(error)) => Err(error.into()),
+            Some(Err(error)) => Err(error)
+                .with_context(|_| ErrorKind::FetchError)
+                .map_err(Error::from),
             Some(Ok(message)) => {
                 let message = message.detach();
                 // Always cache the message in case of errors while processing it.
@@ -323,7 +343,10 @@ impl Kafka {
         if !topic_is_retry(topic) {
             panic!("Attempting to retry task from non _retry topic '{}'", topic);
         }
-        let queue: Q = queue_from_topic(&self.prefix, topic, TopicRole::Retry).parse()?;
+        let queue = queue_from_topic(&self.prefix, topic, TopicRole::Retry);
+        let queue = queue
+            .parse::<Q>()
+            .with_context(|_| ErrorKind::QueueNameInvalid(queue))?;
         let topic = topic_for_queue(&self.prefix, &queue.name(), TopicRole::Queue);
 
         // Check if the task has reached the retry delay.
@@ -345,8 +368,12 @@ impl Kafka {
                 if let Some(payload) = message.payload() {
                     record = record.payload(payload);
                 }
-                self.retry_producer.send(record, self.retry_timeout as i64)
-                    .wait()?.map_err(|(error, _)| error)?;
+                self.retry_producer
+                    .send(record, self.retry_timeout as i64)
+                    .wait()
+                    .with_context(|_| ErrorKind::RetryEnqueue)?
+                    .map_err(|(error, _)| error)
+                    .with_context(|_| ErrorKind::RetryEnqueue)?;
                 retry_cache.published = true;
             }
             let mut list = TopicPartitionList::new();
@@ -357,12 +384,14 @@ impl Kafka {
                 let message_id = format!(
                     "{}:{}:{}", message.topic(), message.partition(), message.offset()
                 );
-                warn!(self.logger, "Stuck trying to commit replyed task"; "id" => message_id);
+                warn!(self.logger, "Stuck trying to commit replyed task"; "id" => &message_id);
                 THREAD_RETRY_CLEAR.with(|retry| { *retry.borrow_mut() = true });
-                return Err(TaskError::Msg("Stuck trying to commit replyed task".into()).into());
+                return Err(ErrorKind::CommitRetryStuck(message_id).into());
             }
             retry_cache.attempts += 1;
-            consumer.commit(&list, CommitMode::Sync)?;
+            consumer
+                .commit(&list, CommitMode::Sync)
+                .with_context(|_| ErrorKind::CommitFailed)?;
             Ok(true)
 
         } else {
@@ -422,7 +451,9 @@ impl<Q: TaskQueue> Backend<Q> for Kafka {
             let poll_result = consumer.as_ref().unwrap().poll(Some(timeout));
             match poll_result {
                 None => Ok(None),
-                Some(Err(error)) => Err(error.into()),
+                Some(Err(error)) => Err(error)
+                    .with_context(|_| ErrorKind::FetchError)
+                    .map_err(Error::from),
                 Some(Ok(message)) => {
                     let cache = self.parse_message::<Q>(
                         message, Arc::clone(consumer.as_ref().unwrap())
@@ -492,15 +523,17 @@ impl KafkaAck {
             let message_id = format!("{}:{}:{}", topic, self.partition, self.offset);
             warn!(
                 self.logger, "Stuck trying to commit processed task";
-                "id" => message_id
+                "id" => &message_id
             );
             THREAD_TASK_CLEAR.with(|retry| { *retry.borrow_mut() = true });
-            return Err(TaskError::Msg("Stuck trying to commit processed task".into()).into());
+            return Err(ErrorKind::CommitRetryStuck(message_id).into());
         }
         *self.commit_attempts.borrow_mut() += 1;
         let mut list = TopicPartitionList::new();
         list.add_partition_offset(topic, self.partition, Offset(self.offset + 1));
-        self.consumer.commit(&list, CommitMode::Sync)?;
+        self.consumer
+            .commit(&list, CommitMode::Sync)
+            .with_context(|_| ErrorKind::CommitFailed)?;
         Ok(())
     }
 
@@ -518,8 +551,12 @@ impl KafkaAck {
         let record: FutureRecord<(), [u8]> = FutureRecord::to(topic)
             .headers(headers)
             .payload(&task.message);
-        self.retry_producer.send(record, self.retry_timeout as i64)
-            .wait()?.map_err(|(error, _)| error)?;
+        self.retry_producer
+            .send(record, self.retry_timeout as i64)
+            .wait()
+            .with_context(|_| ErrorKind::RetryEnqueueID(task.id().to_string()))?
+            .map_err(|(error, _)| error)
+            .with_context(|_| ErrorKind::RetryEnqueueID(task.id().to_string()))?;
         Ok(())
     }
 }
@@ -629,6 +666,12 @@ struct TaskCache {
 
 impl TaskCache {
     fn task<Q: TaskQueue>(self) -> Result<Task<Q>> {
+        let queue = match self.queue.parse::<Q>() {
+            Ok(queue) => queue,
+            Err(error) => return Err(error)
+                .context(ErrorKind::QueueNameInvalid(self.queue))
+                .map_err(Error::from),
+        };
         Ok(Task {
             ack_strategy: Arc::new(KafkaAck {
                 commit_attempts: Rc::clone(&self.commit_attempts),
@@ -647,7 +690,7 @@ impl TaskCache {
             id: self.id,
             message: self.message,
             processed: false,
-            queue: self.queue.parse()?,
+            queue,
             retry_count: self.retry_count,
         })
     }

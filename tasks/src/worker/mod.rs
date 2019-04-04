@@ -2,14 +2,15 @@ use std::collections::HashMap;
 use std::sync::Arc;
 use std::thread::panicking;
 
+use failure::ResultExt;
 use serde::Deserialize;
 
-use super::Result;
-use super::TaskError;
-use super::TaskQueue;
-use super::TaskId;
 use super::metrics::TASK_ACK_ERRORS;
 use super::metrics::TASK_ACK_TOTAL;
+use super::ErrorKind;
+use super::Result;
+use super::TaskId;
+use super::TaskQueue;
 
 mod backend;
 mod set;
@@ -21,7 +22,6 @@ pub use self::backend::AckStrategy;
 pub use self::set::TaskHandler;
 pub use self::set::WorkerSet;
 pub use self::set::WorkerSetPool;
-
 
 /// Task information dispatched to a worker process.
 ///
@@ -42,7 +42,8 @@ pub struct Task<Q: TaskQueue> {
 impl<Q: TaskQueue> Task<Q> {
     /// Deserialise message into a structured object.
     pub fn deserialize<'de, D: Deserialize<'de>>(&'de self) -> Result<D> {
-        let data = ::serde_json::from_slice(&self.message)?;
+        let data = ::serde_json::from_slice(&self.message)
+            .with_context(|_| ErrorKind::PayloadDeserialize)?;
         Ok(data)
     }
 

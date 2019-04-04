@@ -7,13 +7,18 @@ use super::APIVersion;
 use super::RouterBuilder;
 
 mod index;
+mod introspect;
 mod version;
 
 /// Mount core API route handlers.
 pub fn mount(router: &mut RouterBuilder, registry: Registry) {
     let metrics = MetricsHandler::new(registry);
-    let mut unstable = router.for_version(APIVersion::Unstable);
-    unstable.get("/", index::handler, "index");
-    unstable.get("/metrics", metrics, "/metrics");
-    unstable.get("/version", version::handler, "/version");
+    // Scope access to versioned router.
+    {
+        let mut unstable = router.for_version(APIVersion::Unstable);
+        unstable.get("/", index::handler, "index");
+        unstable.get("/metrics", metrics, "/metrics");
+        unstable.get("/version", version::handler, "/version");
+    }
+    self::introspect::mount(router);
 }

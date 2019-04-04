@@ -6,31 +6,29 @@ use std::time::Duration;
 
 use humthreads::Builder;
 use humthreads::Thread;
+use humthreads::ThreadScope;
 use slog::Logger;
 
-use super::super::Config;
-use super::super::config::Backend as BackendConfig;
+use replicante_util_failure::failure_info;
 
+use super::backend::kafka::Kafka;
+use super::backend::Backend;
+use super::super::config::Backend as BackendConfig;
 use super::super::metrics::TASK_WORKER_NO_HANDLER;
 use super::super::metrics::TASK_WORKER_POLL_ERRORS;
 use super::super::metrics::TASK_WORKER_RECEIVED;
+use super::super::Config;
+use super::super::ErrorKind;
+use super::super::Result;
+use super::super::Task;
 
-use super::Result;
-use super::Task;
-use super::TaskError;
 use super::TaskQueue;
-
-use super::backend::Backend;
-use super::backend::kafka::Kafka;
-
 
 #[cfg(debug_assertions)]
 pub mod mock;
 
-
 const TIMEOUT_MS_POLL: u64 = 500;
 const TIMEOUT_MS_ERROR: u64 = 5000;
-
 
 /// Interface for code that can process a task.
 pub trait TaskHandler<Q: TaskQueue> : Send + Sync + 'static {
@@ -56,6 +54,7 @@ struct Worker<Q: TaskQueue> {
     backend: Arc<Backend<Q>>,
     handlers: Arc<HashMap<Q, Box<TaskHandler<Q>>>>,
     logger: Logger,
+    thread: ThreadScope,
 }
 
 impl<Q: TaskQueue> Worker<Q> {
@@ -63,11 +62,13 @@ impl<Q: TaskQueue> Worker<Q> {
         logger: Logger,
         backend: Arc<Backend<Q>>,
         handlers: Arc<HashMap<Q, Box<TaskHandler<Q>>>>,
+        thread: ThreadScope,
     ) -> Worker<Q> {
         Worker {
             backend,
             handlers,
             logger,
+            thread,
         }
     }
 
@@ -75,8 +76,12 @@ impl<Q: TaskQueue> Worker<Q> {
     fn run_once(&self) {
         let task = match self.backend.poll(Duration::from_millis(TIMEOUT_MS_POLL)) {
             Err(error) => {
-                error!(self.logger, "Failed to poll for tasks, sleeping before retring"; "error" => ?error);
+                error!(
+                    self.logger, "Failed to poll for tasks, sleeping before retring";
+                    failure_info(&error)
+                );
                 TASK_WORKER_POLL_ERRORS.inc();
+                let _activity = self.thread.scoped_activity("failed to poll for tasks, backing off a bit");
                 ::std::thread::sleep(Duration::from_millis(TIMEOUT_MS_ERROR));
                 return
             },
@@ -84,6 +89,9 @@ impl<Q: TaskQueue> Worker<Q> {
             Ok(Some(task)) => task,
         };
         let queue = task.queue.name();
+        let _activity = self.thread.scoped_activity(
+            format!("processing task ID '{}' from queue '{}'", task.id, queue.to_string())
+        );
         trace!(self.logger, "Received task"; "queue" => &queue);
         match self.handlers.get(&task.queue) {
             None => {
@@ -136,8 +144,14 @@ impl<Q: TaskQueue> WorkerSet<Q> {
 
             let thread = Builder::new(short_name)
                 .full_name(name)
-                .spawn(move |_scope| {
-                    let worker: Worker<Q> = Worker::new(logger, thread_backend, thread_handlers);
+                .spawn(move |scope| {
+                    scope.activity("waiting for tasks to process");
+                    let worker: Worker<Q> = Worker::new(
+                        logger,
+                        thread_backend,
+                        thread_handlers,
+                        scope,
+                    );
                     while still_running.load(Ordering::SeqCst) {
                         worker.run_once();
                     }
@@ -152,11 +166,11 @@ impl<Q: TaskQueue> WorkerSet<Q> {
                 if let Ok(mut handle) = thread {
                     // TODO: propagate error when we have a better story?
                     if let Err(error) = handle.join() {
-                        error!(self.logger, "WorkerSet pool thread paniced"; "error" => ?error);
+                        error!(self.logger, "WorkerSet pool thread paniced"; failure_info(&error));
                     }
                 }
             }
-            return Err(TaskError::Msg("could not sapwn all worker threads".into()).into());
+            return Err(ErrorKind::PoolSpawn.into());
         }
 
         // All threads where spawned successfully so we can unwrap the reustl.

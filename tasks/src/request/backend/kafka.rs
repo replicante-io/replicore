@@ -1,3 +1,4 @@
+use failure::ResultExt;
 use futures::Future;
 
 use rdkafka::message::OwnedHeaders;
@@ -11,9 +12,10 @@ use super::super::super::shared::kafka::KAFKA_TASKS_PRODUCER;
 use super::super::super::shared::kafka::TopicRole;
 use super::super::super::shared::kafka::producer_config;
 use super::super::super::shared::kafka::topic_for_queue;
+use super::super::super::ErrorKind;
+use super::super::super::Result;
 
 use super::Backend;
-use super::Result;
 use super::TaskQueue;
 use super::TaskRequest;
 
@@ -28,7 +30,8 @@ pub struct Kafka {
 impl Kafka {
     pub fn new(config: KafkaConfig) -> Result<Kafka> {
         let producer = producer_config(&config, KAFKA_TASKS_PRODUCER)
-            .create_with_context(ClientStatsContext::new("request-producer"))?;
+            .create_with_context(ClientStatsContext::new("request-producer"))
+            .with_context(|_| ErrorKind::BackendClientCreation)?;
         let kafka = Kafka {
             prefix: config.queue_prefix,
             producer,
@@ -49,8 +52,12 @@ impl<Q: TaskQueue> Backend<Q> for Kafka {
         let record: FutureRecord<(), [u8]> = FutureRecord::to(&topic)
             .headers(headers)
             .payload(message);
-        self.producer.send(record, self.timeout)
-            .wait()?.map_err(|(error, _)| error)?;
+        self.producer
+            .send(record, self.timeout)
+            .wait()
+            .with_context(|_| ErrorKind::TaskRequest)?
+            .map_err(|(error, _)| error)
+            .with_context(|_| ErrorKind::TaskRequest)?;
         Ok(())
     }
 }

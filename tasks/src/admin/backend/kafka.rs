@@ -2,6 +2,7 @@ use std::collections::HashMap;
 use std::sync::Arc;
 use std::time::Duration;
 
+use failure::ResultExt;
 use slog::Logger;
 
 use rdkafka::Message;
@@ -10,13 +11,7 @@ use rdkafka::consumer::base_consumer::BaseConsumer;
 use rdkafka::message::BorrowedMessage;
 use rdkafka::message::Headers;
 
-use super::super::super::Result;
-use super::super::super::Task;
-use super::super::super::TaskError;
-use super::super::super::TaskId;
-use super::super::super::TaskQueue;
 use super::super::super::config::KafkaConfig;
-
 use super::super::super::shared::kafka::ClientStatsContext;
 use super::super::super::shared::kafka::KAFKA_ADMIN_CONSUMER;
 use super::super::super::shared::kafka::KAFKA_ADMIN_GROUP;
@@ -26,9 +21,13 @@ use super::super::super::shared::kafka::TopicRole;
 use super::super::super::shared::kafka::consumer_config;
 use super::super::super::shared::kafka::queue_from_topic;
 use super::super::super::shared::kafka::topic_for_queue;
-
 use super::super::super::worker::AckStrategy;
-
+use super::super::super::Error;
+use super::super::super::ErrorKind;
+use super::super::super::Result;
+use super::super::super::Task;
+use super::super::super::TaskId;
+use super::super::super::TaskQueue;
 use super::super::AdminBackend;
 use super::super::TasksIter;
 
@@ -64,13 +63,13 @@ impl<Q: TaskQueue> AdminBackend<Q> for Kafka {
         let kafka_config = consumer_config(&self.config, &client_id, &group_id);
 
         // Create consumer and subscribe to queue's topics.
-        let consumer: BaseStatsConsumer = kafka_config.create_with_context(
-            ClientStatsContext::new(stats_id)
-        )?;
+        let consumer: BaseStatsConsumer = kafka_config
+            .create_with_context(ClientStatsContext::new(stats_id))
+            .with_context(|_| ErrorKind::BackendClientCreation)?;
         consumer.subscribe(&[
-           &topic_for_queue(&self.config.queue_prefix, &queue_name, TopicRole::Queue),
-           &topic_for_queue(&self.config.queue_prefix, &queue_name, TopicRole::Retry)
-        ])?;
+            &topic_for_queue(&self.config.queue_prefix, &queue_name, TopicRole::Queue),
+            &topic_for_queue(&self.config.queue_prefix, &queue_name, TopicRole::Retry)
+        ]).with_context(|_| ErrorKind::TaskSubscription)?;
         Ok(TasksIter(Box::new(KafkaIter {
             _queue: ::std::marker::PhantomData,
             consumer,
@@ -95,15 +94,18 @@ impl<Q: TaskQueue> KafkaIter<Q> {
     fn parse_message(&self, message: BorrowedMessage) -> Result<Task<Q>> {
         // Validate the message is on a supported queue.
         // The queue is stored as a string in the end because we cache it as a thread local.
-        let queue: Q = queue_from_topic(&self.prefix, message.topic(), TopicRole::Queue).parse()?;
+        let queue = queue_from_topic(&self.prefix, message.topic(), TopicRole::Queue);
+        let queue = queue
+            .parse::<Q>()
+            .with_context(|_| ErrorKind::QueueNameInvalid(queue))?;
 
         // Extract message metadata and payload.
         let topic = message.topic();
         let message_id = format!("{}:{}:{}", topic, message.partition(), message.offset());
-        let payload = message.payload().ok_or_else(|| TaskError::Msg(
-            format!("received task without payload (id: {})", message_id)
-        ))?.to_vec();
-
+        let payload = message
+            .payload()
+            .ok_or_else(|| ErrorKind::TaskNoPayload(message_id))?
+            .to_vec();
         let mut headers = match message.headers() {
             None => HashMap::new(),
             Some(headers) => {
@@ -112,19 +114,29 @@ impl<Q: TaskQueue> KafkaIter<Q> {
                     let (key, value) = headers.get(idx)
                         .expect("should not decode header that does not exist");
                     let key = String::from(key);
-                    let value = String::from_utf8(value.to_vec())?;
+                    let value = String::from_utf8(value.to_vec())
+                        .with_context(
+                            |_| ErrorKind::TaskHeaderInvalid(key.clone(), "<not-utf8>".into())
+                        )?;
                     hdrs.insert(key, value);
                 }
                 hdrs
             }
         };
         let id: TaskId = match headers.remove(KAFKA_TASKS_ID_HEADER) {
-            None => return Err(TaskError::Msg("Found task without ID".into()).into()),
-            Some(id) => id.parse()?,
+            None => return Err(ErrorKind::TaskNoId.into()),
+            Some(id) => id
+                .parse::<TaskId>()
+                .with_context(|_| ErrorKind::TaskInvalidID(id))?,
         };
         let retry_count = match headers.remove(KAFKA_TASKS_RETRY_HEADER) {
             None => 0,
-            Some(retry_count) => retry_count.parse()?,
+            Some(retry_count) => retry_count
+                .parse::<u8>()
+                .with_context(|_| {
+                    let key = KAFKA_TASKS_RETRY_HEADER.to_string();
+                    ErrorKind::TaskHeaderInvalid(key, retry_count)
+                })?,
         };
 
         // Return a special task that can't be acked and does not panic if not processed.
@@ -145,7 +157,12 @@ impl<Q: TaskQueue> Iterator for KafkaIter<Q> {
     fn next(&mut self) -> Option<Self::Item> {
         match self.consumer.poll(Duration::from_millis(TIMEOUT_MS_POLL)) {
             None => None,
-            Some(Err(error)) => Some(Err(error.into())),
+            Some(Err(error)) => {
+                let error = Err(error)
+                    .with_context(|_| ErrorKind::FetchError)
+                    .map_err(Error::from);
+                Some(error)
+            },
             Some(Ok(message)) => Some(self.parse_message(message)),
         }
     }
@@ -159,14 +176,14 @@ struct ForbidAck {}
 
 impl<Q: TaskQueue> AckStrategy<Q> for ForbidAck {
     fn fail(&self, _: Task<Q>) -> Result<()> {
-        Err(TaskError::Msg("Can't fail tasks while scanning".into()).into())
+        Err(ErrorKind::ScanCannotAck("fail").into())
     }
 
     fn skip(&self, _: Task<Q>) -> Result<()> {
-        Err(TaskError::Msg("Can't skip tasks while scanning".into()).into())
+        Err(ErrorKind::ScanCannotAck("skip").into())
     }
 
     fn success(&self, _: Task<Q>) -> Result<()> {
-        Err(TaskError::Msg("Can't succeed tasks while scanning".into()).into())
+        Err(ErrorKind::ScanCannotAck("succeed").into())
     }
 }

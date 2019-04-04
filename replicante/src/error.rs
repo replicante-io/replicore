@@ -65,6 +65,9 @@ pub enum ErrorKind {
     #[fail(display = "could not coordinate with other processes")]
     Coordination,
 
+    #[fail(display = "could not deserialize {} into {}", _0, _1)]
+    Deserialize(&'static str, &'static str),
+
     #[fail(display = "could not initialise {} interface", _0)]
     InterfaceInit(&'static str),
 
@@ -77,8 +80,11 @@ pub enum ErrorKind {
     #[fail(display = "could not persist {} model to primary store", _0)]
     PrimaryStorePersist(&'static str),
 
-    #[fail(display = "unable to spawn new thread for '{}'", _0)]
+    #[fail(display = "could not spawn new thread for '{}'", _0)]
     SpawnThread(&'static str),
+
+    #[fail(display = "could not register task worker for queue '{}'", _0)]
+    TaskWorkerRegistration(String),
 
     // TODO: drop once all uses are removed.
     #[fail(display = "{}", _0)]

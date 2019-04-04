@@ -1,3 +1,4 @@
+use humthreads::ThreadScope;
 use slog::Logger;
 
 use replicante_agent_discovery::Config as DiscoveryConfig;
@@ -27,18 +28,23 @@ pub struct DiscoveryElection {
     emissions: EmissionTracker,
     logger: Logger,
     tasks: Tasks,
+    thread: ThreadScope,
 }
 
 impl DiscoveryElection {
     pub fn new(
-        discovery_config: DiscoveryConfig, snapshots_config: EventsSnapshotsConfig,
-        logger: Logger, tasks: Tasks
+        discovery_config: DiscoveryConfig,
+        snapshots_config: EventsSnapshotsConfig,
+        logger: Logger,
+        tasks: Tasks,
+        thread: ThreadScope,
     ) -> DiscoveryElection {
         DiscoveryElection {
             discovery_config,
             emissions: EmissionTracker::new(snapshots_config),
             logger,
             tasks,
+            thread,
         }
     }
 }
@@ -67,9 +73,20 @@ impl LoopingElectionLogic for DiscoveryElection {
         LoopingElectionControl::Continue
     }
 
+    fn post_check(&self, election: &Election) -> CoordinatorResult<LoopingElectionControl> {
+        self.thread.activity(format!("(idle) election status: {:?}", election.status()));
+        Ok(LoopingElectionControl::Proceed)
+    }
+
+    fn pre_check(&self, election: &Election) -> CoordinatorResult<LoopingElectionControl> {
+        self.thread.activity(format!("election status: {:?}", election.status()));
+        Ok(LoopingElectionControl::Proceed)
+    }
+
     fn primary(&self, _: &Election) -> CoordinatorResult<LoopingElectionControl> {
         DISCOVERY_COUNT.inc();
         debug!(self.logger, "Discovering agents ...");
+        let _activity = self.thread.scoped_activity("discovering agents");
         let _timer = DISCOVERY_DURATION.start_timer();
         for cluster in discover(self.discovery_config.clone()) {
             match cluster {

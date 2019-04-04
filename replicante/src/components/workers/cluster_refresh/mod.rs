@@ -66,14 +66,14 @@ impl Handler {
     }
 
     fn do_handle(&self, task: &Task) -> Result<()> {
-        let payload: ClusterRefreshPayload = task.deserialize()?;
+        let payload: ClusterRefreshPayload = task.deserialize()
+            .with_context(|_| ErrorKind::Deserialize("task payload", "ClusterRefreshPayload"))?;
         let discovery = payload.cluster;
         let snapshot = payload.snapshot;
 
         // Ensure only one refresh at the same time.
-        let mut lock = self.coordinator.non_blocking_lock(
-            format!("cluster_refresh/{}", discovery.cluster)
-        );
+        let mut lock = self.coordinator
+            .non_blocking_lock(format!("cluster_refresh/{}", discovery.cluster));
         match lock.acquire() {
             Ok(()) => (),
             Err(error) => {

@@ -1,6 +1,7 @@
 use std::time::Duration;
 
 use failure::err_msg;
+use failure::ResultExt;
 use prometheus::Registry;
 use slog::Logger;
 
@@ -9,6 +10,7 @@ use replicante_tasks::TaskQueue;
 use replicante_tasks::WorkerSet;
 use replicante_tasks::WorkerSetPool;
 
+use super::super::Error;
 use super::super::ErrorKind;
 use super::super::Result;
 use super::super::config::Config;
@@ -51,7 +53,12 @@ fn configure_worker<F, H>(
     if enabled {
         WORKERS_ENABLED.with_label_values(&[&name]).set(1.0);
         let handler = factory();
-        let workers = workers.worker(queue, handler)?;
+        let workers = match workers.worker(queue, handler) {
+            Ok(workers) => workers,
+            Err(error) => return Err(error)
+                .with_context(|_| ErrorKind::TaskWorkerRegistration(name))
+                .map_err(Error::from),
+        };
         return Ok(workers);
     }
     WORKERS_ENABLED.with_label_values(&[&name]).set(0.0);
@@ -72,7 +79,8 @@ impl Workers {
         interfaces: &mut Interfaces, logger: Logger, config: Config
     ) -> Result<Workers> {
         let agents_timeout = Duration::from_secs(config.timeouts.agents_api);
-        let worker_set = WorkerSet::new(logger.clone(), config.tasks)?;
+        let worker_set = WorkerSet::new(logger.clone(), config.tasks)
+            .with_context(|_| ErrorKind::ClientInit("tasks workers"))?;
         let worker_set = configure_worker(
             worker_set, ReplicanteQueues::ClusterRefresh, config.task_workers.cluster_refresh(),
             || self::cluster_refresh::Handler::new(interfaces, logger.clone(), agents_timeout)
@@ -85,7 +93,8 @@ impl Workers {
     /// Convert the WorkerSet configuration into a runnning WorkerSetPool.
     pub fn run(&mut self) -> Result<()> {
         if let Some(State::Configured(worker_set)) = self.state.take() {
-            let workers = worker_set.run()?;
+            let workers = worker_set.run()
+                .with_context(|_| ErrorKind::SpawnThread("tasks workers"))?;
             self.state = Some(State::Started(workers));
             Ok(())
         } else {

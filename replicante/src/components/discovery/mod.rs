@@ -70,9 +70,12 @@ impl DiscoveryComponent {
         info!(self.logger, "Starting Agent Discovery thread");
         let thread = ThreadBuilder::new("r:c:discovery")
             .full_name("replicore:component:discovery")
-            .spawn(move |_scope| {
+            .spawn(move |scope| {
+                scope.activity("initialising agent discovery election");
                 let election = coordinator.election("discovery");
-                let logic = DiscoveryElection::new(config, snapshots_config, logger.clone(), tasks);
+                let logic = DiscoveryElection::new(
+                    config, snapshots_config, logger.clone(), tasks, scope
+                );
                 let opts = LoopingElectionOpts::new(election, logic)
                     .loop_delay(interval);
                 let opts = match term {

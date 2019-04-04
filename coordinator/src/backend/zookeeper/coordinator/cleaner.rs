@@ -4,6 +4,7 @@ use std::time::Duration;
 use failure::ResultExt;
 use humthreads::Builder;
 use humthreads::Thread;
+use humthreads::ThreadScope;
 use slog::Logger;
 use zookeeper::ZkError;
 
@@ -51,12 +52,14 @@ impl Cleaner {
         let inner_logger = logger.clone();
         let handle = Builder::new("r:coordinator:zoo:cleaner")
             .full_name("replicore:coordinator:zookeeper:cleaner")
-            .spawn(move |_scope| {
+            .spawn(move |scope| {
+                scope.activity("initialising zookeeper cleaner election");
                 let logger = inner_logger;
                 let cleaner = InnerCleaner {
                     cleanup_limit: config.cleanup.limit,
                     client: Arc::clone(&client),
                     logger: logger.clone(),
+                    thread: scope,
                 };
                 let id = "zookeeper-cleaner";
                 let election = Election::new(id.to_string(), Box::new(ZookeeperElection::new(
@@ -97,9 +100,10 @@ impl Drop for Cleaner {
 
 /// Helper class to collect worker thread context.
 struct InnerCleaner {
-    client: Arc<Client>,
     cleanup_limit: usize,
+    client: Arc<Client>,
     logger: Logger,
+    thread: ThreadScope,
 }
 
 impl InnerCleaner {
@@ -186,8 +190,19 @@ impl LoopingElectionLogic for InnerCleaner {
         LoopingElectionControl::Continue
     }
 
+    fn post_check(&self, election: &Election) -> Result<LoopingElectionControl> {
+        self.thread.activity(format!("(idle) election status: {:?}", election.status()));
+        Ok(LoopingElectionControl::Proceed)
+    }
+
+    fn pre_check(&self, election: &Election) -> Result<LoopingElectionControl> {
+        self.thread.activity(format!("election status: {:?}", election.status()));
+        Ok(LoopingElectionControl::Proceed)
+    }
+
     fn primary(&self, _: &Election) -> Result<LoopingElectionControl> {
         info!(self.logger, "Running zookeeper cleanup cycle");
+        let _activity = self.thread.scoped_activity("cleaning empty zookeeper znodes");
         if let Err(error) = self.cycle() {
             error!(self.logger, "Zookeeper cleanup cycle failed"; failure_info(&error));
         }

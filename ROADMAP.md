@@ -1,5 +1,4 @@
 ## 0.3.0 - Introspection
-- Threads introspection API.
 - Cluster ID and Friendly name (**breaking**).
 - Graceful shutdown.
 - Sentry integration.

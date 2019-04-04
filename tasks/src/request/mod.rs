@@ -1,15 +1,17 @@
 use std::collections::HashMap;
 use std::sync::Arc;
 
+use failure::ResultExt;
 use serde::Serialize;
 
-use super::Config;
-use super::Result;
-use super::TaskId;
-use super::TaskQueue;
 use super::config::Backend as BackendConfig;
 use super::metrics::TASK_REQUEST_ERRORS;
 use super::metrics::TASK_REQUEST_TOTAL;
+use super::Config;
+use super::ErrorKind;
+use super::Result;
+use super::TaskId;
+use super::TaskQueue;
 
 
 mod backend;
@@ -80,7 +82,8 @@ impl<Q: TaskQueue> Tasks<Q> {
     /// Tasks are performed asynchronously and, likely, in separate processes.
     /// There is no guarantee about times within which tasks are completed.
     pub fn request<M: Serialize>(&self, task: TaskRequest<Q>, message: M) -> Result<()> {
-        let message = ::serde_json::to_vec(&message)?;
+        let message = ::serde_json::to_vec(&message)
+            .with_context(|_| ErrorKind::PayloadSerialize)?;
         let queue = task.queue.name();
         TASK_REQUEST_TOTAL.with_label_values(&[&queue]).inc();
         self.0.request(task, &message).map_err(|error| {
