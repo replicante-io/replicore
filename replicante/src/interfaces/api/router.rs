@@ -3,12 +3,14 @@ use iron::Handler;
 use iron::method;
 use router::Router;
 
+use super::config::APIVersions;
 use super::APIVersion;
 
 /// A builder object for an `iron-router` [`Router`].
 ///
 /// [`Router`]: router/struct.Router.html
 pub struct RouterBuilder {
+    config: APIVersions,
     router: Router,
 }
 
@@ -16,9 +18,9 @@ impl RouterBuilder {
     /// Create a new [`Router`] builder.
     ///
     /// [`Router`]: router/struct.Router.html
-    pub fn new() -> RouterBuilder {
+    pub fn new(config: APIVersions) -> RouterBuilder {
         let router = Router::new();
-        RouterBuilder { router }
+        RouterBuilder { config, router }
     }
 
     /// Convert this builder into an iron [`Chain`].
@@ -31,13 +33,17 @@ impl RouterBuilder {
     /// Register routes for a specific API version.
     pub fn for_version(&mut self, version: APIVersion) -> VersionedRouter {
         let prefix = version.prefix();
+        let enabled = match version {
+            APIVersion::Unstable => self.config.unstable,
+        };
         let router = &mut self.router;
-        VersionedRouter { prefix, router }
+        VersionedRouter { enabled, prefix, router }
     }
 }
 
 /// Specialised router to mount endpoints for a specified version.
 pub struct VersionedRouter<'a> {
+    enabled: bool,
     prefix: &'static str,
     router: &'a mut Router,
 }
@@ -73,6 +79,9 @@ impl<'a> VersionedRouter<'a> {
         handler: H,
         route_id: I,
     ) -> &mut VersionedRouter<'a> {
+        if !self.enabled {
+            return self;
+        }
         let glob = self.prefix.to_string() + glob.as_ref();
         let route_id = self.prefix.to_string() + route_id.as_ref();
         self.router.route(method, glob, handler, route_id);
@@ -94,6 +103,7 @@ mod tests {
     use iron_test::response;
 
     use super::APIVersion;
+    use super::APIVersions;
     use super::RouterBuilder;
 
 
@@ -107,7 +117,7 @@ mod tests {
 
     #[test]
     fn attach_get() {
-        let mut builder = RouterBuilder::new();
+        let mut builder = RouterBuilder::new(APIVersions::default());
         {
             let mut version = builder.for_version(APIVersion::Unstable);
             version.get("/", &mock_get, "test");
@@ -122,7 +132,7 @@ mod tests {
 
     #[test]
     fn attach_route() {
-        let mut builder = RouterBuilder::new();
+        let mut builder = RouterBuilder::new(APIVersions::default());
         {
             let mut version = builder.for_version(APIVersion::Unstable);
             version.route(method::Put, "/", &mock_put, "test");

@@ -46,7 +46,7 @@ impl API {
     /// Creates a new API interface.
     pub fn new(config: Config, logger: Logger, metrics: &Metrics) -> API {
         let registry = metrics.registry().clone();
-        let mut router = RouterBuilder::new();
+        let mut router = RouterBuilder::new(config.versions.clone());
         routes::mount(&mut router, registry);
 
         let middleware = MetricsMiddleware::new(
