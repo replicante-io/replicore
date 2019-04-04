@@ -3,7 +3,6 @@ use clap::ArgMatches;
 use clap::SubCommand;
 
 use failure::ResultExt;
-use failure::err_msg;
 
 use replicante::Config;
 use replicante_data_store::Store;
@@ -11,6 +10,7 @@ use replicante_data_store::Store;
 use replicante_streams_events::EventsStream;
 use replicante_streams_events::ScanFilters;
 use replicante_streams_events::ScanOptions;
+use replicante_util_failure::format_fail;
 
 use super::super::super::ErrorKind;
 use super::super::super::Interfaces;
@@ -19,10 +19,8 @@ use super::super::super::Result;
 use super::super::super::outcome::Error;
 use super::super::super::outcome::Outcomes;
 
-
 pub const COMMAND: &str = "streams";
 const COMMAND_EVENTS: &str = "events";
-
 
 /// Configure the `replictl check streams` command parser.
 pub fn command() -> App<'static, 'static> {
@@ -33,7 +31,6 @@ pub fn command() -> App<'static, 'static> {
             .about("Check all events data for format incompatibilities")
         )
 }
-
 
 /// Check ALL events in the stream for compatibility with this version of replicante.
 ///
@@ -50,24 +47,24 @@ pub fn events<'a>(args: &ArgMatches<'a>, interfaces: &Interfaces) -> Result<()> 
     )?;
     if !confirm {
         error!(logger, "Cannot check without user confirmation");
-        return Err(ErrorKind::Legacy(err_msg("operation aborded by the user")).into());
+        return Err(ErrorKind::UserAbort.into());
     }
 
     let mut outcomes = Outcomes::new();
     let config = args.value_of("config").unwrap();
     let config = Config::from_file(config)
-        .context(ErrorKind::Legacy(err_msg("failed to check events")))?;
+        .with_context(|_| ErrorKind::ConfigLoad)?;
     let store = Store::new(config.storage, logger.clone())
         .with_context(|_| ErrorKind::ClientInit("store"))?;
     let stream = EventsStream::new(config.events.stream, logger.clone(), store);
 
     info!(logger, "Checking events stream ...");
     let cursor = stream.scan(ScanFilters::all(), ScanOptions::default())
-        .context(ErrorKind::Legacy(err_msg("failed to check events")))?;
+        .with_context(|_| ErrorKind::CheckFailed("events"))?;
     let mut tracker = interfaces.progress("Processed more events");
     for event in cursor {
         if let Err(error) = event {
-            let error = error.to_string();
+            let error = format_fail(&error);
             outcomes.error(Error::GenericError(error));
         }
         tracker.track();
@@ -77,7 +74,7 @@ pub fn events<'a>(args: &ArgMatches<'a>, interfaces: &Interfaces) -> Result<()> 
     // Report results.
     if outcomes.has_errors() {
         error!(logger, "Events stream checks failed");
-        return Err(ErrorKind::Legacy(err_msg("events stream checks failed")).into());
+        return Err(ErrorKind::CheckWithErrors("events stream").into());
     }
     if outcomes.has_warnings() {
         warn!(logger, "Events stream checks passed with warnings");
@@ -87,7 +84,6 @@ pub fn events<'a>(args: &ArgMatches<'a>, interfaces: &Interfaces) -> Result<()> 
     Ok(())
 }
 
-
 /// Check all streams for incompatibilities.
 pub fn run<'a>(args: &ArgMatches<'a>, interfaces: &Interfaces) -> Result<()> {
     let command = args.subcommand_matches(super::COMMAND).unwrap();
@@ -95,7 +91,9 @@ pub fn run<'a>(args: &ArgMatches<'a>, interfaces: &Interfaces) -> Result<()> {
     let command = command.subcommand_name();
     match command {
         Some(COMMAND_EVENTS) => events(args, interfaces),
-        None => Err(ErrorKind::Legacy(err_msg("need a streams check to run")).into()),
-        _ => Err(ErrorKind::Legacy(err_msg("received unrecognised command")).into()),
+        None => Err(ErrorKind::NoCommand("replictl check streams").into()),
+        Some(name) => Err(
+            ErrorKind::UnkownSubcommand("replictl check streams", name.to_string()).into()
+        ),
     }
 }
