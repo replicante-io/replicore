@@ -18,3 +18,7 @@ members = [
   "streams/events",
   "tasks",
 ]
+
+# This patch is needed to make openssl (needed by kafka) work with openssl 1.0+
+[patch.crates-io]
+kafka = { git = 'https://github.com/l4l/kafka-rust', branch = 'update/openssl' }
