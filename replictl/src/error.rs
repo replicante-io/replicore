@@ -4,7 +4,6 @@ use failure::Backtrace;
 use failure::Context;
 use failure::Fail;
 
-
 /// Error information returned by functions in case of errors.
 #[derive(Debug)]
 pub struct Error(Context<ErrorKind>);
@@ -42,13 +41,6 @@ impl From<ErrorKind> for Error {
         Error(Context::new(kind))
     }
 }
-
-impl From<::failure::Error> for Error {
-    fn from(error: ::failure::Error) -> Error {
-        ErrorKind::Legacy(error).into()
-    }
-}
-
 
 /// Exhaustive list of possible errors emitted by this crate.
 #[derive(Debug, Fail)]
@@ -121,13 +113,7 @@ pub enum ErrorKind {
 
     #[fail(display = "operation aborted by the user")]
     UserAbort,
-
-    // TODO: drop once all uses are removed.
-    #[fail(display = "{}", _0)]
-    #[deprecated(since = "0.2.0", note = "move to specific ErrorKinds")]
-    Legacy(#[cause] ::failure::Error),
 }
-
 
 /// Short form alias for functions returning `Error`s.
 pub type Result<T> = ::std::result::Result<T, Error>;

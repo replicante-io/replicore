@@ -4,11 +4,12 @@ use clap::App;
 use clap::ArgMatches;
 use clap::SubCommand;
 use failure::Fail;
-use failure::err_msg;
+use failure::ResultExt;
 use serde_yaml;
 
 use replicante::Config;
 use replicante_agent_discovery::DiscoveryFileModel;
+use replicante_util_failure::format_fail;
 
 use super::super::super::ErrorKind;
 use super::super::super::Interfaces;
@@ -18,17 +19,14 @@ use super::super::super::outcome::Error;
 use super::super::super::outcome::Outcomes;
 use super::super::super::outcome::Warning;
 
-
 pub const COMMAND: &str = "config";
 const DISCOVERY_INTERVAL_THRESHOLD: u64 = 15;
-
 
 /// Configure the `replictl check config` command parser.
 pub fn command() -> App<'static, 'static> {
     SubCommand::with_name(COMMAND)
         .about("Check the replicante configuration for errors")
 }
-
 
 /// Check the replicante configuration for errors.
 ///
@@ -42,15 +40,8 @@ pub fn run<'a>(args: &ArgMatches<'a>, interfaces: &Interfaces) -> Result<()> {
     info!(logger, "Checking configuration"; "file" => file);
 
     // Load core config.
-    let config = match Config::from_file(file) {
-        Ok(config) => config,
-        Err(error) => {
-            error!(logger, "Configuration checks failed"; "error" => ?error);
-            return Err(error.context(
-                ErrorKind::Legacy(err_msg("check failed: could not load configuration"))
-            ).into());
-        }
-    };
+    let config = Config::from_file(file)
+        .with_context(|_| ErrorKind::ConfigLoad)?;
 
     // Core config checks.
     let mut outcomes = Outcomes::new();
@@ -73,7 +64,7 @@ pub fn run<'a>(args: &ArgMatches<'a>, interfaces: &Interfaces) -> Result<()> {
     outcomes.report(&logger);
     if outcomes.has_errors() {
         error!(logger, "Configuration checks failed");
-        return Err(ErrorKind::Legacy(err_msg("configuration checks failed")).into());
+        return Err(ErrorKind::CheckWithErrors("configuration").into());
     }
     if outcomes.has_warnings() {
         warn!(logger, "Configuration checks passed with warnings");
@@ -83,15 +74,13 @@ pub fn run<'a>(args: &ArgMatches<'a>, interfaces: &Interfaces) -> Result<()> {
     Ok(())
 }
 
-
 /// Attempt to load and parse file.
 fn check_discovery_file(path: &str, outcomes: &mut Outcomes) {
     let file = match File::open(path) {
         Ok(file) => file,
         Err(error) => {
-            let error = error.context(ErrorKind::Legacy(
-                format_err!("failed to open file discovery unit: {}", path))
-            ).to_string();
+            let error = error.context(ErrorKind::ConfigLoad);
+            let error = format_fail(&error);
             outcomes.error(Error::GenericError(error));
             return;
         }
@@ -99,12 +88,11 @@ fn check_discovery_file(path: &str, outcomes: &mut Outcomes) {
     let _content: DiscoveryFileModel = match serde_yaml::from_reader(file) {
         Ok(content) => content,
         Err(error) => {
-            let error = error.context(
-                ErrorKind::Legacy(err_msg("unable to parse model"))
-            ).to_string();
-            outcomes.error(Error::UnableToParseModel(
-                "DiscoveryFile".into(), path.to_string(), error
-            ));
+            let error = error.context(ErrorKind::Config("not a valid file discovery source"));
+            let error = format_fail(&error);
+            outcomes.error(
+                Error::UnableToParseModel("DiscoveryFile".into(), path.to_string(), error)
+            );
             return;
         }
     };

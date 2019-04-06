@@ -3,7 +3,6 @@ use clap::ArgMatches;
 use clap::SubCommand;
 use failure::Fail;
 use failure::ResultExt;
-use failure::err_msg;
 use prometheus::Registry;
 
 use replicante::Config;
@@ -26,7 +25,6 @@ pub const COMMAND: &str = "store";
 
 const COMMAND_DATA: &str = "data";
 const COMMAND_SCHEMA: &str = "schema";
-const FAILED_CHECK_SCHEMA : &str = "failed to check store schema";
 
 const MODEL_AGENT: &str = "Agent";
 const MODEL_AGENT_INFO: &str = "AgentInfo";
@@ -61,8 +59,10 @@ pub fn run<'a>(args: &ArgMatches<'a>, interfaces: &Interfaces) -> Result<()> {
     match command {
         Some(COMMAND_DATA) => data(args, interfaces),
         Some(COMMAND_SCHEMA) => schema(args, interfaces),
-        None => Err(ErrorKind::Legacy(err_msg("need a store check to run")).into()),
-        _ => Err(ErrorKind::Legacy(err_msg("received unrecognised command")).into()),
+        None => Err(ErrorKind::NoCommand("replictl check store").into()),
+        Some(name) => Err(
+            ErrorKind::UnkownSubcommand("replictl check store", name.to_string()).into()
+        ),
     }
 }
 
@@ -82,13 +82,13 @@ pub fn data<'a>(args: &ArgMatches<'a>, interfaces: &Interfaces) -> Result<()> {
     )?;
     if !confirm {
         error!(logger, "Cannot check without user interactive confirmation");
-        return Err(ErrorKind::Legacy(err_msg("operation aborded by the user")).into());
+        return Err(ErrorKind::UserAbort.into());
     }
 
     let mut outcomes = Outcomes::new();
     let config = args.value_of("config").unwrap();
     let config = Config::from_file(config)
-        .context(ErrorKind::Legacy(err_msg(FAILED_CHECK_SCHEMA)))?;
+        .with_context(|_| ErrorKind::ConfigLoad)?;
     let registry = Registry::new();
     let store = Validator::new(config.storage, logger.clone(), &registry)
         .with_context(|_| ErrorKind::AdminInit("store"))?;
@@ -126,7 +126,7 @@ pub fn data<'a>(args: &ArgMatches<'a>, interfaces: &Interfaces) -> Result<()> {
     // Report results.
     if outcomes.has_errors() {
         error!(logger, "Store data checks failed");
-        return Err(ErrorKind::Legacy(err_msg("store data checks failed")).into());
+        return Err(ErrorKind::CheckWithErrors("store data").into());
     }
     if outcomes.has_warnings() {
         warn!(logger, "Store data checks passed with warnings");
@@ -181,7 +181,7 @@ pub fn schema<'a>(args: &ArgMatches<'a>, interfaces: &Interfaces) -> Result<()> 
 
     let config = args.value_of("config").unwrap();
     let config = Config::from_file(config)
-        .context(ErrorKind::Legacy(err_msg(FAILED_CHECK_SCHEMA)))?;
+        .with_context(|_| ErrorKind::ConfigLoad)?;
     let registry = Registry::new();
     let store = Validator::new(config.storage, logger.clone(), &registry)
         .with_context(|_| ErrorKind::AdminInit("store"))?;
@@ -220,7 +220,7 @@ pub fn schema<'a>(args: &ArgMatches<'a>, interfaces: &Interfaces) -> Result<()> 
     // Finish up.
     if outcomes.has_errors() {
         error!(logger, "Store schema checks failed");
-        return Err(ErrorKind::Legacy(err_msg("store schema checks failed")).into());
+        return Err(ErrorKind::CheckWithErrors("store schema").into());
     }
     if outcomes.has_warnings() {
         warn!(logger, "Store schema checks passed with warnings");

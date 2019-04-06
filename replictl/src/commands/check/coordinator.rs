@@ -2,7 +2,6 @@ use clap::App;
 use clap::ArgMatches;
 use clap::SubCommand;
 use failure::ResultExt;
-use failure::err_msg;
 use slog::Logger;
 
 use replicante::Config;
@@ -15,9 +14,7 @@ use super::super::super::Result;
 use super::super::super::outcome::Error;
 use super::super::super::outcome::Outcomes;
 
-
 pub const COMMAND: &str = "coordinator";
-
 
 /// Iterate over elections to ensure the can be read.
 fn check_elections(
@@ -36,7 +33,6 @@ fn check_elections(
     Ok(())
 }
 
-
 /// Iterate over non-blocking locks to ensure they can be read.
 fn check_nblocks(
     admin: &Admin, outcomes: &mut Outcomes, interfaces: &Interfaces, logger: &Logger
@@ -53,7 +49,6 @@ fn check_nblocks(
     outcomes.report(logger);
     Ok(())
 }
-
 
 /// Iterate over registered nodes to ensure they can be read.
 fn check_registry(
@@ -72,13 +67,11 @@ fn check_registry(
     Ok(())
 }
 
-
 /// Configure the `replictl check coordinator` command parser.
 pub fn command() -> App<'static, 'static> {
     SubCommand::with_name(COMMAND)
         .about("Check all coordination data for incompatibilities")
 }
-
 
 /// Check all coordination data for incompatibilities
 pub fn run<'a>(args: &ArgMatches<'a>, interfaces: &Interfaces) -> Result<()> {
@@ -91,14 +84,14 @@ pub fn run<'a>(args: &ArgMatches<'a>, interfaces: &Interfaces) -> Result<()> {
     )?;
     if !confirm {
         error!(logger, "Cannot check without user confirmation");
-        return Err(ErrorKind::Legacy(err_msg("operation aborded by the user")).into());
+        return Err(ErrorKind::UserAbort.into());
     }
 
     let config = args.value_of("config").unwrap();
     let config = Config::from_file(config)
-        .context(ErrorKind::Legacy(err_msg("failed to check coordinator")))?;
+        .with_context(|_| ErrorKind::ConfigLoad)?;
     let admin = Admin::new(config.coordinator, logger.clone())
-        .context(ErrorKind::Legacy(err_msg("failed to check coordinator")))?;
+        .with_context(|_| ErrorKind::AdminInit("coordinator"))?;
     let mut outcomes = Outcomes::new();
 
     // Check things.
@@ -109,7 +102,7 @@ pub fn run<'a>(args: &ArgMatches<'a>, interfaces: &Interfaces) -> Result<()> {
     // Report results.
     if outcomes.has_errors() {
         error!(logger, "Coordinator data checks failed");
-        return Err(ErrorKind::Legacy(err_msg("coordinator data checks failed")).into());
+        return Err(ErrorKind::CheckWithErrors("coordinator data").into());
     }
     if outcomes.has_warnings() {
         warn!(logger, "Coordinator data checks passed with warnings");
