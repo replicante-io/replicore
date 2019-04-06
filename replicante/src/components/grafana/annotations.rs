@@ -23,7 +23,7 @@ use replicante_streams_events::EventsStream;
 use replicante_streams_events::ScanFilters;
 use replicante_streams_events::ScanOptions;
 
-use super::super::super::interfaces::api::APIVersion;
+use super::super::super::interfaces::api::APIRoot;
 use super::super::super::Error;
 use super::super::super::ErrorKind;
 use super::Interfaces;
@@ -173,7 +173,7 @@ impl Handler for Annotations {
 
 impl Annotations {
     pub fn attach(interfaces: &mut Interfaces) {
-        let mut router = interfaces.api.router_for(APIVersion::Unstable);
+        let mut router = interfaces.api.router_for(APIRoot::UnstableAPI);
         let handler = Annotations {
             events: interfaces.streams.events.clone(),
         };

@@ -12,7 +12,7 @@ use router::Router;
 
 use replicante_data_store::Store;
 
-use super::super::super::interfaces::api::APIVersion;
+use super::super::super::interfaces::api::APIRoot;
 use super::super::super::interfaces::Interfaces;
 use super::super::super::Error;
 use super::super::super::ErrorKind;
@@ -44,14 +44,13 @@ impl Handler for Find {
 impl Find {
     /// Attaches the handler for `/webui/clusters/top`.
     pub fn attach(interfaces: &mut Interfaces) {
-        let mut router = interfaces.api.router_for(APIVersion::Unstable);
+        let mut router = interfaces.api.router_for(APIRoot::UnstableWebUI);
         let handler_root = Find { store: interfaces.store.clone() };
         let handler_query = Find { store: interfaces.store.clone() };
-        router.get("/webui/clusters/find", handler_root, "webui/clusters/find");
-        router.get("/webui/clusters/find/:query", handler_query, "webui/clusters/find/query");
+        router.get("/clusters/find", handler_root, "/clusters/find");
+        router.get("/clusters/find/:query", handler_query, "/clusters/find/query");
     }
 }
-
 
 /// Top clusters (`/webui/clusters/top`) handler.
 pub struct Top {
@@ -72,14 +71,13 @@ impl Handler for Top {
 impl Top {
     /// Attaches the handler for `/webui/clusters/top`.
     pub fn attach(interfaces: &mut Interfaces) {
-        let mut router = interfaces.api.router_for(APIVersion::Unstable);
+        let mut router = interfaces.api.router_for(APIRoot::UnstableWebUI);
         let handler = Top {
             store: interfaces.store.clone()
         };
-        router.get("/webui/clusters/top", handler, "webui/clusters/top");
+        router.get("/clusters/top", handler, "/clusters/top");
     }
 }
-
 
 #[cfg(test)]
 mod tests {

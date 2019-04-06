@@ -13,7 +13,7 @@ use router::Router;
 
 use replicante_data_store::Store;
 
-use super::super::super::interfaces::api::APIVersion;
+use super::super::super::interfaces::api::APIRoot;
 use super::super::super::interfaces::Interfaces;
 use super::super::super::Error;
 use super::super::super::ErrorKind;
@@ -45,9 +45,9 @@ impl Handler for Discovery {
 
 impl Discovery {
     pub fn attach(interfaces: &mut Interfaces) {
-        let mut router = interfaces.api.router_for(APIVersion::Unstable);
+        let mut router = interfaces.api.router_for(APIRoot::UnstableWebUI);
         let handler = Discovery { store: interfaces.store.clone() };
-        router.get("/webui/cluster/:cluster/discovery", handler, "webui/cluster/discovery");
+        router.get("/cluster/:cluster/discovery", handler, "/cluster/discovery");
     }
 }
 
@@ -78,8 +78,8 @@ impl Handler for Meta {
 
 impl Meta {
     pub fn attach(interfaces: &mut Interfaces) {
-        let mut router = interfaces.api.router_for(APIVersion::Unstable);
+        let mut router = interfaces.api.router_for(APIRoot::UnstableWebUI);
         let handler = Meta { store: interfaces.store.clone() };
-        router.get("/webui/cluster/:cluster/meta", handler, "webui/cluster/meta");
+        router.get("/cluster/:cluster/meta", handler, "/cluster/meta");
     }
 }

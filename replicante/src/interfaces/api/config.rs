@@ -1,27 +1,21 @@
+use std::collections::HashMap;
+
 /// API server configuration options.
 #[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
 pub struct Config {
     #[serde(default = "Config::default_bind")]
     pub bind: String,
 
-    /// Enable/disable entire API versions.
-    ///
-    /// Useful for advanced operators that which to control access to experimental
-    /// or legacy versions that are supported by the current version.
-    ///
-    /// Example use cases are:
-    ///
-    ///   * Upgrade prep: testing new API versions while having a quick rollback plan.
-    ///   * Controlled rollout: be prepared for when verions are no longer supported.
+    /// Enable/disable entire API trees.
     #[serde(default)]
-    pub versions: APIVersions,
+    pub trees: APITrees,
 }
 
 impl Default for Config {
     fn default() -> Config {
         Config {
             bind: Config::default_bind(),
-            versions: APIVersions::default(),
+            trees: APITrees::default(),
         }
     }
 }
@@ -31,27 +25,38 @@ impl Config {
     fn default_bind() -> String { String::from("127.0.0.1:16016") }
 }
 
-/// Enable/disable entire API versions.
+/// Enable/disable entire API trees.
 #[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
-pub struct APIVersions {
+pub struct APITrees {
+    /// Enable/disable the introspection APIs.
+    #[serde(default = "APITrees::default_true")]
+    pub introspect: bool,
+
     /// Enable/disable the unstable API.
-    ///
-    /// The unstable API version is for endpoints in the early development cycle
-    /// where the attributes and parameters can change a lot and often.
-    #[serde(default = "APIVersions::default_true")]
+    #[serde(default = "APITrees::default_true")]
     pub unstable: bool,
 }
 
-impl Default for APIVersions {
-    fn default() -> APIVersions {
-        APIVersions {
+impl Default for APITrees {
+    fn default() -> APITrees {
+        APITrees {
+            introspect: true,
             unstable: true,
         }
     }
 }
 
-impl APIVersions {
+impl APITrees {
     fn default_true() -> bool {
         true
+    }
+}
+
+impl From<APITrees> for HashMap<&'static str, bool> {
+    fn from(trees: APITrees) -> HashMap<&'static str, bool> {
+        let mut flags = HashMap::new();
+        flags.insert("introspect", trees.introspect);
+        flags.insert("unstable", trees.unstable);
+        flags
     }
 }

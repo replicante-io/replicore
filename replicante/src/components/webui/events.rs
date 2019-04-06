@@ -14,7 +14,7 @@ use replicante_data_store::EventsFilters;
 use replicante_data_store::EventsOptions;
 use replicante_data_store::Store;
 
-use super::super::super::interfaces::api::APIVersion;
+use super::super::super::interfaces::api::APIRoot;
 use super::super::super::interfaces::Interfaces;
 use super::super::super::Error;
 use super::super::super::ErrorKind;
@@ -53,8 +53,8 @@ impl Handler for Events {
 
 impl Events {
     pub fn attach(interfaces: &mut Interfaces) {
-        let mut router = interfaces.api.router_for(APIVersion::Unstable);
+        let mut router = interfaces.api.router_for(APIRoot::UnstableWebUI);
         let handler = Events { store: interfaces.store.clone() };
-        router.get("/webui/events", handler, "webui/events");
+        router.get("/events", handler, "/events");
     }
 }

@@ -6,19 +6,26 @@ api:
   # Production environments should place an HTTPS proxy in front of the API.
   bind: '127.0.0.1:16016'
 
-  # Enable/disable entire API versions.
+  # Enable/disable entire API trees.
   #
-  # Useful for advanced operators that which to control access to experimental
-  # or legacy versions that are supported by the current version.
+  # Useful for advanced operators that which to control access to experimental or legacy
+  # API versions or reduce attack surfices by removing endpoints that are not needed.
   #
   # Example use cases are:
   #
   #   * Upgrade prep: testing new API versions while having a quick rollback plan.
   #   * Controlled rollout: be prepared for when verions are no longer supported.
-  versions:
-    # Enable/disable the unstable API.
+  #   * Disable unstable/experimental APIs: to enusre integrated tools only use stable APIs.
+  trees:
+    # Enable/disable the introspection APIs.
     #
-    # The unstable API version is for endpoints in the early development cycle
+    # The introspection API is very usesul to gain insight into the system.
+    # It can also be used to monitor the system for failures or performance degradation.
+    introspect: true
+
+    # Enable/disable the unstable APIs.
+    #
+    # The unstable APIs are for endpoints in the early development cycle
     # where the attributes and parameters can change a lot and often.
     unstable: true
 
