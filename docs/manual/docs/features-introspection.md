@@ -31,7 +31,8 @@ The [events](features-events.md) section explains how to view and programmatical
 Information about internal operation of replicante is exposed through metrics.
 These can be used to monitor the health and activity of a process as well as its performance.
 
-Metrics are exposed in [Prometheus](https://prometheus.io/) format by the API endpoint `/api/v1/metrics`.
+Metrics are exposed in [Prometheus](https://prometheus.io/)
+format by the API endpoint `/api/unstable/introspect/metrics`.
 
 
 ## Logging
@@ -75,3 +76,11 @@ Replicante supports integration with some distributed tracing tools compatible w
 
 By default distributed tracing is disabled but it can be [configured](admin-config.md)
 with the options under the `tracing` section.
+
+
+## Introspection API
+If what you need is not available among the tools above, a more machine-oriented
+[introscpection API](api-introspection.md) is available.
+
+Keep in mind that this API is meant for advanced operators and developers and may be
+useless, even missleading, without more context and a deeper knowledge of the code.

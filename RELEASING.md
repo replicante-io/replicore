@@ -6,6 +6,7 @@
 - [ ] Update cargo lock file
 - [ ] Update changelog with version and date
 - [ ] Update docs changelog
+- [ ] Update docs example configuration
 - [ ] Version documents
 - [ ] Ensure docker image builds correctly
 - [ ] Git commit and tag release

@@ -37,7 +37,9 @@
     ],
     "API Reference": [
       "api",
-      "api-monitoring"
+      "api-introspection",
+      "api-grafana",
+      "api-webui"
     ],
     "Scaling": [
       "scaling",

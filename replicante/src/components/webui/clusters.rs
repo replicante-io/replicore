@@ -42,7 +42,7 @@ impl Handler for Find {
 }
 
 impl Find {
-    /// Attaches the handler for `/webui/clusters/top`.
+    /// Attaches the handler for `/webui/clusters/find/:query`.
     pub fn attach(interfaces: &mut Interfaces) {
         let mut router = interfaces.api.router_for(APIRoot::UnstableWebUI);
         let handler_root = Find { store: interfaces.store.clone() };

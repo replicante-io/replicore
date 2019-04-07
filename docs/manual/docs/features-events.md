@@ -91,7 +91,7 @@ This feature requires the Grafana component to be enabled enabled
 
 A set of endpoints compatible with the
 [simple JSON datasource](https://grafana.com/plugins/grafana-simple-json-datasource)
-is available under the `/api/v1/grafana` root.
+is available under the `/api/unstable/grafana` root.
 
 
 ### Grafana configuration
@@ -100,8 +100,8 @@ so most of the configuration is on the Grafana side:
 
   1. Install the [simple JSON datasource](https://grafana.com/plugins/grafana-simple-json-datasource)
      plugin if not already installed.
-  2. Configure a new `simple JSON` datasource to point to `http://REPLICANTE_HOST:REPLICANTE_PORT/api/v1/grafana`
-     if not already available.
+  2. Configure a new `simple JSON` datasource to point to
+     `http://REPLICANTE_HOST:REPLICANTE_PORT/api/unstable/grafana` if not already available.
   3. On a dashboard, configure a new annotation query using the newly created datesource.
   4. (Optional) Filter events by adding JSON encoded filters as the query text.
 
