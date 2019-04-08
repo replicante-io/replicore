@@ -1,6 +1,5 @@
 //! Module to define cluster related WebUI endpoints.
 use failure::ResultExt;
-use failure::err_msg;
 
 use iron::Handler;
 use iron::IronResult;
@@ -18,7 +17,6 @@ use super::super::super::interfaces::Interfaces;
 use super::super::super::Error;
 use super::super::super::ErrorKind;
 
-
 /// Cluster discovery (`/webui/cluster/:cluster/discovery`) handler.
 pub struct Discovery {
     store: Store
@@ -30,7 +28,7 @@ impl Handler for Discovery {
             .expect("Iron Router extension not found")
             .find("cluster")
             .map(String::from)
-            .ok_or_else(|| ErrorKind::Legacy(err_msg("missing `cluster` parameter")))
+            .ok_or_else(|| ErrorKind::APIRequestParameterNotFound("cluster"))
             .map_err(Error::from)?;
         let discovery = self.store.cluster_discovery(cluster.clone())
             .with_context(|_| ErrorKind::PrimaryStoreQuery("cluster_discovery"))
@@ -51,7 +49,6 @@ impl Discovery {
     }
 }
 
-
 /// Cluster meta (`/webui/cluster/:cluster/meta`) handler.
 pub struct Meta {
     store: Store
@@ -63,7 +60,7 @@ impl Handler for Meta {
             .expect("Iron Router extension not found")
             .find("cluster")
             .map(String::from)
-            .ok_or_else(|| ErrorKind::Legacy(err_msg("missing `cluster` parameter")))
+            .ok_or_else(|| ErrorKind::APIRequestParameterNotFound("cluster"))
             .map_err(Error::from)?;
         let meta = self.store.cluster_meta(cluster.clone())
             .with_context(|_| ErrorKind::PrimaryStoreQuery("cluster_meta"))

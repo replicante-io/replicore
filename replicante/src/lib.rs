@@ -1,9 +1,7 @@
 extern crate bodyparser;
 extern crate chrono;
 extern crate clap;
-#[macro_use]
 extern crate failure;
-extern crate failure_derive;
 extern crate humthreads;
 
 extern crate iron;
@@ -145,9 +143,8 @@ pub fn run() -> Result<()> {
     // Load configuration.
     let config_location = cli_args.value_of("config").unwrap();
     info!(logger, "Loading configuration ..."; "config" => config_location);
-    let config = Config::from_file(config_location).context(
-        ErrorKind::Legacy(format_err!("failed to load configuration: {}", config_location))
-    )?;
+    let config = Config::from_file(config_location)
+        .with_context(|_| ErrorKind::ConfigLoad)?;
     let config = config.transform();
 
     // Initialise and run forever.

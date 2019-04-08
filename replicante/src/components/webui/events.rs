@@ -1,6 +1,5 @@
 //! Module to define events related WebUI endpoints.
 use failure::ResultExt;
-use failure::err_msg;
 
 use iron::Handler;
 use iron::IronResult;
@@ -19,10 +18,7 @@ use super::super::super::interfaces::Interfaces;
 use super::super::super::Error;
 use super::super::super::ErrorKind;
 
-
-const FAIL_FETCH_EVENTS: &str = "Failed to fetch recent events";
 const RECENT_EVENTS_LIMIT: i64 = 100;
-
 
 /// Cluster discovery (`/webui/events`) handler.
 pub struct Events {
@@ -40,7 +36,7 @@ impl Handler for Events {
         let mut events = Vec::new();
         for event in iter {
             let event = event
-                .context(ErrorKind::Legacy(err_msg(FAIL_FETCH_EVENTS)))
+                .with_context(|_| ErrorKind::Deserialize("event record", "Event"))
                 .map_err(Error::from)?;
             events.push(event);
         }

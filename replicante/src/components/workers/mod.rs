@@ -1,6 +1,5 @@
 use std::time::Duration;
 
-use failure::err_msg;
 use failure::ResultExt;
 use prometheus::Registry;
 use slog::Logger;
@@ -94,11 +93,11 @@ impl Workers {
     pub fn run(&mut self) -> Result<()> {
         if let Some(State::Configured(worker_set)) = self.state.take() {
             let workers = worker_set.run()
-                .with_context(|_| ErrorKind::SpawnThread("tasks workers"))?;
+                .with_context(|_| ErrorKind::ThreadSpawn("tasks workers"))?;
             self.state = Some(State::Started(workers));
             Ok(())
         } else {
-            Err(ErrorKind::Legacy(err_msg("workers already running")))?
+            Err(ErrorKind::ComponentAlreadyRunning("workers").into())
         }
     }
 
@@ -106,9 +105,7 @@ impl Workers {
     pub fn wait(&mut self) -> Result<()> {
         if let Some(State::Started(pool)) = self.state.take() {
             drop(pool);
-            Ok(())
-        } else {
-            Err(ErrorKind::Legacy(err_msg("workers not running")))?
         }
+        Ok(())
     }
 }

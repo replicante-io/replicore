@@ -87,7 +87,7 @@ impl API {
                 scope.activity("running https://github.com/iron/iron HTTP server");
                 Iron::new(chain).http(bind).expect("Unable to start API server");
             })
-            .context(ErrorKind::SpawnThread("http server"))?;
+            .with_context(|_| ErrorKind::ThreadSpawn("http server"))?;
         self.handle = Some(handle);
         Ok(())
     }

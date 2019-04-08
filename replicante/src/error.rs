@@ -46,16 +46,19 @@ impl From<ErrorKind> for Error {
     }
 }
 
-impl From<::failure::Error> for Error {
-    fn from(error: ::failure::Error) -> Error {
-        ErrorKind::Legacy(error).into()
-    }
-}
-
 
 /// Exhaustive list of possible errors emitted by this crate.
 #[derive(Debug, Fail)]
 pub enum ErrorKind {
+    #[fail(display = "the request body is not valid")]
+    APIRequestBodyInvalid,
+
+    #[fail(display = "the request has no body but requires one")]
+    APIRequestBodyNotFound,
+
+    #[fail(display = "missing required request parameter '{}'", _0)]
+    APIRequestParameterNotFound(&'static str),
+
     #[fail(display = "could not initialise client interface for {}", _0)]
     ClientInit(&'static str),
 
@@ -65,8 +68,14 @@ pub enum ErrorKind {
     #[fail(display = "could not coordinate with other processes")]
     Coordination,
 
+    #[fail(display = "could not run already running component '{}'", _0)]
+    ComponentAlreadyRunning(&'static str),
+
     #[fail(display = "could not deserialize {} into {}", _0, _1)]
     Deserialize(&'static str, &'static str),
+
+    #[fail(display = "could not emit a '{}' to the events stream", _0)]
+    EventsStreamEmit(&'static str),
 
     #[fail(display = "could not initialise {} interface", _0)]
     InterfaceInit(&'static str),
@@ -80,69 +89,25 @@ pub enum ErrorKind {
     #[fail(display = "could not persist {} model to primary store", _0)]
     PrimaryStorePersist(&'static str),
 
-    #[fail(display = "could not spawn new thread for '{}'", _0)]
-    SpawnThread(&'static str),
-
     #[fail(display = "could not register task worker for queue '{}'", _0)]
     TaskWorkerRegistration(String),
 
-    // TODO: drop once all uses are removed.
-    #[fail(display = "{}", _0)]
-    #[deprecated(since = "0.2.0", note = "move to specific ErrorKinds")]
-    Legacy(#[cause] ::failure::Error),
-}
+    #[fail(display = "thread terminated with an error")]
+    ThreadFailed,
 
+    #[fail(display = "could not spawn new thread for '{}'", _0)]
+    ThreadSpawn(&'static str),
+
+    #[fail(display = "could not query {} from the view store", _0)]
+    ViewStoreQuery(&'static str),
+}
 
 /// Short form alias for functions returning `Error`s.
 pub type Result<T> = ::std::result::Result<T, Error>;
-
 
 // IronError compatibility code.
 impl From<Error> for IronError {
     fn from(error: Error) -> Self {
         into_ironerror(error)
-    }
-}
-
-
-#[cfg(test)]
-mod tests {
-    use failure::Fail;
-    use failure::err_msg;
-
-    use iron::IronResult;
-    use iron::Headers;
-    use iron::Response;
-    use iron::Request;
-    use iron::headers::ContentType;
-
-    use iron_test::request;
-    use iron_test::response;
-
-    use super::Error;
-    use super::ErrorKind;
-
-    fn failing(_: &mut Request) -> IronResult<Response> {
-        let error: Error = err_msg("test")
-            .context(ErrorKind::Legacy(err_msg("chained")))
-            .context(ErrorKind::Legacy(err_msg("failures")))
-            .into();
-        Err(error.into())
-    }
-
-    #[test]
-    fn error_conversion() {
-        let response = request::get("http://host:16016/", Headers::new(), &failing);
-        let response = match response {
-            Err(error) => error.response,
-            Ok(_) => panic!("Request should fail")
-        };
-
-        let content_type = response.headers.get::<ContentType>().unwrap().clone();
-        assert_eq!(content_type, ContentType::json());
-
-        let result_body = response::extract_body_to_bytes(response);
-        let result_body = String::from_utf8(result_body).unwrap();
-        assert_eq!(result_body, r#"{"error":"failures","layers":["failures","chained","test"],"trace":null}"#);
     }
 }

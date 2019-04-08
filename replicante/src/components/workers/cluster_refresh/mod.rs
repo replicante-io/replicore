@@ -2,7 +2,6 @@ use std::time::Duration;
 
 use failure::Fail;
 use failure::ResultExt;
-use failure::err_msg;
 use slog::Logger;
 
 use replicante_coordinator::Coordinator;
@@ -16,7 +15,6 @@ use replicante_streams_events::EventsStream;
 use replicante_tasks::TaskHandler;
 use replicante_util_failure::failure_info;
 
-use super::super::super::Error;
 use super::super::super::ErrorKind;
 use super::super::super::Result;
 use super::super::super::task_payload::ClusterRefreshPayload;
@@ -24,16 +22,11 @@ use super::Interfaces;
 use super::ReplicanteQueues;
 use super::Task;
 
-
 mod metrics;
 
 pub use self::metrics::register_metrics;
 use self::metrics::REFRESH_DURATION;
 use self::metrics::REFRESH_LOCKED;
-
-
-const FAIL_PERSIST_DISCOVERY: &str = "Failed to persist cluster discovery";
-
 
 /// Task handler for `ReplicanteQueues::Discovery` tasks.
 pub struct Handler {
@@ -133,16 +126,19 @@ impl Handler {
                 return Ok(());
             }
             let event = Event::builder().cluster().changed(current_state, discovery.clone());
-            self.events.emit(event)
-                .context(ErrorKind::Legacy(err_msg(FAIL_PERSIST_DISCOVERY)))
-                .map_err(Error::from)?;
+            let event_code = event.code();
+            self.events
+                .emit(event)
+                .with_context(|_| ErrorKind::EventsStreamEmit(event_code))?;
         } else {
             let event = Event::builder().cluster().cluster_new(discovery.clone());
-            self.events.emit(event)
-                .context(ErrorKind::Legacy(err_msg(FAIL_PERSIST_DISCOVERY)))
-                .map_err(Error::from)?;
+            let event_code = event.code();
+            self.events
+                .emit(event)
+                .with_context(|_| ErrorKind::EventsStreamEmit(event_code))?;
         }
-        self.store.persist_discovery(discovery)
+        self.store
+            .persist_discovery(discovery)
             .with_context(|_| ErrorKind::PrimaryStorePersist("cluster_discovery"))?;
         Ok(())
     }

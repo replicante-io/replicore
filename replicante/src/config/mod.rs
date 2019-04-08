@@ -3,7 +3,6 @@ use std::io::Read;
 use std::path::Path;
 
 use failure::ResultExt;
-use failure::err_msg;
 use serde_yaml;
 
 use replicante_coordinator::Config as CoordinatorConfig;
@@ -33,7 +32,7 @@ pub use self::timeouts::TimeoutsConfig;
 
 
 /// Replicante configuration options.
-#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
+#[derive(Clone, Eq, PartialEq, Hash, Debug, Serialize, Deserialize)]
 pub struct Config {
     /// API server configuration.
     #[serde(default)]
@@ -104,7 +103,7 @@ impl Config {
     /// [`std::fs::File`]: https://doc.rust-lang.org/std/fs/struct.File.html
     pub fn from_file<P: AsRef<Path>>(path: P) -> Result<Config> {
         let config = File::open(path)
-            .context(ErrorKind::Legacy(err_msg("failed to open config file")))?;
+            .with_context(|_| ErrorKind::ConfigLoad)?;
         Config::from_reader(config)
     }
 
@@ -113,7 +112,7 @@ impl Config {
     /// [`std::io::Read`]: https://doc.rust-lang.org/std/io/trait.Read.html
     pub fn from_reader<R: Read>(reader: R) -> Result<Config> {
         let conf = serde_yaml::from_reader(reader)
-            .context(ErrorKind::Legacy(err_msg("failed to decode config file")))?;
+            .with_context(|_| ErrorKind::ConfigLoad)?;
         Ok(conf)
     }
 

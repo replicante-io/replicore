@@ -4,7 +4,6 @@ use chrono::DateTime;
 use chrono::Utc;
 
 use failure::ResultExt;
-use failure::err_msg;
 
 use iron::Handler;
 use iron::IronResult;
@@ -27,7 +26,6 @@ use super::super::super::interfaces::api::APIRoot;
 use super::super::super::Error;
 use super::super::super::ErrorKind;
 use super::Interfaces;
-
 
 /// Advanced query parameters passed as JSON blob in the annotation.query field.
 #[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
@@ -66,9 +64,8 @@ impl AdvancedQuery {
     fn default_limit() -> i64 { 1000 }
 }
 
-
 /// Response annotation, a list of which is our response to SimpleJson.
-#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
+#[derive(Clone, Eq, PartialEq, Hash, Debug, Serialize, Deserialize)]
 struct Annotation {
     tags: Vec<String>,
     text: String,
@@ -76,17 +73,15 @@ struct Annotation {
     title: String,
 }
 
-
 /// Request data sent to us by SimpleJson.
-#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
+#[derive(Clone, Eq, PartialEq, Hash, Debug, Serialize, Deserialize)]
 struct AnnotationRequest {
     annotation: AnnotationQuery,
     range: AnnotationRequestRange,
 }
 
-
 /// Annotation query sent by SimpleJson.
-#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
+#[derive(Clone, Eq, PartialEq, Hash, Debug, Serialize, Deserialize)]
 struct AnnotationQuery {
     datasource: String,
     enable: bool,
@@ -96,14 +91,12 @@ struct AnnotationQuery {
     query: Option<String>,
 }
 
-
 /// Time-range for the annotation query.
-#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
+#[derive(Clone, Eq, PartialEq, Hash, Debug, Serialize, Deserialize)]
 struct AnnotationRequestRange {
     from: DateTime<Utc>,
     to: DateTime<Utc>,
 }
-
 
 /// Grafana check endpoint (`/api/v1/grafana/annotations`) handler.
 pub struct Annotations {
@@ -114,9 +107,9 @@ impl Handler for Annotations {
     fn handle(&self, req: &mut Request) -> IronResult<Response> {
         // Get the annotation query.
         let request = req.get::<bodyparser::Struct<AnnotationRequest>>()
-            .context(ErrorKind::Legacy(err_msg("failed to parse annotation request")))
+            .with_context(|_| ErrorKind::APIRequestBodyInvalid)
             .map_err(Error::from)?
-            .ok_or_else(|| ErrorKind::Legacy(err_msg("annotation request body missing")))
+            .ok_or_else(|| ErrorKind::APIRequestBodyNotFound)
             .map_err(Error::from)?;
 
         // We should not get queries for disabled annotations but just in case skip them.
@@ -131,7 +124,7 @@ impl Handler for Annotations {
         let query = match request.annotation.query.as_ref() {
             Some(query) if query == "" => AdvancedQuery::default(),
             Some(query) => serde_json::from_str(query)
-                .context(ErrorKind::Legacy(err_msg("failed to parse annotation query")))
+                .with_context(|_| ErrorKind::APIRequestBodyInvalid)
                 .map_err(Error::from)?,
             None => AdvancedQuery::default(),
         };
@@ -145,12 +138,12 @@ impl Handler for Annotations {
         filters.stop_at = Some(request.range.to);
         options.limit = Some(query.limit);
         let events = self.events.scan(filters, options)
-            .context(ErrorKind::Legacy(err_msg("failed to scan event stream")))
+            .with_context(|_| ErrorKind::ViewStoreQuery("events"))
             .map_err(Error::from)?;
         let mut annotations: Vec<Annotation> = Vec::new();
         for event in events {
             let event = event
-                .context(ErrorKind::Legacy(err_msg("failed to decode event from stream")))
+                .with_context(|_| ErrorKind::Deserialize("event record", "Event"))
                 .map_err(Error::from)?;
             let tags = Annotations::tags(&event);
             let text = Annotations::text(&event);

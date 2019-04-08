@@ -85,7 +85,7 @@ impl DiscoveryComponent {
                 let mut election = LoopingElection::new(opts, logger);
                 election.loop_forever();
             })
-            .context(ErrorKind::SpawnThread("agent discovery"))?;
+            .with_context(|_| ErrorKind::ThreadSpawn("agent discovery"))?;
         self.worker = Some(thread);
         Ok(())
     }
@@ -94,10 +94,11 @@ impl DiscoveryComponent {
     pub fn wait(&mut self) -> Result<()> {
         info!(self.logger, "Waiting for Agent Discovery to stop");
         if let Some(mut handle) = self.worker.take() {
-            if let Err(error) = handle.join() {
-                let error: Error = format_err!("discovery thread failed: {:?}", error).into();
-                return Err(error);
-            }
+            return handle
+                .join()
+                .with_context(|_| ErrorKind::ThreadFailed)
+                .map_err(Error::from)
+                .map(|_| ());
         }
         Ok(())
     }
