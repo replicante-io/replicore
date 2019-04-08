@@ -75,7 +75,7 @@ impl Cleaner {
                 let mut election = LoopingElection::new(opts, logger);
                 election.loop_forever();
             })
-            .context(ErrorKind::SpawnThread("zookeeper cleaner"))?;
+            .with_context(|_| ErrorKind::SpawnThread("zookeeper cleaner"))?;
         Ok(Cleaner {
             handle: Some(handle),
             logger,
@@ -113,7 +113,7 @@ impl InnerCleaner {
         let mut limit = limit;
 
         let children = Client::get_children(&client, path, false)
-            .context(ErrorKind::Backend("children lookup"))?;
+            .with_context(|_| ErrorKind::Backend("children lookup"))?;
         for child in children {
             let child = format!("{}/{}", path, child);
             let timer = ZOO_OP_DURATION.with_label_values(&["exists"]).start_timer();
@@ -128,7 +128,7 @@ impl InnerCleaner {
                     if error == ZkError::OperationTimeout {
                         ZOO_TIMEOUTS_COUNT.inc();
                     }
-                    return Err(error).context(ErrorKind::Backend("node lookup"))?;
+                    return Err(error).with_context(|_| ErrorKind::Backend("node lookup"))?;
                 },
                 Ok(Some(stats)) => stats,
             };
@@ -144,7 +144,7 @@ impl InnerCleaner {
                 Err(ZkError::NoNode) |
                     Err(ZkError::NotEmpty) |
                     Ok(()) => (),
-                Err(error) => return Err(error).context(ErrorKind::Backend("node delete"))?,
+                Err(error) => return Err(error).with_context(|_| ErrorKind::Backend("node delete"))?,
             };
             ZOO_CLEANUP_COUNT.inc();
             limit = limit - 1;

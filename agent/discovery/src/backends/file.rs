@@ -30,7 +30,8 @@ impl Iter {
 
     /// Loads the content of the file into memory to iterate over it.
     fn load_content(&mut self) -> Result<()> {
-        let file = File::open(&self.path).with_context(|_| ErrorKind::Io(self.path.clone()))?;
+        let file = File::open(&self.path)
+            .with_context(|_| ErrorKind::Io(self.path.clone()))?;
         let mut content: DiscoveryFile = serde_yaml::from_reader(file)
             .with_context(|_| ErrorKind::YamlFile(self.path.clone()))?;
         content.reverse();

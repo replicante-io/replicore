@@ -166,7 +166,7 @@ impl AtomicState {
                 Ok(()) => (),
                 Err(ZkError::NoNode) => (),
                 Err(error) => {
-                    let error = Err(error).context(ErrorKind::Backend("election step down"));
+                    let error = Err(error).with_context(|_| ErrorKind::Backend("election step down"));
                     return error.map_err(|e| e.into());
                 }
             };
@@ -447,7 +447,7 @@ impl ZookeeperElection {
     fn register(&self, keeper: &ZooKeeper) -> Result<String> {
         let context = self.state.context();
         let payload_candidate = serde_json::to_vec(&context.payload_candidate)
-            .context(ErrorKind::Encode("election candidate information"))?;
+            .with_context(|_| ErrorKind::Encode("election candidate information"))?;
         let result = Client::create(
             &keeper, &context.path_candidate, payload_candidate.clone(),
             Acl::read_unsafe().clone(), CreateMode::EphemeralSequential
@@ -457,7 +457,7 @@ impl ZookeeperElection {
             Err(ZkError::NoNode) => {
                 // Create the election container and try to register agian.
                 let payload_election = serde_json::to_vec(&context.payload_election)
-                    .context(ErrorKind::Encode("election information"))?;
+                    .with_context(|_| ErrorKind::Encode("election information"))?;
                 let result = Client::create(
                     &keeper, &context.path_election, payload_election,
                     Acl::open_unsafe().clone(), CreateMode::Persistent
@@ -466,18 +466,19 @@ impl ZookeeperElection {
                     Ok(_) => (),
                     Err(ZkError::NodeExists) => (),
                     Err(error) => {
-                        let error = Err(error).context(ErrorKind::Backend("election registration"));
+                        let error = Err(error)
+                            .with_context(|_| ErrorKind::Backend("election registration"));
                         return error.map_err(|e| e.into());
                     }
                 };
                 let znode = Client::create(
                     &keeper, &context.path_candidate, payload_candidate,
                     Acl::read_unsafe().clone(), CreateMode::EphemeralSequential
-                ).context(ErrorKind::Backend("election registration"))?;
+                ).with_context(|_| ErrorKind::Backend("election registration"))?;
                 Ok(znode)
             },
             Err(error) => {
-                let error = Err(error).context(ErrorKind::Backend("election registration"));
+                let error = Err(error).with_context(|_| ErrorKind::Backend("election registration"));
                 error.map_err(|e| e.into())
             },
         }

@@ -51,7 +51,8 @@ impl Client {
         let registry = match node_id {
             None => None,
             Some(node_id) => {
-                let data = serde_json::to_vec(node_id).context(ErrorKind::Encode("node id"))?;
+                let data = serde_json::to_vec(node_id)
+                    .with_context(|_| ErrorKind::Encode("node id"))?;
                 let key = Client::path_from_hash(PREFIX_NODE, &node_id.to_string());
                 Some(RegistryData {
                     data,
@@ -202,7 +203,7 @@ impl Client {
             Ok(_) => (),
             Err(ZkError::NodeExists) => (),
             Err(error) => {
-                return Err(error).context(ErrorKind::Backend("container creation"))?;
+                return Err(error).with_context(|_| ErrorKind::Backend("container creation"))?;
             },
         };
         Ok(())
@@ -241,10 +242,10 @@ impl Client {
                 let path = Client::container_path(&registry.key);
                 Client::mkcontaner(keeper, &path)?;
                 Client::register_node_data(keeper, registry)
-                    .context(ErrorKind::Backend("node registration"))?;
+                    .with_context(|_| ErrorKind::Backend("node registration"))?;
             },
             Err(err) => {
-                return Err(err).context(ErrorKind::Backend("node registration"))?;
+                return Err(err).with_context(|_| ErrorKind::Backend("node registration"))?;
             },
             Ok(()) => (),
         };
@@ -294,7 +295,7 @@ impl Client {
                 }
                 error
             })
-            .context(ErrorKind::Backend("path check"))?
+            .with_context(|_| ErrorKind::Backend("path check"))?
             .is_none();
         timer.observe_duration();
         if not_exists {
@@ -312,7 +313,7 @@ impl Client {
                     if error == ZkError::OperationTimeout {
                         ZOO_TIMEOUTS_COUNT.inc();
                     }
-                    return Err(error).context(ErrorKind::Backend("path creation"))?;
+                    return Err(error).with_context(|_| ErrorKind::Backend("path creation"))?;
                 },
             };
         }
@@ -333,18 +334,18 @@ impl Client {
                 }
                 error
             })
-            .context(ErrorKind::BackendConnect)?;
+            .with_context(|_| ErrorKind::BackendConnect)?;
         timer.observe_duration();
 
         // Make root if needed.
         self.ensure_persistent("/", &keeper)
-            .context(ErrorKind::Backend("ensure root container exists"))?;
+            .with_context(|_| ErrorKind::Backend("ensure root container exists"))?;
         self.ensure_persistent(PREFIX_ELECTION, &keeper)
-            .context(ErrorKind::Backend("ensure elections container exists"))?;
+            .with_context(|_| ErrorKind::Backend("ensure elections container exists"))?;
         self.ensure_persistent(PREFIX_LOCK, &keeper)
-            .context(ErrorKind::Backend("ensure locks container exists"))?;
+            .with_context(|_| ErrorKind::Backend("ensure locks container exists"))?;
         self.ensure_persistent(PREFIX_NODE, &keeper)
-            .context(ErrorKind::Backend("ensure nodes container exists"))?;
+            .with_context(|_| ErrorKind::Backend("ensure nodes container exists"))?;
 
         // Register node_id for debugging (if provided).
         if let Some(registry) = self.registry.as_ref() {

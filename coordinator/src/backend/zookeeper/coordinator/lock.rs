@@ -100,7 +100,7 @@ impl ZookeeperNBLock {
             let stats = keeper.exists_w(&context.path, move |event| {
                 ZookeeperNBLock::callback_event(&inner_context, &event);
             })
-            .context(ErrorKind::Backend("lock watching"))?;
+            .with_context(|_| ErrorKind::Backend("lock watching"))?;
 
             // If the node was deleted before watching, release the lock.
             if stats.is_some() {
@@ -151,7 +151,7 @@ impl ZookeeperNBLock {
     /// Create the lock znode or fail if the lock is taken.
     fn create(&self, keeper: &ZooKeeper, path: &str) -> Result<()> {
         let data = serde_json::to_vec(&self.payload)
-            .context(ErrorKind::Encode("zookeeper non-blocking lock"))?;
+            .with_context(|_| ErrorKind::Encode("zookeeper non-blocking lock"))?;
         let timer = ZOO_OP_DURATION.with_label_values(&["create"]).start_timer();
         let result = keeper.create(path, data, Acl::read_unsafe().clone(), CreateMode::Ephemeral)
             .map_err(|error| {
@@ -167,13 +167,13 @@ impl ZookeeperNBLock {
             Err(ZkError::NodeExists) => {
                 let payload = self.read(keeper, path)?;
                 let payload: NBLockInfo = serde_json::from_slice(&payload)
-                    .context(ErrorKind::Decode("zookeeper non-blocking lock"))?;
+                    .with_context(|_| ErrorKind::Decode("zookeeper non-blocking lock"))?;
                 return Err(ErrorKind::LockHeld(
                     self.context.state.lock.clone(), payload.owner
                 ).into());
             },
             Err(error) => {
-                return Err(error).context(ErrorKind::Backend("lock acquisition"))?;
+                return Err(error).with_context(|_| ErrorKind::Backend("lock acquisition"))?;
             }
         }
         Ok(())
@@ -182,7 +182,7 @@ impl ZookeeperNBLock {
     /// Read the content of a znode.
     fn read(&self, keeper: &ZooKeeper, path: &str) -> Result<Vec<u8>> {
         let (data, _) = Client::get_data(keeper, path, false)
-            .context(ErrorKind::Backend("lock read"))?;
+            .with_context(|_| ErrorKind::Backend("lock read"))?;
         Ok(data)
     }
 
@@ -226,7 +226,7 @@ impl NonBlockingLockBehaviour for ZookeeperNBLock {
         let stats = Client::exists_w(&keeper, &self.context.path, move |event| {
             ZookeeperNBLock::callback_event(&context, &event);
         })
-        .context(ErrorKind::Backend("lock watching"))?;
+        .with_context(|_| ErrorKind::Backend("lock watching"))?;
         let stats = match stats {
             Some(stats) => stats,
             None => {
@@ -251,7 +251,7 @@ impl NonBlockingLockBehaviour for ZookeeperNBLock {
         // Ensure we actually own the lock even though we shold release it if ever lost.
         let keeper = self.context.client.get()?;
         let stats = Client::exists(&keeper, &self.context.path, false)
-            .context(ErrorKind::Backend("lock stats fetching"))?;
+            .with_context(|_| ErrorKind::Backend("lock stats fetching"))?;
         self.context.state.release();
         match stats {
             None => (),
@@ -261,7 +261,7 @@ impl NonBlockingLockBehaviour for ZookeeperNBLock {
                     Ok(()) => (),
                     Err(ZkError::NoNode) => (),
                     Err(error) => {
-                        return Err(error).context(ErrorKind::Backend("lock release"))?;
+                        return Err(error).with_context(|_| ErrorKind::Backend("lock release"))?;
                     }
                 };
             },
@@ -269,7 +269,7 @@ impl NonBlockingLockBehaviour for ZookeeperNBLock {
                 // Lock exists, we think we own it but is not the one we created.
                 let payload = self.read(&keeper, &self.context.path)?;
                 let payload: NBLockInfo = serde_json::from_slice(&payload)
-                    .context(ErrorKind::Decode("zookeeper non-blocking lock"))?;
+                    .with_context(|_| ErrorKind::Decode("zookeeper non-blocking lock"))?;
                 warn!(
                     self.context.logger, "Attempted lock release but we seem not to be owners";
                     "lock" => &self.context.state.lock, "owner" => %payload.owner
