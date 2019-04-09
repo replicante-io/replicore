@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Threads introspection API.
 
 ### Changed
+- **BREAKING**: Agent client uses `unstable` API.
 - **BREAKING**: Rename incorrectly named v1 API as unstable.
 
 ## [0.2.1] - 2019-03-28

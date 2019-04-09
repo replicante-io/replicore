@@ -16,7 +16,7 @@ and is subject to (potentially breaking) change.
 
 <div class="rest">
   <div class="method get">GET</div>
-  <div class="url get">/api/v1/shards</div>
+  <div class="url get">/api/unstable/shards</div>
   <div class="desc get rtl">Returns detailed information about shards</div>
 </div>
 

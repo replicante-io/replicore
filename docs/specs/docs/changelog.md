@@ -11,6 +11,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## Unreleased
 ### Changed
+- **BREAKING**: Rename incorrectly named `v1` endpoints.
+
+## 0.2.0 - 2019-02-20
+### Changed
 - **BREAKING**: Encode shard roles in lowercase.
 - **BREAKING**: Replaced shard's `last_op` with a `commit_offset`.
 - **BREAKING**: Replication lag has a specified unit (no longer assumed to be seconds).

@@ -16,7 +16,7 @@ and is subject to (potentially breaking) change.
 
 <div class="rest">
   <div class="method get">GET</div>
-  <div class="url get">/api/v1/info/agent</div>
+  <div class="url get">/api/unstable/info/agent</div>
   <div class="desc get rtl">Returns information about the agent itself</div>
 </div>
 
@@ -41,7 +41,7 @@ Example:
 
 <div class="rest">
   <div class="method get">GET</div>
-  <div class="url get">/api/v1/info/datastore</div>
+  <div class="url get">/api/unstable/info/datastore</div>
   <div class="desc get rtl">Returns information about the datastore</div>
 </div>
 

@@ -38,13 +38,13 @@ pub struct HttpClient {
 
 impl Client for HttpClient {
     fn agent_info(&self) -> Result<AgentInfo> {
-        let endpoint = self.endpoint("/api/v1/info/agent");
+        let endpoint = self.endpoint("/api/unstable/info/agent");
         let request = self.client.get(&endpoint);
         self.perform(request)
     }
 
     fn datastore_info(&self) -> Result<DatastoreInfo> {
-        let endpoint = self.endpoint("/api/v1/info/datastore");
+        let endpoint = self.endpoint("/api/unstable/info/datastore");
         let request = self.client.get(&endpoint);
         self.perform(request)
     }
@@ -54,7 +54,7 @@ impl Client for HttpClient {
     }
 
     fn shards(&self) -> Result<Shards> {
-        let endpoint = self.endpoint("/api/v1/shards");
+        let endpoint = self.endpoint("/api/unstable/shards");
         let request = self.client.get(&endpoint);
         self.perform(request)
     }
