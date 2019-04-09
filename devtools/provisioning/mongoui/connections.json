@@ -1,7 +1,11 @@
 {
   "connections": {
-    "replistore": {
-      "connection_string": "mongodb://mongo:27017/replistore",
+    "replicore": {
+      "connection_string": "mongodb://mongo:27017/replicore",
+      "connection_options": {}
+    },
+    "repliview": {
+      "connection_string": "mongodb://mongo:27017/repliview",
       "connection_options": {}
     }
   }

@@ -8,7 +8,7 @@ use replicante_util_iron::MetricsMiddleware;
 
 lazy_static! {
     pub static ref MIDDLEWARE: (HistogramVec, CounterVec, CounterVec) = {
-        MetricsMiddleware::metrics("replicante")
+        MetricsMiddleware::metrics("replicore")
     };
 }
 

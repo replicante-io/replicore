@@ -49,7 +49,7 @@ impl Handler for Events {
 
 impl Events {
     pub fn attach(interfaces: &mut Interfaces) {
-        let mut router = interfaces.api.router_for(APIRoot::UnstableWebUI);
+        let mut router = interfaces.api.router_for(&APIRoot::UnstableWebUI);
         let handler = Events { store: interfaces.store.clone() };
         router.get("/events", handler, "/events");
     }

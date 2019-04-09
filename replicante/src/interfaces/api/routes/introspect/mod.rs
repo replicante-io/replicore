@@ -10,7 +10,7 @@ mod version;
 
 pub fn mount(router: &mut Router, registry: Registry) {
     let metrics = MetricsHandler::new(registry);
-    let mut root = router.for_root(APIRoot::UnstableIntrospect);
+    let mut root = router.for_root(&APIRoot::UnstableIntrospect);
     root.get("/metrics", metrics, "/metrics");
     root.get("/threads", threads::handler, "/threads");
     root.get("/version", version::handler, "/version");

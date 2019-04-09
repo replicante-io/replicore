@@ -3,14 +3,15 @@
 ############################
 #
 # Services:
-#   * Prometheus (points at replicante running on dockerhost)
-version: '3.5'
+#   * Prometheus (points at replicante running on docker host)
+version: '3.7'
 
 
 services:
   prometheus:
     hostname: prometheus
     image: 'prom/prometheus:v2.4.3'
+    init: true
     ports:
       - '9090:9090'
     volumes:

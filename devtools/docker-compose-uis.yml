@@ -6,7 +6,7 @@
 #   * Kafka Topics Viewer (https://github.com/Landoop/kafka-topics-ui)
 #   * MongoDB UI (https://mrvautin.com/adminmongo/)
 #   * Zookeeper Navigator (https://www.elkozmon.com/zoonavigator/)
-version: '3.5'
+version: '3.7'
 
 
 services:
@@ -20,6 +20,7 @@ services:
       KAFKA_REST_ZOOKEEPER_CONNECT: 'zookeeper:2181/kafka'
     hostname: 'kafka-rest'
     image: 'confluentinc/cp-kafka-rest:5.0.0'
+    init: true
     networks:
       default:
         ipv4_address: '172.128.0.29'
@@ -32,6 +33,7 @@ services:
       PROXY: 'true'
     hostname: 'kafka-webui'
     image: 'landoop/kafka-topics-ui'
+    init: true
     ports:
       - '8001:8000'
 
@@ -47,6 +49,7 @@ services:
       PORT: '4321'
     hostname: mongoui
     image: 'mrvautin/adminmongo:latest'
+    init: true
     ports:
       - '4321:4321'
     stop_grace_period: 1s
@@ -61,6 +64,7 @@ services:
       API_HTTP_PORT: 9000
     hostname: zoonavigator-api
     image: elkozmon/zoonavigator-api:0.5.0
+    init: true
 
   zoonavigator-web:
     environment:
@@ -70,6 +74,7 @@ services:
       API_PORT: 9000
     hostname: zoonavigator-web
     image: elkozmon/zoonavigator-web:0.5.0
+    init: true
     links:
       - zoonavigator-api
       - zookeeper

@@ -1,7 +1,7 @@
 #################################################
 # Essential dependencies to run Replicante Core #
 #################################################
-version: '3.5'
+version: '3.7'
 
 
 services:
@@ -16,6 +16,7 @@ services:
       KAFKA_ZOOKEEPER_CONNECT: 'zookeeper:2181/kafka'
     hostname: kafka
     image: wurstmeister/kafka:2.11-2.0.0
+    init: true
     links:
       - zookeeper
     networks:
@@ -37,6 +38,7 @@ services:
       - '0.0.0.0'
     hostname: mongo
     image: mongo:4.0
+    init: true
     ports:
       - '27017:27017'
     volumes:
@@ -53,6 +55,7 @@ services:
       ZOO_MY_ID: 1
     hostname: 'zookeeper'
     image: 'zookeeper:3.4'
+    init: true
     ports:
       - '2181:2181'
     volumes:

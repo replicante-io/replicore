@@ -19,7 +19,7 @@ impl Handler for Check {
 
 impl Check {
     pub fn attach(interfaces: &mut Interfaces) {
-        let mut router = interfaces.api.router_for(APIRoot::UnstableAPI);
+        let mut router = interfaces.api.router_for(&APIRoot::UnstableAPI);
         let handler = Check {};
         router.get("/grafana", handler, "/grafana");
     }

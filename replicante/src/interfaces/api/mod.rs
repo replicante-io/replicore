@@ -63,7 +63,7 @@ impl API {
     }
 
     /// Register routes for a specific API version.
-    pub fn router_for(&mut self, root: APIRoot) -> RootedRouter {
+    pub fn router_for(&mut self, root: &APIRoot) -> RootedRouter {
         self.router
             .as_mut()
             .expect("Unable to access router. Was API::run called already?")
@@ -134,8 +134,8 @@ impl RootDescriptor for APIRoot {
                 None => true,
             },
             APIRoot::UnstableIntrospect => match flags.get("unstable") {
-                Some(flag) => *flag,
-                None => match flags.get("introspect") {
+                Some(flag) if !flag => *flag,
+                _ => match flags.get("introspect") {
                     Some(flag) => *flag,
                     None => true,
                 },

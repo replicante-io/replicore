@@ -166,7 +166,7 @@ impl Handler for Annotations {
 
 impl Annotations {
     pub fn attach(interfaces: &mut Interfaces) {
-        let mut router = interfaces.api.router_for(APIRoot::UnstableAPI);
+        let mut router = interfaces.api.router_for(&APIRoot::UnstableAPI);
         let handler = Annotations {
             events: interfaces.streams.events.clone(),
         };

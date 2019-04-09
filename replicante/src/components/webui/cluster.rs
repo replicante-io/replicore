@@ -43,7 +43,7 @@ impl Handler for Discovery {
 
 impl Discovery {
     pub fn attach(interfaces: &mut Interfaces) {
-        let mut router = interfaces.api.router_for(APIRoot::UnstableWebUI);
+        let mut router = interfaces.api.router_for(&APIRoot::UnstableWebUI);
         let handler = Discovery { store: interfaces.store.clone() };
         router.get("/cluster/:cluster/discovery", handler, "/cluster/discovery");
     }
@@ -75,7 +75,7 @@ impl Handler for Meta {
 
 impl Meta {
     pub fn attach(interfaces: &mut Interfaces) {
-        let mut router = interfaces.api.router_for(APIRoot::UnstableWebUI);
+        let mut router = interfaces.api.router_for(&APIRoot::UnstableWebUI);
         let handler = Meta { store: interfaces.store.clone() };
         router.get("/cluster/:cluster/meta", handler, "/cluster/meta");
     }

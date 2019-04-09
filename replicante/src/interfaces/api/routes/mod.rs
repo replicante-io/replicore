@@ -10,8 +10,8 @@ mod introspect;
 /// Mount core API route handlers.
 pub fn mount(router: &mut Router, registry: Registry) {
     // Create the index root for each API root.
-    let roots = vec![APIRoot::UnstableAPI];
-    for root in roots.into_iter() {
+    let roots = [APIRoot::UnstableAPI];
+    for root in roots.iter() {
         let mut root = router.for_root(root);
         root.get("/", index::handler, "index");
     }
