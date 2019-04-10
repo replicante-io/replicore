@@ -136,7 +136,7 @@ impl Fetcher {
         &self, cluster: &str, node: &str, meta: &mut ClusterMetaBuilder
     ) -> Result<()> {
         meta.node_inc();
-        let client = HttpClient::new(node.to_string(), self.timeout.clone())
+        let client = HttpClient::make(node.to_string(), self.timeout.clone())
             .with_context(|_| ErrorKind::AgentConnect(node.to_string()))?;
         let mut agent = Agent::new(cluster.to_string(), node.to_string(), AgentStatus::Up);
 

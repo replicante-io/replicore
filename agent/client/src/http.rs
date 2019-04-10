@@ -22,13 +22,11 @@ use super::metrics::CLIENT_OPS_DURATION;
 use super::metrics::CLIENT_OP_ERRORS_COUNT;
 use super::metrics::CLIENT_TIMEOUT;
 
-
 /// Decode useful portions of error messages from clients.
 #[derive(Deserialize)]
 struct ClientError {
     error: String,
 }
-
 
 /// Interface to interact with (remote) agents over HTTP.
 pub struct HttpClient {
@@ -61,25 +59,26 @@ impl Client for HttpClient {
 }
 
 impl HttpClient {
-    /// Creates a new HTTP client to interact with the agent.
-    pub fn new<S>(target: S, timeout: Duration) -> Result<HttpClient>
-        where S: Into<String>,
+    /// Create a new HTTP client to interact with the agent.
+    pub fn make<S>(target: S, timeout: Duration) -> Result<HttpClient>
+    where
+        S: Into<String>,
     {
-        let client = ReqwestClient::builder().timeout(timeout).build()
+        let client = ReqwestClient::builder()
+            .timeout(timeout)
+            .build()
             .with_context(|_| ErrorKind::Transport("HTTP"))?;
         let target = target.into();
         let root_url = String::from(target.trim_right_matches('/'));
-        Ok(HttpClient {
-            client,
-            root_url,
-        })
+        Ok(HttpClient { client, root_url })
     }
 }
 
 impl HttpClient {
     /// Utility method to build a full path for an endpoint.
-    fn endpoint<S>(&self, path: S) -> String 
-        where S: Into<String>,
+    fn endpoint<S>(&self, path: S) -> String
+    where
+        S: Into<String>,
     {
         let path = path.into();
         format!("{}/{}", self.root_url, path.trim_left_matches('/'))
@@ -87,22 +86,29 @@ impl HttpClient {
 
     /// Performs a request, decoding the JSON response and tracking some stats.
     fn perform<T>(&self, request: RequestBuilder) -> Result<T>
-        where T: DeserializeOwned
+    where
+        T: DeserializeOwned,
     {
-        let request = request.build().with_context(|_| ErrorKind::Transport("HTTP"))?;
+        let request = request
+            .build()
+            .with_context(|_| ErrorKind::Transport("HTTP"))?;
         let endpoint = String::from(&request.url().as_str()[self.root_url.len()..]);
         CLIENT_OPS_COUNT.with_label_values(&[&endpoint]).inc();
-        let timer = CLIENT_OPS_DURATION.with_label_values(&[&endpoint]).start_timer();
-        let mut response = self.client.execute(request)
+        let timer = CLIENT_OPS_DURATION
+            .with_label_values(&[&endpoint])
+            .start_timer();
+        let mut response = self
+            .client
+            .execute(request)
             .map_err(|error| {
                 CLIENT_OP_ERRORS_COUNT.with_label_values(&[&endpoint]).inc();
                 // Look at the inner error, if any, to check if it is a timout.
-                let inner_kind = error.get_ref()
+                let inner_kind = error
+                    .get_ref()
                     .and_then(|error| error.downcast_ref::<io::Error>())
                     .map(|error| error.kind());
                 match inner_kind {
-                    Some(io::ErrorKind::TimedOut) |
-                    Some(io::ErrorKind:: WouldBlock) => {
+                    Some(io::ErrorKind::TimedOut) | Some(io::ErrorKind::WouldBlock) => {
                         CLIENT_TIMEOUT.with_label_values(&[&endpoint]).inc();
                     }
                     _ => (),
@@ -112,17 +118,23 @@ impl HttpClient {
             .with_context(|_| ErrorKind::Transport("HTTP"))?;
         timer.observe_duration();
         let status = response.status();
-        CLIENT_HTTP_STATUS.with_label_values(&[&endpoint, status.as_str()]).inc();
+        CLIENT_HTTP_STATUS
+            .with_label_values(&[&endpoint, status.as_str()])
+            .inc();
         if response.status() < StatusCode::BAD_REQUEST {
-            response.json().with_context(|_| ErrorKind::JsonDecode)
+            response
+                .json()
+                .with_context(|_| ErrorKind::JsonDecode)
                 .map_err(Error::from)
                 .map_err(|error| {
                     CLIENT_OP_ERRORS_COUNT.with_label_values(&[&endpoint]).inc();
                     error
                 })
         } else {
-            response.json::<ClientError>()
-                .with_context(|_| ErrorKind::JsonDecode).map_err(Error::from)
+            response
+                .json::<ClientError>()
+                .with_context(|_| ErrorKind::JsonDecode)
+                .map_err(Error::from)
                 .and_then(|response| Err(ErrorKind::Remote(response.error).into()))
                 .map_err(|error| {
                     CLIENT_OP_ERRORS_COUNT.with_label_values(&[&endpoint]).inc();
@@ -132,27 +144,27 @@ impl HttpClient {
     }
 }
 
-
 #[cfg(test)]
 mod tests {
     use std::time::Duration;
+
     use super::HttpClient;
 
     #[test]
     fn enpoint_concat() {
-        let client = HttpClient::new("proto://host:port", Duration::from_secs(15)).unwrap();
+        let client = HttpClient::make("proto://host:port", Duration::from_secs(15)).unwrap();
         assert_eq!(client.endpoint("some/path"), "proto://host:port/some/path");
     }
 
     #[test]
     fn enpoint_trim_root() {
-        let client = HttpClient::new("proto://host:port", Duration::from_secs(15)).unwrap();
+        let client = HttpClient::make("proto://host:port", Duration::from_secs(15)).unwrap();
         assert_eq!(client.endpoint("some/path"), "proto://host:port/some/path");
     }
 
     #[test]
     fn enpoint_trim_path_prefix() {
-        let client = HttpClient::new("proto://host:port", Duration::from_secs(15)).unwrap();
+        let client = HttpClient::make("proto://host:port", Duration::from_secs(15)).unwrap();
         assert_eq!(client.endpoint("/some/path"), "proto://host:port/some/path");
     }
 }

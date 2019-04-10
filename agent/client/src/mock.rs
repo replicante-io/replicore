@@ -5,12 +5,12 @@ use replicante_agent_models::Shards;
 use super::Client;
 use super::Result;
 
-
 /// A mock `Client` for tests.
 pub struct MockClient<A, D, S>
-    where A: Fn() -> Result<AgentInfo>,
-          D: Fn() -> Result<DatastoreInfo>,
-          S: Fn() -> Result<Shards>,
+where
+    A: Fn() -> Result<AgentInfo>,
+    D: Fn() -> Result<DatastoreInfo>,
+    S: Fn() -> Result<Shards>,
 {
     agent_info: A,
     datastore_info: D,
@@ -19,9 +19,10 @@ pub struct MockClient<A, D, S>
 }
 
 impl<A, D, S> Client for MockClient<A, D, S>
-    where A: Fn() -> Result<AgentInfo>,
-          D: Fn() -> Result<DatastoreInfo>,
-          S: Fn() -> Result<Shards>,
+where
+    A: Fn() -> Result<AgentInfo>,
+    D: Fn() -> Result<DatastoreInfo>,
+    S: Fn() -> Result<Shards>,
 {
     fn agent_info(&self) -> Result<AgentInfo> {
         (self.agent_info)()
@@ -41,27 +42,32 @@ impl<A, D, S> Client for MockClient<A, D, S>
 }
 
 impl<A, D, S> MockClient<A, D, S>
-    where A: Fn() -> Result<AgentInfo>,
-          D: Fn() -> Result<DatastoreInfo>,
-          S: Fn() -> Result<Shards>,
+where
+    A: Fn() -> Result<AgentInfo>,
+    D: Fn() -> Result<DatastoreInfo>,
+    S: Fn() -> Result<Shards>,
 {
     /// Creates a new `MockClient`.
     pub fn new(agent_info: A, datastore_info: D, shards: S) -> MockClient<A, D, S> {
         let id = "mock://agent".to_string();
-        MockClient { agent_info, datastore_info, id, shards }
+        MockClient {
+            agent_info,
+            datastore_info,
+            id,
+            shards,
+        }
     }
 }
-
 
 #[cfg(test)]
 mod tests {
     use replicante_agent_models::AgentInfo;
     use replicante_agent_models::AgentVersion;
-    use replicante_agent_models::DatastoreInfo;
     use replicante_agent_models::CommitOffset;
+    use replicante_agent_models::DatastoreInfo;
     use replicante_agent_models::Shard;
-    use replicante_agent_models::Shards;
     use replicante_agent_models::ShardRole;
+    use replicante_agent_models::Shards;
 
     fn mock_agent_info() -> AgentInfo {
         AgentInfo::new(AgentVersion::new("a", "b", "c"))
@@ -73,8 +79,10 @@ mod tests {
 
     fn mock_shards() -> Shards {
         let shard = Shard::new(
-            "id", ShardRole::Primary, Some(CommitOffset::seconds(1234)),
-            Some(CommitOffset::seconds(2))
+            "id",
+            ShardRole::Primary,
+            Some(CommitOffset::seconds(1234)),
+            Some(CommitOffset::seconds(2)),
         );
         Shards::new(vec![shard])
     }
@@ -97,7 +105,7 @@ mod tests {
                     &ErrorKind::Remote(ref msg) => assert_eq!("TestError", msg),
                     _ => panic!("Unexpected Err result: {:?}", error),
                 },
-                Ok(_) => panic!("Unexpected Ok result")
+                Ok(_) => panic!("Unexpected Ok result"),
             };
         }
 
@@ -131,7 +139,7 @@ mod tests {
                     &ErrorKind::Remote(ref msg) => assert_eq!("TestError", msg),
                     _ => panic!("Unexpected Err result: {:?}", error),
                 },
-                Ok(_) => panic!("Unexpected Ok result")
+                Ok(_) => panic!("Unexpected Ok result"),
             };
         }
 
@@ -165,7 +173,7 @@ mod tests {
                     &ErrorKind::Remote(ref msg) => assert_eq!("TestError", msg),
                     _ => panic!("Unexpected Err result: {:?}", error),
                 },
-                Ok(_) => panic!("Unexpected Ok result")
+                Ok(_) => panic!("Unexpected Ok result"),
             };
         }
 
@@ -175,7 +183,7 @@ mod tests {
             let client = MockClient::new(
                 || Err(ErrorKind::Remote("Skipped".into()).into()),
                 || Err(ErrorKind::Remote("Skipped".into()).into()),
-                || Ok(mock_shards())
+                || Ok(mock_shards()),
             );
             assert_eq!(info, client.shards().unwrap());
         }

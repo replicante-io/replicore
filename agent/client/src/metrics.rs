@@ -6,37 +6,48 @@ use prometheus::Registry;
 
 use slog::Logger;
 
-
 lazy_static! {
     pub static ref CLIENT_HTTP_STATUS: CounterVec = CounterVec::new(
-        Opts::new("replicore_agentclient_http_status", "Number of HTTP status for an endpoint"),
+        Opts::new(
+            "replicore_agentclient_http_status",
+            "Number of HTTP status for an endpoint"
+        ),
         &["endpoint", "status"]
-    ).expect("Failed to create CLIENT_HTTP_STATUS counter");
-
+    )
+    .expect("Failed to create CLIENT_HTTP_STATUS counter");
     pub static ref CLIENT_OP_ERRORS_COUNT: CounterVec = CounterVec::new(
-        Opts::new("replicore_agentclient_operation_errors", "Number of agent operations failed"),
+        Opts::new(
+            "replicore_agentclient_operation_errors",
+            "Number of agent operations failed"
+        ),
         &["endpoint"]
-    ).expect("Failed to create CLIENT_OP_ERRORS_COUNT counter");
-
+    )
+    .expect("Failed to create CLIENT_OP_ERRORS_COUNT counter");
     pub static ref CLIENT_OPS_COUNT: CounterVec = CounterVec::new(
-        Opts::new("replicore_agentclient_operations", "Number of agent operations issued"),
+        Opts::new(
+            "replicore_agentclient_operations",
+            "Number of agent operations issued"
+        ),
         &["endpoint"]
-    ).expect("Failed to create CLIENT_OPS_COUNT counter");
-
+    )
+    .expect("Failed to create CLIENT_OPS_COUNT counter");
     pub static ref CLIENT_OPS_DURATION: HistogramVec = HistogramVec::new(
         HistogramOpts::new(
             "replicore_agentclient_operations_duration",
             "Duration (in seconds) of agent operations"
         ),
         &["endpoint"]
-    ).expect("Failed to create CLIENT_OPS_DURATION histogram");
-
+    )
+    .expect("Failed to create CLIENT_OPS_DURATION histogram");
     pub static ref CLIENT_TIMEOUT: CounterVec = CounterVec::new(
-        Opts::new("replicore_agentclient_timeout", "Number of agent operations that timed out"),
+        Opts::new(
+            "replicore_agentclient_timeout",
+            "Number of agent operations that timed out"
+        ),
         &["endpoint"]
-    ).expect("Failed to create CLIENT_TIMEOUT counter");
+    )
+    .expect("Failed to create CLIENT_TIMEOUT counter");
 }
-
 
 /// Attemps to register metrics with the Registry.
 ///

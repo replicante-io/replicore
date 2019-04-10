@@ -12,11 +12,9 @@ extern crate slog;
 
 extern crate replicante_agent_models;
 
-
 use replicante_agent_models::AgentInfo;
 use replicante_agent_models::DatastoreInfo;
 use replicante_agent_models::Shards;
-
 
 mod error;
 mod http;
@@ -30,7 +28,6 @@ pub use self::error::ErrorKind;
 pub use self::error::Result;
 pub use self::http::HttpClient;
 pub use self::metrics::register_metrics;
-
 
 /// Interface to interact with (remote) agents.
 ///
