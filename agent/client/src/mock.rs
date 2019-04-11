@@ -74,7 +74,7 @@ mod tests {
     }
 
     fn mock_datastore_info() -> DatastoreInfo {
-        DatastoreInfo::new("a", "b", "c", "d")
+        DatastoreInfo::new(None, "a", "b", "c", "d")
     }
 
     fn mock_shards() -> Shards {

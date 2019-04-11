@@ -120,7 +120,13 @@ mod tests {
             let response = request::get("http://host:16016/", Headers::new(), &handler).unwrap();
             let result_body = response::extract_body_to_bytes(response);
             let result_body = String::from_utf8(result_body).unwrap();
-            assert_eq!(result_body, r#"[{"name":"c1","kinds":["mongo"],"nodes":3},{"name":"c2","kinds":["redis"],"nodes":5}]"#);
+            assert_eq!(
+                result_body,
+                concat!(
+                    r#"[{"cluster_id":"c1","kinds":["mongo"],"nodes":3},"#,
+                    r#"{"cluster_id":"c2","kinds":["redis"],"nodes":5}]"#
+                )
+            );
         }
     }
 }

@@ -66,17 +66,17 @@ impl Handler {
 
         // Ensure only one refresh at the same time.
         let mut lock = self.coordinator
-            .non_blocking_lock(format!("cluster_refresh/{}", discovery.cluster));
+            .non_blocking_lock(format!("cluster_refresh/{}", discovery.cluster_id));
         match lock.acquire() {
             Ok(()) => (),
             Err(error) => {
                 match error.kind() {
                     ::replicante_coordinator::ErrorKind::LockHeld(_, owner) => {
-                        REFRESH_LOCKED.with_label_values(&[&discovery.cluster]).inc();
+                        REFRESH_LOCKED.with_label_values(&[&discovery.cluster_id]).inc();
                         info!(
                             self.logger,
                             "Skipped cluster refresh because another task is in progress";
-                            "cluster" => discovery.cluster, "owner" => %owner
+                            "cluster_id" => discovery.cluster_id, "owner" => %owner
                         );
                         return Ok(());
                     },
@@ -87,8 +87,8 @@ impl Handler {
         };
 
         // Refresh cluster state.
-        let timer = REFRESH_DURATION.with_label_values(&[&discovery.cluster]).start_timer();
-        self.emit_snapshots(&discovery.cluster, snapshot);
+        let timer = REFRESH_DURATION.with_label_values(&[&discovery.cluster_id]).start_timer();
+        self.emit_snapshots(&discovery.cluster_id, snapshot);
         self.refresh_discovery(discovery.clone())?;
         self.fetcher.process(discovery.clone(), lock.watch());
         self.aggregator.process(discovery, lock.watch());
@@ -119,7 +119,7 @@ impl Handler {
     /// Refresh is performed based on the current state or luck of state.
     /// This method emits events as needed (and before the state is updated).
     fn refresh_discovery(&self, discovery: ClusterDiscovery) -> Result<()> {
-        let current_state = self.store.cluster_discovery(discovery.cluster.clone())
+        let current_state = self.store.cluster_discovery(discovery.cluster_id.clone())
             .with_context(|_| ErrorKind::PrimaryStorePersist("cluster_discovery"))?;
         if let Some(current_state) = current_state {
             if discovery == current_state {

@@ -1,32 +1,31 @@
 use replicante_agent_models::AgentInfo as WireAgentInfo;
 
-
 /// Status of an agent.
-#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
+#[derive(Clone, Eq, PartialEq, Hash, Debug, Serialize, Deserialize)]
 pub struct Agent {
-    pub cluster: String,
+    pub cluster_id: String,
     pub host: String,
     pub status: AgentStatus,
 }
 
 impl Agent {
-    pub fn new<S1, S2>(cluster: S1, host: S2, status: AgentStatus) -> Agent
-        where S1: Into<String>,
-              S2: Into<String>,
+    pub fn new<S1, S2>(cluster_id: S1, host: S2, status: AgentStatus) -> Agent
+    where
+        S1: Into<String>,
+        S2: Into<String>,
     {
         Agent {
-            cluster: cluster.into(),
+            cluster_id: cluster_id.into(),
             host: host.into(),
             status,
         }
     }
 }
 
-
 /// Information about an Agent
-#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
+#[derive(Clone, Eq, PartialEq, Hash, Debug, Serialize, Deserialize)]
 pub struct AgentInfo {
-    pub cluster: String,
+    pub cluster_id: String,
     pub host: String,
     pub version_checkout: String,
     pub version_number: String,
@@ -34,12 +33,13 @@ pub struct AgentInfo {
 }
 
 impl AgentInfo {
-    pub fn new<S1, S2>(cluster: S1, host: S2, agent: WireAgentInfo) -> AgentInfo
-        where S1: Into<String>,
-              S2: Into<String>,
+    pub fn new<S1, S2>(cluster_id: S1, host: S2, agent: WireAgentInfo) -> AgentInfo
+    where
+        S1: Into<String>,
+        S2: Into<String>,
     {
         AgentInfo {
-            cluster: cluster.into(),
+            cluster_id: cluster_id.into(),
             host: host.into(),
             version_checkout: agent.version.checkout,
             version_number: agent.version.number,
@@ -48,11 +48,10 @@ impl AgentInfo {
     }
 }
 
-
 /// Tracks the last known state of an agent.
 ///
 /// If an agent or its datastore are down the received error is attached.
-#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
+#[derive(Clone, Eq, PartialEq, Hash, Debug, Serialize, Deserialize)]
 pub enum AgentStatus {
     /// The agent is down or is returning errors.
     AgentDown(String),
@@ -63,7 +62,6 @@ pub enum AgentStatus {
     /// The agent is up and can communicate with the datastore.
     Up,
 }
-
 
 #[cfg(test)]
 mod tests {
@@ -76,7 +74,8 @@ mod tests {
         fn from_json() {
             let status = AgentStatus::AgentDown("TEST".into());
             let expected = Agent::new("cluster", "http://node/", status);
-            let payload = r#"{"cluster":"cluster","host":"http://node/","status":{"AgentDown":"TEST"}}"#;
+            let payload = 
+                r#"{"cluster_id":"cluster","host":"http://node/","status":{"AgentDown":"TEST"}}"#;
             let agent: Agent = serde_json::from_str(payload).unwrap();
             assert_eq!(agent, expected);
         }
@@ -86,7 +85,8 @@ mod tests {
             let status = AgentStatus::AgentDown("TEST".into());
             let agent = Agent::new("cluster", "http://node/", status);
             let payload = serde_json::to_string(&agent).unwrap();
-            let expected = r#"{"cluster":"cluster","host":"http://node/","status":{"AgentDown":"TEST"}}"#;
+            let expected =
+                r#"{"cluster_id":"cluster","host":"http://node/","status":{"AgentDown":"TEST"}}"#;
             assert_eq!(payload, expected);
         }
     }
@@ -102,7 +102,10 @@ mod tests {
             let version = WireAgentVersion::new("check", "1.2.3", "yep");
             let wire = WireAgentInfo::new(version);
             let expected = AgentInfo::new("cluster", "http://node/", wire);
-            let payload = r#"{"cluster":"cluster","host":"http://node/","version_checkout":"check","version_number":"1.2.3","version_taint":"yep"}"#;
+            let payload = concat!(
+                r#"{"cluster_id":"cluster","host":"http://node/","version_checkout":"#,
+                r#""check","version_number":"1.2.3","version_taint":"yep"}"#
+            );
             let info: AgentInfo = serde_json::from_str(&payload).unwrap();
             assert_eq!(info, expected);
         }
@@ -113,7 +116,10 @@ mod tests {
             let wire = WireAgentInfo::new(version);
             let info = AgentInfo::new("cluster", "http://node/", wire);
             let payload = serde_json::to_string(&info).unwrap();
-            let expected = r#"{"cluster":"cluster","host":"http://node/","version_checkout":"check","version_number":"1.2.3","version_taint":"yep"}"#;
+            let expected = concat!(
+                r#"{"cluster_id":"cluster","host":"http://node/","version_checkout":"check""#,
+                r#","version_number":"1.2.3","version_taint":"yep"}"#
+            );
             assert_eq!(payload, expected);
         }
     }

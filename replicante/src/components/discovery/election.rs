@@ -21,7 +21,6 @@ use super::metrics::DISCOVERY_DURATION;
 use super::metrics::DISCOVERY_ERRORS;
 use super::snapshot::EmissionTracker;
 
-
 /// Main discovery logic with primary/secondaries HA support.
 pub struct DiscoveryElection {
     discovery_config: DiscoveryConfig,
@@ -52,16 +51,16 @@ impl DiscoveryElection {
 impl DiscoveryElection {
     /// Emit a cluster refresh task for the discovery.
     fn emit(&self, cluster: ClusterDiscovery) {
-        let name = cluster.cluster.clone();
-        let snapshot = self.emissions.snapshot(name.clone());
+        let cluster_id = cluster.cluster_id.clone();
+        let snapshot = self.emissions.snapshot(cluster_id.clone());
         let payload = ClusterRefreshPayload::new(cluster, snapshot);
         let task = TaskRequest::new(ReplicanteQueues::ClusterRefresh);
         if let Err(error) = self.tasks.request(task, payload) {
             error!(
-                self.logger, "Failed to request cluster refresh";
-                "cluster" => name,
-                "error" => %error
-                // TODO: failure_info(&error)
+                self.logger,
+                "Failed to request cluster refresh";
+                "cluster_id" => cluster_id,
+                failure_info(&error),
             );
         };
     }

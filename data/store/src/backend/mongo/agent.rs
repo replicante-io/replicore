@@ -34,15 +34,16 @@ impl AgentStore {
         AgentStore { client, db }
     }
 
-    pub fn agent(&self, cluster: String, host: String) -> Result<Option<Agent>> {
+    pub fn agent(&self, cluster_id: String, host: String) -> Result<Option<Agent>> {
         let filter = doc!{
-            "cluster" => cluster,
+            "cluster_id" => cluster_id,
             "host" => host,
         };
         MONGODB_OPS_COUNT.with_label_values(&["findOne"]).inc();
         let timer = MONGODB_OPS_DURATION.with_label_values(&["findOne"]).start_timer();
         let collection = self.collection_agents();
-        let agent = collection.find_one(Some(filter), None)
+        let agent = collection
+            .find_one(Some(filter), None)
             .map_err(|error| {
                 MONGODB_OP_ERRORS_COUNT.with_label_values(&["findOne"]).inc();
                 error
@@ -58,9 +59,9 @@ impl AgentStore {
         Ok(Some(agent))
     }
 
-    pub fn agent_info(&self, cluster: String, host: String) -> Result<Option<AgentInfo>> {
+    pub fn agent_info(&self, cluster_id: String, host: String) -> Result<Option<AgentInfo>> {
         let filter = doc!{
-            "cluster" => cluster,
+            "cluster_id" => cluster_id,
             "host" => host,
         };
         MONGODB_OPS_COUNT.with_label_values(&["findOne"]).inc();
@@ -82,8 +83,8 @@ impl AgentStore {
         Ok(Some(agent_info))
     }
 
-    pub fn cluster_agents(&self, cluster: String) -> Result<Cursor<Agent>> {
-        let filter = doc!{"cluster" => cluster};
+    pub fn cluster_agents(&self, cluster_id: String) -> Result<Cursor<Agent>> {
+        let filter = doc!{"cluster_id" => cluster_id};
         MONGODB_OPS_COUNT.with_label_values(&["find"]).inc();
         let timer = MONGODB_OPS_DURATION.with_label_values(&["find"]).start_timer();
         let collection = self.collection_agents();
@@ -103,8 +104,8 @@ impl AgentStore {
         Ok(Cursor(Box::new(iter)))
     }
 
-    pub fn cluster_agents_info(&self, cluster: String) -> Result<Cursor<AgentInfo>> {
-        let filter = doc!{"cluster" => cluster};
+    pub fn cluster_agents_info(&self, cluster_id: String) -> Result<Cursor<AgentInfo>> {
+        let filter = doc!{"cluster_id" => cluster_id};
         MONGODB_OPS_COUNT.with_label_values(&["find"]).inc();
         let timer = MONGODB_OPS_DURATION.with_label_values(&["find"]).start_timer();
         let collection = self.collection_agents_info();
@@ -131,7 +132,7 @@ impl AgentStore {
             _ => panic!("Agent failed to encode as BSON document")
         };
         let filter = doc!{
-            "cluster" => agent.cluster,
+            "cluster_id" => agent.cluster_id,
             "host" => agent.host,
         };
         let collection = self.collection_agents();
@@ -155,7 +156,7 @@ impl AgentStore {
             _ => panic!("AgentInfo failed to encode as BSON document")
         };
         let filter = doc!{
-            "cluster" => agent.cluster,
+            "cluster_id" => agent.cluster_id,
             "host" => agent.host,
         };
         let collection = self.collection_agents_info();

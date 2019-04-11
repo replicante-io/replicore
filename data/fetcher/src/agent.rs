@@ -28,7 +28,7 @@ impl AgentFetcher {
     }
 
     pub fn process_agent(&self, agent: Agent) -> Result<()> {
-        match self.store.agent(agent.cluster.clone(), agent.host.clone()) {
+        match self.store.agent(agent.cluster_id.clone(), agent.host.clone()) {
             Err(error) => Err(error).with_context(|_| ErrorKind::StoreRead("agent"))
                 .map_err(Error::from),
             Ok(None) => self.process_agent_new(agent),
@@ -36,11 +36,16 @@ impl AgentFetcher {
         }
     }
 
-    pub fn process_agent_info(&self, client: &Client, cluster: String, node: String) -> Result<()> {
+    pub fn process_agent_info(
+        &self,
+        client: &Client,
+        cluster_id: String,
+        node: String
+    ) -> Result<()> {
         let info = client.agent_info()
             .with_context(|_| ErrorKind::AgentRead("agent info", client.id().to_string()))?;
-        let info = AgentInfo::new(cluster, node, info);
-        match self.store.agent_info(info.cluster.clone(), info.host.clone()) {
+        let info = AgentInfo::new(cluster_id, node, info);
+        match self.store.agent_info(info.cluster_id.clone(), info.host.clone()) {
             Err(error) => Err(error).with_context(|_| ErrorKind::StoreRead("agent info"))
                 .map_err(Error::from),
             Ok(None) => self.process_agent_info_new(info),
@@ -64,13 +69,15 @@ impl AgentFetcher {
     }
 
     fn process_agent_new(&self, agent: Agent) -> Result<()> {
-        let event = Event::builder().agent().agent_new(agent.cluster.clone(), agent.host.clone());
+        let event = Event::builder()
+            .agent()
+            .agent_new(agent.cluster_id.clone(), agent.host.clone());
         let code = event.code();
         self.events.emit(event).with_context(|_| ErrorKind::EventEmit(code))?;
 
         // Emit a synthetic transition to up.
         let before = AgentStatus::AgentDown("Newly discovered agent".into());
-        let before = Agent::new(agent.cluster.clone(), agent.host.clone(), before);
+        let before = Agent::new(agent.cluster_id.clone(), agent.host.clone(), before);
         let event = Event::builder().agent().transition(before, agent.clone());
         let code = event.code();
         self.events.emit(event).with_context(|_| ErrorKind::EventEmit(code))?;

@@ -87,28 +87,28 @@ impl Default for EventsOptions {
 /// Allows multiple possible datastores to be used as well as mocks for testing.
 pub trait InnerStore: Send + Sync {
     /// See `Store::agent` for details.
-    fn agent(&self, cluster: String, host: String) -> Result<Option<Agent>>;
+    fn agent(&self, cluster_id: String, host: String) -> Result<Option<Agent>>;
 
     /// See `Store::agent_info` for details.
-    fn agent_info(&self, cluster: String, host: String) -> Result<Option<AgentInfo>>;
+    fn agent_info(&self, cluster_id: String, host: String) -> Result<Option<AgentInfo>>;
 
     /// See `Store::cluster_agents` for details.
-    fn cluster_agents(&self, cluster: String) -> Result<Cursor<Agent>>;
+    fn cluster_agents(&self, cluster_id: String) -> Result<Cursor<Agent>>;
 
     /// See `Store::cluster_agents_info` for details.
-    fn cluster_agents_info(&self, cluster: String) -> Result<Cursor<AgentInfo>>;
+    fn cluster_agents_info(&self, cluster_id: String) -> Result<Cursor<AgentInfo>>;
 
     /// See `Store::cluster_discovery` for details.
-    fn cluster_discovery(&self, cluster: String) -> Result<Option<ClusterDiscovery>>;
+    fn cluster_discovery(&self, cluster_id: String) -> Result<Option<ClusterDiscovery>>;
 
     /// See `Store::cluster_meta` for details.
-    fn cluster_meta(&self, cluster: String) -> Result<Option<ClusterMeta>>;
+    fn cluster_meta(&self, cluster_id: String) -> Result<Option<ClusterMeta>>;
 
     /// See `Store::cluster_nodes` for details.
-    fn cluster_nodes(&self, cluster: String) -> Result<Cursor<Node>>;
+    fn cluster_nodes(&self, cluster_id: String) -> Result<Cursor<Node>>;
 
     /// See `Store::cluster_shards` for details.
-    fn cluster_shards(&self, cluster: String) -> Result<Cursor<Shard>>;
+    fn cluster_shards(&self, cluster_id: String) -> Result<Cursor<Shard>>;
 
     /// See `Store::events` for details.
     fn events(&self, filters: EventsFilters, options: EventsOptions) -> Result<Cursor<Event>>;
@@ -117,7 +117,7 @@ pub trait InnerStore: Send + Sync {
     fn find_clusters(&self, search: String, limit: u8) -> Result<Vec<ClusterMeta>>;
 
     /// See `Store::node` for details.
-    fn node(&self, cluster: String, name: String) -> Result<Option<Node>>;
+    fn node(&self, cluster_id: String, name: String) -> Result<Option<Node>>;
 
     /// See `Some::persist_agent` for details.
     fn persist_agent(&self, agent: Agent) -> Result<()>;
@@ -141,7 +141,7 @@ pub trait InnerStore: Send + Sync {
     fn persist_shard(&self, shard: Shard) -> Result<()>;
 
     /// See `Store::shard` for details.
-    fn shard(&self, cluster: String, node: String, id: String) -> Result<Option<Shard>>;
+    fn shard(&self, cluster_id: String, node: String, id: String) -> Result<Option<Shard>>;
 
     /// See `Store::top_clusters` for details.
     fn top_clusters(&self) -> Result<Vec<ClusterMeta>>;
@@ -195,59 +195,69 @@ impl Store {
     }
 
     /// Fetch agent status information.
-    pub fn agent<S1, S2>(&self, cluster: S1, host: S2) -> Result<Option<Agent>>
-        where S1: Into<String>,
-              S2: Into<String>,
+    pub fn agent<S1, S2>(&self, cluster_id: S1, host: S2) -> Result<Option<Agent>>
+    where
+        S1: Into<String>,
+        S2: Into<String>,
     {
-        self.0.agent(cluster.into(), host.into())
+        self.0.agent(cluster_id.into(), host.into())
     }
 
     /// Fetch agent information.
-    pub fn agent_info<S1, S2>(&self, cluster: S1, host: S2) -> Result<Option<AgentInfo>>
-        where S1: Into<String>,
-              S2: Into<String>,
+    pub fn agent_info<S1, S2>(&self, cluster_id: S1, host: S2) -> Result<Option<AgentInfo>>
+    where
+        S1: Into<String>,
+        S2: Into<String>,
     {
-        self.0.agent_info(cluster.into(), host.into())
+        self.0.agent_info(cluster_id.into(), host.into())
     }
 
     /// Fetch the status of all agents in a cluster.
-    pub fn cluster_agents<S>(&self, cluster: S) -> Result<Cursor<Agent>>
-        where S: Into<String>,
+    pub fn cluster_agents<S>(&self, cluster_id: S) -> Result<Cursor<Agent>>
+    where
+        S: Into<String>,
     {
-        self.0.cluster_agents(cluster.into())
+        self.0.cluster_agents(cluster_id.into())
     }
 
     /// Fetch information about all agents in a cluster.
-    pub fn cluster_agents_info<S>(&self, cluster: S) -> Result<Cursor<AgentInfo>>
-        where S: Into<String>,
+    pub fn cluster_agents_info<S>(&self, cluster_id: S) -> Result<Cursor<AgentInfo>>
+    where
+        S: Into<String>,
     {
-        self.0.cluster_agents_info(cluster.into())
+        self.0.cluster_agents_info(cluster_id.into())
     }
 
     /// Fetch discovery information about a cluster.
-    pub fn cluster_discovery<S>(&self, cluster: S) -> Result<Option<ClusterDiscovery>>
-        where S: Into<String>,
+    pub fn cluster_discovery<S>(&self, cluster_id: S) -> Result<Option<ClusterDiscovery>>
+    where
+        S: Into<String>,
     {
-        self.0.cluster_discovery(cluster.into())
+        self.0.cluster_discovery(cluster_id.into())
     }
 
     /// Fetch metadata about a cluster.
-    pub fn cluster_meta<S>(&self, cluster: S) -> Result<Option<ClusterMeta>>
-        where S: Into<String>,
+    pub fn cluster_meta<S>(&self, cluster_id: S) -> Result<Option<ClusterMeta>>
+    where
+        S: Into<String>,
     {
-        self.0.cluster_meta(cluster.into())
+        self.0.cluster_meta(cluster_id.into())
     }
 
     /// Fetch information about all nodes in a cluster.
-    pub fn cluster_nodes<S>(&self, cluster: S) -> Result<Cursor<Node>>
-        where S: Into<String>,
+    pub fn cluster_nodes<S>(&self, cluster_id: S) -> Result<Cursor<Node>>
+    where
+        S: Into<String>,
     {
-        self.0.cluster_nodes(cluster.into())
+        self.0.cluster_nodes(cluster_id.into())
     }
 
     /// Fetch information about all shards in a cluster.
-    pub fn cluster_shards(&self, cluster: String) -> Result<Cursor<Shard>> {
-        self.0.cluster_shards(cluster)
+    pub fn cluster_shards<S>(&self, cluster_id: S) -> Result<Cursor<Shard>>
+    where
+        S: Into<String>,
+    {
+        self.0.cluster_shards(cluster_id.into())
     }
 
     /// Return an iterator over events in the store.
@@ -263,17 +273,19 @@ impl Store {
     /// A limited number of cluster is returned to avoid abuse.
     /// To find more clusters refine the search (paging is not supported).
     pub fn find_clusters<S>(&self, search: S, limit: u8) -> Result<Vec<ClusterMeta>>
-        where S: Into<String>,
+    where
+        S: Into<String>,
     {
         self.0.find_clusters(search.into(), limit)
     }
 
     /// Fetch information about a node.
-    pub fn node<S1, S2>(&self, cluster: S1, name: S2) -> Result<Option<Node>>
-        where S1: Into<String>,
-              S2: Into<String>,
+    pub fn node<S1, S2>(&self, cluster_id: S1, name: S2) -> Result<Option<Node>>
+    where
+        S1: Into<String>,
+        S2: Into<String>,
     {
-        self.0.node(cluster.into(), name.into())
+        self.0.node(cluster_id.into(), name.into())
     }
 
     /// Persist the status of an agent.
@@ -342,12 +354,13 @@ impl Store {
     }
 
     /// Fetch information about a shard.
-    pub fn shard<S1, S2, S3>(&self, cluster: S1, node: S2, id: S3) -> Result<Option<Shard>>
-        where S1: Into<String>,
-              S2: Into<String>,
-              S3: Into<String>,
+    pub fn shard<S1, S2, S3>(&self, cluster_id: S1, node: S2, id: S3) -> Result<Option<Shard>>
+    where
+        S1: Into<String>,
+        S2: Into<String>,
+        S3: Into<String>,
     {
-        self.0.shard(cluster.into(), node.into(), id.into())
+        self.0.shard(cluster_id.into(), node.into(), id.into())
     }
 
     /// Fetch overvew details of the top clusters.

@@ -56,13 +56,13 @@ use self::validator::SchemaValidator;
 ///
 /// # Expected indexes
 ///
-///   * Index on `clusters_meta`: `(nodes: -1, name: 1)`
-///   * Unique index on `agents`: `(cluster: 1, host: 1)`
-///   * Unique index on `agents_info`: `(cluster: 1, host: 1)`
-///   * Unique index on `clusters_meta`: `name: 1`
-///   * Unique index on `discoveries`: `name: 1`
-///   * Unique index on `nodes`: `(cluster: 1, name: 1)`
-///   * Unique index on `shards`: `(cluster: 1, node: 1, id: 1)`
+///   * Index on `clusters_meta`: `(nodes: -1, cluster_id: 1)`
+///   * Unique index on `agents`: `(cluster_id: 1, host: 1)`
+///   * Unique index on `agents_info`: `(cluster_id: 1, host: 1)`
+///   * Unique index on `clusters_meta`: `cluster_id: 1`
+///   * Unique index on `discoveries`: `cluster_id: 1`
+///   * Unique index on `nodes`: `(cluster_id: 1, name: 1)`
+///   * Unique index on `shards`: `(cluster_id: 1, node: 1, id: 1)`
 pub struct MongoStore {
     agents: AgentStore,
     clusters: ClusterStore,
@@ -71,36 +71,36 @@ pub struct MongoStore {
 }
 
 impl InnerStore for MongoStore {
-    fn agent(&self, cluster: String, host: String) -> Result<Option<Agent>> {
-        self.agents.agent(cluster, host)
+    fn agent(&self, cluster_id: String, host: String) -> Result<Option<Agent>> {
+        self.agents.agent(cluster_id, host)
     }
 
-    fn agent_info(&self, cluster: String, host: String) -> Result<Option<AgentInfo>> {
-        self.agents.agent_info(cluster, host)
+    fn agent_info(&self, cluster_id: String, host: String) -> Result<Option<AgentInfo>> {
+        self.agents.agent_info(cluster_id, host)
     }
 
-    fn cluster_agents(&self, cluster: String) -> Result<Cursor<Agent>> {
-        self.agents.cluster_agents(cluster)
+    fn cluster_agents(&self, cluster_id: String) -> Result<Cursor<Agent>> {
+        self.agents.cluster_agents(cluster_id)
     }
 
-    fn cluster_agents_info(&self, cluster: String) -> Result<Cursor<AgentInfo>> {
-        self.agents.cluster_agents_info(cluster)
+    fn cluster_agents_info(&self, cluster_id: String) -> Result<Cursor<AgentInfo>> {
+        self.agents.cluster_agents_info(cluster_id)
     }
 
-    fn cluster_discovery(&self, cluster: String) -> Result<Option<ClusterDiscovery>> {
-        self.clusters.cluster_discovery(cluster)
+    fn cluster_discovery(&self, cluster_id: String) -> Result<Option<ClusterDiscovery>> {
+        self.clusters.cluster_discovery(cluster_id)
     }
 
-    fn cluster_meta(&self, cluster: String) -> Result<Option<ClusterMeta>> {
-        self.clusters.cluster_meta(cluster)
+    fn cluster_meta(&self, cluster_id: String) -> Result<Option<ClusterMeta>> {
+        self.clusters.cluster_meta(cluster_id)
     }
 
-    fn cluster_nodes(&self, cluster: String) -> Result<Cursor<Node>> {
-        self.datastores.cluster_nodes(cluster)
+    fn cluster_nodes(&self, cluster_id: String) -> Result<Cursor<Node>> {
+        self.datastores.cluster_nodes(cluster_id)
     }
 
-    fn cluster_shards(&self, cluster: String) -> Result<Cursor<Shard>> {
-        self.datastores.cluster_shards(cluster)
+    fn cluster_shards(&self, cluster_id: String) -> Result<Cursor<Shard>> {
+        self.datastores.cluster_shards(cluster_id)
     }
 
     fn events(&self, filters: EventsFilters, options: EventsOptions) -> Result<Cursor<Event>> {
@@ -111,8 +111,8 @@ impl InnerStore for MongoStore {
         self.clusters.find_clusters(&search, limit)
     }
 
-    fn node(&self, cluster: String, name: String) -> Result<Option<Node>> {
-        self.datastores.node(cluster, name)
+    fn node(&self, cluster_id: String, name: String) -> Result<Option<Node>> {
+        self.datastores.node(cluster_id, name)
     }
 
     fn persist_agent(&self, agent: Agent) -> Result<()> {
@@ -143,8 +143,8 @@ impl InnerStore for MongoStore {
         self.datastores.persist_shard(shard)
     }
 
-    fn shard(&self, cluster: String, node: String, id: String) -> Result<Option<Shard>> {
-        self.datastores.shard(cluster, node, id)
+    fn shard(&self, cluster_id: String, node: String, id: String) -> Result<Option<Shard>> {
+        self.datastores.shard(cluster_id, node, id)
     }
 
     fn top_clusters(&self) -> Result<Vec<ClusterMeta>> {
@@ -161,7 +161,7 @@ impl MongoStore {
         let client = Client::with_uri(&config.uri)
             .with_context(|_| ErrorKind::MongoDBConnect(config.uri.clone()))?;
         let agents = AgentStore::new(client.clone(), db.clone());
-        let clusters = ClusterStore::new(client.clone(), db.clone(), logger);
+        let clusters = ClusterStore::new(client.clone(), db.clone());
         let datastores = DatastoreStore::new(client.clone(), db.clone());
         let events = EventStore::new(client, db);
         Ok(MongoStore {

@@ -4,7 +4,6 @@ use super::super::EventBuilder;
 use super::super::EventPayload;
 use super::super::ShardAllocationChanged;
 
-
 /// Build `Event`s that belongs to the shard family.
 pub struct ShardBuilder {
     builder: EventBuilder,
@@ -19,7 +18,7 @@ impl ShardBuilder {
     /// Build an `EventPayload::ShardAllocationChanged` event.
     pub fn allocation_changed(self, before: Shard, after: Shard) -> Event {
         let data = EventPayload::ShardAllocationChanged(ShardAllocationChanged {
-            cluster: before.cluster.clone(),
+            cluster_id: before.cluster_id.clone(),
             id: before.id.clone(),
             node: before.node.clone(),
             after,
@@ -34,7 +33,6 @@ impl ShardBuilder {
         self.builder.build(data)
     }
 }
-
 
 #[cfg(test)]
 mod tests {
@@ -53,7 +51,7 @@ mod tests {
         let after = Shard::new("cluster", "test", after);
         let event = Event::builder().shard().allocation_changed(before.clone(), after.clone());
         let expected = EventPayload::ShardAllocationChanged(ShardAllocationChanged {
-            cluster: before.cluster.clone(),
+            cluster_id: before.cluster_id.clone(),
             id: before.id.clone(),
             node: before.node.clone(),
             after,

@@ -176,7 +176,7 @@ impl Annotations {
     fn tags(event: &Event) -> Vec<String> {
         let mut tags = Vec::new();
         tags.push(event.code().into());
-        tags.push(String::from(event.cluster().unwrap_or("System")));
+        tags.push(String::from(event.cluster_id().unwrap_or("System")));
         tags
     }
 

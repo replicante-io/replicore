@@ -31,43 +31,43 @@ pub struct MockStore {
 }
 
 impl InnerStore for MockStore {
-    fn agent(&self, cluster: String, host: String) -> Result<Option<Agent>> {
+    fn agent(&self, cluster_id: String, host: String) -> Result<Option<Agent>> {
         let agents = self.agents.lock().unwrap();
-        let agent = agents.get(&(cluster, host)).cloned();
+        let agent = agents.get(&(cluster_id, host)).cloned();
         Ok(agent)
     }
 
-    fn agent_info(&self, cluster: String, host: String) -> Result<Option<AgentInfo>> {
+    fn agent_info(&self, cluster_id: String, host: String) -> Result<Option<AgentInfo>> {
         let agents_info = self.agents_info.lock().unwrap();
-        let agent_info = agents_info.get(&(cluster, host)).cloned();
+        let agent_info = agents_info.get(&(cluster_id, host)).cloned();
         Ok(agent_info)
     }
 
-    fn cluster_agents(&self, _cluster: String) -> Result<Cursor<Agent>> {
+    fn cluster_agents(&self, _cluster_id: String) -> Result<Cursor<Agent>> {
         Err(ErrorKind::MockNotYetImplemented("cluster agents").into())
     }
 
-    fn cluster_agents_info(&self, _cluster: String) -> Result<Cursor<AgentInfo>> {
+    fn cluster_agents_info(&self, _cluster_id: String) -> Result<Cursor<AgentInfo>> {
         Err(ErrorKind::MockNotYetImplemented("cluster agents info").into())
     }
 
-    fn cluster_discovery(&self, cluster: String) -> Result<Option<ClusterDiscovery>> {
+    fn cluster_discovery(&self, cluster_id: String) -> Result<Option<ClusterDiscovery>> {
         let discoveries = self.discoveries.lock().unwrap();
-        let discovery = discoveries.get(&cluster).cloned();
+        let discovery = discoveries.get(&cluster_id).cloned();
         Ok(discovery)
     }
 
-    fn cluster_meta(&self, cluster: String) -> Result<Option<ClusterMeta>> {
+    fn cluster_meta(&self, cluster_id: String) -> Result<Option<ClusterMeta>> {
         let clusters = self.clusters_meta.lock().unwrap();
-        let meta = clusters.get(&cluster).cloned();
+        let meta = clusters.get(&cluster_id).cloned();
         Ok(meta)
     }
 
-    fn cluster_nodes(&self, _cluster: String) -> Result<Cursor<Node>> {
+    fn cluster_nodes(&self, _cluster_id: String) -> Result<Cursor<Node>> {
         Err(ErrorKind::MockNotYetImplemented("cluster nodes").into())
     }
 
-    fn cluster_shards(&self, _cluster: String) -> Result<Cursor<Shard>> {
+    fn cluster_shards(&self, _cluster_id: String) -> Result<Cursor<Shard>> {
         Err(ErrorKind::MockNotYetImplemented("cluster shards").into())
     }
 
@@ -87,39 +87,39 @@ impl InnerStore for MockStore {
         Ok(results)
     }
     
-    fn node(&self, cluster: String, name: String) -> Result<Option<Node>> {
+    fn node(&self, cluster_id: String, name: String) -> Result<Option<Node>> {
         let nodes = self.nodes.lock().unwrap();
-        let node = nodes.get(&(cluster, name)).cloned();
+        let node = nodes.get(&(cluster_id, name)).cloned();
         Ok(node)
     }
 
     fn persist_agent(&self, agent: Agent) -> Result<()> {
-        let cluster = agent.cluster.clone();
+        let cluster_id = agent.cluster_id.clone();
         let host = agent.host.clone();
         let mut agents = self.agents.lock().unwrap();
-        agents.insert((cluster, host), agent);
+        agents.insert((cluster_id, host), agent);
         Ok(())
     }
 
     fn persist_agent_info(&self, agent: AgentInfo) -> Result<()> {
-        let cluster = agent.cluster.clone();
+        let cluster_id = agent.cluster_id.clone();
         let host = agent.host.clone();
         let mut agents_info = self.agents_info.lock().unwrap();
-        agents_info.insert((cluster, host), agent);
+        agents_info.insert((cluster_id, host), agent);
         Ok(())
     }
 
     fn persist_discovery(&self, cluster: ClusterDiscovery) -> Result<()> {
-        let name = cluster.cluster.clone();
+        let cluster_id = cluster.cluster_id.clone();
         let mut discoveries = self.discoveries.lock().unwrap();
-        discoveries.insert(name, cluster);
+        discoveries.insert(cluster_id, cluster);
         Ok(())
     }
 
     fn persist_cluster_meta(&self, meta: ClusterMeta) -> Result<()> {
-        let name = meta.name.clone();
+        let cluster_id = meta.cluster_id.clone();
         let mut clusters = self.clusters_meta.lock().unwrap();
-        clusters.insert(name, meta);
+        clusters.insert(cluster_id, meta);
         Ok(())
     }
 
@@ -130,25 +130,25 @@ impl InnerStore for MockStore {
     }
 
     fn persist_node(&self, node: Node) -> Result<()> {
-        let cluster = node.cluster.clone();
+        let cluster_id = node.cluster_id.clone();
         let name = node.name.clone();
         let mut nodes = self.nodes.lock().unwrap();
-        nodes.insert((cluster, name), node);
+        nodes.insert((cluster_id, name), node);
         Ok(())
     }
 
     fn persist_shard(&self, shard: Shard) -> Result<()> {
-        let cluster = shard.cluster.clone();
+        let cluster_id = shard.cluster_id.clone();
         let node = shard.node.clone();
         let id = shard.id.clone();
         let mut shards = self.shards.lock().unwrap();
-        shards.insert((cluster, node, id), shard);
+        shards.insert((cluster_id, node, id), shard);
         Ok(())
     }
 
-    fn shard(&self, cluster: String, node: String, id: String) -> Result<Option<Shard>> {
+    fn shard(&self, cluster_id: String, node: String, id: String) -> Result<Option<Shard>> {
         let shards = self.shards.lock().unwrap();
-        let shard = shards.get(&(cluster, node, id)).cloned();
+        let shard = shards.get(&(cluster_id, node, id)).cloned();
         Ok(shard)
     }
 
@@ -168,7 +168,6 @@ impl MockStore {
         MockStore::default()
     }
 }
-
 
 #[cfg(test)]
 mod tests {
@@ -216,7 +215,7 @@ mod tests {
             let mock = Arc::new(MockStore::new());
             let store = Store::mock(Arc::clone(&mock));
             let info = AgentInfo {
-                cluster: "test".into(),
+                cluster_id: "test".into(),
                 host: "node".into(),
                 version_checkout: "commit".into(),
                 version_number: "1.2.3".into(),
@@ -364,7 +363,7 @@ mod tests {
         fn persist() {
             let mock = Arc::new(MockStore::new());
             let store = Store::mock(Arc::clone(&mock));
-            let node = Node::new(DatastoreInfo::new("cluster", "kind", "name", "version"));
+            let node = Node::new(DatastoreInfo::new(None, "cluster", "kind", "name", "version"));
             store.persist_node(node.clone()).unwrap();
             let key = (String::from("cluster"), String::from("name"));
             let stored = mock.nodes.lock().expect("Faild to lock")

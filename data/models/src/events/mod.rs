@@ -9,71 +9,63 @@ use super::ClusterDiscovery;
 use super::Node;
 use super::Shard;
 
-
 mod builder;
 
 use self::builder::EventBuilder;
 
-
 /// Metadata attached to agent new events.
-#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
+#[derive(Clone, Eq, PartialEq, Hash, Debug, Serialize, Deserialize)]
 pub struct AgentNew {
-    pub cluster: String,
+    pub cluster_id: String,
     pub host: String,
 }
 
-
 /// Metadata attached to agent info changed.
-#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
+#[derive(Clone, Eq, PartialEq, Hash, Debug, Serialize, Deserialize)]
 pub struct AgentInfoChanged {
     pub after: AgentInfo,
     pub before: AgentInfo,
-    pub cluster: String,
+    pub cluster_id: String,
 }
 
-
 /// Metadata attached to agent status change events.
-#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
+#[derive(Clone, Eq, PartialEq, Hash, Debug, Serialize, Deserialize)]
 pub struct AgentStatusChange {
     pub after: AgentStatus,
     pub before: AgentStatus,
-    pub cluster: String,
+    pub cluster_id: String,
     pub host: String,
 }
 
-
 /// Metadata attached to cluster status change events.
-#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
+#[derive(Clone, Eq, PartialEq, Hash, Debug, Serialize, Deserialize)]
 pub struct ClusterChanged {
     pub after: ClusterDiscovery,
     pub before: ClusterDiscovery,
-    pub cluster: String,
+    pub cluster_id: String,
 }
 
-
 /// Metadata attached to node changed events.
-#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
+#[derive(Clone, Eq, PartialEq, Hash, Debug, Serialize, Deserialize)]
 pub struct NodeChanged {
     pub after: Node,
     pub before: Node,
-    pub cluster: String,
+    pub cluster_id: String,
     pub host: String,
 }
 
-
 /// Metadata attached to shard allocation changed events.
-#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
+#[derive(Clone, Eq, PartialEq, Hash, Debug, Serialize, Deserialize)]
 pub struct ShardAllocationChanged {
     pub after: Shard,
     pub before: Shard,
-    pub cluster: String,
+    pub cluster_id: String,
     pub id: String,
     pub node: String,
 }
 
-
 /// Enumerates all possible events emitted by the system.
-#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
+#[derive(Clone, Eq, PartialEq, Hash, Debug, Serialize, Deserialize)]
 #[serde(tag = "event", content = "data")]
 pub enum EventPayload {
     /// An agent was found to be down.
@@ -149,9 +141,8 @@ pub enum EventPayload {
     SnapshotShard(Shard),
 }
 
-
 /// Model an event that is emitted by the system.
-#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
+#[derive(Clone, Eq, PartialEq, Hash, Debug, Serialize, Deserialize)]
 pub struct Event {
     #[serde(flatten)]
     pub payload: EventPayload,
@@ -165,26 +156,26 @@ impl Event {
     }
 
     /// Look up the cluster ID for the event, if they have one.
-    pub fn cluster(&self) -> Option<&str> {
+    pub fn cluster_id(&self) -> Option<&str> {
         match self.payload {
-            EventPayload::AgentDown(ref data) => Some(&data.cluster),
-            EventPayload::AgentInfoChanged(ref data) => Some(&data.cluster),
-            EventPayload::AgentInfoNew(ref data) => Some(&data.cluster),
-            EventPayload::AgentNew(ref data) => Some(&data.cluster),
-            EventPayload::AgentUp(ref data) => Some(&data.cluster),
-            EventPayload::ClusterChanged(ref data) => Some(&data.cluster),
-            EventPayload::ClusterNew(ref data) => Some(&data.cluster),
-            EventPayload::NodeChanged(ref data) => Some(&data.cluster),
-            EventPayload::NodeDown(ref data) => Some(&data.cluster),
-            EventPayload::NodeNew(ref data) => Some(&data.cluster),
-            EventPayload::NodeUp(ref data) => Some(&data.cluster),
-            EventPayload::ShardAllocationChanged(ref data) => Some(&data.cluster),
-            EventPayload::ShardAllocationNew(ref data) => Some(&data.cluster),
-            EventPayload::SnapshotAgent(ref data) => Some(&data.cluster),
-            EventPayload::SnapshotAgentInfo(ref data) => Some(&data.cluster),
-            EventPayload::SnapshotDiscovery(ref data) => Some(&data.cluster),
-            EventPayload::SnapshotNode(ref data) => Some(&data.cluster),
-            EventPayload::SnapshotShard(ref data) => Some(&data.cluster),
+            EventPayload::AgentDown(ref data) => Some(&data.cluster_id),
+            EventPayload::AgentInfoChanged(ref data) => Some(&data.cluster_id),
+            EventPayload::AgentInfoNew(ref data) => Some(&data.cluster_id),
+            EventPayload::AgentNew(ref data) => Some(&data.cluster_id),
+            EventPayload::AgentUp(ref data) => Some(&data.cluster_id),
+            EventPayload::ClusterChanged(ref data) => Some(&data.cluster_id),
+            EventPayload::ClusterNew(ref data) => Some(&data.cluster_id),
+            EventPayload::NodeChanged(ref data) => Some(&data.cluster_id),
+            EventPayload::NodeDown(ref data) => Some(&data.cluster_id),
+            EventPayload::NodeNew(ref data) => Some(&data.cluster_id),
+            EventPayload::NodeUp(ref data) => Some(&data.cluster_id),
+            EventPayload::ShardAllocationChanged(ref data) => Some(&data.cluster_id),
+            EventPayload::ShardAllocationNew(ref data) => Some(&data.cluster_id),
+            EventPayload::SnapshotAgent(ref data) => Some(&data.cluster_id),
+            EventPayload::SnapshotAgentInfo(ref data) => Some(&data.cluster_id),
+            EventPayload::SnapshotDiscovery(ref data) => Some(&data.cluster_id),
+            EventPayload::SnapshotNode(ref data) => Some(&data.cluster_id),
+            EventPayload::SnapshotShard(ref data) => Some(&data.cluster_id),
         }
     }
 
@@ -213,7 +204,6 @@ impl Event {
     }
 }
 
-
 #[cfg(test)]
 mod tests {
     use chrono::TimeZone;
@@ -225,7 +215,10 @@ mod tests {
 
     #[test]
     fn from_json() {
-        let payload = r#"{"event":"CLUSTER_NEW","data":{"cluster":"test","nodes":[]},"timestamp":"2014-07-08T09:10:11.012Z"}"#;
+        let payload = concat!(
+            r#"{"event":"CLUSTER_NEW","data":{"cluster_id":"test","nodes":[]},"#,
+            r#""timestamp":"2014-07-08T09:10:11.012Z"}"#
+        );
         let event: Event = serde_json::from_str(&payload).unwrap();
         let discovery = ClusterDiscovery::new("test", vec![]);
         let expected = Event::builder()
@@ -241,7 +234,10 @@ mod tests {
             .timestamp(Utc.ymd(2014, 7, 8).and_hms(9, 10, 11))
             .cluster().cluster_new(discovery);
         let payload = serde_json::to_string(&event).unwrap();
-        let expected = r#"{"event":"CLUSTER_NEW","data":{"cluster":"test","nodes":[]},"timestamp":"2014-07-08T09:10:11Z"}"#;
+        let expected = concat!(
+            r#"{"event":"CLUSTER_NEW","data":{"cluster_id":"test","nodes":[]},"#,
+            r#""timestamp":"2014-07-08T09:10:11Z"}"#
+        );
         assert_eq!(payload, expected);
     }
 }

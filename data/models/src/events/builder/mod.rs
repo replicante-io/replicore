@@ -4,7 +4,6 @@ use chrono::Utc;
 use super::Event;
 use super::EventPayload;
 
-
 mod agent;
 mod cluster;
 mod node;
@@ -16,7 +15,6 @@ use self::cluster::ClusterBuilder;
 use self::node::NodeBuilder;
 use self::shard::ShardBuilder;
 use self::snapshot::SnapshotBuilder;
-
 
 /// Build `Event`s, validating inputs.
 #[derive(Default)]

@@ -34,8 +34,8 @@ impl DatastoreStore {
         DatastoreStore { client, db }
     }
 
-    pub fn cluster_nodes(&self, cluster: String) -> Result<Cursor<Node>> {
-        let filter = doc!{"cluster" => cluster};
+    pub fn cluster_nodes(&self, cluster_id: String) -> Result<Cursor<Node>> {
+        let filter = doc!{"cluster_id" => cluster_id};
         MONGODB_OPS_COUNT.with_label_values(&["find"]).inc();
         let timer = MONGODB_OPS_DURATION.with_label_values(&["find"]).start_timer();
         let collection = self.collection_nodes();
@@ -55,8 +55,8 @@ impl DatastoreStore {
         Ok(Cursor(Box::new(iter)))
     }
 
-    pub fn cluster_shards(&self, cluster: String) -> Result<Cursor<Shard>> {
-        let filter = doc!{"cluster" => cluster};
+    pub fn cluster_shards(&self, cluster_id: String) -> Result<Cursor<Shard>> {
+        let filter = doc!{"cluster_id" => cluster_id};
         MONGODB_OPS_COUNT.with_label_values(&["find"]).inc();
         let timer = MONGODB_OPS_DURATION.with_label_values(&["find"]).start_timer();
         let collection = self.collection_shards();
@@ -76,9 +76,9 @@ impl DatastoreStore {
         Ok(Cursor(Box::new(iter)))
     }
 
-    pub fn node(&self, cluster: String, name: String) -> Result<Option<Node>> {
+    pub fn node(&self, cluster_id: String, name: String) -> Result<Option<Node>> {
         let filter = doc!{
-            "cluster" => cluster,
+            "cluster_id" => cluster_id,
             "name" => name,
         };
         MONGODB_OPS_COUNT.with_label_values(&["findOne"]).inc();
@@ -107,7 +107,7 @@ impl DatastoreStore {
             _ => panic!("Node failed to encode as BSON document")
         };
         let filter = doc!{
-            "cluster" => node.cluster,
+            "cluster_id" => node.cluster_id,
             "name" => node.name,
         };
         let mut options = UpdateOptions::new();
@@ -131,7 +131,7 @@ impl DatastoreStore {
             _ => panic!("Shard failed to encode as BSON document")
         };
         let filter = doc!{
-            "cluster" => shard.cluster,
+            "cluster_id" => shard.cluster_id,
             "node" => shard.node,
             "id" => shard.id,
         };
@@ -149,9 +149,9 @@ impl DatastoreStore {
         Ok(())
     }
 
-    pub fn shard(&self, cluster: String, node: String, id: String) -> Result<Option<Shard>> {
+    pub fn shard(&self, cluster_id: String, node: String, id: String) -> Result<Option<Shard>> {
         let filter = doc!{
-            "cluster" => cluster,
+            "cluster_id" => cluster_id,
             "node" => node,
             "id" => id,
         };

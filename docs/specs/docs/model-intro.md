@@ -34,9 +34,13 @@ This aims of the model are:
 ## Administration
 The datastore MUST provide the following administration information:
 
-  * A cluster name shared by all nodes.
+  * A cluster ID shared by all nodes.
   * A cluster-unique name for the node.
   * Version information.
+
+The datastore MAY provide the following administration information:
+
+  * A human friendly display name for the cluster.
 
 
 ## Clustering

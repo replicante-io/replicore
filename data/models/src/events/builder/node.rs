@@ -4,7 +4,6 @@ use super::super::EventBuilder;
 use super::super::EventPayload;
 use super::super::NodeChanged;
 
-
 /// Build `Event`s that belongs to the node family.
 pub struct NodeBuilder {
     builder: EventBuilder,
@@ -19,7 +18,7 @@ impl NodeBuilder {
     /// Build an `EventPayload::NodeChanged` event.
     pub fn changed(self, before: Node, after: Node) -> Event {
         let data = EventPayload::NodeChanged(NodeChanged {
-            cluster: before.cluster.clone(),
+            cluster_id: before.cluster_id.clone(),
             host: before.name.clone(),
             before,
             after,
@@ -45,13 +44,13 @@ mod tests {
 
     #[test]
     fn changed() {
-        let before = WireNode::new("cluster", "TestDB", "test", "1.2.3");
+        let before = WireNode::new(None, "cluster", "TestDB", "test", "1.2.3");
         let before = Node::new(before);
-        let after = WireNode::new("cluster", "TestDB", "test", "4.5.6");
+        let after = WireNode::new(None, "cluster", "TestDB", "test", "4.5.6");
         let after = Node::new(after);
         let event = Event::builder().node().changed(before.clone(), after.clone());
         let expected = EventPayload::NodeChanged(NodeChanged {
-            cluster: before.cluster.clone(),
+            cluster_id: before.cluster_id.clone(),
             host: before.name.clone(),
             before,
             after,
@@ -61,7 +60,7 @@ mod tests {
 
     #[test]
     fn node_new() {
-        let node = WireNode::new("cluster", "TestDB", "test", "1.2.3");
+        let node = WireNode::new(None, "cluster", "TestDB", "test", "1.2.3");
         let node = Node::new(node);
         let event = Event::builder().node().node_new(node.clone());
         let expected = EventPayload::NodeNew(node);

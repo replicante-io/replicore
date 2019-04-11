@@ -7,11 +7,11 @@ pub use replicante_agent_models::CommitOffset;
 pub use replicante_agent_models::CommitUnit;
 pub use replicante_agent_models::ShardRole;
 
-
 /// Datastore version details.
-#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
+#[derive(Clone, Eq, PartialEq, Hash, Debug, Serialize, Deserialize)]
 pub struct Node {
-    pub cluster: String,
+    pub cluster_display_name: String,
+    pub cluster_id: String,
     pub kind: String,
     pub name: String,
     pub version: String,
@@ -19,8 +19,13 @@ pub struct Node {
 
 impl Node {
     pub fn new(node: WireNode) -> Node {
+        let cluster_display_name = match node.cluster_display_name {
+            Some(cluster_display_name) => cluster_display_name,
+            None => node.cluster_id.clone(),
+        };
         Node {
-            cluster: node.cluster,
+            cluster_display_name,
+            cluster_id: node.cluster_id,
             kind: node.kind,
             name: node.name,
             version: node.version,
@@ -28,11 +33,10 @@ impl Node {
     }
 }
 
-
 /// Information about a shard on a node.
-#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
+#[derive(Clone, Eq, PartialEq, Hash, Debug, Serialize, Deserialize)]
 pub struct Shard {
-    pub cluster: String,
+    pub cluster_id: String,
     pub commit_offset: Option<CommitOffset>,
     pub id: String,
     pub lag: Option<CommitOffset>,
@@ -41,12 +45,13 @@ pub struct Shard {
 }
 
 impl Shard {
-    pub fn new<S1, S2>(cluster: S1, node: S2, shard: WireShard) -> Shard
-        where S1: Into<String>,
-              S2: Into<String>,
+    pub fn new<S1, S2>(cluster_id: S1, node: S2, shard: WireShard) -> Shard
+    where
+        S1: Into<String>,
+        S2: Into<String>,
     {
         Shard {
-            cluster: cluster.into(),
+            cluster_id: cluster_id.into(),
             commit_offset: shard.commit_offset,
             id: shard.id,
             lag: shard.lag,
@@ -55,7 +60,6 @@ impl Shard {
         }
     }
 }
-
 
 #[cfg(test)]
 mod tests {
@@ -66,19 +70,25 @@ mod tests {
 
         #[test]
         fn from_json() {
-            let payload = r#"{"cluster":"cluster","kind":"DB","name":"Name","version":"1.2.3"}"#;
+            let payload = concat!(
+                r#"{"cluster_display_name":"humans","cluster_id":"cluster","#,
+                r#""kind":"DB","name":"Name","version":"1.2.3"}"#
+            );
             let node: Node = serde_json::from_str(payload).unwrap();
-            let wire = WireNode::new("cluster", "DB", "Name", "1.2.3");
+            let wire = WireNode::new(Some("humans".into()), "cluster", "DB", "Name", "1.2.3");
             let expected = Node::new(wire);
             assert_eq!(node, expected);
         }
 
         #[test]
         fn to_json() {
-            let wire = WireNode::new("cluster", "DB", "Name", "1.2.3");
+            let wire = WireNode::new(None, "cluster", "DB", "Name", "1.2.3");
             let node = Node::new(wire);
             let payload = serde_json::to_string(&node).unwrap();
-            let expected = r#"{"cluster":"cluster","kind":"DB","name":"Name","version":"1.2.3"}"#;
+            let expected = concat!(
+                r#"{"cluster_display_name":"cluster","cluster_id":"cluster","#,
+                r#""kind":"DB","name":"Name","version":"1.2.3"}"#
+            );
             assert_eq!(payload, expected);
         }
     }
@@ -93,7 +103,7 @@ mod tests {
         #[test]
         fn from_json() {
             let payload = concat!(
-                r#"{"cluster":"cluster","commit_offset":{"unit":"seconds","value":54},"#,
+                r#"{"cluster_id":"cluster","commit_offset":{"unit":"seconds","value":54},"#,
                 r#""id":"shard","lag":null,"node":"node","role":"secondary"}"#
             );
             let shard: Shard = serde_json::from_str(payload).unwrap();
@@ -114,7 +124,7 @@ mod tests {
             let shard = Shard::new("cluster", "node", wire);
             let payload = serde_json::to_string(&shard).unwrap();
             let expected = concat!(
-                r#"{"cluster":"cluster","commit_offset":{"unit":"seconds","value":54},"#,
+                r#"{"cluster_id":"cluster","commit_offset":{"unit":"seconds","value":54},"#,
                 r#""id":"shard","lag":null,"node":"node","role":"secondary"}"#
             );
             assert_eq!(payload, expected);

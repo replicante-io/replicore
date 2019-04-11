@@ -98,34 +98,34 @@ impl Fetcher {
     }
 
     pub fn process(&self, cluster: ClusterDiscovery, lock: NonBlockingLockWatcher) {
-        let name = cluster.cluster.clone();
-        let mut meta = ClusterMetaBuilder::new(cluster.cluster);
+        let cluster_id = cluster.cluster_id.clone();
+        let mut meta = ClusterMetaBuilder::new(cluster.cluster_id);
 
         for node in cluster.nodes {
             // Exit early if lock was lost.
             if !lock.inspect() {
                 warn!(
                     self.logger, "Cluster fetcher lock lost, skipping futher nodes";
-                    "cluster" => &name
+                    "cluster_id" => &cluster_id
                 );
                 return;
             }
 
-            let result = self.process_target(&name, &node, &mut meta);
+            let result = self.process_target(&cluster_id, &node, &mut meta);
             if let Err(error) = result {
-                FETCHER_ERRORS_COUNT.with_label_values(&[&name]).inc();
+                FETCHER_ERRORS_COUNT.with_label_values(&[&cluster_id]).inc();
                 error!(
                     self.logger, "Failed to process cluster node";
-                    "cluster" => &name, "node" => node, failure_info(&error)
+                    "cluster_id" => &cluster_id, "node" => node, failure_info(&error)
                 );
             }
         }
 
         if let Err(error) = self.meta.persist_meta(meta.build()) {
-            FETCHER_ERRORS_COUNT.with_label_values(&[&name]).inc();
+            FETCHER_ERRORS_COUNT.with_label_values(&[&cluster_id]).inc();
             error!(
                 self.logger, "Failed to persist cluster metadata";
-                "cluster" => name, failure_info(&error)
+                "cluster_id" => cluster_id, failure_info(&error)
             );
         }
     }

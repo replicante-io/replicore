@@ -47,17 +47,24 @@ Example:
 
 The following datastore information MUST be included:
 
-  * `cluster`: datastore determined cluster name.
+  * `cluster_id`: datastore determined cluster identifier.
+  * `id`: datastore determined, cluster unique, node identifier.
   * `kind`: datastore software managed by the agent.
-  * `name`: datastore determined, cluster unique, node name.
   * `version`: the [SemVer](https://semver.org/) datastore version.
+
+The following datastore information MAY be included:
+
+  * `cluster_display_name`:
+    cluster display name to be used in place of the `cluster_id` in
+    the UI and other user messages, if provided.
 
 Example:
 ```json
 {
-  "cluster": "replica-set-name",
+  "cluster_display_name": "prod-data",
+  "cluster_id": "replica-set-name",
+  "id": "host.domain.com:27017",
   "kind": "MongoDB",
-  "name": "host.domain.com:27017",
   "version": "3.4.5"
 }
 ```

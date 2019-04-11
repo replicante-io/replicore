@@ -4,7 +4,6 @@ use super::super::Event;
 use super::super::EventBuilder;
 use super::super::EventPayload;
 
-
 /// Build `Event`s that belongs to the cluster family.
 pub struct ClusterBuilder {
     builder: EventBuilder,
@@ -19,7 +18,7 @@ impl ClusterBuilder {
     /// Build an `EventPayload::ClusterChanged`.
     pub fn changed(self, before: ClusterDiscovery, after: ClusterDiscovery) -> Event {
         let data = ClusterChanged {
-            cluster: before.cluster.clone(),
+            cluster_id: before.cluster_id.clone(),
             before,
             after,
         };
@@ -33,7 +32,6 @@ impl ClusterBuilder {
         self.builder.build(data)
     }
 }
-
 
 #[cfg(test)]
 mod tests {
