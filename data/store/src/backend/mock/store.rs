@@ -131,18 +131,18 @@ impl InnerStore for MockStore {
 
     fn persist_node(&self, node: Node) -> Result<()> {
         let cluster_id = node.cluster_id.clone();
-        let name = node.name.clone();
+        let node_id = node.node_id.clone();
         let mut nodes = self.nodes.lock().unwrap();
-        nodes.insert((cluster_id, name), node);
+        nodes.insert((cluster_id, node_id), node);
         Ok(())
     }
 
     fn persist_shard(&self, shard: Shard) -> Result<()> {
         let cluster_id = shard.cluster_id.clone();
-        let node = shard.node.clone();
-        let id = shard.id.clone();
+        let node_id = shard.node_id.clone();
+        let shard_id = shard.shard_id.clone();
         let mut shards = self.shards.lock().unwrap();
-        shards.insert((cluster_id, node, id), shard);
+        shards.insert((cluster_id, node_id, shard_id), shard);
         Ok(())
     }
 

@@ -201,7 +201,7 @@ impl Annotations {
             )),
             EventPayload::ClusterNew(_) => String::from("Cluster discovered for the first time"),
             EventPayload::NodeChanged(ref data) => format!(
-                "Details about datastore node {} changed", data.host
+                "Details about datastore node {} changed", data.node_id
             ),
             EventPayload::NodeDown(ref data) => format!(
                 "Node {} is down or non-responsive but the agent on the node could be reached",
@@ -210,10 +210,10 @@ impl Annotations {
             EventPayload::NodeNew(_) => "A new datastore node was detected".into(),
             EventPayload::NodeUp(ref data) => format!("Datastore node {} is now up", data.host),
             EventPayload::ShardAllocationChanged(ref data) => format!(
-                "Status of shard {} on node {} have changed", data.id, data.node
+                "Status of shard {} on node {} have changed", data.shard_id, data.node_id
             ),
             EventPayload::ShardAllocationNew(ref data) => format!(
-                "Shard {} found on node {} for the first time", data.id, data.node
+                "Shard {} found on node {} for the first time", data.shard_id, data.node_id
             ),
             _ => format!("{}", event.code()),
         }

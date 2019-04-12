@@ -55,33 +55,33 @@ lazy_static! {
 
         map.insert(COLLECTION_AGENTS, vec![IndexInfo {
             expires: false,
-            key: vec![("cluster".into(), 1), ("host".into(), 1)],
+            key: vec![("cluster_id".into(), 1), ("host".into(), 1)],
             unique: true
         }]);
         map.insert(COLLECTION_AGENTS_INFO, vec![IndexInfo {
             expires: false,
-            key: vec![("cluster".into(), 1), ("host".into(), 1)],
+            key: vec![("cluster_id".into(), 1), ("host".into(), 1)],
             unique: true
         }]);
         map.insert(COLLECTION_CLUSTER_META, vec![IndexInfo {
             expires: false,
-            key: vec![("name".into(), 1)],
+            key: vec![("cluster_id".into(), 1)],
             unique: true
         }]);
         map.insert(COLLECTION_DISCOVERIES, vec![IndexInfo {
             expires: false,
-            key: vec![("cluster".into(), 1)],
+            key: vec![("cluster_id".into(), 1)],
             unique: true
         }]);
         map.insert(COLLECTION_EVENTS, vec![]);
         map.insert(COLLECTION_NODES, vec![IndexInfo {
             expires: false,
-            key: vec![("cluster".into(), 1), ("name".into(), 1)],
+            key: vec![("cluster_id".into(), 1), ("node_id".into(), 1)],
             unique: true
         }]);
         map.insert(COLLECTION_SHARDS, vec![IndexInfo {
             expires: false,
-            key: vec![("cluster".into(), 1), ("node".into(), 1), ("id".into(), 1)],
+            key: vec![("cluster_id".into(), 1), ("node_id".into(), 1), ("shard_id".into(), 1)],
             unique: true
         }]);
 
@@ -95,8 +95,8 @@ lazy_static! {
         map.insert(COLLECTION_AGENTS_INFO, vec![]);
         map.insert(COLLECTION_CLUSTER_META, vec![IndexInfo {
             expires: false,
-            key: vec![("nodes".into(), -1), ("name".into(), 1)],
-            unique: false
+            key: vec![("nodes".into(), -1), ("cluster_id".into(), 1)],
+            unique: false,
         }]);
         map.insert(COLLECTION_DISCOVERIES, vec![]);
         map.insert(COLLECTION_EVENTS, vec![]);
@@ -109,7 +109,7 @@ lazy_static! {
 
 
 /// Extra information about a collection.
-#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug)]
+#[derive(Clone, Eq, PartialEq, Hash, Debug)]
 struct CollectionInfo {
     pub capped: bool,
     pub kind: String,

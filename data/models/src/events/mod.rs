@@ -51,7 +51,7 @@ pub struct NodeChanged {
     pub after: Node,
     pub before: Node,
     pub cluster_id: String,
-    pub host: String,
+    pub node_id: String,
 }
 
 /// Metadata attached to shard allocation changed events.
@@ -60,8 +60,8 @@ pub struct ShardAllocationChanged {
     pub after: Shard,
     pub before: Shard,
     pub cluster_id: String,
-    pub id: String,
-    pub node: String,
+    pub shard_id: String,
+    pub node_id: String,
 }
 
 /// Enumerates all possible events emitted by the system.

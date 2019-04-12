@@ -34,8 +34,8 @@ impl NodeFetcher {
         meta.node_kind(node.kind.clone());
 
         let cluster_id = node.cluster_id.clone();
-        let name = node.name.clone();
-        match self.store.node(cluster_id, name) {
+        let node_id = node.node_id.clone();
+        match self.store.node(cluster_id, node_id) {
             Err(error) => Err(error)
                 .with_context(|_| ErrorKind::StoreRead("node")).map_err(Error::from),
             Ok(None) => self.process_node_new(node),

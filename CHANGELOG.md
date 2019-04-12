@@ -12,7 +12,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Changed
 - **BREAKING**: Agent client uses `unstable` API.
+- **BREAKING**: Cluster ID and Friendly name.
 - **BREAKING**: Rename incorrectly named v1 API as unstable.
+- **BREAKING**: Rename node's `name` to `node_id`.
+- **BREAKING**: Rename shard's `id` to `shard_id`.
 
 ## [0.2.1] - 2019-03-28
 ### Added

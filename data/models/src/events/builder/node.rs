@@ -17,11 +17,13 @@ impl NodeBuilder {
 
     /// Build an `EventPayload::NodeChanged` event.
     pub fn changed(self, before: Node, after: Node) -> Event {
+        let cluster_id = before.cluster_id.clone();
+        let node_id = before.node_id.clone();
         let data = EventPayload::NodeChanged(NodeChanged {
-            cluster_id: before.cluster_id.clone(),
-            host: before.name.clone(),
-            before,
             after,
+            before,
+            cluster_id,
+            node_id,
         });
         self.builder.build(data)
     }
@@ -50,10 +52,10 @@ mod tests {
         let after = Node::new(after);
         let event = Event::builder().node().changed(before.clone(), after.clone());
         let expected = EventPayload::NodeChanged(NodeChanged {
-            cluster_id: before.cluster_id.clone(),
-            host: before.name.clone(),
-            before,
             after,
+            cluster_id: before.cluster_id.clone(),
+            node_id: before.node_id.clone(),
+            before,
         });
         assert_eq!(event.payload, expected);
     }

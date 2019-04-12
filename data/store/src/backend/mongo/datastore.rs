@@ -108,7 +108,7 @@ impl DatastoreStore {
         };
         let filter = doc!{
             "cluster_id" => node.cluster_id,
-            "name" => node.name,
+            "node_id" => node.node_id,
         };
         let mut options = UpdateOptions::new();
         options.upsert = Some(true);
@@ -132,8 +132,8 @@ impl DatastoreStore {
         };
         let filter = doc!{
             "cluster_id" => shard.cluster_id,
-            "node" => shard.node,
-            "id" => shard.id,
+            "node_id" => shard.node_id,
+            "shard_id" => shard.shard_id,
         };
         let mut options = UpdateOptions::new();
         options.upsert = Some(true);
@@ -149,11 +149,16 @@ impl DatastoreStore {
         Ok(())
     }
 
-    pub fn shard(&self, cluster_id: String, node: String, id: String) -> Result<Option<Shard>> {
+    pub fn shard(
+        &self,
+        cluster_id: String,
+        node_id: String,
+        shard_id: String,
+    ) -> Result<Option<Shard>> {
         let filter = doc!{
             "cluster_id" => cluster_id,
-            "node" => node,
-            "id" => id,
+            "node_id" => node_id,
+            "shard_id" => shard_id,
         };
         MONGODB_OPS_COUNT.with_label_values(&["findOne"]).inc();
         let timer = MONGODB_OPS_DURATION.with_label_values(&["findOne"]).start_timer();

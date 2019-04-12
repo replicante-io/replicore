@@ -41,9 +41,9 @@ impl ShardFetcher {
 impl ShardFetcher {
     fn process_shard(&self, shard: Shard) -> Result<()> {
         let cluster_id = shard.cluster_id.clone();
-        let node = shard.node.clone();
-        let id = shard.id.clone();
-        match self.store.shard(cluster_id.clone(), node.clone(), id.clone()) {
+        let node_id = shard.node_id.clone();
+        let shard_id = shard.shard_id.clone();
+        match self.store.shard(cluster_id.clone(), node_id.clone(), shard_id.clone()) {
             Err(error) => Err(error)
                 .with_context(|_| ErrorKind::StoreRead("shard"))
                 .map_err(Error::from),
@@ -89,8 +89,8 @@ impl ShardFetcher {
         }
         // Check if the "stable" attributes have changed.
         shard.cluster_id != old.cluster_id ||
-            shard.id != old.id ||
-            shard.node != old.node ||
-            shard.role != old.role
+            shard.node_id != old.node_id ||
+            shard.role != old.role ||
+            shard.shard_id != old.shard_id
     }
 }

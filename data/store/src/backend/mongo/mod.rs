@@ -61,8 +61,8 @@ use self::validator::SchemaValidator;
 ///   * Unique index on `agents_info`: `(cluster_id: 1, host: 1)`
 ///   * Unique index on `clusters_meta`: `cluster_id: 1`
 ///   * Unique index on `discoveries`: `cluster_id: 1`
-///   * Unique index on `nodes`: `(cluster_id: 1, name: 1)`
-///   * Unique index on `shards`: `(cluster_id: 1, node: 1, id: 1)`
+///   * Unique index on `nodes`: `(cluster_id: 1, node_id: 1)`
+///   * Unique index on `shards`: `(cluster_id: 1, node_id: 1, shard_id: 1)`
 pub struct MongoStore {
     agents: AgentStore,
     clusters: ClusterStore,

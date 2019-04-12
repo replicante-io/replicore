@@ -17,12 +17,15 @@ impl ShardBuilder {
 
     /// Build an `EventPayload::ShardAllocationChanged` event.
     pub fn allocation_changed(self, before: Shard, after: Shard) -> Event {
+        let cluster_id = before.cluster_id.clone();
+        let node_id = before.node_id.clone();
+        let shard_id = before.shard_id.clone();
         let data = EventPayload::ShardAllocationChanged(ShardAllocationChanged {
-            cluster_id: before.cluster_id.clone(),
-            id: before.id.clone(),
-            node: before.node.clone(),
             after,
             before,
+            cluster_id,
+            node_id,
+            shard_id,
         });
         self.builder.build(data)
     }
@@ -51,10 +54,10 @@ mod tests {
         let after = Shard::new("cluster", "test", after);
         let event = Event::builder().shard().allocation_changed(before.clone(), after.clone());
         let expected = EventPayload::ShardAllocationChanged(ShardAllocationChanged {
-            cluster_id: before.cluster_id.clone(),
-            id: before.id.clone(),
-            node: before.node.clone(),
             after,
+            cluster_id: before.cluster_id.clone(),
+            node_id: before.node_id.clone(),
+            shard_id: before.shard_id.clone(),
             before,
         });
         assert_eq!(event.payload, expected);

@@ -13,7 +13,7 @@ pub struct Node {
     pub cluster_display_name: String,
     pub cluster_id: String,
     pub kind: String,
-    pub name: String,
+    pub node_id: String,
     pub version: String,
 }
 
@@ -27,7 +27,7 @@ impl Node {
             cluster_display_name,
             cluster_id: node.cluster_id,
             kind: node.kind,
-            name: node.name,
+            node_id: node.id,
             version: node.version,
         }
     }
@@ -38,14 +38,14 @@ impl Node {
 pub struct Shard {
     pub cluster_id: String,
     pub commit_offset: Option<CommitOffset>,
-    pub id: String,
     pub lag: Option<CommitOffset>,
-    pub node: String,
+    pub node_id: String,
     pub role: ShardRole,
+    pub shard_id: String,
 }
 
 impl Shard {
-    pub fn new<S1, S2>(cluster_id: S1, node: S2, shard: WireShard) -> Shard
+    pub fn new<S1, S2>(cluster_id: S1, node_id: S2, shard: WireShard) -> Shard
     where
         S1: Into<String>,
         S2: Into<String>,
@@ -53,10 +53,10 @@ impl Shard {
         Shard {
             cluster_id: cluster_id.into(),
             commit_offset: shard.commit_offset,
-            id: shard.id,
             lag: shard.lag,
-            node: node.into(),
+            node_id: node_id.into(),
             role: shard.role,
+            shard_id: shard.id,
         }
     }
 }
@@ -72,7 +72,7 @@ mod tests {
         fn from_json() {
             let payload = concat!(
                 r#"{"cluster_display_name":"humans","cluster_id":"cluster","#,
-                r#""kind":"DB","name":"Name","version":"1.2.3"}"#
+                r#""kind":"DB","node_id":"Name","version":"1.2.3"}"#
             );
             let node: Node = serde_json::from_str(payload).unwrap();
             let wire = WireNode::new(Some("humans".into()), "cluster", "DB", "Name", "1.2.3");
@@ -87,7 +87,7 @@ mod tests {
             let payload = serde_json::to_string(&node).unwrap();
             let expected = concat!(
                 r#"{"cluster_display_name":"cluster","cluster_id":"cluster","#,
-                r#""kind":"DB","name":"Name","version":"1.2.3"}"#
+                r#""kind":"DB","node_id":"Name","version":"1.2.3"}"#
             );
             assert_eq!(payload, expected);
         }
@@ -104,7 +104,7 @@ mod tests {
         fn from_json() {
             let payload = concat!(
                 r#"{"cluster_id":"cluster","commit_offset":{"unit":"seconds","value":54},"#,
-                r#""id":"shard","lag":null,"node":"node","role":"secondary"}"#
+                r#""shard_id":"shard","lag":null,"node_id":"node","role":"secondary"}"#
             );
             let shard: Shard = serde_json::from_str(payload).unwrap();
             let wire = WireShard::new(
@@ -125,7 +125,7 @@ mod tests {
             let payload = serde_json::to_string(&shard).unwrap();
             let expected = concat!(
                 r#"{"cluster_id":"cluster","commit_offset":{"unit":"seconds","value":54},"#,
-                r#""id":"shard","lag":null,"node":"node","role":"secondary"}"#
+                r#""lag":null,"node_id":"node","role":"secondary","shard_id":"shard"}"#
             );
             assert_eq!(payload, expected);
         }
