@@ -6,6 +6,28 @@ api:
   # Production environments should place an HTTPS proxy in front of the API.
   bind: '127.0.0.1:16016'
 
+  # The number of request handling threads.
+  #
+  # By default this is 8 * number of CPUs.
+  threads_count: ~
+
+  # API server timeouts.
+  timeouts:
+    # Controls the timeout, in seconds, for keep alive connections.
+    #
+    # NOTE: Setting this to null (~) will turn off keep alive.
+    keep_alive: 5
+
+    # Control the timeout, in seconds, for reads on existing connections.
+    #
+    # NOTE: Setting this to null (~) will turn off read timeouts.
+    read: 5
+
+    # Control the timeout, in seconds, for writes on existing connections.
+    #
+    # NOTE: Setting this to null (~) will turn off write timeouts.
+    write: 1
+
   # Enable/disable entire API trees.
   #
   # Useful for advanced operators that which to control access to experimental or legacy

@@ -18,7 +18,6 @@ use super::Result;
 use super::components::DiscoveryConfig;
 use super::interfaces::api::Config as APIConfig;
 
-
 mod components;
 mod events;
 mod task_workers;
@@ -29,7 +28,6 @@ pub use self::events::EventsConfig;
 pub use self::events::SnapshotsConfig as EventsSnapshotsConfig;
 pub use self::task_workers::TaskWorkers;
 pub use self::timeouts::TimeoutsConfig;
-
 
 /// Replicante configuration options.
 #[derive(Clone, Eq, PartialEq, Hash, Debug, Serialize, Deserialize)]
@@ -131,7 +129,6 @@ impl Config {
         self
     }
 }
-
 
 #[cfg(test)]
 mod tests {

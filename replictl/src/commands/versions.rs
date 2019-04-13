@@ -109,7 +109,7 @@ fn value_or_error(logger: &Logger, tool: &'static str, result: Result<String>) -
     match result {
         Err(error) => {
             warn!(logger, "Failed to detect {} version", tool; failure_info(&error));
-            error.to_string().trim_right().to_string()
+            error.to_string().trim_end().to_string()
         },
         Ok(value) => value,
     }

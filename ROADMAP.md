@@ -1,4 +1,7 @@
 ## 0.3.0 - Introspection
+- Add `/api/unstable/introspect/self` endpoint.
+- Move cluster metadata to aggregation pipeline.
+- Mark and sweep agent, node, and shard models.
 - Graceful shutdown.
 - Sentry integration.
 - Trace agent discovery.

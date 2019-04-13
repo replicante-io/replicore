@@ -4,6 +4,7 @@
 //! This module does not implement all of the APIs but rather provides
 //! tools for other interfaces and components to add their own endpoints.
 use std::collections::HashMap;
+use std::time::Duration;
 
 use failure::ResultExt;
 use humthreads::Builder as ThreadBuilder;
@@ -72,7 +73,7 @@ impl API {
 
     /// Creates an Iron server and spawns a thread to serve it.
     pub fn run(&mut self) -> Result<()> {
-        let bind = self.config.bind.clone();
+        let config = self.config.clone();
         let logger = self.logger.clone();
 
         let mut chain = self.router.take().unwrap().build();
@@ -83,9 +84,17 @@ impl API {
         let handle = ThreadBuilder::new("r:i:api")
             .full_name("replicore:interface:api")
             .spawn(move |scope| {
-                info!(logger, "Starting API server"; "bind" => bind.clone());
+                let mut server = Iron::new(chain);
+                server.timeouts.keep_alive = config.timeouts.keep_alive.map(Duration::from_secs);
+                server.timeouts.read = config.timeouts.read.map(Duration::from_secs);
+                server.timeouts.write = config.timeouts.write.map(Duration::from_secs);
+                if let Some(threads_count) = config.threads_count {
+                    server.threads = threads_count;
+                }
+
+                info!(logger, "Starting API server"; "bind" => &config.bind);
                 scope.activity("running https://github.com/iron/iron HTTP server");
-                Iron::new(chain).http(bind).expect("Unable to start API server");
+                server.http(config.bind).expect("Unable to start API server");
             })
             .with_context(|_| ErrorKind::ThreadSpawn("http server"))?;
         self.handle = Some(handle);

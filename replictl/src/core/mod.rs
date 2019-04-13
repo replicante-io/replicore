@@ -18,7 +18,7 @@ impl Client {
     /// Create a new client that will connect to the given `url`.
     pub fn new<'a>(args: &ArgMatches<'a>) -> Result<Client> {
         let client = ReqwestClient::builder().build().with_context(|_| ErrorKind::HttpClient)?;
-        let url = String::from(args.value_of("url").unwrap().trim_right_matches('/'));
+        let url = String::from(args.value_of("url").unwrap().trim_end_matches('/'));
         Ok(Client {
             client,
             url,
@@ -41,6 +41,6 @@ impl Client {
     /// Utility method to build a full path for an endpoint.
     fn endpoint<S>(&self, path: S) -> String where S: Into<String> {
         let path = path.into();
-        format!("{}/{}", self.url, path.trim_left_matches('/'))
+        format!("{}/{}", self.url, path.trim_start_matches('/'))
     }
 }
