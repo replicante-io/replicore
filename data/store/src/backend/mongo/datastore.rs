@@ -76,10 +76,10 @@ impl DatastoreStore {
         Ok(Cursor(Box::new(iter)))
     }
 
-    pub fn node(&self, cluster_id: String, name: String) -> Result<Option<Node>> {
+    pub fn node(&self, cluster_id: String, node_id: String) -> Result<Option<Node>> {
         let filter = doc!{
             "cluster_id" => cluster_id,
-            "name" => name,
+            "node_id" => node_id,
         };
         MONGODB_OPS_COUNT.with_label_values(&["findOne"]).inc();
         let timer = MONGODB_OPS_DURATION.with_label_values(&["findOne"]).start_timer();

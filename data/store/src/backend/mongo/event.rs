@@ -46,9 +46,9 @@ impl EventStore {
         if let Some(cluster_id) = filters.cluster_id {
             filter.push(Bson::from(doc! {
                 "$or": [{
-                    "data.cluster" => {"$eq" => cluster_id}
+                    "data.cluster_id" => {"$eq" => cluster_id}
                 }, {
-                    "data.cluster" => {"$exists" => false}
+                    "data.cluster_id" => {"$exists" => false}
                 }]
             }));
         }
@@ -132,8 +132,6 @@ impl EventStore {
         self.client.db(&self.db).collection(COLLECTION_EVENTS)
     }
 }
-
-
 
 /// A wrapper for the `Event` model to allow BSON to encode/decode timestamps correctly.
 #[derive(Clone, Eq, PartialEq, Debug, Serialize, Deserialize)]
