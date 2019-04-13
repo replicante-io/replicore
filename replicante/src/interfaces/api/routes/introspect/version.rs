@@ -7,7 +7,6 @@ use iron_json_response::JsonResponse;
 
 use replicante_data_models::api::Version;
 
-
 lazy_static! {
     /// Compile-time constant version of core.
     static ref REPLICANTE_VERSION: Version = {

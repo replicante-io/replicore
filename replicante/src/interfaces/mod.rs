@@ -45,9 +45,9 @@ impl Interfaces {
     #[cfg_attr(feature = "cargo-clippy", allow(needless_pass_by_value))]
     pub fn new(config: &Config, logger: Logger) -> Result<Interfaces> {
         let metrics = Metrics::new();
-        let api = API::new(config.api.clone(), logger.clone(), &metrics);
         let coordinator = Coordinator::new(config.coordinator.clone(), logger.clone())
             .with_context(|_| ErrorKind::InterfaceInit("coordinator"))?;
+        let api = API::new(config.api.clone(), coordinator.clone(), logger.clone(), &metrics);
         let store = Store::new(config.storage.clone(), logger.clone())
             .with_context(|_| ErrorKind::ClientInit("store"))?;
         let streams = Streams::new(config, logger.clone(), store.clone())?;
@@ -137,7 +137,7 @@ impl Interfaces {
     /// Mock interfaces using the given logger and wrap them in an `Interfaces` instance.
     pub fn mock_with_logger(logger: Logger) -> (Interfaces, MockInterfaces) {
         let metrics = Metrics::mock();
-        let api = API::mock(logger.clone(), &metrics);
+        let (api, _) = API::mock(logger.clone(), &metrics);
         let tracing = Tracing::mock();
 
         let mock_coordinator = ::replicante_coordinator::mock::MockCoordinator::new(logger.clone());

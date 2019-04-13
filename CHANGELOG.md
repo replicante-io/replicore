@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## [Unreleased]
 ### Added
 - A better thread story.
+- Add `/api/unstable/introspect/self` endpoint.
 - Additional API server configuration options.
 - Introduce an `/api/unstable` API "version".
 - Threads introspection API.

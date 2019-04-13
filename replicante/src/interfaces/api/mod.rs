@@ -13,6 +13,10 @@ use iron::Iron;
 use iron_json_response::JsonResponseMiddleware;
 use slog::Logger;
 
+use replicante_coordinator::Coordinator;
+#[cfg(test)]
+use replicante_coordinator::mock::MockCoordinator;
+
 use replicante_util_iron::MetricsMiddleware;
 use replicante_util_iron::RequestLogger;
 use replicante_util_iron::RootDescriptor;
@@ -45,10 +49,15 @@ pub struct API {
 
 impl API {
     /// Creates a new API interface.
-    pub fn new(config: Config, logger: Logger, metrics: &Metrics) -> API {
+    pub fn new(
+        config: Config,
+        coordinator: Coordinator,
+        logger: Logger,
+        metrics: &Metrics,
+    ) -> API {
         let registry = metrics.registry().clone();
         let mut router = Router::new(config.trees.clone().into());
-        routes::mount(&mut router, registry);
+        routes::mount(&mut router, coordinator, registry);
 
         let middleware = MetricsMiddleware::new(
             MIDDLEWARE.0.clone(), MIDDLEWARE.1.clone(), MIDDLEWARE.2.clone(), logger.clone()
@@ -110,9 +119,11 @@ impl API {
 
     /// Returns an `API` instance usable as a mock.
     #[cfg(test)]
-    pub fn mock(logger: Logger, metrics: &Metrics) -> API {
+    pub fn mock(logger: Logger, metrics: &Metrics) -> (API, MockCoordinator) {
         let config = Config::default();
-        API::new(config, logger, metrics)
+        let coordinator = MockCoordinator::new(logger.clone());
+        let api = API::new(config, coordinator.mock(), logger, metrics);
+        (api, coordinator)
     }
 }
 
