@@ -40,7 +40,7 @@ The datastore MUST provide the following administration information:
 
 The datastore MAY provide the following administration information:
 
-  * A human friendly display name for the cluster.
+  * An operator friendly display name for the cluster.
 
 
 ## Clustering

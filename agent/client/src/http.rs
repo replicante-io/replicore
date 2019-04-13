@@ -69,7 +69,7 @@ impl HttpClient {
             .build()
             .with_context(|_| ErrorKind::Transport("HTTP"))?;
         let target = target.into();
-        let root_url = String::from(target.trim_right_matches('/'));
+        let root_url = String::from(target.trim_end_matches('/'));
         Ok(HttpClient { client, root_url })
     }
 }
@@ -81,7 +81,7 @@ impl HttpClient {
         S: Into<String>,
     {
         let path = path.into();
-        format!("{}/{}", self.root_url, path.trim_left_matches('/'))
+        format!("{}/{}", self.root_url, path.trim_start_matches('/'))
     }
 
     /// Performs a request, decoding the JSON response and tracking some stats.
@@ -106,7 +106,7 @@ impl HttpClient {
                 let inner_kind = error
                     .get_ref()
                     .and_then(|error| error.downcast_ref::<io::Error>())
-                    .map(|error| error.kind());
+                    .map(io::Error::kind);
                 match inner_kind {
                     Some(io::ErrorKind::TimedOut) | Some(io::ErrorKind::WouldBlock) => {
                         CLIENT_TIMEOUT.with_label_values(&[&endpoint]).inc();
