@@ -7,7 +7,6 @@ extern crate serde_yaml;
 
 extern crate replicante_data_models;
 
-
 mod backends;
 mod config;
 mod error;

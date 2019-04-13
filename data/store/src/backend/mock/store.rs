@@ -363,7 +363,7 @@ mod tests {
         fn persist() {
             let mock = Arc::new(MockStore::new());
             let store = Store::mock(Arc::clone(&mock));
-            let node = Node::new(DatastoreInfo::new(None, "cluster", "kind", "name", "version"));
+            let node = Node::new(DatastoreInfo::new("cluster", "kind", "name", "version", None));
             store.persist_node(node.clone()).unwrap();
             let key = (String::from("cluster"), String::from("name"));
             let stored = mock.nodes.lock().expect("Faild to lock")

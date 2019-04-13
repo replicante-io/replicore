@@ -17,6 +17,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - **BREAKING**: Rename node's `name` to `node_id`.
 - **BREAKING**: Rename shard's `id` to `shard_id`.
 
+### Removed
+- **BREAKING**: Removed nonsensical ordering on some models.
+
 ## [0.2.1] - 2019-03-28
 ### Added
 - Add `rustfmt` to CI and move in that direction.

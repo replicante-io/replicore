@@ -27,7 +27,7 @@ impl Node {
             cluster_display_name,
             cluster_id: node.cluster_id,
             kind: node.kind,
-            node_id: node.id,
+            node_id: node.node_id,
             version: node.version,
         }
     }
@@ -75,14 +75,14 @@ mod tests {
                 r#""kind":"DB","node_id":"Name","version":"1.2.3"}"#
             );
             let node: Node = serde_json::from_str(payload).unwrap();
-            let wire = WireNode::new(Some("humans".into()), "cluster", "DB", "Name", "1.2.3");
+            let wire = WireNode::new("cluster", "DB", "Name", "1.2.3", Some("humans".into()));
             let expected = Node::new(wire);
             assert_eq!(node, expected);
         }
 
         #[test]
         fn to_json() {
-            let wire = WireNode::new(None, "cluster", "DB", "Name", "1.2.3");
+            let wire = WireNode::new("cluster", "DB", "Name", "1.2.3", None);
             let node = Node::new(wire);
             let payload = serde_json::to_string(&node).unwrap();
             let expected = concat!(

@@ -46,9 +46,9 @@ mod tests {
 
     #[test]
     fn changed() {
-        let before = WireNode::new(None, "cluster", "TestDB", "test", "1.2.3");
+        let before = WireNode::new("cluster", "TestDB", "test", "1.2.3", None);
         let before = Node::new(before);
-        let after = WireNode::new(None, "cluster", "TestDB", "test", "4.5.6");
+        let after = WireNode::new("cluster", "TestDB", "test", "4.5.6", None);
         let after = Node::new(after);
         let event = Event::builder().node().changed(before.clone(), after.clone());
         let expected = EventPayload::NodeChanged(NodeChanged {
@@ -62,7 +62,7 @@ mod tests {
 
     #[test]
     fn node_new() {
-        let node = WireNode::new(None, "cluster", "TestDB", "test", "1.2.3");
+        let node = WireNode::new("cluster", "TestDB", "test", "1.2.3", None);
         let node = Node::new(node);
         let event = Event::builder().node().node_new(node.clone());
         let expected = EventPayload::NodeNew(node);
