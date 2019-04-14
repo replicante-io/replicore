@@ -91,7 +91,7 @@ impl Handler {
         self.emit_snapshots(&discovery.cluster_id, snapshot);
         self.refresh_discovery(discovery.clone())?;
         self.fetcher.process(discovery.clone(), lock.watch());
-        self.aggregator.process(discovery, lock.watch());
+        self.aggregator.process(discovery.cluster_id, lock.watch());
 
         // Done.
         timer.observe_duration();

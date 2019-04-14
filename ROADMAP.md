@@ -1,5 +1,4 @@
 ## 0.3.0 - Introspection
-- Move cluster metadata to aggregation pipeline.
 - Mark and sweep agent, node, and shard models.
 - Graceful shutdown.
 - Sentry integration.

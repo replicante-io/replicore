@@ -11,9 +11,8 @@ use super::super::Result;
 pub fn register_metrics(logger: &Logger, registry: &Registry) {
     // Register default process metircs.
     let process = ProcessCollector::for_self();
-    if let Err(err) = registry.register(Box::new(process)) {
-        let error = format!("{:?}", err);
-        debug!(logger, "Failed to register PROCESS metrics"; "error" => error);
+    if let Err(error) = registry.register(Box::new(process)) {
+        debug!(logger, "Failed to register PROCESS metrics"; "error" => ?error);
     }
 }
 

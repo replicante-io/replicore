@@ -53,6 +53,18 @@ pub enum ErrorKind {
     #[fail(display = "error fetching {} from agent {}", _0, _1)]
     AgentRead(&'static str, String),
 
+    #[fail(
+        display = "expected cluster display name '{}' but found '{}' for node with ID '{}'",
+        _0, _1, _2
+    )]
+    ClusterDisplayNameDoesNotMatch(String, String, String),
+
+    #[fail(
+        display = "expected cluster ID '{}' but found '{}' for node with ID '{}'",
+        _0, _1, _2
+    )]
+    ClusterIdDoesNotMatch(String, String, String),
+
     #[fail(display = "error emitting {} event", _0)]
     EventEmit(&'static str),
 

@@ -17,7 +17,6 @@ extern crate replicante_util_failure;
 use std::time::Duration;
 
 use failure::ResultExt;
-use prometheus::Registry;
 use slog::Logger;
 
 use replicante_agent_client::HttpClient;
@@ -33,27 +32,70 @@ use replicante_util_failure::format_fail;
 
 mod agent;
 mod error;
-mod meta;
 mod metrics;
 mod node;
 mod shard;
 mod snapshotter;
 
 use self::agent::AgentFetcher;
-use self::meta::ClusterMetaBuilder;
-use self::meta::MetaFetcher;
-
 use self::metrics::FETCHER_ERRORS_COUNT;
-use self::metrics::register_metrics;
-
 use self::node::NodeFetcher;
 use self::shard::ShardFetcher;
 
 pub use self::error::Error;
 pub use self::error::ErrorKind;
 pub use self::error::Result;
+pub use self::metrics::register_metrics;
 pub use self::snapshotter::Snapshotter;
 
+struct ClusterIdentityChecker {
+    display_name: Option<String>,
+    id: Option<String>,
+}
+
+impl ClusterIdentityChecker {
+    fn check_or_set_display_name(&mut self, display_name: &str, node_id: &str) -> Result<()> {
+        if self.display_name.is_none() {
+            self.display_name = Some(display_name.to_string());
+            return Ok(());
+        }
+        let current = self.display_name.as_ref().unwrap();
+        if current == display_name {
+            return Ok(());
+        }
+        Err(
+            ErrorKind::ClusterDisplayNameDoesNotMatch(
+                current.to_string(),
+                display_name.to_string(),
+                node_id.to_string(),
+            )
+            .into()
+        )
+    }
+
+    fn check_or_set_id(&mut self, id: &str, agent_host: &str) -> Result<()> {
+        if self.id.is_none() {
+            self.id = Some(id.to_string());
+            return Ok(());
+        }
+        let current = self.id.as_ref().unwrap();
+        if current == id {
+            return Ok(());
+        }
+        Err(
+            ErrorKind::ClusterIdDoesNotMatch(
+                current.to_string(),
+                id.to_string(),
+                agent_host.to_string(),
+            )
+            .into()
+        )
+    }
+
+    fn new(id: Option<String>, display_name: Option<String>) -> ClusterIdentityChecker {
+        ClusterIdentityChecker { display_name, id }
+    }
+}
 
 /// Node (agent and datastore) status fetching and processing logic.
 ///
@@ -67,11 +109,9 @@ pub use self::snapshotter::Snapshotter;
 ///     5. Attempt to fetch shards status (only if agent and datastore are up).
 ///     6. Persist each `Shard` record (if fetch succeeded).
 ///     7. Persist the `Agent` record.
-///   2. Generate and persist `ClusterMeta` record.
 pub struct Fetcher {
     agent: AgentFetcher,
     logger: Logger,
-    meta: MetaFetcher,
     node: NodeFetcher,
     shard: ShardFetcher,
     timeout: Duration,
@@ -80,26 +120,20 @@ pub struct Fetcher {
 impl Fetcher {
     pub fn new(logger: Logger, events: EventsStream, store: Store, timeout: Duration) -> Fetcher {
         let agent = AgentFetcher::new(events.clone(), store.clone());
-        let meta = MetaFetcher::new(store.clone());
         let node = NodeFetcher::new(events.clone(), store.clone());
         let shard = ShardFetcher::new(events, store);
         Fetcher {
             agent,
             logger,
-            meta,
             node,
             shard,
             timeout,
         }
     }
 
-    pub fn register_metrics(logger: &Logger, registry: &Registry) {
-        register_metrics(logger, registry)
-    }
-
     pub fn process(&self, cluster: ClusterDiscovery, lock: NonBlockingLockWatcher) {
+        let mut id_checker = ClusterIdentityChecker::new(Some(cluster.cluster_id.clone()), None);
         let cluster_id = cluster.cluster_id.clone();
-        let mut meta = ClusterMetaBuilder::new(cluster.cluster_id);
 
         for node in cluster.nodes {
             // Exit early if lock was lost.
@@ -111,7 +145,7 @@ impl Fetcher {
                 return;
             }
 
-            let result = self.process_target(&cluster_id, &node, &mut meta);
+            let result = self.process_target(&cluster_id, &node, &mut id_checker);
             if let Err(error) = result {
                 FETCHER_ERRORS_COUNT.with_label_values(&[&cluster_id]).inc();
                 error!(
@@ -120,27 +154,25 @@ impl Fetcher {
                 );
             }
         }
-
-        if let Err(error) = self.meta.persist_meta(meta.build()) {
-            FETCHER_ERRORS_COUNT.with_label_values(&[&cluster_id]).inc();
-            error!(
-                self.logger, "Failed to persist cluster metadata";
-                "cluster_id" => cluster_id, failure_info(&error)
-            );
-        }
     }
 }
 
 impl Fetcher {
     fn process_target(
-        &self, cluster: &str, node: &str, meta: &mut ClusterMetaBuilder
+        &self,
+        cluster: &str,
+        node: &str,
+        id_checker: &mut ClusterIdentityChecker,
     ) -> Result<()> {
-        meta.node_inc();
         let client = HttpClient::make(node.to_string(), self.timeout.clone())
             .with_context(|_| ErrorKind::AgentConnect(node.to_string()))?;
         let mut agent = Agent::new(cluster.to_string(), node.to_string(), AgentStatus::Up);
 
-        let result = self.agent.process_agent_info(&client, cluster.to_string(), node.to_string());
+        let result = self.agent.process_agent_info(
+            &client,
+            cluster.to_string(),
+            node.to_string(),
+        );
         if let Err(error) = result {
             let message = format_fail(&error);
             agent.status = AgentStatus::AgentDown(message);
@@ -148,7 +180,7 @@ impl Fetcher {
             return Err(error);
         };
 
-        let result = self.node.process_node(&client, meta);
+        let result = self.node.process_node(&client, id_checker);
         if let Err(error) = result {
             let message = format_fail(&error);
             agent.status = AgentStatus::NodeDown(message);

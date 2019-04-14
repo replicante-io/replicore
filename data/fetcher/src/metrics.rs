@@ -3,15 +3,13 @@ use prometheus::Opts;
 use prometheus::Registry;
 use slog::Logger;
 
-
 lazy_static! {
     /// Counter for fetcher errors by cluster.
     pub static ref FETCHER_ERRORS_COUNT: CounterVec = CounterVec::new(
-        Opts::new("replicante_fetchers_errors", "Number of fetchers errors"),
+        Opts::new("replicore_fetcher_errors", "Number of fetchers errors"),
         &["cluster"]
-    ).expect("Failed to create replicante_fetchers_errors counter");
+    ).expect("Failed to create replicore_fetcher_errors counter");
 }
-
 
 /// Attemps to register metrics with the Registry.
 ///

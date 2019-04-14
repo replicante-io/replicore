@@ -1,14 +1,10 @@
 use prometheus::Registry;
 use slog::Logger;
 
-use replicante_data_aggregator::Aggregator;
-use replicante_data_fetcher::Fetcher;
-
 use super::Config;
 use super::Interfaces;
 use super::Result;
 use super::metrics::COMPONENTS_ENABLED;
-
 
 mod discovery;
 mod grafana;
@@ -21,7 +17,6 @@ use self::discovery::DiscoveryComponent as Discovery;
 use self::grafana::Grafana;
 use self::webui::WebUI;
 use self::workers::Workers;
-
 
 /// Helper macro to keep `Components::run` simpler in the presence of optional components.
 macro_rules! component_run {
@@ -116,8 +111,8 @@ impl Components {
         self::discovery::register_metrics(logger, registry);
         self::workers::register_metrics(logger, registry);
         ::replicante_agent_client::register_metrics(logger, registry);
-        Aggregator::register_metrics(logger, registry);
-        Fetcher::register_metrics(logger, registry);
+        ::replicante_data_aggregator::register_metrics(logger, registry);
+        ::replicante_data_fetcher::register_metrics(logger, registry);
     }
 
 

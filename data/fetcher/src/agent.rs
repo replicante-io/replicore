@@ -14,20 +14,20 @@ use super::Result;
 
 
 /// Subset of fetcher logic that deals specifically with agents.
-pub struct AgentFetcher {
+pub(crate) struct AgentFetcher {
     events: EventsStream,
     store: Store,
 }
 
 impl AgentFetcher {
-    pub fn new(events: EventsStream, store: Store) -> AgentFetcher {
+    pub(crate) fn new(events: EventsStream, store: Store) -> AgentFetcher {
         AgentFetcher {
             events,
             store,
         }
     }
 
-    pub fn process_agent(&self, agent: Agent) -> Result<()> {
+    pub(crate) fn process_agent(&self, agent: Agent) -> Result<()> {
         match self.store.agent(agent.cluster_id.clone(), agent.host.clone()) {
             Err(error) => Err(error).with_context(|_| ErrorKind::StoreRead("agent"))
                 .map_err(Error::from),
@@ -36,11 +36,11 @@ impl AgentFetcher {
         }
     }
 
-    pub fn process_agent_info(
+    pub(crate) fn process_agent_info(
         &self,
         client: &Client,
         cluster_id: String,
-        node: String
+        node: String,
     ) -> Result<()> {
         let info = client.agent_info()
             .with_context(|_| ErrorKind::AgentRead("agent info", client.id().to_string()))?;

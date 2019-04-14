@@ -2,6 +2,7 @@
 name = "replicante_data_aggregator"
 version = "0.1.0"
 authors = ["Stefano Pogliani <stefano@spogliani.net>"]
+edition = "2018"
 
 description = "Cluster status aggregator for Replicante Core"
 documentation = "https://www.replicante.io/docs"

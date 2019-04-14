@@ -7,32 +7,33 @@ use replicante_data_models::Node;
 use replicante_data_store::Store;
 use replicante_streams_events::EventsStream;
 
+use super::ClusterIdentityChecker;
 use super::Error;
 use super::ErrorKind;
 use super::Result;
-use super::meta::ClusterMetaBuilder;
 
 
 /// Subset of fetcher logic that deals specifically with nodes.
-pub struct NodeFetcher {
+pub(crate) struct NodeFetcher {
     events: EventsStream,
     store: Store,
 }
 
 impl NodeFetcher {
-    pub fn new(events: EventsStream, store: Store) -> NodeFetcher {
-        NodeFetcher {
-            events,
-            store,
-        }
+    pub(crate) fn new(events: EventsStream, store: Store) -> NodeFetcher {
+        NodeFetcher { events, store }
     }
 
-    pub fn process_node(&self, client: &Client, meta: &mut ClusterMetaBuilder) -> Result<()> {
+    pub(crate) fn process_node(
+        &self,
+        client: &Client,
+        id_checker: &mut ClusterIdentityChecker,
+    ) -> Result<()> {
         let info = client.datastore_info()
             .with_context(|_| ErrorKind::AgentRead("datastore info", client.id().to_string()))?;
         let node = Node::new(info);
-        meta.node_kind(node.kind.clone());
-
+        id_checker.check_or_set_id(&node.cluster_id, &node.node_id)?;
+        id_checker.check_or_set_display_name(&node.cluster_display_name, &node.node_id)?;
         let cluster_id = node.cluster_id.clone();
         let node_id = node.node_id.clone();
         match self.store.node(cluster_id, node_id) {

@@ -6,33 +6,27 @@ extern crate replicante_coordinator;
 extern crate replicante_data_models;
 extern crate replicante_data_store;
 
-use prometheus::Registry;
 use slog::Logger;
 
 use replicante_coordinator::NonBlockingLockWatcher;
-use replicante_data_models::ClusterDiscovery;
 use replicante_data_store::Store;
 
+mod metrics;
+
+pub use self::metrics::register_metrics;
 
 /// Node (agent and datastore) status aggregator logic.
 pub struct Aggregator {
-    //logger: Logger,
-    //store: Store,
+    _logger: Logger,
+    _store: Store,
 }
 
 impl Aggregator {
     pub fn new(_logger: Logger, _store: Store) -> Aggregator {
-        Aggregator {
-            //logger,
-            //store,
-        }
+        Aggregator { _logger, _store }
     }
 
-    pub fn register_metrics(_logger: &Logger, _registry: &Registry) {
-        // TODO(stefano): implement metrics registration.
-    }
-
-    pub fn process(&self, _cluster: ClusterDiscovery, _lock: NonBlockingLockWatcher) {
+    pub fn process(&self, _cluster_id: String, _lock: NonBlockingLockWatcher) {
         // TODO(stefano): implement cluster aggregation.
     }
 }

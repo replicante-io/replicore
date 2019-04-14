@@ -13,20 +13,20 @@ use super::Result;
 
 
 /// Subset of fetcher logic that deals specifically with shards.
-pub struct ShardFetcher {
+pub(crate) struct ShardFetcher {
     events: EventsStream,
     store: Store,
 }
 
 impl ShardFetcher {
-    pub fn new(events: EventsStream, store: Store) -> ShardFetcher {
+    pub(crate) fn new(events: EventsStream, store: Store) -> ShardFetcher {
         ShardFetcher {
             events,
             store,
         }
     }
 
-    pub fn process_shards(&self, client: &Client, cluster: &str, node: &str) -> Result<()> {
+    pub(crate) fn process_shards(&self, client: &Client, cluster: &str, node: &str) -> Result<()> {
         let shards = client.shards()
             .with_context(|_| ErrorKind::AgentRead("shards", client.id().to_string()))?;
         for shard in shards.shards {

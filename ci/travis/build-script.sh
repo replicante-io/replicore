@@ -11,3 +11,4 @@ cargo fmt --verbose -- --check || true
 # we made compatible to prevent slips.
 cargo clippy --verbose -p replicante_agent_client -- -D warnings
 cargo fmt --verbose -preplicante_agent_client -- --check
+cargo fmt --verbose -preplicante_data_aggregator -- --check
