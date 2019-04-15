@@ -57,7 +57,8 @@ impl ClusterMetaAggregator {
         if !self.lock.inspect() {
             return Err(ErrorKind::ClusterLockLost(cluster_id).into());
         }
-        self.store.persist_cluster_meta(meta)
+        self.store
+            .persist_cluster_meta(meta)
             .with_context(|_| ErrorKind::StoreWrite("ClusterMeta"))?;
         Ok(())
     }
