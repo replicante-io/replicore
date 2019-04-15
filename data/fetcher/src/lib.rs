@@ -50,7 +50,7 @@ pub use self::snapshotter::Snapshotter;
 
 struct ClusterIdentityChecker {
     display_name: Option<String>,
-    id: Option<String>,
+    id: String,
 }
 
 impl ClusterIdentityChecker {
@@ -73,26 +73,21 @@ impl ClusterIdentityChecker {
         )
     }
 
-    fn check_or_set_id(&mut self, id: &str, agent_host: &str) -> Result<()> {
-        if self.id.is_none() {
-            self.id = Some(id.to_string());
-            return Ok(());
-        }
-        let current = self.id.as_ref().unwrap();
-        if current == id {
+    fn check_id(&mut self, id: &str, node_id: &str) -> Result<()> {
+        if self.id == id {
             return Ok(());
         }
         Err(
             ErrorKind::ClusterIdDoesNotMatch(
-                current.to_string(),
+                self.id.clone(),
                 id.to_string(),
-                agent_host.to_string(),
+                node_id.to_string(),
             )
             .into()
         )
     }
 
-    fn new(id: Option<String>, display_name: Option<String>) -> ClusterIdentityChecker {
+    fn new(id: String, display_name: Option<String>) -> ClusterIdentityChecker {
         ClusterIdentityChecker { display_name, id }
     }
 }
@@ -131,9 +126,21 @@ impl Fetcher {
         }
     }
 
+    /// Refresh the optimistic view on a cluster state.
+    ///
+    /// If the refrsh process fails due to core-related issues (store errors,
+    /// internal logic, ...) the process is aborted and the error propagated.
+    ///
+    /// If the refresh process encounters an agent error (invalid response or state,
+    /// network issue, ...) the error is NOT propagated and is instead accounted for
+    /// as part of the state refersh operation.
+    // TODO: return a Result<()>
+    // TODO: propagate core errors.
+    // TODO: separatelly handle agnet/remote errors.
     pub fn process(&self, cluster: ClusterDiscovery, lock: NonBlockingLockWatcher) {
-        let mut id_checker = ClusterIdentityChecker::new(Some(cluster.cluster_id.clone()), None);
+        let mut id_checker = ClusterIdentityChecker::new(cluster.cluster_id.clone(), None);
         let cluster_id = cluster.cluster_id.clone();
+        debug!(self.logger, "Refreshing cluster state"; "cluster_id" => &cluster_id);
 
         for node in cluster.nodes {
             // Exit early if lock was lost.

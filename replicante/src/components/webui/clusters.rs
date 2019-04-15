@@ -98,8 +98,12 @@ mod tests {
 
         fn mockstore() -> MockStore {
             let mock_store = MockStore::new();
-            let c1 = ClusterMeta::new("c1", "mongo", 3);
-            let c2 = ClusterMeta::new("c2", "redis", 5);
+            let mut c1 = ClusterMeta::new("c1", "mongo");
+            c1.kinds = vec!["mongo".into()];
+            c1.nodes = 3;
+            let mut c2 = ClusterMeta::new("c2", "redis");
+            c2.kinds = vec!["redis".into()];
+            c2.nodes = 5;
             mock_store.clusters_meta.lock().unwrap().insert("c1".into(), c1);
             mock_store.clusters_meta.lock().unwrap().insert("c2".into(), c2);
             mock_store
@@ -123,8 +127,10 @@ mod tests {
             assert_eq!(
                 result_body,
                 concat!(
-                    r#"[{"cluster_id":"c1","kinds":["mongo"],"nodes":3},"#,
-                    r#"{"cluster_id":"c2","kinds":["redis"],"nodes":5}]"#
+                    r#"[{"cluster_display_name":"mongo","cluster_id":"c1","kinds":["mongo"],"#,
+                    r#""agents_down":0,"nodes":3,"nodes_down":0,"shards":0},"#,
+                    r#"{"cluster_display_name":"redis","cluster_id":"c2","kinds":["redis"],"#,
+                    r#""agents_down":0,"nodes":5,"nodes_down":0,"shards":0}]"#
                 )
             );
         }

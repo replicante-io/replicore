@@ -91,7 +91,8 @@ impl Handler {
         self.emit_snapshots(&discovery.cluster_id, snapshot);
         self.refresh_discovery(discovery.clone())?;
         self.fetcher.process(discovery.clone(), lock.watch());
-        self.aggregator.process(discovery.cluster_id, lock.watch());
+        self.aggregator.process(discovery, lock.watch())
+            .with_context(|_| ErrorKind::ClusterAggregation)?;
 
         // Done.
         timer.observe_duration();
@@ -151,8 +152,7 @@ impl TaskHandler<ReplicanteQueues> for Handler {
                 if let Err(error) = task.success() {
                     error!(
                         self.logger, "Error while acking successfully processed task";
-                        "error" => ?error
-                        // TODO(stefano): once error_chain is gone: failure_info(&error)
+                        failure_info(&error)
                     );
                 }
             },

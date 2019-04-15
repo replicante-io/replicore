@@ -240,8 +240,10 @@ mod tests {
         fn find_clusters() {
             let mock = Arc::new(MockStore::new());
             let store = Store::mock(Arc::clone(&mock));
-            let cluster1 = ClusterMeta::new("cluster1", "Redis", 44);
-            let cluster2 = ClusterMeta::new("cluster2", "Redis", 44);
+            let mut cluster1 = ClusterMeta::new("cluster1", "Redis");
+            cluster1.nodes = 44;
+            let mut cluster2 = ClusterMeta::new("cluster2", "Redis");
+            cluster2.nodes = 44;
             mock.clusters_meta.lock().expect("Faild to lock")
                 .insert("cluster1".into(), cluster1.clone());
             mock.clusters_meta.lock().expect("Faild to lock")
@@ -254,7 +256,8 @@ mod tests {
         fn found_meta() {
             let mock = Arc::new(MockStore::new());
             let store = Store::mock(Arc::clone(&mock));
-            let meta = ClusterMeta::new("test", "Redis", 44);
+            let mut meta = ClusterMeta::new("test", "Redis");
+            meta.nodes = 44;
             mock.clusters_meta.lock().expect("Faild to lock").insert("test".into(), meta.clone());
             let found = store.cluster_meta("test").unwrap().unwrap();
             assert_eq!(found, meta);
@@ -271,8 +274,10 @@ mod tests {
         fn top_clusters() {
             let mock = Arc::new(MockStore::new());
             let store = Store::mock(Arc::clone(&mock));
-            let cluster1 = ClusterMeta::new("cluster1", "Redis", 44);
-            let cluster2 = ClusterMeta::new("cluster2", "Redis", 4);
+            let mut cluster1 = ClusterMeta::new("cluster1", "Redis");
+            cluster1.nodes = 44;
+            let mut cluster2 = ClusterMeta::new("cluster2", "Redis");
+            cluster2.nodes = 4;
             mock.clusters_meta.lock().expect("Faild to lock")
                 .insert("cluster1".into(), cluster1.clone());
             mock.clusters_meta.lock().expect("Faild to lock")
@@ -285,7 +290,8 @@ mod tests {
         fn persist() {
             let mock = Arc::new(MockStore::new());
             let store = Store::mock(Arc::clone(&mock));
-            let meta = ClusterMeta::new("test", "Redis", 44);
+            let mut meta = ClusterMeta::new("test", "Redis");
+            meta.nodes = 44;
             store.persist_cluster_meta(meta.clone()).unwrap();
             let stored = mock.clusters_meta.lock().expect("Faild to lock")
                 .get("test")

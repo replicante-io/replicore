@@ -32,7 +32,7 @@ impl NodeFetcher {
         let info = client.datastore_info()
             .with_context(|_| ErrorKind::AgentRead("datastore info", client.id().to_string()))?;
         let node = Node::new(info);
-        id_checker.check_or_set_id(&node.cluster_id, &node.node_id)?;
+        id_checker.check_id(&node.cluster_id, &node.node_id)?;
         id_checker.check_or_set_display_name(&node.cluster_display_name, &node.node_id)?;
         let cluster_id = node.cluster_id.clone();
         let node_id = node.node_id.clone();

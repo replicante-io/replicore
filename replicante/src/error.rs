@@ -62,6 +62,9 @@ pub enum ErrorKind {
     #[fail(display = "could not initialise client interface for {}", _0)]
     ClientInit(&'static str),
 
+    #[fail(display = "cloud not generate cluster aggregates")]
+    ClusterAggregation,
+
     #[fail(display = "could not load configuration")]
     ConfigLoad,
 
