@@ -8,7 +8,7 @@
 ///
 ///
 /// # Cluster configuration (future plan)
-/// 
+///
 /// Any configuration option that replicante should apply to the cluster is defined in this model.
 #[derive(Clone, Eq, PartialEq, Hash, Debug, Serialize, Deserialize)]
 pub struct ClusterDiscovery {

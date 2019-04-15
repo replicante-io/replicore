@@ -19,12 +19,12 @@ impl NodeBuilder {
     pub fn changed(self, before: Node, after: Node) -> Event {
         let cluster_id = before.cluster_id.clone();
         let node_id = before.node_id.clone();
-        let data = EventPayload::NodeChanged(NodeChanged {
+        let data = EventPayload::NodeChanged(Box::new(NodeChanged {
             after,
             before,
             cluster_id,
             node_id,
-        });
+        }));
         self.builder.build(data)
     }
 
@@ -35,10 +35,10 @@ impl NodeBuilder {
     }
 }
 
-
 #[cfg(test)]
 mod tests {
     use replicante_agent_models::DatastoreInfo as WireNode;
+
     use super::Event;
     use super::EventPayload;
     use super::Node;
@@ -50,13 +50,15 @@ mod tests {
         let before = Node::new(before);
         let after = WireNode::new("cluster", "TestDB", "test", "4.5.6", None);
         let after = Node::new(after);
-        let event = Event::builder().node().changed(before.clone(), after.clone());
-        let expected = EventPayload::NodeChanged(NodeChanged {
+        let event = Event::builder()
+            .node()
+            .changed(before.clone(), after.clone());
+        let expected = EventPayload::NodeChanged(Box::new(NodeChanged {
             after,
             cluster_id: before.cluster_id.clone(),
             node_id: before.node_id.clone(),
             before,
-        });
+        }));
         assert_eq!(event.payload, expected);
     }
 

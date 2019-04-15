@@ -2,8 +2,8 @@ use super::super::super::Agent;
 use super::super::super::AgentInfo;
 use super::super::super::AgentStatus;
 
-use super::super::AgentNew;
 use super::super::AgentInfoChanged;
+use super::super::AgentNew;
 use super::super::AgentStatusChange;
 use super::super::Event;
 use super::super::EventBuilder;
@@ -48,21 +48,29 @@ impl AgentBuilder {
     pub fn transition(self, before: Agent, after: Agent) -> Event {
         let data = match (before.status, after.status) {
             (AgentStatus::AgentDown(data), new_status) => self.payload_from_after(
-                before.cluster_id, before.host, AgentStatus::AgentDown(data), new_status
+                before.cluster_id,
+                before.host,
+                AgentStatus::AgentDown(data),
+                new_status,
             ),
-            (AgentStatus::NodeDown(data), AgentStatus::Up) => EventPayload::NodeUp(AgentStatusChange {
-                cluster_id: before.cluster_id,
-                host: before.host,
-                before: AgentStatus::NodeDown(data),
-                after: AgentStatus::Up,
-            }),
+            (AgentStatus::NodeDown(data), AgentStatus::Up) => {
+                EventPayload::NodeUp(AgentStatusChange {
+                    after: AgentStatus::Up,
+                    before: AgentStatus::NodeDown(data),
+                    cluster_id: before.cluster_id,
+                    host: before.host,
+                })
+            }
             (AgentStatus::NodeDown(data), new_status) => self.payload_from_after(
-                before.cluster_id, before.host, AgentStatus::NodeDown(data), new_status
+                before.cluster_id,
+                before.host,
+                AgentStatus::NodeDown(data),
+                new_status,
             ),
             (AgentStatus::Up, AgentStatus::Up) => panic!("An agent can't go from UP to UP"),
-            (AgentStatus::Up, new_status) => self.payload_from_after(
-                before.cluster_id, before.host, AgentStatus::Up, new_status
-            ),
+            (AgentStatus::Up, new_status) => {
+                self.payload_from_after(before.cluster_id, before.host, AgentStatus::Up, new_status)
+            }
         };
         self.builder.build(data)
     }
@@ -71,26 +79,30 @@ impl AgentBuilder {
 impl AgentBuilder {
     /// Generate an event payload based on the status we are transitioning to.
     fn payload_from_after(
-        &self, cluster_id: String, host: String, before: AgentStatus, after: AgentStatus
+        &self,
+        cluster_id: String,
+        host: String,
+        before: AgentStatus,
+        after: AgentStatus,
     ) -> EventPayload {
         match after {
             AgentStatus::AgentDown(_) => EventPayload::AgentDown(AgentStatusChange {
+                after,
+                before,
                 cluster_id,
                 host,
-                before,
-                after,
             }),
             AgentStatus::NodeDown(_) => EventPayload::NodeDown(AgentStatusChange {
+                after,
+                before,
                 cluster_id,
                 host,
-                before,
-                after,
             }),
             AgentStatus::Up => EventPayload::AgentUp(AgentStatusChange {
+                after,
+                before,
                 cluster_id,
                 host,
-                before,
-                after,
             }),
         }
     }
@@ -109,11 +121,11 @@ impl AgentInfoBuilder {
 
     /// Build an `EventPayload::AgentInfoChanged` event.
     pub fn changed(self, before: AgentInfo, after: AgentInfo) -> Event {
-        let data = EventPayload::AgentInfoChanged(AgentInfoChanged {
+        let data = EventPayload::AgentInfoChanged(Box::new(AgentInfoChanged {
+            after,
             cluster_id: before.cluster_id.clone(),
             before,
-            after,
-        });
+        }));
         self.builder.build(data)
     }
 
@@ -134,7 +146,9 @@ mod tests {
 
     #[test]
     fn new() {
-        let event = Event::builder().agent().agent_new("cluster".into(), "host".into());
+        let event = Event::builder()
+            .agent()
+            .agent_new("cluster".into(), "host".into());
         let expected = EventPayload::AgentNew(AgentNew {
             cluster_id: "cluster".into(),
             host: "host".into(),
@@ -153,7 +167,9 @@ mod tests {
         fn agent_down_to_agent_down() {
             let after = Agent::new("cluster", "host", AgentStatus::AgentDown("after".into()));
             let before = Agent::new("cluster", "host", AgentStatus::AgentDown("before".into()));
-            let event = Event::builder().agent().transition(before.clone(), after.clone());
+            let event = Event::builder()
+                .agent()
+                .transition(before.clone(), after.clone());
             let expected = EventPayload::AgentDown(AgentStatusChange {
                 cluster_id: "cluster".into(),
                 host: "host".into(),
@@ -167,7 +183,9 @@ mod tests {
         fn agent_down_to_datastore_down() {
             let after = Agent::new("cluster", "host", AgentStatus::NodeDown("after".into()));
             let before = Agent::new("cluster", "host", AgentStatus::AgentDown("before".into()));
-            let event = Event::builder().agent().transition(before.clone(), after.clone());
+            let event = Event::builder()
+                .agent()
+                .transition(before.clone(), after.clone());
             let expected = EventPayload::NodeDown(AgentStatusChange {
                 cluster_id: "cluster".into(),
                 host: "host".into(),
@@ -181,7 +199,9 @@ mod tests {
         fn agent_down_to_up() {
             let after = Agent::new("cluster", "host", AgentStatus::Up);
             let before = Agent::new("cluster", "host", AgentStatus::AgentDown("before".into()));
-            let event = Event::builder().agent().transition(before.clone(), after.clone());
+            let event = Event::builder()
+                .agent()
+                .transition(before.clone(), after.clone());
             let expected = EventPayload::AgentUp(AgentStatusChange {
                 cluster_id: "cluster".into(),
                 host: "host".into(),
@@ -195,7 +215,9 @@ mod tests {
         fn datastore_down_to_agent_down() {
             let after = Agent::new("cluster", "host", AgentStatus::AgentDown("after".into()));
             let before = Agent::new("cluster", "host", AgentStatus::NodeDown("before".into()));
-            let event = Event::builder().agent().transition(before.clone(), after.clone());
+            let event = Event::builder()
+                .agent()
+                .transition(before.clone(), after.clone());
             let expected = EventPayload::AgentDown(AgentStatusChange {
                 cluster_id: "cluster".into(),
                 host: "host".into(),
@@ -209,7 +231,9 @@ mod tests {
         fn datastore_down_to_datastore_down() {
             let after = Agent::new("cluster", "host", AgentStatus::NodeDown("after".into()));
             let before = Agent::new("cluster", "host", AgentStatus::NodeDown("before".into()));
-            let event = Event::builder().agent().transition(before.clone(), after.clone());
+            let event = Event::builder()
+                .agent()
+                .transition(before.clone(), after.clone());
             let expected = EventPayload::NodeDown(AgentStatusChange {
                 cluster_id: "cluster".into(),
                 host: "host".into(),
@@ -223,7 +247,9 @@ mod tests {
         fn datastore_down_to_up() {
             let after = Agent::new("cluster", "host", AgentStatus::Up);
             let before = Agent::new("cluster", "host", AgentStatus::NodeDown("before".into()));
-            let event = Event::builder().agent().transition(before.clone(), after.clone());
+            let event = Event::builder()
+                .agent()
+                .transition(before.clone(), after.clone());
             let expected = EventPayload::NodeUp(AgentStatusChange {
                 cluster_id: "cluster".into(),
                 host: "host".into(),
@@ -237,7 +263,9 @@ mod tests {
         fn up_to_agent_down() {
             let after = Agent::new("cluster", "host", AgentStatus::AgentDown("TEST".into()));
             let before = Agent::new("cluster", "host", AgentStatus::Up);
-            let event = Event::builder().agent().transition(before.clone(), after.clone());
+            let event = Event::builder()
+                .agent()
+                .transition(before.clone(), after.clone());
             let expected = EventPayload::AgentDown(AgentStatusChange {
                 cluster_id: "cluster".into(),
                 host: "host".into(),
@@ -251,7 +279,9 @@ mod tests {
         fn up_to_datastore_down() {
             let after = Agent::new("cluster", "host", AgentStatus::NodeDown("TEST".into()));
             let before = Agent::new("cluster", "host", AgentStatus::Up);
-            let event = Event::builder().agent().transition(before.clone(), after.clone());
+            let event = Event::builder()
+                .agent()
+                .transition(before.clone(), after.clone());
             let expected = EventPayload::NodeDown(AgentStatusChange {
                 cluster_id: "cluster".into(),
                 host: "host".into(),
@@ -273,6 +303,7 @@ mod tests {
     mod info {
         use replicante_agent_models::AgentInfo as WireAgentInfo;
         use replicante_agent_models::AgentVersion;
+
         use super::super::super::super::super::AgentInfo;
         use super::super::AgentInfoChanged;
         use super::Event;
@@ -286,12 +317,15 @@ mod tests {
             let after = AgentVersion::new("1.2.3", "abcdef", "tainted");
             let after = WireAgentInfo::new(after);
             let after = AgentInfo::new("cluster", "host", after);
-            let event = Event::builder().agent().info().changed(before.clone(), after.clone());
-            let expected = EventPayload::AgentInfoChanged(AgentInfoChanged {
-                cluster_id: "cluster".into(),
+            let event = Event::builder()
+                .agent()
+                .info()
+                .changed(before.clone(), after.clone());
+            let expected = EventPayload::AgentInfoChanged(Box::new(AgentInfoChanged {
+                after,
                 before,
-                after
-            });
+                cluster_id: "cluster".into(),
+            }));
             assert_eq!(event.payload, expected);
         }
 

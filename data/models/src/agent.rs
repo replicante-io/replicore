@@ -67,6 +67,7 @@ pub enum AgentStatus {
 mod tests {
     mod agent {
         use serde_json;
+
         use super::super::Agent;
         use super::super::AgentStatus;
 
@@ -74,7 +75,7 @@ mod tests {
         fn from_json() {
             let status = AgentStatus::AgentDown("TEST".into());
             let expected = Agent::new("cluster", "http://node/", status);
-            let payload = 
+            let payload =
                 r#"{"cluster_id":"cluster","host":"http://node/","status":{"AgentDown":"TEST"}}"#;
             let agent: Agent = serde_json::from_str(payload).unwrap();
             assert_eq!(agent, expected);
@@ -93,8 +94,10 @@ mod tests {
 
     mod agent_info {
         use serde_json;
+
         use replicante_agent_models::AgentInfo as WireAgentInfo;
         use replicante_agent_models::AgentVersion as WireAgentVersion;
+
         use super::super::AgentInfo;
 
         #[test]
@@ -126,6 +129,7 @@ mod tests {
 
     mod agent_status {
         use serde_json;
+
         use super::super::AgentStatus;
 
         #[test]

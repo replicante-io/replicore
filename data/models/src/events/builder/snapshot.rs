@@ -4,10 +4,9 @@ use super::super::super::ClusterDiscovery;
 use super::super::super::Node;
 use super::super::super::Shard;
 
-use super::super::EventBuilder;
 use super::super::Event;
+use super::super::EventBuilder;
 use super::super::EventPayload;
-
 
 /// Build `Event`s that belongs to the snapshot family.
 pub struct SnapshotBuilder {

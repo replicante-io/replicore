@@ -74,7 +74,7 @@ pub enum EventPayload {
 
     /// Information about an agent changed.
     #[serde(rename = "AGENT_INFO_CHANGED")]
-    AgentInfoChanged(AgentInfoChanged),
+    AgentInfoChanged(Box<AgentInfoChanged>),
 
     /// Information about an agent was collected for the first time.
     #[serde(rename = "AGENT_INFO_NEW")]
@@ -98,7 +98,7 @@ pub enum EventPayload {
 
     /// A datastore node has changed.
     #[serde(rename = "NODE_CHANGED")]
-    NodeChanged(NodeChanged),
+    NodeChanged(Box<NodeChanged>),
 
     /// A datastore node was found to be down.
     #[serde(rename = "NODE_DOWN")]
@@ -114,7 +114,7 @@ pub enum EventPayload {
 
     /// A shard on a node has changed.
     #[serde(rename = "SHARD_ALLOCATION_CHANGED")]
-    ShardAllocationChanged(ShardAllocationChanged),
+    ShardAllocationChanged(Box<ShardAllocationChanged>),
 
     /// A shard was found for the first time on a node.
     #[serde(rename = "SHARD_ALLOCATION_NEW")]
@@ -223,7 +223,8 @@ mod tests {
         let discovery = ClusterDiscovery::new("test", vec![]);
         let expected = Event::builder()
             .timestamp(Utc.ymd(2014, 7, 8).and_hms_micro(9, 10, 11, 12000))
-            .cluster().cluster_new(discovery);
+            .cluster()
+            .cluster_new(discovery);
         assert_eq!(event, expected);
     }
 
@@ -232,7 +233,8 @@ mod tests {
         let discovery = ClusterDiscovery::new("test", vec![]);
         let event = Event::builder()
             .timestamp(Utc.ymd(2014, 7, 8).and_hms(9, 10, 11))
-            .cluster().cluster_new(discovery);
+            .cluster()
+            .cluster_new(discovery);
         let payload = serde_json::to_string(&event).unwrap();
         let expected = concat!(
             r#"{"event":"CLUSTER_NEW","data":{"cluster_id":"test","nodes":[]},"#,

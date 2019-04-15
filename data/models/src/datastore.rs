@@ -65,7 +65,9 @@ impl Shard {
 mod tests {
     mod node {
         use serde_json;
+
         use replicante_agent_models::DatastoreInfo as WireNode;
+
         use super::super::Node;
 
         #[test]
@@ -95,9 +97,11 @@ mod tests {
 
     mod shard {
         use serde_json;
+
         use replicante_agent_models::CommitOffset;
         use replicante_agent_models::Shard as WireShard;
         use replicante_agent_models::ShardRole;
+
         use super::super::Shard;
 
         #[test]
@@ -108,8 +112,10 @@ mod tests {
             );
             let shard: Shard = serde_json::from_str(payload).unwrap();
             let wire = WireShard::new(
-                "shard", ShardRole::Secondary,
-                Some(CommitOffset::seconds(54)), None
+                "shard",
+                ShardRole::Secondary,
+                Some(CommitOffset::seconds(54)),
+                None,
             );
             let expected = Shard::new("cluster", "node", wire);
             assert_eq!(shard, expected);
@@ -118,8 +124,10 @@ mod tests {
         #[test]
         fn to_json() {
             let wire = WireShard::new(
-                "shard", ShardRole::Secondary,
-                Some(CommitOffset::seconds(54)), None
+                "shard",
+                ShardRole::Secondary,
+                Some(CommitOffset::seconds(54)),
+                None,
             );
             let shard = Shard::new("cluster", "node", wire);
             let payload = serde_json::to_string(&shard).unwrap();
