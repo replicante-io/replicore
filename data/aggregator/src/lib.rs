@@ -1,4 +1,6 @@
 extern crate failure;
+#[macro_use]
+extern crate lazy_static;
 extern crate prometheus;
 #[macro_use]
 extern crate slog;
@@ -19,6 +21,8 @@ mod error;
 mod metrics;
 
 use self::cluster_meta::ClusterMetaAggregator;
+use self::metrics::AGGREGATE_DURATION;
+use self::metrics::AGGREGATE_ERRORS_COUNT;
 
 pub use self::error::Error;
 pub use self::error::ErrorKind;
@@ -41,6 +45,22 @@ impl Aggregator {
     /// If the aggregation process fails due to core-related issues (store errors,
     /// internal logic, ...) the process is aborted and the error propagated.
     pub fn process(
+        &self,
+        discovery: ClusterDiscovery,
+        lock: NonBlockingLockWatcher,
+    ) -> Result<()> {
+        let _timer = AGGREGATE_DURATION.start_timer();
+        self.inner_process(discovery, lock)
+            .map_err(|error| {
+                AGGREGATE_ERRORS_COUNT.inc();
+                error
+            })
+    }
+}
+
+impl Aggregator {
+    /// Wrapped logic to handle error cases only once.
+    pub fn inner_process(
         &self,
         discovery: ClusterDiscovery,
         lock: NonBlockingLockWatcher,

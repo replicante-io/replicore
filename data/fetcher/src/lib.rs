@@ -1,6 +1,5 @@
 extern crate failure;
 extern crate failure_derive;
-
 #[macro_use]
 extern crate lazy_static;
 extern crate prometheus;
@@ -38,6 +37,7 @@ mod shard;
 mod snapshotter;
 
 use self::agent::AgentFetcher;
+use self::metrics::FETCHER_DURATION;
 use self::metrics::FETCHER_ERRORS_COUNT;
 use self::node::NodeFetcher;
 use self::shard::ShardFetcher;
@@ -142,6 +142,7 @@ impl Fetcher {
         let cluster_id = cluster.cluster_id.clone();
         debug!(self.logger, "Refreshing cluster state"; "cluster_id" => &cluster_id);
 
+        let _timer = FETCHER_DURATION.start_timer();
         for node in cluster.nodes {
             // Exit early if lock was lost.
             if !lock.inspect() {
@@ -154,7 +155,7 @@ impl Fetcher {
 
             let result = self.process_target(&cluster_id, &node, &mut id_checker);
             if let Err(error) = result {
-                FETCHER_ERRORS_COUNT.with_label_values(&[&cluster_id]).inc();
+                FETCHER_ERRORS_COUNT.inc();
                 error!(
                     self.logger, "Failed to process cluster node";
                     "cluster_id" => &cluster_id, "node" => node, failure_info(&error)

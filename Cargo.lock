@@ -1779,6 +1779,7 @@ name = "replicante_data_aggregator"
 version = "0.1.0"
 dependencies = [
  "failure 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)",
+ "lazy_static 1.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "prometheus 0.5.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "replicante_coordinator 0.1.0",
  "replicante_data_models 0.2.1",
