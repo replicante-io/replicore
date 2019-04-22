@@ -24,6 +24,7 @@ use super::constants::COLLECTION_DISCOVERIES;
 use super::constants::COLLECTION_EVENTS;
 use super::constants::COLLECTION_NODES;
 use super::constants::COLLECTION_SHARDS;
+use super::document::AgentInfo as AgentInfoDocument;
 use super::legacy::EventWrapper;
 
 /// Scan all documents in a collection.
@@ -60,7 +61,9 @@ impl DataInterface for Data {
 
     fn agents_info(&self) -> Result<Cursor<AgentInfo>> {
         let collection = self.client.db(&self.db).collection(COLLECTION_AGENTS_INFO);
-        scan_collection(collection)
+        let cursor = scan_collection(collection)?
+            .map(|result: Result<AgentInfoDocument>| result.map(AgentInfo::from));
+        Ok(Cursor(Box::new(cursor)))
     }
 
     fn cluster_discoveries(&self) -> Result<Cursor<ClusterDiscovery>> {
@@ -75,8 +78,8 @@ impl DataInterface for Data {
 
     fn events(&self) -> Result<Cursor<Event>> {
         let collection = self.client.db(&self.db).collection(COLLECTION_EVENTS);
-        let cursor = scan_collection(collection)?;
-        let cursor = cursor.map(|result: Result<EventWrapper>| result.map(Event::from));
+        let cursor = scan_collection(collection)?
+            .map(|result: Result<EventWrapper>| result.map(Event::from));
         Ok(Cursor(Box::new(cursor)))
     }
 

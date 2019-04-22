@@ -107,7 +107,9 @@ impl LegacyInterface for Legacy {
             doc! {}
         };
         let collection = self.client.db(&self.db).collection(COLLECTION_EVENTS);
-        find_with_options(collection, filter, options)
+        let cursor = find_with_options(collection, filter, options)?
+            .map(|result: Result<EventWrapper>| result.map(Event::from));
+        Ok(Cursor(Box::new(cursor)))
     }
 
     fn find_clusters(&self, search: String, limit: u8) -> Result<Cursor<ClusterMeta>> {
@@ -135,7 +137,7 @@ impl LegacyInterface for Legacy {
 
     fn persist_event(&self, event: Event) -> Result<()> {
         let collection = self.client.db(&self.db).collection(COLLECTION_EVENTS);
-        let event: EventWrapper = event.into();
+        let event = EventWrapper::from(event);
         let document = bson::to_bson(&event).with_context(|_| ErrorKind::MongoDBBsonEncode)?;
         let document = match document {
             Bson::Document(document) => document,
