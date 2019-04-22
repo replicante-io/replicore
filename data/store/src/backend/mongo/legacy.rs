@@ -1,5 +1,4 @@
 use bson::Bson;
-use bson::UtcDateTime;
 use failure::ResultExt;
 use mongodb::coll::options::FindOptions;
 use mongodb::db::ThreadedDatabase;
@@ -9,7 +8,6 @@ use regex;
 
 use replicante_data_models::ClusterMeta;
 use replicante_data_models::Event;
-use replicante_data_models::EventPayload;
 
 use super::super::super::store::legacy::EventsFilters;
 use super::super::super::store::legacy::EventsOptions;
@@ -25,32 +23,7 @@ use super::constants::COLLECTION_CLUSTER_META;
 use super::constants::COLLECTION_EVENTS;
 use super::constants::EVENTS_FILTER_NOT_SNAPSHOT;
 use super::constants::TOP_CLUSTERS_LIMIT;
-
-/// A wrapper for the `Event` model to allow BSON to encode/decode timestamps correctly.
-#[derive(Clone, Eq, PartialEq, Debug, Serialize, Deserialize)]
-pub struct EventWrapper {
-    #[serde(flatten)]
-    pub payload: EventPayload,
-    pub timestamp: UtcDateTime,
-}
-
-impl From<Event> for EventWrapper {
-    fn from(event: Event) -> EventWrapper {
-        EventWrapper {
-            payload: event.payload,
-            timestamp: UtcDateTime(event.timestamp),
-        }
-    }
-}
-
-impl From<EventWrapper> for Event {
-    fn from(event: EventWrapper) -> Event {
-        Event {
-            payload: event.payload,
-            timestamp: event.timestamp.0,
-        }
-    }
-}
+use super::document::EventDocument;
 
 /// Legacy operations implementation using MongoDB.
 pub struct Legacy {
@@ -108,7 +81,7 @@ impl LegacyInterface for Legacy {
         };
         let collection = self.client.db(&self.db).collection(COLLECTION_EVENTS);
         let cursor = find_with_options(collection, filter, options)?
-            .map(|result: Result<EventWrapper>| result.map(Event::from));
+            .map(|result: Result<EventDocument>| result.map(Event::from));
         Ok(Cursor(Box::new(cursor)))
     }
 
@@ -137,7 +110,7 @@ impl LegacyInterface for Legacy {
 
     fn persist_event(&self, event: Event) -> Result<()> {
         let collection = self.client.db(&self.db).collection(COLLECTION_EVENTS);
-        let event = EventWrapper::from(event);
+        let event = EventDocument::from(event);
         let document = bson::to_bson(&event).with_context(|_| ErrorKind::MongoDBBsonEncode)?;
         let document = match document {
             Bson::Document(document) => document,

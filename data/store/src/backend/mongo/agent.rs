@@ -11,7 +11,7 @@ use super::super::AgentInterface;
 use super::common::find_one;
 use super::constants::COLLECTION_AGENTS;
 use super::constants::COLLECTION_AGENTS_INFO;
-use super::document::AgentInfo as AgentInfoDocument;
+use super::document::AgentInfoDocument;
 
 /// Agent operations implementation using MongoDB.
 pub struct Agent {

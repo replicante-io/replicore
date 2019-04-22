@@ -24,8 +24,10 @@ use super::constants::COLLECTION_DISCOVERIES;
 use super::constants::COLLECTION_EVENTS;
 use super::constants::COLLECTION_NODES;
 use super::constants::COLLECTION_SHARDS;
-use super::document::AgentInfo as AgentInfoDocument;
-use super::legacy::EventWrapper;
+use super::document::AgentInfoDocument;
+use super::document::EventDocument;
+use super::document::NodeDocument;
+use super::document::ShardDocument;
 
 /// Scan all documents in a collection.
 ///
@@ -79,17 +81,21 @@ impl DataInterface for Data {
     fn events(&self) -> Result<Cursor<Event>> {
         let collection = self.client.db(&self.db).collection(COLLECTION_EVENTS);
         let cursor = scan_collection(collection)?
-            .map(|result: Result<EventWrapper>| result.map(Event::from));
+            .map(|result: Result<EventDocument>| result.map(Event::from));
         Ok(Cursor(Box::new(cursor)))
     }
 
     fn nodes(&self) -> Result<Cursor<Node>> {
         let collection = self.client.db(&self.db).collection(COLLECTION_NODES);
-        scan_collection(collection)
+        let cursor = scan_collection(collection)?
+            .map(|result: Result<NodeDocument>| result.map(Node::from));
+        Ok(Cursor(Box::new(cursor)))
     }
 
     fn shards(&self) -> Result<Cursor<Shard>> {
         let collection = self.client.db(&self.db).collection(COLLECTION_SHARDS);
-        scan_collection(collection)
+        let cursor = scan_collection(collection)?
+            .map(|result: Result<ShardDocument>| result.map(Shard::from));
+        Ok(Cursor(Box::new(cursor)))
     }
 }

@@ -10,6 +10,7 @@ use super::super::super::Result;
 use super::super::ShardsInterface;
 use super::common::find;
 use super::constants::COLLECTION_SHARDS;
+use super::document::ShardDocument;
 
 /// Shards operations implementation using MongoDB.
 pub struct Shards {
@@ -27,6 +28,8 @@ impl ShardsInterface for Shards {
     fn iter(&self, attrs: &ShardsAttribures) -> Result<Cursor<Shard>> {
         let filter = doc! {"cluster_id" => &attrs.cluster_id};
         let collection = self.client.db(&self.db).collection(COLLECTION_SHARDS);
-        find(collection, filter)
+        let cursor = find(collection, filter)?
+            .map(|result: Result<ShardDocument>| result.map(Shard::from));
+        Ok(Cursor(Box::new(cursor)))
     }
 }

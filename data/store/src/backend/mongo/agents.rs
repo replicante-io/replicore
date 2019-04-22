@@ -12,7 +12,7 @@ use super::super::AgentsInterface;
 use super::common::find;
 use super::constants::COLLECTION_AGENTS;
 use super::constants::COLLECTION_AGENTS_INFO;
-use super::document::AgentInfo as AgentInfoDocument;
+use super::document::AgentInfoDocument;
 
 /// Agents operations implementation using MongoDB.
 pub struct Agents {

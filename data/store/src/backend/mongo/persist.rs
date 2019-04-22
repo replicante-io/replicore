@@ -19,7 +19,9 @@ use super::constants::COLLECTION_AGENTS_INFO;
 use super::constants::COLLECTION_DISCOVERIES;
 use super::constants::COLLECTION_NODES;
 use super::constants::COLLECTION_SHARDS;
-use super::document::AgentInfo as AgentInfoDocument;
+use super::document::AgentInfoDocument;
+use super::document::NodeDocument;
+use super::document::ShardDocument;
 
 /// Persistence operations implementation using MongoDB.
 pub struct Persist {
@@ -79,6 +81,7 @@ impl PersistInterface for Persist {
             "cluster_id" => &node.cluster_id,
             "node_id" => &node.node_id,
         };
+        let node = NodeDocument::from(node);
         let collection = self.client.db(&self.db).collection(COLLECTION_NODES);
         let document = bson::to_bson(&node).with_context(|_| ErrorKind::MongoDBBsonEncode)?;
         let document = match document {
@@ -94,6 +97,7 @@ impl PersistInterface for Persist {
             "node_id" => &shard.node_id,
             "shard_id" => &shard.shard_id,
         };
+        let shard = ShardDocument::from(shard);
         let collection = self.client.db(&self.db).collection(COLLECTION_SHARDS);
         let document = bson::to_bson(&shard).with_context(|_| ErrorKind::MongoDBBsonEncode)?;
         let document = match document {

@@ -9,6 +9,7 @@ use super::super::super::Result;
 use super::super::NodeInterface;
 use super::common::find_one;
 use super::constants::COLLECTION_NODES;
+use super::document::NodeDocument;
 
 /// Node operations implementation using MongoDB.
 pub struct Node {
@@ -29,6 +30,7 @@ impl NodeInterface for Node {
             "node_id" => &attrs.node_id,
         };
         let collection = self.client.db(&self.db).collection(COLLECTION_NODES);
-        find_one(collection, filter)
+        let document: Option<NodeDocument> = find_one(collection, filter)?;
+        Ok(document.map(NodeModel::from))
     }
 }

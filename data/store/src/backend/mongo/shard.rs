@@ -9,6 +9,7 @@ use super::super::super::Result;
 use super::super::ShardInterface;
 use super::common::find_one;
 use super::constants::COLLECTION_SHARDS;
+use super::document::ShardDocument;
 
 /// Shard operations implementation using MongoDB.
 pub struct Shard {
@@ -30,6 +31,7 @@ impl ShardInterface for Shard {
             "shard_id" => &attrs.shard_id,
         };
         let collection = self.client.db(&self.db).collection(COLLECTION_SHARDS);
-        find_one(collection, filter)
+        let document: Option<ShardDocument> = find_one(collection, filter)?;
+        Ok(document.map(ShardModel::from))
     }
 }
