@@ -9,9 +9,9 @@ use iron::Set;
 use iron::status;
 use iron_json_response::JsonResponse;
 
-use replicante_data_store::EventsFilters;
-use replicante_data_store::EventsOptions;
-use replicante_data_store::Store;
+use replicante_data_store::store::legacy::EventsFilters;
+use replicante_data_store::store::legacy::EventsOptions;
+use replicante_data_store::store::Store;
 
 use super::super::super::interfaces::api::APIRoot;
 use super::super::super::interfaces::Interfaces;
@@ -30,7 +30,9 @@ impl Handler for Events {
         let mut options = EventsOptions::default();
         options.limit = Some(RECENT_EVENTS_LIMIT);
         options.reverse = true;
-        let iter = self.store.events(EventsFilters::all(), options)
+        let iter = self.store
+            .legacy()
+            .events(EventsFilters::all(), options)
             .with_context(|_| ErrorKind::PrimaryStoreQuery("events"))
             .map_err(Error::from)?;
         let mut events = Vec::new();

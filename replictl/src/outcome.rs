@@ -1,13 +1,13 @@
 use slog::Logger;
 
-use replicante_data_store::ValidationResult;
+use replicante_data_store::admin::ValidationResult;
 
 
 const GROUP_PERF_ABUSE: &str = "perf/abuse";
 
 
 /// Collection of outcomes for a set of checks.
-#[derive(Clone, Default, Eq, PartialEq, Ord, PartialOrd, Hash, Debug)]
+#[derive(Clone, Default, Eq, PartialEq, Hash, Debug)]
 pub struct Outcomes {
     errors: Vec<Error>,
     errors_count: u64,
@@ -60,7 +60,7 @@ impl Outcomes {
 ///
 /// Errors are issues that will prevent replicante from working correctly
 /// and must be fixed for the system to behave as expected.
-#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug)]
+#[derive(Clone, Eq, PartialEq, Hash, Debug)]
 pub enum Error {
     /// An error was encountered while cheking the system.
     GenericError(String),
@@ -109,7 +109,7 @@ impl Error {
 ///
 /// Warnings are issues that will NOT prevent replicante from working correctly
 /// but may lead to poor performance, instability, or other similar risk.
-#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug)]
+#[derive(Clone, Eq, PartialEq, Hash, Debug)]
 pub enum Warning {
     /// A configuration option is below the suggested threshold.
     ///

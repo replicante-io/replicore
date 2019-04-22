@@ -3,7 +3,7 @@ use prometheus::Registry;
 use slog::Logger;
 
 use replicante_coordinator::Coordinator;
-use replicante_data_store::Store;
+use replicante_data_store::store::Store;
 use replicante_streams_events::EventsStream;
 
 use super::ErrorKind;
@@ -48,7 +48,7 @@ impl Interfaces {
         let coordinator = Coordinator::new(config.coordinator.clone(), logger.clone())
             .with_context(|_| ErrorKind::InterfaceInit("coordinator"))?;
         let api = API::new(config.api.clone(), coordinator.clone(), logger.clone(), &metrics);
-        let store = Store::new(config.storage.clone(), logger.clone())
+        let store = Store::make(config.storage.clone(), logger.clone())
             .with_context(|_| ErrorKind::ClientInit("store"))?;
         let streams = Streams::new(config, logger.clone(), store.clone())?;
         let tasks = Tasks::new(config.tasks.clone())
@@ -70,9 +70,9 @@ impl Interfaces {
     /// Metrics that fail to register are logged and ignored.
     pub fn register_metrics(logger: &Logger, registry: &Registry) {
         ::replicante_coordinator::register_metrics(logger, registry);
+        ::replicante_data_store::register_metrics(logger, registry);
         ::replicante_tasks::register_metrics(logger, registry);
         EventsStream::register_metrics(logger, registry);
-        Store::register_metrics(logger, registry);
         self::api::register_metrics(logger, registry);
         self::metrics::register_metrics(logger, registry);
     }
@@ -118,7 +118,7 @@ impl Streams {
 pub struct MockInterfaces {
     pub coordinator: ::replicante_coordinator::mock::MockCoordinator,
     pub events: ::std::sync::Arc<::replicante_streams_events::mock::MockEvents>,
-    pub store: ::std::sync::Arc<::replicante_data_store::mock::MockStore>,
+    pub store: ::replicante_data_store::mock::Mock,
     pub tasks: ::std::sync::Arc<super::tasks::MockTasks>,
 }
 
@@ -147,9 +147,8 @@ impl Interfaces {
         let mock_events = ::std::sync::Arc::new(mock_events);
         let events = ::replicante_streams_events::mock::MockEvents::mock(mock_events.clone());
 
-        let mock_store = ::replicante_data_store::mock::MockStore::new();
-        let mock_store = ::std::sync::Arc::new(mock_store);
-        let store = Store::mock(mock_store.clone());
+        let mock_store = ::replicante_data_store::mock::Mock::default();
+        let store = mock_store.store();
         let tasks = ::std::sync::Arc::new(super::tasks::MockTasks::new());
 
         // Wrap things up.

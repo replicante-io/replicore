@@ -13,4 +13,5 @@ db.shards.createIndex({cluster_id: 1, node_id: 1, shard_id: 1}, {unique: true});
 db.events.createIndex({timestamp: 1}, {expireAfterSeconds: 1209600});
 
 // Indexes for performance reasons.
-db.clusters_meta.createIndex({nodes: -1, cluster_id: 1});
+db.clusters_meta.createIndex({cluster_display_name: 1});
+db.clusters_meta.createIndex({shards: -1, nodes: -1, cluster_id: 1});

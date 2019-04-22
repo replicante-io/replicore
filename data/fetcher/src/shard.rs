@@ -4,7 +4,7 @@ use replicante_agent_client::Client;
 use replicante_data_models::Event;
 use replicante_data_models::Shard;
 
-use replicante_data_store::Store;
+use replicante_data_store::store::Store;
 use replicante_streams_events::EventsStream;
 
 use super::Error;
@@ -43,7 +43,7 @@ impl ShardFetcher {
         let cluster_id = shard.cluster_id.clone();
         let node_id = shard.node_id.clone();
         let shard_id = shard.shard_id.clone();
-        match self.store.shard(cluster_id.clone(), node_id.clone(), shard_id.clone()) {
+        match self.store.shard(cluster_id.clone(), node_id.clone(), shard_id.clone()).get() {
             Err(error) => Err(error)
                 .with_context(|_| ErrorKind::StoreRead("shard"))
                 .map_err(Error::from),
@@ -66,7 +66,9 @@ impl ShardFetcher {
         }
 
         // Persist the model so the latest offset and lag information are available.
-        self.store.persist_shard(shard)
+        self.store
+            .persist()
+            .shard(shard)
             .with_context(|_| ErrorKind::StoreWrite("shard update")).map_err(Error::from)
     }
 
@@ -74,7 +76,9 @@ impl ShardFetcher {
         let event = Event::builder().shard().shard_allocation_new(shard.clone());
         let code = event.code();
         self.events.emit(event).with_context(|_| ErrorKind::EventEmit(code))?;
-        self.store.persist_shard(shard)
+        self.store
+            .persist()
+            .shard(shard)
             .with_context(|_| ErrorKind::StoreWrite("new shard")).map_err(Error::from)
     }
 

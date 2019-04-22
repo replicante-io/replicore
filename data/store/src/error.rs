@@ -4,7 +4,6 @@ use failure::Backtrace;
 use failure::Context;
 use failure::Fail;
 
-
 /// Error information returned by functions in case of errors.
 #[derive(Debug)]
 pub struct Error(Context<ErrorKind>);
@@ -43,12 +42,11 @@ impl fmt::Display for Error {
     }
 }
 
-
 /// Exhaustive list of possible errors emitted by this crate.
 #[derive(Debug, Fail)]
 pub enum ErrorKind {
-    #[fail(display = "mock {} not yet implemented", _0)]
-    MockNotYetImplemented(&'static str),
+    #[fail(display = "found invalid record with id '{}'", _0)]
+    InvalidRecord(String),
 
     #[fail(display = "failed to connect to MongoDB URI '{}'", _0)]
     MongoDBConnect(String),
@@ -64,11 +62,7 @@ pub enum ErrorKind {
 
     #[fail(display = "MongoDB {} operation failed", _0)]
     MongoDBOperation(&'static str),
-
-    #[fail(display = "unable to parse model with id '{}': {}", _0, _1)]
-    UnableToParseModel(String, String),
 }
-
 
 /// Short form alias for functions returning `Error`s.
 pub type Result<T> = ::std::result::Result<T, Error>;

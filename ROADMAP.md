@@ -1,5 +1,5 @@
 ## 0.3.0 - Introspection
-- Mark and sweep agent, node, and shard models.
+- Improve data consistency in cases where data is unavailable.
 - Graceful shutdown.
 - Sentry integration.
 - Trace agent discovery.

@@ -5,7 +5,7 @@ use clap::SubCommand;
 use failure::ResultExt;
 
 use replicante::Config;
-use replicante_data_store::Store;
+use replicante_data_store::store::Store;
 
 use replicante_streams_events::EventsStream;
 use replicante_streams_events::ScanFilters;
@@ -54,7 +54,7 @@ pub fn events<'a>(args: &ArgMatches<'a>, interfaces: &Interfaces) -> Result<()> 
     let config = args.value_of("config").unwrap();
     let config = Config::from_file(config)
         .with_context(|_| ErrorKind::ConfigLoad)?;
-    let store = Store::new(config.storage, logger.clone())
+    let store = Store::make(config.storage, logger.clone())
         .with_context(|_| ErrorKind::ClientInit("store"))?;
     let stream = EventsStream::new(config.events.stream, logger.clone(), store);
 

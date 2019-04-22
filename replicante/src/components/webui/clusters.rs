@@ -10,7 +10,7 @@ use iron::status;
 use iron_json_response::JsonResponse;
 use router::Router;
 
-use replicante_data_store::Store;
+use replicante_data_store::store::Store;
 
 use super::super::super::interfaces::api::APIRoot;
 use super::super::super::interfaces::Interfaces;
@@ -32,11 +32,20 @@ impl Handler for Find {
             .expect("Iron Router extension not found")
             .find("query")
             .unwrap_or("");
-        let clusters = self.store.find_clusters(query, FIND_CLUSTERS_LIMIT)
+        let clusters = self.store
+            .legacy()
+            .find_clusters(query.to_string(), FIND_CLUSTERS_LIMIT)
             .with_context(|_| ErrorKind::PrimaryStoreQuery("find_clusters"))
             .map_err(Error::from)?;
+        let mut response = Vec::new();
+        for cluster in clusters {
+            let cluster = cluster
+                .with_context(|_| ErrorKind::PrimaryStoreQuery("find_clusters"))
+                .map_err(Error::from)?;
+            response.push(cluster);
+        }
         let mut resp = Response::new();
-        resp.set_mut(JsonResponse::json(clusters)).set_mut(status::Ok);
+        resp.set_mut(JsonResponse::json(response)).set_mut(status::Ok);
         Ok(resp)
     }
 }
@@ -59,11 +68,20 @@ pub struct Top {
 
 impl Handler for Top {
     fn handle(&self, _: &mut Request) -> IronResult<Response> {
-        let clusters = self.store.top_clusters()
+        let clusters = self.store
+            .legacy()
+            .top_clusters()
             .with_context(|_| ErrorKind::PrimaryStoreQuery("top_clusters"))
             .map_err(Error::from)?;
+        let mut response = Vec::new();
+        for cluster in clusters {
+            let cluster = cluster
+                .with_context(|_| ErrorKind::PrimaryStoreQuery("top_clusters"))
+                .map_err(Error::from)?;
+            response.push(cluster);
+        }
         let mut resp = Response::new();
-        resp.set_mut(JsonResponse::json(clusters)).set_mut(status::Ok);
+        resp.set_mut(JsonResponse::json(response)).set_mut(status::Ok);
         Ok(resp)
     }
 }
@@ -82,8 +100,6 @@ impl Top {
 #[cfg(test)]
 mod tests {
     mod top {
-        use std::sync::Arc;
-
         use iron::Chain;
         use iron::Headers;
         use iron_json_response::JsonResponseMiddleware;
@@ -91,26 +107,35 @@ mod tests {
         use iron_test::response;
 
         use replicante_data_models::ClusterMeta;
-        use replicante_data_store::Store;
-        use replicante_data_store::mock::MockStore;
+        use replicante_data_store::mock::Mock as MockStore;
 
         use super::super::Top;
 
         fn mockstore() -> MockStore {
-            let mock_store = MockStore::new();
+            let mock_store = MockStore::default();
             let mut c1 = ClusterMeta::new("c1", "mongo");
             c1.kinds = vec!["mongo".into()];
             c1.nodes = 3;
             let mut c2 = ClusterMeta::new("c2", "redis");
             c2.kinds = vec!["redis".into()];
             c2.nodes = 5;
-            mock_store.clusters_meta.lock().unwrap().insert("c1".into(), c1);
-            mock_store.clusters_meta.lock().unwrap().insert("c2".into(), c2);
+            mock_store
+                .state
+                .lock()
+                .unwrap()
+                .clusters_meta
+                .insert("c1".into(), c1);
+            mock_store
+                .state
+                .lock()
+                .unwrap()
+                .clusters_meta
+                .insert("c2".into(), c2);
             mock_store
         }
 
-        fn handler(store: &Arc<MockStore>) -> Chain {
-            let store = Store::mock(Arc::clone(&store));
+        fn handler(mock: &MockStore) -> Chain {
+            let store = mock.store();
             let handler = Top { store };
             let mut handler = Chain::new(handler);
             handler.link_after(JsonResponseMiddleware::new());
@@ -119,20 +144,18 @@ mod tests {
 
         #[test]
         fn get_top_clusers() {
-            let mock_store = Arc::new(mockstore());
+            let mock_store = mockstore();
             let handler = handler(&mock_store);
             let response = request::get("http://host:16016/", Headers::new(), &handler).unwrap();
             let result_body = response::extract_body_to_bytes(response);
-            let result_body = String::from_utf8(result_body).unwrap();
-            assert_eq!(
-                result_body,
-                concat!(
-                    r#"[{"cluster_display_name":"mongo","cluster_id":"c1","kinds":["mongo"],"#,
-                    r#""agents_down":0,"nodes":3,"nodes_down":0,"shards":0},"#,
-                    r#"{"cluster_display_name":"redis","cluster_id":"c2","kinds":["redis"],"#,
-                    r#""agents_down":0,"nodes":5,"nodes_down":0,"shards":0}]"#
-                )
-            );
+            let result: Vec<ClusterMeta> = serde_json::from_slice(&result_body).unwrap();
+            let mut c1 = ClusterMeta::new("c1", "mongo");
+            c1.kinds = vec!["mongo".into()];
+            c1.nodes = 3;
+            let mut c2 = ClusterMeta::new("c2", "redis");
+            c2.kinds = vec!["redis".into()];
+            c2.nodes = 5;
+            assert_eq!(result, vec![c2, c1]);
         }
     }
 }

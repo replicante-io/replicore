@@ -10,7 +10,7 @@ use replicante_data_fetcher::Fetcher;
 use replicante_data_fetcher::Snapshotter;
 use replicante_data_models::ClusterDiscovery;
 use replicante_data_models::Event;
-use replicante_data_store::Store;
+use replicante_data_store::store::Store;
 use replicante_streams_events::EventsStream;
 use replicante_tasks::TaskHandler;
 use replicante_util_failure::failure_info;
@@ -87,8 +87,9 @@ impl Handler {
         };
 
         // Refresh cluster state.
-        let timer = REFRESH_DURATION.with_label_values(&[&discovery.cluster_id]).start_timer();
-        self.emit_snapshots(&discovery.cluster_id, snapshot);
+        let cluster_id = discovery.cluster_id.clone();
+        let timer = REFRESH_DURATION.with_label_values(&[&cluster_id]).start_timer();
+        self.emit_snapshots(&cluster_id, snapshot);
         self.refresh_discovery(discovery.clone())?;
         self.fetcher.process(discovery.clone(), lock.watch());
         self.aggregator.process(discovery, lock.watch())
@@ -97,6 +98,7 @@ impl Handler {
         // Done.
         timer.observe_duration();
         lock.release().context(ErrorKind::Coordination)?;
+        info!(self.logger, "Cluster state refresh completed"; "cluster_id" => cluster_id);
         Ok(())
     }
 
@@ -120,7 +122,9 @@ impl Handler {
     /// Refresh is performed based on the current state or luck of state.
     /// This method emits events as needed (and before the state is updated).
     fn refresh_discovery(&self, discovery: ClusterDiscovery) -> Result<()> {
-        let current_state = self.store.cluster_discovery(discovery.cluster_id.clone())
+        let current_state = self.store
+            .cluster(discovery.cluster_id.clone())
+            .discovery()
             .with_context(|_| ErrorKind::PrimaryStorePersist("cluster_discovery"))?;
         if let Some(current_state) = current_state {
             if discovery == current_state {
@@ -139,7 +143,8 @@ impl Handler {
                 .with_context(|_| ErrorKind::EventsStreamEmit(event_code))?;
         }
         self.store
-            .persist_discovery(discovery)
+            .persist()
+            .cluster_discovery(discovery)
             .with_context(|_| ErrorKind::PrimaryStorePersist("cluster_discovery"))?;
         Ok(())
     }

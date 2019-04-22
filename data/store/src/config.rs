@@ -1,5 +1,5 @@
 /// Persisted storage configuration options.
-#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
+#[derive(Clone, Eq, PartialEq, Hash, Debug, Serialize, Deserialize)]
 #[serde(tag = "backend", content = "options", deny_unknown_fields)]
 pub enum Config {
     /// Persist data in mongodb (recommended, default).
@@ -13,10 +13,8 @@ impl Default for Config {
     }
 }
 
-
 /// MongoDB storage configuration options.
-#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
-#[serde(deny_unknown_fields)]
+#[derive(Clone, Eq, PartialEq, Hash, Debug, Serialize, Deserialize)]
 pub struct MongoDBConfig {
     #[serde(default = "MongoDBConfig::default_db")]
     pub db: String,
@@ -35,6 +33,10 @@ impl Default for MongoDBConfig {
 }
 
 impl MongoDBConfig {
-    fn default_db() -> String { String::from("replicore") }
-    fn default_uri() -> String { String::from("mongodb://localhost:27017/") }
+    fn default_db() -> String {
+        String::from("replicore")
+    }
+    fn default_uri() -> String {
+        String::from("mongodb://localhost:27017/")
+    }
 }

@@ -1,4 +1,5 @@
 extern crate chrono;
+extern crate semver;
 extern crate serde;
 #[macro_use]
 extern crate serde_derive;
@@ -11,6 +12,7 @@ mod agent;
 mod cluster;
 mod datastore;
 
+pub mod admin;
 pub mod api;
 pub mod events;
 

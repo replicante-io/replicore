@@ -65,6 +65,7 @@ git2 = "^0.8.0"
 
 [dev-dependencies]
 iron-test = "^0.6.0"
+replicante_data_store = { path = "../data/store", features = ["with_test_support"] }
 
 
 [features]

@@ -1,13 +1,13 @@
 # Improving errors
-Status: BLOCKED (error-chain; warnings)
+Status: BLOCKED (warnings)
 Reason: More useful error messages and better error handling code.
-Bloking something: NO
+Blocking something: NO
 
 
 ## Task
 There are a couple of issues with the way errors are in replicante:
 
-  * Nested error are too lengthty to log.
+  * Nested error are too lengthy to log.
   * Top errors are often too generic.
 
 Improvements are needed overall but are a large task so maybe delay to later?

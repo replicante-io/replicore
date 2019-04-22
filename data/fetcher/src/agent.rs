@@ -5,7 +5,7 @@ use replicante_data_models::Agent;
 use replicante_data_models::AgentInfo;
 use replicante_data_models::AgentStatus;
 use replicante_data_models::Event;
-use replicante_data_store::Store;
+use replicante_data_store::store::Store;
 use replicante_streams_events::EventsStream;
 
 use super::Error;
@@ -28,7 +28,7 @@ impl AgentFetcher {
     }
 
     pub(crate) fn process_agent(&self, agent: Agent) -> Result<()> {
-        match self.store.agent(agent.cluster_id.clone(), agent.host.clone()) {
+        match self.store.agent(agent.cluster_id.clone(), agent.host.clone()).get() {
             Err(error) => Err(error).with_context(|_| ErrorKind::StoreRead("agent"))
                 .map_err(Error::from),
             Ok(None) => self.process_agent_new(agent),
@@ -42,10 +42,11 @@ impl AgentFetcher {
         cluster_id: String,
         node: String,
     ) -> Result<()> {
-        let info = client.agent_info()
+        let info = client
+            .agent_info()
             .with_context(|_| ErrorKind::AgentRead("agent info", client.id().to_string()))?;
         let info = AgentInfo::new(cluster_id, node, info);
-        match self.store.agent_info(info.cluster_id.clone(), info.host.clone()) {
+        match self.store.agent(info.cluster_id.clone(), info.host.clone()).info() {
             Err(error) => Err(error).with_context(|_| ErrorKind::StoreRead("agent info"))
                 .map_err(Error::from),
             Ok(None) => self.process_agent_info_new(info),
@@ -64,8 +65,11 @@ impl AgentFetcher {
             let code = event.code();
             self.events.emit(event).with_context(|_| ErrorKind::EventEmit(code))?;
         }
-        self.store.persist_agent(agent)
-            .with_context(|_| ErrorKind::StoreWrite("agent update")).map_err(Error::from)
+        self.store
+            .persist()
+            .agent(agent)
+            .with_context(|_| ErrorKind::StoreWrite("agent update"))
+            .map_err(Error::from)
     }
 
     fn process_agent_new(&self, agent: Agent) -> Result<()> {
@@ -81,9 +85,11 @@ impl AgentFetcher {
         let event = Event::builder().agent().transition(before, agent.clone());
         let code = event.code();
         self.events.emit(event).with_context(|_| ErrorKind::EventEmit(code))?;
-
-        self.store.persist_agent(agent)
-            .with_context(|_| ErrorKind::StoreWrite("new agent")).map_err(Error::from)
+        self.store
+            .persist()
+            .agent(agent)
+            .with_context(|_| ErrorKind::StoreWrite("new agent"))
+            .map_err(Error::from)
     }
 
     fn process_agent_info_existing(&self, agent: AgentInfo, old: AgentInfo) -> Result<()> {
@@ -93,15 +99,21 @@ impl AgentFetcher {
         let event = Event::builder().agent().info().changed(old, agent.clone());
         let code = event.code();
         self.events.emit(event).with_context(|_| ErrorKind::EventEmit(code))?;
-        self.store.persist_agent_info(agent)
-            .with_context(|_| ErrorKind::StoreWrite("agent info update")).map_err(Error::from)
+        self.store
+            .persist()
+            .agent_info(agent)
+            .with_context(|_| ErrorKind::StoreWrite("agent info update"))
+            .map_err(Error::from)
     }
 
     fn process_agent_info_new(&self, agent: AgentInfo) -> Result<()> {
         let event = Event::builder().agent().info().info_new(agent.clone());
         let code = event.code();
         self.events.emit(event).with_context(|_| ErrorKind::EventEmit(code))?;
-        self.store.persist_agent_info(agent)
-            .with_context(|_| ErrorKind::StoreWrite("new agent info")).map_err(Error::from)
+        self.store
+            .persist()
+            .agent_info(agent)
+            .with_context(|_| ErrorKind::StoreWrite("new agent info"))
+            .map_err(Error::from)
     }
 }

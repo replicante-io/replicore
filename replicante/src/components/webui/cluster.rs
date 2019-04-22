@@ -10,7 +10,7 @@ use iron::status;
 use iron_json_response::JsonResponse;
 use router::Router;
 
-use replicante_data_store::Store;
+use replicante_data_store::store::Store;
 
 use super::super::super::interfaces::api::APIRoot;
 use super::super::super::interfaces::Interfaces;
@@ -30,7 +30,9 @@ impl Handler for Discovery {
             .map(String::from)
             .ok_or_else(|| ErrorKind::APIRequestParameterNotFound("cluster"))
             .map_err(Error::from)?;
-        let discovery = self.store.cluster_discovery(cluster.clone())
+        let discovery = self.store
+            .cluster(cluster.clone())
+            .discovery()
             .with_context(|_| ErrorKind::PrimaryStoreQuery("cluster_discovery"))
             .map_err(Error::from)?
             .ok_or_else(|| ErrorKind::ModelNotFound("cluster_discovery", cluster))
@@ -62,7 +64,9 @@ impl Handler for Meta {
             .map(String::from)
             .ok_or_else(|| ErrorKind::APIRequestParameterNotFound("cluster"))
             .map_err(Error::from)?;
-        let meta = self.store.cluster_meta(cluster.clone())
+        let meta = self.store
+            .legacy()
+            .cluster_meta(cluster.clone())
             .with_context(|_| ErrorKind::PrimaryStoreQuery("cluster_meta"))
             .map_err(Error::from)?
             .ok_or_else(|| ErrorKind::ModelNotFound("cluster_meta", cluster))

@@ -1,7 +1,8 @@
 [package]
 name = "replicante_data_store"
-version = "0.2.1"
+version = "0.3.0"
 authors = ["Stefano Pogliani <stefano@spogliani.net>"]
+edition = "2018"
 
 description = "Replicante data storage interface"
 documentation = "https://www.replicante.io/docs"
@@ -15,19 +16,21 @@ license = "MIT"
 maintenance = { status = "actively-developed" }
 
 
+[features]
+with_test_support = []
+
+
 [dependencies]
 bson = "=0.13.0"
 chrono = "^0.4.6"
 failure = "^0.1.5"
-failure_derive = "^0.1.5"
 lazy_static = "^1.0.0"
 mongodb = "^0.3.10"
 prometheus = "^0.5.0"
 regex = "^1.0.0"
+semver = { version = "^0.9.0", features = ["serde"] }
 serde = "^1.0.34"
 serde_derive = "^1.0.34"
 slog = "^2.2.0"
 
-replicante_agent_models = { path = "../../common/agent/models" }
 replicante_data_models = { path = "../models" }
-replicante_util_failure = { path = "../../common/util/failure" }

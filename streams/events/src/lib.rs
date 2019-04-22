@@ -18,7 +18,7 @@ use prometheus::Registry;
 use slog::Logger;
 
 use replicante_data_models::Event;
-use replicante_data_store::Store;
+use replicante_data_store::store::Store;
 
 
 mod backend;

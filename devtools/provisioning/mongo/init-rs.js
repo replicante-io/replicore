@@ -12,11 +12,13 @@ if (status.code == 94 /* NotYetInitialized */) {
     sleep(1000);
     print("---> Checking Replica Set status ...");
     status = rs.status();
-    if (status.myState == 1) {
+    if (status.myState === 1) {
       break;
     }
   }
 
+  // Once the pirmary is elected give it time to initialise itself.
+  sleep(1000);
   print("---> Replica Set Ready!");
 } else {
 

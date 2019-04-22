@@ -10,7 +10,7 @@ use replicante_data_models::ClusterDiscovery;
 use replicante_data_models::ClusterMeta;
 use replicante_data_models::Node;
 use replicante_data_models::Shard;
-use replicante_data_store::Store;
+use replicante_data_store::store::Store;
 
 use super::ErrorKind;
 use super::Result;
@@ -58,6 +58,7 @@ impl ClusterMetaAggregator {
             return Err(ErrorKind::ClusterLockLost(cluster_id).into());
         }
         self.store
+            .legacy()
             .persist_cluster_meta(meta)
             .with_context(|_| ErrorKind::StoreWrite("ClusterMeta"))?;
         Ok(())

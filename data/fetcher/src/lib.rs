@@ -23,7 +23,7 @@ use replicante_coordinator::NonBlockingLockWatcher;
 use replicante_data_models::Agent;
 use replicante_data_models::AgentStatus;
 use replicante_data_models::ClusterDiscovery;
-use replicante_data_store::Store;
+use replicante_data_store::store::Store;
 use replicante_streams_events::EventsStream;
 use replicante_util_failure::failure_info;
 use replicante_util_failure::format_fail;

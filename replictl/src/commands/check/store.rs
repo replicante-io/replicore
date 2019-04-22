@@ -3,13 +3,12 @@ use clap::ArgMatches;
 use clap::SubCommand;
 use failure::Fail;
 use failure::ResultExt;
-use prometheus::Registry;
 
 use replicante::Config;
+use replicante_data_store::admin::Admin;
+use replicante_data_store::admin::ValidationResult;
 use replicante_data_store::Cursor;
 use replicante_data_store::ErrorKind as StoreErrorKind;
-use replicante_data_store::ValidationResult;
-use replicante_data_store::Validator;
 use replicante_util_failure::format_fail;
 
 use super::super::super::ErrorKind;
@@ -89,38 +88,40 @@ pub fn data<'a>(args: &ArgMatches<'a>, interfaces: &Interfaces) -> Result<()> {
     let config = args.value_of("config").unwrap();
     let config = Config::from_file(config)
         .with_context(|_| ErrorKind::ConfigLoad)?;
-    let registry = Registry::new();
-    let store = Validator::new(config.storage, logger.clone(), &registry)
+    let admin = Admin::make(config.storage.clone(), logger.clone())
         .with_context(|_| ErrorKind::AdminInit("store"))?;
 
     info!(logger, "Checking records for the '{}' model", MODEL_AGENT);
-    scan_collection(store.agents(), MODEL_AGENT, &mut outcomes, interfaces);
+    scan_collection(admin.data().agents(), MODEL_AGENT, &mut outcomes, interfaces);
     outcomes.report(&logger);
 
     info!(logger, "Checking records for the '{}' model", MODEL_AGENT_INFO);
-    scan_collection(store.agents_info(), MODEL_AGENT_INFO, &mut outcomes, interfaces);
+    scan_collection(admin.data().agents_info(), MODEL_AGENT_INFO, &mut outcomes, interfaces);
     outcomes.report(&logger);
 
     info!(logger, "Checking records for the '{}' model", MODEL_CLUSTER_META);
-    scan_collection(store.clusters_meta(), MODEL_CLUSTER_META, &mut outcomes, interfaces);
+    scan_collection(admin.data().clusters_meta(), MODEL_CLUSTER_META, &mut outcomes, interfaces);
     outcomes.report(&logger);
 
     info!(logger, "Checking records for the '{}' model", MODEL_CLUSTER_DISCOVERY);
     scan_collection(
-        store.cluster_discoveries(), MODEL_CLUSTER_DISCOVERY, &mut outcomes, interfaces
+        admin.data().cluster_discoveries(),
+        MODEL_CLUSTER_DISCOVERY,
+        &mut outcomes,
+        interfaces,
     );
     outcomes.report(&logger);
 
     info!(logger, "Checking records for the '{}' model", MODEL_EVENT);
-    scan_collection(store.events(), MODEL_EVENT, &mut outcomes, interfaces);
+    scan_collection(admin.data().events(), MODEL_EVENT, &mut outcomes, interfaces);
     outcomes.report(&logger);
 
     info!(logger, "Checking records for the '{}' model", MODEL_NODE);
-    scan_collection(store.nodes(), MODEL_NODE, &mut outcomes, interfaces);
+    scan_collection(admin.data().nodes(), MODEL_NODE, &mut outcomes, interfaces);
     outcomes.report(&logger);
 
     info!(logger, "Checking records for the '{}' model", MODEL_SHARD);
-    scan_collection(store.shards(), MODEL_SHARD, &mut outcomes, interfaces);
+    scan_collection(admin.data().shards(), MODEL_SHARD, &mut outcomes, interfaces);
     outcomes.report(&logger);
 
     // Report results.
@@ -152,10 +153,14 @@ fn scan_collection<Model: ::std::fmt::Debug>(
     for item in cursor {
         match item {
             Err(error) => match error.kind() {
-                &StoreErrorKind::UnableToParseModel(ref id, ref msg) =>
+                StoreErrorKind::InvalidRecord(ref id) => {
+                    let cause = format_fail(error.cause().expect(
+                        "primary store ErrorKind::InvalidRecord error must have a cause"
+                    ));
                     outcomes.error(Error::UnableToParseModel(
-                        collection.to_string(), id.to_string(), msg.to_string()
-                    )),
+                        collection.to_string(), id.to_string(), cause
+                    ));
+                }
                 _ => {
                     let error = format_fail(&error);
                     outcomes.error(Error::GenericError(error));
@@ -182,13 +187,12 @@ pub fn schema<'a>(args: &ArgMatches<'a>, interfaces: &Interfaces) -> Result<()> 
     let config = args.value_of("config").unwrap();
     let config = Config::from_file(config)
         .with_context(|_| ErrorKind::ConfigLoad)?;
-    let registry = Registry::new();
-    let store = Validator::new(config.storage, logger.clone(), &registry)
+    let store = Admin::make(config.storage, logger.clone())
         .with_context(|_| ErrorKind::AdminInit("store"))?;
     let mut outcomes = Outcomes::new();
 
     debug!(logger, "Checking schema");
-    match store.schema() {
+    match store.validate().schema() {
         Ok(results) => consume_results(results, &mut outcomes),
         Err(error) => {
             let error = error.context(ErrorKind::CheckFailed("current schema"));
@@ -198,7 +202,7 @@ pub fn schema<'a>(args: &ArgMatches<'a>, interfaces: &Interfaces) -> Result<()> 
     outcomes.report(&logger);
 
     debug!(logger, "Checking indexes");
-    match store.indexes() {
+    match store.validate().indexes() {
         Ok(results) => consume_results(results, &mut outcomes),
         Err(error) => {
             let error = error.context(ErrorKind::CheckFailed("existing indexes"));
@@ -208,7 +212,7 @@ pub fn schema<'a>(args: &ArgMatches<'a>, interfaces: &Interfaces) -> Result<()> 
     outcomes.report(&logger);
 
     debug!(logger, "Checking for removed collections/tables or indexes");
-    match store.removed() {
+    match store.validate().removed_entities() {
         Ok(results) => consume_results(results, &mut outcomes),
         Err(error) => {
             let error = error.context(ErrorKind::CheckFailed("removed collections or indexes"));

@@ -14,7 +14,7 @@ use slog::Logger;
 
 use replicante_coordinator::NonBlockingLockWatcher;
 use replicante_data_models::ClusterDiscovery;
-use replicante_data_store::Store;
+use replicante_data_store::store::Store;
 
 mod cluster_meta;
 mod error;
@@ -71,7 +71,8 @@ impl Aggregator {
         // Visit agents.
         let agents = self
             .store
-            .cluster_agents(cluster_id.clone())
+            .agents(cluster_id.clone())
+            .iter()
             .with_context(|_| ErrorKind::StoreRead("cluster agents"))?;
         for agent in agents {
             let agent = agent.with_context(|_| ErrorKind::StoreRead("agent"))?;
@@ -81,7 +82,8 @@ impl Aggregator {
         // Visit agents info.
         let agents_info = self
             .store
-            .cluster_agents_info(cluster_id.clone())
+            .agents(cluster_id.clone())
+            .iter_info()
             .with_context(|_| ErrorKind::StoreRead("cluster agents info"))?;
         for agent in agents_info {
             let agent = agent.with_context(|_| ErrorKind::StoreRead("agent info"))?;
@@ -91,7 +93,8 @@ impl Aggregator {
         // Visit node records.
         let nodes = self
             .store
-            .cluster_nodes(cluster_id.clone())
+            .nodes(cluster_id.clone())
+            .iter()
             .with_context(|_| ErrorKind::StoreRead("cluster nodes"))?;
         for node in nodes {
             let node = node.with_context(|_| ErrorKind::StoreRead("node"))?;
@@ -101,7 +104,8 @@ impl Aggregator {
         // Visit shards.
         let shards = self
             .store
-            .cluster_shards(cluster_id.clone())
+            .shards(cluster_id.clone())
+            .iter()
             .with_context(|_| ErrorKind::StoreRead("cluster shards"))?;
         for shard in shards {
             let shard = shard.with_context(|_| ErrorKind::StoreRead("shard"))?;

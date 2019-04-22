@@ -2,14 +2,13 @@ use clap::App;
 use clap::ArgMatches;
 use clap::SubCommand;
 use failure::ResultExt;
-use prometheus::Registry;
 use slog::Logger;
 
 use replicante::Config;
 use replicante::ReplicanteQueues;
 use replicante::VERSION as REPLICANTE_VERSION;
 use replicante_coordinator::Admin as CoordinatorAdmin;
-use replicante_data_store::Validator as StoreAdmin;
+use replicante_data_store::admin::Admin as StoreAdmin;
 use replicante_tasks::Admin as TasksAdmin;
 use replicante_util_failure::failure_info;
 
@@ -83,11 +82,11 @@ fn coordinator_version(config: &Config, logger: &Logger) -> Result<()> {
 
 /// Collect version information for the configured primary store.
 fn primary_store_version(config: &Config, logger: &Logger) -> Result<()> {
-    let registry = Registry::new();
-    let version = StoreAdmin::new(config.storage.clone(), logger.clone(), &registry)
+    let version = StoreAdmin::make(config.storage.clone(), logger.clone())
         .with_context(|_| ErrorKind::AdminInit("primary store"))
         .and_then(|store| store.version().with_context(|_| ErrorKind::FetchVersion("store")))
-        .map_err(Error::from);
+        .map_err(Error::from)
+        .map(|v| format!("{} {}", v.tag, v.version));
     println!("Primary Store: {}", value_or_error(logger, "primary store", version));
     Ok(())
 }

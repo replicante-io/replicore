@@ -4,9 +4,9 @@ use failure::ResultExt;
 use slog::Logger;
 
 use replicante_data_models::Event;
-use replicante_data_store::EventsFilters;
-use replicante_data_store::EventsOptions;
-use replicante_data_store::Store;
+use replicante_data_store::store::legacy::EventsFilters;
+use replicante_data_store::store::legacy::EventsOptions;
+use replicante_data_store::store::Store;
 
 use super::super::Error;
 use super::super::ErrorKind;
@@ -32,14 +32,14 @@ impl StoreInterface {
 
 impl StreamInterface for StoreInterface {
     fn emit(&self, event: Event) -> Result<()> {
-        self.store.persist_event(event)
+        self.store.legacy().persist_event(event)
             .with_context(|_| ErrorKind::StoreWrite("event")).map_err(Error::from)
     }
 
     fn scan(&self, filters: ScanFilters, options: ScanOptions) -> Result<Iter> {
         let filters = into_store_filters(filters);
         let options = into_store_options(options);
-        let iter = self.store.events(filters, options)
+        let iter = self.store.legacy().events(filters, options)
             .with_context(|_| ErrorKind::StoreRead("events"))?;
         let iter = iter.map(|event| {
             event.with_context(|_| ErrorKind::StoreRead("event")).map_err(Error::from)

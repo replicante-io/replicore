@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - **BREAKING**: Rename node's `name` to `node_id`.
 - **BREAKING**: Rename shard's `id` to `shard_id`.
 - Move cluster metadata to aggregation pipeline.
+- Reworked primary store interface.
 
 ### Removed
 - **BREAKING**: Removed nonsensical ordering on some models.

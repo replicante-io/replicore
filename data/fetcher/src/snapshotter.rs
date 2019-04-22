@@ -1,7 +1,7 @@
 use failure::ResultExt;
 
 use replicante_data_models::Event;
-use replicante_data_store::Store;
+use replicante_data_store::store::Store;
 use replicante_streams_events::EventsStream;
 
 use super::ErrorKind;
@@ -36,7 +36,10 @@ impl Snapshotter {
 
 impl Snapshotter {
     fn agents(&self) -> Result<()> {
-        let statuses = self.store.cluster_agents(self.cluster.clone())
+        let statuses = self
+            .store
+            .agents(self.cluster.clone())
+            .iter()
             .with_context(|_| ErrorKind::StoreRead("agents statuses"))?;
         for status in statuses {
             let status = status.with_context(|_| ErrorKind::StoreRead("agent status"))?;
@@ -44,7 +47,10 @@ impl Snapshotter {
             let code = event.code();
             self.events.emit(event).with_context(|_| ErrorKind::EventEmit(code))?;
         }
-        let infos = self.store.cluster_agents_info(self.cluster.clone())
+        let infos = self
+            .store
+            .agents(self.cluster.clone())
+            .iter_info()
             .with_context(|_| ErrorKind::StoreRead("agents info"))?;
         for info in infos {
             let info = info.with_context(|_| ErrorKind::StoreRead("agent info"))?;
@@ -56,7 +62,10 @@ impl Snapshotter {
     }
 
     fn discovery(&self) -> Result<()> {
-        let discovery = self.store.cluster_discovery(self.cluster.clone())
+        let discovery = self
+            .store
+            .cluster(self.cluster.clone())
+            .discovery()
             .with_context(|_| ErrorKind::StoreRead("discovery"))?;
         if let Some(discovery) = discovery {
             let event = Event::builder().snapshot().discovery(discovery);
@@ -67,7 +76,10 @@ impl Snapshotter {
     }
 
     fn nodes(&self) -> Result<()> {
-        let nodes = self.store.cluster_nodes(self.cluster.clone())
+        let nodes = self
+            .store
+            .nodes(self.cluster.clone())
+            .iter()
             .with_context(|_| ErrorKind::StoreRead("nodes"))?;
         for node in nodes {
             let node = node.with_context(|_| ErrorKind::StoreRead("node"))?;
@@ -79,7 +91,10 @@ impl Snapshotter {
     }
 
     fn shards(&self) -> Result<()> {
-        let shards = self.store.cluster_shards(self.cluster.clone())
+        let shards = self
+            .store
+            .shards(self.cluster.clone())
+            .iter()
             .with_context(|_| ErrorKind::StoreRead("shards"))?;
         for shard in shards {
             let shard = shard.with_context(|_| ErrorKind::StoreRead("shard"))?;
