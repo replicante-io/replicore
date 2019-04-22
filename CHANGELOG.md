@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - **BREAKING**: Rename incorrectly named v1 API as unstable.
 - **BREAKING**: Rename node's `name` to `node_id`.
 - **BREAKING**: Rename shard's `id` to `shard_id`.
+- Improve data consistency in cases where data is unavailable.
 - Move cluster metadata to aggregation pipeline.
 - Reworked primary store interface.
 

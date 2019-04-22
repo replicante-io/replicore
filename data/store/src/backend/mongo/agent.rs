@@ -11,6 +11,7 @@ use super::super::AgentInterface;
 use super::common::find_one;
 use super::constants::COLLECTION_AGENTS;
 use super::constants::COLLECTION_AGENTS_INFO;
+use super::document::AgentInfo as AgentInfoDocument;
 
 /// Agent operations implementation using MongoDB.
 pub struct Agent {
@@ -40,6 +41,7 @@ impl AgentInterface for Agent {
             "host" => &attrs.host,
         };
         let collection = self.client.db(&self.db).collection(COLLECTION_AGENTS_INFO);
-        find_one(collection, filter)
+        let document: Option<AgentInfoDocument> = find_one(collection, filter)?;
+        Ok(document.map(AgentInfoModel::from))
     }
 }

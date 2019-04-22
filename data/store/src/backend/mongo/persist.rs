@@ -19,6 +19,7 @@ use super::constants::COLLECTION_AGENTS_INFO;
 use super::constants::COLLECTION_DISCOVERIES;
 use super::constants::COLLECTION_NODES;
 use super::constants::COLLECTION_SHARDS;
+use super::document::AgentInfo as AgentInfoDocument;
 
 /// Persistence operations implementation using MongoDB.
 pub struct Persist {
@@ -52,6 +53,7 @@ impl PersistInterface for Persist {
             "cluster_id" => &agent.cluster_id,
             "host" => &agent.host,
         };
+        let agent = AgentInfoDocument::from(agent);
         let collection = self.client.db(&self.db).collection(COLLECTION_AGENTS_INFO);
         let document = bson::to_bson(&agent).with_context(|_| ErrorKind::MongoDBBsonEncode)?;
         let document = match document {

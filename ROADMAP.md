@@ -1,5 +1,4 @@
 ## 0.3.0 - Introspection
-- Improve data consistency in cases where data is unavailable.
 - Graceful shutdown.
 - Sentry integration.
 - Trace agent discovery.

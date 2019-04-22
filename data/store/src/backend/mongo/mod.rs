@@ -30,6 +30,7 @@ mod cluster;
 mod common;
 mod constants;
 mod data;
+mod document;
 mod legacy;
 mod metrics;
 mod node;
