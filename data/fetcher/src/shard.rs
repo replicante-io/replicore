@@ -31,7 +31,6 @@ impl ShardFetcher {
             .with_context(|_| ErrorKind::AgentRead("shards", client.id().to_string()))?;
         for shard in shards.shards {
             let shard = Shard::new(cluster.to_string(), node.to_string(), shard);
-            // TODO(stefano): should an error prevent all following shards from being processed?
             self.process_shard(shard)?;
         }
         Ok(())
@@ -53,11 +52,6 @@ impl ShardFetcher {
     }
 
     fn process_shard_existing(&self, shard: Shard, old: Shard) -> Result<()> {
-        // If the shard is the same (including offset and lag) exit now.
-        if shard == old {
-            return Ok(());
-        }
-
         // If anything other then offset or lag changed emit and event.
         if self.shard_changed(&shard, &old) {
             let event = Event::builder().shard().allocation_changed(old, shard.clone());
@@ -66,6 +60,7 @@ impl ShardFetcher {
         }
 
         // Persist the model so the latest offset and lag information are available.
+        // ALWAYS persist the model, even unchanged, to clear the staleness state.
         self.store
             .persist()
             .shard(shard)

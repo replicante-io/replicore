@@ -91,8 +91,9 @@ impl Handler {
         let timer = REFRESH_DURATION.with_label_values(&[&cluster_id]).start_timer();
         self.emit_snapshots(&cluster_id, snapshot);
         self.refresh_discovery(discovery.clone())?;
-        self.fetcher.process(discovery.clone(), lock.watch());
-        self.aggregator.process(discovery, lock.watch())
+        self.fetcher.fetch(discovery.clone(), lock.watch())
+            .with_context(|_| ErrorKind::ClusterRefresh)?;
+        self.aggregator.aggregate(discovery, lock.watch())
             .with_context(|_| ErrorKind::ClusterAggregation)?;
 
         // Done.

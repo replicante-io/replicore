@@ -97,16 +97,17 @@ impl AdminInterface for Admin {
 ///
 /// # Expected indexes
 ///
-///   * Index on `clusters_meta`: `(nodes: -1, cluster_id: 1)`
+///   * Index on `clusters_meta`: `(shards: -1, nodes: -1, cluster_id: 1)`
 ///   * Unique index on `agents`: `(cluster_id: 1, host: 1)`
 ///   * Unique index on `agents_info`: `(cluster_id: 1, host: 1)`
 ///   * Unique index on `clusters_meta`: `cluster_id: 1`
 ///   * Unique index on `discoveries`: `cluster_id: 1`
 ///   * Unique index on `nodes`: `(cluster_id: 1, node_id: 1)`
-///   * Unique index on `shards`: `(cluster_id: 1, node_id: 1, shard_id: 1)`
+///   * Unique index on `shards`: `(cluster_id: 1, shard_id: 1, node_id: 1)`
 pub struct Store {
     client: Client,
     db: String,
+    logger: Logger,
 }
 
 impl Store {
@@ -116,7 +117,7 @@ impl Store {
         let db = config.db.clone();
         let client = Client::with_uri(&config.uri)
             .with_context(|_| ErrorKind::MongoDBConnect(config.uri.clone()))?;
-        Ok(Store { client, db })
+        Ok(Store { client, db, logger })
     }
 }
 
@@ -132,7 +133,8 @@ impl StoreInterface for Store {
     }
 
     fn cluster(&self) -> ClusterImpl {
-        let cluster = self::cluster::Cluster::new(self.client.clone(), self.db.clone());
+        let cluster =
+            self::cluster::Cluster::new(self.client.clone(), self.db.clone(), self.logger.clone());
         ClusterImpl::new(cluster)
     }
 

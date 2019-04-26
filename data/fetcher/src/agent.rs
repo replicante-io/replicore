@@ -93,12 +93,12 @@ impl AgentFetcher {
     }
 
     fn process_agent_info_existing(&self, agent: AgentInfo, old: AgentInfo) -> Result<()> {
-        if agent == old {
-            return Ok(());
+        if agent != old {
+            let event = Event::builder().agent().info().changed(old, agent.clone());
+            let code = event.code();
+            self.events.emit(event).with_context(|_| ErrorKind::EventEmit(code))?;
         }
-        let event = Event::builder().agent().info().changed(old, agent.clone());
-        let code = event.code();
-        self.events.emit(event).with_context(|_| ErrorKind::EventEmit(code))?;
+        // ALWAYS persist the model, even unchanged, to clear the staleness state.
         self.store
             .persist()
             .agent_info(agent)

@@ -48,14 +48,14 @@ impl NodeFetcher {
 
 impl NodeFetcher {
     fn process_node_existing(&self, node: Node, old: Node) -> Result<()> {
-        if node == old {
-            return Ok(());
+        if node != old {
+            let event = Event::builder().node().changed(old, node.clone());
+            let code = event.code();
+            self.events
+                .emit(event)
+                .with_context(|_| ErrorKind::EventEmit(code))?;
         }
-        let event = Event::builder().node().changed(old, node.clone());
-        let code = event.code();
-        self.events
-            .emit(event)
-            .with_context(|_| ErrorKind::EventEmit(code))?;
+        // ALWAYS persist the model, even unchanged, to clear the staleness state.
         self.store
             .persist()
             .node(node)

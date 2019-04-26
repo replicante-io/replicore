@@ -1,3 +1,4 @@
+use std::collections::HashSet;
 use std::ops::Deref;
 use std::sync::Arc;
 
@@ -16,6 +17,7 @@ use replicante_data_models::Shard;
 use super::admin::ValidationResult;
 use super::store::agent::AgentAttribures;
 use super::store::agents::AgentsAttribures;
+use super::store::agents::AgentsCounts;
 use super::store::cluster::ClusterAttribures;
 use super::store::legacy::EventsFilters;
 use super::store::legacy::EventsOptions;
@@ -23,6 +25,7 @@ use super::store::node::NodeAttribures;
 use super::store::nodes::NodesAttribures;
 use super::store::shard::ShardAttribures;
 use super::store::shards::ShardsAttribures;
+use super::store::shards::ShardsCounts;
 use super::Config;
 use super::Cursor;
 use super::Result;
@@ -106,6 +109,7 @@ impl Deref for AgentImpl {
 ///
 /// See `store::agents::Agents` for descriptions of methods.
 pub trait AgentsInterface: Send + Sync {
+    fn counts(&self, attrs: &AgentsAttribures) -> Result<AgentsCounts>;
     fn iter(&self, attrs: &AgentsAttribures) -> Result<Cursor<Agent>>;
     fn iter_info(&self, attrs: &AgentsAttribures) -> Result<Cursor<AgentInfo>>;
 }
@@ -132,6 +136,7 @@ impl Deref for AgentsImpl {
 /// See `store::cluster::Cluster` for descriptions of methods.
 pub trait ClusterInterface: Send + Sync {
     fn discovery(&self, attrs: &ClusterAttribures) -> Result<Option<ClusterDiscovery>>;
+    fn mark_stale(&self, attrs: &ClusterAttribures) -> Result<()>;
 }
 
 /// Dynamic dispatch all cluster operations to a backend-specific implementation.
@@ -239,6 +244,7 @@ impl Deref for NodeImpl {
 /// See `store::nodes::Nodes` for descriptions of methods.
 pub trait NodesInterface: Send + Sync {
     fn iter(&self, attrs: &NodesAttribures) -> Result<Cursor<Node>>;
+    fn kinds(&self, attrs: &NodesAttribures) -> Result<HashSet<String>>;
 }
 
 /// Dynamic dispatch nodes operations to a backend-specific implementation.
@@ -348,6 +354,7 @@ impl Deref for ShardImpl {
 ///
 /// See `store::shards::Shards` for descriptions of methods.
 pub trait ShardsInterface: Send + Sync {
+    fn counts(&self, attrs: &ShardsAttribures) -> Result<ShardsCounts>;
     fn iter(&self, attrs: &ShardsAttribures) -> Result<Cursor<Shard>>;
 }
 

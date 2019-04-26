@@ -87,8 +87,8 @@ impl DataInterface for Data {
 
     fn nodes(&self) -> Result<Cursor<Node>> {
         let collection = self.client.db(&self.db).collection(COLLECTION_NODES);
-        let cursor = scan_collection(collection)?
-            .map(|result: Result<NodeDocument>| result.map(Node::from));
+        let cursor =
+            scan_collection(collection)?.map(|result: Result<NodeDocument>| result.map(Node::from));
         Ok(Cursor(Box::new(cursor)))
     }
 

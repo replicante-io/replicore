@@ -40,5 +40,7 @@ impl Default for Config {
 }
 
 impl Config {
-    fn default_threads_count() -> u16 { 8 * (::num_cpus::get() as u16) }
+    fn default_threads_count() -> u16 {
+        ::num_cpus::get() as u16
+    }
 }

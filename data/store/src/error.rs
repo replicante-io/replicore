@@ -45,6 +45,9 @@ impl fmt::Display for Error {
 /// Exhaustive list of possible errors emitted by this crate.
 #[derive(Debug, Fail)]
 pub enum ErrorKind {
+    #[fail(display = "unexpected duplicate {} record with id '{}' found", _0, _1)]
+    DuplicateRecord(&'static str, String),
+
     #[fail(display = "found invalid record with id '{}'", _0)]
     InvalidRecord(String),
 
@@ -62,6 +65,9 @@ pub enum ErrorKind {
 
     #[fail(display = "MongoDB {} operation failed", _0)]
     MongoDBOperation(&'static str),
+
+    #[fail(display = "{} record with id '{}' not found", _0, _1)]
+    RecordNotFound(&'static str, String),
 }
 
 /// Short form alias for functions returning `Error`s.

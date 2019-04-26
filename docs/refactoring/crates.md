@@ -21,13 +21,11 @@ Crates marked as `FUTURE` are POSSIBLE things that will be added and not a commi
     * [ ] `aggregator`: aggregated view and events generator (RENAME).
     * [ ] `discovery`: cluster discovery sybsystem (RENAME).
     * [ ] `fetcher`: cluster state refresh and diff (RENAME).
-  * [ ] `common/`: crates shared with agents or other projects (NO CHANGE).
-    * [ ] `models/`: group model-related crates (NEW).
-      * [ ] `agent`: Replicante agent models (RENAME).
-      * [ ] `api`: Replicante Core API request/response models (NEW).
+  * [x] `common/`: crates shared with agents or other projects (NO CHANGE).
   * [x] `devtools/`: development tools and helpers (NO CHANGE).
   * [x] `docs/`: project documentation.
   * [ ] `models/`: crates defining data models only (NEW).
+    * [ ] `api`: Replicante Core API request/response models (FUTURE).
     * [ ] `core`: Replicante Core models (RENAME).
     * `common`: Move `common/models` here??? (UNLIKELY).
   * [ ] `service/`: crates that provide services to replicante core (NEW).

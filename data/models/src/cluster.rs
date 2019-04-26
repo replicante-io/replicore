@@ -39,7 +39,8 @@ pub struct ClusterMeta {
     pub agents_down: i32,
     pub nodes: i32,
     pub nodes_down: i32,
-    pub shards: i32,
+    pub shards_count: i32,
+    pub shards_primaries: i32,
 }
 
 impl ClusterMeta {
@@ -56,7 +57,8 @@ impl ClusterMeta {
             kinds: Vec::new(),
             nodes: 0,
             nodes_down: 0,
-            shards: 0,
+            shards_count: 0,
+            shards_primaries: 0,
         }
     }
 }
@@ -94,19 +96,19 @@ mod tests {
         fn from_json() {
             let payload = concat!(
                 r#"[{"cluster_display_name":"mongo","cluster_id":"c1","kinds":["mongo"],"#,
-                r#""agents_down":0,"nodes":4,"nodes_down":0,"shards":5},"#,
+                r#""agents_down":0,"nodes":4,"nodes_down":0,"shards_count":5,"shards_primaries":0},"#,
                 r#"{"cluster_display_name":"redis","cluster_id":"c2","kinds":["redis"],"#,
-                r#""agents_down":0,"nodes":2,"nodes_down":0,"shards":30}]"#
+                r#""agents_down":0,"nodes":2,"nodes_down":0,"shards_count":30,"shards_primaries":0}]"#
             );
             let clusters: Vec<ClusterMeta> = serde_json::from_str(payload).unwrap();
             let mut c1 = ClusterMeta::new("c1", "mongo");
             c1.kinds = vec!["mongo".into()];
             c1.nodes = 4;
-            c1.shards = 5;
+            c1.shards_count = 5;
             let mut c2 = ClusterMeta::new("c2", "redis");
             c2.kinds = vec!["redis".into()];
             c2.nodes = 2;
-            c2.shards = 30;
+            c2.shards_count = 30;
             let expected = vec![c1, c2];
             assert_eq!(clusters, expected);
         }
@@ -123,9 +125,9 @@ mod tests {
             let payload = serde_json::to_string(&clusters).unwrap();
             let expected = concat!(
                 r#"[{"cluster_display_name":"mongo","cluster_id":"c1","kinds":["mongo"],"#,
-                r#""agents_down":0,"nodes":4,"nodes_down":0,"shards":0},"#,
+                r#""agents_down":0,"nodes":4,"nodes_down":0,"shards_count":0,"shards_primaries":0},"#,
                 r#"{"cluster_display_name":"redis","cluster_id":"c2","kinds":["redis"],"#,
-                r#""agents_down":0,"nodes":2,"nodes_down":0,"shards":0}]"#
+                r#""agents_down":0,"nodes":2,"nodes_down":0,"shards_count":0,"shards_primaries":0}]"#
             );
             assert_eq!(payload, expected);
         }

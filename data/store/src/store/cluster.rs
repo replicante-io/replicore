@@ -18,6 +18,29 @@ impl Cluster {
     pub fn discovery(&self) -> Result<Option<ClusterDiscovery>> {
         self.cluster.discovery(&self.attrs)
     }
+
+    /// Mark the cluster state as stale until the data is updated.
+    ///
+    /// Stale data simply means that some cluster models listed below are marked as stale
+    /// and can't be trusted to reflect the state of the cluster anymore.
+    ///
+    /// The staleness mark is automatically removed once records
+    /// are updated by a cluster refresh operation.
+    ///
+    /// List of models that "go stale":
+    ///
+    ///   * AgentInfo
+    ///   * Node
+    ///   * Shard
+    ///
+    /// # Example
+    /// If an agent goes down the current state of the node can't be determined
+    /// but we still have the state the node was in before the agent failed.
+    /// Instead of deliting this state, which would otherwise make the node
+    /// appear new when it comes back online, we mark it as stale.
+    pub fn mark_stale(&self) -> Result<()> {
+        self.cluster.mark_stale(&self.attrs)
+    }
 }
 
 /// Attributes attached to all cluster-level operations.

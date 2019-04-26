@@ -3,15 +3,53 @@ use failure::Fail;
 use failure::ResultExt;
 use mongodb::coll::options::FindOptions;
 use mongodb::coll::options::UpdateOptions;
+use mongodb::coll::results::UpdateResult;
 use mongodb::coll::Collection;
 use serde::Deserialize;
 
 use super::super::super::Cursor;
+use super::super::super::Error;
 use super::super::super::ErrorKind;
 use super::super::super::Result;
 use super::metrics::MONGODB_OPS_COUNT;
 use super::metrics::MONGODB_OPS_DURATION;
 use super::metrics::MONGODB_OP_ERRORS_COUNT;
+
+/// Perform an [`aggregate`] operation.
+///
+/// [`aggregate`]: https://docs.mongodb.com/manual/reference/method/db.collection.aggregate/
+pub fn aggregate<'de, T>(
+    collection: Collection,
+    pipeline: Vec<OrderedDocument>,
+) -> Result<Cursor<T>>
+where
+    T: Deserialize<'de>,
+{
+    MONGODB_OPS_COUNT.with_label_values(&["aggregate"]).inc();
+    let timer = MONGODB_OPS_DURATION
+        .with_label_values(&["aggregate"])
+        .start_timer();
+    let cursor = collection
+        .aggregate(pipeline, None)
+        .map_err(|error| {
+            MONGODB_OP_ERRORS_COUNT
+                .with_label_values(&["aggregate"])
+                .inc();
+            error
+        })
+        .with_context(|_| ErrorKind::MongoDBOperation("aggregate"))?;
+    timer.observe_duration();
+    let iter = cursor.map(|document| {
+        let document = document.with_context(|_| ErrorKind::MongoDBCursor("aggregate"))?;
+        let id = document
+            .get_object_id("_id")
+            .map(bson::oid::ObjectId::to_hex)
+            .unwrap_or_else(|_| "<NO ID>".into());
+        bson::from_bson::<T>(bson::Bson::Document(document))
+            .map_err(|error| error.context(ErrorKind::InvalidRecord(id)).into())
+    });
+    Ok(Cursor(Box::new(iter)))
+}
 
 /// Perform a [`find`] operation.
 ///
@@ -144,4 +182,28 @@ pub fn replace_one(
         })
         .with_context(|_| ErrorKind::MongoDBOperation("replaceOne"))?;
     Ok(())
+}
+
+/// Perform an [`updateMany`] operation.
+///
+/// [`updateMany`]: https://docs.mongodb.com/manual/reference/method/db.collection.updateMany/
+pub fn update_many(
+    collection: Collection,
+    filter: OrderedDocument,
+    update: OrderedDocument,
+) -> Result<UpdateResult> {
+    MONGODB_OPS_COUNT.with_label_values(&["updateMany"]).inc();
+    let _timer = MONGODB_OPS_DURATION
+        .with_label_values(&["updateMany"])
+        .start_timer();
+    collection
+        .update_many(filter, update, None)
+        .map_err(|error| {
+            MONGODB_OP_ERRORS_COUNT
+                .with_label_values(&["updateMany"])
+                .inc();
+            error
+        })
+        .with_context(|_| ErrorKind::MongoDBOperation("updateMany"))
+        .map_err(Error::from)
 }

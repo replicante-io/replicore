@@ -23,6 +23,13 @@ lazy_static! {
         "SNAPSHOT_NODE",
         "SNAPSHOT_SHARD",
     ]};
+    pub static ref STALE_COLLECTIONS: HashSet<&'static str> = {
+        let mut set = HashSet::new();
+        set.insert(COLLECTION_AGENTS_INFO);
+        set.insert(COLLECTION_NODES);
+        set.insert(COLLECTION_SHARDS);
+        set
+    };
     pub static ref VALIDATE_EXPECTED_COLLECTIONS: HashSet<&'static str> = {
         let mut set = HashSet::new();
         set.insert(COLLECTION_AGENTS);
@@ -83,8 +90,8 @@ lazy_static! {
                 expires: false,
                 key: vec![
                     ("cluster_id".into(), 1),
-                    ("node_id".into(), 1),
                     ("shard_id".into(), 1),
+                    ("node_id".into(), 1),
                 ],
                 unique: true,
             }],

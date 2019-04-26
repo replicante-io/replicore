@@ -44,7 +44,11 @@ impl Aggregator {
     ///
     /// If the aggregation process fails due to core-related issues (store errors,
     /// internal logic, ...) the process is aborted and the error propagated.
-    pub fn process(&self, discovery: ClusterDiscovery, lock: NonBlockingLockWatcher) -> Result<()> {
+    pub fn aggregate(
+        &self,
+        discovery: ClusterDiscovery,
+        lock: NonBlockingLockWatcher,
+    ) -> Result<()> {
         let _timer = AGGREGATE_DURATION.start_timer();
         self.inner_process(discovery, lock).map_err(|error| {
             AGGREGATE_ERRORS_COUNT.inc();
@@ -60,60 +64,22 @@ impl Aggregator {
         discovery: ClusterDiscovery,
         lock: NonBlockingLockWatcher,
     ) -> Result<()> {
-        // Initialise cluster aggregators.
-        let mut meta = ClusterMetaAggregator::new(self.store.clone(), lock);
         let cluster_id = discovery.cluster_id.clone();
         debug!(self.logger, "Aggregating cluster"; "cluster_id" => &cluster_id);
 
-        // Visit the discovery.
-        meta.visit_discovery(&discovery)?;
-
-        // Visit agents.
-        let agents = self
-            .store
-            .agents(cluster_id.clone())
-            .iter()
-            .with_context(|_| ErrorKind::StoreRead("cluster agents"))?;
-        for agent in agents {
-            let agent = agent.with_context(|_| ErrorKind::StoreRead("agent"))?;
-            meta.visit_agent(&agent)?;
+        // (Re-)Aggregate cluster meta.
+        let mut meta = ClusterMetaAggregator::new(&discovery);
+        meta.aggregate(self.store.clone())?;
+        let meta = meta.generate();
+        if !lock.inspect() {
+            return Err(ErrorKind::ClusterLockLost(cluster_id).into());
         }
+        self.store
+            .legacy()
+            .persist_cluster_meta(meta)
+            .with_context(|_| ErrorKind::StoreWrite("ClusterMeta"))?;
 
-        // Visit agents info.
-        let agents_info = self
-            .store
-            .agents(cluster_id.clone())
-            .iter_info()
-            .with_context(|_| ErrorKind::StoreRead("cluster agents info"))?;
-        for agent in agents_info {
-            let agent = agent.with_context(|_| ErrorKind::StoreRead("agent info"))?;
-            meta.visit_agent_info(&agent)?;
-        }
-
-        // Visit node records.
-        let nodes = self
-            .store
-            .nodes(cluster_id.clone())
-            .iter()
-            .with_context(|_| ErrorKind::StoreRead("cluster nodes"))?;
-        for node in nodes {
-            let node = node.with_context(|_| ErrorKind::StoreRead("node"))?;
-            meta.visit_node(&node)?;
-        }
-
-        // Visit shards.
-        let shards = self
-            .store
-            .shards(cluster_id.clone())
-            .iter()
-            .with_context(|_| ErrorKind::StoreRead("cluster shards"))?;
-        for shard in shards {
-            let shard = shard.with_context(|_| ErrorKind::StoreRead("shard"))?;
-            meta.visit_shard(&shard)?;
-        }
-
-        // Commit generated metadata.
-        meta.commit()?;
+        // Generated all aggrgations.
         Ok(())
     }
 }

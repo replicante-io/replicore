@@ -422,7 +422,7 @@ tasks:
       socket: 60000
 
   # Number of task processing threads to spawn.
-  #threads_count: 8 * number of CPUs
+  #threads_count: number of CPUs
 
 
 # Timeouts configured here are used throughout the system for various reasons.

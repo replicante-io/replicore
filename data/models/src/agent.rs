@@ -52,14 +52,18 @@ impl AgentInfo {
 ///
 /// If an agent or its datastore are down the received error is attached.
 #[derive(Clone, Eq, PartialEq, Hash, Debug, Serialize, Deserialize)]
+#[serde(tag = "code", content = "data")]
 pub enum AgentStatus {
     /// The agent is down or is returning errors.
+    #[serde(rename = "AGENT_DOWN")]
     AgentDown(String),
 
     /// The agent is up but the datastore is down or is returning errors.
+    #[serde(rename = "NODE_DOWN")]
     NodeDown(String),
 
     /// The agent is up and can communicate with the datastore.
+    #[serde(rename = "UP")]
     Up,
 }
 
@@ -75,8 +79,10 @@ mod tests {
         fn from_json() {
             let status = AgentStatus::AgentDown("TEST".into());
             let expected = Agent::new("cluster", "http://node/", status);
-            let payload =
-                r#"{"cluster_id":"cluster","host":"http://node/","status":{"AgentDown":"TEST"}}"#;
+            let payload = concat!(
+                r#"{"cluster_id":"cluster","host":"http://node/","#,
+                r#""status":{"code":"AGENT_DOWN","data":"TEST"}}"#
+            );
             let agent: Agent = serde_json::from_str(payload).unwrap();
             assert_eq!(agent, expected);
         }
@@ -86,8 +92,10 @@ mod tests {
             let status = AgentStatus::AgentDown("TEST".into());
             let agent = Agent::new("cluster", "http://node/", status);
             let payload = serde_json::to_string(&agent).unwrap();
-            let expected =
-                r#"{"cluster_id":"cluster","host":"http://node/","status":{"AgentDown":"TEST"}}"#;
+            let expected = concat!(
+                r#"{"cluster_id":"cluster","host":"http://node/","#,
+                r#""status":{"code":"AGENT_DOWN","data":"TEST"}}"#
+            );
             assert_eq!(payload, expected);
         }
     }
@@ -136,7 +144,7 @@ mod tests {
         fn agent_down() {
             let status = AgentStatus::AgentDown("TEST".into());
             let payload = serde_json::to_string(&status).unwrap();
-            let expected = r#"{"AgentDown":"TEST"}"#;
+            let expected = r#"{"code":"AGENT_DOWN","data":"TEST"}"#;
             assert_eq!(payload, expected);
         }
 
@@ -144,7 +152,7 @@ mod tests {
         fn downstore_down() {
             let status = AgentStatus::NodeDown("TEST".into());
             let payload = serde_json::to_string(&status).unwrap();
-            let expected = r#"{"NodeDown":"TEST"}"#;
+            let expected = r#"{"code":"NODE_DOWN","data":"TEST"}"#;
             assert_eq!(payload, expected);
         }
 
@@ -152,7 +160,7 @@ mod tests {
         fn up() {
             let status = AgentStatus::Up;
             let payload = serde_json::to_string(&status).unwrap();
-            let expected = r#""Up""#;
+            let expected = r#"{"code":"UP"}"#;
             assert_eq!(payload, expected);
         }
     }

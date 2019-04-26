@@ -1,3 +1,5 @@
+use std::collections::HashSet;
+
 use replicante_data_models::Node as NodeModel;
 
 use super::super::backend::NodesImpl;
@@ -18,6 +20,14 @@ impl Nodes {
     /// Iterate over nodes in a cluster.
     pub fn iter(&self) -> Result<Cursor<NodeModel>> {
         self.nodes.iter(&self.attrs)
+    }
+
+    /// Enumerate the different kinds of *active* nodes in the cluster.
+    ///
+    /// Active nodes are those not stale.
+    /// See `Store::cluster::mark_stale` for why nodes are marked stale.
+    pub fn kinds(&self) -> Result<HashSet<String>> {
+        self.nodes.kinds(&self.attrs)
     }
 }
 

@@ -109,6 +109,7 @@ pub struct Fetcher {
     logger: Logger,
     node: NodeFetcher,
     shard: ShardFetcher,
+    store: Store,
     timeout: Duration,
 }
 
@@ -116,16 +117,30 @@ impl Fetcher {
     pub fn new(logger: Logger, events: EventsStream, store: Store, timeout: Duration) -> Fetcher {
         let agent = AgentFetcher::new(events.clone(), store.clone());
         let node = NodeFetcher::new(events.clone(), store.clone());
-        let shard = ShardFetcher::new(events, store);
+        let shard = ShardFetcher::new(events, store.clone());
         Fetcher {
             agent,
             logger,
             node,
             shard,
+            store,
             timeout,
         }
     }
 
+    /// Fetch an optimistic view of the cluster state.
+    ///
+    /// # Errors
+    /// The frech process can encounter two kinds of errors:
+    /// 
+    ///   * Core errors: store, coordinator, internal logic, ...
+    ///   * Remote errors: agent is down, network issue, invalid data returned, ...
+    /// 
+    /// Core errors are returned and interupt the fetching process early (if the primary store is
+    /// failing to respond it is likely to fail again in a short time).
+    ///
+    /// Remote errors are logged and accounted for as part of the refresh process (a remote agent
+    /// crashing should not prevent the full cluster from being checked).
     /// Refresh the optimistic view on a cluster state.
     ///
     /// If the refrsh process fails due to core-related issues (store errors,
@@ -134,15 +149,29 @@ impl Fetcher {
     /// If the refresh process encounters an agent error (invalid response or state,
     /// network issue, ...) the error is NOT propagated and is instead accounted for
     /// as part of the state refersh operation.
-    // TODO: return a Result<()>
-    // TODO: propagate core errors.
     // TODO: separatelly handle agnet/remote errors.
-    pub fn process(&self, cluster: ClusterDiscovery, lock: NonBlockingLockWatcher) {
-        let mut id_checker = ClusterIdentityChecker::new(cluster.cluster_id.clone(), None);
+    pub fn fetch(&self, cluster: ClusterDiscovery, lock: NonBlockingLockWatcher) -> Result<()> {
+        let _timer = FETCHER_DURATION.start_timer();
+        let result = self.fetch_checked(cluster, lock)
+            .map_err(|error| {
+                FETCHER_ERRORS_COUNT.inc();
+                error
+            });
+        // TODO: propagate core errors.
+        if let Err(error) = result {
+            error!(self.logger, "Failed to process cluster refresh"; failure_info(&error));
+        }
+        Ok(())
+    }
+
+    /// Wrapped version of `fetch` so stats can be accounted for once.
+    fn fetch_checked(&self, cluster: ClusterDiscovery, lock: NonBlockingLockWatcher) -> Result<()> {
         let cluster_id = cluster.cluster_id.clone();
         debug!(self.logger, "Refreshing cluster state"; "cluster_id" => &cluster_id);
+        let mut id_checker = ClusterIdentityChecker::new(cluster_id.clone(), None);
+        self.store.cluster(cluster_id.clone()).mark_stale()
+            .with_context(|_| ErrorKind::StoreWrite("cluster staleness"))?;
 
-        let _timer = FETCHER_DURATION.start_timer();
         for node in cluster.nodes {
             // Exit early if lock was lost.
             if !lock.inspect() {
@@ -150,22 +179,13 @@ impl Fetcher {
                     self.logger, "Cluster fetcher lock lost, skipping futher nodes";
                     "cluster_id" => &cluster_id
                 );
-                return;
+                return Ok(());
             }
-
-            let result = self.process_target(&cluster_id, &node, &mut id_checker);
-            if let Err(error) = result {
-                FETCHER_ERRORS_COUNT.inc();
-                error!(
-                    self.logger, "Failed to process cluster node";
-                    "cluster_id" => &cluster_id, "node" => node, failure_info(&error)
-                );
-            }
+            self.process_target(&cluster_id, &node, &mut id_checker)?;
         }
+        Ok(())
     }
-}
 
-impl Fetcher {
     fn process_target(
         &self,
         cluster: &str,
@@ -185,7 +205,8 @@ impl Fetcher {
             let message = format_fail(&error);
             agent.status = AgentStatus::AgentDown(message);
             self.agent.process_agent(agent)?;
-            return Err(error);
+            // TODO: figure out which errors to propagate.
+            return Ok(());
         };
 
         let result = self.node.process_node(&client, id_checker);
@@ -193,7 +214,8 @@ impl Fetcher {
             let message = format_fail(&error);
             agent.status = AgentStatus::NodeDown(message);
             self.agent.process_agent(agent)?;
-            return Err(error);
+            // TODO: figure out which errors to propagate.
+            return Ok(());
         };
 
         let result = self.shard.process_shards(&client, cluster, node);
@@ -201,7 +223,8 @@ impl Fetcher {
             let message = format_fail(&error);
             agent.status = AgentStatus::NodeDown(message);
             self.agent.process_agent(agent)?;
-            return Err(error);
+            // TODO: figure out which errors to propagate.
+            return Ok(());
         };
 
         self.agent.process_agent(agent)

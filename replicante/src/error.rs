@@ -65,6 +65,9 @@ pub enum ErrorKind {
     #[fail(display = "cloud not generate cluster aggregates")]
     ClusterAggregation,
 
+    #[fail(display = "cloud not refresh cluster state")]
+    ClusterRefresh,
+
     #[fail(display = "could not load configuration")]
     ConfigLoad,
 

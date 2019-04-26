@@ -69,10 +69,7 @@ pub struct NodeDocument {
 
 impl From<Node> for NodeDocument {
     fn from(node: Node) -> NodeDocument {
-        NodeDocument {
-            node,
-            stale: false,
-        }
+        NodeDocument { node, stale: false }
     }
 }
 

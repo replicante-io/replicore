@@ -16,6 +16,11 @@ impl Agents {
         Agents { agents, attrs }
     }
 
+    /// Count agents in the cluster.
+    pub fn counts(&self) -> Result<AgentsCounts> {
+        self.agents.counts(&self.attrs)
+    }
+
     /// Iterate over agents in a cluster.
     pub fn iter(&self) -> Result<Cursor<AgentModel>> {
         self.agents.iter(&self.attrs)
@@ -30,4 +35,12 @@ impl Agents {
 /// Attributes attached to all `Agents` operations.
 pub struct AgentsAttribures {
     pub cluster_id: String,
+}
+
+/// Counts returned by the `Agents::counts` operation.
+#[derive(Clone, Eq, PartialEq, Hash, Debug, Serialize, Deserialize)]
+pub struct AgentsCounts {
+    pub agents_down: i32,
+    pub nodes: i32,
+    pub nodes_down: i32,
 }
