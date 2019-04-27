@@ -1,7 +1,7 @@
-use std::sync::Arc;
-use std::sync::Mutex;
 use std::sync::atomic::AtomicBool;
 use std::sync::atomic::Ordering;
+use std::sync::Arc;
+use std::sync::Mutex;
 
 use failure::ResultExt;
 use slog::Logger;
@@ -17,26 +17,22 @@ use zookeeper::ZooKeeper;
 
 use replicante_util_failure::failure_info;
 
+use super::super::super::super::coordinator::NonBlockingLockWatcher;
+use super::super::super::super::metrics::NB_LOCK_DROP_FAIL;
+use super::super::super::super::metrics::NB_LOCK_DROP_TOTAL;
+use super::super::super::super::metrics::NB_LOCK_LOST;
 use super::super::super::super::ErrorKind;
 use super::super::super::super::NodeId;
 use super::super::super::super::Result;
-use super::super::super::super::coordinator::NonBlockingLockWatcher;
-
-use super::super::super::super::metrics::NB_LOCK_LOST;
-use super::super::super::super::metrics::NB_LOCK_DROP_FAIL;
-use super::super::super::super::metrics::NB_LOCK_DROP_TOTAL;
-
 use super::super::super::NonBlockingLockBehaviour;
-use super::super::NBLockInfo;
 use super::super::client::Client;
 use super::super::constants::PREFIX_LOCK;
-
 use super::super::metrics::ZOO_NB_LOCK_DELETED;
 use super::super::metrics::ZOO_NB_LOCK_LOST;
 use super::super::metrics::ZOO_OP_DURATION;
 use super::super::metrics::ZOO_OP_ERRORS_COUNT;
 use super::super::metrics::ZOO_TIMEOUTS_COUNT;
-
+use super::super::NBLockInfo;
 
 /// Zookeeper non-blocking lock behaviour code.
 pub struct ZookeeperNBLock {
@@ -47,7 +43,10 @@ pub struct ZookeeperNBLock {
 
 impl ZookeeperNBLock {
     pub fn new(
-        client: Arc<Client>, lock: String, owner: NodeId, logger: Logger
+        client: Arc<Client>,
+        lock: String,
+        owner: NodeId,
+        logger: Logger,
     ) -> ZookeeperNBLock {
         let path = Client::path_from_key(PREFIX_LOCK, &lock);
         let payload = NBLockInfo {
@@ -92,15 +91,16 @@ impl ZookeeperNBLock {
             NB_LOCK_LOST.inc();
             return;
         }
-        
+
         // Re-register lock watcher.
         let block = || -> Result<()> {
             let keeper = context.client.get()?;
             let inner_context = context.clone();
-            let stats = keeper.exists_w(&context.path, move |event| {
-                ZookeeperNBLock::callback_event(&inner_context, &event);
-            })
-            .with_context(|_| ErrorKind::Backend("lock watching"))?;
+            let stats = keeper
+                .exists_w(&context.path, move |event| {
+                    ZookeeperNBLock::callback_event(&inner_context, &event);
+                })
+                .with_context(|_| ErrorKind::Backend("lock watching"))?;
 
             // If the node was deleted before watching, release the lock.
             if stats.is_some() {
@@ -153,7 +153,13 @@ impl ZookeeperNBLock {
         let data = serde_json::to_vec(&self.payload)
             .with_context(|_| ErrorKind::Encode("zookeeper non-blocking lock"))?;
         let timer = ZOO_OP_DURATION.with_label_values(&["create"]).start_timer();
-        let result = keeper.create(path, data, Acl::read_unsafe().clone(), CreateMode::Ephemeral)
+        let result = keeper
+            .create(
+                path,
+                data,
+                Acl::read_unsafe().clone(),
+                CreateMode::Ephemeral,
+            )
             .map_err(|error| {
                 ZOO_OP_ERRORS_COUNT.with_label_values(&["create"]).inc();
                 if error == ZkError::OperationTimeout {
@@ -168,10 +174,10 @@ impl ZookeeperNBLock {
                 let payload = self.read(keeper, path)?;
                 let payload: NBLockInfo = serde_json::from_slice(&payload)
                     .with_context(|_| ErrorKind::Decode("zookeeper non-blocking lock"))?;
-                return Err(ErrorKind::LockHeld(
-                    self.context.state.lock.clone(), payload.owner
-                ).into());
-            },
+                return Err(
+                    ErrorKind::LockHeld(self.context.state.lock.clone(), payload.owner).into(),
+                );
+            }
             Err(error) => {
                 return Err(error).with_context(|_| ErrorKind::Backend("lock acquisition"))?;
             }
@@ -205,7 +211,10 @@ impl NonBlockingLockBehaviour for ZookeeperNBLock {
     fn acquire(&mut self) -> Result<()> {
         let (acquired, _, version) = self.context.state.inspect();
         if acquired {
-            panic!("Attempted to acquire held lock '{}'", self.context.state.lock);
+            panic!(
+                "Attempted to acquire held lock '{}'",
+                self.context.state.lock
+            );
         }
         let keeper = self.context.client.get()?;
 
@@ -264,7 +273,7 @@ impl NonBlockingLockBehaviour for ZookeeperNBLock {
                         return Err(error).with_context(|_| ErrorKind::Backend("lock release"))?;
                     }
                 };
-            },
+            }
             Some(_) => {
                 // Lock exists, we think we own it but is not the one we created.
                 let payload = self.read(&keeper, &self.context.path)?;
@@ -298,7 +307,6 @@ impl NonBlockingLockBehaviour for ZookeeperNBLock {
     }
 }
 
-
 /// Syncronised internal state for non-blocking locks.
 ///
 /// The internal state of a ZookeeperNBLock object can be:
@@ -308,7 +316,7 @@ impl NonBlockingLockBehaviour for ZookeeperNBLock {
 #[derive(Clone)]
 struct NblSyncState {
     inner: Arc<Mutex<NblSyncStateInner>>,
-    lock: String
+    lock: String,
 }
 
 impl NblSyncState {
@@ -318,10 +326,7 @@ impl NblSyncState {
             czxid: None,
             version: 0,
         }));
-        NblSyncState {
-            inner,
-            lock,
-        }
+        NblSyncState { inner, lock }
     }
 
     fn acquire(&self, czxid: i64, version: u64) -> Result<()> {
@@ -336,7 +341,11 @@ impl NblSyncState {
 
     fn inspect(&self) -> (bool, Option<i64>, u64) {
         let inner = self.inner.lock().expect("internal lock state poisoned");
-        (inner.acquired.load(Ordering::Relaxed), inner.czxid, inner.version)
+        (
+            inner.acquired.load(Ordering::Relaxed),
+            inner.czxid,
+            inner.version,
+        )
     }
 
     fn release(&self) {
@@ -352,14 +361,12 @@ impl NblSyncState {
     }
 }
 
-
 /// Inner non-blocking lock raw state.
 struct NblSyncStateInner {
     acquired: Arc<AtomicBool>,
     czxid: Option<i64>,
     version: u64,
 }
-
 
 /// Collection of non-blocking lock state shared across the node and all callbacks.
 #[derive(Clone)]

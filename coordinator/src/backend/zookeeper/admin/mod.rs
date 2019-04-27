@@ -5,27 +5,24 @@ use slog::Logger;
 use zookeeper::ZkError;
 use zookeeper::ZooKeeper;
 
-use super::super::super::Error;
-use super::super::super::ErrorKind;
-use super::super::super::NodeId;
-use super::super::super::Result;
 use super::super::super::admin::Election;
 use super::super::super::admin::Elections;
 use super::super::super::admin::NonBlockingLock;
 use super::super::super::config::ZookeeperConfig;
+use super::super::super::Error;
+use super::super::super::ErrorKind;
+use super::super::super::NodeId;
+use super::super::super::Result;
 use super::super::BackendAdmin;
 use super::super::Nodes;
 use super::super::NonBlockingLocks;
-
-use super::NBLockInfo;
 use super::client::Client;
 use super::constants::PREFIX_LOCK;
 use super::constants::PREFIX_NODE;
-
+use super::NBLockInfo;
 
 mod election;
 mod lock;
-
 
 /// Admin backend for zookeeper distributed coordination.
 pub struct ZookeeperAdmin {
@@ -35,9 +32,7 @@ pub struct ZookeeperAdmin {
 impl ZookeeperAdmin {
     pub fn new(config: ZookeeperConfig, logger: Logger) -> Result<ZookeeperAdmin> {
         let client = Arc::new(Client::new(config, None, logger)?);
-        Ok(ZookeeperAdmin {
-            client,
-        })
+        Ok(ZookeeperAdmin { client })
     }
 }
 
@@ -51,9 +46,7 @@ impl BackendAdmin for ZookeeperAdmin {
     }
 
     fn elections(&self) -> Elections {
-        Elections::new(election::ZooKeeperElections::new(
-            Arc::clone(&self.client)
-        ))
+        Elections::new(election::ZooKeeperElections::new(Arc::clone(&self.client)))
     }
 
     fn nodes(&self) -> Nodes {
@@ -73,14 +66,14 @@ impl BackendAdmin for ZookeeperAdmin {
             Err(error) => {
                 let error = Err(error).context(ErrorKind::Backend("non-blocking lock lookup"));
                 return error.map_err(Error::from);
-            },
+            }
         };
         let info: NBLockInfo = match serde_json::from_slice(&payload) {
             Ok(info) => info,
             Err(error) => {
                 let error = Err(error).context(ErrorKind::Decode("lock info"));
                 return error.map_err(Error::from);
-            },
+            }
         };
         let name = info.name.clone();
         let behaviour = lock::ZookeeperNBLBehaviour {
@@ -103,7 +96,6 @@ impl BackendAdmin for ZookeeperAdmin {
         Ok("Zookeeper (version not reported)".into())
     }
 }
-
 
 /// Iterate over nodes registered in zookeeper.
 ///
@@ -166,14 +158,14 @@ impl Iterator for ZookeeperNodes {
                 Err(error) => {
                     let error = Err(error).context(ErrorKind::Backend("node read"));
                     return Some(error.map_err(Error::from));
-                },
+                }
                 Ok((node, _)) => node,
             };
             let node: Result<NodeId> = match serde_json::from_slice(&node) {
                 Err(error) => {
                     let error = Err(error).context(ErrorKind::Decode("node info"));
                     error.map_err(Error::from)
-                },
+                }
                 Ok(node) => Ok(node),
             };
             return Some(node);

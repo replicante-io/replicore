@@ -1,7 +1,6 @@
+use super::super::backend::NonBlockingLockAdminBehaviour;
 use super::super::NodeId;
 use super::super::Result;
-use super::super::backend::NonBlockingLockAdminBehaviour;
-
 
 /// Admin tools for a non-blocking lock.
 pub struct NonBlockingLock {
@@ -11,12 +10,10 @@ pub struct NonBlockingLock {
 
 impl NonBlockingLock {
     pub(crate) fn new(
-        name: String, behaviour: Box<dyn NonBlockingLockAdminBehaviour>
+        name: String,
+        behaviour: Box<dyn NonBlockingLockAdminBehaviour>,
     ) -> NonBlockingLock {
-        NonBlockingLock {
-            behaviour,
-            name,
-        }
+        NonBlockingLock { behaviour, name }
     }
 }
 
@@ -34,12 +31,11 @@ impl NonBlockingLock {
     }
 }
 
-
 /// Iterator over held non-blocking locks.
-pub struct NonBlockingLocks(Box<dyn Iterator<Item=Result<NonBlockingLock>>>);
+pub struct NonBlockingLocks(Box<dyn Iterator<Item = Result<NonBlockingLock>>>);
 
 impl NonBlockingLocks {
-    pub(crate) fn new<I: Iterator<Item=Result<NonBlockingLock>> + 'static>(iter: I) -> Self {
+    pub(crate) fn new<I: Iterator<Item = Result<NonBlockingLock>> + 'static>(iter: I) -> Self {
         NonBlockingLocks(Box::new(iter))
     }
 }
@@ -50,7 +46,6 @@ impl Iterator for NonBlockingLocks {
         self.0.next()
     }
 }
-
 
 #[cfg(test)]
 mod tests {

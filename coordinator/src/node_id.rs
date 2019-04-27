@@ -3,7 +3,6 @@ use std::fmt;
 
 use replicante_util_rndid::RndId;
 
-
 /// Unique ID for nodes in a Replicante cluster.
 ///
 /// Node IDs are primarily used for debugging and introspection purposes.

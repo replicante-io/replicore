@@ -1,5 +1,3 @@
-use super::NodeId;
-use super::Result;
 use super::admin::Election as AdminElection;
 use super::admin::Elections as AdminElections;
 use super::admin::Nodes;
@@ -10,13 +8,13 @@ use super::coordinator::ElectionStatus;
 use super::coordinator::ElectionWatch;
 use super::coordinator::NonBlockingLock;
 use super::coordinator::NonBlockingLockWatcher;
-
+use super::NodeId;
+use super::Result;
 
 pub mod zookeeper;
 
-
 /// Distributed coordination backend interface.
-pub trait Backend : Send + Sync {
+pub trait Backend: Send + Sync {
     /// Election for a single primary with secondaries ready to take over.
     fn election(&self, id: String) -> Election;
 
@@ -27,11 +25,10 @@ pub trait Backend : Send + Sync {
     fn non_blocking_lock(&self, lock: String) -> NonBlockingLock;
 }
 
-
 /// Distributed coordination admin backend interface.
-pub trait BackendAdmin : Send + Sync {
+pub trait BackendAdmin: Send + Sync {
     /// Lookup an election.
-    fn election(&self, &str) -> Result<AdminElection>;
+    fn election(&self, id: &str) -> Result<AdminElection>;
 
     /// Iterate over elections.
     fn elections(&self) -> AdminElections;
@@ -49,7 +46,6 @@ pub trait BackendAdmin : Send + Sync {
     fn version(&self) -> Result<String>;
 }
 
-
 /// Backend specific elections admin behaviour.
 pub trait ElectionAdminBehaviour {
     /// Fetch the `NodeId` of the primary for this election, if a primary is elected.
@@ -61,7 +57,6 @@ pub trait ElectionAdminBehaviour {
     /// Strip the current primary of its role and forces a new election.
     fn step_down(&self) -> Result<bool>;
 }
-
 
 /// Backend specific elections behaviours.
 pub trait ElectionBehaviour {
@@ -81,7 +76,6 @@ pub trait ElectionBehaviour {
     fn watch(&self) -> ElectionWatch;
 }
 
-
 /// Backend specific non-blocking lock admin behaviours.
 pub trait NonBlockingLockAdminBehaviour {
     /// Attempt to release a non-blocking lock held by someone else.
@@ -90,7 +84,6 @@ pub trait NonBlockingLockAdminBehaviour {
     /// Return the NodeId that owns a lock, if the lock is held.
     fn owner(&self) -> Result<NodeId>;
 }
-
 
 /// Backend specific non-blocking lock behaviours.
 pub trait NonBlockingLockBehaviour {

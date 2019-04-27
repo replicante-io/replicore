@@ -1,7 +1,7 @@
-use std::sync::Arc;
-use std::sync::Mutex;
 use std::sync::atomic::AtomicBool;
 use std::sync::atomic::Ordering;
+use std::sync::Arc;
+use std::sync::Mutex;
 
 use failure::ResultExt;
 use slog::Logger;
@@ -15,12 +15,8 @@ use zookeeper::ZooKeeper;
 
 use replicante_util_failure::failure_info;
 
-use super::super::super::super::ErrorKind;
-use super::super::super::super::NodeId;
-use super::super::super::super::Result;
 use super::super::super::super::coordinator::ElectionStatus;
 use super::super::super::super::coordinator::ElectionWatch;
-
 use super::super::super::super::metrics::ELECTION_DROP_FAIL;
 use super::super::super::super::metrics::ELECTION_DROP_TOTAL;
 use super::super::super::super::metrics::ELECTION_RUN_FAIL;
@@ -28,19 +24,21 @@ use super::super::super::super::metrics::ELECTION_RUN_TOTAL;
 use super::super::super::super::metrics::ELECTION_STEPDOWN_FAIL;
 use super::super::super::super::metrics::ELECTION_STEPDOWN_TOTAL;
 use super::super::super::super::metrics::ELECTION_TERMINATED;
-
+use super::super::super::super::ErrorKind;
+use super::super::super::super::NodeId;
+use super::super::super::super::Result;
 use super::super::super::ElectionBehaviour;
-use super::super::ElectionCandidateInfo;
-use super::super::ElectionInfo;
+
 use super::super::client::Client;
 use super::super::constants::PREFIX_ELECTION;
-
+use super::super::ElectionCandidateInfo;
+use super::super::ElectionInfo;
 
 /// Atomically manage the current election state.
 #[derive(Clone)]
 struct AtomicState {
     state: Arc<Mutex<ElectionState>>,
-    context: ElectionContext
+    context: ElectionContext,
 }
 
 impl AtomicState {
@@ -52,10 +50,7 @@ impl AtomicState {
             subscription: None,
             terminate_reason: None,
         }));
-        AtomicState {
-            context,
-            state,
-        }
+        AtomicState { context, state }
     }
 }
 
@@ -86,24 +81,24 @@ impl AtomicState {
         let mut lock = self.state.lock().expect("AtomicState lock poisoned");
         match lock.state {
             ElectionStateMachine::Primary => (),
-            ElectionStateMachine::Registered |
-            ElectionStateMachine::Secondary => {
+            ElectionStateMachine::Registered | ElectionStateMachine::Secondary => {
                 debug!(logger, "Node elected as primary"; "election" => name);
                 lock.state = ElectionStateMachine::Primary;
                 lock.primary_watcher.store(true, Ordering::Relaxed);
-            },
-            _ => {
-                debug!(
-                    logger, "Attempted transition to primary for a terminated election";
-                    "election" => name
-                );
-            },
+            }
+            _ => debug!(
+                logger, "Attempted transition to primary for a terminated election";
+                "election" => name
+            ),
         };
     }
 
     /// Transition to the `ElectionStateMachine::Registered` state if no changes occurred.
     fn register(
-        &self, expected: ElectionStateMachine, candidate_znode: String, subscription: Subscription
+        &self,
+        expected: ElectionStateMachine,
+        candidate_znode: String,
+        subscription: Subscription,
     ) -> Result<()> {
         let mut lock = self.state.lock().expect("AtomicState lock poisoned");
         if expected != lock.state {
@@ -128,18 +123,16 @@ impl AtomicState {
             ElectionStateMachine::Primary => {
                 debug!(logger, "Node demoted to secondary"; "election" => name);
                 lock.state = ElectionStateMachine::Secondary;
-            },
+            }
             ElectionStateMachine::Registered => {
                 debug!(logger, "Node transitioned to secondary"; "election" => name);
                 lock.state = ElectionStateMachine::Secondary;
-            },
+            }
             ElectionStateMachine::Secondary => (),
-            _ => {
-                debug!(
-                    logger, "Attempted transition to secondary for a terminated election";
-                    "election" => name
-                );
-            },
+            _ => debug!(
+                logger, "Attempted transition to secondary for a terminated election";
+                "election" => name
+            ),
         };
     }
 
@@ -166,8 +159,9 @@ impl AtomicState {
                 Ok(()) => (),
                 Err(ZkError::NoNode) => (),
                 Err(error) => {
-                    let error = Err(error).with_context(|_| ErrorKind::Backend("election step down"));
-                    return error.map_err(|e| e.into());
+                    return Err(error)
+                        .with_context(|_| ErrorKind::Backend("election step down"))
+                        .map_err(Into::into);
                 }
             };
         }
@@ -201,7 +195,7 @@ impl AtomicState {
                     "election" => &self.context.name, failure_info(&error)
                 );
                 return;
-            },
+            }
         };
 
         // Remove subscription and candidate znode.
@@ -231,7 +225,9 @@ impl AtomicState {
             ElectionStateMachine::Registered => ElectionStatus::InProgress,
             ElectionStateMachine::Secondary => ElectionStatus::Secondary,
             ElectionStateMachine::Terminated => ElectionStatus::Terminated(
-                lock.terminate_reason.clone().expect("A terminate_reason must be set")
+                lock.terminate_reason
+                    .clone()
+                    .expect("A terminate_reason must be set"),
             ),
         }
     }
@@ -244,7 +240,6 @@ impl AtomicState {
     }
 }
 
-
 /// Inner election atomic state.
 struct ElectionState {
     candidate_znode: Option<String>,
@@ -253,7 +248,6 @@ struct ElectionState {
     subscription: Option<Subscription>,
     terminate_reason: Option<String>,
 }
-
 
 /// Stages the election state machine can be in.
 #[derive(Clone, Eq, PartialEq)]
@@ -270,7 +264,7 @@ impl ElectionStateMachine {
         match self {
             ElectionStateMachine::NotCandidate => true,
             ElectionStateMachine::Terminated => true,
-            _ => false
+            _ => false,
         }
     }
 
@@ -279,11 +273,10 @@ impl ElectionStateMachine {
             ElectionStateMachine::Primary => true,
             ElectionStateMachine::Registered => true,
             ElectionStateMachine::Secondary => true,
-            _ => false
+            _ => false,
         }
     }
 }
-
 
 /// Container struct for data used by elections.
 #[derive(Clone)]
@@ -296,7 +289,6 @@ struct ElectionContext {
     payload_candidate: ElectionCandidateInfo,
     payload_election: ElectionInfo,
 }
-
 
 /// Zookeeper backed primary-secondaries election.
 ///
@@ -339,9 +331,7 @@ impl ZookeeperElection {
             payload_election,
         };
         let state = AtomicState::new(context);
-        ZookeeperElection {
-            state,
-        }
+        ZookeeperElection { state }
     }
 }
 
@@ -388,7 +378,7 @@ impl ZookeeperElection {
                     None => {
                         state.terminate("election has no candidates");
                         return;
-                    },
+                    }
                     Some(primary) => format!("{}/{}", state.context.path_election, primary),
                 };
                 let znode = match state.get_candidate() {
@@ -421,7 +411,7 @@ impl ZookeeperElection {
 
                 // If we are not in the candidates list we were deleted.
                 state.terminate("election candidate deleted");
-            },
+            }
 
             // The entire election was deleted, transition to terminated state.
             Err(ZkError::NoNode) => state.terminate("election deleted"),
@@ -449,8 +439,11 @@ impl ZookeeperElection {
         let payload_candidate = serde_json::to_vec(&context.payload_candidate)
             .with_context(|_| ErrorKind::Encode("election candidate information"))?;
         let result = Client::create(
-            &keeper, &context.path_candidate, payload_candidate.clone(),
-            Acl::read_unsafe().clone(), CreateMode::EphemeralSequential
+            &keeper,
+            &context.path_candidate,
+            payload_candidate.clone(),
+            Acl::read_unsafe().clone(),
+            CreateMode::EphemeralSequential,
         );
         match result {
             Ok(candidate) => Ok(candidate),
@@ -459,28 +452,34 @@ impl ZookeeperElection {
                 let payload_election = serde_json::to_vec(&context.payload_election)
                     .with_context(|_| ErrorKind::Encode("election information"))?;
                 let result = Client::create(
-                    &keeper, &context.path_election, payload_election,
-                    Acl::open_unsafe().clone(), CreateMode::Persistent
+                    &keeper,
+                    &context.path_election,
+                    payload_election,
+                    Acl::open_unsafe().clone(),
+                    CreateMode::Persistent,
                 );
                 match result {
                     Ok(_) => (),
                     Err(ZkError::NodeExists) => (),
                     Err(error) => {
-                        let error = Err(error)
-                            .with_context(|_| ErrorKind::Backend("election registration"));
-                        return error.map_err(|e| e.into());
+                        return Err(error)
+                            .with_context(|_| ErrorKind::Backend("election registration"))
+                            .map_err(Into::into);
                     }
                 };
                 let znode = Client::create(
-                    &keeper, &context.path_candidate, payload_candidate,
-                    Acl::read_unsafe().clone(), CreateMode::EphemeralSequential
-                ).with_context(|_| ErrorKind::Backend("election registration"))?;
+                    &keeper,
+                    &context.path_candidate,
+                    payload_candidate,
+                    Acl::read_unsafe().clone(),
+                    CreateMode::EphemeralSequential,
+                )
+                .with_context(|_| ErrorKind::Backend("election registration"))?;
                 Ok(znode)
-            },
-            Err(error) => {
-                let error = Err(error).with_context(|_| ErrorKind::Backend("election registration"));
-                error.map_err(|e| e.into())
-            },
+            }
+            Err(error) => Err(error)
+                .with_context(|_| ErrorKind::Backend("election registration"))
+                .map_err(Into::into),
         }
     }
 }
@@ -509,22 +508,24 @@ impl ElectionBehaviour for ZookeeperElection {
                 ZookeeperElection::session_closed(&closure_state);
             }
         });
-        self.state.register(state, candidate_znode.clone(), subscription).map_err(|error| {
-            // Delete the candidate_znode if we failed to update the state.
-            match Client::delete(&keeper, &candidate_znode, None) {
-                Ok(()) => (),
-                Err(ZkError::NoNode) => (),
-                Err(error) => {
-                    error!(
-                        self.state.context.logger,
-                        "Failed to delete cancidate znode for election in invalid state";
-                        "election" => &context.name, failure_info(&error)
-                    );
-                },
-            };
-            ELECTION_RUN_FAIL.inc();
-            error
-        })?;
+        self.state
+            .register(state, candidate_znode.clone(), subscription)
+            .map_err(|error| {
+                // Delete the candidate_znode if we failed to update the state.
+                match Client::delete(&keeper, &candidate_znode, None) {
+                    Ok(()) => (),
+                    Err(ZkError::NoNode) => (),
+                    Err(error) => {
+                        error!(
+                            self.state.context.logger,
+                            "Failed to delete cancidate znode for election in invalid state";
+                            "election" => &context.name, failure_info(&error)
+                        );
+                    }
+                };
+                ELECTION_RUN_FAIL.inc();
+                error
+            })?;
 
         // Refresh election state and transition to election results.
         ZookeeperElection::election_changed(&self.state);

@@ -3,15 +3,14 @@ use std::sync::Arc;
 use failure::ResultExt;
 use zookeeper::ZkError;
 
+use super::super::super::super::admin::NonBlockingLock;
 use super::super::super::super::ErrorKind;
 use super::super::super::super::NodeId;
 use super::super::super::super::Result;
-use super::super::super::super::admin::NonBlockingLock;
 use super::super::super::NonBlockingLockAdminBehaviour;
-use super::super::NBLockInfo;
 use super::super::client::Client;
 use super::super::constants::PREFIX_LOCK;
-
+use super::super::NBLockInfo;
 
 /// Iterate over registered non-blocking locks.
 pub struct ZookeeperNBLocks {
@@ -58,7 +57,10 @@ impl Iterator for ZookeeperNBLocks {
             Ok(keeper) => keeper,
             Err(error) => return Some(Err(error)),
         };
-        let locks = self.locks.as_mut().expect("ZookeeperNBLocks::locks must be Some(Vec)");
+        let locks = self
+            .locks
+            .as_mut()
+            .expect("ZookeeperNBLocks::locks must be Some(Vec)");
         while let Some(path) = locks.pop() {
             let lock = Client::get_data(&keeper, &path, false);
             let lock = match lock {
@@ -66,15 +68,15 @@ impl Iterator for ZookeeperNBLocks {
                 Err(ZkError::NoNode) => continue,
                 Err(error) => {
                     let error = Err(error).context(ErrorKind::Backend("iterating over locks"));
-                    return Some(error.map_err(|e| e.into()));
+                    return Some(error.map_err(Into::into));
                 }
             };
             let lock: NBLockInfo = match serde_json::from_slice(&lock) {
                 Ok(lock) => lock,
                 Err(error) => {
                     let error = Err(error).context(ErrorKind::Decode("lock info"));
-                    return Some(error.map_err(|e| e.into()));
-                },
+                    return Some(error.map_err(Into::into));
+                }
             };
             let name = lock.name.clone();
             let behaviour = ZookeeperNBLBehaviour {
@@ -88,7 +90,6 @@ impl Iterator for ZookeeperNBLocks {
         None
     }
 }
-
 
 /// Admin behaviour for zookeeper non-blocking locks.
 pub struct ZookeeperNBLBehaviour {
@@ -105,7 +106,7 @@ impl NonBlockingLockAdminBehaviour for ZookeeperNBLBehaviour {
             Err(ZkError::NoNode) => (),
             Err(error) => {
                 let error = Err(error).context(ErrorKind::Backend("force-releasing lock"));
-                return error.map_err(|e| e.into());
+                return error.map_err(Into::into);
             }
         }
         Ok(())

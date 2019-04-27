@@ -2,7 +2,6 @@ use prometheus::Counter;
 use prometheus::Registry;
 use slog::Logger;
 
-
 lazy_static! {
     pub static ref ELECTION_DROP_FAIL: Counter = Counter::new(
         "replicore_coordinator_election_drop_fail",
@@ -75,7 +74,6 @@ lazy_static! {
     )
     .expect("Failed to create NB_LOCK_RELEASE_TOTAL counter");
 }
-
 
 /// Attemps to register metrics with the Registry.
 ///

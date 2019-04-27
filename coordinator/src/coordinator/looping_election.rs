@@ -1,16 +1,15 @@
 use std::time::Duration;
 
+use crossbeam_channel::bounded;
 use crossbeam_channel::Receiver;
 use crossbeam_channel::RecvTimeoutError;
 use crossbeam_channel::Sender;
-use crossbeam_channel::bounded;
 use slog::Logger;
 
 use super::super::Error;
 use super::super::Result;
 use super::Election;
 use super::ElectionStatus;
-
 
 /// Helper class to manage repeating exclusive tasks.
 ///
@@ -113,7 +112,7 @@ impl LoopingElection {
             ElectionStatus::InProgress => {
                 debug!(self.logger, "Election in progress"; "election" => self.election.name());
                 LoopingElectionControl::Proceed
-            },
+            }
             ElectionStatus::Primary => self.primary(),
             ElectionStatus::Secondary => self.secondary(),
             ElectionStatus::Terminated(reason) => self.terminated(reason),
@@ -226,7 +225,6 @@ impl LoopingElection {
     }
 }
 
-
 /// Possible options for logic methods to control the looping election.
 #[derive(Clone, Debug, Eq, PartialEq)]
 #[must_use]
@@ -246,7 +244,6 @@ pub enum LoopingElectionControl {
     /// Step down from an election, relinquishing primary or secondary role.
     StepDown,
 }
-
 
 /// Implementation of usefull logic through hooks.
 pub trait LoopingElectionLogic {
@@ -284,7 +281,6 @@ pub trait LoopingElectionLogic {
     }
 }
 
-
 /// Options passed to a `LoopingElection` to customise its behaviour.
 pub struct LoopingElectionOpts {
     election: Election,
@@ -304,7 +300,8 @@ impl LoopingElectionOpts {
 
 impl LoopingElectionOpts {
     pub fn new<Logic>(election: Election, logic: Logic) -> LoopingElectionOpts
-        where Logic: LoopingElectionLogic + 'static
+    where
+        Logic: LoopingElectionLogic + 'static,
     {
         LoopingElectionOpts {
             election,
@@ -362,7 +359,6 @@ impl LoopingElectionOpts {
     }
 }
 
-
 /// Type of receivers of shutdown requests for `LoopingElection`.
 pub struct ShutdownReceiver(Receiver<()>);
 
@@ -372,7 +368,6 @@ impl ShutdownReceiver {
         self.0.recv_timeout(duration)
     }
 }
-
 
 /// Type of senders of shutdown requests for `LoopingElection`.
 #[derive(Clone)]
@@ -386,7 +381,6 @@ impl ShutdownSender {
     }
 }
 
-
 #[cfg(test)]
 mod tests {
     use std::cell::RefCell;
@@ -396,9 +390,9 @@ mod tests {
     use slog::Discard;
     use slog::Logger;
 
+    use super::super::super::mock::MockCoordinator;
     use super::super::super::Error;
     use super::super::super::Result;
-    use super::super::super::mock::MockCoordinator;
     use super::super::Election;
     use super::super::ElectionStatus;
 
@@ -477,7 +471,7 @@ mod tests {
             *self.secondary.borrow_mut() += 1;
             Ok(LoopingElectionControl::Proceed)
         }
-        
+
         fn terminated(&self, _: &Election, _: String) -> Result<LoopingElectionControl> {
             *self.terminated.borrow_mut() += 1;
             Ok(LoopingElectionControl::ReRun)
@@ -488,7 +482,6 @@ mod tests {
         let logger = ::slog::Logger::root(::slog::Discard, o!());
         MockCoordinator::new(logger)
     }
-
 
     #[test]
     fn loop_once_not_connected() {
@@ -710,7 +703,7 @@ mod tests {
         let coordinator = mock_coordinator.mock();
         let election = coordinator.election("test");
         let logic = {
-            let mut logic = TestLogic::new();
+            let logic = TestLogic::new();
             *logic.max_loops.borrow_mut() = 20;
             logic
         };
@@ -737,7 +730,7 @@ mod tests {
         let handle = ::std::thread::spawn(move || {
             let election = coordinator.election("test");
             let logic = {
-                let mut logic = TestLogic::new();
+                let logic = TestLogic::new();
                 *logic.max_loops.borrow_mut() = 1;
                 logic
             };

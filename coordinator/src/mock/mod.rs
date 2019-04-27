@@ -1,27 +1,26 @@
 use std::collections::HashMap;
-use std::sync::Arc;
-use std::sync::Mutex;
 use std::sync::atomic::AtomicBool;
 use std::sync::atomic::AtomicUsize;
 use std::sync::atomic::Ordering;
+use std::sync::Arc;
+use std::sync::Mutex;
 
 use slog::Logger;
 
+use super::backend::ElectionBehaviour;
+use super::coordinator::ElectionStatus;
+use super::coordinator::ElectionWatch;
 use super::Admin;
 use super::Coordinator;
 use super::ErrorKind;
 use super::NodeId;
 use super::Result;
-use super::backend::ElectionBehaviour;
-use super::coordinator::ElectionStatus;
-use super::coordinator::ElectionWatch;
 
 mod admin;
 mod backend;
 
 use self::admin::MockAdmin;
 use self::backend::MockBackend;
-
 
 /// Helper to mock distributed coordination services.
 pub struct MockCoordinator {
@@ -48,9 +47,14 @@ impl MockCoordinator {
 
     pub fn election<S: Into<String>>(&self, name: S) -> MockElection {
         let name: String = name.into();
-        let mut elections = self.elections.lock()
+        let mut elections = self
+            .elections
+            .lock()
             .expect("MockCoordinator::elections lock poisoned");
-        elections.entry(name.clone()).or_insert_with(|| MockElection::new(name)).clone()
+        elections
+            .entry(name.clone())
+            .or_insert_with(|| MockElection::new(name))
+            .clone()
     }
 
     pub fn mock(&self) -> Coordinator {
@@ -64,19 +68,21 @@ impl MockCoordinator {
     /// Get a mocked non-blocking lock for assertions and manipulation.
     pub fn non_blocking_lock<S: Into<String>>(&self, lock: S) -> MockNonBlockingLock {
         let lock = lock.into();
-        let mut guard = self.nblocks.lock().expect("MockCoordinator::nblocks poisoned");
+        let mut guard = self
+            .nblocks
+            .lock()
+            .expect("MockCoordinator::nblocks poisoned");
         let mock = guard.get(&lock).map(Clone::clone);
         match mock {
+            Some(mock) => mock,
             None => {
                 let mock = MockNonBlockingLock::new(lock.clone(), self.node_id.clone());
                 guard.insert(lock, mock.clone());
                 mock
-            },
-            Some(mock) => mock,
+            }
         }
     }
 }
-
 
 /// Election mock behaviour.
 #[derive(Clone)]
@@ -100,25 +106,37 @@ impl MockElection {
 
 impl ElectionBehaviour for MockElection {
     fn run(&mut self) -> Result<()> {
-        let primary = self.primary.lock().expect("MockElection::primary lock poisoned");
+        let primary = self
+            .primary
+            .lock()
+            .expect("MockElection::primary lock poisoned");
         let primary = primary.is_some();
         let status = if primary {
             ElectionStatus::Primary
         } else {
             ElectionStatus::Secondary
         };
-        let mut lock = self.status.lock().expect("MockElection::status lock poisoned");
+        let mut lock = self
+            .status
+            .lock()
+            .expect("MockElection::status lock poisoned");
         *lock = status;
         Ok(())
     }
 
     fn status(&self) -> ElectionStatus {
-        let lock = self.status.lock().expect("MockElection::status lock poisoned");
+        let lock = self
+            .status
+            .lock()
+            .expect("MockElection::status lock poisoned");
         lock.clone()
     }
 
     fn step_down(&mut self) -> Result<()> {
-        let mut lock = self.status.lock().expect("MockElection::status lock poisoned");
+        let mut lock = self
+            .status
+            .lock()
+            .expect("MockElection::status lock poisoned");
         *lock = ElectionStatus::NotCandidate;
         Ok(())
     }
@@ -131,7 +149,6 @@ impl ElectionBehaviour for MockElection {
         panic!("TODO: MockElection::watch");
     }
 }
-
 
 /// A mocked non-blocking lock for assertions and manipulation.
 #[derive(Clone)]

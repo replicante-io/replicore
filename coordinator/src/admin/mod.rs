@@ -18,7 +18,6 @@ pub use self::election::Elections;
 pub use self::lock::NonBlockingLock;
 pub use self::lock::NonBlockingLocks;
 
-
 /// Interface to admin distributed coordination services.
 #[derive(Clone)]
 pub struct Admin(Arc<dyn BackendAdmin>);
@@ -26,9 +25,9 @@ pub struct Admin(Arc<dyn BackendAdmin>);
 impl Admin {
     pub fn new(config: Config, logger: Logger) -> Result<Admin> {
         let backend = match config.backend {
-            BackendConfig::Zookeeper(zookeeper) => Arc::new(
-                backend::zookeeper::ZookeeperAdmin::new(zookeeper, logger)?
-            ),
+            BackendConfig::Zookeeper(zookeeper) => {
+                Arc::new(backend::zookeeper::ZookeeperAdmin::new(zookeeper, logger)?)
+            }
         };
         Ok(Admin(backend))
     }
@@ -72,12 +71,11 @@ impl Admin {
     }
 }
 
-
 /// Iterator over nodes registered in the coordinator.
-pub struct Nodes(Box<dyn Iterator<Item=Result<NodeId>>>);
+pub struct Nodes(Box<dyn Iterator<Item = Result<NodeId>>>);
 
 impl Nodes {
-    pub(crate) fn new<I: Iterator<Item=Result<NodeId>> + 'static>(iter: I) -> Nodes {
+    pub(crate) fn new<I: Iterator<Item = Result<NodeId>> + 'static>(iter: I) -> Nodes {
         Nodes(Box::new(iter))
     }
 }

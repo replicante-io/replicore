@@ -17,7 +17,6 @@ extern crate zookeeper;
 extern crate replicante_util_failure;
 extern crate replicante_util_rndid;
 
-
 pub mod admin;
 
 mod backend;
@@ -29,7 +28,6 @@ mod node_id;
 
 #[cfg(debug_assertions)]
 pub mod mock;
-
 
 pub use self::admin::Admin;
 pub use self::config::Backend as BackendConfig;

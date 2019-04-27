@@ -11,7 +11,7 @@ lazy_static! {
             "Duration (in seconds) it takes to generate aggregated cluster data"
         )
         // Buckers: start = 1, next = prev * 10
-        .buckets(vec![1.0, 10.0, 100.0, 1000.0, 10000.0, 100000.0]),
+        .buckets(vec![1.0, 10.0, 100.0, 1000.0, 10000.0, 100_000.0]),
     )
     .expect("Failed to create replicore_fetcher_duration histogram");
     pub static ref AGGREGATE_ERRORS_COUNT: Counter = Counter::new(

@@ -10,6 +10,7 @@ use zookeeper::ZkError;
 
 use replicante_util_failure::failure_info;
 
+use super::super::super::super::config::ZookeeperConfig;
 use super::super::super::super::Election;
 use super::super::super::super::Error;
 use super::super::super::super::ErrorKind;
@@ -20,19 +21,16 @@ use super::super::super::super::LoopingElectionOpts;
 use super::super::super::super::NodeId;
 use super::super::super::super::Result;
 use super::super::super::super::ShutdownSender;
-use super::super::super::super::config::ZookeeperConfig;
 
 use super::super::constants::PREFIX_ELECTION;
 use super::super::constants::PREFIX_LOCK;
 use super::super::constants::PREFIX_NODE;
-
 use super::super::metrics::ZOO_CLEANUP_COUNT;
 use super::super::metrics::ZOO_OP_DURATION;
 use super::super::metrics::ZOO_OP_ERRORS_COUNT;
 use super::super::metrics::ZOO_TIMEOUTS_COUNT;
-use super::Client;
 use super::election::ZookeeperElection;
-
+use super::Client;
 
 /// Background thread to cleanup unused nodes.
 ///
@@ -46,7 +44,10 @@ pub struct Cleaner {
 
 impl Cleaner {
     pub fn new(
-        client: Arc<Client>, config: ZookeeperConfig, node_id: NodeId, logger: Logger
+        client: Arc<Client>,
+        config: ZookeeperConfig,
+        node_id: NodeId,
+        logger: Logger,
     ) -> Result<Cleaner> {
         let (sender, receiver) = LoopingElectionOpts::shutdown_channel();
         let inner_logger = logger.clone();
@@ -62,9 +63,10 @@ impl Cleaner {
                     thread: scope,
                 };
                 let id = "zookeeper-cleaner";
-                let election = Election::new(id.to_string(), Box::new(ZookeeperElection::new(
-                    client, id, node_id, logger.clone()
-                )));
+                let election = Election::new(
+                    id.to_string(),
+                    Box::new(ZookeeperElection::new(client, id, node_id, logger.clone())),
+                );
                 let opts = LoopingElectionOpts::new(election, cleaner)
                     .loop_delay(Duration::from_secs(config.cleanup.interval))
                     .shutdown_receiver(receiver);
@@ -97,7 +99,6 @@ impl Drop for Cleaner {
     }
 }
 
-
 /// Helper class to collect worker thread context.
 struct InnerCleaner {
     cleanup_limit: usize,
@@ -111,7 +112,6 @@ impl InnerCleaner {
     fn clean(&self, path: &str, limit: usize) -> Result<usize> {
         let client = self.client.get()?;
         let mut limit = limit;
-
         let children = Client::get_children(&client, path, false)
             .with_context(|_| ErrorKind::Backend("children lookup"))?;
         for child in children {
@@ -121,7 +121,7 @@ impl InnerCleaner {
                 Err(ZkError::NoNode) | Ok(None) => {
                     timer.observe_duration();
                     continue;
-                },
+                }
                 Err(error) => {
                     timer.observe_duration();
                     ZOO_OP_ERRORS_COUNT.with_label_values(&["exists"]).inc();
@@ -129,7 +129,7 @@ impl InnerCleaner {
                         ZOO_TIMEOUTS_COUNT.inc();
                     }
                     return Err(error).with_context(|_| ErrorKind::Backend("node lookup"))?;
-                },
+                }
                 Ok(Some(stats)) => stats,
             };
             timer.observe_duration();
@@ -141,15 +141,15 @@ impl InnerCleaner {
 
             // Delete and count.
             match Client::delete(&client, &child, Some(stats.version)) {
-                Err(ZkError::NoNode) |
-                    Err(ZkError::NotEmpty) |
-                    Ok(()) => (),
-                Err(error) => return Err(error).with_context(|_| ErrorKind::Backend("node delete"))?,
+                Err(ZkError::NoNode) | Err(ZkError::NotEmpty) | Ok(()) => (),
+                Err(error) => {
+                    return Err(error).with_context(|_| ErrorKind::Backend("node delete"))?;
+                }
             };
             ZOO_CLEANUP_COUNT.inc();
-            limit = limit - 1;
+            limit -= 1;
             if limit == 0 {
-                return Ok(0)
+                return Ok(0);
             }
         }
 
@@ -191,18 +191,22 @@ impl LoopingElectionLogic for InnerCleaner {
     }
 
     fn post_check(&self, election: &Election) -> Result<LoopingElectionControl> {
-        self.thread.activity(format!("(idle) election status: {:?}", election.status()));
+        self.thread
+            .activity(format!("(idle) election status: {:?}", election.status()));
         Ok(LoopingElectionControl::Proceed)
     }
 
     fn pre_check(&self, election: &Election) -> Result<LoopingElectionControl> {
-        self.thread.activity(format!("election status: {:?}", election.status()));
+        self.thread
+            .activity(format!("election status: {:?}", election.status()));
         Ok(LoopingElectionControl::Proceed)
     }
 
     fn primary(&self, _: &Election) -> Result<LoopingElectionControl> {
         info!(self.logger, "Running zookeeper cleanup cycle");
-        let _activity = self.thread.scoped_activity("cleaning empty zookeeper znodes");
+        let _activity = self
+            .thread
+            .scoped_activity("cleaning empty zookeeper znodes");
         if let Err(error) = self.cycle() {
             error!(self.logger, "Zookeeper cleanup cycle failed"; failure_info(&error));
         }

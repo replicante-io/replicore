@@ -2,11 +2,11 @@ use std::sync::Arc;
 
 use slog::Logger;
 
-use super::super::super::NodeId;
-use super::super::super::Result;
 use super::super::super::config::ZookeeperConfig;
 use super::super::super::coordinator::Election;
 use super::super::super::coordinator::NonBlockingLock;
+use super::super::super::NodeId;
+use super::super::super::Result;
 use super::super::Backend;
 use super::client::Client;
 
@@ -15,7 +15,6 @@ mod election;
 mod lock;
 
 use self::cleaner::Cleaner;
-
 
 /// Zookeeper-backed distributed coordination.
 pub struct Zookeeper {
@@ -41,14 +40,23 @@ impl Zookeeper {
 
 impl Backend for Zookeeper {
     fn election(&self, id: String) -> Election {
-        Election::new(id.clone(), Box::new(self::election::ZookeeperElection::new(
-            Arc::clone(&self.client), &id, self.node_id.clone(), self.logger.clone()
-        )))
+        Election::new(
+            id.clone(),
+            Box::new(self::election::ZookeeperElection::new(
+                Arc::clone(&self.client),
+                &id,
+                self.node_id.clone(),
+                self.logger.clone(),
+            )),
+        )
     }
 
     fn non_blocking_lock(&self, lock: String) -> NonBlockingLock {
         NonBlockingLock::new(Box::new(self::lock::ZookeeperNBLock::new(
-            Arc::clone(&self.client), lock, self.node_id.clone(), self.logger.clone()
+            Arc::clone(&self.client),
+            lock,
+            self.node_id.clone(),
+            self.logger.clone(),
         )))
     }
 

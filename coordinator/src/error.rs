@@ -6,7 +6,6 @@ use failure::Fail;
 
 use super::NodeId;
 
-
 /// Error information returned by the `Coordinator` API in case of errors.
 #[derive(Debug)]
 pub struct Error(Context<ErrorKind>);
@@ -44,7 +43,6 @@ impl fmt::Display for Error {
         fmt::Display::fmt(&self.0, f)
     }
 }
-
 
 /// Exhaustive list of possible errors emitted by this crate.
 #[derive(Clone, Eq, PartialEq, Hash, Debug, Fail)]
@@ -85,7 +83,6 @@ pub enum ErrorKind {
     #[fail(display = "unable to spawn new thread for '{}'", _0)]
     SpawnThread(&'static str),
 }
-
 
 /// Short form alias for functions returning `Error`s.
 pub type Result<T> = ::std::result::Result<T, Error>;

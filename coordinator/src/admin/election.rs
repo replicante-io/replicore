@@ -1,7 +1,6 @@
+use super::super::backend::ElectionAdminBehaviour;
 use super::super::NodeId;
 use super::super::Result;
-use super::super::backend::ElectionAdminBehaviour;
-
 
 /// Admin tools for an election.
 pub struct Election {
@@ -11,10 +10,7 @@ pub struct Election {
 
 impl Election {
     pub(crate) fn new(name: String, behaviour: Box<dyn ElectionAdminBehaviour>) -> Election {
-        Election {
-            behaviour,
-            name
-        }
+        Election { behaviour, name }
     }
 }
 
@@ -39,7 +35,6 @@ impl Election {
         self.behaviour.step_down()
     }
 }
-
 
 /// Iterator over elections.
 pub struct Elections(Box<dyn Iterator<Item = Result<Election>>>);

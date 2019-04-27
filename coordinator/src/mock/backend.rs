@@ -2,17 +2,15 @@ use std::collections::HashMap;
 use std::sync::Arc;
 use std::sync::Mutex;
 
-use super::super::NodeId;
-use super::super::Result;
 use super::super::backend::Backend;
 use super::super::backend::NonBlockingLockBehaviour;
 use super::super::coordinator::Election;
 use super::super::coordinator::NonBlockingLock;
 use super::super::coordinator::NonBlockingLockWatcher;
+use super::super::NodeId;
+use super::super::Result;
 use super::MockElection;
 use super::MockNonBlockingLock;
-
-
 
 /// Proxy synchronized access to mock attributes.
 pub struct MockBackend {
@@ -24,8 +22,14 @@ pub struct MockBackend {
 impl Backend for MockBackend {
     fn election(&self, id: String) -> Election {
         let name = id.clone();
-        let mut elections = self.elections.lock().expect("MockBackend::elections lock poisoned");
-        let mock = elections.entry(id.clone()).or_insert_with(|| MockElection::new(id)).clone();
+        let mut elections = self
+            .elections
+            .lock()
+            .expect("MockBackend::elections lock poisoned");
+        let mock = elections
+            .entry(id.clone())
+            .or_insert_with(|| MockElection::new(id))
+            .clone();
         Election::new(name, Box::new(mock))
     }
 
@@ -42,7 +46,6 @@ impl Backend for MockBackend {
     }
 }
 
-
 /// Non-blocking lock mock behaviour.
 struct MockNBL {
     lock: String,
@@ -55,13 +58,13 @@ impl NonBlockingLockBehaviour for MockNBL {
         let mut guard = self.nblocks.lock().expect("MockBackend::nblocks poisoned");
         let mock = guard.get(&self.lock).map(Clone::clone);
         match mock {
+            Some(mock) => mock.acquire(),
             None => {
                 let mock = MockNonBlockingLock::new(self.lock.clone(), self.node_id.clone());
                 mock.acquire()?;
                 guard.insert(self.lock.clone(), mock);
                 Ok(())
-            },
-            Some(mock) => mock.acquire(),
+            }
         }
     }
 
@@ -78,12 +81,12 @@ impl NonBlockingLockBehaviour for MockNBL {
         let mut guard = self.nblocks.lock().expect("MockBackend::nblocks poisoned");
         let mock = guard.get(&self.lock).map(Clone::clone);
         match mock {
+            Some(mock) => mock.release(),
             None => {
                 let mock = MockNonBlockingLock::new(self.lock.clone(), self.node_id.clone());
                 guard.insert(self.lock.clone(), mock);
                 Ok(())
-            },
-            Some(mock) => mock.release(),
+            }
         }
     }
 
@@ -94,7 +97,7 @@ impl NonBlockingLockBehaviour for MockNBL {
             None => (),
             Some(mock) => {
                 let _ = mock.release();
-            },
+            }
         }
     }
 
@@ -102,13 +105,13 @@ impl NonBlockingLockBehaviour for MockNBL {
         let mut guard = self.nblocks.lock().expect("MockBackend::nblocks poisoned");
         let mock = guard.get(&self.lock).map(Clone::clone);
         let arc = match mock {
+            Some(mock) => Arc::clone(&mock.locked),
             None => {
                 let mock = MockNonBlockingLock::new(self.lock.clone(), self.node_id.clone());
                 let arc = Arc::clone(&mock.locked);
                 guard.insert(self.lock.clone(), mock);
                 arc
-            },
-            Some(mock) => Arc::clone(&mock.locked),
+            }
         };
         NonBlockingLockWatcher::new(arc)
     }

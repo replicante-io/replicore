@@ -1,5 +1,5 @@
 /// Zookeeper background cleaner configuration.
-#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
+#[derive(Clone, Eq, PartialEq, Hash, Debug, Serialize, Deserialize)]
 pub struct CleanupConfig {
     /// Maximum number of nodes to delete in a single cleanup cycle.
     #[serde(default = "CleanupConfig::default_limit")]
@@ -30,14 +30,21 @@ impl Default for CleanupConfig {
 }
 
 impl CleanupConfig {
-    fn default_limit() -> usize { 1000 }
-    fn default_interval() -> u64 { 3600 }  // 1 hour
-    fn default_term() -> u64 { 6 }  // using defaults, a re-election every ~6 hours
+    fn default_limit() -> usize {
+        1000
+    }
+
+    fn default_interval() -> u64 {
+        3600 // 1 hour
+    }
+
+    fn default_term() -> u64 {
+        6 // using defaults, a re-election every ~6 hours
+    }
 }
 
-
 /// Zookeeper distributed coordination configuration options.
-#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
+#[derive(Clone, Eq, PartialEq, Hash, Debug, Serialize, Deserialize)]
 pub struct ZookeeperConfig {
     /// Zookeeper background cleaner configuration.
     #[serde(default)]
@@ -63,6 +70,11 @@ impl Default for ZookeeperConfig {
 }
 
 impl ZookeeperConfig {
-    fn default_ensemble() -> String { "localhost:2181/replicante".into() }
-    fn default_timeout() -> u64 { 10 }
+    fn default_ensemble() -> String {
+        "localhost:2181/replicante".into()
+    }
+
+    fn default_timeout() -> u64 {
+        10
+    }
 }

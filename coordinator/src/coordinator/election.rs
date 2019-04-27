@@ -1,10 +1,9 @@
-use std::sync::Arc;
 use std::sync::atomic::AtomicBool;
 use std::sync::atomic::Ordering;
+use std::sync::Arc;
 
-use super::super::Result;
 use super::super::backend::ElectionBehaviour;
-
+use super::super::Result;
 
 /// Election for a single primary with secondaries ready to take over.
 pub struct Election {
@@ -14,7 +13,8 @@ pub struct Election {
 
 impl Election {
     pub(crate) fn new<S>(name: S, inner: Box<dyn ElectionBehaviour>) -> Self
-        where S: Into<String>,
+    where
+        S: Into<String>,
     {
         Election {
             inner,
@@ -56,7 +56,6 @@ impl Drop for Election {
     }
 }
 
-
 /// Status of a `Election` instance.
 #[derive(Clone, Debug)]
 pub enum ElectionStatus {
@@ -97,7 +96,6 @@ impl ElectionStatus {
         }
     }
 }
-
 
 /// Lightweight election watcher to check the status for changes.
 #[derive(Clone)]

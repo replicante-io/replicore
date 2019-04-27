@@ -1,15 +1,14 @@
-use std::sync::Arc;
 use std::sync::atomic::AtomicBool;
 use std::sync::atomic::Ordering;
+use std::sync::Arc;
 
-use super::super::Result;
 use super::super::backend::NonBlockingLockBehaviour;
+use super::super::Result;
 
 use super::super::metrics::NB_LOCK_ACQUIRE_FAIL;
 use super::super::metrics::NB_LOCK_ACQUIRE_TOTAL;
 use super::super::metrics::NB_LOCK_RELEASE_FAIL;
 use super::super::metrics::NB_LOCK_RELEASE_TOTAL;
-
 
 /// A non-blocking lock that can be acquired/released as needed.
 ///
@@ -17,9 +16,9 @@ use super::super::metrics::NB_LOCK_RELEASE_TOTAL;
 /// any acquire operation will fail.
 /// Only locks that are currently held can be released.
 ///
-/// Locks are automatically released if the process that holds them crashes 
+/// Locks are automatically released if the process that holds them crashes
 /// (or is no longer able to talk to the coordination system).
-/// 
+///
 /// If a lock is lost (the coordinator is no longer reachable or thinks we no longer
 /// hold the lock for any reason) the state is changed and applications can check this.
 ///
@@ -32,9 +31,7 @@ pub struct NonBlockingLock {
 
 impl NonBlockingLock {
     pub(crate) fn new(behaviour: Box<dyn NonBlockingLockBehaviour>) -> NonBlockingLock {
-        NonBlockingLock {
-            behaviour,
-        }
+        NonBlockingLock { behaviour }
     }
 }
 
@@ -77,7 +74,6 @@ impl Drop for NonBlockingLock {
     }
 }
 
-
 /// Watcher of a non-blocking lock returned by `NonBlockingLock::watch`.
 pub struct NonBlockingLockWatcher(Arc<AtomicBool>);
 
@@ -94,7 +90,6 @@ impl NonBlockingLockWatcher {
         self.0.load(Ordering::Relaxed)
     }
 }
-
 
 #[cfg(test)]
 mod tests {
@@ -129,12 +124,10 @@ mod tests {
         assert_eq!(mock.locked(), true);
         match lock2.acquire() {
             Ok(()) => panic!("lock acquired twice"),
-            Err(error) => {
-                match error.kind() {
-                    ErrorKind::LockHeld(_, _) => (),
-                    error => panic!("{}", error),
-                }
-            }
+            Err(error) => match error.kind() {
+                ErrorKind::LockHeld(_, _) => (),
+                error => panic!("{}", error),
+            },
         }
     }
 
@@ -194,13 +187,11 @@ mod tests {
         assert_eq!(mock.locked(), false);
         match lock.release() {
             Ok(()) => panic!("lock released twice"),
-            Err(error) => {
-                match error.kind() {
-                    ErrorKind::LockNotHeld(_, _) => (),
-                    ErrorKind::LockNotFound(_) => (),
-                    error => panic!("{}", error),
-                }
-            }
+            Err(error) => match error.kind() {
+                ErrorKind::LockNotHeld(_, _) => (),
+                ErrorKind::LockNotFound(_) => (),
+                error => panic!("{}", error),
+            },
         }
     }
 }

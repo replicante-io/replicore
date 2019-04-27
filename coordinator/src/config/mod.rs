@@ -4,9 +4,8 @@ mod zookeeper;
 
 pub use self::zookeeper::ZookeeperConfig;
 
-
 /// Backend specific configuration options.
-#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
+#[derive(Clone, Eq, PartialEq, Hash, Debug, Serialize, Deserialize)]
 #[serde(tag = "backend", content = "options", deny_unknown_fields)]
 pub enum Backend {
     /// Use zookeeper as a coordination system (recommended, default).
@@ -20,9 +19,8 @@ impl Default for Backend {
     }
 }
 
-
 /// Distributed coordinator configuration options.
-#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
+#[derive(Clone, Eq, PartialEq, Hash, Debug, Serialize, Deserialize)]
 pub struct Config {
     #[serde(default, flatten)]
     pub backend: Backend,
