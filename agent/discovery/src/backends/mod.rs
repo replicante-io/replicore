@@ -1,12 +1,11 @@
 use replicante_data_models::ClusterDiscovery;
 
-use super::Result;
 use super::config::Config;
+use super::Result;
 
 mod file;
 
 pub use self::file::DiscoveryFile as DiscoveryFileModel;
-
 
 /// Enumerate supported backends to access their iterators.
 enum Backend {
@@ -21,7 +20,6 @@ impl Iterator for Backend {
         }
     }
 }
-
 
 /// Iterator over the agent discovery process.
 pub struct Iter {
@@ -47,8 +45,8 @@ impl Iter {
             None => {
                 self.active = None;
                 None
-            },
-            some => some
+            }
+            some => some,
         }
     }
 
@@ -79,13 +77,12 @@ impl Iterator for Iter {
         if self.active.is_some() {
             match self.next_active() {
                 None => return self.next_backend(),
-                some => return some
+                some => return some,
             }
         }
         self.next_backend()
     }
 }
-
 
 /// Starts the agent discover process returning and iterator over results.
 ///
@@ -141,15 +138,15 @@ pub fn discover(config: Config) -> Iter {
     Iter::new(backends)
 }
 
-
 #[cfg(test)]
 mod tests {
     use std::path::Path;
+
     use replicante_data_models::ClusterDiscovery;
 
+    use super::file;
     use super::Backend;
     use super::Iter;
-    use super::file;
 
     /// Helper function to find fixtrue files.
     ///
@@ -176,7 +173,9 @@ mod tests {
         let cluster_b = file::Iter::new(fixture_path("tests/no.clusters.yaml"));
         let cluster_c = file::Iter::new(fixture_path("tests/no.clusters.yaml"));
         let mut iter = Iter::new(vec![
-            Backend::File(cluster_a), Backend::File(cluster_b), Backend::File(cluster_c)
+            Backend::File(cluster_a),
+            Backend::File(cluster_b),
+            Backend::File(cluster_c),
         ]);
         assert!(iter.next().is_none());
     }
@@ -186,16 +185,25 @@ mod tests {
         let backend = file::Iter::new(fixture_path("tests/two.clusters.yaml"));
         let mut iter = Iter::new(vec![Backend::File(backend)]);
         let next = iter.next().unwrap().unwrap();
-        assert_eq!(next, ClusterDiscovery::new("test1", vec![
-            "http://node1:port/".into(),
-            "http://node2:port/".into(),
-            "http://node3:port/".into(),
-        ]));
+        assert_eq!(
+            next,
+            ClusterDiscovery::new(
+                "test1",
+                vec![
+                    "http://node1:port/".into(),
+                    "http://node2:port/".into(),
+                    "http://node3:port/".into(),
+                ]
+            )
+        );
         let next = iter.next().unwrap().unwrap();
-        assert_eq!(next, ClusterDiscovery::new("test2", vec![
-            "http://node1:port/".into(),
-            "http://node3:port/".into(),
-        ]));
+        assert_eq!(
+            next,
+            ClusterDiscovery::new(
+                "test2",
+                vec!["http://node1:port/".into(), "http://node3:port/".into()]
+            )
+        );
         assert!(iter.next().is_none());
     }
 
@@ -205,25 +213,42 @@ mod tests {
         let cluster_b = file::Iter::new(fixture_path("tests/no.clusters.yaml"));
         let cluster_c = file::Iter::new(fixture_path("tests/two.clusters.yaml"));
         let mut iter = Iter::new(vec![
-            Backend::File(cluster_a), Backend::File(cluster_b), Backend::File(cluster_c)
+            Backend::File(cluster_a),
+            Backend::File(cluster_b),
+            Backend::File(cluster_c),
         ]);
         let next = iter.next().unwrap().unwrap();
-        assert_eq!(next, ClusterDiscovery::new("mongodb-rs", vec![
-            "http://node1:37017".into(),
-            "http://node2:37017".into(),
-            "http://node3:37017".into(),
-        ]));
+        assert_eq!(
+            next,
+            ClusterDiscovery::new(
+                "mongodb-rs",
+                vec![
+                    "http://node1:37017".into(),
+                    "http://node2:37017".into(),
+                    "http://node3:37017".into(),
+                ]
+            )
+        );
         let next = iter.next().unwrap().unwrap();
-        assert_eq!(next, ClusterDiscovery::new("test1", vec![
-            "http://node1:port/".into(),
-            "http://node2:port/".into(),
-            "http://node3:port/".into(),
-        ]));
+        assert_eq!(
+            next,
+            ClusterDiscovery::new(
+                "test1",
+                vec![
+                    "http://node1:port/".into(),
+                    "http://node2:port/".into(),
+                    "http://node3:port/".into(),
+                ]
+            )
+        );
         let next = iter.next().unwrap().unwrap();
-        assert_eq!(next, ClusterDiscovery::new("test2", vec![
-            "http://node1:port/".into(),
-            "http://node3:port/".into(),
-        ]));
+        assert_eq!(
+            next,
+            ClusterDiscovery::new(
+                "test2",
+                vec!["http://node1:port/".into(), "http://node3:port/".into()]
+            )
+        );
         assert!(iter.next().is_none());
     }
 }

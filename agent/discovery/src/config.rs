@@ -8,8 +8,6 @@ pub struct Config {
 
 impl Default for Config {
     fn default() -> Config {
-        Config {
-            files: Vec::new(),
-        }
+        Config { files: Vec::new() }
     }
 }

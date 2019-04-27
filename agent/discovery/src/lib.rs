@@ -11,8 +11,8 @@ mod backends;
 mod config;
 mod error;
 
-pub use self::backends::Iter;
 pub use self::backends::discover;
+pub use self::backends::Iter;
 pub use self::config::Config;
 pub use self::error::Error;
 pub use self::error::ErrorKind;

@@ -4,7 +4,6 @@ use failure::Backtrace;
 use failure::Context;
 use failure::Fail;
 
-
 /// Error information returned by functions in case of errors.
 #[derive(Debug)]
 pub struct Error(Context<ErrorKind>);
@@ -43,7 +42,6 @@ impl fmt::Display for Error {
     }
 }
 
-
 /// Exhaustive list of possible errors emitted by this crate.
 #[derive(Debug, Fail)]
 pub enum ErrorKind {
@@ -53,7 +51,6 @@ pub enum ErrorKind {
     #[fail(display = "invalid YAML read from '{}'", _0)]
     YamlFile(String),
 }
-
 
 /// Short form alias for functions returning `Error`s.
 pub type Result<T> = ::std::result::Result<T, Error>;

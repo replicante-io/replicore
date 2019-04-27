@@ -8,10 +8,8 @@ use replicante_data_models::ClusterDiscovery;
 use super::super::ErrorKind;
 use super::super::Result;
 
-
 /// Serialization format for file discovery.
 pub type DiscoveryFile = Vec<ClusterDiscovery>;
-
 
 /// Iterator over results of file discovery.
 pub struct Iter {
@@ -21,7 +19,10 @@ pub struct Iter {
 
 impl Iter {
     /// Creates an iterator that reads the given file.
-    pub fn new<S>(path: S) -> Iter where S: Into<String> {
+    pub fn new<S>(path: S) -> Iter
+    where
+        S: Into<String>,
+    {
         Iter {
             data: None,
             path: path.into(),
@@ -30,8 +31,7 @@ impl Iter {
 
     /// Loads the content of the file into memory to iterate over it.
     fn load_content(&mut self) -> Result<()> {
-        let file = File::open(&self.path)
-            .with_context(|_| ErrorKind::Io(self.path.clone()))?;
+        let file = File::open(&self.path).with_context(|_| ErrorKind::Io(self.path.clone()))?;
         let mut content: DiscoveryFile = serde_yaml::from_reader(file)
             .with_context(|_| ErrorKind::YamlFile(self.path.clone()))?;
         content.reverse();
@@ -50,8 +50,8 @@ impl Iterator for Iter {
                     Ok(()) => (),
                     Err(error) => {
                         self.data = Some(Vec::new());
-                        return Some(Err(error))
-                    },
+                        return Some(Err(error));
+                    }
                 };
                 self.data.as_mut().unwrap()
             }
@@ -59,7 +59,6 @@ impl Iterator for Iter {
         data.pop().map(Ok)
     }
 }
-
 
 #[cfg(test)]
 mod tests {
@@ -78,7 +77,7 @@ mod tests {
             Some(Err(error)) => match error.kind() {
                 &ErrorKind::Io(ref path) => assert_eq!(path, "/some/file/that/does/not/exists"),
                 _ => panic!("Invalid error: {:?}", error),
-            }
+            },
         };
         assert!(iter.next().is_none());
     }
@@ -87,11 +86,17 @@ mod tests {
     fn example_file() {
         let mut iter = Iter::new(fixture_path("file.example.yaml"));
         let next = iter.next().unwrap().unwrap();
-        assert_eq!(next, ClusterDiscovery::new("mongodb-rs", vec![
-            "http://node1:37017".into(),
-            "http://node2:37017".into(),
-            "http://node3:37017".into(),
-        ]));
+        assert_eq!(
+            next,
+            ClusterDiscovery::new(
+                "mongodb-rs",
+                vec![
+                    "http://node1:37017".into(),
+                    "http://node2:37017".into(),
+                    "http://node3:37017".into(),
+                ]
+            )
+        );
         assert!(iter.next().is_none());
     }
 
@@ -105,16 +110,25 @@ mod tests {
     fn two_clusters() {
         let mut iter = Iter::new(fixture_path("tests/two.clusters.yaml"));
         let next = iter.next().unwrap().unwrap();
-        assert_eq!(next, ClusterDiscovery::new("test1", vec![
-            "http://node1:port/".into(),
-            "http://node2:port/".into(),
-            "http://node3:port/".into(),
-        ]));
+        assert_eq!(
+            next,
+            ClusterDiscovery::new(
+                "test1",
+                vec![
+                    "http://node1:port/".into(),
+                    "http://node2:port/".into(),
+                    "http://node3:port/".into(),
+                ]
+            )
+        );
         let next = iter.next().unwrap().unwrap();
-        assert_eq!(next, ClusterDiscovery::new("test2", vec![
-            "http://node1:port/".into(),
-            "http://node3:port/".into(),
-        ]));
+        assert_eq!(
+            next,
+            ClusterDiscovery::new(
+                "test2",
+                vec!["http://node1:port/".into(), "http://node3:port/".into()]
+            )
+        );
         assert!(iter.next().is_none());
     }
 }
