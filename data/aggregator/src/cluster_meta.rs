@@ -73,7 +73,7 @@ impl ClusterMetaAggregator {
     pub(crate) fn new(discovery: &ClusterDiscovery) -> ClusterMetaAggregator {
         ClusterMetaAggregator {
             agents_down: 0,
-            cluster_display_name: None,
+            cluster_display_name: discovery.display_name.clone(),
             cluster_id: discovery.cluster_id.clone(),
             kinds: HashSet::new(),
             nodes: 0,

@@ -34,7 +34,9 @@ impl NodeFetcher {
             .with_context(|_| ErrorKind::AgentRead("datastore info", client.id().to_string()))?;
         let node = Node::new(info);
         id_checker.check_id(&node.cluster_id, &node.node_id)?;
-        id_checker.check_or_set_display_name(&node.cluster_display_name, &node.node_id)?;
+        if let Some(display_name) = node.cluster_display_name.as_ref() {
+            id_checker.check_or_set_display_name(display_name, &node.node_id)?;
+        }
         let cluster_id = node.cluster_id.clone();
         let node_id = node.node_id.clone();
         match self.store.node(cluster_id, node_id).get() {

@@ -237,8 +237,8 @@ mod tests {
             .cluster_new(discovery);
         let payload = serde_json::to_string(&event).unwrap();
         let expected = concat!(
-            r#"{"event":"CLUSTER_NEW","data":{"cluster_id":"test","nodes":[]},"#,
-            r#""timestamp":"2014-07-08T09:10:11Z"}"#
+            r#"{"event":"CLUSTER_NEW","data":{"cluster_id":"test","display_name":null,"#,
+            r#""nodes":[]},"timestamp":"2014-07-08T09:10:11Z"}"#
         );
         assert_eq!(payload, expected);
     }

@@ -166,10 +166,12 @@ impl Fetcher {
 
     /// Wrapped version of `fetch` so stats can be accounted for once.
     fn fetch_checked(&self, cluster: ClusterDiscovery, lock: NonBlockingLockWatcher) -> Result<()> {
-        let cluster_id = cluster.cluster_id.clone();
+        let cluster_id = cluster.cluster_id;
         debug!(self.logger, "Refreshing cluster state"; "cluster_id" => &cluster_id);
-        let mut id_checker = ClusterIdentityChecker::new(cluster_id.clone(), None);
-        self.store.cluster(cluster_id.clone()).mark_stale()
+        let mut id_checker = ClusterIdentityChecker::new(cluster_id.clone(), cluster.display_name);
+        self.store
+            .cluster(cluster_id.clone())
+            .mark_stale()
             .with_context(|_| ErrorKind::StoreWrite("cluster staleness"))?;
 
         for node in cluster.nodes {

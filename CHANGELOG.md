@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Add `/api/unstable/introspect/self` endpoint.
 - Additional API server configuration options.
 - Introduce an `/api/unstable` API "version".
+- Optional `display_name` discovery attribute.
 - Threads introspection API.
 
 ### Changed

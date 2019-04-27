@@ -10,7 +10,7 @@ pub use replicante_agent_models::ShardRole;
 /// Datastore version details.
 #[derive(Clone, Eq, PartialEq, Hash, Debug, Serialize, Deserialize)]
 pub struct Node {
-    pub cluster_display_name: String,
+    pub cluster_display_name: Option<String>,
     pub cluster_id: String,
     pub kind: String,
     pub node_id: String,
@@ -19,12 +19,8 @@ pub struct Node {
 
 impl Node {
     pub fn new(node: WireNode) -> Node {
-        let cluster_display_name = match node.cluster_display_name {
-            Some(cluster_display_name) => cluster_display_name,
-            None => node.cluster_id.clone(),
-        };
         Node {
-            cluster_display_name,
+            cluster_display_name: node.cluster_display_name,
             cluster_id: node.cluster_id,
             kind: node.kind,
             node_id: node.node_id,
@@ -88,7 +84,7 @@ mod tests {
             let node = Node::new(wire);
             let payload = serde_json::to_string(&node).unwrap();
             let expected = concat!(
-                r#"{"cluster_display_name":"cluster","cluster_id":"cluster","#,
+                r#"{"cluster_display_name":null,"cluster_id":"cluster","#,
                 r#""kind":"DB","node_id":"Name","version":"1.2.3"}"#
             );
             assert_eq!(payload, expected);

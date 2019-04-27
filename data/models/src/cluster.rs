@@ -13,6 +13,8 @@
 #[derive(Clone, Eq, PartialEq, Hash, Debug, Serialize, Deserialize)]
 pub struct ClusterDiscovery {
     pub cluster_id: String,
+    #[serde(default)]
+    pub display_name: Option<String>,
     pub nodes: Vec<String>,
 }
 
@@ -23,6 +25,7 @@ impl ClusterDiscovery {
     {
         ClusterDiscovery {
             cluster_id: cluster_id.into(),
+            display_name: None,
             nodes,
         }
     }
@@ -82,7 +85,7 @@ mod tests {
         fn to_json() {
             let cluster = ClusterDiscovery::new("test", vec!["a".into(), "b".into()]);
             let payload = serde_json::to_string(&cluster).unwrap();
-            let expected = r#"{"cluster_id":"test","nodes":["a","b"]}"#;
+            let expected = r#"{"cluster_id":"test","display_name":null,"nodes":["a","b"]}"#;
             assert_eq!(payload, expected);
         }
     }

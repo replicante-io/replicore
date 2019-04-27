@@ -14,4 +14,4 @@ node_modules/
 deps.dot
 deps.svg
 replicante.yaml
-conf.d/
+devtools/replicante.conf.d/
