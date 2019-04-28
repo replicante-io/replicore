@@ -15,7 +15,7 @@ lazy_static! {
     )
     .expect("Failed to create replicore_fetcher_duration histogram");
     pub static ref AGGREGATE_ERRORS_COUNT: Counter = Counter::new(
-        "replicore_fetcher_errors", "Number of fetchers errors"
+        "replicore_aggregate_errors", "Number of fetchers errors"
     )
     .expect("Failed to create replicore_fetcher_errors counter");
 }
