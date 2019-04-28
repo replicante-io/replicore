@@ -28,7 +28,6 @@ use replicante_streams_events::EventsStream;
 use replicante_util_failure::failure_info;
 use replicante_util_failure::format_fail;
 
-
 mod agent;
 mod error;
 mod metrics;
@@ -63,14 +62,12 @@ impl ClusterIdentityChecker {
         if current == display_name {
             return Ok(());
         }
-        Err(
-            ErrorKind::ClusterDisplayNameDoesNotMatch(
-                current.to_string(),
-                display_name.to_string(),
-                node_id.to_string(),
-            )
-            .into()
+        Err(ErrorKind::ClusterDisplayNameDoesNotMatch(
+            current.to_string(),
+            display_name.to_string(),
+            node_id.to_string(),
         )
+        .into())
     }
 
     fn check_id(&mut self, id: &str, node_id: &str) -> Result<()> {
@@ -78,12 +75,8 @@ impl ClusterIdentityChecker {
             return Ok(());
         }
         Err(
-            ErrorKind::ClusterIdDoesNotMatch(
-                self.id.clone(),
-                id.to_string(),
-                node_id.to_string(),
-            )
-            .into()
+            ErrorKind::ClusterIdDoesNotMatch(self.id.clone(), id.to_string(), node_id.to_string())
+                .into(),
         )
     }
 
@@ -132,10 +125,10 @@ impl Fetcher {
     ///
     /// # Errors
     /// The frech process can encounter two kinds of errors:
-    /// 
+    ///
     ///   * Core errors: store, coordinator, internal logic, ...
     ///   * Remote errors: agent is down, network issue, invalid data returned, ...
-    /// 
+    ///
     /// Core errors are returned and interupt the fetching process early (if the primary store is
     /// failing to respond it is likely to fail again in a short time).
     ///
@@ -152,11 +145,10 @@ impl Fetcher {
     // TODO: separatelly handle agnet/remote errors.
     pub fn fetch(&self, cluster: ClusterDiscovery, lock: NonBlockingLockWatcher) -> Result<()> {
         let _timer = FETCHER_DURATION.start_timer();
-        let result = self.fetch_checked(cluster, lock)
-            .map_err(|error| {
-                FETCHER_ERRORS_COUNT.inc();
-                error
-            });
+        let result = self.fetch_checked(cluster, lock).map_err(|error| {
+            FETCHER_ERRORS_COUNT.inc();
+            error
+        });
         // TODO: propagate core errors.
         if let Err(error) = result {
             error!(self.logger, "Failed to process cluster refresh"; failure_info(&error));
@@ -194,15 +186,12 @@ impl Fetcher {
         node: &str,
         id_checker: &mut ClusterIdentityChecker,
     ) -> Result<()> {
-        let client = HttpClient::make(node.to_string(), self.timeout.clone())
+        let client = HttpClient::make(node.to_string(), self.timeout)
             .with_context(|_| ErrorKind::AgentConnect(node.to_string()))?;
         let mut agent = Agent::new(cluster.to_string(), node.to_string(), AgentStatus::Up);
-
-        let result = self.agent.process_agent_info(
-            &client,
-            cluster.to_string(),
-            node.to_string(),
-        );
+        let result = self
+            .agent
+            .process_agent_info(&client, cluster.to_string(), node.to_string());
         if let Err(error) = result {
             let message = format_fail(&error);
             agent.status = AgentStatus::AgentDown(message);

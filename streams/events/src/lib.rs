@@ -57,7 +57,7 @@ pub struct EventsStream(Arc<StreamInterface>);
 
 impl EventsStream {
     pub fn new(config: Config, logger: Logger, store: Store) -> EventsStream {
-        let stream = self::backend::new(config, logger, store);
+        let stream = self::backend::make(config, logger, store);
         EventsStream(stream)
     }
 

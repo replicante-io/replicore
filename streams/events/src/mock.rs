@@ -12,6 +12,7 @@ use super::interface::StreamInterface;
 
 
 /// Mock implementation of the events streaming interface.
+#[derive(Default)]
 pub struct MockEvents {}
 
 impl MockEvents {

@@ -7,14 +7,12 @@ use replicante_streams_events::EventsStream;
 use super::ErrorKind;
 use super::Result;
 
-
 /// Emits snapshots for the states of a cluster.
 pub struct Snapshotter {
     cluster: String,
     events: EventsStream,
     store: Store,
 }
-
 
 impl Snapshotter {
     pub fn new(cluster: String, events: EventsStream, store: Store) -> Snapshotter {
@@ -45,7 +43,9 @@ impl Snapshotter {
             let status = status.with_context(|_| ErrorKind::StoreRead("agent status"))?;
             let event = Event::builder().snapshot().agent(status);
             let code = event.code();
-            self.events.emit(event).with_context(|_| ErrorKind::EventEmit(code))?;
+            self.events
+                .emit(event)
+                .with_context(|_| ErrorKind::EventEmit(code))?;
         }
         let infos = self
             .store
@@ -56,7 +56,9 @@ impl Snapshotter {
             let info = info.with_context(|_| ErrorKind::StoreRead("agent info"))?;
             let event = Event::builder().snapshot().agent_info(info);
             let code = event.code();
-            self.events.emit(event).with_context(|_| ErrorKind::EventEmit(code))?;
+            self.events
+                .emit(event)
+                .with_context(|_| ErrorKind::EventEmit(code))?;
         }
         Ok(())
     }
@@ -70,7 +72,9 @@ impl Snapshotter {
         if let Some(discovery) = discovery {
             let event = Event::builder().snapshot().discovery(discovery);
             let code = event.code();
-            self.events.emit(event).with_context(|_| ErrorKind::EventEmit(code))?;
+            self.events
+                .emit(event)
+                .with_context(|_| ErrorKind::EventEmit(code))?;
         }
         Ok(())
     }
@@ -85,7 +89,9 @@ impl Snapshotter {
             let node = node.with_context(|_| ErrorKind::StoreRead("node"))?;
             let event = Event::builder().snapshot().node(node);
             let code = event.code();
-            self.events.emit(event).with_context(|_| ErrorKind::EventEmit(code))?;
+            self.events
+                .emit(event)
+                .with_context(|_| ErrorKind::EventEmit(code))?;
         }
         Ok(())
     }
@@ -100,7 +106,9 @@ impl Snapshotter {
             let shard = shard.with_context(|_| ErrorKind::StoreRead("shard"))?;
             let event = Event::builder().snapshot().shard(shard);
             let code = event.code();
-            self.events.emit(event).with_context(|_| ErrorKind::EventEmit(code))?;
+            self.events
+                .emit(event)
+                .with_context(|_| ErrorKind::EventEmit(code))?;
         }
         Ok(())
     }

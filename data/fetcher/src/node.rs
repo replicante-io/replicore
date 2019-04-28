@@ -12,7 +12,6 @@ use super::Error;
 use super::ErrorKind;
 use super::Result;
 
-
 /// Subset of fetcher logic that deals specifically with nodes.
 pub(crate) struct NodeFetcher {
     events: EventsStream,
@@ -41,7 +40,8 @@ impl NodeFetcher {
         let node_id = node.node_id.clone();
         match self.store.node(cluster_id, node_id).get() {
             Err(error) => Err(error)
-                .with_context(|_| ErrorKind::StoreRead("node")).map_err(Error::from),
+                .with_context(|_| ErrorKind::StoreRead("node"))
+                .map_err(Error::from),
             Ok(None) => self.process_node_new(node),
             Ok(Some(old)) => self.process_node_existing(node, old),
         }
@@ -61,7 +61,8 @@ impl NodeFetcher {
         self.store
             .persist()
             .node(node)
-            .with_context(|_| ErrorKind::StoreWrite("node update")).map_err(Error::from)
+            .with_context(|_| ErrorKind::StoreWrite("node update"))
+            .map_err(Error::from)
     }
 
     fn process_node_new(&self, node: Node) -> Result<()> {
@@ -73,6 +74,7 @@ impl NodeFetcher {
         self.store
             .persist()
             .node(node)
-            .with_context(|_| ErrorKind::StoreWrite("new node")).map_err(Error::from)
+            .with_context(|_| ErrorKind::StoreWrite("new node"))
+            .map_err(Error::from)
     }
 }

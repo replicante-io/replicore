@@ -10,8 +10,8 @@ use super::interface::StreamInterface;
 mod store;
 
 
-pub fn new(config: Config, logger: Logger, store: Store) -> Arc<StreamInterface> {
+pub fn make(config: Config, logger: Logger, store: Store) -> Arc<StreamInterface> {
     match config {
-        Config::Store => self::store::StoreInterface::new(logger, store),
+        Config::Store => self::store::StoreInterface::make(logger, store),
     }
 }
