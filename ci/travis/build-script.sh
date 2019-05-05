@@ -16,6 +16,8 @@ cargo clippy --verbose -p replicante_data_aggregator -- -D warnings
 cargo clippy --verbose -p replicante_data_fetcher -- -D warnings
 cargo clippy --verbose -p replicante_data_models -- -D warnings
 cargo clippy --verbose -p replicante_data_store -- -D warnings
+cargo clippy --verbose -p replicante_streams_events -- -D warnings
+cargo clippy --verbose -p replicante_tasks -- -D warnings
 cargo fmt --verbose -preplicante_agent_client -- --check
 cargo fmt --verbose -preplicante_agent_discovery -- --check
 cargo fmt --verbose -preplicante_coordinator -- --check
@@ -23,3 +25,5 @@ cargo fmt --verbose -preplicante_data_aggregator -- --check
 cargo fmt --verbose -preplicante_data_fetcher -- --check
 cargo fmt --verbose -preplicante_data_models -- --check
 cargo fmt --verbose -preplicante_data_store -- --check
+cargo fmt --verbose -preplicante_streams_events -- --check
+cargo fmt --verbose -preplicante_tasks -- --check

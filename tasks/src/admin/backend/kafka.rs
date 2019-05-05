@@ -5,22 +5,22 @@ use std::time::Duration;
 use failure::ResultExt;
 use slog::Logger;
 
-use rdkafka::Message;
-use rdkafka::consumer::Consumer;
 use rdkafka::consumer::base_consumer::BaseConsumer;
+use rdkafka::consumer::Consumer;
 use rdkafka::message::BorrowedMessage;
 use rdkafka::message::Headers;
+use rdkafka::Message;
 
 use super::super::super::config::KafkaConfig;
+use super::super::super::shared::kafka::consumer_config;
+use super::super::super::shared::kafka::queue_from_topic;
+use super::super::super::shared::kafka::topic_for_queue;
 use super::super::super::shared::kafka::ClientStatsContext;
+use super::super::super::shared::kafka::TopicRole;
 use super::super::super::shared::kafka::KAFKA_ADMIN_CONSUMER;
 use super::super::super::shared::kafka::KAFKA_ADMIN_GROUP;
 use super::super::super::shared::kafka::KAFKA_TASKS_ID_HEADER;
 use super::super::super::shared::kafka::KAFKA_TASKS_RETRY_HEADER;
-use super::super::super::shared::kafka::TopicRole;
-use super::super::super::shared::kafka::consumer_config;
-use super::super::super::shared::kafka::queue_from_topic;
-use super::super::super::shared::kafka::topic_for_queue;
 use super::super::super::worker::AckStrategy;
 use super::super::super::Error;
 use super::super::super::ErrorKind;
@@ -31,12 +31,10 @@ use super::super::super::TaskQueue;
 use super::super::AdminBackend;
 use super::super::TasksIter;
 
-
 const TIMEOUT_MS_POLL: u64 = 500;
 
 /// Type alias for a BaseConsumer that has a ClientStatsContext context.
 type BaseStatsConsumer = BaseConsumer<ClientStatsContext>;
-
 
 /// Admin tasks backend for kafka tasks.
 pub struct Kafka {
@@ -45,9 +43,7 @@ pub struct Kafka {
 
 impl Kafka {
     pub fn new(_logger: Logger, config: KafkaConfig) -> Result<Kafka> {
-        Ok(Kafka {
-            config,
-        })
+        Ok(Kafka { config })
     }
 }
 
@@ -66,10 +62,12 @@ impl<Q: TaskQueue> AdminBackend<Q> for Kafka {
         let consumer: BaseStatsConsumer = kafka_config
             .create_with_context(ClientStatsContext::new(stats_id))
             .with_context(|_| ErrorKind::BackendClientCreation)?;
-        consumer.subscribe(&[
-            &topic_for_queue(&self.config.queue_prefix, &queue_name, TopicRole::Queue),
-            &topic_for_queue(&self.config.queue_prefix, &queue_name, TopicRole::Retry)
-        ]).with_context(|_| ErrorKind::TaskSubscription)?;
+        consumer
+            .subscribe(&[
+                &topic_for_queue(&self.config.queue_prefix, &queue_name, TopicRole::Queue),
+                &topic_for_queue(&self.config.queue_prefix, &queue_name, TopicRole::Retry),
+            ])
+            .with_context(|_| ErrorKind::TaskSubscription)?;
         Ok(TasksIter(Box::new(KafkaIter {
             _queue: ::std::marker::PhantomData,
             consumer,
@@ -81,7 +79,6 @@ impl<Q: TaskQueue> AdminBackend<Q> for Kafka {
         Ok("Kafka (version not reported)".into())
     }
 }
-
 
 /// Iterator over kafka stored tasks.
 struct KafkaIter<Q: TaskQueue> {
@@ -111,13 +108,13 @@ impl<Q: TaskQueue> KafkaIter<Q> {
             Some(headers) => {
                 let mut hdrs = HashMap::new();
                 for idx in 0..headers.count() {
-                    let (key, value) = headers.get(idx)
+                    let (key, value) = headers
+                        .get(idx)
                         .expect("should not decode header that does not exist");
                     let key = String::from(key);
-                    let value = String::from_utf8(value.to_vec())
-                        .with_context(
-                            |_| ErrorKind::TaskHeaderInvalid(key.clone(), "<not-utf8>".into())
-                        )?;
+                    let value = String::from_utf8(value.to_vec()).with_context(|_| {
+                        ErrorKind::TaskHeaderInvalid(key.clone(), "<not-utf8>".into())
+                    })?;
                     hdrs.insert(key, value);
                 }
                 hdrs
@@ -131,12 +128,10 @@ impl<Q: TaskQueue> KafkaIter<Q> {
         };
         let retry_count = match headers.remove(KAFKA_TASKS_RETRY_HEADER) {
             None => 0,
-            Some(retry_count) => retry_count
-                .parse::<u8>()
-                .with_context(|_| {
-                    let key = KAFKA_TASKS_RETRY_HEADER.to_string();
-                    ErrorKind::TaskHeaderInvalid(key, retry_count)
-                })?,
+            Some(retry_count) => retry_count.parse::<u8>().with_context(|_| {
+                let key = KAFKA_TASKS_RETRY_HEADER.to_string();
+                ErrorKind::TaskHeaderInvalid(key, retry_count)
+            })?,
         };
 
         // Return a special task that can't be acked and does not panic if not processed.
@@ -162,12 +157,11 @@ impl<Q: TaskQueue> Iterator for KafkaIter<Q> {
                     .with_context(|_| ErrorKind::FetchError)
                     .map_err(Error::from);
                 Some(error)
-            },
+            }
             Some(Ok(message)) => Some(self.parse_message(message)),
         }
     }
 }
-
 
 /// Acks are not allowed while scanning kafka tasks.
 ///

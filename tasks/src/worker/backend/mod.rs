@@ -8,7 +8,6 @@ pub mod kafka;
 #[cfg(debug_assertions)]
 pub mod mock;
 
-
 /// Backend specific task acknowledgement logic.
 ///
 /// Once created, tasks are mostly independent of their backend.
@@ -29,11 +28,10 @@ pub trait AckStrategy<Q: TaskQueue> {
     fn success(&self, task: Task<Q>) -> Result<()>;
 }
 
-
 /// Internal interface used to fetch tasks form the queue system backend.
 ///
 /// This trait is used by the public interface but not exposed directly.
-pub trait Backend<Q: TaskQueue> : Send + Sync {
+pub trait Backend<Q: TaskQueue>: Send + Sync {
     /// Attempt to fetch a new task, waiting at most `timeout` before giving up.
     fn poll(&self, timeout: Duration) -> Result<Option<Task<Q>>>;
 

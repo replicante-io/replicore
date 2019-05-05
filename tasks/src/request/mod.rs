@@ -13,12 +13,10 @@ use super::Result;
 use super::TaskId;
 use super::TaskQueue;
 
-
 mod backend;
 
-use self::backend::Backend;
 use self::backend::kafka::Kafka;
-
+use self::backend::Backend;
 
 /// Request a task to be queued for processing
 pub struct TaskRequest<Q: TaskQueue> {
@@ -30,8 +28,9 @@ pub struct TaskRequest<Q: TaskQueue> {
 impl<Q: TaskQueue> TaskRequest<Q> {
     /// Attach or update an header to the task.
     pub fn header<S1, S2>(&mut self, header: S1, value: S2)
-        where S1: Into<String>,
-              S2: Into<String>,
+    where
+        S1: Into<String>,
+        S2: Into<String>,
     {
         self.headers.insert(header.into(), value.into());
     }
@@ -63,7 +62,6 @@ impl<Q: TaskQueue> TaskRequest<Q> {
     }
 }
 
-
 /// Manages task requests to the queue system.
 #[derive(Clone)]
 pub struct Tasks<Q: TaskQueue>(Arc<Backend<Q>>);
@@ -82,8 +80,8 @@ impl<Q: TaskQueue> Tasks<Q> {
     /// Tasks are performed asynchronously and, likely, in separate processes.
     /// There is no guarantee about times within which tasks are completed.
     pub fn request<M: Serialize>(&self, task: TaskRequest<Q>, message: M) -> Result<()> {
-        let message = ::serde_json::to_vec(&message)
-            .with_context(|_| ErrorKind::PayloadSerialize)?;
+        let message =
+            ::serde_json::to_vec(&message).with_context(|_| ErrorKind::PayloadSerialize)?;
         let queue = task.queue.name();
         TASK_REQUEST_TOTAL.with_label_values(&[&queue]).inc();
         self.0.request(task, &message).map_err(|error| {
@@ -93,11 +91,14 @@ impl<Q: TaskQueue> Tasks<Q> {
     }
 }
 
+#[cfg(debug_assertions)]
+pub type MockedRequests<Q> = Arc<::std::sync::Mutex<Vec<(TaskRequest<Q>, ::serde_json::Value)>>>;
 
 /// Mock tools to test `Tasks` users.
 #[cfg(debug_assertions)]
+#[derive(Default)]
 pub struct MockTasks<Q: TaskQueue> {
-    pub requests: Arc<::std::sync::Mutex<Vec<(TaskRequest<Q>, ::serde_json::Value)>>>,
+    pub requests: MockedRequests<Q>,
 }
 
 #[cfg(debug_assertions)]
@@ -117,7 +118,6 @@ impl<Q: TaskQueue> MockTasks<Q> {
     }
 }
 
-
 #[cfg(test)]
 mod tests {
     use std::str::FromStr;
@@ -129,7 +129,7 @@ mod tests {
 
     #[derive(Clone, Debug, Eq, Hash, PartialEq)]
     enum TestQueues {
-        Test
+        Test,
     }
 
     impl FromStr for TestQueues {
@@ -143,13 +143,17 @@ mod tests {
     }
 
     impl TaskQueue for TestQueues {
-        fn max_retry_count(&self) -> u8 { 12 }
+        fn max_retry_count(&self) -> u8 {
+            12
+        }
         fn name(&self) -> String {
             match self {
                 TestQueues::Test => "test".into(),
             }
         }
-        fn retry_delay(&self) -> Duration { Duration::from_secs(5 * 60) }
+        fn retry_delay(&self) -> Duration {
+            Duration::from_secs(5 * 60)
+        }
     }
 
     #[test]
@@ -157,7 +161,9 @@ mod tests {
         let task = TaskRequest::new(TestQueues::Test);
         let message: String = "Some text".into();
         let mock: MockTasks<TestQueues> = MockTasks::new();
-        mock.mock().request(task, message).expect("failed to request task");
+        mock.mock()
+            .request(task, message)
+            .expect("failed to request task");
         let found = &mock.requests.lock().expect("failed to lock")[0];
         assert_eq!(found.0.queue(), &TestQueues::Test);
         assert_eq!("Some text", found.1);
@@ -167,7 +173,9 @@ mod tests {
     fn request_unit() {
         let task = TaskRequest::new(TestQueues::Test);
         let mock: MockTasks<TestQueues> = MockTasks::new();
-        mock.mock().request(task, ()).expect("failed to request task");
+        mock.mock()
+            .request(task, ())
+            .expect("failed to request task");
         let found = &mock.requests.lock().expect("failed to lock")[0];
         assert_eq!(found.0.queue(), &TestQueues::Test);
     }

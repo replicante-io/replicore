@@ -5,7 +5,6 @@ use replicante_data_models::Event;
 
 use super::Result;
 
-
 /// Private interface to the events streaming system.
 ///
 /// Allows multiple possible backends to be used as well as mocks for testing.
@@ -17,13 +16,13 @@ pub trait StreamInterface: Send + Sync {
     fn scan(&self, filters: ScanFilters, options: ScanOptions) -> Result<Iter>;
 }
 
-
 /// Iterator over events returned by a scan operation.
-pub struct Iter(Box<Iterator<Item=Result<Event>>>);
+pub struct Iter(Box<Iterator<Item = Result<Event>>>);
 
 impl Iter {
     pub fn new<I>(iter: I) -> Iter
-        where I: Iterator<Item=Result<Event>> + 'static
+    where
+        I: Iterator<Item = Result<Event>> + 'static,
     {
         Iter(Box::new(iter))
     }
@@ -35,7 +34,6 @@ impl Iterator for Iter {
         self.0.next()
     }
 }
-
 
 /// Filters to apply when scanning events.
 pub struct ScanFilters {
@@ -86,7 +84,6 @@ impl Default for ScanFilters {
         }
     }
 }
-
 
 /// Options to apply when scanning events.
 pub struct ScanOptions {

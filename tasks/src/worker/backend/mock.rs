@@ -14,7 +14,6 @@ use super::Result;
 use super::Task;
 use super::TaskQueue;
 
-
 /// Strategy to operate on mock tasks.
 pub struct MockAck {
     pub mock: Arc<Mutex<MockTask>>,
@@ -37,7 +36,6 @@ impl<Q: TaskQueue> AckStrategy<Q> for MockAck {
     }
 }
 
-
 /// Mock implementation of a tasks queue backend.
 pub struct MockBackend<Q: TaskQueue> {
     pub tasks: Arc<Mutex<VecDeque<TaskTemplate<Q>>>>,
@@ -47,7 +45,10 @@ impl<Q: TaskQueue> Backend<Q> for MockBackend<Q> {
     fn poll(&self, timeout: Duration) -> Result<Option<Task<Q>>> {
         // Simulate waiting for a task to arrive.
         sleep(timeout / 2);
-        let task = self.tasks.lock().expect("mock tasks lock poisoned")
+        let task = self
+            .tasks
+            .lock()
+            .expect("mock tasks lock poisoned")
             .pop_front()
             .map(|t| t.task());
         Ok(task)
@@ -58,12 +59,10 @@ impl<Q: TaskQueue> Backend<Q> for MockBackend<Q> {
     }
 }
 
-
 /// Mock tools to simulate tasks.
 pub struct MockTask {
     pub ack: TaskAck,
 }
-
 
 /// Track the acknowledgement state of a mocked task.
 #[derive(Debug, Eq, PartialEq)]
@@ -73,7 +72,6 @@ pub enum TaskAck {
     Skipped,
     Success,
 }
-
 
 /// Template describing mocked tasks that can be later inspected for assertions.
 pub struct TaskTemplate<Q: TaskQueue> {
@@ -87,9 +85,13 @@ pub struct TaskTemplate<Q: TaskQueue> {
 
 impl<Q: TaskQueue> TaskTemplate<Q> {
     pub fn new<M>(
-        queue: Q, message: M, headers: HashMap<String, String>, retry_count: u8
+        queue: Q,
+        message: M,
+        headers: HashMap<String, String>,
+        retry_count: u8,
     ) -> TaskTemplate<Q>
-        where M: Serialize
+    where
+        M: Serialize,
     {
         let mock = Arc::new(Mutex::new(MockTask {
             ack: TaskAck::NotAcked,
@@ -113,7 +115,7 @@ impl<Q: TaskQueue> TaskTemplate<Q> {
             mock: Arc::clone(&self.mock),
         });
         Task {
-            ack_strategy, 
+            ack_strategy,
             headers: self.headers.clone(),
             id: self.id.clone(),
             message: self.message.clone(),

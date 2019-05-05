@@ -1,7 +1,7 @@
 use std::collections::HashMap;
-use std::sync::Arc;
 use std::sync::atomic::AtomicBool;
 use std::sync::atomic::Ordering;
+use std::sync::Arc;
 use std::time::Duration;
 
 use humthreads::Builder;
@@ -11,8 +11,6 @@ use slog::Logger;
 
 use replicante_util_failure::failure_info;
 
-use super::backend::kafka::Kafka;
-use super::backend::Backend;
 use super::super::config::Backend as BackendConfig;
 use super::super::metrics::TASK_WORKER_NO_HANDLER;
 use super::super::metrics::TASK_WORKER_POLL_ERRORS;
@@ -21,6 +19,8 @@ use super::super::Config;
 use super::super::ErrorKind;
 use super::super::Result;
 use super::super::Task;
+use super::backend::kafka::Kafka;
+use super::backend::Backend;
 
 use super::TaskQueue;
 
@@ -31,7 +31,7 @@ const TIMEOUT_MS_POLL: u64 = 500;
 const TIMEOUT_MS_ERROR: u64 = 5000;
 
 /// Interface for code that can process a task.
-pub trait TaskHandler<Q: TaskQueue> : Send + Sync + 'static {
+pub trait TaskHandler<Q: TaskQueue>: Send + Sync + 'static {
     /// Process the given task.
     ///
     /// The handler MUST call one of the task acknowledgement methods (`fail`, `skip`, `success`)
@@ -40,14 +40,14 @@ pub trait TaskHandler<Q: TaskQueue> : Send + Sync + 'static {
 }
 
 impl<F, Q> TaskHandler<Q> for F
-    where F: Fn(Task<Q>) -> () + Send + Sync + 'static,
-          Q: TaskQueue,
+where
+    F: Fn(Task<Q>) -> () + Send + Sync + 'static,
+    Q: TaskQueue,
 {
     fn handle(&self, task: Task<Q>) {
         self(task)
     }
 }
-
 
 /// Worker logic run by each thread.
 struct Worker<Q: TaskQueue> {
@@ -81,31 +81,34 @@ impl<Q: TaskQueue> Worker<Q> {
                     failure_info(&error)
                 );
                 TASK_WORKER_POLL_ERRORS.inc();
-                let _activity = self.thread.scoped_activity("failed to poll for tasks, backing off a bit");
+                let _activity = self
+                    .thread
+                    .scoped_activity("failed to poll for tasks, backing off a bit");
                 ::std::thread::sleep(Duration::from_millis(TIMEOUT_MS_ERROR));
-                return
-            },
+                return;
+            }
             Ok(None) => return,
             Ok(Some(task)) => task,
         };
         let queue = task.queue.name();
-        let _activity = self.thread.scoped_activity(
-            format!("processing task ID '{}' from queue '{}'", task.id, queue.to_string())
-        );
+        let _activity = self.thread.scoped_activity(format!(
+            "processing task ID '{}' from queue '{}'",
+            task.id,
+            queue.to_string(),
+        ));
         trace!(self.logger, "Received task"; "queue" => &queue);
         match self.handlers.get(&task.queue) {
             None => {
                 error!(self.logger, "No task handler found"; "queue" => task.queue.name());
                 TASK_WORKER_NO_HANDLER.with_label_values(&[&queue]).inc();
-            },
+            }
             Some(handler) => {
                 TASK_WORKER_RECEIVED.with_label_values(&[&queue]).inc();
                 handler.handle(task)
-            },
+            }
         };
     }
 }
-
 
 /// Builder for a worker threads pool receiving and processing tasks.
 pub struct WorkerSet<Q: TaskQueue> {
@@ -146,12 +149,8 @@ impl<Q: TaskQueue> WorkerSet<Q> {
                 .full_name(name)
                 .spawn(move |scope| {
                     scope.activity("waiting for tasks to process");
-                    let worker: Worker<Q> = Worker::new(
-                        logger,
-                        thread_backend,
-                        thread_handlers,
-                        scope,
-                    );
+                    let worker: Worker<Q> =
+                        Worker::new(logger, thread_backend, thread_handlers, scope);
                     while still_running.load(Ordering::SeqCst) {
                         worker.run_once();
                     }
@@ -160,7 +159,7 @@ impl<Q: TaskQueue> WorkerSet<Q> {
         }
 
         // If any of the threads failed to spawn we need to terminate the pool and clean up.
-        if threads.iter().any(|t| t.is_err()) {
+        if threads.iter().any(::std::result::Result::is_err) {
             running.store(false, Ordering::SeqCst);
             for thread in threads.into_iter() {
                 if let Ok(mut handle) = thread {
@@ -186,7 +185,7 @@ impl<Q: TaskQueue> WorkerSet<Q> {
             threads: handles,
         })
     }
-    
+
     /// Register a new worker routine for a queue.
     ///
     /// Each queue can only have one handling routine associated with it.
@@ -205,7 +204,6 @@ impl<Q: TaskQueue> WorkerSet<Q> {
         Ok(self)
     }
 }
-
 
 /// Set of worker threads processing tasks.
 pub struct WorkerSetPool {
@@ -241,7 +239,6 @@ impl Drop for WorkerSetPool {
     }
 }
 
-
 #[cfg(test)]
 mod tests {
     use std::collections::HashMap;
@@ -255,9 +252,9 @@ mod tests {
 
     use super::super::mock::MockWorkerSet;
     use super::super::mock::TaskTemplate;
-    use super::TIMEOUT_MS_POLL;
     use super::Task;
     use super::TaskQueue;
+    use super::TIMEOUT_MS_POLL;
 
     #[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
     enum TestQueues {
@@ -277,14 +274,18 @@ mod tests {
     }
 
     impl TaskQueue for TestQueues {
-        fn max_retry_count(&self) -> u8 { 12 }
+        fn max_retry_count(&self) -> u8 {
+            12
+        }
         fn name(&self) -> String {
             match self {
                 TestQueues::Test1 => "test1".into(),
                 TestQueues::Test2 => "test2".into(),
             }
         }
-        fn retry_delay(&self) -> Duration { Duration::from_secs(5 * 60) }
+        fn retry_delay(&self) -> Duration {
+            Duration::from_secs(5 * 60)
+        }
     }
 
     #[test]
@@ -295,12 +296,15 @@ mod tests {
         (*mock_set.tasks.lock().unwrap()).push_back(task);
         let processed = Arc::new(Mutex::new(Vec::new()));
         let processed_thread = Arc::clone(&processed);
-        let _workers = mock_set.mock(logger)
+        let _workers = mock_set
+            .mock(logger)
             .worker(TestQueues::Test1, move |task: Task<TestQueues>| {
                 let queue = task.queue.name();
                 processed_thread.lock().unwrap().push(queue);
-            }).unwrap()
-            .run().unwrap();
+            })
+            .unwrap()
+            .run()
+            .unwrap();
         ::std::thread::sleep(Duration::from_millis(TIMEOUT_MS_POLL + 100));
         assert_eq!(*processed.lock().unwrap(), vec![String::from("test1")]);
     }
@@ -309,9 +313,12 @@ mod tests {
     fn map_queue_to_handler() {
         let logger = Logger::root(Discard, o!());
         let mock_set = MockWorkerSet::new();
-        let workers = mock_set.mock(logger)
-            .worker(TestQueues::Test1, |_|()).unwrap()
-            .worker(TestQueues::Test2, |_| ()).unwrap();
+        let workers = mock_set
+            .mock(logger)
+            .worker(TestQueues::Test1, |_| ())
+            .unwrap()
+            .worker(TestQueues::Test2, |_| ())
+            .unwrap();
         assert_eq!(workers.handlers.len(), 2);
         let mut keys: Vec<TestQueues> = workers.handlers.keys().map(|k| k.clone()).collect();
         keys.sort();
@@ -322,9 +329,12 @@ mod tests {
     fn stop_pool() {
         let logger = Logger::root(Discard, o!());
         let mock_set = MockWorkerSet::new();
-        let mut workers = mock_set.mock(logger)
-            .worker(TestQueues::Test1, |_| ()).unwrap()
-            .run().unwrap();
+        let mut workers = mock_set
+            .mock(logger)
+            .worker(TestQueues::Test1, |_| ())
+            .unwrap()
+            .run()
+            .unwrap();
         workers.stop().unwrap();
     }
 }

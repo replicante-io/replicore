@@ -2,7 +2,6 @@ mod kafka;
 
 pub use self::kafka::KafkaConfig;
 
-
 /// Task queue backend configuration.
 #[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
 #[serde(tag = "backend", content = "options", deny_unknown_fields)]
@@ -17,7 +16,6 @@ impl Default for Backend {
         Backend::Kafka(KafkaConfig::default())
     }
 }
-
 
 /// Tasks configuration options.
 #[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]

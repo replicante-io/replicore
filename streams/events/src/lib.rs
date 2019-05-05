@@ -11,7 +11,6 @@ extern crate slog;
 extern crate replicante_data_models;
 extern crate replicante_data_store;
 
-
 use std::sync::Arc;
 
 use prometheus::Registry;
@@ -19,7 +18,6 @@ use slog::Logger;
 
 use replicante_data_models::Event;
 use replicante_data_store::store::Store;
-
 
 mod backend;
 mod config;
@@ -31,7 +29,6 @@ mod interface;
 #[cfg(debug_assertions)]
 pub mod mock;
 
-
 pub use self::config::Config;
 
 pub use self::error::Error;
@@ -42,7 +39,6 @@ pub use self::interface::Iter;
 pub use self::interface::ScanFilters;
 pub use self::interface::ScanOptions;
 use self::interface::StreamInterface;
-
 
 /// Public interface to the events streaming system.
 ///

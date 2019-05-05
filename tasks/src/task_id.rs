@@ -3,11 +3,10 @@ use std::str::FromStr;
 
 use replicante_util_rndid::RndId;
 
-
 /// Task (probably) unique identifiers.
 ///
 /// Use to distinguish each task from others and "connect" retires to the main task.
-#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
+#[derive(Clone, Default, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
 pub struct TaskId(RndId);
 
 impl TaskId {
@@ -29,7 +28,6 @@ impl fmt::Display for TaskId {
         write!(fmt, "{}", self.0)
     }
 }
-
 
 #[cfg(test)]
 mod tests {

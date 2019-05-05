@@ -28,7 +28,6 @@ impl Default for KafkaAckLevel {
     }
 }
 
-
 /// Kafka as a task queue configuration options.
 #[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
 pub struct KafkaConfig {
@@ -71,12 +70,19 @@ impl Default for KafkaConfig {
 }
 
 impl KafkaConfig {
-    fn default_brokers() -> String { "localhost:9092".into() }
-    fn default_commit_retries() -> u8 { 5 }
-    fn default_heartbeat() -> u32 { 3000 }
-    fn default_queue_preifx() -> String { "task".into() }
+    fn default_brokers() -> String {
+        "localhost:9092".into()
+    }
+    fn default_commit_retries() -> u8 {
+        5
+    }
+    fn default_heartbeat() -> u32 {
+        3000
+    }
+    fn default_queue_preifx() -> String {
+        "task".into()
+    }
 }
-
 
 /// Kafka timeout options.
 #[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
@@ -110,8 +116,16 @@ impl Default for KafkaTimeouts {
 }
 
 impl KafkaTimeouts {
-    fn default_metadata() -> u32 { 60000 }
-    fn default_request() -> u32 { 5000 }
-    fn default_session() -> u32 { 10000 }
-    fn default_socket() -> u32 { 60000 }
+    fn default_metadata() -> u32 {
+        60000
+    }
+    fn default_request() -> u32 {
+        5000
+    }
+    fn default_session() -> u32 {
+        10000
+    }
+    fn default_socket() -> u32 {
+        60000
+    }
 }

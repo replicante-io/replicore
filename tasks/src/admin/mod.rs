@@ -2,20 +2,15 @@ use std::sync::Arc;
 
 use slog::Logger;
 
-
+use super::config::Backend as BackendConfig;
+use super::config::Config;
 use super::Result;
 use super::Task;
 use super::TaskQueue;
 
-use super::config::Backend as BackendConfig;
-use super::config::Config;
-
-
 mod backend;
 
-
 use self::backend::kafka::Kafka;
-
 
 /// Backend dependent admin logic.
 trait AdminBackend<Q: TaskQueue> {
@@ -25,7 +20,6 @@ trait AdminBackend<Q: TaskQueue> {
     /// Return softwre and version of the task queue in use.
     fn version(&self) -> Result<String>;
 }
-
 
 /// Additional task subsystem tools primarily for use by `replictl`.
 pub struct TasksAdmin<Q: TaskQueue>(Arc<AdminBackend<Q>>);
@@ -49,9 +43,8 @@ impl<Q: TaskQueue> TasksAdmin<Q> {
     }
 }
 
-
 ///  Iterator over tasks stored in a queue.
-pub struct TasksIter<Q: TaskQueue>(Box<Iterator<Item=Result<Task<Q>>>>);
+pub struct TasksIter<Q: TaskQueue>(Box<Iterator<Item = Result<Task<Q>>>>);
 impl<Q: TaskQueue> Iterator for TasksIter<Q> {
     type Item = Result<Task<Q>>;
     fn next(&mut self) -> Option<Self::Item> {

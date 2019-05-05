@@ -49,7 +49,7 @@ impl<Q: TaskQueue> Task<Q> {
 
     /// Lookup an header
     pub fn header(&self, name: &str) -> Option<&str> {
-        self.headers.get(name).map(|s| s.as_str())
+        self.headers.get(name).map(String::as_str)
     }
 
     /// Access the task ID.
@@ -72,9 +72,13 @@ impl<Q: TaskQueue> Task<Q> {
         let ack = Arc::clone(&self.ack_strategy);
         let queue = self.queue.name();
         if self.retry_count >= self.queue.max_retry_count() {
-            TASK_ACK_TOTAL.with_label_values(&[&queue, "fail[skip]"]).inc();
+            TASK_ACK_TOTAL
+                .with_label_values(&[&queue, "fail[skip]"])
+                .inc();
             ack.skip(self).map_err(|error| {
-                TASK_ACK_ERRORS.with_label_values(&[&queue, "fail[skip]"]).inc();
+                TASK_ACK_ERRORS
+                    .with_label_values(&[&queue, "fail[skip]"])
+                    .inc();
                 error
             })
         } else {
@@ -105,7 +109,9 @@ impl<Q: TaskQueue> Task<Q> {
         let queue = self.queue.name();
         TASK_ACK_TOTAL.with_label_values(&[&queue, "success"]).inc();
         ack.success(self).map_err(|error| {
-            TASK_ACK_ERRORS.with_label_values(&[&queue, "success"]).inc();
+            TASK_ACK_ERRORS
+                .with_label_values(&[&queue, "success"])
+                .inc();
             error
         })
     }
@@ -121,16 +127,15 @@ impl<Q: TaskQueue> Drop for Task<Q> {
     }
 }
 
-
 #[cfg(test)]
 mod tests {
     use std::collections::HashMap;
     use std::str::FromStr;
     use std::time::Duration;
 
-    use super::TaskQueue;
     use super::mock::TaskAck;
     use super::mock::TaskTemplate;
+    use super::TaskQueue;
 
     #[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
     enum TestQueues {
@@ -150,14 +155,18 @@ mod tests {
     }
 
     impl TaskQueue for TestQueues {
-        fn max_retry_count(&self) -> u8 { 12 }
+        fn max_retry_count(&self) -> u8 {
+            12
+        }
         fn name(&self) -> String {
             match self {
                 TestQueues::Test1 => "test1".into(),
                 TestQueues::Test2 => "test2".into(),
             }
         }
-        fn retry_delay(&self) -> Duration { Duration::from_secs(5 * 60) }
+        fn retry_delay(&self) -> Duration {
+            Duration::from_secs(5 * 60)
+        }
     }
 
     #[test]

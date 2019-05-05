@@ -16,7 +16,6 @@ use super::super::ScanFilters;
 use super::super::ScanOptions;
 use super::StreamInterface;
 
-
 /// Wrap the store interface.
 pub struct StoreInterface {
     store: Store,
@@ -32,22 +31,29 @@ impl StoreInterface {
 
 impl StreamInterface for StoreInterface {
     fn emit(&self, event: Event) -> Result<()> {
-        self.store.legacy().persist_event(event)
-            .with_context(|_| ErrorKind::StoreWrite("event")).map_err(Error::from)
+        self.store
+            .legacy()
+            .persist_event(event)
+            .with_context(|_| ErrorKind::StoreWrite("event"))
+            .map_err(Error::from)
     }
 
     fn scan(&self, filters: ScanFilters, options: ScanOptions) -> Result<Iter> {
         let filters = into_store_filters(filters);
         let options = into_store_options(options);
-        let iter = self.store.legacy().events(filters, options)
+        let iter = self
+            .store
+            .legacy()
+            .events(filters, options)
             .with_context(|_| ErrorKind::StoreRead("events"))?;
         let iter = iter.map(|event| {
-            event.with_context(|_| ErrorKind::StoreRead("event")).map_err(Error::from)
+            event
+                .with_context(|_| ErrorKind::StoreRead("event"))
+                .map_err(Error::from)
         });
         Ok(Iter::new(iter))
     }
 }
-
 
 fn into_store_filters(filters: ScanFilters) -> EventsFilters {
     let mut fils = EventsFilters::default();

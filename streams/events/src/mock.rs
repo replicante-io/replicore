@@ -2,14 +2,13 @@ use std::sync::Arc;
 
 use replicante_data_models::Event;
 
+use super::interface::StreamInterface;
 use super::ErrorKind;
 use super::EventsStream;
 use super::Iter;
 use super::Result;
 use super::ScanFilters;
 use super::ScanOptions;
-use super::interface::StreamInterface;
-
 
 /// Mock implementation of the events streaming interface.
 #[derive(Default)]

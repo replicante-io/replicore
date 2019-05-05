@@ -6,13 +6,13 @@ use std::sync::Mutex;
 use slog::Logger;
 
 use super::super::super::Config;
-use super::super::TaskQueue;
 use super::super::backend::mock::MockBackend;
 use super::super::backend::mock::TaskTemplate;
+use super::super::TaskQueue;
 use super::WorkerSet;
 
-
 /// Mock tools to test `WorkerSet` users.
+#[derive(Default)]
 pub struct MockWorkerSet<Q: TaskQueue> {
     pub tasks: Arc<Mutex<VecDeque<TaskTemplate<Q>>>>,
 }
