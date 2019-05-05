@@ -70,18 +70,15 @@ impl Handler {
         match lock.acquire() {
             Ok(()) => (),
             Err(error) => {
-                match error.kind() {
-                    ::replicante_coordinator::ErrorKind::LockHeld(_, owner) => {
-                        REFRESH_LOCKED.with_label_values(&[&discovery.cluster_id]).inc();
-                        info!(
-                            self.logger,
-                            "Skipped cluster refresh because another task is in progress";
-                            "cluster_id" => discovery.cluster_id, "owner" => %owner
-                        );
-                        return Ok(());
-                    },
-                    _ => (),
-                };
+                if let ::replicante_coordinator::ErrorKind::LockHeld(_, owner) = error.kind() {
+                    REFRESH_LOCKED.with_label_values(&[&discovery.cluster_id]).inc();
+                    info!(
+                        self.logger,
+                        "Skipped cluster refresh because another task is in progress";
+                        "cluster_id" => discovery.cluster_id, "owner" => %owner
+                    );
+                    return Ok(());
+                }
                 return Err(error.context(ErrorKind::Coordination).into());
             }
         };

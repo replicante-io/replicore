@@ -215,7 +215,7 @@ impl Annotations {
             EventPayload::ShardAllocationNew(ref data) => format!(
                 "Shard {} found on node {} for the first time", data.shard_id, data.node_id
             ),
-            _ => format!("{}", event.code()),
+            _ => event.code().to_string(),
         }
     }
 
@@ -234,7 +234,7 @@ impl Annotations {
             EventPayload::NodeUp(_) => "Datastore node is up".into(),
             EventPayload::ShardAllocationChanged(_) => "Shard status on node changed".into(),
             EventPayload::ShardAllocationNew(_) => "Shard found on node".into(),
-            _ => format!("{}", event.code()),
+            _ => event.code().to_string(),
         }
     }
 }

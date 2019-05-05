@@ -151,8 +151,8 @@ fn scan_collection<Model: ::std::fmt::Debug>(
     };
     let mut tracker = interfaces.progress(format!("Scanned more {} documents", collection));
     for item in cursor {
-        match item {
-            Err(error) => match error.kind() {
+        if let Err(error) = item {
+            match error.kind() {
                 StoreErrorKind::InvalidRecord(ref id) => {
                     let cause = format_fail(error.cause().expect(
                         "primary store ErrorKind::InvalidRecord error must have a cause"
@@ -165,9 +165,8 @@ fn scan_collection<Model: ::std::fmt::Debug>(
                     let error = format_fail(&error);
                     outcomes.error(Error::GenericError(error));
                 }
-            },
-            Ok(_) => (),
-        };
+            }
+        }
         tracker.track();
     }
 }

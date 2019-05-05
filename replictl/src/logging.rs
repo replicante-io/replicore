@@ -39,7 +39,7 @@ impl<D: Drain> Drain for LevelFilter<D> {
 
 arg_enum!{
     /// Enumerate valid log verbosity levels.
-    #[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug)]
+    #[derive(Clone, Eq, PartialEq, Hash, Debug)]
     pub enum LogLevel {
         Critical,
         Error,
@@ -80,6 +80,9 @@ pub fn configure(level: LogLevel) -> Logger {
     let drain = FullFormat::new(decorator).build();
     let drain = Mutex::new(drain).map(IgnoreResult::new);
     let drain = LevelFilter(drain, level.into());
+    // rustc can't infer lifetimes correctly when using Record::module.
+    // Without this allow, clipply complainants that we do not use Record::module.
+    #[allow(clippy::redundant_closure)]
     Logger::root(drain, o!(
         "module" => FnValue(|rinfo : &Record| rinfo.module()),
         "version" => env!("GIT_BUILD_HASH"),
