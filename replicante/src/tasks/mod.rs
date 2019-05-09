@@ -3,9 +3,7 @@ use std::time::Duration;
 
 use replicante_tasks::TaskQueue;
 
-
 pub mod payload;
-
 
 /// Enumerate all queues used in Replicante.
 #[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug)]
@@ -37,7 +35,7 @@ impl TaskQueue for ReplicanteQueues {
             ReplicanteQueues::ClusterRefresh => "cluster_refresh".into(),
         }
     }
-    
+
     fn retry_delay(&self) -> Duration {
         match self {
             ReplicanteQueues::ClusterRefresh => Duration::from_secs(10),
@@ -45,7 +43,6 @@ impl TaskQueue for ReplicanteQueues {
         }
     }
 }
-
 
 /// Type-specialised task model.
 pub type Task = ::replicante_tasks::Task<ReplicanteQueues>;

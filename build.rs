@@ -3,33 +3,30 @@ extern crate git2;
 use git2::Repository;
 use git2::Status;
 
-
 fn is_index_status(status: &Status) -> bool {
     status.intersects(
-        Status::INDEX_DELETED |
-        Status::INDEX_MODIFIED |
-        Status::INDEX_NEW |
-        Status::INDEX_RENAMED |
-        Status::INDEX_TYPECHANGE
+        Status::INDEX_DELETED
+            | Status::INDEX_MODIFIED
+            | Status::INDEX_NEW
+            | Status::INDEX_RENAMED
+            | Status::INDEX_TYPECHANGE,
     )
 }
 
 fn is_workdir_status(status: &Status) -> bool {
     status.intersects(
-        Status::WT_DELETED |
-        Status::WT_MODIFIED |
-        Status::WT_NEW |
-        Status::WT_RENAMED |
-        Status::WT_TYPECHANGE
+        Status::WT_DELETED
+            | Status::WT_MODIFIED
+            | Status::WT_NEW
+            | Status::WT_RENAMED
+            | Status::WT_TYPECHANGE,
     )
 }
-
 
 fn main() {
     println!("cargo:rustc-env=GIT_BUILD_HASH={}", git_hash());
     println!("cargo:rustc-env=GIT_BUILD_TAINT={}", git_taint());
 }
-
 
 fn git_hash() -> String {
     let repo = Repository::discover(".").unwrap();
@@ -56,6 +53,6 @@ fn git_taint() -> String {
         (true, true) => String::from("index and working directory tainted"),
         (true, false) => String::from("index tainted"),
         (false, true) => String::from("working directory tainted"),
-        (false, false) => String::from("not tainted")
+        (false, false) => String::from("not tainted"),
     }
 }

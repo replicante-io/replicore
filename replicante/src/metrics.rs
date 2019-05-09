@@ -1,8 +1,7 @@
-use prometheus::Registry;
-use prometheus::Opts;
 use prometheus::GaugeVec;
+use prometheus::Opts;
+use prometheus::Registry;
 use slog::Logger;
-
 
 lazy_static! {
     pub static ref COMPONENTS_ENABLED: GaugeVec = GaugeVec::new(
@@ -11,17 +10,17 @@ lazy_static! {
             "Enabled status of components on this node (1 = enabled, 0 = disabled)"
         ),
         &["component", "type"]
-    ).expect("Failed to create COMPONENTS_ENABLED gauge");
-
+    )
+    .expect("Failed to create COMPONENTS_ENABLED gauge");
     pub static ref WORKERS_ENABLED: GaugeVec = GaugeVec::new(
         Opts::new(
             "replicore_workers_enabled",
             "Enabled status of task workers on this node (1 = enabled, 0 = disabled)"
         ),
         &["worker"]
-    ).expect("Failed to create WORKERS_ENABLED gauge");
+    )
+    .expect("Failed to create WORKERS_ENABLED gauge");
 }
-
 
 /// Attemps to register metrics with the Registry.
 ///

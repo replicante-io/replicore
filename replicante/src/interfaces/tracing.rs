@@ -1,15 +1,14 @@
 use failure::ResultExt;
-use opentracingrust::Tracer;
 use opentracingrust::utils::ReporterThread;
+use opentracingrust::Tracer;
 use slog::Logger;
 
+use replicante_util_tracing::tracer;
 use replicante_util_tracing::Config;
 use replicante_util_tracing::TracerExtra;
-use replicante_util_tracing::tracer;
 
 use super::ErrorKind;
 use super::Result;
-
 
 /// Distributed tracing interface.
 pub struct Tracing {
@@ -25,16 +24,13 @@ impl Tracing {
     /// Configuring the tracer usually also start the
     /// reporting thread but this is backend dependent.
     pub fn new(config: Config, logger: Logger) -> Result<Tracing> {
-        let (tracer, extra) = tracer(config, logger)
-            .with_context(|_| ErrorKind::InterfaceInit("tracing"))?;
+        let (tracer, extra) =
+            tracer(config, logger).with_context(|_| ErrorKind::InterfaceInit("tracing"))?;
         let reporter = match extra {
             TracerExtra::Nothing => None,
             TracerExtra::ReporterThread(reporter) => Some(reporter),
         };
-        Ok(Tracing {
-            reporter,
-            tracer,
-        })
+        Ok(Tracing { reporter, tracer })
     }
 
     /// Noop method for standard interface.
@@ -55,8 +51,9 @@ impl Tracing {
     pub fn mock() -> Tracing {
         let (tracer, receiver) = ::opentracingrust::tracers::NoopTracer::new();
         let reporter = ReporterThread::new_with_duration(
-            receiver, ::std::time::Duration::from_millis(50),
-            ::opentracingrust::tracers::NoopTracer::report
+            receiver,
+            ::std::time::Duration::from_millis(50),
+            ::opentracingrust::tracers::NoopTracer::report,
         );
         Tracing {
             reporter: Some(reporter),

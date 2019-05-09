@@ -6,9 +6,9 @@ extern crate humthreads;
 
 extern crate iron;
 extern crate iron_json_response;
-extern crate router;
 #[cfg(test)]
 extern crate iron_test;
+extern crate router;
 
 #[macro_use]
 extern crate lazy_static;
@@ -64,8 +64,8 @@ pub use self::config::Config;
 pub use self::error::Error;
 pub use self::error::ErrorKind;
 pub use self::error::Result;
-pub use self::tasks::ReplicanteQueues;
 pub use self::tasks::payload as task_payload;
+pub use self::tasks::ReplicanteQueues;
 
 lazy_static! {
     /// Version details for replictl.
@@ -92,7 +92,9 @@ fn initialise_and_run(config: Config, logger: Logger) -> Result<bool> {
 
     // Initialise Upkeep instance and signals.
     let mut upkeep = Upkeep::new();
-    upkeep.register_signal().with_context(|_| ErrorKind::InterfaceInit("UNIX signal"))?;
+    upkeep
+        .register_signal()
+        .with_context(|_| ErrorKind::InterfaceInit("UNIX signal"))?;
     upkeep.set_logger(logger.clone());
 
     // Need to initialise the interfaces before we can register all metrics.
@@ -118,7 +120,6 @@ fn initialise_and_run(config: Config, logger: Logger) -> Result<bool> {
     Ok(clean_exit)
 }
 
-
 /// Parse command line, load configuration, initialise logger.
 ///
 /// Once the configuration is loaded control is passed to `initialise_and_run`.
@@ -126,18 +127,21 @@ pub fn run() -> Result<bool> {
     // Initialise and parse command line arguments.
     let version = format!(
         "{} [{}; {}]",
-        env!("CARGO_PKG_VERSION"), env!("GIT_BUILD_HASH"), env!("GIT_BUILD_TAINT")
+        env!("CARGO_PKG_VERSION"),
+        env!("GIT_BUILD_HASH"),
+        env!("GIT_BUILD_TAINT")
     );
     let cli_args = App::new("Replicante Core")
         .version(version.as_ref())
         .about(env!("CARGO_PKG_DESCRIPTION"))
-        .arg(Arg::with_name("config")
-             .short("c")
-             .long("config")
-             .value_name("FILE")
-             .default_value("replicante.yaml")
-             .help("Specifies the configuration file to use")
-             .takes_value(true)
+        .arg(
+            Arg::with_name("config")
+                .short("c")
+                .long("config")
+                .value_name("FILE")
+                .default_value("replicante.yaml")
+                .help("Specifies the configuration file to use")
+                .takes_value(true),
         )
         .get_matches();
 
@@ -149,8 +153,7 @@ pub fn run() -> Result<bool> {
     // Load configuration.
     let config_location = cli_args.value_of("config").unwrap();
     info!(logger, "Loading configuration ..."; "config" => config_location);
-    let config = Config::from_file(config_location)
-        .with_context(|_| ErrorKind::ConfigLoad)?;
+    let config = Config::from_file(config_location).with_context(|_| ErrorKind::ConfigLoad)?;
     let config = config.transform();
 
     // Initialise and run forever.
