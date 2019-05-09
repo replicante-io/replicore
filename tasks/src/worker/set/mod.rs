@@ -4,12 +4,13 @@ use std::sync::atomic::Ordering;
 use std::sync::Arc;
 use std::time::Duration;
 
+use failure::ResultExt;
 use humthreads::Builder;
-use humthreads::Thread;
 use humthreads::ThreadScope;
 use slog::Logger;
 
 use replicante_util_failure::failure_info;
+use replicante_util_upkeep::Upkeep;
 
 use super::super::config::Backend as BackendConfig;
 use super::super::metrics::TASK_WORKER_NO_HANDLER;
@@ -50,26 +51,32 @@ where
 }
 
 /// Worker logic run by each thread.
-struct Worker<Q: TaskQueue> {
+struct Worker<'a, Q: TaskQueue> {
     backend: Arc<Backend<Q>>,
     handlers: Arc<HashMap<Q, Box<TaskHandler<Q>>>>,
     logger: Logger,
-    thread: ThreadScope,
+    thread: &'a ThreadScope,
 }
 
-impl<Q: TaskQueue> Worker<Q> {
+impl<'a, Q: TaskQueue> Worker<'a, Q> {
     fn new(
         logger: Logger,
         backend: Arc<Backend<Q>>,
         handlers: Arc<HashMap<Q, Box<TaskHandler<Q>>>>,
-        thread: ThreadScope,
-    ) -> Worker<Q> {
+        thread: &'a ThreadScope,
+    ) -> Worker<'a, Q> {
         Worker {
             backend,
             handlers,
             logger,
             thread,
         }
+    }
+
+    /// Allow the backend to perform cleanup as workers shut down.
+    fn cleanup(self) {
+        trace!(self.logger, "Stopping worker");
+        self.backend.worker_cleanup();
     }
 
     /// Perform a single "worker cycle".
@@ -132,10 +139,9 @@ impl<Q: TaskQueue> WorkerSet<Q> {
     }
 
     /// Start the threads pool and wait for tasks to process.
-    pub fn run(self) -> Result<WorkerSetPool> {
+    pub fn run(self, upkeep: &mut Upkeep) -> Result<WorkerSetPool> {
         let handlers = Arc::new(self.handlers);
         let running = Arc::new(AtomicBool::new(true));
-        let mut threads = Vec::new();
 
         for idx in 0..self.config.threads_count {
             let logger = self.logger.clone();
@@ -150,40 +156,17 @@ impl<Q: TaskQueue> WorkerSet<Q> {
                 .spawn(move |scope| {
                     scope.activity("waiting for tasks to process");
                     let worker: Worker<Q> =
-                        Worker::new(logger, thread_backend, thread_handlers, scope);
-                    while still_running.load(Ordering::SeqCst) {
+                        Worker::new(logger, thread_backend, thread_handlers, &scope);
+                    while still_running.load(Ordering::Relaxed) && !scope.should_shutdown() {
                         worker.run_once();
                     }
-                });
-            threads.push(thread);
+                    worker.cleanup();
+                })
+                .with_context(|_| ErrorKind::PoolSpawn)?;
+            upkeep.register_thread(thread);
         }
 
-        // If any of the threads failed to spawn we need to terminate the pool and clean up.
-        if threads.iter().any(::std::result::Result::is_err) {
-            running.store(false, Ordering::SeqCst);
-            for thread in threads.into_iter() {
-                if let Ok(mut handle) = thread {
-                    // TODO: propagate error when we have a better story?
-                    if let Err(error) = handle.join() {
-                        error!(self.logger, "WorkerSet pool thread paniced"; failure_info(&error));
-                    }
-                }
-            }
-            return Err(ErrorKind::PoolSpawn.into());
-        }
-
-        // All threads where spawned successfully so we can unwrap the reustl.
-        let mut handles = Vec::new();
-        for t in threads {
-            let t = t.expect("spawn errors should have been managed above!");
-            handles.push(t);
-        }
-
-        Ok(WorkerSetPool {
-            logger: self.logger.clone(),
-            running,
-            threads: handles,
-        })
+        Ok(WorkerSetPool { running })
     }
 
     /// Register a new worker routine for a queue.
@@ -207,35 +190,22 @@ impl<Q: TaskQueue> WorkerSet<Q> {
 
 /// Set of worker threads processing tasks.
 pub struct WorkerSetPool {
-    logger: Logger,
     running: Arc<AtomicBool>,
-    threads: Vec<Thread<()>>,
 }
 
 impl WorkerSetPool {
-    /// Stop the background thread pool and wait for threads to terminate.
-    pub fn stop(&mut self) -> Result<()> {
+    /// Stop the background thread pool.
+    ///
+    /// The `Upkeep` instance that was passed to `WorkerSet::run` is responsible
+    /// for joining threads as they exit.
+    pub fn stop(&mut self) {
         self.running.store(false, Ordering::SeqCst);
-        while let Some(mut handle) = self.threads.pop() {
-            // TODO: propagate error when we have a better story?
-            if let Err(error) = handle.join() {
-                error!(self.logger, "WorkerSet pool thread paniced"; "error" => ?error);
-            }
-        }
-        Ok(())
     }
-
-    // TODO: implement utilities that make this possible.
-    //pub fn wait(&self, _timeout: Duration) -> Result<ThreadStatus> {
-    //    Err(TODO)
-    //}
 }
 
 impl Drop for WorkerSetPool {
     fn drop(&mut self) {
-        if let Err(error) = self.stop() {
-            error!(self.logger, "Failed to stop WorkerSet pool on drop"; "error" => ?error);
-        }
+        self.stop();
     }
 }
 
@@ -249,6 +219,8 @@ mod tests {
 
     use slog::Discard;
     use slog::Logger;
+
+    use replicante_util_upkeep::Upkeep;
 
     use super::super::mock::MockWorkerSet;
     use super::super::mock::TaskTemplate;
@@ -289,24 +261,27 @@ mod tests {
     }
 
     #[test]
-    fn dispath_task() {
+    fn dispatch_task() {
         let logger = Logger::root(Discard, o!());
         let task = TaskTemplate::new(TestQueues::Test1, (), HashMap::new(), 0);
         let mock_set = MockWorkerSet::new();
         (*mock_set.tasks.lock().unwrap()).push_back(task);
         let processed = Arc::new(Mutex::new(Vec::new()));
         let processed_thread = Arc::clone(&processed);
-        let _workers = mock_set
+        let mut upkeep = Upkeep::new();
+        let mut workers = mock_set
             .mock(logger)
             .worker(TestQueues::Test1, move |task: Task<TestQueues>| {
                 let queue = task.queue.name();
                 processed_thread.lock().unwrap().push(queue);
             })
             .unwrap()
-            .run()
+            .run(&mut upkeep)
             .unwrap();
         ::std::thread::sleep(Duration::from_millis(TIMEOUT_MS_POLL + 100));
         assert_eq!(*processed.lock().unwrap(), vec![String::from("test1")]);
+        workers.stop();
+        upkeep.keepalive();
     }
 
     #[test]
@@ -329,12 +304,14 @@ mod tests {
     fn stop_pool() {
         let logger = Logger::root(Discard, o!());
         let mock_set = MockWorkerSet::new();
+        let mut upkeep = Upkeep::new();
         let mut workers = mock_set
             .mock(logger)
             .worker(TestQueues::Test1, |_| ())
             .unwrap()
-            .run()
+            .run(&mut upkeep)
             .unwrap();
-        workers.stop().unwrap();
+        workers.stop();
+        upkeep.keepalive();
     }
 }

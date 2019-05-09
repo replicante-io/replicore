@@ -27,3 +27,4 @@ slog = "^2.2.0"
 
 replicante_util_failure = { path = "../common/util/failure" }
 replicante_util_rndid = { path = "../common/util/rndid" }
+replicante_util_upkeep = { path = "../common/util/upkeep" }

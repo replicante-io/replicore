@@ -3,7 +3,7 @@ global:
 
 
 scrape_configs:
-  - job_name: dev-core
+  - job_name: replicante-dev-core
     metrics_path: '/api/unstable/introspect/metrics'
     static_configs:
       - targets:

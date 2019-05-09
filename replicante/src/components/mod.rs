@@ -1,6 +1,8 @@
 use prometheus::Registry;
 use slog::Logger;
 
+use replicante_util_upkeep::Upkeep;
+
 use super::Config;
 use super::Interfaces;
 use super::Result;
@@ -20,18 +22,9 @@ use self::workers::Workers;
 
 /// Helper macro to keep `Components::run` simpler in the presence of optional components.
 macro_rules! component_run {
-    ($component:expr) => {
+    ($component:expr, $upkeep:expr) => {
         if let Some(component) = $component {
-            component.run()?;
-        }
-    };
-}
-
-/// Helper macro to keep `Components::wait_all` simpler in the presence of optional components.
-macro_rules! component_wait {
-    ($component:expr) => {
-        if let Some(component) = $component {
-            component.wait()?;
+            component.run($upkeep)?;
         }
     };
 }
@@ -117,20 +110,11 @@ impl Components {
 
 
     /// Performs any final configuration and starts background threads.
-    pub fn run(&mut self) -> Result<()> {
-        component_run!(self.discovery.as_mut());
-        component_run!(self.grafana.as_mut());
-        component_run!(self.webui.as_mut());
-        component_run!(self.workers.as_mut());
-        Ok(())
-    }
-
-    /// Waits for all interfaces to terminate.
-    pub fn wait_all(&mut self) -> Result<()> {
-        component_wait!(self.discovery.as_mut());
-        component_wait!(self.grafana.as_mut());
-        component_wait!(self.webui.as_mut());
-        component_wait!(self.workers.as_mut());
+    pub fn run(&mut self, upkeep: &mut Upkeep) -> Result<()> {
+        component_run!(self.discovery.as_mut(), upkeep);
+        component_run!(self.grafana.as_mut(), upkeep);
+        component_run!(self.webui.as_mut(), upkeep);
+        component_run!(self.workers.as_mut(), upkeep);
         Ok(())
     }
 }

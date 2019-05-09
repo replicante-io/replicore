@@ -1,11 +1,11 @@
+use replicante_util_upkeep::Upkeep;
+
 use super::super::Result;
 use super::super::interfaces::Interfaces;
-
 
 mod cluster;
 mod clusters;
 mod events;
-
 
 /// Component to mount /webui endpoints.
 ///
@@ -27,12 +27,7 @@ impl WebUI {
     }
 
     /// Noop method for standard interface.
-    pub fn run(&self) -> Result<()> {
-        Ok(())
-    }
-
-    /// Noop method for standard interface.
-    pub fn wait(&self) -> Result<()> {
+    pub fn run(&self, _: &mut Upkeep) -> Result<()> {
         Ok(())
     }
 }

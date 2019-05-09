@@ -41,13 +41,14 @@ extern crate replicante_tasks;
 extern crate replicante_util_failure;
 extern crate replicante_util_iron;
 extern crate replicante_util_tracing;
-
+extern crate replicante_util_upkeep;
 
 use clap::App;
 use clap::Arg;
 use failure::ResultExt;
 use slog::Logger;
 
+use replicante_util_upkeep::Upkeep;
 
 mod components;
 mod config;
@@ -66,7 +67,6 @@ pub use self::error::Result;
 pub use self::tasks::ReplicanteQueues;
 pub use self::tasks::payload as task_payload;
 
-
 lazy_static! {
     /// Version details for replictl.
     pub static ref VERSION: String = format!(
@@ -74,7 +74,6 @@ lazy_static! {
         env!("CARGO_PKG_VERSION"), env!("GIT_BUILD_HASH"), env!("GIT_BUILD_TAINT")
     );
 }
-
 
 /// Initialised interfaces and components and waits for the system to exit.
 ///
@@ -87,10 +86,15 @@ lazy_static! {
 /// Interfaces can work in the same way if they need threads but some may just provide
 /// services to other interfaces and/or components.
 #[allow(clippy::needless_pass_by_value)]
-fn initialise_and_run(config: Config, logger: Logger) -> Result<()> {
+fn initialise_and_run(config: Config, logger: Logger) -> Result<bool> {
+    info!(logger, "Initialising sub-systems ...");
     // TODO: iniialise sentry as soon as possible.
 
-    info!(logger, "Initialising sub-systems ...");
+    // Initialise Upkeep instance and signals.
+    let mut upkeep = Upkeep::new();
+    upkeep.register_signal().with_context(|_| ErrorKind::InterfaceInit("UNIX signal"))?;
+    upkeep.set_logger(logger.clone());
+
     // Need to initialise the interfaces before we can register all metrics.
     let mut interfaces = Interfaces::new(&config, logger.clone())?;
     Interfaces::register_metrics(&logger, interfaces.metrics.registry());
@@ -100,23 +104,25 @@ fn initialise_and_run(config: Config, logger: Logger) -> Result<()> {
 
     // Initialisation done, run all interfaces and components.
     info!(logger, "Starting sub-systems ...");
-    interfaces.run()?;
-    components.run()?;
+    interfaces.run(&mut upkeep)?;
+    components.run(&mut upkeep)?;
 
     // Wait for interfaces and components to terminate.
-    info!(logger, "Replicante ready");
-    interfaces.wait_all()?;
-    components.wait_all()?;
-
-    info!(logger, "Replicante stopped gracefully");
-    Ok(())
+    info!(logger, "Replicante is ready");
+    let clean_exit = upkeep.keepalive();
+    if clean_exit {
+        info!(logger, "Replicante stopped gracefully");
+    } else {
+        warn!(logger, "Exiting due to error in a worker thread");
+    }
+    Ok(clean_exit)
 }
 
 
 /// Parse command line, load configuration, initialise logger.
 ///
 /// Once the configuration is loaded control is passed to `initialise_and_run`.
-pub fn run() -> Result<()> {
+pub fn run() -> Result<bool> {
     // Initialise and parse command line arguments.
     let version = format!(
         "{} [{}; {}]",
@@ -154,6 +160,10 @@ pub fn run() -> Result<()> {
     debug!(logger, "Logging configured");
 
     let result = initialise_and_run(config, logger.clone());
-    warn!(logger, "Shutdown: system exiting now"; "error" => result.is_err());
+    let error = match &result {
+        Err(_) => true,
+        Ok(clean) => *clean,
+    };
+    warn!(logger, "Shutdown: system exiting now"; "error" => error);
     result
 }

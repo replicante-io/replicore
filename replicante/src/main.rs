@@ -18,9 +18,14 @@ fn main() {
     }
 
     // Can now run replicante.
-    if let Err(error) = run() {
-        let message = format_fail(&error);
-        println!("{}", message);
-        exit(1);
-    }
+    let result = run();
+    match result {
+        Err(error) => {
+            let message = format_fail(&error);
+            println!("{}", message);
+            exit(1);
+        }
+        Ok(clean) if !clean => exit(1),
+        _ => (),
+    };
 }

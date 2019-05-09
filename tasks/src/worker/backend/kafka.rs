@@ -484,6 +484,17 @@ impl<Q: TaskQueue> Backend<Q> for Kafka {
             .push(topic_for_queue(&self.prefix, &queue_name, TopicRole::Queue));
         Ok(())
     }
+
+    fn worker_cleanup(&self) {
+        // The kafka consumer logs in its Drop::drop implementation.
+        // That in turn uses scope_log and Thread Local Store (TLS).
+        // Because the consumer is being dopped as the thread is exiting, TLS access panics.
+        // We explicitly drop the consumers here to avoid this issue.
+        THREAD_RETRY_CACHE.with(|cache| cache.borrow_mut().take());
+        THREAD_RETRY_CONSUMER.with(|consumer| consumer.borrow_mut().take());
+        THREAD_TASK_CACHE.with(|cache| cache.borrow_mut().take());
+        THREAD_TASK_CONSUMER.with(|consumer| consumer.borrow_mut().take());
+    }
 }
 
 /// Kafka strategy to deal with task acks and retries.

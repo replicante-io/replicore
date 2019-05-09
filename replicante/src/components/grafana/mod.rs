@@ -1,10 +1,10 @@
+use replicante_util_upkeep::Upkeep;
+
 use super::super::Result;
 use super::super::interfaces::Interfaces;
 
-
 mod annotations;
 mod check;
-
 
 /// Component to mount /api/v1/grafana endpoints.
 ///
@@ -21,12 +21,7 @@ impl Grafana {
     }
 
     /// Noop method for standard interface.
-    pub fn run(&self) -> Result<()> {
-        Ok(())
-    }
-
-    /// Noop method for standard interface.
-    pub fn wait(&self) -> Result<()> {
+    pub fn run(&self, _: &mut Upkeep) -> Result<()> {
         Ok(())
     }
 }

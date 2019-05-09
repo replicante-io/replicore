@@ -1,4 +1,5 @@
 use std::sync::Arc;
+use std::sync::Mutex;
 use std::time::Duration;
 
 use failure::ResultExt;
@@ -37,7 +38,7 @@ use super::Client;
 /// Prevent the prefix nodes that do not contain anything from piling up without value.
 /// Once the new container znode type is stable this code can be dropped in favour of that.
 pub struct Cleaner {
-    handle: Option<Thread<()>>,
+    handle: Mutex<Option<Thread<()>>>,
     logger: Logger,
     shutdown_signal: Option<ShutdownSender>,
 }
@@ -79,7 +80,7 @@ impl Cleaner {
             })
             .with_context(|_| ErrorKind::SpawnThread("zookeeper cleaner"))?;
         Ok(Cleaner {
-            handle: Some(handle),
+            handle: Mutex::new(Some(handle)),
             logger,
             shutdown_signal: Some(sender),
         })
@@ -91,7 +92,12 @@ impl Drop for Cleaner {
         if let Some(shutdown_signal) = self.shutdown_signal.take() {
             drop(shutdown_signal);
         }
-        if let Some(mut handle) = self.handle.take() {
+        let handle = self
+            .handle
+            .lock()
+            .expect("zookeeper cleaner thread lock poisoned")
+            .take();
+        if let Some(handle) = handle {
             if let Err(error) = handle.join() {
                 error!(self.logger, "Zookeeper cleaner thread paniced"; failure_info(&error));
             }

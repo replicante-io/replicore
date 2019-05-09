@@ -50,12 +50,6 @@ impl Tracing {
         &self.tracer
     }
 
-    /// Noop method for standard interface.
-    pub fn wait(&self) -> Result<()> {
-        // ReporterThread is stopped and joined when dropped so we don't wait.
-        Ok(())
-    }
-
     /// Returns a `Tracing` instance usable as a mock.
     #[cfg(test)]
     pub fn mock() -> Tracing {

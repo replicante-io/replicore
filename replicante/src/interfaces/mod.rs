@@ -5,12 +5,12 @@ use slog::Logger;
 use replicante_coordinator::Coordinator;
 use replicante_data_store::store::Store;
 use replicante_streams_events::EventsStream;
+use replicante_util_upkeep::Upkeep;
 
 use super::ErrorKind;
 use super::Result;
 use super::config::Config;
 use super::tasks::Tasks;
-
 
 pub mod api;
 pub mod metrics;
@@ -19,7 +19,6 @@ pub mod tracing;
 use self::api::API;
 use self::metrics::Metrics;
 use self::tracing::Tracing;
-
 
 /// A container for replicante interfaces.
 ///
@@ -80,18 +79,10 @@ impl Interfaces {
     /// Performs any final configuration and starts background threads.
     ///
     /// For example, the [`ApiInterface`] uses it to wrap the router into a server.
-    pub fn run(&mut self) -> Result<()> {
-        self.api.run()?;
+    pub fn run(&mut self, upkeep: &mut Upkeep) -> Result<()> {
+        self.api.run(upkeep)?;
         self.metrics.run()?;
         self.tracing.run()?;
-        Ok(())
-    }
-
-    /// Waits for all interfaces to terminate.
-    pub fn wait_all(&mut self) -> Result<()> {
-        self.api.wait()?;
-        self.metrics.wait()?;
-        self.tracing.wait()?;
         Ok(())
     }
 }

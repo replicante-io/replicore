@@ -15,6 +15,7 @@ extern crate slog;
 
 extern crate replicante_util_failure;
 extern crate replicante_util_rndid;
+extern crate replicante_util_upkeep;
 
 use std::hash::Hash;
 use std::str::FromStr;

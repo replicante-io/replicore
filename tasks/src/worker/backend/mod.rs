@@ -37,4 +37,7 @@ pub trait Backend<Q: TaskQueue>: Send + Sync {
 
     /// Subscribe to a queue for tasks to consume.
     fn subscribe(&mut self, queue: &Q) -> Result<()>;
+
+    /// Perform advanced cleanup (like thread local store) just before a worker exists.
+    fn worker_cleanup(&self) {}
 }

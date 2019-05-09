@@ -42,11 +42,6 @@ impl Metrics {
         Ok(())
     }
 
-    /// Noop method for standard interface.
-    pub fn wait(&self) -> Result<()> {
-        Ok(())
-    }
-
     /// Returns a `Metrics` instance usable as a mock.
     #[cfg(test)]
     pub fn mock() -> Metrics {

@@ -58,6 +58,7 @@ replicante_tasks = { path = "../tasks" }
 replicante_util_failure = { path = "../common/util/failure" }
 replicante_util_iron = { path = "../common/util/iron" }
 replicante_util_tracing = { path = "../common/util/tracing" }
+replicante_util_upkeep = { path = "../common/util/upkeep" }
 
 
 [build-dependencies]

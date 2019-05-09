@@ -8,6 +8,7 @@ use replicante_tasks::TaskHandler;
 use replicante_tasks::TaskQueue;
 use replicante_tasks::WorkerSet;
 use replicante_tasks::WorkerSetPool;
+use replicante_util_upkeep::Upkeep;
 
 use super::super::Error;
 use super::super::ErrorKind;
@@ -75,13 +76,17 @@ impl Workers {
     ///
     /// The tasks that are processed by this node are defined in the configuration file.
     pub fn new(
-        interfaces: &mut Interfaces, logger: Logger, config: Config
+        interfaces: &mut Interfaces,
+        logger: Logger,
+        config: Config,
     ) -> Result<Workers> {
         let agents_timeout = Duration::from_secs(config.timeouts.agents_api);
         let worker_set = WorkerSet::new(logger.clone(), config.tasks)
             .with_context(|_| ErrorKind::ClientInit("tasks workers"))?;
         let worker_set = configure_worker(
-            worker_set, ReplicanteQueues::ClusterRefresh, config.task_workers.cluster_refresh(),
+            worker_set,
+            ReplicanteQueues::ClusterRefresh,
+            config.task_workers.cluster_refresh(),
             || self::cluster_refresh::Handler::new(interfaces, logger.clone(), agents_timeout)
         )?;
         Ok(Workers {
@@ -90,22 +95,14 @@ impl Workers {
     }
 
     /// Convert the WorkerSet configuration into a runnning WorkerSetPool.
-    pub fn run(&mut self) -> Result<()> {
+    pub fn run(&mut self, upkeep: &mut Upkeep) -> Result<()> {
         if let Some(State::Configured(worker_set)) = self.state.take() {
-            let workers = worker_set.run()
+            let workers = worker_set.run(upkeep)
                 .with_context(|_| ErrorKind::ThreadSpawn("tasks workers"))?;
             self.state = Some(State::Started(workers));
             Ok(())
         } else {
             Err(ErrorKind::ComponentAlreadyRunning("workers").into())
         }
-    }
-
-    /// Stop worker threads and wait for them to terminate.
-    pub fn wait(&mut self) -> Result<()> {
-        if let Some(State::Started(pool)) = self.state.take() {
-            drop(pool);
-        }
-        Ok(())
     }
 }
