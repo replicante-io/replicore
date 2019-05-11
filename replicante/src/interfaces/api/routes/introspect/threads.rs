@@ -1,8 +1,8 @@
+use iron::status;
 use iron::IronResult;
 use iron::Request;
 use iron::Response;
 use iron::Set;
-use iron::status;
 use iron_json_response::JsonResponse;
 
 use humthreads::registered_threads;
@@ -14,7 +14,8 @@ pub fn handler(_: &mut Request) -> IronResult<Response> {
     threads.sort_unstable_by_key(|t| t.name.clone());
     let threads = ThreadsResponse::new(threads);
     let mut resp = Response::new();
-    resp.set_mut(JsonResponse::json(threads)).set_mut(status::Ok);
+    resp.set_mut(JsonResponse::json(threads))
+        .set_mut(status::Ok);
     Ok(resp)
 }
 

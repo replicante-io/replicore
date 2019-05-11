@@ -1,9 +1,8 @@
-use prometheus::Registry;
 use prometheus::process_collector::ProcessCollector;
+use prometheus::Registry;
 use slog::Logger;
 
 use super::super::Result;
-
 
 /// Attemps to register metrics with the Registry.
 ///
@@ -15,7 +14,6 @@ pub fn register_metrics(logger: &Logger, registry: &Registry) {
         debug!(logger, "Failed to register PROCESS metrics"; "error" => ?error);
     }
 }
-
 
 /// Interface for metrics collection.
 ///

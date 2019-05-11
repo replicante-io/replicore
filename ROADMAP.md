@@ -1,5 +1,4 @@
 ## 0.3.0 - Introspection
-- Graceful shutdown.
 - Sentry integration.
 - Trace agent discovery.
 - Trace state fetching.

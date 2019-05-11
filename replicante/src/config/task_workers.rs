@@ -1,5 +1,5 @@
 /// Task workers enabling configuration.
-#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
+#[derive(Clone, Eq, PartialEq, Hash, Debug, Serialize, Deserialize)]
 pub struct TaskWorkers {
     /// Default status for all task workers that are not explicitly enabled/disabled.
     #[serde(default = "TaskWorkers::default_default", rename = "_default")]
@@ -20,7 +20,9 @@ impl Default for TaskWorkers {
 
 impl TaskWorkers {
     /// Default `_default` value used by serde.
-    fn default_default() -> bool { true }
+    fn default_default() -> bool {
+        true
+    }
 }
 
 impl TaskWorkers {

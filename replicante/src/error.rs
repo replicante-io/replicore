@@ -7,7 +7,6 @@ use iron::IronError;
 
 use replicante_util_iron::into_ironerror;
 
-
 /// Error information returned by functions in case of errors.
 #[derive(Debug)]
 pub struct Error(Context<ErrorKind>);
@@ -45,7 +44,6 @@ impl From<ErrorKind> for Error {
         Error(Context::new(kind))
     }
 }
-
 
 /// Exhaustive list of possible errors emitted by this crate.
 #[derive(Debug, Fail)]

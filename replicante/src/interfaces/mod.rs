@@ -7,10 +7,10 @@ use replicante_data_store::store::Store;
 use replicante_streams_events::EventsStream;
 use replicante_util_upkeep::Upkeep;
 
-use super::ErrorKind;
-use super::Result;
 use super::config::Config;
 use super::tasks::Tasks;
+use super::ErrorKind;
+use super::Result;
 
 pub mod api;
 pub mod metrics;
@@ -46,12 +46,17 @@ impl Interfaces {
         let metrics = Metrics::new();
         let coordinator = Coordinator::new(config.coordinator.clone(), logger.clone())
             .with_context(|_| ErrorKind::InterfaceInit("coordinator"))?;
-        let api = API::new(config.api.clone(), coordinator.clone(), logger.clone(), &metrics);
+        let api = API::new(
+            config.api.clone(),
+            coordinator.clone(),
+            logger.clone(),
+            &metrics,
+        );
         let store = Store::make(config.storage.clone(), logger.clone())
             .with_context(|_| ErrorKind::ClientInit("store"))?;
         let streams = Streams::new(config, logger.clone(), store.clone())?;
-        let tasks = Tasks::new(config.tasks.clone())
-            .with_context(|_| ErrorKind::ClientInit("tasks"))?;
+        let tasks =
+            Tasks::new(config.tasks.clone()).with_context(|_| ErrorKind::ClientInit("tasks"))?;
         let tracing = Tracing::new(config.tracing.clone(), logger.clone())?;
         Ok(Interfaces {
             api,
@@ -87,7 +92,6 @@ impl Interfaces {
     }
 }
 
-
 /// Collection of all the streaming interfaces.
 pub struct Streams {
     pub events: EventsStream,
@@ -96,12 +100,9 @@ pub struct Streams {
 impl Streams {
     pub fn new(config: &Config, logger: Logger, store: Store) -> Result<Streams> {
         let events = EventsStream::new(config.events.stream.clone(), logger, store);
-        Ok(Streams {
-            events,
-        })
+        Ok(Streams { events })
     }
 }
-
 
 // *** Implement interfaces mocks for tests *** //
 /// A container for mocks used by interfaces.
@@ -154,16 +155,13 @@ impl Interfaces {
             coordinator,
             metrics,
             store,
-            streams: Streams {
-                events,
-            },
+            streams: Streams { events },
             tasks: mocks.tasks.mock(),
             tracing,
         };
         (interfaces, mocks)
     }
 }
-
 
 #[cfg(test)]
 mod tests {

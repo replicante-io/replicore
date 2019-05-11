@@ -33,7 +33,9 @@ impl Default for Config {
 
 impl Config {
     /// Default value for `bind` used by serde.
-    fn default_bind() -> String { String::from("127.0.0.1:16016") }
+    fn default_bind() -> String {
+        String::from("127.0.0.1:16016")
+    }
 }
 
 /// Enable/disable entire API trees.
@@ -94,9 +96,9 @@ pub struct Timeouts {
 impl Default for Timeouts {
     fn default() -> Timeouts {
         Timeouts {
-            keep_alive: Some(5),
-            read: Some(5),
-            write: Some(1),
+            keep_alive: Self::default_keep_alive(),
+            read: Self::default_read(),
+            write: Self::default_write(),
         }
     }
 }

@@ -100,8 +100,7 @@ impl Config {
     ///
     /// [`std::fs::File`]: https://doc.rust-lang.org/std/fs/struct.File.html
     pub fn from_file<P: AsRef<Path>>(path: P) -> Result<Config> {
-        let config = File::open(path)
-            .with_context(|_| ErrorKind::ConfigLoad)?;
+        let config = File::open(path).with_context(|_| ErrorKind::ConfigLoad)?;
         Config::from_reader(config)
     }
 
@@ -109,8 +108,7 @@ impl Config {
     ///
     /// [`std::io::Read`]: https://doc.rust-lang.org/std/io/trait.Read.html
     pub fn from_reader<R: Read>(reader: R) -> Result<Config> {
-        let conf = serde_yaml::from_reader(reader)
-            .with_context(|_| ErrorKind::ConfigLoad)?;
+        let conf = serde_yaml::from_reader(reader).with_context(|_| ErrorKind::ConfigLoad)?;
         Ok(conf)
     }
 
@@ -123,8 +121,14 @@ impl Config {
         // With !verbose logging debug level applies only to replicante crates.
         if self.logging.level == LoggingLevel::Debug && !self.logging.verbose {
             self.logging.level = LoggingLevel::Info;
-            self.logging.modules.entry("replicante".into()).or_insert(LoggingLevel::Debug);
-            self.logging.modules.entry("replictl".into()).or_insert(LoggingLevel::Debug);
+            self.logging
+                .modules
+                .entry("replicante".into())
+                .or_insert(LoggingLevel::Debug);
+            self.logging
+                .modules
+                .entry("replictl".into())
+                .or_insert(LoggingLevel::Debug);
         }
         self
     }
@@ -133,6 +137,7 @@ impl Config {
 #[cfg(test)]
 mod tests {
     use std::io::Cursor;
+
     use super::Config;
 
     #[test]

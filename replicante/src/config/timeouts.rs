@@ -16,6 +16,7 @@ impl Default for TimeoutsConfig {
 
 impl TimeoutsConfig {
     /// Default value for `agents_api` used by serde.
-    fn default_agents_api() -> u64 { 15 }
+    fn default_agents_api() -> u64 {
+        15
+    }
 }
-

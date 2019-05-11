@@ -1,14 +1,12 @@
+use iron::status;
 use iron::IronResult;
 use iron::Request;
 use iron::Response;
-use iron::status;
-
 
 /// Root index (`/`) handler.
 pub fn handler(_: &mut Request) -> IronResult<Response> {
     Ok(Response::with((status::Ok, "Replicante API server")))
 }
-
 
 #[cfg(test)]
 mod tests {
@@ -17,7 +15,6 @@ mod tests {
     use iron_test::response;
 
     use super::handler;
-
 
     #[test]
     fn get_index() {

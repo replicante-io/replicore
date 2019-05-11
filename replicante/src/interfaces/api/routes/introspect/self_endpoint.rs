@@ -22,8 +22,7 @@ impl ::iron::Handler for Handler {
     fn handle(&self, _: &mut Request) -> IronResult<Response> {
         let info = self.coordinator.node_id();
         let mut resp = Response::new();
-        resp.set_mut(JsonResponse::json(info))
-            .set_mut(status::Ok);
+        resp.set_mut(JsonResponse::json(info)).set_mut(status::Ok);
         Ok(resp)
     }
 }
@@ -32,9 +31,9 @@ impl ::iron::Handler for Handler {
 mod tests {
     use iron::Chain;
     use iron::Headers;
+    use iron_json_response::JsonResponseMiddleware;
     use iron_test::request;
     use iron_test::response;
-    use iron_json_response::JsonResponseMiddleware;
     use slog::Discard;
     use slog::Logger;
 
@@ -51,9 +50,9 @@ mod tests {
         let response = request::get("http://host:16016/", Headers::new(), &chain).unwrap();
         let result_body = response::extract_body_to_bytes(response);
         let result_body = String::from_utf8(result_body).unwrap();
-        assert_eq!(result_body, format!(
-            r#"{{"extra":{{}},"id":"{}"}}"#,
-            coordinator.node_id
-        ));
+        assert_eq!(
+            result_body,
+            format!(r#"{{"extra":{{}},"id":"{}"}}"#, coordinator.node_id)
+        );
     }
 }

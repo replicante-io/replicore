@@ -12,9 +12,9 @@ use iron::Iron;
 use iron_json_response::JsonResponseMiddleware;
 use slog::Logger;
 
-use replicante_coordinator::Coordinator;
 #[cfg(test)]
 use replicante_coordinator::mock::MockCoordinator;
+use replicante_coordinator::Coordinator;
 
 use replicante_util_iron::MetricsMiddleware;
 use replicante_util_iron::RequestLogger;
@@ -48,18 +48,16 @@ pub struct API {
 
 impl API {
     /// Creates a new API interface.
-    pub fn new(
-        config: Config,
-        coordinator: Coordinator,
-        logger: Logger,
-        metrics: &Metrics,
-    ) -> API {
+    pub fn new(config: Config, coordinator: Coordinator, logger: Logger, metrics: &Metrics) -> API {
         let registry = metrics.registry().clone();
         let mut router = Router::new(config.trees.clone().into());
         routes::mount(&mut router, coordinator, registry);
 
         let middleware = MetricsMiddleware::new(
-            MIDDLEWARE.0.clone(), MIDDLEWARE.1.clone(), MIDDLEWARE.2.clone(), logger.clone()
+            MIDDLEWARE.0.clone(),
+            MIDDLEWARE.1.clone(),
+            MIDDLEWARE.2.clone(),
+            logger.clone(),
         );
 
         API {
@@ -101,7 +99,9 @@ impl API {
 
                 info!(logger, "Starting API server"; "bind" => &config.bind);
                 scope.activity("running https://github.com/iron/iron HTTP server");
-                let mut bind = server.http(config.bind).expect("Unable to start API server");
+                let mut bind = server
+                    .http(config.bind)
+                    .expect("Unable to start API server");
                 // Once started, the server will run in the background.
                 // When the guard returned by Iron::http is dropped it tries to join the server.
                 // To support shutting down wait for the signal here, then close the server.
@@ -150,8 +150,7 @@ pub enum APIRoot {
 impl RootDescriptor for APIRoot {
     fn enabled(&self, flags: &HashMap<&'static str, bool>) -> bool {
         match self {
-            APIRoot::UnstableAPI |
-            APIRoot::UnstableWebUI => match flags.get("unstable") {
+            APIRoot::UnstableAPI | APIRoot::UnstableWebUI => match flags.get("unstable") {
                 Some(flag) => *flag,
                 None => true,
             },
