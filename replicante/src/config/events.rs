@@ -1,6 +1,5 @@
 use replicante_streams_events::Config as EventsStreamConfig;
 
-
 /// Replicante events configuration options.
 #[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
 pub struct EventsConfig {
@@ -21,7 +20,6 @@ impl Default for EventsConfig {
         }
     }
 }
-
 
 /// Periodic state snapshots configuration.
 #[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
@@ -46,8 +44,12 @@ impl Default for SnapshotsConfig {
 
 impl SnapshotsConfig {
     /// Default enabled status.
-    fn default_enabled() -> bool { true }
+    fn default_enabled() -> bool {
+        true
+    }
 
     /// Default snapshot emission frequency.
-    fn default_frequency() -> u32 { 60 }
+    fn default_frequency() -> u32 {
+        60
+    }
 }

@@ -1,7 +1,7 @@
 use replicante_util_upkeep::Upkeep;
 
-use super::super::Result;
 use super::super::interfaces::Interfaces;
+use super::super::Result;
 
 mod cluster;
 mod clusters;

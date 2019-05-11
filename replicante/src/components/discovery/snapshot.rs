@@ -4,7 +4,6 @@ use std::sync::Mutex;
 use super::super::super::config::EventsSnapshotsConfig;
 use super::metrics::DISCOVERY_SNAPSHOT_TRACKED_CLUSTERS;
 
-
 /// Helper object to decide when snapshot events should be emitted.
 ///
 /// This is a naive implementation using an in-memory map that never forgets nodes.
@@ -29,7 +28,10 @@ impl EmissionTracker {
         if !self.enabled {
             return;
         }
-        let mut map = self.state.lock().expect("EmissionTracker lock was poisoned");
+        let mut map = self
+            .state
+            .lock()
+            .expect("EmissionTracker lock was poisoned");
         map.clear();
         DISCOVERY_SNAPSHOT_TRACKED_CLUSTERS.set(0.0);
     }
@@ -39,7 +41,10 @@ impl EmissionTracker {
         if !self.enabled {
             return false;
         }
-        let mut map = self.state.lock().expect("EmissionTracker lock was poisoned");
+        let mut map = self
+            .state
+            .lock()
+            .expect("EmissionTracker lock was poisoned");
         // Default to 1 so that we can emit immediatelly.
         // This is so that a failover leads to a double snapshot instead of a snapshot delay.
         let state = map.entry(cluster).or_insert_with(|| {

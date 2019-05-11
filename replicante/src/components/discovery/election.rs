@@ -1,8 +1,8 @@
 use humthreads::ThreadScope;
 use slog::Logger;
 
-use replicante_agent_discovery::Config as DiscoveryConfig;
 use replicante_agent_discovery::discover;
+use replicante_agent_discovery::Config as DiscoveryConfig;
 use replicante_coordinator::Election;
 use replicante_coordinator::Error as CoordinatorError;
 use replicante_coordinator::LoopingElectionControl;
@@ -73,12 +73,14 @@ impl LoopingElectionLogic for DiscoveryElection {
     }
 
     fn post_check(&self, election: &Election) -> CoordinatorResult<LoopingElectionControl> {
-        self.thread.activity(format!("(idle) election status: {:?}", election.status()));
+        self.thread
+            .activity(format!("(idle) election status: {:?}", election.status()));
         Ok(LoopingElectionControl::Proceed)
     }
 
     fn pre_check(&self, election: &Election) -> CoordinatorResult<LoopingElectionControl> {
-        self.thread.activity(format!("election status: {:?}", election.status()));
+        self.thread
+            .activity(format!("election status: {:?}", election.status()));
         Ok(LoopingElectionControl::Proceed)
     }
 

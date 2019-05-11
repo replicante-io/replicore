@@ -1,12 +1,12 @@
 //! Module to define events related WebUI endpoints.
 use failure::ResultExt;
 
+use iron::status;
 use iron::Handler;
 use iron::IronResult;
 use iron::Request;
 use iron::Response;
 use iron::Set;
-use iron::status;
 use iron_json_response::JsonResponse;
 
 use replicante_data_store::store::legacy::EventsFilters;
@@ -22,7 +22,7 @@ const RECENT_EVENTS_LIMIT: i64 = 100;
 
 /// Cluster discovery (`/webui/events`) handler.
 pub struct Events {
-    store: Store
+    store: Store,
 }
 
 impl Handler for Events {
@@ -30,7 +30,8 @@ impl Handler for Events {
         let mut options = EventsOptions::default();
         options.limit = Some(RECENT_EVENTS_LIMIT);
         options.reverse = true;
-        let iter = self.store
+        let iter = self
+            .store
             .legacy()
             .events(EventsFilters::all(), options)
             .with_context(|_| ErrorKind::PrimaryStoreQuery("events"))
@@ -52,7 +53,9 @@ impl Handler for Events {
 impl Events {
     pub fn attach(interfaces: &mut Interfaces) {
         let mut router = interfaces.api.router_for(&APIRoot::UnstableWebUI);
-        let handler = Events { store: interfaces.store.clone() };
+        let handler = Events {
+            store: interfaces.store.clone(),
+        };
         router.get("/events", handler, "/events");
     }
 }

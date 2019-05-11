@@ -5,13 +5,13 @@ use chrono::Utc;
 
 use failure::ResultExt;
 
+use iron::status;
 use iron::Handler;
 use iron::IronResult;
 use iron::Plugin;
 use iron::Request;
 use iron::Response;
 use iron::Set;
-use iron::status;
 use iron_json_response::JsonResponse;
 
 use serde_json;
@@ -59,9 +59,15 @@ impl Default for AdvancedQuery {
 }
 
 impl AdvancedQuery {
-    fn default_exclude_snapshots() -> bool { true }
-    fn default_exclude_system_events() -> bool { false }
-    fn default_limit() -> i64 { 1000 }
+    fn default_exclude_snapshots() -> bool {
+        true
+    }
+    fn default_exclude_system_events() -> bool {
+        false
+    }
+    fn default_limit() -> i64 {
+        1000
+    }
 }
 
 /// Response annotation, a list of which is our response to SimpleJson.
@@ -106,7 +112,8 @@ pub struct Annotations {
 impl Handler for Annotations {
     fn handle(&self, req: &mut Request) -> IronResult<Response> {
         // Get the annotation query.
-        let request = req.get::<bodyparser::Struct<AnnotationRequest>>()
+        let request = req
+            .get::<bodyparser::Struct<AnnotationRequest>>()
             .with_context(|_| ErrorKind::APIRequestBodyInvalid)
             .map_err(Error::from)?
             .ok_or_else(|| ErrorKind::APIRequestBodyNotFound)
@@ -116,7 +123,8 @@ impl Handler for Annotations {
         if !request.annotation.enable {
             let mut resp = Response::new();
             let nothing: Vec<Annotation> = Vec::new();
-            resp.set_mut(JsonResponse::json(nothing)).set_mut(status::Ok);
+            resp.set_mut(JsonResponse::json(nothing))
+                .set_mut(status::Ok);
             return Ok(resp);
         }
 
@@ -137,7 +145,9 @@ impl Handler for Annotations {
         filters.start_from = Some(request.range.from);
         filters.stop_at = Some(request.range.to);
         options.limit = Some(query.limit);
-        let events = self.events.scan(filters, options)
+        let events = self
+            .events
+            .scan(filters, options)
             .with_context(|_| ErrorKind::ViewStoreQuery("events"))
             .map_err(Error::from)?;
         let mut annotations: Vec<Annotation> = Vec::new();
@@ -159,7 +169,8 @@ impl Handler for Annotations {
 
         // Send the response to clients.
         let mut resp = Response::new();
-        resp.set_mut(JsonResponse::json(annotations)).set_mut(status::Ok);
+        resp.set_mut(JsonResponse::json(annotations))
+            .set_mut(status::Ok);
         Ok(resp)
     }
 }
@@ -182,27 +193,27 @@ impl Annotations {
 
     fn text(event: &Event) -> String {
         match event.payload {
-            EventPayload::AgentDown(ref data) => format!(
-                "Agent {} is down or non-responsive", data.host
-            ),
-            EventPayload::AgentInfoChanged(ref data) => format!(
-                "Details about agent on {} changed", data.before.host
-            ),
-            EventPayload::AgentInfoNew(ref data) => format!(
-                "A new agent was detected on host {}", data.host
-            ),
-            EventPayload::AgentNew(ref data) => format!(
-                "A new agent was detected on host {}", data.host
-            ),
+            EventPayload::AgentDown(ref data) => {
+                format!("Agent {} is down or non-responsive", data.host)
+            }
+            EventPayload::AgentInfoChanged(ref data) => {
+                format!("Details about agent on {} changed", data.before.host)
+            }
+            EventPayload::AgentInfoNew(ref data) => {
+                format!("A new agent was detected on host {}", data.host)
+            }
+            EventPayload::AgentNew(ref data) => {
+                format!("A new agent was detected on host {}", data.host)
+            }
             EventPayload::AgentUp(ref data) => format!("Agent {} is now up", data.host),
             EventPayload::ClusterChanged(_) => String::from(concat!(
                 "Cluster discovery record changed (most commonly, this indicates",
                 "a membership change)"
             )),
             EventPayload::ClusterNew(_) => String::from("Cluster discovered for the first time"),
-            EventPayload::NodeChanged(ref data) => format!(
-                "Details about datastore node {} changed", data.node_id
-            ),
+            EventPayload::NodeChanged(ref data) => {
+                format!("Details about datastore node {} changed", data.node_id)
+            }
             EventPayload::NodeDown(ref data) => format!(
                 "Node {} is down or non-responsive but the agent on the node could be reached",
                 data.host
@@ -210,10 +221,12 @@ impl Annotations {
             EventPayload::NodeNew(_) => "A new datastore node was detected".into(),
             EventPayload::NodeUp(ref data) => format!("Datastore node {} is now up", data.host),
             EventPayload::ShardAllocationChanged(ref data) => format!(
-                "Status of shard {} on node {} have changed", data.shard_id, data.node_id
+                "Status of shard {} on node {} have changed",
+                data.shard_id, data.node_id
             ),
             EventPayload::ShardAllocationNew(ref data) => format!(
-                "Shard {} found on node {} for the first time", data.shard_id, data.node_id
+                "Shard {} found on node {} for the first time",
+                data.shard_id, data.node_id
             ),
             _ => event.code().to_string(),
         }

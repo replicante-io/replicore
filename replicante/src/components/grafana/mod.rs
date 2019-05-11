@@ -1,14 +1,14 @@
 use replicante_util_upkeep::Upkeep;
 
-use super::super::Result;
 use super::super::interfaces::Interfaces;
+use super::super::Result;
 
 mod annotations;
 mod check;
 
 /// Component to mount /api/v1/grafana endpoints.
 ///
-/// These endpoints are designed to provide an Annotations backend for the Grafana 
+/// These endpoints are designed to provide an Annotations backend for the Grafana
 /// [SimpleJson](https://grafana.com/plugins/grafana-simple-json-datasource) plugin.
 pub struct Grafana {}
 

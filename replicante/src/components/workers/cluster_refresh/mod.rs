@@ -15,9 +15,9 @@ use replicante_streams_events::EventsStream;
 use replicante_tasks::TaskHandler;
 use replicante_util_failure::failure_info;
 
+use super::super::super::task_payload::ClusterRefreshPayload;
 use super::super::super::ErrorKind;
 use super::super::super::Result;
-use super::super::super::task_payload::ClusterRefreshPayload;
 use super::Interfaces;
 use super::ReplicanteQueues;
 use super::Task;
@@ -44,8 +44,10 @@ impl Handler {
         let coordinator = interfaces.coordinator.clone();
         let events = interfaces.streams.events.clone();
         let fetcher = Fetcher::new(
-            logger.clone(), interfaces.streams.events.clone(), interfaces.store.clone(),
-            agents_timeout
+            logger.clone(),
+            interfaces.streams.events.clone(),
+            interfaces.store.clone(),
+            agents_timeout,
         );
         let store = interfaces.store.clone();
         Handler {
@@ -59,19 +61,23 @@ impl Handler {
     }
 
     fn do_handle(&self, task: &Task) -> Result<()> {
-        let payload: ClusterRefreshPayload = task.deserialize()
+        let payload: ClusterRefreshPayload = task
+            .deserialize()
             .with_context(|_| ErrorKind::Deserialize("task payload", "ClusterRefreshPayload"))?;
         let discovery = payload.cluster;
         let snapshot = payload.snapshot;
 
         // Ensure only one refresh at the same time.
-        let mut lock = self.coordinator
+        let mut lock = self
+            .coordinator
             .non_blocking_lock(format!("cluster_refresh/{}", discovery.cluster_id));
         match lock.acquire() {
             Ok(()) => (),
             Err(error) => {
                 if let ::replicante_coordinator::ErrorKind::LockHeld(_, owner) = error.kind() {
-                    REFRESH_LOCKED.with_label_values(&[&discovery.cluster_id]).inc();
+                    REFRESH_LOCKED
+                        .with_label_values(&[&discovery.cluster_id])
+                        .inc();
                     info!(
                         self.logger,
                         "Skipped cluster refresh because another task is in progress";
@@ -85,12 +91,16 @@ impl Handler {
 
         // Refresh cluster state.
         let cluster_id = discovery.cluster_id.clone();
-        let timer = REFRESH_DURATION.with_label_values(&[&cluster_id]).start_timer();
+        let timer = REFRESH_DURATION
+            .with_label_values(&[&cluster_id])
+            .start_timer();
         self.emit_snapshots(&cluster_id, snapshot);
         self.refresh_discovery(discovery.clone())?;
-        self.fetcher.fetch(discovery.clone(), lock.watch())
+        self.fetcher
+            .fetch(discovery.clone(), lock.watch())
             .with_context(|_| ErrorKind::ClusterRefresh)?;
-        self.aggregator.aggregate(discovery, lock.watch())
+        self.aggregator
+            .aggregate(discovery, lock.watch())
             .with_context(|_| ErrorKind::ClusterAggregation)?;
 
         // Done.
@@ -120,7 +130,8 @@ impl Handler {
     /// Refresh is performed based on the current state or luck of state.
     /// This method emits events as needed (and before the state is updated).
     fn refresh_discovery(&self, discovery: ClusterDiscovery) -> Result<()> {
-        let current_state = self.store
+        let current_state = self
+            .store
             .cluster(discovery.cluster_id.clone())
             .discovery()
             .with_context(|_| ErrorKind::PrimaryStorePersist("cluster_discovery"))?;
@@ -128,7 +139,9 @@ impl Handler {
             if discovery == current_state {
                 return Ok(());
             }
-            let event = Event::builder().cluster().changed(current_state, discovery.clone());
+            let event = Event::builder()
+                .cluster()
+                .changed(current_state, discovery.clone());
             let event_code = event.code();
             self.events
                 .emit(event)
@@ -158,7 +171,7 @@ impl TaskHandler<ReplicanteQueues> for Handler {
                         failure_info(&error)
                     );
                 }
-            },
+            }
             Err(error) => {
                 error!(
                     self.logger, "Failed to handle cluster discovery task"; failure_info(&error)
@@ -166,8 +179,7 @@ impl TaskHandler<ReplicanteQueues> for Handler {
                 if let Err(error) = task.fail() {
                     error!(
                         self.logger, "Error while acking failed task";
-                        "error" => ?error
-                        // TODO(stefano): once error_chain is gone: failure_info(&error)
+                        failure_info(&error)
                     );
                 }
             }

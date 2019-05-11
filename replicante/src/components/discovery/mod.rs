@@ -9,23 +9,21 @@ use replicante_coordinator::LoopingElection;
 use replicante_coordinator::LoopingElectionOpts;
 use replicante_util_upkeep::Upkeep;
 
-use super::super::ErrorKind;
 use super::super::config::EventsSnapshotsConfig;
 use super::super::tasks::Tasks;
+use super::super::ErrorKind;
+use super::super::Result;
 use super::Interfaces;
-use super::Result;
-
 
 mod config;
 mod election;
 mod metrics;
 mod snapshot;
 
-
 pub use self::config::Config;
 pub use self::metrics::register_metrics;
-use self::election::DiscoveryElection;
 
+use self::election::DiscoveryElection;
 
 /// Component to periodically perform service discovery.
 pub struct DiscoveryComponent {
@@ -73,13 +71,8 @@ impl DiscoveryComponent {
             .spawn(move |scope| {
                 scope.activity("initialising agent discovery election");
                 let election = coordinator.election("discovery");
-                let logic = DiscoveryElection::new(
-                    config,
-                    snapshots_config,
-                    logger.clone(),
-                    tasks,
-                    scope,
-                );
+                let logic =
+                    DiscoveryElection::new(config, snapshots_config, logger.clone(), tasks, scope);
                 let opts = LoopingElectionOpts::new(election, logic)
                     .loop_delay(interval)
                     .shutdown_receiver(shutdown_receiver);

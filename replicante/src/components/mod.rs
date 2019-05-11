@@ -3,10 +3,10 @@ use slog::Logger;
 
 use replicante_util_upkeep::Upkeep;
 
+use super::metrics::COMPONENTS_ENABLED;
 use super::Config;
 use super::Interfaces;
 use super::Result;
-use super::metrics::COMPONENTS_ENABLED;
 
 mod discovery;
 mod grafana;
@@ -31,23 +31,31 @@ macro_rules! component_run {
 
 /// Helper function to keep `Components::new` simpler in the presence of optional components.
 fn component_new<C, F>(
-    component: &str, mode: &str, enabled: bool, logger: &Logger, factory: F
+    component: &str,
+    mode: &str,
+    enabled: bool,
+    logger: &Logger,
+    factory: F,
 ) -> Option<C>
-    where F: FnOnce() -> C,
+where
+    F: FnOnce() -> C,
 {
     info!(
         logger, "Initialising component if enabled";
         "component" => component, "type" => mode, "enabled" => enabled
     );
     if enabled {
-        COMPONENTS_ENABLED.with_label_values(&[component, mode]).set(1.0);
+        COMPONENTS_ENABLED
+            .with_label_values(&[component, mode])
+            .set(1.0);
         Some(factory())
     } else {
-        COMPONENTS_ENABLED.with_label_values(&[component, mode]).set(0.0);
+        COMPONENTS_ENABLED
+            .with_label_values(&[component, mode])
+            .set(0.0);
         None
     }
 }
-
 
 /// A container for replicante components.
 ///
@@ -69,20 +77,39 @@ impl Components {
     /// Creates and configures components.
     pub fn new(config: &Config, logger: Logger, interfaces: &mut Interfaces) -> Result<Components> {
         let discovery = component_new(
-            "discovery", "required", config.components.discovery(), &logger, || Discovery::new(
-                config.discovery.clone(), config.events.snapshots.clone(), logger.clone(), interfaces
-            )
+            "discovery",
+            "required",
+            config.components.discovery(),
+            &logger,
+            || {
+                Discovery::new(
+                    config.discovery.clone(),
+                    config.events.snapshots.clone(),
+                    logger.clone(),
+                    interfaces,
+                )
+            },
         );
         let grafana = component_new(
-            "grafana", "optional", config.components.grafana(), &logger,
-            || Grafana::new(interfaces)
+            "grafana",
+            "optional",
+            config.components.grafana(),
+            &logger,
+            || Grafana::new(interfaces),
         );
         let webui = component_new(
-            "webui", "optional", config.components.webui(), &logger, || WebUI::new(interfaces)
+            "webui",
+            "optional",
+            config.components.webui(),
+            &logger,
+            || WebUI::new(interfaces),
         );
         let workers = component_new(
-            "workers", "required", config.components.workers(), &logger,
-            || Workers::new(interfaces, logger.clone(), config.clone())
+            "workers",
+            "required",
+            config.components.workers(),
+            &logger,
+            || Workers::new(interfaces, logger.clone(), config.clone()),
         );
         let workers = match workers {
             Some(Err(error)) => return Err(error),
@@ -107,7 +134,6 @@ impl Components {
         ::replicante_data_aggregator::register_metrics(logger, registry);
         ::replicante_data_fetcher::register_metrics(logger, registry);
     }
-
 
     /// Performs any final configuration and starts background threads.
     pub fn run(&mut self, upkeep: &mut Upkeep) -> Result<()> {

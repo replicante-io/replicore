@@ -1,12 +1,12 @@
 //! Module to define cluster related WebUI endpoints.
 use failure::ResultExt;
 
+use iron::status;
 use iron::Handler;
 use iron::IronResult;
 use iron::Request;
 use iron::Response;
 use iron::Set;
-use iron::status;
 use iron_json_response::JsonResponse;
 use router::Router;
 
@@ -17,22 +17,23 @@ use super::super::super::interfaces::Interfaces;
 use super::super::super::Error;
 use super::super::super::ErrorKind;
 
-
 static FIND_CLUSTERS_LIMIT: u8 = 25;
-
 
 /// Clusters find (`/webui/clusters/find`) handler.
 pub struct Find {
-    store: Store
+    store: Store,
 }
 
 impl Handler for Find {
     fn handle(&self, req: &mut Request) -> IronResult<Response> {
-        let query = req.extensions.get::<Router>()
+        let query = req
+            .extensions
+            .get::<Router>()
             .expect("Iron Router extension not found")
             .find("query")
             .unwrap_or("");
-        let clusters = self.store
+        let clusters = self
+            .store
             .legacy()
             .find_clusters(query.to_string(), FIND_CLUSTERS_LIMIT)
             .with_context(|_| ErrorKind::PrimaryStoreQuery("find_clusters"))
@@ -45,7 +46,8 @@ impl Handler for Find {
             response.push(cluster);
         }
         let mut resp = Response::new();
-        resp.set_mut(JsonResponse::json(response)).set_mut(status::Ok);
+        resp.set_mut(JsonResponse::json(response))
+            .set_mut(status::Ok);
         Ok(resp)
     }
 }
@@ -54,21 +56,30 @@ impl Find {
     /// Attaches the handler for `/webui/clusters/find/:query`.
     pub fn attach(interfaces: &mut Interfaces) {
         let mut router = interfaces.api.router_for(&APIRoot::UnstableWebUI);
-        let handler_root = Find { store: interfaces.store.clone() };
-        let handler_query = Find { store: interfaces.store.clone() };
+        let handler_root = Find {
+            store: interfaces.store.clone(),
+        };
+        let handler_query = Find {
+            store: interfaces.store.clone(),
+        };
         router.get("/clusters/find", handler_root, "/clusters/find");
-        router.get("/clusters/find/:query", handler_query, "/clusters/find/query");
+        router.get(
+            "/clusters/find/:query",
+            handler_query,
+            "/clusters/find/query",
+        );
     }
 }
 
 /// Top clusters (`/webui/clusters/top`) handler.
 pub struct Top {
-    store: Store
+    store: Store,
 }
 
 impl Handler for Top {
     fn handle(&self, _: &mut Request) -> IronResult<Response> {
-        let clusters = self.store
+        let clusters = self
+            .store
             .legacy()
             .top_clusters()
             .with_context(|_| ErrorKind::PrimaryStoreQuery("top_clusters"))
@@ -81,7 +92,8 @@ impl Handler for Top {
             response.push(cluster);
         }
         let mut resp = Response::new();
-        resp.set_mut(JsonResponse::json(response)).set_mut(status::Ok);
+        resp.set_mut(JsonResponse::json(response))
+            .set_mut(status::Ok);
         Ok(resp)
     }
 }
@@ -91,7 +103,7 @@ impl Top {
     pub fn attach(interfaces: &mut Interfaces) {
         let mut router = interfaces.api.router_for(&APIRoot::UnstableWebUI);
         let handler = Top {
-            store: interfaces.store.clone()
+            store: interfaces.store.clone(),
         };
         router.get("/clusters/top", handler, "/clusters/top");
     }

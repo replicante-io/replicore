@@ -18,3 +18,4 @@ cargo fmt --verbose -preplicante_data_models -- --check
 cargo fmt --verbose -preplicante_data_store -- --check
 cargo fmt --verbose -preplicante_streams_events -- --check
 cargo fmt --verbose -preplicante_tasks -- --check
+cargo fmt --verbose -preplicante -- --check

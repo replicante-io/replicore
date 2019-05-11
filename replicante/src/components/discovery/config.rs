@@ -1,6 +1,5 @@
 use replicante_agent_discovery::Config as BackendsConfig;
 
-
 /// Agent discovery configuration options.
 #[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -34,6 +33,11 @@ impl Default for Config {
 }
 
 impl Config {
-    fn default_interval() -> u64 { 60 }
-    fn default_term() -> u64 { 10800 }  // using defaults, a re-election every ~3 hours
+    fn default_interval() -> u64 {
+        60
+    }
+    fn default_term() -> u64 {
+        // using defaults, a re-election every ~3 hours
+        10800
+    }
 }

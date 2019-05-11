@@ -1,9 +1,9 @@
 //! Module to define cluster related WebUI endpoints.
+use iron::status;
 use iron::Handler;
 use iron::IronResult;
 use iron::Request;
 use iron::Response;
-use iron::status;
 
 use super::super::super::interfaces::api::APIRoot;
 use super::Interfaces;
@@ -13,7 +13,10 @@ pub struct Check {}
 
 impl Handler for Check {
     fn handle(&self, _req: &mut Request) -> IronResult<Response> {
-        Ok(Response::with((status::Ok, "Grafana SimpleJson Annotations API endpoints")))
+        Ok(Response::with((
+            status::Ok,
+            "Grafana SimpleJson Annotations API endpoints",
+        )))
     }
 }
 

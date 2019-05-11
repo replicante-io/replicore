@@ -32,7 +32,9 @@ impl Default for ComponentsConfig {
 
 impl ComponentsConfig {
     /// Default `_default` value used by serde.
-    fn default_default() -> bool { true }
+    fn default_default() -> bool {
+        true
+    }
 }
 
 impl ComponentsConfig {
