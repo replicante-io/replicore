@@ -1,0 +1,58 @@
+#########################################
+# Local sentry instance for development #
+#########################################
+version: '3.7'
+
+
+services:
+  sentry-memcached:
+    image: memcached:1.5-alpine
+
+  sentry-postgres:
+    image: postgres:9.5
+    volumes:
+      - type: volume
+        source: sentry-db
+        target: '/var/lib/postgresql/data'
+
+  sentry-redis:
+    image: redis:5.0-alpine
+
+  sentry-smtp:
+    image: tianon/exim4
+
+  x-sentry-defaults: &defaults
+    image: sentry:9.1
+    depends_on:
+      - sentry-memcached
+      - sentry-postgres
+      - sentry-redis
+      - sentry-smtp
+    environment:
+      SENTRY_EMAIL_HOST: sentry-smtp
+      SENTRY_MEMCACHED_HOST: sentry-memcached
+      SENTRY_POSTGRES_HOST: sentry-postgres
+      SENTRY_REDIS_HOST: sentry-redis
+      SENTRY_SECRET_KEY: ')0pab^fle4=v8jgzb^scbl5doezg+7*d=&3tl%s*g8r%*oepis'
+    volumes:
+      - type: volume
+        source: sentry-data
+        target: '/var/lib/sentry/files'
+
+  sentry-cron:
+    <<: *defaults
+    command: run cron
+
+  sentry-web:
+    <<: *defaults
+    ports:
+      - '9000:9000'
+
+  sentry-worker:
+    <<: *defaults
+    command: run worker
+
+
+volumes:
+  sentry-data: {}
+  sentry-db: {}
