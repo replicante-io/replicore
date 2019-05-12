@@ -10,6 +10,7 @@ use replicante_coordinator::LoopingElectionLogic;
 use replicante_coordinator::Result as CoordinatorResult;
 use replicante_data_models::ClusterDiscovery;
 use replicante_tasks::TaskRequest;
+use replicante_util_failure::capture_fail;
 use replicante_util_failure::failure_info;
 
 use super::super::super::config::EventsSnapshotsConfig;
@@ -56,7 +57,8 @@ impl DiscoveryElection {
         let payload = ClusterRefreshPayload::new(cluster, snapshot);
         let task = TaskRequest::new(ReplicanteQueues::ClusterRefresh);
         if let Err(error) = self.tasks.request(task, payload) {
-            error!(
+            capture_fail!(
+                &error,
                 self.logger,
                 "Failed to request cluster refresh";
                 "cluster_id" => cluster_id,

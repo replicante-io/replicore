@@ -13,6 +13,7 @@ use replicante_data_models::Event;
 use replicante_data_store::store::Store;
 use replicante_streams_events::EventsStream;
 use replicante_tasks::TaskHandler;
+use replicante_util_failure::capture_fail;
 use replicante_util_failure::failure_info;
 
 use super::super::super::task_payload::ClusterRefreshPayload;
@@ -166,19 +167,26 @@ impl TaskHandler<ReplicanteQueues> for Handler {
         match self.do_handle(&task) {
             Ok(()) => {
                 if let Err(error) = task.success() {
-                    error!(
-                        self.logger, "Error while acking successfully processed task";
+                    capture_fail!(
+                        &error,
+                        self.logger,
+                        "Error while acking successfully processed task";
                         failure_info(&error)
                     );
                 }
             }
             Err(error) => {
-                error!(
-                    self.logger, "Failed to handle cluster discovery task"; failure_info(&error)
+                capture_fail!(
+                    &error,
+                    self.logger,
+                    "Failed to handle cluster discovery task";
+                    failure_info(&error)
                 );
                 if let Err(error) = task.fail() {
-                    error!(
-                        self.logger, "Error while acking failed task";
+                    capture_fail!(
+                        &error,
+                        self.logger,
+                        "Error while acking failed task";
                         failure_info(&error)
                     );
                 }
