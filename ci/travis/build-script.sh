@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
 set -ex
 
-cargo build --verbose
-cargo test --verbose
-cargo clippy --verbose -- -D warnings
+cargo build
+cargo test
+cargo clippy -- -D warnings
+# Run cargo fmt in verbose mode to see what the editions are.
 # Code format is optional until we can make it work.
 cargo fmt --verbose -- --check || true
 

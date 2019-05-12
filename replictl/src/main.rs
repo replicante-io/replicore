@@ -1,13 +1,11 @@
-extern crate replictl;
 extern crate replicante_util_failure;
-
+extern crate replictl;
 
 use std::env;
 use std::process::exit;
 
-use replictl::run;
 use replicante_util_failure::format_fail;
-
+use replictl::run;
 
 fn main() {
     // Enable backtraces if the user did not set them.

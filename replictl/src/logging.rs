@@ -10,7 +10,6 @@ use slog::Record;
 use slog_term::FullFormat;
 use slog_term::TermDecorator;
 
-
 /// Alternative implementation of slog's [`LevelFilter`] with `Ok == ()`.
 ///
 /// The default [`LevelFilter`] implementation wraps `D::Ok` into an [`Option`].
@@ -36,8 +35,7 @@ impl<D: Drain> Drain for LevelFilter<D> {
     }
 }
 
-
-arg_enum!{
+arg_enum! {
     /// Enumerate valid log verbosity levels.
     #[derive(Clone, Eq, PartialEq, Hash, Debug)]
     pub enum LogLevel {
@@ -73,7 +71,6 @@ impl From<LogLevel> for ::slog::Level {
     }
 }
 
-
 /// Configure the logger.
 pub fn configure(level: LogLevel) -> Logger {
     let decorator = TermDecorator::new().stdout().build();
@@ -83,8 +80,11 @@ pub fn configure(level: LogLevel) -> Logger {
     // rustc can't infer lifetimes correctly when using Record::module.
     // Without this allow, clipply complainants that we do not use Record::module.
     #[allow(clippy::redundant_closure)]
-    Logger::root(drain, o!(
-        "module" => FnValue(|rinfo : &Record| rinfo.module()),
-        "version" => env!("GIT_BUILD_HASH"),
-    ))
+    Logger::root(
+        drain,
+        o!(
+            "module" => FnValue(|rinfo : &Record| rinfo.module()),
+            "version" => env!("GIT_BUILD_HASH"),
+        ),
+    )
 }

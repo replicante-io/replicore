@@ -2,9 +2,7 @@ use slog::Logger;
 
 use replicante_data_store::admin::ValidationResult;
 
-
 const GROUP_PERF_ABUSE: &str = "perf/abuse";
-
 
 /// Collection of outcomes for a set of checks.
 #[derive(Clone, Default, Eq, PartialEq, Hash, Debug)]
@@ -55,7 +53,6 @@ impl Outcomes {
     }
 }
 
-
 /// Enumerate possible check errors.
 ///
 /// Errors are issues that will prevent replicante from working correctly
@@ -103,7 +100,6 @@ impl Error {
         }
     }
 }
-
 
 /// Enumerate possible check warnings.
 ///
