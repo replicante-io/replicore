@@ -1,5 +1,4 @@
 ## 0.3.0 - Introspection
-- Sentry integration.
 - Trace agent discovery.
 - Trace state fetching.
 - Standardise metrics names.

@@ -18,12 +18,16 @@ impl Error {
 }
 
 impl Fail for Error {
+    fn backtrace(&self) -> Option<&Backtrace> {
+        self.0.backtrace()
+    }
+
     fn cause(&self) -> Option<&Fail> {
         self.0.cause()
     }
 
-    fn backtrace(&self) -> Option<&Backtrace> {
-        self.0.backtrace()
+    fn name(&self) -> Option<&str> {
+        self.kind().kind_name()
     }
 }
 
@@ -104,6 +108,33 @@ pub enum ErrorKind {
 
     #[fail(display = "could not query {} from the view store", _0)]
     ViewStoreQuery(&'static str),
+}
+
+impl ErrorKind {
+    fn kind_name(&self) -> Option<&str> {
+        let name = match self {
+            ErrorKind::APIRequestBodyInvalid => "APIRequestBodyInvalid",
+            ErrorKind::APIRequestBodyNotFound => "APIRequestBodyNotFound",
+            ErrorKind::APIRequestParameterNotFound(_) => "APIRequestParameterNotFound",
+            ErrorKind::ClientInit(_) => "ClientInit",
+            ErrorKind::ClusterAggregation => "ClusterAggregation",
+            ErrorKind::ClusterRefresh => "ClusterRefresh",
+            ErrorKind::ConfigLoad => "ConfigLoad",
+            ErrorKind::Coordination => "Coordination",
+            ErrorKind::ComponentAlreadyRunning(_) => "ComponentAlreadyRunning",
+            ErrorKind::Deserialize(_, _) => "Deserialize",
+            ErrorKind::EventsStreamEmit(_) => "EventsStreamEmit",
+            ErrorKind::InterfaceInit(_) => "InterfaceInit",
+            ErrorKind::ModelNotFound(_, _) => "ModelNotFound",
+            ErrorKind::PrimaryStoreQuery(_) => "PrimaryStoreQuery",
+            ErrorKind::PrimaryStorePersist(_) => "PrimaryStorePersist",
+            ErrorKind::TaskWorkerRegistration(_) => "TaskWorkerRegistration",
+            ErrorKind::ThreadFailed => "ThreadFailed",
+            ErrorKind::ThreadSpawn(_) => "ThreadSpawn",
+            ErrorKind::ViewStoreQuery(_) => "ViewStoreQuery",
+        };
+        Some(name)
+    }
 }
 
 /// Short form alias for functions returning `Error`s.

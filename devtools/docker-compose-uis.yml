@@ -15,7 +15,7 @@ services:
       - zookeeper
       - kafka
     environment:
-      KAFKA_REST_HOST_NAME: '172.128.0.29'
+      KAFKA_REST_HOST_NAME: '172.128.0.253'
       KAFKA_REST_LISTENERS: 'http://0.0.0.0:8082'
       KAFKA_REST_ZOOKEEPER_CONNECT: 'zookeeper:2181/kafka'
     hostname: 'kafka-rest'
@@ -23,13 +23,13 @@ services:
     init: true
     networks:
       default:
-        ipv4_address: '172.128.0.29'
+        ipv4_address: '172.128.0.253'
 
   kafka-webui:
     depends_on:
       - kafka-rest
     environment:
-      KAFKA_REST_PROXY_URL: 'http://172.128.0.29:8082'
+      KAFKA_REST_PROXY_URL: 'http://172.128.0.254:8082'
       PROXY: 'true'
     hostname: 'kafka-webui'
     image: 'landoop/kafka-topics-ui'

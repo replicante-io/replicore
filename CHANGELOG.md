@@ -7,12 +7,13 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## [Unreleased]
 ### Added
 - A better thread story.
-- Add `/api/unstable/introspect/self` endpoint.
 - Additional API server configuration options.
 - Graceful shutdown.
 - Introduce an `/api/unstable` API "version".
 - Optional `display_name` discovery attribute.
+- Sentry integration.
 - Threads introspection API.
+- `/api/unstable/introspect/self` endpoint.
 
 ### Changed
 - **BREAKING**: Agent client uses `unstable` API.

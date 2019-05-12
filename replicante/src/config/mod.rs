@@ -56,6 +56,10 @@ pub struct Config {
     #[serde(default)]
     pub logging: LoggingConfig,
 
+    /// Optional sentry integration configuration.
+    #[serde(default)]
+    pub sentry: Option<SentryConfig>,
+
     /// Storage layer configuration.
     #[serde(default)]
     pub storage: StorageConfig,
@@ -86,6 +90,7 @@ impl Default for Config {
             discovery: DiscoveryConfig::default(),
             events: EventsConfig::default(),
             logging: LoggingConfig::default(),
+            sentry: None,
             storage: StorageConfig::default(),
             task_workers: TaskWorkers::default(),
             tasks: TasksConfig::default(),
@@ -132,6 +137,13 @@ impl Config {
         }
         self
     }
+}
+
+/// Sentry integration configuration.
+#[derive(Clone, Eq, PartialEq, Hash, Debug, Serialize, Deserialize)]
+pub struct SentryConfig {
+    /// The DSN to use to configure sentry.
+    pub dsn: String,
 }
 
 #[cfg(test)]

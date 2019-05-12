@@ -12,16 +12,14 @@ extern crate router;
 
 #[macro_use]
 extern crate lazy_static;
-
 extern crate opentracingrust;
 extern crate prometheus;
-
+extern crate sentry;
 extern crate serde;
 #[macro_use]
 extern crate serde_derive;
 extern crate serde_json;
 extern crate serde_yaml;
-
 #[macro_use]
 extern crate slog;
 extern crate slog_scope;
@@ -46,6 +44,9 @@ extern crate replicante_util_upkeep;
 use clap::App;
 use clap::Arg;
 use failure::ResultExt;
+use sentry::integrations::failure::capture_fail;
+use sentry::internals::ClientInitGuard;
+use sentry::internals::IntoDsn;
 use slog::Logger;
 
 use replicante_util_upkeep::Upkeep;
@@ -57,15 +58,16 @@ mod interfaces;
 mod metrics;
 mod tasks;
 
-use self::components::Components;
-use self::interfaces::Interfaces;
-
 pub use self::config::Config;
 pub use self::error::Error;
 pub use self::error::ErrorKind;
 pub use self::error::Result;
 pub use self::tasks::payload as task_payload;
 pub use self::tasks::ReplicanteQueues;
+
+use self::components::Components;
+use self::config::SentryConfig;
+use self::interfaces::Interfaces;
 
 lazy_static! {
     /// Version details for replictl.
@@ -87,9 +89,6 @@ lazy_static! {
 /// services to other interfaces and/or components.
 #[allow(clippy::needless_pass_by_value)]
 fn initialise_and_run(config: Config, logger: Logger) -> Result<bool> {
-    info!(logger, "Initialising sub-systems ...");
-    // TODO: iniialise sentry as soon as possible.
-
     // Initialise Upkeep instance and signals.
     let mut upkeep = Upkeep::new();
     upkeep
@@ -98,6 +97,7 @@ fn initialise_and_run(config: Config, logger: Logger) -> Result<bool> {
     upkeep.set_logger(logger.clone());
 
     // Need to initialise the interfaces before we can register all metrics.
+    info!(logger, "Initialising sub-systems ...");
     let mut interfaces = Interfaces::new(&config, logger.clone())?;
     Interfaces::register_metrics(&logger, interfaces.metrics.registry());
     Components::register_metrics(&logger, interfaces.metrics.registry());
@@ -118,6 +118,35 @@ fn initialise_and_run(config: Config, logger: Logger) -> Result<bool> {
         warn!(logger, "Exiting due to error in a worker thread");
     }
     Ok(clean_exit)
+}
+
+/// Initialise sentry integration.
+///
+/// If sentry is configured, the panic handler is also registered.
+pub fn initialise_sentry(config: Option<SentryConfig>, logger: &Logger) -> Result<ClientInitGuard> {
+    let config = match config {
+        None => {
+            info!(logger, "Not using sentry: no configuration provided");
+            return Ok(sentry::init(()));
+        }
+        Some(config) => config,
+    };
+    info!(logger, "Configuring sentry integration");
+    let dsn = config
+        .dsn
+        .into_dsn()
+        .with_context(|_| ErrorKind::InterfaceInit("sentry"))?;
+    let client = sentry::init(sentry::ClientOptions {
+        attach_stacktrace: true,
+        dsn,
+        in_app_include: vec!["replicante"],
+        release: Some(env!("GIT_BUILD_HASH").into()),
+        ..Default::default()
+    });
+    if client.is_enabled() {
+        sentry::integrations::panic::register_panic_handler();
+    }
+    Ok(client)
 }
 
 /// Parse command line, load configuration, initialise logger.
@@ -162,7 +191,12 @@ pub fn run() -> Result<bool> {
     slog_stdlog::init().expect("Failed to initialise log -> slog integration");
     debug!(logger, "Logging configured");
 
-    let result = initialise_and_run(config, logger.clone());
+    // Iniialise sentry as soon as possible.
+    let _sentry = initialise_sentry(config.sentry.clone(), &logger)?;
+    let result = initialise_and_run(config, logger.clone()).map_err(|error| {
+        capture_fail(&error);
+        error
+    });
     let error = match &result {
         Err(_) => true,
         Ok(clean) => *clean,

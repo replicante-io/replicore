@@ -319,6 +319,15 @@ logging:
   verbose: false
 
 
+# Optional sentry.io integration configuration (desabled by default).
+#
+# Set a DSN parameter to enable centralised error reporting.
+#sentry:
+#  # (required) The DSN to use to configure sentry.
+#  dsn: 'https://key@server.domain:port/project'
+sentry: ~
+
+
 # The section below is for storage configuration.
 storage:
   # The database to use for persistent storage.

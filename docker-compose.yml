@@ -9,7 +9,7 @@ services:
     environment:
       JMX_PORT: 9999
       KAFKA_BROKER_ID: 1
-      KAFKA_LISTENERS: PLAINTEXT://172.128.0.30:9092
+      KAFKA_LISTENERS: PLAINTEXT://172.128.0.254:9092
       KAFKA_LOG_FLUSH_SCHEDULER_INTERVAL_MS: 60000
       KAFKA_NUM_PARTITIONS: 4
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
@@ -21,7 +21,7 @@ services:
       - zookeeper
     networks:
       default:
-        ipv4_address: '172.128.0.30'
+        ipv4_address: '172.128.0.254'
     ports:
       - '9092:9092'
     volumes:
@@ -73,9 +73,18 @@ services:
 
 networks:
   default:
+    # Use a known IP range so some addresses can be fixed.
+    # Fixed addresses are useful to allow the host to find containers by IP
+    # (for example kafka-rest) of for tools that broadcast their IP as a form
+    # of service discovery (for example kafka).
+    #
+    # Known containers with fixed IPs:
+    #
+    #   - 172.128.0.254: kafka
+    #   - 172.128.0.253: kafka-rest
     ipam:
       config:
-        - subnet: 172.128.0.0/27
+        - subnet: 172.128.0.0/24
 
 
 volumes:
