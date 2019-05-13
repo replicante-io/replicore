@@ -22,11 +22,9 @@ extern crate replicante_streams_events;
 extern crate replicante_tasks;
 extern crate replicante_util_failure;
 
-
 use clap::App;
 use clap::Arg;
 use clap::ArgMatches;
-
 
 mod commands;
 mod core;
@@ -42,59 +40,64 @@ pub use self::error::Result;
 use self::commands::check;
 use self::commands::coordinator;
 use self::commands::versions;
-
 use self::interfaces::Interfaces;
 use self::logging::LogLevel;
-
 
 /// Process command line arcuments and run the given command.
 pub fn run() -> Result<()> {
     // Initialise clap.
     let version = format!(
         "{} [{}; {}]",
-        env!("CARGO_PKG_VERSION"), env!("GIT_BUILD_HASH"), env!("GIT_BUILD_TAINT")
+        env!("CARGO_PKG_VERSION"),
+        env!("GIT_BUILD_HASH"),
+        env!("GIT_BUILD_TAINT"),
     );
     let args = App::new("replictl")
         .version(version.as_ref())
         .about(env!("CARGO_PKG_DESCRIPTION"))
-        .arg(Arg::with_name("config")
-             .short("c")
-             .long("config")
-             .value_name("FILE")
-             .default_value("replicante.yaml")
-             .takes_value(true)
-             .global(true)
-             .help("Specifies the configuration file to use")
+        .arg(
+            Arg::with_name("config")
+                .short("c")
+                .long("config")
+                .value_name("FILE")
+                .default_value("replicante.yaml")
+                .takes_value(true)
+                .global(true)
+                .help("Specifies the configuration file to use"),
         )
-        .arg(Arg::with_name("log-level")
-             .long("log-level")
-             .value_name("LEVEL")
-             .takes_value(true)
-             .possible_values(&LogLevel::variants())
-             .case_insensitive(true)
-             .global(true)
-             .help("Specifies the logging verbosity")
+        .arg(
+            Arg::with_name("log-level")
+                .long("log-level")
+                .value_name("LEVEL")
+                .takes_value(true)
+                .possible_values(&LogLevel::variants())
+                .case_insensitive(true)
+                .global(true)
+                .help("Specifies the logging verbosity"),
         )
-        .arg(Arg::with_name("no-progress")
-             .long("no-progress")
-             .global(true)
-             .help("Do not show progress bars")
+        .arg(
+            Arg::with_name("no-progress")
+                .long("no-progress")
+                .global(true)
+                .help("Do not show progress bars"),
         )
-        .arg(Arg::with_name("progress-chunk")
-             .long("progress-chunk")
-             .value_name("CHUNK")
-             .default_value("500")
-             .takes_value(true)
-             .global(true)
-             .help("Specifies how frequently to show progress messages")
+        .arg(
+            Arg::with_name("progress-chunk")
+                .long("progress-chunk")
+                .value_name("CHUNK")
+                .default_value("500")
+                .takes_value(true)
+                .global(true)
+                .help("Specifies how frequently to show progress messages"),
         )
-        .arg(Arg::with_name("url")
-             .long("url")
-             .value_name("URL")
-             .default_value("http://localhost:16016/")
-             .takes_value(true)
-             .global(true)
-             .help("Specifies the URL of the Replicante API to use")
+        .arg(
+            Arg::with_name("url")
+                .long("url")
+                .value_name("URL")
+                .default_value("http://localhost:16016/")
+                .takes_value(true)
+                .global(true)
+                .help("Specifies the URL of the Replicante API to use"),
         )
         .subcommand(check::command())
         .subcommand(coordinator::command())
@@ -116,7 +119,6 @@ pub fn run() -> Result<()> {
     }
     result
 }
-
 
 /// Switch the control flow to the requested command.
 fn run_command(args: &ArgMatches, interfaces: &Interfaces) -> Result<()> {

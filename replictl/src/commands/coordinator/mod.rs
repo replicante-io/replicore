@@ -10,13 +10,10 @@ use super::super::ErrorKind;
 use super::super::Interfaces;
 use super::super::Result;
 
-
 mod election;
 mod nblock;
 
-
 pub const COMMAND: &str = "coordinator";
-
 
 /// Configure the `replictl coordinator` command parser.
 pub fn command() -> App<'static, 'static> {
@@ -26,7 +23,6 @@ pub fn command() -> App<'static, 'static> {
         .subcommand(nblock::command())
 }
 
-
 /// Switch the control flow to the requested coordinator command.
 pub fn run<'a>(args: &ArgMatches<'a>, interfaces: &Interfaces) -> Result<()> {
     let command = args.subcommand_matches(COMMAND).unwrap();
@@ -35,12 +31,11 @@ pub fn run<'a>(args: &ArgMatches<'a>, interfaces: &Interfaces) -> Result<()> {
         Some(election::COMMAND) => election::run(args, interfaces),
         Some(nblock::COMMAND) => nblock::run(args, interfaces),
         None => Err(ErrorKind::NoCommand("replictl coordinator").into()),
-        Some(name) => Err(
-            ErrorKind::UnkownSubcommand("replictl coordinator", name.to_string()).into()
-        )
+        Some(name) => {
+            Err(ErrorKind::UnkownSubcommand("replictl coordinator", name.to_string()).into())
+        }
     }
 }
-
 
 /// Helper function to configure and instantiate an Admin interface.
 fn admin_interface<'a>(args: &ArgMatches<'a>, interfaces: &Interfaces) -> Result<Admin> {

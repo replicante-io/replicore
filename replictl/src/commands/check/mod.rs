@@ -2,24 +2,20 @@ use clap::App;
 use clap::ArgMatches;
 use clap::SubCommand;
 
-
 mod config;
 mod coordinator;
 mod store;
 mod streams;
 mod tasks;
 
-
 use super::super::ErrorKind;
 use super::super::Interfaces;
 use super::super::Result;
-
 
 pub const COMMAND: &str = "check";
 const DEEP_COMMAND: &str = "deep";
 const QUICK_COMMAND: &str = "quick";
 const UPDATE_COMMAND: &str = "update";
-
 
 /// Configure the `replictl check` command parser.
 pub fn command() -> App<'static, 'static> {
@@ -30,17 +26,19 @@ pub fn command() -> App<'static, 'static> {
         .subcommand(store::command())
         .subcommand(streams::command())
         .subcommand(tasks::command())
-        .subcommand(SubCommand::with_name(DEEP_COMMAND)
-            .about("Run all checks INCLUDING the ones that iterate over ALL data")
+        .subcommand(
+            SubCommand::with_name(DEEP_COMMAND)
+                .about("Run all checks INCLUDING the ones that iterate over ALL data"),
         )
-        .subcommand(SubCommand::with_name(QUICK_COMMAND)
-            .about("Run all checks that do NOT iterate over data (default command)")
+        .subcommand(
+            SubCommand::with_name(QUICK_COMMAND)
+                .about("Run all checks that do NOT iterate over data (default command)"),
         )
-        .subcommand(SubCommand::with_name(UPDATE_COMMAND)
-            .about("Run all checks to confirm an update is possible (iterates over ALL data!)")
+        .subcommand(
+            SubCommand::with_name(UPDATE_COMMAND)
+                .about("Run all checks to confirm an update is possible (iterates over ALL data!)"),
         )
 }
-
 
 /// Switch the control flow to the requested check command.
 pub fn run<'a>(args: &ArgMatches<'a>, interfaces: &Interfaces) -> Result<()> {
@@ -61,7 +59,6 @@ pub fn run<'a>(args: &ArgMatches<'a>, interfaces: &Interfaces) -> Result<()> {
     }
 }
 
-
 /// Run all checks INCLUDING the ones that iterate over ALL data.
 fn run_deep<'a>(args: &ArgMatches<'a>, interfaces: &Interfaces) -> Result<()> {
     let config = config::run(args, interfaces);
@@ -78,7 +75,6 @@ fn run_deep<'a>(args: &ArgMatches<'a>, interfaces: &Interfaces) -> Result<()> {
     tasks_data?;
     Ok(())
 }
-
 
 /// Run all checks that do NOT iterate over data.
 fn run_quick<'a>(args: &ArgMatches<'a>, interfaces: &Interfaces) -> Result<()> {

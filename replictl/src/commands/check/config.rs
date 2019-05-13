@@ -24,8 +24,7 @@ const DISCOVERY_INTERVAL_THRESHOLD: u64 = 15;
 
 /// Configure the `replictl check config` command parser.
 pub fn command() -> App<'static, 'static> {
-    SubCommand::with_name(COMMAND)
-        .about("Check the replicante configuration for errors")
+    SubCommand::with_name(COMMAND).about("Check the replicante configuration for errors")
 }
 
 /// Check the replicante configuration for errors.
@@ -40,15 +39,15 @@ pub fn run<'a>(args: &ArgMatches<'a>, interfaces: &Interfaces) -> Result<()> {
     info!(logger, "Checking configuration"; "file" => file);
 
     // Load core config.
-    let config = Config::from_file(file)
-        .with_context(|_| ErrorKind::ConfigLoad)?;
+    let config = Config::from_file(file).with_context(|_| ErrorKind::ConfigLoad)?;
 
     // Core config checks.
     let mut outcomes = Outcomes::new();
     if config.discovery.interval < DISCOVERY_INTERVAL_THRESHOLD {
         outcomes.warn(Warning::BelowThreshold(
             "'discovery.interval' is very frequent".into(),
-            config.discovery.interval, DISCOVERY_INTERVAL_THRESHOLD
+            config.discovery.interval,
+            DISCOVERY_INTERVAL_THRESHOLD,
         ));
     }
     outcomes.report(&logger);
@@ -90,9 +89,11 @@ fn check_discovery_file(path: &str, outcomes: &mut Outcomes) {
         Err(error) => {
             let error = error.context(ErrorKind::Config("not a valid file discovery source"));
             let error = format_fail(&error);
-            outcomes.error(
-                Error::UnableToParseModel("DiscoveryFile".into(), path.to_string(), error)
-            );
+            outcomes.error(Error::UnableToParseModel(
+                "DiscoveryFile".into(),
+                path.to_string(),
+                error,
+            ));
             return;
         }
     };

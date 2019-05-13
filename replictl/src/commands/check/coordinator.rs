@@ -18,7 +18,10 @@ pub const COMMAND: &str = "coordinator";
 
 /// Iterate over elections to ensure the can be read.
 fn check_elections(
-    admin: &Admin, outcomes: &mut Outcomes, interfaces: &Interfaces, logger: &Logger
+    admin: &Admin,
+    outcomes: &mut Outcomes,
+    interfaces: &Interfaces,
+    logger: &Logger,
 ) -> Result<()> {
     info!(logger, "Checking elections");
     let mut tracker = interfaces.progress("Processed more elections");
@@ -35,7 +38,10 @@ fn check_elections(
 
 /// Iterate over non-blocking locks to ensure they can be read.
 fn check_nblocks(
-    admin: &Admin, outcomes: &mut Outcomes, interfaces: &Interfaces, logger: &Logger
+    admin: &Admin,
+    outcomes: &mut Outcomes,
+    interfaces: &Interfaces,
+    logger: &Logger,
 ) -> Result<()> {
     info!(logger, "Checking held non-blocking locks");
     let mut tracker = interfaces.progress("Processed more non-blocking locks");
@@ -52,7 +58,10 @@ fn check_nblocks(
 
 /// Iterate over registered nodes to ensure they can be read.
 fn check_registry(
-    admin: &Admin, outcomes: &mut Outcomes, interfaces: &Interfaces, logger: &Logger
+    admin: &Admin,
+    outcomes: &mut Outcomes,
+    interfaces: &Interfaces,
+    logger: &Logger,
 ) -> Result<()> {
     info!(logger, "Checking registered nodes");
     let mut tracker = interfaces.progress("Processed more nodes");
@@ -69,8 +78,7 @@ fn check_registry(
 
 /// Configure the `replictl check coordinator` command parser.
 pub fn command() -> App<'static, 'static> {
-    SubCommand::with_name(COMMAND)
-        .about("Check all coordination data for incompatibilities")
+    SubCommand::with_name(COMMAND).about("Check all coordination data for incompatibilities")
 }
 
 /// Check all coordination data for incompatibilities
@@ -79,8 +87,8 @@ pub fn run<'a>(args: &ArgMatches<'a>, interfaces: &Interfaces) -> Result<()> {
     info!(logger, "Checking coordination data");
     let confirm = interfaces.prompt().confirm_danger(
         "About to scan ALL data in the distibuted coordination system. \
-        This could impact your production system. \
-        Would you like to proceed?"
+         This could impact your production system. \
+         Would you like to proceed?",
     )?;
     if !confirm {
         error!(logger, "Cannot check without user confirmation");
@@ -88,8 +96,7 @@ pub fn run<'a>(args: &ArgMatches<'a>, interfaces: &Interfaces) -> Result<()> {
     }
 
     let config = args.value_of("config").unwrap();
-    let config = Config::from_file(config)
-        .with_context(|_| ErrorKind::ConfigLoad)?;
+    let config = Config::from_file(config).with_context(|_| ErrorKind::ConfigLoad)?;
     let admin = Admin::new(config.coordinator, logger.clone())
         .with_context(|_| ErrorKind::AdminInit("coordinator"))?;
     let mut outcomes = Outcomes::new();

@@ -11,14 +11,12 @@ use replicante_data_store::Cursor;
 use replicante_data_store::ErrorKind as StoreErrorKind;
 use replicante_util_failure::format_fail;
 
-use super::super::super::ErrorKind;
-use super::super::super::Interfaces;
-use super::super::super::Result;
-
 use super::super::super::outcome::Error;
 use super::super::super::outcome::Outcomes;
 use super::super::super::outcome::Warning;
-
+use super::super::super::ErrorKind;
+use super::super::super::Interfaces;
+use super::super::super::Result;
 
 pub const COMMAND: &str = "store";
 
@@ -33,22 +31,19 @@ const MODEL_EVENT: &str = "Event";
 const MODEL_NODE: &str = "Node";
 const MODEL_SHARD: &str = "Shard";
 
-
 /// Configure the `replictl check store` command parser.
 pub fn command() -> App<'static, 'static> {
     SubCommand::with_name(COMMAND)
         .about("Check the primary store for incompatibilities")
+        .subcommand(SubCommand::with_name(COMMAND_DATA).about(
+            "Check ALL primary store content for compatibility with this version of replicante",
+        ))
         .subcommand(
-            SubCommand::with_name(COMMAND_DATA).about(
-                "Check ALL primary store content for compatibility with this version of replicante"
-            )
-        )
-        .subcommand(
-            SubCommand::with_name(COMMAND_SCHEMA)
-            .about("Check the primary store schema compatibility with this version of replicante")
+            SubCommand::with_name(COMMAND_SCHEMA).about(
+                "Check the primary store schema compatibility with this version of replicante",
+            ),
         )
 }
-
 
 /// Check the primary store for incompatibilities.
 pub fn run<'a>(args: &ArgMatches<'a>, interfaces: &Interfaces) -> Result<()> {
@@ -59,12 +54,11 @@ pub fn run<'a>(args: &ArgMatches<'a>, interfaces: &Interfaces) -> Result<()> {
         Some(COMMAND_DATA) => data(args, interfaces),
         Some(COMMAND_SCHEMA) => schema(args, interfaces),
         None => Err(ErrorKind::NoCommand("replictl check store").into()),
-        Some(name) => Err(
-            ErrorKind::UnkownSubcommand("replictl check store", name.to_string()).into()
-        ),
+        Some(name) => {
+            Err(ErrorKind::UnkownSubcommand("replictl check store", name.to_string()).into())
+        }
     }
 }
-
 
 /// Check ALL primary store content for compatibility with this version of replicante.
 ///
@@ -76,8 +70,8 @@ pub fn data<'a>(args: &ArgMatches<'a>, interfaces: &Interfaces) -> Result<()> {
     info!(logger, "Checking store data");
     let confirm = interfaces.prompt().confirm_danger(
         "About to scan ALL content of the store. \
-        This could impact your production system. \
-        Would you like to proceed?"
+         This could impact your production system. \
+         Would you like to proceed?",
     )?;
     if !confirm {
         error!(logger, "Cannot check without user interactive confirmation");
@@ -86,24 +80,47 @@ pub fn data<'a>(args: &ArgMatches<'a>, interfaces: &Interfaces) -> Result<()> {
 
     let mut outcomes = Outcomes::new();
     let config = args.value_of("config").unwrap();
-    let config = Config::from_file(config)
-        .with_context(|_| ErrorKind::ConfigLoad)?;
+    let config = Config::from_file(config).with_context(|_| ErrorKind::ConfigLoad)?;
     let admin = Admin::make(config.storage.clone(), logger.clone())
         .with_context(|_| ErrorKind::AdminInit("store"))?;
 
     info!(logger, "Checking records for the '{}' model", MODEL_AGENT);
-    scan_collection(admin.data().agents(), MODEL_AGENT, &mut outcomes, interfaces);
+    scan_collection(
+        admin.data().agents(),
+        MODEL_AGENT,
+        &mut outcomes,
+        interfaces,
+    );
     outcomes.report(&logger);
 
-    info!(logger, "Checking records for the '{}' model", MODEL_AGENT_INFO);
-    scan_collection(admin.data().agents_info(), MODEL_AGENT_INFO, &mut outcomes, interfaces);
+    info!(
+        logger,
+        "Checking records for the '{}' model", MODEL_AGENT_INFO
+    );
+    scan_collection(
+        admin.data().agents_info(),
+        MODEL_AGENT_INFO,
+        &mut outcomes,
+        interfaces,
+    );
     outcomes.report(&logger);
 
-    info!(logger, "Checking records for the '{}' model", MODEL_CLUSTER_META);
-    scan_collection(admin.data().clusters_meta(), MODEL_CLUSTER_META, &mut outcomes, interfaces);
+    info!(
+        logger,
+        "Checking records for the '{}' model", MODEL_CLUSTER_META
+    );
+    scan_collection(
+        admin.data().clusters_meta(),
+        MODEL_CLUSTER_META,
+        &mut outcomes,
+        interfaces,
+    );
     outcomes.report(&logger);
 
-    info!(logger, "Checking records for the '{}' model", MODEL_CLUSTER_DISCOVERY);
+    info!(
+        logger,
+        "Checking records for the '{}' model", MODEL_CLUSTER_DISCOVERY
+    );
     scan_collection(
         admin.data().cluster_discoveries(),
         MODEL_CLUSTER_DISCOVERY,
@@ -113,7 +130,12 @@ pub fn data<'a>(args: &ArgMatches<'a>, interfaces: &Interfaces) -> Result<()> {
     outcomes.report(&logger);
 
     info!(logger, "Checking records for the '{}' model", MODEL_EVENT);
-    scan_collection(admin.data().events(), MODEL_EVENT, &mut outcomes, interfaces);
+    scan_collection(
+        admin.data().events(),
+        MODEL_EVENT,
+        &mut outcomes,
+        interfaces,
+    );
     outcomes.report(&logger);
 
     info!(logger, "Checking records for the '{}' model", MODEL_NODE);
@@ -121,7 +143,12 @@ pub fn data<'a>(args: &ArgMatches<'a>, interfaces: &Interfaces) -> Result<()> {
     outcomes.report(&logger);
 
     info!(logger, "Checking records for the '{}' model", MODEL_SHARD);
-    scan_collection(admin.data().shards(), MODEL_SHARD, &mut outcomes, interfaces);
+    scan_collection(
+        admin.data().shards(),
+        MODEL_SHARD,
+        &mut outcomes,
+        interfaces,
+    );
     outcomes.report(&logger);
 
     // Report results.
@@ -137,10 +164,14 @@ pub fn data<'a>(args: &ArgMatches<'a>, interfaces: &Interfaces) -> Result<()> {
     Ok(())
 }
 
-fn scan_collection<Model: ::std::fmt::Debug>(
+fn scan_collection<Model>(
     cursor: ::replicante_data_store::Result<Cursor<Model>>,
-    collection: &str, outcomes: &mut Outcomes, interfaces: &Interfaces
-) {
+    collection: &str,
+    outcomes: &mut Outcomes,
+    interfaces: &Interfaces,
+) where
+    Model: ::std::fmt::Debug,
+{
     let cursor = match cursor {
         Ok(cursor) => cursor,
         Err(error) => {
@@ -154,11 +185,14 @@ fn scan_collection<Model: ::std::fmt::Debug>(
         if let Err(error) = item {
             match error.kind() {
                 StoreErrorKind::InvalidRecord(ref id) => {
-                    let cause = format_fail(error.cause().expect(
-                        "primary store ErrorKind::InvalidRecord error must have a cause"
-                    ));
+                    let cause =
+                        format_fail(error.cause().expect(
+                            "primary store ErrorKind::InvalidRecord error must have a cause",
+                        ));
                     outcomes.error(Error::UnableToParseModel(
-                        collection.to_string(), id.to_string(), cause
+                        collection.to_string(),
+                        id.to_string(),
+                        cause,
                     ));
                 }
                 _ => {
@@ -170,7 +204,6 @@ fn scan_collection<Model: ::std::fmt::Debug>(
         tracker.track();
     }
 }
-
 
 /// Check the primary store schema compatibility with this version of replicante.
 ///
@@ -184,8 +217,7 @@ pub fn schema<'a>(args: &ArgMatches<'a>, interfaces: &Interfaces) -> Result<()> 
     info!(logger, "Checking store schema");
 
     let config = args.value_of("config").unwrap();
-    let config = Config::from_file(config)
-        .with_context(|_| ErrorKind::ConfigLoad)?;
+    let config = Config::from_file(config).with_context(|_| ErrorKind::ConfigLoad)?;
     let store = Admin::make(config.storage, logger.clone())
         .with_context(|_| ErrorKind::AdminInit("store"))?;
     let mut outcomes = Outcomes::new();
@@ -232,7 +264,6 @@ pub fn schema<'a>(args: &ArgMatches<'a>, interfaces: &Interfaces) -> Result<()> 
     info!(logger, "Store schema checks passed");
     Ok(())
 }
-
 
 fn consume_results(results: Vec<ValidationResult>, outcomes: &mut Outcomes) {
     for result in results {

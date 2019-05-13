@@ -28,7 +28,7 @@ pub fn command() -> App<'static, 'static> {
         .about("Check all streams for incompatibilities")
         .subcommand(
             SubCommand::with_name(COMMAND_EVENTS)
-            .about("Check all events data for format incompatibilities")
+                .about("Check all events data for format incompatibilities"),
         )
 }
 
@@ -42,8 +42,8 @@ pub fn events<'a>(args: &ArgMatches<'a>, interfaces: &Interfaces) -> Result<()> 
     info!(logger, "Checking events stream");
     let confirm = interfaces.prompt().confirm_danger(
         "About to scan ALL events in the stream. \
-        This could impact your production system. \
-        Would you like to proceed?"
+         This could impact your production system. \
+         Would you like to proceed?",
     )?;
     if !confirm {
         error!(logger, "Cannot check without user confirmation");
@@ -52,14 +52,14 @@ pub fn events<'a>(args: &ArgMatches<'a>, interfaces: &Interfaces) -> Result<()> 
 
     let mut outcomes = Outcomes::new();
     let config = args.value_of("config").unwrap();
-    let config = Config::from_file(config)
-        .with_context(|_| ErrorKind::ConfigLoad)?;
+    let config = Config::from_file(config).with_context(|_| ErrorKind::ConfigLoad)?;
     let store = Store::make(config.storage, logger.clone())
         .with_context(|_| ErrorKind::ClientInit("store"))?;
     let stream = EventsStream::new(config.events.stream, logger.clone(), store);
 
     info!(logger, "Checking events stream ...");
-    let cursor = stream.scan(ScanFilters::all(), ScanOptions::default())
+    let cursor = stream
+        .scan(ScanFilters::all(), ScanOptions::default())
         .with_context(|_| ErrorKind::CheckFailed("events"))?;
     let mut tracker = interfaces.progress("Processed more events");
     for event in cursor {
@@ -92,8 +92,8 @@ pub fn run<'a>(args: &ArgMatches<'a>, interfaces: &Interfaces) -> Result<()> {
     match command {
         Some(COMMAND_EVENTS) => events(args, interfaces),
         None => Err(ErrorKind::NoCommand("replictl check streams").into()),
-        Some(name) => Err(
-            ErrorKind::UnkownSubcommand("replictl check streams", name.to_string()).into()
-        ),
+        Some(name) => {
+            Err(ErrorKind::UnkownSubcommand("replictl check streams", name.to_string()).into())
+        }
     }
 }

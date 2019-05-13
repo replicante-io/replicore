@@ -84,7 +84,10 @@ pub enum ErrorKind {
     #[fail(display = "could not lookup non-blocking lock '{}'", _0)]
     CoordinatorNBLockLookup(String),
 
-    #[fail(display = "could not lookup current owner of non-blocking lock '{}'", _0)]
+    #[fail(
+        display = "could not lookup current owner of non-blocking lock '{}'",
+        _0
+    )]
     CoordinatorNBLockOwnerLookup(String),
 
     #[fail(display = "could not force-release non-blocking lock '{}'", _0)]

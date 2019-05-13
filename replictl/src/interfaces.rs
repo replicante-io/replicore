@@ -8,7 +8,6 @@ use slog::Logger;
 use super::ErrorKind;
 use super::Result;
 
-
 /// A container sturcture to inject dependencies.
 pub struct Interfaces {
     logger: Logger,
@@ -23,10 +22,10 @@ impl Interfaces {
     /// Create a new `Interfaces` container.
     pub fn new<'a>(args: &ArgMatches<'a>, logger: Logger) -> Result<Interfaces> {
         let prompt = Prompt {
-            _logger: logger.clone()
+            _logger: logger.clone(),
         };
         let progress_chunk = value_t!(args, "progress-chunk", u32)
-            .with_context(|_|ErrorKind::Config("progress-chunk is not a positive integer"))?;
+            .with_context(|_| ErrorKind::Config("progress-chunk is not a positive integer"))?;
         if progress_chunk == 0 {
             return Err(ErrorKind::Config("progress-chunck must be grater then 0").into());
         }
@@ -50,10 +49,14 @@ impl Interfaces {
     ///
     /// No progress will be outputted if the `--no-progress` command line argument is passed.
     pub fn progress<S>(&self, message: S) -> ProgressTracker
-        where S: Into<String>,
+    where
+        S: Into<String>,
     {
         ProgressTracker::new(
-            self.progress_chunk, !self.progress, self.logger.clone(), message.into()
+            self.progress_chunk,
+            !self.progress,
+            self.logger.clone(),
+            message.into(),
         )
     }
 
@@ -62,7 +65,6 @@ impl Interfaces {
         &self.prompt
     }
 }
-
 
 /// Track progress of long running operations and emit logs about it.
 pub struct ProgressTracker {
@@ -96,7 +98,6 @@ impl ProgressTracker {
     }
 }
 
-
 /// Interface to interact with users over stdout/stdin.
 pub struct Prompt {
     _logger: Logger,
@@ -106,9 +107,13 @@ impl Prompt {
     /// Ask the user for confirmation before something potentially harmful is done.
     pub fn confirm_danger(&self, prompt: &str) -> Result<bool> {
         print!("{} [y/N] ", prompt);
-        io::stdout().flush().with_context(|_| ErrorKind::Io("stdout".into()))?;
+        io::stdout()
+            .flush()
+            .with_context(|_| ErrorKind::Io("stdout".into()))?;
         let mut reply = String::new();
-        io::stdin().read_line(&mut reply).with_context(|_| ErrorKind::Io("stdin".into()))?;
+        io::stdin()
+            .read_line(&mut reply)
+            .with_context(|_| ErrorKind::Io("stdin".into()))?;
         match reply.trim() {
             "y" => Ok(true),
             "yes" => Ok(true),
