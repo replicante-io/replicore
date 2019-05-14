@@ -1,5 +1,5 @@
 /// Control the Kafka acknowledgement level for published messages.
-#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
+#[derive(Clone, Eq, PartialEq, Hash, Debug, Serialize, Deserialize)]
 pub enum KafkaAckLevel {
     #[serde(rename = "all")]
     All,
@@ -29,7 +29,7 @@ impl Default for KafkaAckLevel {
 }
 
 /// Kafka as a task queue configuration options.
-#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
+#[derive(Clone, Eq, PartialEq, Hash, Debug, Serialize, Deserialize)]
 pub struct KafkaConfig {
     /// Acknowledgement level for published messages.
     #[serde(default)]
@@ -85,7 +85,7 @@ impl KafkaConfig {
 }
 
 /// Kafka timeout options.
-#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
+#[derive(Clone, Eq, PartialEq, Hash, Debug, Serialize, Deserialize)]
 pub struct KafkaTimeouts {
     /// Timeout (in milliseconds) for non-topic requests.
     #[serde(default = "KafkaTimeouts::default_metadata")]

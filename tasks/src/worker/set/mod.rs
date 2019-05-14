@@ -9,6 +9,7 @@ use humthreads::Builder;
 use humthreads::ThreadScope;
 use slog::Logger;
 
+use replicante_util_failure::capture_fail;
 use replicante_util_failure::failure_info;
 use replicante_util_upkeep::Upkeep;
 
@@ -83,9 +84,11 @@ impl<'a, Q: TaskQueue> Worker<'a, Q> {
     fn run_once(&self) {
         let task = match self.backend.poll(Duration::from_millis(TIMEOUT_MS_POLL)) {
             Err(error) => {
-                error!(
-                    self.logger, "Failed to poll for tasks, sleeping before retring";
-                    failure_info(&error)
+                capture_fail!(
+                    &error,
+                    self.logger,
+                    "Failed to poll for tasks, sleeping before retring";
+                    failure_info(&error),
                 );
                 TASK_WORKER_POLL_ERRORS.inc();
                 let _activity = self

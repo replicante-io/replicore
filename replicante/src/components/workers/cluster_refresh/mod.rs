@@ -119,9 +119,12 @@ impl Handler {
         debug!(self.logger, "Emitting cluster snapshot"; "cluster" => name);
         let snapshotter = Snapshotter::new(name.into(), self.events.clone(), self.store.clone());
         if let Err(error) = snapshotter.run() {
-            error!(
-                self.logger, "Failed to emit snapshots";
-                "cluster" => name, failure_info(&error)
+            capture_fail!(
+                &error,
+                self.logger,
+                "Failed to emit snapshots";
+                "cluster" => name,
+                failure_info(&error),
             );
         }
     }
@@ -171,7 +174,7 @@ impl TaskHandler<ReplicanteQueues> for Handler {
                         &error,
                         self.logger,
                         "Error while acking successfully processed task";
-                        failure_info(&error)
+                        failure_info(&error),
                     );
                 }
             }
@@ -180,14 +183,14 @@ impl TaskHandler<ReplicanteQueues> for Handler {
                     &error,
                     self.logger,
                     "Failed to handle cluster discovery task";
-                    failure_info(&error)
+                    failure_info(&error),
                 );
                 if let Err(error) = task.fail() {
                     capture_fail!(
                         &error,
                         self.logger,
                         "Error while acking failed task";
-                        failure_info(&error)
+                        failure_info(&error),
                     );
                 }
             }

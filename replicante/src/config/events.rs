@@ -1,7 +1,7 @@
 use replicante_streams_events::Config as EventsStreamConfig;
 
 /// Replicante events configuration options.
-#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
+#[derive(Clone, Eq, PartialEq, Hash, Debug, Serialize, Deserialize)]
 pub struct EventsConfig {
     /// Periodic state snapshots configuration.
     #[serde(default)]
@@ -22,7 +22,7 @@ impl Default for EventsConfig {
 }
 
 /// Periodic state snapshots configuration.
-#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
+#[derive(Clone, Eq, PartialEq, Hash, Debug, Serialize, Deserialize)]
 pub struct SnapshotsConfig {
     /// Enables the emission of snapshot events.
     #[serde(default = "SnapshotsConfig::default_enabled")]

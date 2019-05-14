@@ -1,5 +1,5 @@
 /// Replicante timeouts configuration options.
-#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
+#[derive(Clone, Eq, PartialEq, Hash, Debug, Serialize, Deserialize)]
 pub struct TimeoutsConfig {
     /// Time after which API requests to agents are failed.
     #[serde(default = "TimeoutsConfig::default_agents_api")]

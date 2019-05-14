@@ -25,6 +25,7 @@ use replicante_data_models::AgentStatus;
 use replicante_data_models::ClusterDiscovery;
 use replicante_data_store::store::Store;
 use replicante_streams_events::EventsStream;
+use replicante_util_failure::capture_fail;
 use replicante_util_failure::failure_info;
 use replicante_util_failure::format_fail;
 
@@ -151,7 +152,12 @@ impl Fetcher {
         });
         // TODO: propagate core errors.
         if let Err(error) = result {
-            error!(self.logger, "Failed to process cluster refresh"; failure_info(&error));
+            capture_fail!(
+                &error,
+                self.logger,
+                "Failed to process cluster refresh";
+                failure_info(&error),
+            );
         }
         Ok(())
     }
@@ -170,8 +176,9 @@ impl Fetcher {
             // Exit early if lock was lost.
             if !lock.inspect() {
                 warn!(
-                    self.logger, "Cluster fetcher lock lost, skipping futher nodes";
-                    "cluster_id" => &cluster_id
+                    self.logger,
+                    "Cluster fetcher lock lost, skipping futher nodes";
+                    "cluster_id" => &cluster_id,
                 );
                 return Ok(());
             }

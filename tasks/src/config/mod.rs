@@ -3,7 +3,7 @@ mod kafka;
 pub use self::kafka::KafkaConfig;
 
 /// Task queue backend configuration.
-#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
+#[derive(Clone, Eq, PartialEq, Hash, Debug, Serialize, Deserialize)]
 #[serde(tag = "backend", content = "options", deny_unknown_fields)]
 pub enum Backend {
     /// Use kafka as a task system (recommended, default).
@@ -18,7 +18,7 @@ impl Default for Backend {
 }
 
 /// Tasks configuration options.
-#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
+#[derive(Clone, Eq, PartialEq, Hash, Debug, Serialize, Deserialize)]
 pub struct Config {
     #[serde(default, flatten)]
     pub backend: Backend,

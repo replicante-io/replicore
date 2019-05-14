@@ -70,7 +70,7 @@ impl DiscoveryElection {
 
 impl LoopingElectionLogic for DiscoveryElection {
     fn handle_error(&self, error: CoordinatorError) -> LoopingElectionControl {
-        error!(self.logger, "Discovery election error"; failure_info(&error));
+        capture_fail!(&error, self.logger, "Discovery election error"; failure_info(&error));
         LoopingElectionControl::Continue
     }
 
@@ -95,7 +95,12 @@ impl LoopingElectionLogic for DiscoveryElection {
             match cluster {
                 Ok(cluster) => self.emit(cluster),
                 Err(error) => {
-                    error!(self.logger, "Cluster discovery error"; failure_info(&error));
+                    capture_fail!(
+                        &error,
+                        self.logger,
+                        "Cluster discovery error";
+                        failure_info(&error),
+                    );
                     DISCOVERY_ERRORS.inc();
                 }
             }

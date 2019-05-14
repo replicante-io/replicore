@@ -1,7 +1,7 @@
 use replicante_agent_discovery::Config as BackendsConfig;
 
 /// Agent discovery configuration options.
-#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
+#[derive(Clone, Eq, PartialEq, Hash, Debug, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct Config {
     /// Discovery backends configuration.

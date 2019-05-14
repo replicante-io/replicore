@@ -41,8 +41,11 @@ where
     F: FnOnce() -> C,
 {
     info!(
-        logger, "Initialising component if enabled";
-        "component" => component, "type" => mode, "enabled" => enabled
+        logger,
+        "Initialising component if enabled";
+        "component" => component,
+        "type" => mode,
+        "enabled" => enabled,
     );
     if enabled {
         COMPONENTS_ENABLED

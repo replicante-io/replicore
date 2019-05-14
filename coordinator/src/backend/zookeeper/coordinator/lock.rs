@@ -15,6 +15,7 @@ use zookeeper::ZkError;
 use zookeeper::ZkState;
 use zookeeper::ZooKeeper;
 
+use replicante_util_failure::capture_fail;
 use replicante_util_failure::failure_info;
 
 use super::super::super::super::coordinator::NonBlockingLockWatcher;
@@ -83,7 +84,8 @@ impl ZookeeperNBLock {
         // Release the lock if the node was deleted.
         if let WatchedEventType::NodeDeleted = event.event_type {
             error!(
-                context.logger, "Lock lost, znode was deleted";
+                context.logger,
+                "Lock lost, znode was deleted";
                 "lock" => &context.state.lock
             );
             context.state.release();
@@ -105,14 +107,16 @@ impl ZookeeperNBLock {
             // If the node was deleted before watching, release the lock.
             if stats.is_some() {
                 debug!(
-                    context.logger, "Refreshed non-blocking lock watcher";
-                    "lock" => &context.state.lock
+                    context.logger,
+                    "Refreshed non-blocking lock watcher";
+                    "lock" => &context.state.lock,
                 );
                 return Ok(());
             }
             error!(
-                context.logger, "Lock lost, znode was deleted";
-                "lock" => &context.state.lock
+                context.logger,
+                "Lock lost, znode was deleted";
+                "lock" => &context.state.lock,
             );
             context.state.release();
             ZOO_NB_LOCK_DELETED.inc();
@@ -123,9 +127,11 @@ impl ZookeeperNBLock {
             context.state.release();
             ZOO_NB_LOCK_LOST.inc();
             NB_LOCK_LOST.inc();
-            error!(
-                context.logger, "Lock lost, failed to reattach change watcher";
-                failure_info(&error)
+            capture_fail!(
+                &error,
+                context.logger,
+                "Lock lost, failed to reattach change watcher";
+                failure_info(&error),
             );
         }
     }
@@ -137,8 +143,9 @@ impl ZookeeperNBLock {
     fn callback_state(context: &NblCallbackContext, status: ZkState) {
         if let ZkState::Closed = status {
             error!(
-                context.logger, "Lock lost, zookeeper session expired";
-                "lock" => &context.state.lock
+                context.logger,
+                "Lock lost, zookeeper session expired";
+                "lock" => &context.state.lock,
             );
             context.state.release();
             ZOO_NB_LOCK_LOST.inc();
@@ -280,8 +287,10 @@ impl NonBlockingLockBehaviour for ZookeeperNBLock {
                 let payload: NBLockInfo = serde_json::from_slice(&payload)
                     .with_context(|_| ErrorKind::Decode("zookeeper non-blocking lock"))?;
                 warn!(
-                    self.context.logger, "Attempted lock release but we seem not to be owners";
-                    "lock" => &self.context.state.lock, "owner" => %payload.owner
+                    self.context.logger,
+                    "Attempted lock release but we seem not to be owners";
+                    "lock" => &self.context.state.lock,
+                    "owner" => %payload.owner,
                 );
             }
         };
@@ -295,9 +304,11 @@ impl NonBlockingLockBehaviour for ZookeeperNBLock {
         }
         if let Err(error) = self.release() {
             NB_LOCK_DROP_FAIL.inc();
-            error!(
-                self.context.logger, "Unable to release lock from destructor";
-                failure_info(&error)
+            capture_fail!(
+                &error,
+                self.context.logger,
+                "Unable to release lock from destructor";
+                failure_info(&error),
             );
         }
     }

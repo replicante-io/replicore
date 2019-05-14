@@ -6,7 +6,7 @@ use replicante_tasks::TaskQueue;
 pub mod payload;
 
 /// Enumerate all queues used in Replicante.
-#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug)]
+#[derive(Clone, Eq, PartialEq, Hash, Debug)]
 pub enum ReplicanteQueues {
     /// Cluster state refresh and aggregation tasks.
     ClusterRefresh,
@@ -25,7 +25,7 @@ impl FromStr for ReplicanteQueues {
 impl TaskQueue for ReplicanteQueues {
     fn max_retry_count(&self) -> u8 {
         match self {
-            ReplicanteQueues::ClusterRefresh => 4,
+            ReplicanteQueues::ClusterRefresh => 3,
             //_ => 12,
         }
     }

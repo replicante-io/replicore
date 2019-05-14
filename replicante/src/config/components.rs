@@ -1,5 +1,5 @@
 /// Components enabling configuration.
-#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
+#[derive(Clone, Eq, PartialEq, Hash, Debug, Serialize, Deserialize)]
 pub struct ComponentsConfig {
     /// Default status for all components that are not explicitly enabled/disabled.
     #[serde(default = "ComponentsConfig::default_default", rename = "_default")]

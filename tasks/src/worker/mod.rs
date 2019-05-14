@@ -179,6 +179,16 @@ mod tests {
     }
 
     #[test]
+    #[should_panic(expected = "this test should panic")]
+    fn unacked_task_does_not_double_panic() {
+        let template = TaskTemplate::new(TestQueues::Test1, (), HashMap::new(), 0);
+        let mock = template.mock();
+        let _task = template.task();
+        assert_eq!(mock.lock().unwrap().ack, TaskAck::NotAcked);
+        panic!("this test should panic");
+    }
+
+    #[test]
     fn task_fail() {
         let template = TaskTemplate::new(TestQueues::Test1, (), HashMap::new(), 0);
         let mock = template.mock();

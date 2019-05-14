@@ -16,6 +16,8 @@ use slog::Logger;
 use replicante_coordinator::mock::MockCoordinator;
 use replicante_coordinator::Coordinator;
 
+use replicante_util_failure::capture_fail;
+use replicante_util_failure::failure_info;
 use replicante_util_iron::MetricsMiddleware;
 use replicante_util_iron::RequestLogger;
 use replicante_util_iron::RootDescriptor;
@@ -111,7 +113,12 @@ impl API {
                     ::std::thread::sleep(Duration::from_secs(1));
                 }
                 if let Err(error) = bind.close() {
-                    error!(logger, "Failed to shutdown API server"; "error" => ?error);
+                    capture_fail!(
+                        &error,
+                        logger,
+                        "Failed to shutdown API server";
+                        failure_info(&error),
+                    );
                 }
             })
             .with_context(|_| ErrorKind::ThreadSpawn("http server"))?;

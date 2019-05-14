@@ -9,6 +9,7 @@ use humthreads::ThreadScope;
 use slog::Logger;
 use zookeeper::ZkError;
 
+use replicante_util_failure::capture_fail;
 use replicante_util_failure::failure_info;
 
 use super::super::super::super::config::ZookeeperConfig;
@@ -99,7 +100,12 @@ impl Drop for Cleaner {
             .take();
         if let Some(handle) = handle {
             if let Err(error) = handle.join() {
-                error!(self.logger, "Zookeeper cleaner thread paniced"; failure_info(&error));
+                capture_fail!(
+                    &error,
+                    self.logger,
+                    "Zookeeper cleaner thread paniced";
+                    failure_info(&error),
+                );
             }
         }
     }
@@ -192,7 +198,12 @@ impl InnerCleaner {
 
 impl LoopingElectionLogic for InnerCleaner {
     fn handle_error(&self, error: Error) -> LoopingElectionControl {
-        error!(self.logger, "Zookeeper background cleaner election error"; failure_info(&error));
+        capture_fail!(
+            &error,
+            self.logger,
+            "Zookeeper background cleaner election error";
+            failure_info(&error)
+        );
         LoopingElectionControl::Continue
     }
 
@@ -214,7 +225,12 @@ impl LoopingElectionLogic for InnerCleaner {
             .thread
             .scoped_activity("cleaning empty zookeeper znodes");
         if let Err(error) = self.cycle() {
-            error!(self.logger, "Zookeeper cleanup cycle failed"; failure_info(&error));
+            capture_fail!(
+                &error,
+                self.logger,
+                "Zookeeper cleanup cycle failed";
+                failure_info(&error)
+            );
         }
         debug!(self.logger, "Zookeeper cleanup cycle ended");
         Ok(LoopingElectionControl::Proceed)

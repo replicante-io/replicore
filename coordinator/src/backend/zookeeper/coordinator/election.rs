@@ -13,6 +13,7 @@ use zookeeper::ZkError;
 use zookeeper::ZkState;
 use zookeeper::ZooKeeper;
 
+use replicante_util_failure::capture_fail;
 use replicante_util_failure::failure_info;
 
 use super::super::super::super::coordinator::ElectionStatus;
@@ -190,9 +191,12 @@ impl AtomicState {
             // We can't get a client.
             // The session will have been invalidated and the subscription removed for us.
             Err(error) => {
-                error!(
-                    logger, "Election terminated without zookeeper session";
-                    "election" => &self.context.name, failure_info(&error)
+                capture_fail!(
+                    &error,
+                    logger,
+                    "Election terminated without zookeeper session";
+                    "election" => &self.context.name,
+                    failure_info(&error),
                 );
                 return;
             }
@@ -207,9 +211,12 @@ impl AtomicState {
                 Ok(()) => (),
                 Err(ZkError::NoNode) => (),
                 Err(error) => {
-                    error!(
-                        logger, "Failed to delete candidate znode for election";
-                        "election" => &self.context.name, failure_info(&error)
+                    capture_fail!(
+                        &error,
+                        logger,
+                        "Failed to delete candidate znode for election";
+                        "election" => &self.context.name,
+                        failure_info(&error),
                     );
                 }
             };
@@ -350,9 +357,12 @@ impl ZookeeperElection {
         let keeper = match context.client.get() {
             Ok(keeper) => keeper,
             Err(error) => {
-                error!(
-                    context.logger, "Failed to refresh election state";
-                    "election" => &context.name, failure_info(&error)
+                capture_fail!(
+                    &error,
+                    context.logger,
+                    "Failed to refresh election state";
+                    "election" => &context.name,
+                    failure_info(&error),
                 );
                 state.terminate("zookeeper session lost");
                 return;
@@ -386,7 +396,8 @@ impl ZookeeperElection {
                     // The election must have been shut down elsewhere.
                     None => {
                         debug!(
-                            context.logger, "Not updating election without candidate znode";
+                            context.logger,
+                            "Not updating election without candidate znode";
                             "election" => &context.name
                         );
                         return;
@@ -418,9 +429,12 @@ impl ZookeeperElection {
 
             // Unable to refresh election state, termiate.
             Err(error) => {
-                error!(
-                    context.logger, "Failed to refresh election state";
-                    "election" => &context.name, failure_info(&error)
+                capture_fail!(
+                    &error,
+                    context.logger,
+                    "Failed to refresh election state";
+                    "election" => &context.name,
+                    failure_info(&error),
                 );
                 state.terminate("election refresh failed")
             }
@@ -516,10 +530,12 @@ impl ElectionBehaviour for ZookeeperElection {
                     Ok(()) => (),
                     Err(ZkError::NoNode) => (),
                     Err(error) => {
-                        error!(
+                        capture_fail!(
+                            &error,
                             self.state.context.logger,
                             "Failed to delete cancidate znode for election in invalid state";
-                            "election" => &context.name, failure_info(&error)
+                            "election" => &context.name,
+                            failure_info(&error),
                         );
                     }
                 };
@@ -548,9 +564,12 @@ impl ElectionBehaviour for ZookeeperElection {
         ELECTION_DROP_TOTAL.inc();
         if let Err(error) = self.state.step_down() {
             ELECTION_DROP_FAIL.inc();
-            error!(
-                self.state.context.logger, "Failed to automatically step down election";
-                "election" => &self.state.context.name, failure_info(&error)
+            capture_fail!(
+                &error,
+                self.state.context.logger,
+                "Failed to automatically step down election";
+                "election" => &self.state.context.name,
+                failure_info(&error),
             );
         }
     }
