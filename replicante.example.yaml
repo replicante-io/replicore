@@ -323,6 +323,17 @@ logging:
 #
 # Set a DSN parameter to enable centralised error reporting.
 #sentry:
+#  # Sentry API response capture filter.
+#  #
+#  # When sentry is enabled, API error responses returned to clients can be recorded
+#  # as sentry events to detect and debug issues.
+#  #
+#  # This option sets the severity level of responses that are reported:
+#  #  * `no`: disable sentry capturing of API error responses.
+#  #  * `client`: report client side errors and above (status code >= 400).
+#  #  * `server`: only report server side errors (status code >= 500).
+#  capture_api_errors: 'server'
+#
 #  # (required) The DSN to use to configure sentry.
 #  dsn: 'https://key@server.domain:port/project'
 sentry: ~

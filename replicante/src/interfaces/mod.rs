@@ -48,6 +48,11 @@ impl Interfaces {
             .with_context(|_| ErrorKind::InterfaceInit("coordinator"))?;
         let api = API::new(
             config.api.clone(),
+            config
+                .sentry
+                .as_ref()
+                .map(|sentry| sentry.capture_api_errors.clone())
+                .unwrap_or_default(),
             coordinator.clone(),
             logger.clone(),
             &metrics,
