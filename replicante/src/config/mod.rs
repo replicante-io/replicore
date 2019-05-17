@@ -20,12 +20,15 @@ use super::interfaces::api::Config as APIConfig;
 
 mod components;
 mod events;
+mod sentry;
 mod task_workers;
 mod timeouts;
 
 pub use self::components::ComponentsConfig;
 pub use self::events::EventsConfig;
 pub use self::events::SnapshotsConfig as EventsSnapshotsConfig;
+pub use self::sentry::SentryCaptureApi;
+pub use self::sentry::SentryConfig;
 pub use self::task_workers::TaskWorkers;
 pub use self::timeouts::TimeoutsConfig;
 
@@ -137,36 +140,6 @@ impl Config {
         }
         self
     }
-}
-
-/// Sentry API response capture filter.
-#[derive(Clone, Eq, PartialEq, Hash, Debug, Serialize, Deserialize)]
-pub enum SentryCaptureApi {
-    #[serde(rename = "no")]
-    No,
-
-    #[serde(rename = "client")]
-    Client,
-
-    #[serde(rename = "server")]
-    Server,
-}
-
-impl Default for SentryCaptureApi {
-    fn default() -> SentryCaptureApi {
-        SentryCaptureApi::Server
-    }
-}
-
-/// Sentry integration configuration.
-#[derive(Clone, Eq, PartialEq, Hash, Debug, Serialize, Deserialize)]
-pub struct SentryConfig {
-    /// Sentry API response capture filter.
-    #[serde(default)]
-    pub capture_api_errors: SentryCaptureApi,
-
-    /// The DSN to use to configure sentry.
-    pub dsn: String,
 }
 
 #[cfg(test)]

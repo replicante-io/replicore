@@ -70,10 +70,12 @@ use self::config::SentryConfig;
 use self::interfaces::Interfaces;
 
 lazy_static! {
-    /// Version details for replictl.
+    static ref RELEASE: String = format!("replicore@{}", env!("GIT_BUILD_HASH"));
     pub static ref VERSION: String = format!(
         "{} [{}; {}]",
-        env!("CARGO_PKG_VERSION"), env!("GIT_BUILD_HASH"), env!("GIT_BUILD_TAINT")
+        env!("CARGO_PKG_VERSION"),
+        env!("GIT_BUILD_HASH"),
+        env!("GIT_BUILD_TAINT"),
     );
 }
 
@@ -140,7 +142,7 @@ pub fn initialise_sentry(config: Option<SentryConfig>, logger: &Logger) -> Resul
         attach_stacktrace: true,
         dsn,
         in_app_include: vec!["replicante"],
-        release: Some(env!("GIT_BUILD_HASH").into()),
+        release: Some(RELEASE.as_str().into()),
         ..Default::default()
     });
     if client.is_enabled() {
