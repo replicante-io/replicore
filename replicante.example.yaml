@@ -466,13 +466,43 @@ tracing:
   #
   # Zipkin options
   #options:
-  #  # (required) The service name for this zipkin endpoint.
-  #  service_name: replicante
+  #  # (required) The transport to send tracing information to zipkin.
+  #  #
+  #  # Available options:
+  #  #
+  #  #  * 'http'
+  #  #  * 'kafka'
+  #  transport: 'http'
   #
-  #  # (required) List of kafka seed hostnames.
-  #  kafka:
-  #    - HOST1:9092
-  #    - HOST2:9092
+  #  # Any transport-specific option is set here.
+  #  # The available options vary and are documented below.
+  #  #
+  #  # HTTP transport options
+  #  options:
+  #    # Number of buffered spans that should trigger a flush.
+  #    #
+  #    # This option is a best-effort configuration and the size of the buffer may grow
+  #    # slightly above this threshold.
+  #    flush_count: 100
   #
-  #  # The kafka topic to publish spans to.
-  #  topic: zipkin
+  #    # Muximum delay between span flushes in milliseconds.
+  #    #
+  #    # This option is a best-effort configuration and the size of the buffer may grow
+  #    # slightly above this threshold.
+  #    flush_timeout_millis: 2000
+  #
+  #    # Custom headers to attach to POST requests.
+  #    headers: {}
+  #
+  #    # (required) Target URL to POST spans to.
+  #    url: 'https://zipkin.corp/'
+  #
+  #  # Kafka transport options
+  #  options:
+  #    # (required) List of kafka seed hostnames.
+  #    kafka:
+  #      - HOST1:9092
+  #      - HOST2:9092
+  #
+  #    # The kafka topic to publish spans to.
+  #    topic: zipkin

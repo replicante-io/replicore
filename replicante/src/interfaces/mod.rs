@@ -42,7 +42,7 @@ pub struct Interfaces {
 impl Interfaces {
     /// Creates and configures interfaces.
     #[allow(clippy::needless_pass_by_value)]
-    pub fn new(config: &Config, logger: Logger) -> Result<Interfaces> {
+    pub fn new(config: &Config, logger: Logger, upkeep: &mut Upkeep) -> Result<Interfaces> {
         let metrics = Metrics::new();
         let coordinator = Coordinator::new(config.coordinator.clone(), logger.clone())
             .with_context(|_| ErrorKind::InterfaceInit("coordinator"))?;
@@ -62,7 +62,7 @@ impl Interfaces {
         let streams = Streams::new(config, logger.clone(), store.clone())?;
         let tasks =
             Tasks::new(config.tasks.clone()).with_context(|_| ErrorKind::ClientInit("tasks"))?;
-        let tracing = Tracing::new(config.tracing.clone(), logger.clone())?;
+        let tracing = Tracing::new(config.tracing.clone(), logger.clone(), upkeep)?;
         Ok(Interfaces {
             api,
             coordinator,

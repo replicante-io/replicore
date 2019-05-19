@@ -3,13 +3,11 @@ extern crate chrono;
 extern crate clap;
 extern crate failure;
 extern crate humthreads;
-
 extern crate iron;
 extern crate iron_json_response;
 #[cfg(test)]
 extern crate iron_test;
 extern crate router;
-
 #[macro_use]
 extern crate lazy_static;
 extern crate opentracingrust;
@@ -100,7 +98,7 @@ fn initialise_and_run(config: Config, logger: Logger) -> Result<bool> {
 
     // Need to initialise the interfaces before we can register all metrics.
     info!(logger, "Initialising sub-systems ...");
-    let mut interfaces = Interfaces::new(&config, logger.clone())?;
+    let mut interfaces = Interfaces::new(&config, logger.clone(), &mut upkeep)?;
     Interfaces::register_metrics(&logger, interfaces.metrics.registry());
     Components::register_metrics(&logger, interfaces.metrics.registry());
     self::metrics::register_metrics(&logger, interfaces.metrics.registry());
