@@ -34,6 +34,10 @@ impl Fail for Error {
     fn backtrace(&self) -> Option<&Backtrace> {
         self.0.backtrace()
     }
+
+    fn name(&self) -> Option<&str> {
+        self.kind().kind_name()
+    }
 }
 
 impl fmt::Display for Error {
@@ -50,6 +54,16 @@ pub enum ErrorKind {
 
     #[fail(display = "invalid YAML read from '{}'", _0)]
     YamlFile(String),
+}
+
+impl ErrorKind {
+    fn kind_name(&self) -> Option<&str> {
+        let name = match self {
+            ErrorKind::Io(_) => "Io",
+            ErrorKind::YamlFile(_) => "YamlFile",
+        };
+        Some(name)
+    }
 }
 
 /// Short form alias for functions returning `Error`s.

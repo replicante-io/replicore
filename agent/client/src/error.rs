@@ -34,6 +34,10 @@ impl Fail for Error {
     fn backtrace(&self) -> Option<&Backtrace> {
         self.0.backtrace()
     }
+
+    fn name(&self) -> Option<&str> {
+        self.kind().kind_name()
+    }
 }
 
 impl fmt::Display for Error {
@@ -53,6 +57,17 @@ pub enum ErrorKind {
 
     #[fail(display = "{} transport error", _0)]
     Transport(&'static str),
+}
+
+impl ErrorKind {
+    fn kind_name(&self) -> Option<&str> {
+        let name = match self {
+            ErrorKind::JsonDecode => "JsonDecode",
+            ErrorKind::Remote(_) => "Remote",
+            ErrorKind::Transport(_) => "Transport",
+        };
+        Some(name)
+    }
 }
 
 /// Short form alias for functions returning `Error`s.
