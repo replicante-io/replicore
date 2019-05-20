@@ -16,10 +16,10 @@ use replicante_tasks::TaskHandler;
 use replicante_util_failure::capture_fail;
 use replicante_util_failure::failure_info;
 
-use super::super::super::task_payload::ClusterRefreshPayload;
-use super::super::super::ErrorKind;
-use super::super::super::Result;
-use super::Interfaces;
+use super::super::ErrorKind;
+use super::super::Interfaces;
+use super::super::Result;
+use super::payload::ClusterRefreshPayload;
 use super::ReplicanteQueues;
 use super::Task;
 

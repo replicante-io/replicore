@@ -3,6 +3,7 @@ use std::time::Duration;
 
 use replicante_tasks::TaskQueue;
 
+pub mod cluster_refresh;
 pub mod payload;
 
 /// Enumerate all queues used in Replicante.

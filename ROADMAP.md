@@ -1,6 +1,4 @@
 ## 0.3.0 - Introspection
-- Trace agent discovery.
-- Trace state fetching.
 - Standardise metrics names.
 - Investigate yield and harvast.
 - Check for available updates.

@@ -13,13 +13,13 @@ use replicante_util_upkeep::Upkeep;
 use super::super::config::Config;
 use super::super::interfaces::Interfaces;
 use super::super::metrics::WORKERS_ENABLED;
+
+use super::super::tasks::cluster_refresh;
 use super::super::tasks::ReplicanteQueues;
-use super::super::tasks::Task;
+
 use super::super::Error;
 use super::super::ErrorKind;
 use super::super::Result;
-
-mod cluster_refresh;
 
 /// Attemps to register metrics with the Registry.
 ///
