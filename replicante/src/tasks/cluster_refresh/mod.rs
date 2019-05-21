@@ -2,6 +2,7 @@ use std::time::Duration;
 
 use failure::Fail;
 use failure::ResultExt;
+use opentracingrust::Span;
 use slog::Logger;
 
 use replicante_coordinator::Coordinator;
@@ -15,7 +16,9 @@ use replicante_streams_events::EventsStream;
 use replicante_tasks::TaskHandler;
 use replicante_util_failure::capture_fail;
 use replicante_util_failure::failure_info;
+use replicante_util_tracing::fail_span;
 
+use super::super::interfaces::tracing::Tracing;
 use super::super::ErrorKind;
 use super::super::Interfaces;
 use super::super::Result;
@@ -37,6 +40,7 @@ pub struct Handler {
     fetcher: Fetcher,
     logger: Logger,
     store: Store,
+    tracing: Tracing,
 }
 
 impl Handler {
@@ -51,6 +55,7 @@ impl Handler {
             agents_timeout,
         );
         let store = interfaces.store.clone();
+        let tracing = interfaces.tracing.clone();
         Handler {
             aggregator,
             coordinator,
@@ -58,10 +63,11 @@ impl Handler {
             fetcher,
             logger,
             store,
+            tracing,
         }
     }
 
-    fn do_handle(&self, task: &Task) -> Result<()> {
+    fn do_handle(&self, task: &Task, _span: &mut Span) -> Result<()> {
         let payload: ClusterRefreshPayload = task
             .deserialize()
             .with_context(|_| ErrorKind::Deserialize("task payload", "ClusterRefreshPayload"))?;
@@ -167,7 +173,15 @@ impl Handler {
 
 impl TaskHandler<ReplicanteQueues> for Handler {
     fn handle(&self, task: Task) {
-        match self.do_handle(&task) {
+        let mut span = self
+            .tracing
+            .tracer()
+            .span("tasks::cluster_refresh")
+            .auto_finish();
+        let result = self
+            .do_handle(&task, &mut span)
+            .map_err(|error| fail_span(error, &mut span));
+        match result {
             Ok(()) => {
                 if let Err(error) = task.success() {
                     capture_fail!(

@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use failure::ResultExt;
 use opentracingrust::Tracer;
 use slog::Logger;
@@ -10,8 +12,9 @@ use super::ErrorKind;
 use super::Result;
 
 /// Distributed tracing interface.
+#[derive(Clone)]
 pub struct Tracing {
-    tracer: Tracer,
+    tracer: Arc<Tracer>,
 }
 
 impl Tracing {
@@ -22,6 +25,7 @@ impl Tracing {
     pub fn new(config: Config, logger: Logger, upkeep: &mut Upkeep) -> Result<Tracing> {
         let opts = replicante_util_tracing::Opts::new("replicore", logger, upkeep);
         let tracer = tracer(config, opts).with_context(|_| ErrorKind::InterfaceInit("tracing"))?;
+        let tracer = Arc::new(tracer);
         Ok(Tracing { tracer })
     }
 
@@ -42,6 +46,7 @@ impl Tracing {
     #[cfg(test)]
     pub fn mock() -> Tracing {
         let (tracer, _) = ::opentracingrust::tracers::NoopTracer::new();
+        let tracer = Arc::new(tracer);
         Tracing { tracer }
     }
 }
