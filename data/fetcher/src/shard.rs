@@ -1,4 +1,5 @@
 use failure::ResultExt;
+use opentracingrust::Span;
 
 use replicante_agent_client::Client;
 use replicante_data_models::Event;
@@ -22,9 +23,15 @@ impl ShardFetcher {
         ShardFetcher { events, store }
     }
 
-    pub(crate) fn process_shards(&self, client: &Client, cluster: &str, node: &str) -> Result<()> {
+    pub(crate) fn process_shards(
+        &self,
+        client: &Client,
+        cluster: &str,
+        node: &str,
+        span: &mut Span,
+    ) -> Result<()> {
         let shards = client
-            .shards()
+            .shards(span.context().clone().into())
             .with_context(|_| ErrorKind::AgentRead("shards", client.id().to_string()))?;
         for shard in shards.shards {
             let shard = Shard::new(cluster.to_string(), node.to_string(), shard);

@@ -2,6 +2,7 @@ extern crate failure;
 extern crate failure_derive;
 #[macro_use]
 extern crate lazy_static;
+extern crate opentracingrust;
 extern crate prometheus;
 extern crate reqwest;
 extern crate serde;
@@ -11,6 +12,8 @@ extern crate serde_derive;
 extern crate slog;
 
 extern crate replicante_agent_models;
+
+use opentracingrust::SpanContext;
 
 use replicante_agent_models::AgentInfo;
 use replicante_agent_models::DatastoreInfo;
@@ -35,10 +38,10 @@ pub use self::metrics::register_metrics;
 /// The `mock` module is useful for tests.
 pub trait Client {
     /// Returns general agent information.
-    fn agent_info(&self) -> Result<AgentInfo>;
+    fn agent_info(&self, span: Option<SpanContext>) -> Result<AgentInfo>;
 
     /// Returns general datastore information.
-    fn datastore_info(&self) -> Result<DatastoreInfo>;
+    fn datastore_info(&self, span: Option<SpanContext>) -> Result<DatastoreInfo>;
 
     /// Returns an ID that can be used to identify the agent.
     ///
@@ -46,5 +49,5 @@ pub trait Client {
     fn id(&self) -> &str;
 
     /// Returns status information for the node.
-    fn shards(&self) -> Result<Shards>;
+    fn shards(&self, span: Option<SpanContext>) -> Result<Shards>;
 }

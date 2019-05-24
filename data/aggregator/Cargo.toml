@@ -12,16 +12,14 @@ keywords = ["automation", "datastore", "operations"]
 license = "MIT"
 
 
-[badges]
-maintenance = { status = "actively-developed" }
-
-
 [dependencies]
 failure = "^0.1.5"
 lazy_static = "^1.0.0"
+opentracingrust = "^0.3.3"
 prometheus = "^0.5.0"
 slog = "^2.1.1"
 
 replicante_coordinator = { path = "../../coordinator" }
 replicante_data_models = { path = "../models" }
 replicante_data_store = { path = "../store" }
+replicante_util_tracing = { path = "../../common/util/tracing" }

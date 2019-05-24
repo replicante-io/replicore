@@ -1,3 +1,5 @@
+use opentracingrust::SpanContext;
+
 use replicante_agent_models::AgentInfo;
 use replicante_agent_models::DatastoreInfo;
 use replicante_agent_models::Shards;
@@ -24,11 +26,11 @@ where
     D: Fn() -> Result<DatastoreInfo>,
     S: Fn() -> Result<Shards>,
 {
-    fn agent_info(&self) -> Result<AgentInfo> {
+    fn agent_info(&self, _: Option<SpanContext>) -> Result<AgentInfo> {
         (self.agent_info)()
     }
 
-    fn datastore_info(&self) -> Result<DatastoreInfo> {
+    fn datastore_info(&self, _: Option<SpanContext>) -> Result<DatastoreInfo> {
         (self.datastore_info)()
     }
 
@@ -36,7 +38,7 @@ where
         &self.id
     }
 
-    fn shards(&self) -> Result<Shards> {
+    fn shards(&self, _: Option<SpanContext>) -> Result<Shards> {
         (self.shards)()
     }
 }
@@ -100,7 +102,7 @@ mod tests {
                 || Err(ErrorKind::Remote("Skipped".into()).into()),
                 || Err(ErrorKind::Remote("Skipped".into()).into()),
             );
-            match client.agent_info() {
+            match client.agent_info(None) {
                 Err(error) => match error.kind() {
                     &ErrorKind::Remote(ref msg) => assert_eq!("TestError", msg),
                     _ => panic!("Unexpected Err result: {:?}", error),
@@ -117,7 +119,7 @@ mod tests {
                 || Err(ErrorKind::Remote("Skipped".into()).into()),
                 || Err(ErrorKind::Remote("Skipped".into()).into()),
             );
-            assert_eq!(info, client.agent_info().unwrap());
+            assert_eq!(info, client.agent_info(None).unwrap());
         }
     }
 
@@ -134,7 +136,7 @@ mod tests {
                 || Err(ErrorKind::Remote("TestError".into()).into()),
                 || Err(ErrorKind::Remote("Skipped".into()).into()),
             );
-            match client.datastore_info() {
+            match client.datastore_info(None) {
                 Err(error) => match error.kind() {
                     &ErrorKind::Remote(ref msg) => assert_eq!("TestError", msg),
                     _ => panic!("Unexpected Err result: {:?}", error),
@@ -151,7 +153,7 @@ mod tests {
                 || Ok(mock_datastore_info()),
                 || Err(ErrorKind::Remote("Skipped".into()).into()),
             );
-            assert_eq!(info, client.datastore_info().unwrap());
+            assert_eq!(info, client.datastore_info(None).unwrap());
         }
     }
 
@@ -168,7 +170,7 @@ mod tests {
                 || Err(ErrorKind::Remote("Skipped".into()).into()),
                 || Err(ErrorKind::Remote("TestError".into()).into()),
             );
-            match client.shards() {
+            match client.shards(None) {
                 Err(error) => match error.kind() {
                     &ErrorKind::Remote(ref msg) => assert_eq!("TestError", msg),
                     _ => panic!("Unexpected Err result: {:?}", error),
@@ -185,7 +187,7 @@ mod tests {
                 || Err(ErrorKind::Remote("Skipped".into()).into()),
                 || Ok(mock_shards()),
             );
-            assert_eq!(info, client.shards().unwrap());
+            assert_eq!(info, client.shards(None).unwrap());
         }
     }
 }

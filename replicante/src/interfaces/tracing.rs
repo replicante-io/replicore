@@ -37,9 +37,8 @@ impl Tracing {
     /// Access the stored [`Tracer`]
     ///
     /// [`Tracer`]: opentracingrust/struct.Tracer.html
-    #[allow(unused)]
-    pub fn tracer(&self) -> &Tracer {
-        &self.tracer
+    pub fn tracer(&self) -> Arc<Tracer> {
+        Arc::clone(&self.tracer)
     }
 
     /// Returns a `Tracing` instance usable as a mock.

@@ -53,6 +53,7 @@ impl Handler {
             interfaces.streams.events.clone(),
             interfaces.store.clone(),
             agents_timeout,
+            interfaces.tracing.tracer(),
         );
         let store = interfaces.store.clone();
         let tracing = interfaces.tracing.clone();
@@ -67,12 +68,14 @@ impl Handler {
         }
     }
 
-    fn do_handle(&self, task: &Task, _span: &mut Span) -> Result<()> {
+    fn do_handle(&self, task: &Task, span: &mut Span) -> Result<()> {
         let payload: ClusterRefreshPayload = task
             .deserialize()
             .with_context(|_| ErrorKind::Deserialize("task payload", "ClusterRefreshPayload"))?;
         let discovery = payload.cluster;
         let snapshot = payload.snapshot;
+        span.tag("cluster.id", discovery.cluster_id.clone());
+        span.tag("emit.snapshot", snapshot);
 
         // Ensure only one refresh at the same time.
         let mut lock = self
@@ -88,8 +91,10 @@ impl Handler {
                     info!(
                         self.logger,
                         "Skipped cluster refresh because another task is in progress";
-                        "cluster_id" => discovery.cluster_id, "owner" => %owner
+                        "cluster_id" => discovery.cluster_id,
+                        "owner" => %owner
                     );
+                    span.tag("coordinator.lock.busy", true);
                     return Ok(());
                 }
                 return Err(error.context(ErrorKind::Coordination).into());
@@ -104,10 +109,10 @@ impl Handler {
         self.emit_snapshots(&cluster_id, snapshot);
         self.refresh_discovery(discovery.clone())?;
         self.fetcher
-            .fetch(discovery.clone(), lock.watch())
+            .fetch(discovery.clone(), lock.watch(), span)
             .with_context(|_| ErrorKind::ClusterRefresh)?;
         self.aggregator
-            .aggregate(discovery, lock.watch())
+            .aggregate(discovery, lock.watch(), span)
             .with_context(|_| ErrorKind::ClusterAggregation)?;
 
         // Done.

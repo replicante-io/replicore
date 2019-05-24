@@ -1,4 +1,5 @@
 use failure::ResultExt;
+use opentracingrust::Span;
 
 use replicante_agent_client::Client;
 use replicante_data_models::Agent;
@@ -42,9 +43,10 @@ impl AgentFetcher {
         client: &Client,
         cluster_id: String,
         node: String,
+        span: &mut Span,
     ) -> Result<()> {
         let info = client
-            .agent_info()
+            .agent_info(span.context().clone().into())
             .with_context(|_| ErrorKind::AgentRead("agent info", client.id().to_string()))?;
         let info = AgentInfo::new(cluster_id, node, info);
         let old = self

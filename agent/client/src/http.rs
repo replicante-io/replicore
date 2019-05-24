@@ -1,15 +1,24 @@
 use std::io;
+use std::sync::Arc;
 use std::time::Duration;
 
 use failure::ResultExt;
+use failure::SyncFailure;
+use opentracingrust::SpanContext;
+use opentracingrust::Tracer;
+use reqwest::header::HeaderMap;
 use reqwest::Client as ReqwestClient;
 use reqwest::RequestBuilder;
 use reqwest::StatusCode;
 use serde::de::DeserializeOwned;
+use slog::Logger;
 
 use replicante_agent_models::AgentInfo;
 use replicante_agent_models::DatastoreInfo;
 use replicante_agent_models::Shards;
+use replicante_util_failure::capture_fail;
+use replicante_util_failure::failure_info;
+use replicante_util_tracing::carriers::reqwest::HeadersCarrier;
 
 use super::Client;
 use super::Error;
@@ -31,46 +40,55 @@ struct ClientError {
 /// Interface to interact with (remote) agents over HTTP.
 pub struct HttpClient {
     client: ReqwestClient,
+    logger: Logger,
     root_url: String,
+    tracer: Option<Arc<Tracer>>,
 }
 
 impl Client for HttpClient {
-    fn agent_info(&self) -> Result<AgentInfo> {
+    fn agent_info(&self, span: Option<SpanContext>) -> Result<AgentInfo> {
         let endpoint = self.endpoint("/api/unstable/info/agent");
         let request = self.client.get(&endpoint);
-        self.perform(request)
+        self.perform(request, span)
     }
 
-    fn datastore_info(&self) -> Result<DatastoreInfo> {
+    fn datastore_info(&self, span: Option<SpanContext>) -> Result<DatastoreInfo> {
         let endpoint = self.endpoint("/api/unstable/info/datastore");
         let request = self.client.get(&endpoint);
-        self.perform(request)
+        self.perform(request, span)
     }
 
     fn id(&self) -> &str {
         &self.root_url
     }
 
-    fn shards(&self) -> Result<Shards> {
+    fn shards(&self, span: Option<SpanContext>) -> Result<Shards> {
         let endpoint = self.endpoint("/api/unstable/shards");
         let request = self.client.get(&endpoint);
-        self.perform(request)
+        self.perform(request, span)
     }
 }
 
 impl HttpClient {
     /// Create a new HTTP client to interact with the agent.
-    pub fn make<S>(target: S, timeout: Duration) -> Result<HttpClient>
+    pub fn make<S, T>(target: S, timeout: Duration, logger: Logger, tracer: T) -> Result<HttpClient>
     where
         S: Into<String>,
+        T: Into<Option<Arc<Tracer>>>,
     {
         let client = ReqwestClient::builder()
             .timeout(timeout)
             .build()
             .with_context(|_| ErrorKind::Transport("HTTP"))?;
         let target = target.into();
+        let tracer = tracer.into();
         let root_url = String::from(target.trim_end_matches('/'));
-        Ok(HttpClient { client, root_url })
+        Ok(HttpClient {
+            client,
+            logger,
+            root_url,
+            tracer,
+        })
     }
 }
 
@@ -85,11 +103,27 @@ impl HttpClient {
     }
 
     /// Performs a request, decoding the JSON response and tracking some stats.
-    fn perform<T>(&self, request: RequestBuilder) -> Result<T>
+    fn perform<T>(&self, request: RequestBuilder, span: Option<SpanContext>) -> Result<T>
     where
         T: DeserializeOwned,
     {
+        let headers = {
+            let mut headers = HeaderMap::new();
+            if let (Some(tracer), Some(span)) = (self.tracer.as_ref(), span) {
+                if let Err(error) = HeadersCarrier::inject(&span, &mut headers, tracer) {
+                    let error = SyncFailure::new(error);
+                    capture_fail!(
+                        &error,
+                        self.logger,
+                        "Failed to inject tracing context into headers";
+                        failure_info(&error),
+                    );
+                }
+            }
+            headers
+        };
         let request = request
+            .headers(headers)
             .build()
             .with_context(|_| ErrorKind::Transport("HTTP"))?;
         let endpoint = String::from(&request.url().as_str()[self.root_url.len()..]);
@@ -148,23 +182,33 @@ impl HttpClient {
 mod tests {
     use std::time::Duration;
 
+    use slog::o;
+    use slog::Discard;
+    use slog::Logger;
+
     use super::HttpClient;
 
     #[test]
     fn enpoint_concat() {
-        let client = HttpClient::make("proto://host:port", Duration::from_secs(15)).unwrap();
+        let logger = Logger::root(Discard, o!());
+        let client =
+            HttpClient::make("proto://host:port", Duration::from_secs(15), logger, None).unwrap();
         assert_eq!(client.endpoint("some/path"), "proto://host:port/some/path");
     }
 
     #[test]
     fn enpoint_trim_root() {
-        let client = HttpClient::make("proto://host:port", Duration::from_secs(15)).unwrap();
+        let logger = Logger::root(Discard, o!());
+        let client =
+            HttpClient::make("proto://host:port", Duration::from_secs(15), logger, None).unwrap();
         assert_eq!(client.endpoint("some/path"), "proto://host:port/some/path");
     }
 
     #[test]
     fn enpoint_trim_path_prefix() {
-        let client = HttpClient::make("proto://host:port", Duration::from_secs(15)).unwrap();
+        let logger = Logger::root(Discard, o!());
+        let client =
+            HttpClient::make("proto://host:port", Duration::from_secs(15), logger, None).unwrap();
         assert_eq!(client.endpoint("/some/path"), "proto://host:port/some/path");
     }
 }

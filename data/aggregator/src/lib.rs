@@ -1,6 +1,7 @@
 extern crate failure;
 #[macro_use]
 extern crate lazy_static;
+extern crate opentracingrust;
 extern crate prometheus;
 #[macro_use]
 extern crate slog;
@@ -8,13 +9,17 @@ extern crate slog;
 extern crate replicante_coordinator;
 extern crate replicante_data_models;
 extern crate replicante_data_store;
+extern crate replicante_util_tracing;
 
 use failure::ResultExt;
+use opentracingrust::Log;
+use opentracingrust::Span;
 use slog::Logger;
 
 use replicante_coordinator::NonBlockingLockWatcher;
 use replicante_data_models::ClusterDiscovery;
 use replicante_data_store::store::Store;
+use replicante_util_tracing::fail_span;
 
 mod cluster_meta;
 mod error;
@@ -48,11 +53,13 @@ impl Aggregator {
         &self,
         discovery: ClusterDiscovery,
         lock: NonBlockingLockWatcher,
+        span: &mut Span,
     ) -> Result<()> {
+        span.log(Log::new().log("stage", "aggregate"));
         let _timer = AGGREGATE_DURATION.start_timer();
-        self.inner_process(discovery, lock).map_err(|error| {
+        self.inner_process(discovery, lock, span).map_err(|error| {
             AGGREGATE_ERRORS_COUNT.inc();
-            error
+            fail_span(error, span)
         })
     }
 }
@@ -63,6 +70,7 @@ impl Aggregator {
         &self,
         discovery: ClusterDiscovery,
         lock: NonBlockingLockWatcher,
+        _span: &mut Span,
     ) -> Result<()> {
         let cluster_id = discovery.cluster_id.clone();
         debug!(self.logger, "Aggregating cluster"; "cluster_id" => &cluster_id);

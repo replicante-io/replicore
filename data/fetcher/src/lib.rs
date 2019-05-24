@@ -2,6 +2,7 @@ extern crate failure;
 extern crate failure_derive;
 #[macro_use]
 extern crate lazy_static;
+extern crate opentracingrust;
 extern crate prometheus;
 #[macro_use]
 extern crate slog;
@@ -12,10 +13,15 @@ extern crate replicante_data_models;
 extern crate replicante_data_store;
 extern crate replicante_streams_events;
 extern crate replicante_util_failure;
+extern crate replicante_util_tracing;
 
+use std::sync::Arc;
 use std::time::Duration;
 
 use failure::ResultExt;
+use opentracingrust::Log;
+use opentracingrust::Span;
+use opentracingrust::Tracer;
 use slog::Logger;
 
 use replicante_agent_client::HttpClient;
@@ -28,6 +34,7 @@ use replicante_streams_events::EventsStream;
 use replicante_util_failure::capture_fail;
 use replicante_util_failure::failure_info;
 use replicante_util_failure::format_fail;
+use replicante_util_tracing::fail_span;
 
 mod agent;
 mod error;
@@ -105,10 +112,17 @@ pub struct Fetcher {
     shard: ShardFetcher,
     store: Store,
     timeout: Duration,
+    tracer: Arc<Tracer>,
 }
 
 impl Fetcher {
-    pub fn new(logger: Logger, events: EventsStream, store: Store, timeout: Duration) -> Fetcher {
+    pub fn new(
+        logger: Logger,
+        events: EventsStream,
+        store: Store,
+        timeout: Duration,
+        tracer: Arc<Tracer>,
+    ) -> Fetcher {
         let agent = AgentFetcher::new(events.clone(), store.clone());
         let node = NodeFetcher::new(events.clone(), store.clone());
         let shard = ShardFetcher::new(events, store.clone());
@@ -119,6 +133,7 @@ impl Fetcher {
             shard,
             store,
             timeout,
+            tracer,
         }
     }
 
@@ -144,14 +159,21 @@ impl Fetcher {
     /// network issue, ...) the error is NOT propagated and is instead accounted for
     /// as part of the state refersh operation.
     // TODO: separatelly handle agnet/remote errors.
-    pub fn fetch(&self, cluster: ClusterDiscovery, lock: NonBlockingLockWatcher) -> Result<()> {
+    pub fn fetch(
+        &self,
+        cluster: ClusterDiscovery,
+        lock: NonBlockingLockWatcher,
+        span: &mut Span,
+    ) -> Result<()> {
+        span.log(Log::new().log("stage", "fetch"));
         let _timer = FETCHER_DURATION.start_timer();
-        let result = self.fetch_checked(cluster, lock).map_err(|error| {
+        let result = self.fetch_checked(cluster, lock, span).map_err(|error| {
             FETCHER_ERRORS_COUNT.inc();
             error
         });
         // TODO: propagate core errors.
         if let Err(error) = result {
+            let error = fail_span(error, span);
             capture_fail!(
                 &error,
                 self.logger,
@@ -163,7 +185,12 @@ impl Fetcher {
     }
 
     /// Wrapped version of `fetch` so stats can be accounted for once.
-    fn fetch_checked(&self, cluster: ClusterDiscovery, lock: NonBlockingLockWatcher) -> Result<()> {
+    fn fetch_checked(
+        &self,
+        cluster: ClusterDiscovery,
+        lock: NonBlockingLockWatcher,
+        span: &mut Span,
+    ) -> Result<()> {
         let cluster_id = cluster.cluster_id;
         debug!(self.logger, "Refreshing cluster state"; "cluster_id" => &cluster_id);
         let mut id_checker = ClusterIdentityChecker::new(cluster_id.clone(), cluster.display_name);
@@ -175,6 +202,7 @@ impl Fetcher {
         for node in cluster.nodes {
             // Exit early if lock was lost.
             if !lock.inspect() {
+                span.log(Log::new().log("abbandoned", "lock lost"));
                 warn!(
                     self.logger,
                     "Cluster fetcher lock lost, skipping futher nodes";
@@ -182,7 +210,7 @@ impl Fetcher {
                 );
                 return Ok(());
             }
-            self.process_target(&cluster_id, &node, &mut id_checker)?;
+            self.process_target(&cluster_id, &node, &mut id_checker, span)?;
         }
         Ok(())
     }
@@ -192,13 +220,19 @@ impl Fetcher {
         cluster: &str,
         node: &str,
         id_checker: &mut ClusterIdentityChecker,
+        span: &mut Span,
     ) -> Result<()> {
-        let client = HttpClient::make(node.to_string(), self.timeout)
-            .with_context(|_| ErrorKind::AgentConnect(node.to_string()))?;
+        let client = HttpClient::make(
+            node.to_string(),
+            self.timeout,
+            self.logger.clone(),
+            Arc::clone(&self.tracer),
+        )
+        .with_context(|_| ErrorKind::AgentConnect(node.to_string()))?;
         let mut agent = Agent::new(cluster.to_string(), node.to_string(), AgentStatus::Up);
-        let result = self
-            .agent
-            .process_agent_info(&client, cluster.to_string(), node.to_string());
+        let result =
+            self.agent
+                .process_agent_info(&client, cluster.to_string(), node.to_string(), span);
         if let Err(error) = result {
             let message = format_fail(&error);
             agent.status = AgentStatus::AgentDown(message);
@@ -207,7 +241,7 @@ impl Fetcher {
             return Ok(());
         };
 
-        let result = self.node.process_node(&client, id_checker);
+        let result = self.node.process_node(&client, id_checker, span);
         if let Err(error) = result {
             let message = format_fail(&error);
             agent.status = AgentStatus::NodeDown(message);
@@ -216,7 +250,7 @@ impl Fetcher {
             return Ok(());
         };
 
-        let result = self.shard.process_shards(&client, cluster, node);
+        let result = self.shard.process_shards(&client, cluster, node, span);
         if let Err(error) = result {
             let message = format_fail(&error);
             agent.status = AgentStatus::NodeDown(message);

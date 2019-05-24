@@ -1,4 +1,5 @@
 use failure::ResultExt;
+use opentracingrust::Span;
 
 use replicante_agent_client::Client;
 use replicante_data_models::Event;
@@ -27,9 +28,10 @@ impl NodeFetcher {
         &self,
         client: &Client,
         id_checker: &mut ClusterIdentityChecker,
+        span: &mut Span,
     ) -> Result<()> {
         let info = client
-            .datastore_info()
+            .datastore_info(span.context().clone().into())
             .with_context(|_| ErrorKind::AgentRead("datastore info", client.id().to_string()))?;
         let node = Node::new(info);
         id_checker.check_id(&node.cluster_id, &node.node_id)?;
