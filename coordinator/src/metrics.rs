@@ -78,7 +78,7 @@ lazy_static! {
 /// Attemps to register metrics with the Registry.
 ///
 /// Metrics that fail to register are logged and ignored.
-#[allow(clippy::cyclomatic_complexity)]
+#[allow(clippy::cognitive_complexity)]
 pub fn register_metrics(logger: &Logger, registry: &Registry) {
     if let Err(err) = registry.register(Box::new(ELECTION_DROP_FAIL.clone())) {
         debug!(logger, "Failed to register ELECTION_DROP_FAIL"; "error" => ?err);
