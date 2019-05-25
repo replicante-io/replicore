@@ -1,8 +1,13 @@
+use std::ops::Deref;
+use std::sync::Arc;
+
 use bson::Bson;
 use failure::ResultExt;
 use mongodb::db::ThreadedDatabase;
 use mongodb::Client;
 use mongodb::ThreadedClient;
+use opentracingrust::SpanContext;
+use opentracingrust::Tracer;
 
 use replicante_data_models::Agent as AgentModel;
 use replicante_data_models::AgentInfo as AgentInfoModel;
@@ -27,11 +32,16 @@ use super::document::ShardDocument;
 pub struct Persist {
     client: Client,
     db: String,
+    tracer: Option<Arc<Tracer>>,
 }
 
 impl Persist {
-    pub fn new(client: Client, db: String) -> Persist {
-        Persist { client, db }
+    pub fn new<T>(client: Client, db: String, tracer: T) -> Persist
+    where
+        T: Into<Option<Arc<Tracer>>>,
+    {
+        let tracer = tracer.into();
+        Persist { client, db, tracer }
     }
 }
 
@@ -47,7 +57,7 @@ impl PersistInterface for Persist {
             Bson::Document(document) => document,
             _ => panic!("Agent failed to encode as BSON document"),
         };
-        replace_one(collection, filter, document)
+        replace_one(collection, filter, document, None, None)
     }
 
     fn agent_info(&self, agent: AgentInfoModel) -> Result<()> {
@@ -62,10 +72,14 @@ impl PersistInterface for Persist {
             Bson::Document(document) => document,
             _ => panic!("AgentInfo failed to encode as BSON document"),
         };
-        replace_one(collection, filter, document)
+        replace_one(collection, filter, document, None, None)
     }
 
-    fn cluster_discovery(&self, discovery: ClusterDiscoveryModel) -> Result<()> {
+    fn cluster_discovery(
+        &self,
+        discovery: ClusterDiscoveryModel,
+        span: Option<SpanContext>,
+    ) -> Result<()> {
         let filter = doc! {"cluster_id" => &discovery.cluster_id};
         let collection = self.client.db(&self.db).collection(COLLECTION_DISCOVERIES);
         let document = bson::to_bson(&discovery).with_context(|_| ErrorKind::MongoDBBsonEncode)?;
@@ -73,7 +87,13 @@ impl PersistInterface for Persist {
             Bson::Document(document) => document,
             _ => panic!("ClusterDiscovery failed to encode as BSON document"),
         };
-        replace_one(collection, filter, document)
+        replace_one(
+            collection,
+            filter,
+            document,
+            span,
+            self.tracer.as_ref().map(|tracer| tracer.deref()),
+        )
     }
 
     fn node(&self, node: NodeModel) -> Result<()> {
@@ -88,7 +108,7 @@ impl PersistInterface for Persist {
             Bson::Document(document) => document,
             _ => panic!("Node failed to encode as BSON document"),
         };
-        replace_one(collection, filter, document)
+        replace_one(collection, filter, document, None, None)
     }
 
     fn shard(&self, shard: ShardModel) -> Result<()> {
@@ -104,6 +124,6 @@ impl PersistInterface for Persist {
             Bson::Document(document) => document,
             _ => panic!("Shard failed to encode as BSON document"),
         };
-        replace_one(collection, filter, document)
+        replace_one(collection, filter, document, None, None)
     }
 }

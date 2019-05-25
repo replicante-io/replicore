@@ -1,3 +1,5 @@
+use opentracingrust::SpanContext;
+
 use replicante_data_models::Agent as AgentModel;
 use replicante_data_models::AgentInfo as AgentInfoModel;
 use replicante_data_models::ClusterDiscovery as ClusterDiscoveryModel;
@@ -28,8 +30,11 @@ impl Persist {
     }
 
     /// Create or update a ClusterDiscovery record.
-    pub fn cluster_discovery(&self, discovery: ClusterDiscoveryModel) -> Result<()> {
-        self.persist.cluster_discovery(discovery)
+    pub fn cluster_discovery<S>(&self, discovery: ClusterDiscoveryModel, span: S) -> Result<()>
+    where
+        S: Into<Option<SpanContext>>,
+    {
+        self.persist.cluster_discovery(discovery, span.into())
     }
 
     /// Creat or update a Node record.

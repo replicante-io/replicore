@@ -170,7 +170,7 @@ impl Handler {
         }
         self.store
             .persist()
-            .cluster_discovery(discovery)
+            .cluster_discovery(discovery, span.context().clone())
             .with_context(|_| ErrorKind::PrimaryStorePersist("cluster_discovery"))?;
         Ok(())
     }

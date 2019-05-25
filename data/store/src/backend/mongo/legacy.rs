@@ -105,7 +105,7 @@ impl LegacyInterface for Legacy {
             Bson::Document(document) => document,
             _ => panic!("ClusterMeta failed to encode as BSON document"),
         };
-        replace_one(collection, filter, document)
+        replace_one(collection, filter, document, None, None)
     }
 
     fn persist_event(&self, event: Event) -> Result<()> {

@@ -171,7 +171,8 @@ impl StoreInterface for Store {
     }
 
     fn persist(&self) -> PersistImpl {
-        let persist = self::persist::Persist::new(self.client.clone(), self.db.clone());
+        let persist =
+            self::persist::Persist::new(self.client.clone(), self.db.clone(), self.tracer.clone());
         PersistImpl::new(persist)
     }
 

@@ -199,9 +199,25 @@ pub fn replace_one(
     collection: Collection,
     filter: OrderedDocument,
     document: OrderedDocument,
+    span: Option<SpanContext>,
+    tracer: Option<&Tracer>,
 ) -> Result<()> {
     let mut options = UpdateOptions::new();
     options.upsert = Some(true);
+    let mut span = match (tracer, span) {
+        (Some(tracer), Some(context)) => {
+            let options = StartOptions::default().child_of(context);
+            let mut span = tracer.span_with_options("replaceOne", options);
+            span.tag(
+                "filter",
+                serde_json::to_string(&filter)
+                    .unwrap_or_else(|_| "<unable to encode filter>".into()),
+            );
+            span.tag("namespace", collection.namespace.clone());
+            Some(span.auto_finish())
+        }
+        _ => None,
+    };
     MONGODB_OPS_COUNT.with_label_values(&["replaceOne"]).inc();
     let _timer = MONGODB_OPS_DURATION
         .with_label_values(&["replaceOne"])
@@ -214,7 +230,11 @@ pub fn replace_one(
                 .inc();
             error
         })
-        .with_context(|_| ErrorKind::MongoDBOperation("replaceOne"))?;
+        .with_context(|_| ErrorKind::MongoDBOperation("replaceOne"))
+        .map_err(|error| match span {
+            Some(ref mut span) => fail_span(error, span),
+            None => error,
+        })?;
     Ok(())
 }
 

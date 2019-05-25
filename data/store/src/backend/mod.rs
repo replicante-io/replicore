@@ -282,7 +282,11 @@ impl Deref for NodesImpl {
 pub trait PersistInterface: Send + Sync {
     fn agent(&self, agent: Agent) -> Result<()>;
     fn agent_info(&self, agent: AgentInfo) -> Result<()>;
-    fn cluster_discovery(&self, discovery: ClusterDiscovery) -> Result<()>;
+    fn cluster_discovery(
+        &self,
+        discovery: ClusterDiscovery,
+        span: Option<SpanContext>,
+    ) -> Result<()>;
     fn node(&self, node: Node) -> Result<()>;
     fn shard(&self, shard: Shard) -> Result<()>;
 }

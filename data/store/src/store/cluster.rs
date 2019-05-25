@@ -21,8 +21,7 @@ impl Cluster {
     where
         S: Into<Option<SpanContext>>,
     {
-        let span = span.into();
-        self.cluster.discovery(&self.attrs, span)
+        self.cluster.discovery(&self.attrs, span.into())
     }
 
     /// Mark the cluster state as stale until the data is updated.
