@@ -1,4 +1,5 @@
 use failure::ResultExt;
+use opentracingrust::Span;
 
 use replicante_data_models::Event;
 use replicante_data_store::store::Store;
@@ -23,8 +24,8 @@ impl Snapshotter {
         }
     }
 
-    pub fn run(&self) -> Result<()> {
-        self.discovery()?;
+    pub fn run(&self, span: &mut Span) -> Result<()> {
+        self.discovery(span)?;
         self.agents()?;
         self.nodes()?;
         self.shards()?;
@@ -63,11 +64,11 @@ impl Snapshotter {
         Ok(())
     }
 
-    fn discovery(&self) -> Result<()> {
+    fn discovery(&self, span: &mut Span) -> Result<()> {
         let discovery = self
             .store
             .cluster(self.cluster.clone())
-            .discovery()
+            .discovery(span.context().clone())
             .with_context(|_| ErrorKind::StoreRead("discovery"))?;
         if let Some(discovery) = discovery {
             let event = Event::builder().snapshot().discovery(discovery);

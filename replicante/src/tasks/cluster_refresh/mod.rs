@@ -106,8 +106,8 @@ impl Handler {
         let timer = REFRESH_DURATION
             .with_label_values(&[&cluster_id])
             .start_timer();
-        self.emit_snapshots(&cluster_id, snapshot);
-        self.refresh_discovery(discovery.clone())?;
+        self.emit_snapshots(&cluster_id, snapshot, span);
+        self.refresh_discovery(discovery.clone(), span)?;
         self.fetcher
             .fetch(discovery.clone(), lock.watch(), span)
             .with_context(|_| ErrorKind::ClusterRefresh)?;
@@ -123,13 +123,13 @@ impl Handler {
     }
 
     /// Emit cluster state snapshots, if needed by this task.
-    fn emit_snapshots(&self, name: &str, snapshot: bool) {
+    fn emit_snapshots(&self, name: &str, snapshot: bool, span: &mut Span) {
         if !snapshot {
             return;
         }
         debug!(self.logger, "Emitting cluster snapshot"; "cluster" => name);
         let snapshotter = Snapshotter::new(name.into(), self.events.clone(), self.store.clone());
-        if let Err(error) = snapshotter.run() {
+        if let Err(error) = snapshotter.run(span) {
             capture_fail!(
                 &error,
                 self.logger,
@@ -144,11 +144,11 @@ impl Handler {
     ///
     /// Refresh is performed based on the current state or luck of state.
     /// This method emits events as needed (and before the state is updated).
-    fn refresh_discovery(&self, discovery: ClusterDiscovery) -> Result<()> {
+    fn refresh_discovery(&self, discovery: ClusterDiscovery, span: &mut Span) -> Result<()> {
         let current_state = self
             .store
             .cluster(discovery.cluster_id.clone())
-            .discovery()
+            .discovery(span.context().clone())
             .with_context(|_| ErrorKind::PrimaryStorePersist("cluster_discovery"))?;
         if let Some(current_state) = current_state {
             if discovery == current_state {

@@ -35,7 +35,7 @@ impl Handler for Discovery {
         let discovery = self
             .store
             .cluster(cluster.clone())
-            .discovery()
+            .discovery(None)
             .with_context(|_| ErrorKind::PrimaryStoreQuery("cluster_discovery"))
             .map_err(Error::from)?
             .ok_or_else(|| ErrorKind::ModelNotFound("cluster_discovery", cluster))

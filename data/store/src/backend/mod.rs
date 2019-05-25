@@ -2,6 +2,8 @@ use std::collections::HashSet;
 use std::ops::Deref;
 use std::sync::Arc;
 
+use opentracingrust::SpanContext;
+use opentracingrust::Tracer;
 use prometheus::Registry;
 use slog::Logger;
 
@@ -33,9 +35,15 @@ use super::Result;
 mod mongo;
 
 /// Instantiate a new storage backend based on the given configuration.
-pub fn backend_factory(config: Config, logger: Logger) -> Result<StoreImpl> {
+pub fn backend_factory<T>(config: Config, logger: Logger, tracer: T) -> Result<StoreImpl>
+where
+    T: Into<Option<Arc<Tracer>>>,
+{
     let store = match config {
-        Config::MongoDB(config) => StoreImpl::new(self::mongo::Store::make(config, logger)?),
+        Config::MongoDB(config) => {
+            let store = self::mongo::Store::make(config, logger, tracer)?;
+            StoreImpl::new(store)
+        }
     };
     Ok(store)
 }
@@ -135,7 +143,11 @@ impl Deref for AgentsImpl {
 ///
 /// See `store::cluster::Cluster` for descriptions of methods.
 pub trait ClusterInterface: Send + Sync {
-    fn discovery(&self, attrs: &ClusterAttribures) -> Result<Option<ClusterDiscovery>>;
+    fn discovery(
+        &self,
+        attrs: &ClusterAttribures,
+        span: Option<SpanContext>,
+    ) -> Result<Option<ClusterDiscovery>>;
     fn mark_stale(&self, attrs: &ClusterAttribures) -> Result<()>;
 }
 

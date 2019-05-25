@@ -32,7 +32,7 @@ impl AgentInterface for Agent {
             "host" => &attrs.host,
         };
         let collection = self.client.db(&self.db).collection(COLLECTION_AGENTS);
-        find_one(collection, filter)
+        find_one(collection, filter, None, None)
     }
 
     fn info(&self, attrs: &AgentAttribures) -> Result<Option<AgentInfoModel>> {
@@ -41,7 +41,7 @@ impl AgentInterface for Agent {
             "host" => &attrs.host,
         };
         let collection = self.client.db(&self.db).collection(COLLECTION_AGENTS_INFO);
-        let document: Option<AgentInfoDocument> = find_one(collection, filter)?;
+        let document: Option<AgentInfoDocument> = find_one(collection, filter, None, None)?;
         Ok(document.map(AgentInfoModel::from))
     }
 }

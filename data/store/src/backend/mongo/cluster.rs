@@ -1,6 +1,11 @@
+use std::ops::Deref;
+use std::sync::Arc;
+
 use mongodb::db::ThreadedDatabase;
 use mongodb::Client;
 use mongodb::ThreadedClient;
+use opentracingrust::SpanContext;
+use opentracingrust::Tracer;
 use slog::Logger;
 
 use replicante_data_models::ClusterDiscovery;
@@ -18,19 +23,38 @@ pub struct Cluster {
     client: Client,
     db: String,
     logger: Logger,
+    tracer: Option<Arc<Tracer>>,
 }
 
 impl Cluster {
-    pub fn new(client: Client, db: String, logger: Logger) -> Cluster {
-        Cluster { client, db, logger }
+    pub fn new<T>(client: Client, db: String, logger: Logger, tracer: T) -> Cluster
+    where
+        T: Into<Option<Arc<Tracer>>>,
+    {
+        let tracer = tracer.into();
+        Cluster {
+            client,
+            db,
+            logger,
+            tracer,
+        }
     }
 }
 
 impl ClusterInterface for Cluster {
-    fn discovery(&self, attrs: &ClusterAttribures) -> Result<Option<ClusterDiscovery>> {
+    fn discovery(
+        &self,
+        attrs: &ClusterAttribures,
+        span: Option<SpanContext>,
+    ) -> Result<Option<ClusterDiscovery>> {
         let filter = doc! {"cluster_id" => &attrs.cluster_id};
         let collection = self.client.db(&self.db).collection(COLLECTION_DISCOVERIES);
-        find_one(collection, filter)
+        find_one(
+            collection,
+            filter,
+            span,
+            self.tracer.as_ref().map(|tracer| tracer.deref()),
+        )
     }
 
     fn mark_stale(&self, attrs: &ClusterAttribures) -> Result<()> {

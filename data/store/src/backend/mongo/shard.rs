@@ -31,7 +31,7 @@ impl ShardInterface for Shard {
             "shard_id" => &attrs.shard_id,
         };
         let collection = self.client.db(&self.db).collection(COLLECTION_SHARDS);
-        let document: Option<ShardDocument> = find_one(collection, filter)?;
+        let document: Option<ShardDocument> = find_one(collection, filter, None, None)?;
         Ok(document.map(ShardModel::from))
     }
 }

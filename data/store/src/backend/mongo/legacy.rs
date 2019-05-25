@@ -41,7 +41,7 @@ impl LegacyInterface for Legacy {
     fn cluster_meta(&self, cluster_id: String) -> Result<Option<ClusterMeta>> {
         let filter = doc! {"cluster_id" => &cluster_id};
         let collection = self.client.db(&self.db).collection(COLLECTION_CLUSTER_META);
-        find_one(collection, filter)
+        find_one(collection, filter, None, None)
     }
 
     fn events(&self, filters: EventsFilters, opts: EventsOptions) -> Result<Cursor<Event>> {
@@ -80,7 +80,7 @@ impl LegacyInterface for Legacy {
             doc! {}
         };
         let collection = self.client.db(&self.db).collection(COLLECTION_EVENTS);
-        let cursor = find_with_options(collection, filter, options)?
+        let cursor = find_with_options(collection, filter, options, None)?
             .map(|result: Result<EventDocument>| result.map(Event::from));
         Ok(Cursor(Box::new(cursor)))
     }
@@ -94,7 +94,7 @@ impl LegacyInterface for Legacy {
         let collection = self.client.db(&self.db).collection(COLLECTION_CLUSTER_META);
         let mut options = FindOptions::new();
         options.limit = Some(i64::from(limit));
-        find_with_options(collection, filter, options)
+        find_with_options(collection, filter, options, None)
     }
 
     fn persist_cluster_meta(&self, meta: ClusterMeta) -> Result<()> {
@@ -130,6 +130,6 @@ impl LegacyInterface for Legacy {
         options.limit = Some(i64::from(TOP_CLUSTERS_LIMIT));
         options.sort = Some(sort);
         let collection = self.client.db(&self.db).collection(COLLECTION_CLUSTER_META);
-        find_with_options(collection, filter, options)
+        find_with_options(collection, filter, options, None)
     }
 }

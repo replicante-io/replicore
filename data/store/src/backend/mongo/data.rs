@@ -40,7 +40,7 @@ where
     let sort = doc! {"_id" => 1};
     let mut options = FindOptions::new();
     options.sort = Some(sort);
-    find_with_options(collection, filter, options)
+    find_with_options(collection, filter, options, None)
 }
 
 /// Data admin operations implementation using MongoDB.

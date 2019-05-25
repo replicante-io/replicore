@@ -1,3 +1,6 @@
+use std::sync::Arc;
+
+use opentracingrust::Tracer;
 use slog::Logger;
 
 use super::backend::backend_factory;
@@ -51,8 +54,11 @@ pub struct Store {
 
 impl Store {
     /// Instantiate a new storage interface.
-    pub fn make(config: Config, logger: Logger) -> Result<Store> {
-        let store = backend_factory(config, logger)?;
+    pub fn make<T>(config: Config, logger: Logger, tracer: T) -> Result<Store>
+    where
+        T: Into<Option<Arc<Tracer>>>,
+    {
+        let store = backend_factory(config, logger, tracer)?;
         Ok(Store { store })
     }
 

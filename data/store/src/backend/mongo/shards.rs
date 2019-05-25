@@ -89,8 +89,8 @@ impl ShardsInterface for Shards {
     fn iter(&self, attrs: &ShardsAttribures) -> Result<Cursor<Shard>> {
         let filter = doc! {"cluster_id" => &attrs.cluster_id};
         let collection = self.client.db(&self.db).collection(COLLECTION_SHARDS);
-        let cursor =
-            find(collection, filter)?.map(|result: Result<ShardDocument>| result.map(Shard::from));
+        let cursor = find(collection, filter, None)?
+            .map(|result: Result<ShardDocument>| result.map(Shard::from));
         Ok(Cursor(Box::new(cursor)))
     }
 }

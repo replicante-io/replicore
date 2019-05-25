@@ -5,7 +5,12 @@ use mongodb::coll::options::FindOptions;
 use mongodb::coll::options::UpdateOptions;
 use mongodb::coll::results::UpdateResult;
 use mongodb::coll::Collection;
+use opentracingrust::SpanContext;
+use opentracingrust::StartOptions;
+use opentracingrust::Tracer;
 use serde::Deserialize;
+
+use replicante_util_tracing::fail_span;
 
 use super::super::super::Cursor;
 use super::super::super::Error;
@@ -54,12 +59,16 @@ where
 /// Perform a [`find`] operation.
 ///
 /// [`find`]: https://docs.mongodb.com/manual/reference/method/db.collection.find/
-pub fn find<'de, T>(collection: Collection, filter: OrderedDocument) -> Result<Cursor<T>>
+pub fn find<'de, T>(
+    collection: Collection,
+    filter: OrderedDocument,
+    span: Option<SpanContext>,
+) -> Result<Cursor<T>>
 where
     T: Deserialize<'de>,
 {
     let options = FindOptions::default();
-    find_with_options(collection, filter, options)
+    find_with_options(collection, filter, options, span)
 }
 
 /// Perform a [`find`] operation with additional options.
@@ -69,6 +78,7 @@ pub fn find_with_options<'de, T>(
     collection: Collection,
     filter: OrderedDocument,
     options: FindOptions,
+    _span: Option<SpanContext>,
 ) -> Result<Cursor<T>>
 where
     T: Deserialize<'de>,
@@ -107,10 +117,29 @@ where
 ///  * `Ok(Some(document))` if the operation succeeded and `document` was found.
 ///
 /// [`findOne`]: https://docs.mongodb.com/manual/reference/method/db.collection.findOne/
-pub fn find_one<'de, T>(collection: Collection, filter: OrderedDocument) -> Result<Option<T>>
+pub fn find_one<'de, T>(
+    collection: Collection,
+    filter: OrderedDocument,
+    span: Option<SpanContext>,
+    tracer: Option<&Tracer>,
+) -> Result<Option<T>>
 where
     T: Deserialize<'de>,
 {
+    let mut span = match (tracer, span) {
+        (Some(tracer), Some(context)) => {
+            let options = StartOptions::default().child_of(context);
+            let mut span = tracer.span_with_options("findOne", options);
+            span.tag(
+                "filter",
+                serde_json::to_string(&filter)
+                    .unwrap_or_else(|_| "<unable to encode filter>".into()),
+            );
+            span.tag("namespace", collection.namespace.clone());
+            Some(span.auto_finish())
+        }
+        _ => None,
+    };
     MONGODB_OPS_COUNT.with_label_values(&["findOne"]).inc();
     let timer = MONGODB_OPS_DURATION
         .with_label_values(&["findOne"])
@@ -123,8 +152,13 @@ where
                 .inc();
             error
         })
-        .with_context(|_| ErrorKind::MongoDBOperation("findOne"))?;
+        .with_context(|_| ErrorKind::MongoDBOperation("findOne"))
+        .map_err(|error| match span {
+            Some(ref mut span) => fail_span(error, span),
+            None => error,
+        })?;
     timer.observe_duration();
+    span.take();
     if document.is_none() {
         return Ok(None);
     }

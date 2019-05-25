@@ -1,3 +1,5 @@
+use opentracingrust::SpanContext;
+
 use replicante_data_models::ClusterDiscovery;
 
 use super::super::backend::ClusterImpl;
@@ -15,8 +17,12 @@ impl Cluster {
     }
 
     /// Query a `ClusterDiscovery` record, if any is stored.
-    pub fn discovery(&self) -> Result<Option<ClusterDiscovery>> {
-        self.cluster.discovery(&self.attrs)
+    pub fn discovery<S>(&self, span: S) -> Result<Option<ClusterDiscovery>>
+    where
+        S: Into<Option<SpanContext>>,
+    {
+        let span = span.into();
+        self.cluster.discovery(&self.attrs, span)
     }
 
     /// Mark the cluster state as stale until the data is updated.

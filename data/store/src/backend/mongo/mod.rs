@@ -1,7 +1,10 @@
+use std::sync::Arc;
+
 use failure::ResultExt;
 use mongodb::db::ThreadedDatabase;
 use mongodb::Client;
 use mongodb::ThreadedClient;
+use opentracingrust::Tracer;
 use slog::Logger;
 
 use replicante_data_models::admin::Version;
@@ -108,16 +111,26 @@ pub struct Store {
     client: Client,
     db: String,
     logger: Logger,
+    tracer: Option<Arc<Tracer>>,
 }
 
 impl Store {
     /// Create a mongodb-backed primary store interface.
-    pub fn make(config: MongoDBConfig, logger: Logger) -> Result<Store> {
+    pub fn make<T>(config: MongoDBConfig, logger: Logger, tracer: T) -> Result<Store>
+    where
+        T: Into<Option<Arc<Tracer>>>,
+    {
         info!(logger, "Instantiating primary store backed by MongoDB");
         let db = config.db.clone();
         let client = Client::with_uri(&config.uri)
             .with_context(|_| ErrorKind::MongoDBConnect(config.uri.clone()))?;
-        Ok(Store { client, db, logger })
+        let tracer = tracer.into();
+        Ok(Store {
+            client,
+            db,
+            logger,
+            tracer,
+        })
     }
 }
 
@@ -133,8 +146,12 @@ impl StoreInterface for Store {
     }
 
     fn cluster(&self) -> ClusterImpl {
-        let cluster =
-            self::cluster::Cluster::new(self.client.clone(), self.db.clone(), self.logger.clone());
+        let cluster = self::cluster::Cluster::new(
+            self.client.clone(),
+            self.db.clone(),
+            self.logger.clone(),
+            self.tracer.clone(),
+        );
         ClusterImpl::new(cluster)
     }
 

@@ -5,16 +5,19 @@ extern crate failure;
 #[macro_use]
 extern crate lazy_static;
 extern crate mongodb;
+extern crate opentracingrust;
 extern crate prometheus;
 extern crate regex;
 extern crate semver;
 extern crate serde;
 #[macro_use]
 extern crate serde_derive;
+extern crate serde_json;
 #[macro_use]
 extern crate slog;
 
 extern crate replicante_data_models;
+extern crate replicante_util_tracing;
 
 mod backend;
 mod config;

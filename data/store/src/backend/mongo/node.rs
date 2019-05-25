@@ -30,7 +30,7 @@ impl NodeInterface for Node {
             "node_id" => &attrs.node_id,
         };
         let collection = self.client.db(&self.db).collection(COLLECTION_NODES);
-        let document: Option<NodeDocument> = find_one(collection, filter)?;
+        let document: Option<NodeDocument> = find_one(collection, filter, None, None)?;
         Ok(document.map(NodeModel::from))
     }
 }

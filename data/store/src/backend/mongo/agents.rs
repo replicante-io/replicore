@@ -80,13 +80,13 @@ impl AgentsInterface for Agents {
     fn iter(&self, attrs: &AgentsAttribures) -> Result<Cursor<AgentModel>> {
         let filter = doc! {"cluster_id" => &attrs.cluster_id};
         let collection = self.client.db(&self.db).collection(COLLECTION_AGENTS);
-        find(collection, filter)
+        find(collection, filter, None)
     }
 
     fn iter_info(&self, attrs: &AgentsAttribures) -> Result<Cursor<AgentInfoModel>> {
         let filter = doc! {"cluster_id" => &attrs.cluster_id};
         let collection = self.client.db(&self.db).collection(COLLECTION_AGENTS_INFO);
-        let cursor = find(collection, filter)?
+        let cursor = find(collection, filter, None)?
             .map(|result: Result<AgentInfoDocument>| result.map(AgentInfoModel::from));
         Ok(Cursor(Box::new(cursor)))
     }

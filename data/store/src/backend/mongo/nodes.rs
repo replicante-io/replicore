@@ -34,8 +34,8 @@ impl NodesInterface for Nodes {
     fn iter(&self, attrs: &NodesAttribures) -> Result<Cursor<Node>> {
         let filter = doc! {"cluster_id" => &attrs.cluster_id};
         let collection = self.client.db(&self.db).collection(COLLECTION_NODES);
-        let cursor =
-            find(collection, filter)?.map(|result: Result<NodeDocument>| result.map(Node::from));
+        let cursor = find(collection, filter, None)?
+            .map(|result: Result<NodeDocument>| result.map(Node::from));
         Ok(Cursor(Box::new(cursor)))
     }
 

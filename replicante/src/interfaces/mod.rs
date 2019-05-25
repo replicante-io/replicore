@@ -57,12 +57,12 @@ impl Interfaces {
             logger.clone(),
             &metrics,
         );
-        let store = Store::make(config.storage.clone(), logger.clone())
+        let tracing = Tracing::new(config.tracing.clone(), logger.clone(), upkeep)?;
+        let store = Store::make(config.storage.clone(), logger.clone(), tracing.tracer())
             .with_context(|_| ErrorKind::ClientInit("store"))?;
         let streams = Streams::new(config, logger.clone(), store.clone())?;
         let tasks =
             Tasks::new(config.tasks.clone()).with_context(|_| ErrorKind::ClientInit("tasks"))?;
-        let tracing = Tracing::new(config.tracing.clone(), logger.clone(), upkeep)?;
         Ok(Interfaces {
             api,
             coordinator,

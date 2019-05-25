@@ -53,7 +53,7 @@ pub fn events<'a>(args: &ArgMatches<'a>, interfaces: &Interfaces) -> Result<()> 
     let mut outcomes = Outcomes::new();
     let config = args.value_of("config").unwrap();
     let config = Config::from_file(config).with_context(|_| ErrorKind::ConfigLoad)?;
-    let store = Store::make(config.storage, logger.clone())
+    let store = Store::make(config.storage, logger.clone(), None)
         .with_context(|_| ErrorKind::ClientInit("store"))?;
     let stream = EventsStream::new(config.events.stream, logger.clone(), store);
 
