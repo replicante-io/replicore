@@ -1,3 +1,5 @@
+use opentracingrust::SpanContext;
+
 use replicante_data_models::Agent as AgentModel;
 use replicante_data_models::AgentInfo as AgentInfoModel;
 
@@ -17,18 +19,27 @@ impl Agents {
     }
 
     /// Count agents in the cluster.
-    pub fn counts(&self) -> Result<AgentsCounts> {
-        self.agents.counts(&self.attrs)
+    pub fn counts<S>(&self, span: S) -> Result<AgentsCounts>
+    where
+        S: Into<Option<SpanContext>>,
+    {
+        self.agents.counts(&self.attrs, span.into())
     }
 
     /// Iterate over agents in a cluster.
-    pub fn iter(&self) -> Result<Cursor<AgentModel>> {
-        self.agents.iter(&self.attrs)
+    pub fn iter<S>(&self, span: S) -> Result<Cursor<AgentModel>>
+    where
+        S: Into<Option<SpanContext>>,
+    {
+        self.agents.iter(&self.attrs, span.into())
     }
 
     /// Iterate over info for agents in a cluster.
-    pub fn iter_info(&self) -> Result<Cursor<AgentInfoModel>> {
-        self.agents.iter_info(&self.attrs)
+    pub fn iter_info<S>(&self, span: S) -> Result<Cursor<AgentInfoModel>>
+    where
+        S: Into<Option<SpanContext>>,
+    {
+        self.agents.iter_info(&self.attrs, span.into())
     }
 }
 

@@ -46,7 +46,7 @@ impl Persist {
 }
 
 impl PersistInterface for Persist {
-    fn agent(&self, agent: AgentModel) -> Result<()> {
+    fn agent(&self, agent: AgentModel, span: Option<SpanContext>) -> Result<()> {
         let filter = doc! {
             "cluster_id" => &agent.cluster_id,
             "host" => &agent.host,
@@ -57,10 +57,16 @@ impl PersistInterface for Persist {
             Bson::Document(document) => document,
             _ => panic!("Agent failed to encode as BSON document"),
         };
-        replace_one(collection, filter, document, None, None)
+        replace_one(
+            collection,
+            filter,
+            document,
+            span,
+            self.tracer.as_ref().map(|tracer| tracer.deref()),
+        )
     }
 
-    fn agent_info(&self, agent: AgentInfoModel) -> Result<()> {
+    fn agent_info(&self, agent: AgentInfoModel, span: Option<SpanContext>) -> Result<()> {
         let filter = doc! {
             "cluster_id" => &agent.cluster_id,
             "host" => &agent.host,
@@ -72,7 +78,13 @@ impl PersistInterface for Persist {
             Bson::Document(document) => document,
             _ => panic!("AgentInfo failed to encode as BSON document"),
         };
-        replace_one(collection, filter, document, None, None)
+        replace_one(
+            collection,
+            filter,
+            document,
+            span,
+            self.tracer.as_ref().map(|tracer| tracer.deref()),
+        )
     }
 
     fn cluster_discovery(
@@ -96,7 +108,7 @@ impl PersistInterface for Persist {
         )
     }
 
-    fn node(&self, node: NodeModel) -> Result<()> {
+    fn node(&self, node: NodeModel, span: Option<SpanContext>) -> Result<()> {
         let filter = doc! {
             "cluster_id" => &node.cluster_id,
             "node_id" => &node.node_id,
@@ -108,10 +120,16 @@ impl PersistInterface for Persist {
             Bson::Document(document) => document,
             _ => panic!("Node failed to encode as BSON document"),
         };
-        replace_one(collection, filter, document, None, None)
+        replace_one(
+            collection,
+            filter,
+            document,
+            span,
+            self.tracer.as_ref().map(|tracer| tracer.deref()),
+        )
     }
 
-    fn shard(&self, shard: ShardModel) -> Result<()> {
+    fn shard(&self, shard: ShardModel, span: Option<SpanContext>) -> Result<()> {
         let filter = doc! {
             "cluster_id" => &shard.cluster_id,
             "node_id" => &shard.node_id,
@@ -124,6 +142,12 @@ impl PersistInterface for Persist {
             Bson::Document(document) => document,
             _ => panic!("Shard failed to encode as BSON document"),
         };
-        replace_one(collection, filter, document, None, None)
+        replace_one(
+            collection,
+            filter,
+            document,
+            span,
+            self.tracer.as_ref().map(|tracer| tracer.deref()),
+        )
     }
 }

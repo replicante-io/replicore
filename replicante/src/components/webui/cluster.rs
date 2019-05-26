@@ -75,7 +75,7 @@ impl Handler for Meta {
         let meta = self
             .store
             .legacy()
-            .cluster_meta(cluster.clone())
+            .cluster_meta(cluster.clone(), None)
             .with_context(|_| ErrorKind::PrimaryStoreQuery("cluster_meta"))
             .map_err(Error::from)?
             .ok_or_else(|| ErrorKind::ModelNotFound("cluster_meta", cluster))

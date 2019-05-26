@@ -20,13 +20,19 @@ impl Persist {
     }
 
     /// Create or update an Agent record.
-    pub fn agent(&self, agent: AgentModel) -> Result<()> {
-        self.persist.agent(agent)
+    pub fn agent<S>(&self, agent: AgentModel, span: S) -> Result<()>
+    where
+        S: Into<Option<SpanContext>>,
+    {
+        self.persist.agent(agent, span.into())
     }
 
     /// Create or update an AgentInfo record.
-    pub fn agent_info(&self, agent: AgentInfoModel) -> Result<()> {
-        self.persist.agent_info(agent)
+    pub fn agent_info<S>(&self, agent: AgentInfoModel, span: S) -> Result<()>
+    where
+        S: Into<Option<SpanContext>>,
+    {
+        self.persist.agent_info(agent, span.into())
     }
 
     /// Create or update a ClusterDiscovery record.
@@ -38,12 +44,18 @@ impl Persist {
     }
 
     /// Creat or update a Node record.
-    pub fn node(&self, node: NodeModel) -> Result<()> {
-        self.persist.node(node)
+    pub fn node<S>(&self, node: NodeModel, span: S) -> Result<()>
+    where
+        S: Into<Option<SpanContext>>,
+    {
+        self.persist.node(node, span.into())
     }
 
     /// Creat or update a Shard record.
-    pub fn shard(&self, shard: ShardModel) -> Result<()> {
-        self.persist.shard(shard)
+    pub fn shard<S>(&self, shard: ShardModel, span: S) -> Result<()>
+    where
+        S: Into<Option<SpanContext>>,
+    {
+        self.persist.shard(shard, span.into())
     }
 }

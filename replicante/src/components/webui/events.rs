@@ -33,7 +33,7 @@ impl Handler for Events {
         let iter = self
             .store
             .legacy()
-            .events(EventsFilters::all(), options)
+            .events(EventsFilters::all(), options, None)
             .with_context(|_| ErrorKind::PrimaryStoreQuery("events"))
             .map_err(Error::from)?;
         let mut events = Vec::new();

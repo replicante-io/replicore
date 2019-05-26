@@ -1,6 +1,7 @@
 use std::collections::HashSet;
 
 use failure::ResultExt;
+use opentracingrust::Span;
 
 use replicante_data_models::ClusterDiscovery;
 use replicante_data_models::ClusterMeta;
@@ -22,11 +23,11 @@ pub(crate) struct ClusterMetaAggregator {
 
 impl ClusterMetaAggregator {
     /// Fetch and aggrgate cluster metadata.
-    pub(crate) fn aggregate(&mut self, store: Store) -> Result<()> {
+    pub(crate) fn aggregate(&mut self, store: Store, span: &mut Span) -> Result<()> {
         // Fetch nodes counts.
         let counts = store
             .agents(self.cluster_id.clone())
-            .counts()
+            .counts(span.context().clone())
             .with_context(|_| ErrorKind::StoreRead("agents counts"))?;
         self.agents_down = counts.agents_down;
         self.nodes = counts.nodes;
@@ -35,13 +36,13 @@ impl ClusterMetaAggregator {
         // Fetch known datastore kinds.
         self.kinds = store
             .nodes(self.cluster_id.clone())
-            .kinds()
+            .kinds(span.context().clone())
             .with_context(|_| ErrorKind::StoreRead("nodes kinds"))?;
 
         // Fetch total shards count.
         let counts = store
             .shards(self.cluster_id.clone())
-            .counts()
+            .counts(span.context().clone())
             .with_context(|_| ErrorKind::StoreRead("shards counts"))?;
         self.shards_count = counts.shards;
         self.shards_primaries = counts.primaries;

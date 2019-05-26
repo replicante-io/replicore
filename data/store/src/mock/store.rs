@@ -1,6 +1,8 @@
 use std::sync::Arc;
 use std::sync::Mutex;
 
+use opentracingrust::SpanContext;
+
 use replicante_data_models::ClusterMeta;
 use replicante_data_models::Event;
 
@@ -82,27 +84,41 @@ struct Legacy {
 }
 
 impl LegacyInterface for Legacy {
-    fn cluster_meta(&self, _cluster_id: String) -> Result<Option<ClusterMeta>> {
+    fn cluster_meta(
+        &self,
+        _cluster_id: String,
+        _: Option<SpanContext>,
+    ) -> Result<Option<ClusterMeta>> {
         panic!("mocking primary store::legacy::cluster_meta not yet supportd");
     }
 
-    fn events(&self, _filters: EventsFilters, _options: EventsOptions) -> Result<Cursor<Event>> {
+    fn events(
+        &self,
+        _filters: EventsFilters,
+        _options: EventsOptions,
+        _: Option<SpanContext>,
+    ) -> Result<Cursor<Event>> {
         panic!("mocking primary store::legacy::events not yet supportd");
     }
 
-    fn find_clusters(&self, _search: String, _limit: u8) -> Result<Cursor<ClusterMeta>> {
+    fn find_clusters(
+        &self,
+        _search: String,
+        _limit: u8,
+        _: Option<SpanContext>,
+    ) -> Result<Cursor<ClusterMeta>> {
         panic!("mocking primary store::legacy::find_clusters not yet supportd");
     }
 
-    fn persist_cluster_meta(&self, _meta: ClusterMeta) -> Result<()> {
+    fn persist_cluster_meta(&self, _meta: ClusterMeta, _: Option<SpanContext>) -> Result<()> {
         panic!("mocking primary store::legacy::persist_cluster_meta not yet supportd");
     }
 
-    fn persist_event(&self, _event: Event) -> Result<()> {
+    fn persist_event(&self, _event: Event, _: Option<SpanContext>) -> Result<()> {
         panic!("mocking primary store::legacy::persist_event not yet supportd");
     }
 
-    fn top_clusters(&self) -> Result<Cursor<ClusterMeta>> {
+    fn top_clusters(&self, _: Option<SpanContext>) -> Result<Cursor<ClusterMeta>> {
         let clusters = &self.state.lock().unwrap().clusters_meta;
         let mut results: Vec<ClusterMeta> = clusters.iter().map(|(_, meta)| meta.clone()).collect();
         results.sort_by_key(|meta| meta.nodes);

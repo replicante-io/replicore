@@ -1,3 +1,5 @@
+use opentracingrust::SpanContext;
+
 use replicante_data_models::Shard as ShardModel;
 
 use super::super::backend::ShardImpl;
@@ -14,9 +16,12 @@ impl Shard {
         Shard { shard, attrs }
     }
 
-    /// Query the `Node` record, if any is stored.
-    pub fn get(&self) -> Result<Option<ShardModel>> {
-        self.shard.get(&self.attrs)
+    /// Query the `Shard` record, if any is stored.
+    pub fn get<S>(&self, span: S) -> Result<Option<ShardModel>>
+    where
+        S: Into<Option<SpanContext>>,
+    {
+        self.shard.get(&self.attrs, span.into())
     }
 }
 

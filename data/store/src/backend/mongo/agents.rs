@@ -1,7 +1,12 @@
+use std::ops::Deref;
+use std::sync::Arc;
+
 use bson::ordered::OrderedDocument;
 use mongodb::db::ThreadedDatabase;
 use mongodb::Client;
 use mongodb::ThreadedClient;
+use opentracingrust::SpanContext;
+use opentracingrust::Tracer;
 
 use replicante_data_models::Agent as AgentModel;
 use replicante_data_models::AgentInfo as AgentInfoModel;
@@ -33,16 +38,21 @@ fn aggregate_count_status(status: &'static str) -> OrderedDocument {
 pub struct Agents {
     client: Client,
     db: String,
+    tracer: Option<Arc<Tracer>>,
 }
 
 impl Agents {
-    pub fn new(client: Client, db: String) -> Agents {
-        Agents { client, db }
+    pub fn new<T>(client: Client, db: String, tracer: T) -> Agents
+    where
+        T: Into<Option<Arc<Tracer>>>,
+    {
+        let tracer = tracer.into();
+        Agents { client, db, tracer }
     }
 }
 
 impl AgentsInterface for Agents {
-    fn counts(&self, attrs: &AgentsAttribures) -> Result<AgentsCounts> {
+    fn counts(&self, attrs: &AgentsAttribures, span: Option<SpanContext>) -> Result<AgentsCounts> {
         // Let mongo figure out the counts with an aggregation.
         let filter = doc! {"$match" => {"cluster_id" => &attrs.cluster_id}};
         let agents_down = aggregate_count_status("AGENT_DOWN");
@@ -58,7 +68,12 @@ impl AgentsInterface for Agents {
 
         // Run aggrgation and grab the one and only (expected) result.
         let collection = self.client.db(&self.db).collection(COLLECTION_AGENTS);
-        let mut cursor = aggregate(collection, pipeline)?;
+        let mut cursor = aggregate(
+            collection,
+            pipeline,
+            span,
+            self.tracer.as_ref().map(|tracer| tracer.deref()),
+        )?;
         let counts: AgentsCounts = match cursor.next() {
             Some(counts) => counts?,
             None => {
@@ -77,17 +92,35 @@ impl AgentsInterface for Agents {
         Ok(counts)
     }
 
-    fn iter(&self, attrs: &AgentsAttribures) -> Result<Cursor<AgentModel>> {
+    fn iter(
+        &self,
+        attrs: &AgentsAttribures,
+        span: Option<SpanContext>,
+    ) -> Result<Cursor<AgentModel>> {
         let filter = doc! {"cluster_id" => &attrs.cluster_id};
         let collection = self.client.db(&self.db).collection(COLLECTION_AGENTS);
-        find(collection, filter, None)
+        find(
+            collection,
+            filter,
+            span,
+            self.tracer.as_ref().map(|tracer| tracer.deref()),
+        )
     }
 
-    fn iter_info(&self, attrs: &AgentsAttribures) -> Result<Cursor<AgentInfoModel>> {
+    fn iter_info(
+        &self,
+        attrs: &AgentsAttribures,
+        span: Option<SpanContext>,
+    ) -> Result<Cursor<AgentInfoModel>> {
         let filter = doc! {"cluster_id" => &attrs.cluster_id};
         let collection = self.client.db(&self.db).collection(COLLECTION_AGENTS_INFO);
-        let cursor = find(collection, filter, None)?
-            .map(|result: Result<AgentInfoDocument>| result.map(AgentInfoModel::from));
+        let cursor = find(
+            collection,
+            filter,
+            span,
+            self.tracer.as_ref().map(|tracer| tracer.deref()),
+        )?
+        .map(|result: Result<AgentInfoDocument>| result.map(AgentInfoModel::from));
         Ok(Cursor(Box::new(cursor)))
     }
 }

@@ -1,3 +1,5 @@
+use opentracingrust::SpanContext;
+
 use replicante_data_models::Agent as AgentModel;
 use replicante_data_models::AgentInfo as AgentInfoModel;
 
@@ -16,13 +18,19 @@ impl Agent {
     }
 
     /// Query the `Agent` record, if any is stored.
-    pub fn get(&self) -> Result<Option<AgentModel>> {
-        self.agent.get(&self.attrs)
+    pub fn get<S>(&self, span: S) -> Result<Option<AgentModel>>
+    where
+        S: Into<Option<SpanContext>>,
+    {
+        self.agent.get(&self.attrs, span.into())
     }
 
     /// Query the `AgentInfo` record, if any is stored.
-    pub fn info(&self) -> Result<Option<AgentInfoModel>> {
-        self.agent.info(&self.attrs)
+    pub fn info<S>(&self, span: S) -> Result<Option<AgentInfoModel>>
+    where
+        S: Into<Option<SpanContext>>,
+    {
+        self.agent.info(&self.attrs, span.into())
     }
 }
 

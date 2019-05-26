@@ -33,7 +33,7 @@ impl StreamInterface for StoreInterface {
     fn emit(&self, event: Event) -> Result<()> {
         self.store
             .legacy()
-            .persist_event(event)
+            .persist_event(event, None)
             .with_context(|_| ErrorKind::StoreWrite("event"))
             .map_err(Error::from)
     }
@@ -44,7 +44,7 @@ impl StreamInterface for StoreInterface {
         let iter = self
             .store
             .legacy()
-            .events(filters, options)
+            .events(filters, options, None)
             .with_context(|_| ErrorKind::StoreRead("events"))?;
         let iter = iter.map(|event| {
             event

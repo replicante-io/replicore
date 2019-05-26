@@ -196,7 +196,7 @@ impl Fetcher {
         let mut id_checker = ClusterIdentityChecker::new(cluster_id.clone(), cluster.display_name);
         self.store
             .cluster(cluster_id.clone())
-            .mark_stale()
+            .mark_stale(span.context().clone())
             .with_context(|_| ErrorKind::StoreWrite("cluster staleness"))?;
 
         for node in cluster.nodes {
@@ -236,7 +236,7 @@ impl Fetcher {
         if let Err(error) = result {
             let message = format_fail(&error);
             agent.status = AgentStatus::AgentDown(message);
-            self.agent.process_agent(agent)?;
+            self.agent.process_agent(agent, span)?;
             // TODO: figure out which errors to propagate.
             return Ok(());
         };
@@ -245,7 +245,7 @@ impl Fetcher {
         if let Err(error) = result {
             let message = format_fail(&error);
             agent.status = AgentStatus::NodeDown(message);
-            self.agent.process_agent(agent)?;
+            self.agent.process_agent(agent, span)?;
             // TODO: figure out which errors to propagate.
             return Ok(());
         };
@@ -254,11 +254,11 @@ impl Fetcher {
         if let Err(error) = result {
             let message = format_fail(&error);
             agent.status = AgentStatus::NodeDown(message);
-            self.agent.process_agent(agent)?;
+            self.agent.process_agent(agent, span)?;
             // TODO: figure out which errors to propagate.
             return Ok(());
         };
 
-        self.agent.process_agent(agent)
+        self.agent.process_agent(agent, span)
     }
 }

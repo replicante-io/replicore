@@ -40,18 +40,22 @@ impl NodeFetcher {
         }
         let cluster_id = node.cluster_id.clone();
         let node_id = node.node_id.clone();
-        match self.store.node(cluster_id, node_id).get() {
+        let record = self
+            .store
+            .node(cluster_id, node_id)
+            .get(span.context().clone());
+        match record {
             Err(error) => Err(error)
                 .with_context(|_| ErrorKind::StoreRead("node"))
                 .map_err(Error::from),
-            Ok(None) => self.process_node_new(node),
-            Ok(Some(old)) => self.process_node_existing(node, old),
+            Ok(None) => self.process_node_new(node, span),
+            Ok(Some(old)) => self.process_node_existing(node, old, span),
         }
     }
 }
 
 impl NodeFetcher {
-    fn process_node_existing(&self, node: Node, old: Node) -> Result<()> {
+    fn process_node_existing(&self, node: Node, old: Node, span: &mut Span) -> Result<()> {
         if node != old {
             let event = Event::builder().node().changed(old, node.clone());
             let code = event.code();
@@ -62,12 +66,12 @@ impl NodeFetcher {
         // ALWAYS persist the model, even unchanged, to clear the staleness state.
         self.store
             .persist()
-            .node(node)
+            .node(node, span.context().clone())
             .with_context(|_| ErrorKind::StoreWrite("node update"))
             .map_err(Error::from)
     }
 
-    fn process_node_new(&self, node: Node) -> Result<()> {
+    fn process_node_new(&self, node: Node, span: &mut Span) -> Result<()> {
         let event = Event::builder().node().node_new(node.clone());
         let code = event.code();
         self.events
@@ -75,7 +79,7 @@ impl NodeFetcher {
             .with_context(|_| ErrorKind::EventEmit(code))?;
         self.store
             .persist()
-            .node(node)
+            .node(node, span.context().clone())
             .with_context(|_| ErrorKind::StoreWrite("new node"))
             .map_err(Error::from)
     }

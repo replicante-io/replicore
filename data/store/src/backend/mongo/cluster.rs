@@ -57,12 +57,18 @@ impl ClusterInterface for Cluster {
         )
     }
 
-    fn mark_stale(&self, attrs: &ClusterAttribures) -> Result<()> {
+    fn mark_stale(&self, attrs: &ClusterAttribures, span: Option<SpanContext>) -> Result<()> {
         for name in STALE_COLLECTIONS.iter() {
             let collection = self.client.db(&self.db).collection(name);
             let filter = doc! {"cluster_id" => &attrs.cluster_id};
             let mark = doc! {"$set" => {"stale" => true}};
-            let stats = update_many(collection, filter, mark)?;
+            let stats = update_many(
+                collection,
+                filter,
+                mark,
+                span.clone(),
+                self.tracer.as_ref().map(|tracer| tracer.deref()),
+            )?;
             debug!(
                 self.logger, "Marked cluster as stale";
                 "cluster_id" => &attrs.cluster_id,

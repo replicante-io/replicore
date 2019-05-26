@@ -1,3 +1,5 @@
+use opentracingrust::SpanContext;
+
 use replicante_data_models::Node as NodeModel;
 
 use super::super::backend::NodeImpl;
@@ -15,8 +17,11 @@ impl Node {
     }
 
     /// Query the `Node` record, if any is stored.
-    pub fn get(&self) -> Result<Option<NodeModel>> {
-        self.node.get(&self.attrs)
+    pub fn get<S>(&self, span: S) -> Result<Option<NodeModel>>
+    where
+        S: Into<Option<SpanContext>>,
+    {
+        self.node.get(&self.attrs, span.into())
     }
 }
 

@@ -26,19 +26,19 @@ impl Snapshotter {
 
     pub fn run(&self, span: &mut Span) -> Result<()> {
         self.discovery(span)?;
-        self.agents()?;
-        self.nodes()?;
-        self.shards()?;
+        self.agents(span)?;
+        self.nodes(span)?;
+        self.shards(span)?;
         Ok(())
     }
 }
 
 impl Snapshotter {
-    fn agents(&self) -> Result<()> {
+    fn agents(&self, span: &mut Span) -> Result<()> {
         let statuses = self
             .store
             .agents(self.cluster.clone())
-            .iter()
+            .iter(span.context().clone())
             .with_context(|_| ErrorKind::StoreRead("agents statuses"))?;
         for status in statuses {
             let status = status.with_context(|_| ErrorKind::StoreRead("agent status"))?;
@@ -51,7 +51,7 @@ impl Snapshotter {
         let infos = self
             .store
             .agents(self.cluster.clone())
-            .iter_info()
+            .iter_info(span.context().clone())
             .with_context(|_| ErrorKind::StoreRead("agents info"))?;
         for info in infos {
             let info = info.with_context(|_| ErrorKind::StoreRead("agent info"))?;
@@ -80,11 +80,11 @@ impl Snapshotter {
         Ok(())
     }
 
-    fn nodes(&self) -> Result<()> {
+    fn nodes(&self, span: &mut Span) -> Result<()> {
         let nodes = self
             .store
             .nodes(self.cluster.clone())
-            .iter()
+            .iter(span.context().clone())
             .with_context(|_| ErrorKind::StoreRead("nodes"))?;
         for node in nodes {
             let node = node.with_context(|_| ErrorKind::StoreRead("node"))?;
@@ -97,11 +97,11 @@ impl Snapshotter {
         Ok(())
     }
 
-    fn shards(&self) -> Result<()> {
+    fn shards(&self, span: &mut Span) -> Result<()> {
         let shards = self
             .store
             .shards(self.cluster.clone())
-            .iter()
+            .iter(span.context().clone())
             .with_context(|_| ErrorKind::StoreRead("shards"))?;
         for shard in shards {
             let shard = shard.with_context(|_| ErrorKind::StoreRead("shard"))?;

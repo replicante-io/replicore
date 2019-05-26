@@ -70,21 +70,21 @@ impl Aggregator {
         &self,
         discovery: ClusterDiscovery,
         lock: NonBlockingLockWatcher,
-        _span: &mut Span,
+        span: &mut Span,
     ) -> Result<()> {
         let cluster_id = discovery.cluster_id.clone();
         debug!(self.logger, "Aggregating cluster"; "cluster_id" => &cluster_id);
 
         // (Re-)Aggregate cluster meta.
         let mut meta = ClusterMetaAggregator::new(&discovery);
-        meta.aggregate(self.store.clone())?;
+        meta.aggregate(self.store.clone(), span)?;
         let meta = meta.generate();
         if !lock.inspect() {
             return Err(ErrorKind::ClusterLockLost(cluster_id).into());
         }
         self.store
             .legacy()
-            .persist_cluster_meta(meta)
+            .persist_cluster_meta(meta, span.context().clone())
             .with_context(|_| ErrorKind::StoreWrite("ClusterMeta"))?;
 
         // Generated all aggrgations.

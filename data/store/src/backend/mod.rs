@@ -92,8 +92,9 @@ impl Deref for AdminImpl {
 ///
 /// See `store::agent::Agent` for descriptions of methods.
 pub trait AgentInterface: Send + Sync {
-    fn get(&self, attrs: &AgentAttribures) -> Result<Option<Agent>>;
-    fn info(&self, attrs: &AgentAttribures) -> Result<Option<AgentInfo>>;
+    fn get(&self, attrs: &AgentAttribures, span: Option<SpanContext>) -> Result<Option<Agent>>;
+    fn info(&self, attrs: &AgentAttribures, span: Option<SpanContext>)
+        -> Result<Option<AgentInfo>>;
 }
 
 /// Dynamic dispatch agent operations to a backend-specific implementation.
@@ -117,9 +118,13 @@ impl Deref for AgentImpl {
 ///
 /// See `store::agents::Agents` for descriptions of methods.
 pub trait AgentsInterface: Send + Sync {
-    fn counts(&self, attrs: &AgentsAttribures) -> Result<AgentsCounts>;
-    fn iter(&self, attrs: &AgentsAttribures) -> Result<Cursor<Agent>>;
-    fn iter_info(&self, attrs: &AgentsAttribures) -> Result<Cursor<AgentInfo>>;
+    fn counts(&self, attrs: &AgentsAttribures, span: Option<SpanContext>) -> Result<AgentsCounts>;
+    fn iter(&self, attrs: &AgentsAttribures, span: Option<SpanContext>) -> Result<Cursor<Agent>>;
+    fn iter_info(
+        &self,
+        attrs: &AgentsAttribures,
+        span: Option<SpanContext>,
+    ) -> Result<Cursor<AgentInfo>>;
 }
 
 /// Dynamic dispatch agents operations to a backend-specific implementation.
@@ -148,7 +153,7 @@ pub trait ClusterInterface: Send + Sync {
         attrs: &ClusterAttribures,
         span: Option<SpanContext>,
     ) -> Result<Option<ClusterDiscovery>>;
-    fn mark_stale(&self, attrs: &ClusterAttribures) -> Result<()>;
+    fn mark_stale(&self, attrs: &ClusterAttribures, span: Option<SpanContext>) -> Result<()>;
 }
 
 /// Dynamic dispatch all cluster operations to a backend-specific implementation.
@@ -202,12 +207,26 @@ impl Deref for DataImpl {
 ///
 /// See `store::legacy::Legacy` for descriptions of methods.
 pub trait LegacyInterface: Send + Sync {
-    fn cluster_meta(&self, cluster_id: String) -> Result<Option<ClusterMeta>>;
-    fn events(&self, filters: EventsFilters, options: EventsOptions) -> Result<Cursor<Event>>;
-    fn find_clusters(&self, search: String, limit: u8) -> Result<Cursor<ClusterMeta>>;
-    fn persist_cluster_meta(&self, meta: ClusterMeta) -> Result<()>;
-    fn persist_event(&self, event: Event) -> Result<()>;
-    fn top_clusters(&self) -> Result<Cursor<ClusterMeta>>;
+    fn cluster_meta(
+        &self,
+        cluster_id: String,
+        span: Option<SpanContext>,
+    ) -> Result<Option<ClusterMeta>>;
+    fn events(
+        &self,
+        filters: EventsFilters,
+        options: EventsOptions,
+        span: Option<SpanContext>,
+    ) -> Result<Cursor<Event>>;
+    fn find_clusters(
+        &self,
+        search: String,
+        limit: u8,
+        span: Option<SpanContext>,
+    ) -> Result<Cursor<ClusterMeta>>;
+    fn persist_cluster_meta(&self, meta: ClusterMeta, span: Option<SpanContext>) -> Result<()>;
+    fn persist_event(&self, event: Event, span: Option<SpanContext>) -> Result<()>;
+    fn top_clusters(&self, span: Option<SpanContext>) -> Result<Cursor<ClusterMeta>>;
 }
 
 /// Dynamic dispatch legacy operations to a backend-specific implementation.
@@ -231,7 +250,7 @@ impl Deref for LegacyImpl {
 ///
 /// See `store::node::Node` for descriptions of methods.
 pub trait NodeInterface: Send + Sync {
-    fn get(&self, attrs: &NodeAttribures) -> Result<Option<Node>>;
+    fn get(&self, attrs: &NodeAttribures, span: Option<SpanContext>) -> Result<Option<Node>>;
 }
 
 /// Dynamic dispatch node operations to a backend-specific implementation.
@@ -255,8 +274,8 @@ impl Deref for NodeImpl {
 ///
 /// See `store::nodes::Nodes` for descriptions of methods.
 pub trait NodesInterface: Send + Sync {
-    fn iter(&self, attrs: &NodesAttribures) -> Result<Cursor<Node>>;
-    fn kinds(&self, attrs: &NodesAttribures) -> Result<HashSet<String>>;
+    fn iter(&self, attrs: &NodesAttribures, span: Option<SpanContext>) -> Result<Cursor<Node>>;
+    fn kinds(&self, attrs: &NodesAttribures, span: Option<SpanContext>) -> Result<HashSet<String>>;
 }
 
 /// Dynamic dispatch nodes operations to a backend-specific implementation.
@@ -280,15 +299,15 @@ impl Deref for NodesImpl {
 ///
 /// See `store::persist::Persist` for descriptions of methods.
 pub trait PersistInterface: Send + Sync {
-    fn agent(&self, agent: Agent) -> Result<()>;
-    fn agent_info(&self, agent: AgentInfo) -> Result<()>;
+    fn agent(&self, agent: Agent, span: Option<SpanContext>) -> Result<()>;
+    fn agent_info(&self, agent: AgentInfo, span: Option<SpanContext>) -> Result<()>;
     fn cluster_discovery(
         &self,
         discovery: ClusterDiscovery,
         span: Option<SpanContext>,
     ) -> Result<()>;
-    fn node(&self, node: Node) -> Result<()>;
-    fn shard(&self, shard: Shard) -> Result<()>;
+    fn node(&self, node: Node, span: Option<SpanContext>) -> Result<()>;
+    fn shard(&self, shard: Shard, span: Option<SpanContext>) -> Result<()>;
 }
 
 /// Dynamic dispatch persist operations to a backend-specific implementation.
@@ -346,7 +365,7 @@ impl Deref for StoreImpl {
 ///
 /// See `store::shard::Shard` for descriptions of methods.
 pub trait ShardInterface: Send + Sync {
-    fn get(&self, attrs: &ShardAttribures) -> Result<Option<Shard>>;
+    fn get(&self, attrs: &ShardAttribures, span: Option<SpanContext>) -> Result<Option<Shard>>;
 }
 
 /// Dynamic dispatch shard operations to a backend-specific implementation.
@@ -370,8 +389,8 @@ impl Deref for ShardImpl {
 ///
 /// See `store::shards::Shards` for descriptions of methods.
 pub trait ShardsInterface: Send + Sync {
-    fn counts(&self, attrs: &ShardsAttribures) -> Result<ShardsCounts>;
-    fn iter(&self, attrs: &ShardsAttribures) -> Result<Cursor<Shard>>;
+    fn counts(&self, attrs: &ShardsAttribures, span: Option<SpanContext>) -> Result<ShardsCounts>;
+    fn iter(&self, attrs: &ShardsAttribures, span: Option<SpanContext>) -> Result<Cursor<Shard>>;
 }
 
 #[derive(Clone)]

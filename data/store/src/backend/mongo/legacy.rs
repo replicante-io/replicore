@@ -1,9 +1,14 @@
+use std::ops::Deref;
+use std::sync::Arc;
+
 use bson::Bson;
 use failure::ResultExt;
 use mongodb::coll::options::FindOptions;
 use mongodb::db::ThreadedDatabase;
 use mongodb::Client;
 use mongodb::ThreadedClient;
+use opentracingrust::SpanContext;
+use opentracingrust::Tracer;
 use regex;
 
 use replicante_data_models::ClusterMeta;
@@ -29,22 +34,41 @@ use super::document::EventDocument;
 pub struct Legacy {
     client: Client,
     db: String,
+    tracer: Option<Arc<Tracer>>,
 }
 
 impl Legacy {
-    pub fn new(client: Client, db: String) -> Legacy {
-        Legacy { client, db }
+    pub fn new<T>(client: Client, db: String, tracer: T) -> Legacy
+    where
+        T: Into<Option<Arc<Tracer>>>,
+    {
+        let tracer = tracer.into();
+        Legacy { client, db, tracer }
     }
 }
 
 impl LegacyInterface for Legacy {
-    fn cluster_meta(&self, cluster_id: String) -> Result<Option<ClusterMeta>> {
+    fn cluster_meta(
+        &self,
+        cluster_id: String,
+        span: Option<SpanContext>,
+    ) -> Result<Option<ClusterMeta>> {
         let filter = doc! {"cluster_id" => &cluster_id};
         let collection = self.client.db(&self.db).collection(COLLECTION_CLUSTER_META);
-        find_one(collection, filter, None, None)
+        find_one(
+            collection,
+            filter,
+            span,
+            self.tracer.as_ref().map(|tracer| tracer.deref()),
+        )
     }
 
-    fn events(&self, filters: EventsFilters, opts: EventsOptions) -> Result<Cursor<Event>> {
+    fn events(
+        &self,
+        filters: EventsFilters,
+        opts: EventsOptions,
+        span: Option<SpanContext>,
+    ) -> Result<Cursor<Event>> {
         let mut options = FindOptions::new();
         options.limit = opts.limit;
         options.sort = Some(doc! {"$natural" => if opts.reverse { -1 } else { 1 }});
@@ -80,12 +104,23 @@ impl LegacyInterface for Legacy {
             doc! {}
         };
         let collection = self.client.db(&self.db).collection(COLLECTION_EVENTS);
-        let cursor = find_with_options(collection, filter, options, None)?
-            .map(|result: Result<EventDocument>| result.map(Event::from));
+        let cursor = find_with_options(
+            collection,
+            filter,
+            options,
+            span,
+            self.tracer.as_ref().map(|tracer| tracer.deref()),
+        )?
+        .map(|result: Result<EventDocument>| result.map(Event::from));
         Ok(Cursor(Box::new(cursor)))
     }
 
-    fn find_clusters(&self, search: String, limit: u8) -> Result<Cursor<ClusterMeta>> {
+    fn find_clusters(
+        &self,
+        search: String,
+        limit: u8,
+        span: Option<SpanContext>,
+    ) -> Result<Cursor<ClusterMeta>> {
         let search = regex::escape(&search);
         let filter = doc! { "$or" => [
             {"cluster_display_name" => {"$regex" => &search, "$options" => "i"}},
@@ -94,10 +129,16 @@ impl LegacyInterface for Legacy {
         let collection = self.client.db(&self.db).collection(COLLECTION_CLUSTER_META);
         let mut options = FindOptions::new();
         options.limit = Some(i64::from(limit));
-        find_with_options(collection, filter, options, None)
+        find_with_options(
+            collection,
+            filter,
+            options,
+            span,
+            self.tracer.as_ref().map(|tracer| tracer.deref()),
+        )
     }
 
-    fn persist_cluster_meta(&self, meta: ClusterMeta) -> Result<()> {
+    fn persist_cluster_meta(&self, meta: ClusterMeta, span: Option<SpanContext>) -> Result<()> {
         let filter = doc! {"cluster_id" => &meta.cluster_id};
         let collection = self.client.db(&self.db).collection(COLLECTION_CLUSTER_META);
         let document = bson::to_bson(&meta).with_context(|_| ErrorKind::MongoDBBsonEncode)?;
@@ -105,10 +146,16 @@ impl LegacyInterface for Legacy {
             Bson::Document(document) => document,
             _ => panic!("ClusterMeta failed to encode as BSON document"),
         };
-        replace_one(collection, filter, document, None, None)
+        replace_one(
+            collection,
+            filter,
+            document,
+            span,
+            self.tracer.as_ref().map(|tracer| tracer.deref()),
+        )
     }
 
-    fn persist_event(&self, event: Event) -> Result<()> {
+    fn persist_event(&self, event: Event, span: Option<SpanContext>) -> Result<()> {
         let collection = self.client.db(&self.db).collection(COLLECTION_EVENTS);
         let event = EventDocument::from(event);
         let document = bson::to_bson(&event).with_context(|_| ErrorKind::MongoDBBsonEncode)?;
@@ -116,10 +163,15 @@ impl LegacyInterface for Legacy {
             Bson::Document(document) => document,
             _ => panic!("Event failed to encode as BSON document"),
         };
-        insert_one(collection, document)
+        insert_one(
+            collection,
+            document,
+            span,
+            self.tracer.as_ref().map(|tracer| tracer.deref()),
+        )
     }
 
-    fn top_clusters(&self) -> Result<Cursor<ClusterMeta>> {
+    fn top_clusters(&self, span: Option<SpanContext>) -> Result<Cursor<ClusterMeta>> {
         let filter = doc! {};
         let sort = doc! {
             "shards" => -1,
@@ -130,6 +182,12 @@ impl LegacyInterface for Legacy {
         options.limit = Some(i64::from(TOP_CLUSTERS_LIMIT));
         options.sort = Some(sort);
         let collection = self.client.db(&self.db).collection(COLLECTION_CLUSTER_META);
-        find_with_options(collection, filter, options, None)
+        find_with_options(
+            collection,
+            filter,
+            options,
+            span,
+            self.tracer.as_ref().map(|tracer| tracer.deref()),
+        )
     }
 }

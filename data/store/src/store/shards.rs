@@ -1,3 +1,5 @@
+use opentracingrust::SpanContext;
+
 use replicante_data_models::Shard as ShardModel;
 
 use super::super::backend::ShardsImpl;
@@ -19,13 +21,19 @@ impl Shards {
     ///
     /// Active nodes are those not stale.
     /// See `Store::cluster::mark_stale` for why nodes are marked stale.
-    pub fn counts(&self) -> Result<ShardsCounts> {
-        self.shards.counts(&self.attrs)
+    pub fn counts<S>(&self, span: S) -> Result<ShardsCounts>
+    where
+        S: Into<Option<SpanContext>>,
+    {
+        self.shards.counts(&self.attrs, span.into())
     }
 
     /// Iterate over shards in a cluster.
-    pub fn iter(&self) -> Result<Cursor<ShardModel>> {
-        self.shards.iter(&self.attrs)
+    pub fn iter<S>(&self, span: S) -> Result<Cursor<ShardModel>>
+    where
+        S: Into<Option<SpanContext>>,
+    {
+        self.shards.iter(&self.attrs, span.into())
     }
 }
 

@@ -35,31 +35,31 @@ impl ShardFetcher {
             .with_context(|_| ErrorKind::AgentRead("shards", client.id().to_string()))?;
         for shard in shards.shards {
             let shard = Shard::new(cluster.to_string(), node.to_string(), shard);
-            self.process_shard(shard)?;
+            self.process_shard(shard, span)?;
         }
         Ok(())
     }
 }
 
 impl ShardFetcher {
-    fn process_shard(&self, shard: Shard) -> Result<()> {
+    fn process_shard(&self, shard: Shard, span: &mut Span) -> Result<()> {
         let cluster_id = shard.cluster_id.clone();
         let node_id = shard.node_id.clone();
         let shard_id = shard.shard_id.clone();
         let old = self
             .store
             .shard(cluster_id.clone(), node_id.clone(), shard_id.clone())
-            .get();
+            .get(span.context().clone());
         match old {
             Err(error) => Err(error)
                 .with_context(|_| ErrorKind::StoreRead("shard"))
                 .map_err(Error::from),
-            Ok(None) => self.process_shard_new(shard),
-            Ok(Some(old)) => self.process_shard_existing(shard, old),
+            Ok(None) => self.process_shard_new(shard, span),
+            Ok(Some(old)) => self.process_shard_existing(shard, old, span),
         }
     }
 
-    fn process_shard_existing(&self, shard: Shard, old: Shard) -> Result<()> {
+    fn process_shard_existing(&self, shard: Shard, old: Shard, span: &mut Span) -> Result<()> {
         // If anything other then offset or lag changed emit and event.
         if self.shard_changed(&shard, &old) {
             let event = Event::builder()
@@ -75,12 +75,12 @@ impl ShardFetcher {
         // ALWAYS persist the model, even unchanged, to clear the staleness state.
         self.store
             .persist()
-            .shard(shard)
+            .shard(shard, span.context().clone())
             .with_context(|_| ErrorKind::StoreWrite("shard update"))
             .map_err(Error::from)
     }
 
-    fn process_shard_new(&self, shard: Shard) -> Result<()> {
+    fn process_shard_new(&self, shard: Shard, span: &mut Span) -> Result<()> {
         let event = Event::builder().shard().shard_allocation_new(shard.clone());
         let code = event.code();
         self.events
@@ -88,7 +88,7 @@ impl ShardFetcher {
             .with_context(|_| ErrorKind::EventEmit(code))?;
         self.store
             .persist()
-            .shard(shard)
+            .shard(shard, span.context().clone())
             .with_context(|_| ErrorKind::StoreWrite("new shard"))
             .map_err(Error::from)
     }

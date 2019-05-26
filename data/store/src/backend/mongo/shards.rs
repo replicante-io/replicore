@@ -1,7 +1,12 @@
+use std::ops::Deref;
+use std::sync::Arc;
+
 use bson::ordered::OrderedDocument;
 use mongodb::db::ThreadedDatabase;
 use mongodb::Client;
 use mongodb::ThreadedClient;
+use opentracingrust::SpanContext;
+use opentracingrust::Tracer;
 
 use replicante_data_models::Shard;
 
@@ -31,16 +36,21 @@ fn aggregate_count_role(role: &'static str) -> OrderedDocument {
 pub struct Shards {
     client: Client,
     db: String,
+    tracer: Option<Arc<Tracer>>,
 }
 
 impl Shards {
-    pub fn new(client: Client, db: String) -> Shards {
-        Shards { client, db }
+    pub fn new<T>(client: Client, db: String, tracer: T) -> Shards
+    where
+        T: Into<Option<Arc<Tracer>>>,
+    {
+        let tracer = tracer.into();
+        Shards { client, db, tracer }
     }
 }
 
 impl ShardsInterface for Shards {
-    fn counts(&self, attrs: &ShardsAttribures) -> Result<ShardsCounts> {
+    fn counts(&self, attrs: &ShardsAttribures, span: Option<SpanContext>) -> Result<ShardsCounts> {
         // Let mongo figure out the counts with an aggregation.
         // Remember to count each shard only once across all nodes (and NOT once per node).
         let filter = doc! {"$match" => {
@@ -68,7 +78,12 @@ impl ShardsInterface for Shards {
 
         // Run aggrgation and grab the one and only (expected) result.
         let collection = self.client.db(&self.db).collection(COLLECTION_SHARDS);
-        let mut cursor = aggregate(collection, pipeline)?;
+        let mut cursor = aggregate(
+            collection,
+            pipeline,
+            span,
+            self.tracer.as_ref().map(|tracer| tracer.deref()),
+        )?;
         let counts: ShardsCounts = match cursor.next() {
             Some(counts) => counts?,
             None => {
@@ -86,11 +101,16 @@ impl ShardsInterface for Shards {
         Ok(counts)
     }
 
-    fn iter(&self, attrs: &ShardsAttribures) -> Result<Cursor<Shard>> {
+    fn iter(&self, attrs: &ShardsAttribures, span: Option<SpanContext>) -> Result<Cursor<Shard>> {
         let filter = doc! {"cluster_id" => &attrs.cluster_id};
         let collection = self.client.db(&self.db).collection(COLLECTION_SHARDS);
-        let cursor = find(collection, filter, None)?
-            .map(|result: Result<ShardDocument>| result.map(Shard::from));
+        let cursor = find(
+            collection,
+            filter,
+            span,
+            self.tracer.as_ref().map(|tracer| tracer.deref()),
+        )?
+        .map(|result: Result<ShardDocument>| result.map(Shard::from));
         Ok(Cursor(Box::new(cursor)))
     }
 }

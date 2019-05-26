@@ -35,7 +35,7 @@ impl Handler for Find {
         let clusters = self
             .store
             .legacy()
-            .find_clusters(query.to_string(), FIND_CLUSTERS_LIMIT)
+            .find_clusters(query.to_string(), FIND_CLUSTERS_LIMIT, None)
             .with_context(|_| ErrorKind::PrimaryStoreQuery("find_clusters"))
             .map_err(Error::from)?;
         let mut response = Vec::new();
@@ -81,7 +81,7 @@ impl Handler for Top {
         let clusters = self
             .store
             .legacy()
-            .top_clusters()
+            .top_clusters(None)
             .with_context(|_| ErrorKind::PrimaryStoreQuery("top_clusters"))
             .map_err(Error::from)?;
         let mut response = Vec::new();

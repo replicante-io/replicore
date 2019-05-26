@@ -43,8 +43,11 @@ impl Cluster {
     /// but we still have the state the node was in before the agent failed.
     /// Instead of deliting this state, which would otherwise make the node
     /// appear new when it comes back online, we mark it as stale.
-    pub fn mark_stale(&self) -> Result<()> {
-        self.cluster.mark_stale(&self.attrs)
+    pub fn mark_stale<S>(&self, span: S) -> Result<()>
+    where
+        S: Into<Option<SpanContext>>,
+    {
+        self.cluster.mark_stale(&self.attrs, span.into())
     }
 }
 

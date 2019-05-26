@@ -136,12 +136,14 @@ impl Store {
 
 impl StoreInterface for Store {
     fn agent(&self) -> AgentImpl {
-        let agent = self::agent::Agent::new(self.client.clone(), self.db.clone());
+        let agent =
+            self::agent::Agent::new(self.client.clone(), self.db.clone(), self.tracer.clone());
         AgentImpl::new(agent)
     }
 
     fn agents(&self) -> AgentsImpl {
-        let agents = self::agents::Agents::new(self.client.clone(), self.db.clone());
+        let agents =
+            self::agents::Agents::new(self.client.clone(), self.db.clone(), self.tracer.clone());
         AgentsImpl::new(agents)
     }
 
@@ -156,17 +158,19 @@ impl StoreInterface for Store {
     }
 
     fn legacy(&self) -> LegacyImpl {
-        let legacy = self::legacy::Legacy::new(self.client.clone(), self.db.clone());
+        let legacy =
+            self::legacy::Legacy::new(self.client.clone(), self.db.clone(), self.tracer.clone());
         LegacyImpl::new(legacy)
     }
 
     fn node(&self) -> NodeImpl {
-        let node = self::node::Node::new(self.client.clone(), self.db.clone());
+        let node = self::node::Node::new(self.client.clone(), self.db.clone(), self.tracer.clone());
         NodeImpl::new(node)
     }
 
     fn nodes(&self) -> NodesImpl {
-        let nodes = self::nodes::Nodes::new(self.client.clone(), self.db.clone());
+        let nodes =
+            self::nodes::Nodes::new(self.client.clone(), self.db.clone(), self.tracer.clone());
         NodesImpl::new(nodes)
     }
 
@@ -177,12 +181,14 @@ impl StoreInterface for Store {
     }
 
     fn shard(&self) -> ShardImpl {
-        let shard = self::shard::Shard::new(self.client.clone(), self.db.clone());
+        let shard =
+            self::shard::Shard::new(self.client.clone(), self.db.clone(), self.tracer.clone());
         ShardImpl::new(shard)
     }
 
     fn shards(&self) -> ShardsImpl {
-        let shards = self::shards::Shards::new(self.client.clone(), self.db.clone());
+        let shards =
+            self::shards::Shards::new(self.client.clone(), self.db.clone(), self.tracer.clone());
         ShardsImpl::new(shards)
     }
 }

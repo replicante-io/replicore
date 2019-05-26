@@ -1,10 +1,14 @@
 use std::collections::HashSet;
+use std::ops::Deref;
+use std::sync::Arc;
 
 use bson::Bson;
 use failure::ResultExt;
 use mongodb::db::ThreadedDatabase;
 use mongodb::Client;
 use mongodb::ThreadedClient;
+use opentracingrust::SpanContext;
+use opentracingrust::Tracer;
 
 use replicante_data_models::Node;
 
@@ -22,24 +26,34 @@ use super::document::NodeDocument;
 pub struct Nodes {
     client: Client,
     db: String,
+    tracer: Option<Arc<Tracer>>,
 }
 
 impl Nodes {
-    pub fn new(client: Client, db: String) -> Nodes {
-        Nodes { client, db }
+    pub fn new<T>(client: Client, db: String, tracer: T) -> Nodes
+    where
+        T: Into<Option<Arc<Tracer>>>,
+    {
+        let tracer = tracer.into();
+        Nodes { client, db, tracer }
     }
 }
 
 impl NodesInterface for Nodes {
-    fn iter(&self, attrs: &NodesAttribures) -> Result<Cursor<Node>> {
+    fn iter(&self, attrs: &NodesAttribures, span: Option<SpanContext>) -> Result<Cursor<Node>> {
         let filter = doc! {"cluster_id" => &attrs.cluster_id};
         let collection = self.client.db(&self.db).collection(COLLECTION_NODES);
-        let cursor = find(collection, filter, None)?
-            .map(|result: Result<NodeDocument>| result.map(Node::from));
+        let cursor = find(
+            collection,
+            filter,
+            span,
+            self.tracer.as_ref().map(|tracer| tracer.deref()),
+        )?
+        .map(|result: Result<NodeDocument>| result.map(Node::from));
         Ok(Cursor(Box::new(cursor)))
     }
 
-    fn kinds(&self, attrs: &NodesAttribures) -> Result<HashSet<String>> {
+    fn kinds(&self, attrs: &NodesAttribures, span: Option<SpanContext>) -> Result<HashSet<String>> {
         // Let mongo figure out the kinds with an aggregation.
         let filter = doc! {"$match" => {
             "cluster_id" => &attrs.cluster_id,
@@ -53,7 +67,12 @@ impl NodesInterface for Nodes {
 
         // Run aggrgation and grab the one and only (expected) result.
         let collection = self.client.db(&self.db).collection(COLLECTION_NODES);
-        let mut cursor = aggregate(collection, pipeline)?;
+        let mut cursor = aggregate(
+            collection,
+            pipeline,
+            span,
+            self.tracer.as_ref().map(|tracer| tracer.deref()),
+        )?;
         let kinds: Bson = match cursor.next() {
             None => return Ok(HashSet::new()),
             Some(kinds) => kinds?,

@@ -24,17 +24,17 @@ impl AgentFetcher {
         AgentFetcher { events, store }
     }
 
-    pub(crate) fn process_agent(&self, agent: Agent) -> Result<()> {
+    pub(crate) fn process_agent(&self, agent: Agent, span: &mut Span) -> Result<()> {
         let old = self
             .store
             .agent(agent.cluster_id.clone(), agent.host.clone())
-            .get();
+            .get(span.context().clone());
         match old {
             Err(error) => Err(error)
                 .with_context(|_| ErrorKind::StoreRead("agent"))
                 .map_err(Error::from),
-            Ok(None) => self.process_agent_new(agent),
-            Ok(Some(old)) => self.process_agent_existing(agent, old),
+            Ok(None) => self.process_agent_new(agent, span),
+            Ok(Some(old)) => self.process_agent_existing(agent, old, span),
         }
     }
 
@@ -52,19 +52,19 @@ impl AgentFetcher {
         let old = self
             .store
             .agent(info.cluster_id.clone(), info.host.clone())
-            .info();
+            .info(span.context().clone());
         match old {
             Err(error) => Err(error)
                 .with_context(|_| ErrorKind::StoreRead("agent info"))
                 .map_err(Error::from),
-            Ok(None) => self.process_agent_info_new(info),
-            Ok(Some(old)) => self.process_agent_info_existing(info, old),
+            Ok(None) => self.process_agent_info_new(info, span),
+            Ok(Some(old)) => self.process_agent_info_existing(info, old, span),
         }
     }
 }
 
 impl AgentFetcher {
-    fn process_agent_existing(&self, agent: Agent, old: Agent) -> Result<()> {
+    fn process_agent_existing(&self, agent: Agent, old: Agent, span: &mut Span) -> Result<()> {
         if agent == old {
             return Ok(());
         }
@@ -77,12 +77,12 @@ impl AgentFetcher {
         }
         self.store
             .persist()
-            .agent(agent)
+            .agent(agent, span.context().clone())
             .with_context(|_| ErrorKind::StoreWrite("agent update"))
             .map_err(Error::from)
     }
 
-    fn process_agent_new(&self, agent: Agent) -> Result<()> {
+    fn process_agent_new(&self, agent: Agent, span: &mut Span) -> Result<()> {
         let event = Event::builder()
             .agent()
             .agent_new(agent.cluster_id.clone(), agent.host.clone());
@@ -101,12 +101,17 @@ impl AgentFetcher {
             .with_context(|_| ErrorKind::EventEmit(code))?;
         self.store
             .persist()
-            .agent(agent)
+            .agent(agent, span.context().clone())
             .with_context(|_| ErrorKind::StoreWrite("new agent"))
             .map_err(Error::from)
     }
 
-    fn process_agent_info_existing(&self, agent: AgentInfo, old: AgentInfo) -> Result<()> {
+    fn process_agent_info_existing(
+        &self,
+        agent: AgentInfo,
+        old: AgentInfo,
+        span: &mut Span,
+    ) -> Result<()> {
         if agent != old {
             let event = Event::builder().agent().info().changed(old, agent.clone());
             let code = event.code();
@@ -117,12 +122,12 @@ impl AgentFetcher {
         // ALWAYS persist the model, even unchanged, to clear the staleness state.
         self.store
             .persist()
-            .agent_info(agent)
+            .agent_info(agent, span.context().clone())
             .with_context(|_| ErrorKind::StoreWrite("agent info update"))
             .map_err(Error::from)
     }
 
-    fn process_agent_info_new(&self, agent: AgentInfo) -> Result<()> {
+    fn process_agent_info_new(&self, agent: AgentInfo, span: &mut Span) -> Result<()> {
         let event = Event::builder().agent().info().info_new(agent.clone());
         let code = event.code();
         self.events
@@ -130,7 +135,7 @@ impl AgentFetcher {
             .with_context(|_| ErrorKind::EventEmit(code))?;
         self.store
             .persist()
-            .agent_info(agent)
+            .agent_info(agent, span.context().clone())
             .with_context(|_| ErrorKind::StoreWrite("new agent info"))
             .map_err(Error::from)
     }
