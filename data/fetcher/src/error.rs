@@ -73,5 +73,23 @@ pub enum ErrorKind {
     StoreWrite(&'static str),
 }
 
+impl ErrorKind {
+    /// Returns true if the error was specific to an agent and not the core system.
+    ///
+    /// For example: a connection error or an invalid response are agent specific errors
+    /// while database or events stream errors are about the platform.
+    pub fn is_agent(&self) -> bool {
+        match self {
+            ErrorKind::AgentConnect(_) => true,
+            ErrorKind::AgentRead(_, _) => true,
+            ErrorKind::ClusterDisplayNameDoesNotMatch(_, _, _) => true,
+            ErrorKind::ClusterIdDoesNotMatch(_, _, _) => true,
+            ErrorKind::EventEmit(_) => false,
+            ErrorKind::StoreRead(_) => false,
+            ErrorKind::StoreWrite(_) => false,
+        }
+    }
+}
+
 /// Short form alias for functions returning `Error`s.
 pub type Result<T> = ::std::result::Result<T, Error>;

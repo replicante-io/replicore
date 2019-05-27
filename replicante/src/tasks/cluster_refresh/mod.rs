@@ -2,6 +2,7 @@ use std::time::Duration;
 
 use failure::Fail;
 use failure::ResultExt;
+use opentracingrust::Log;
 use opentracingrust::Span;
 use slog::Logger;
 
@@ -128,6 +129,7 @@ impl Handler {
             return;
         }
         debug!(self.logger, "Emitting cluster snapshot"; "cluster" => name);
+        span.log(Log::new().log("stage", "snapshot"));
         let snapshotter = Snapshotter::new(name.into(), self.events.clone(), self.store.clone());
         if let Err(error) = snapshotter.run(span) {
             capture_fail!(

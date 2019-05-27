@@ -31,10 +31,7 @@ use replicante_data_models::AgentStatus;
 use replicante_data_models::ClusterDiscovery;
 use replicante_data_store::store::Store;
 use replicante_streams_events::EventsStream;
-use replicante_util_failure::capture_fail;
-use replicante_util_failure::failure_info;
 use replicante_util_failure::format_fail;
-use replicante_util_tracing::fail_span;
 
 mod agent;
 mod error;
@@ -158,7 +155,6 @@ impl Fetcher {
     /// If the refresh process encounters an agent error (invalid response or state,
     /// network issue, ...) the error is NOT propagated and is instead accounted for
     /// as part of the state refersh operation.
-    // TODO: separatelly handle agnet/remote errors.
     pub fn fetch(
         &self,
         cluster: ClusterDiscovery,
@@ -167,21 +163,10 @@ impl Fetcher {
     ) -> Result<()> {
         span.log(Log::new().log("stage", "fetch"));
         let _timer = FETCHER_DURATION.start_timer();
-        let result = self.fetch_checked(cluster, lock, span).map_err(|error| {
+        self.fetch_checked(cluster, lock, span).map_err(|error| {
             FETCHER_ERRORS_COUNT.inc();
             error
-        });
-        // TODO: propagate core errors.
-        if let Err(error) = result {
-            let error = fail_span(error, span);
-            capture_fail!(
-                &error,
-                self.logger,
-                "Failed to process cluster refresh";
-                failure_info(&error),
-            );
-        }
-        Ok(())
+        })
     }
 
     /// Wrapped version of `fetch` so stats can be accounted for once.
@@ -237,8 +222,10 @@ impl Fetcher {
             let message = format_fail(&error);
             agent.status = AgentStatus::AgentDown(message);
             self.agent.process_agent(agent, span)?;
-            // TODO: figure out which errors to propagate.
-            return Ok(());
+            if error.kind().is_agent() {
+                return Ok(());
+            }
+            return Err(error);
         };
 
         let result = self.node.process_node(&client, id_checker, span);
@@ -246,8 +233,10 @@ impl Fetcher {
             let message = format_fail(&error);
             agent.status = AgentStatus::NodeDown(message);
             self.agent.process_agent(agent, span)?;
-            // TODO: figure out which errors to propagate.
-            return Ok(());
+            if error.kind().is_agent() {
+                return Ok(());
+            }
+            return Err(error);
         };
 
         let result = self.shard.process_shards(&client, cluster, node, span);
@@ -255,8 +244,10 @@ impl Fetcher {
             let message = format_fail(&error);
             agent.status = AgentStatus::NodeDown(message);
             self.agent.process_agent(agent, span)?;
-            // TODO: figure out which errors to propagate.
-            return Ok(());
+            if error.kind().is_agent() {
+                return Ok(());
+            }
+            return Err(error);
         };
 
         self.agent.process_agent(agent, span)

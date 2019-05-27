@@ -5,6 +5,7 @@ use std::time::Duration;
 use failure::ResultExt;
 use failure::SyncFailure;
 use opentracingrust::SpanContext;
+use opentracingrust::StartOptions;
 use opentracingrust::Tracer;
 use reqwest::header::HeaderMap;
 use reqwest::Client as ReqwestClient;
@@ -19,6 +20,7 @@ use replicante_agent_models::Shards;
 use replicante_util_failure::capture_fail;
 use replicante_util_failure::failure_info;
 use replicante_util_tracing::carriers::reqwest::HeadersCarrier;
+use replicante_util_tracing::fail_span;
 
 use super::Client;
 use super::Error;
@@ -49,13 +51,41 @@ impl Client for HttpClient {
     fn agent_info(&self, span: Option<SpanContext>) -> Result<AgentInfo> {
         let endpoint = self.endpoint("/api/unstable/info/agent");
         let request = self.client.get(&endpoint);
-        self.perform(request, span)
+        let span = match (self.tracer.as_ref(), span) {
+            (Some(tracer), Some(parent)) => {
+                let options = StartOptions::default().child_of(parent);
+                let span = tracer
+                    .span_with_options("agent.client.http.info.agent", options)
+                    .auto_finish();
+                Some(span)
+            }
+            _ => None,
+        };
+        let context = span.as_ref().map(|span| span.context().clone());
+        self.perform(request, context).map_err(|error| match span {
+            None => error,
+            Some(mut span) => fail_span(error, span.as_mut()),
+        })
     }
 
     fn datastore_info(&self, span: Option<SpanContext>) -> Result<DatastoreInfo> {
         let endpoint = self.endpoint("/api/unstable/info/datastore");
         let request = self.client.get(&endpoint);
-        self.perform(request, span)
+        let span = match (self.tracer.as_ref(), span) {
+            (Some(tracer), Some(parent)) => {
+                let options = StartOptions::default().child_of(parent);
+                let span = tracer
+                    .span_with_options("agent.client.http.info.datastore", options)
+                    .auto_finish();
+                Some(span)
+            }
+            _ => None,
+        };
+        let context = span.as_ref().map(|span| span.context().clone());
+        self.perform(request, context).map_err(|error| match span {
+            None => error,
+            Some(mut span) => fail_span(error, span.as_mut()),
+        })
     }
 
     fn id(&self) -> &str {
@@ -65,7 +95,21 @@ impl Client for HttpClient {
     fn shards(&self, span: Option<SpanContext>) -> Result<Shards> {
         let endpoint = self.endpoint("/api/unstable/shards");
         let request = self.client.get(&endpoint);
-        self.perform(request, span)
+        let span = match (self.tracer.as_ref(), span) {
+            (Some(tracer), Some(parent)) => {
+                let options = StartOptions::default().child_of(parent);
+                let span = tracer
+                    .span_with_options("agent.client.http.shards", options)
+                    .auto_finish();
+                Some(span)
+            }
+            _ => None,
+        };
+        let context = span.as_ref().map(|span| span.context().clone());
+        self.perform(request, context).map_err(|error| match span {
+            None => error,
+            Some(mut span) => fail_span(error, span.as_mut()),
+        })
     }
 }
 
