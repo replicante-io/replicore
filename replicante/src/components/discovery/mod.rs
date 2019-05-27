@@ -1,7 +1,9 @@
+use std::sync::Arc;
 use std::time::Duration;
 
 use failure::ResultExt;
 use humthreads::Builder as ThreadBuilder;
+use opentracingrust::Tracer;
 use slog::Logger;
 
 use replicante_coordinator::Coordinator;
@@ -33,6 +35,7 @@ pub struct DiscoveryComponent {
     logger: Logger,
     snapshots_config: EventsSnapshotsConfig,
     tasks: Tasks,
+    tracer: Arc<Tracer>,
 }
 
 impl DiscoveryComponent {
@@ -51,6 +54,7 @@ impl DiscoveryComponent {
             logger,
             snapshots_config,
             tasks: interfaces.tasks.clone(),
+            tracer: interfaces.tracing.tracer(),
         }
     }
 
@@ -63,6 +67,7 @@ impl DiscoveryComponent {
         let snapshots_config = self.snapshots_config.clone();
         let tasks = self.tasks.clone();
         let term = self.config.term;
+        let tracer = Arc::clone(&self.tracer);
         let (shutdown_sender, shutdown_receiver) = LoopingElectionOpts::shutdown_channel();
 
         info!(self.logger, "Starting Agent Discovery thread");
@@ -71,8 +76,14 @@ impl DiscoveryComponent {
             .spawn(move |scope| {
                 scope.activity("initialising agent discovery election");
                 let election = coordinator.election("discovery");
-                let logic =
-                    DiscoveryElection::new(config, snapshots_config, logger.clone(), tasks, scope);
+                let logic = DiscoveryElection::new(
+                    config,
+                    snapshots_config,
+                    logger.clone(),
+                    tasks,
+                    scope,
+                    tracer,
+                );
                 let opts = LoopingElectionOpts::new(election, logic)
                     .loop_delay(interval)
                     .shutdown_receiver(shutdown_receiver);

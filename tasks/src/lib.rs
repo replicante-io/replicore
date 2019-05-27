@@ -4,6 +4,7 @@ extern crate humthreads;
 #[macro_use]
 extern crate lazy_static;
 extern crate num_cpus;
+extern crate opentracingrust;
 extern crate prometheus;
 extern crate rdkafka;
 extern crate serde;

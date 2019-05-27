@@ -199,7 +199,7 @@ pub fn run() -> Result<bool> {
     });
     let error = match &result {
         Err(_) => true,
-        Ok(clean) => *clean,
+        Ok(clean) => !*clean,
     };
     warn!(logger, "Shutdown: system exiting now"; "error" => error);
     result

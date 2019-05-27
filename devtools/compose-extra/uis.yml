@@ -29,7 +29,7 @@ services:
     depends_on:
       - kafka-rest
     environment:
-      KAFKA_REST_PROXY_URL: 'http://172.128.0.254:8082'
+      KAFKA_REST_PROXY_URL: 'http://172.128.0.253:8082'
       PROXY: 'true'
     hostname: 'kafka-webui'
     image: 'landoop/kafka-topics-ui'

@@ -181,11 +181,22 @@ impl Handler {
 
 impl TaskHandler<ReplicanteQueues> for Handler {
     fn handle(&self, task: Task) {
-        let mut span = self
-            .tracing
-            .tracer()
-            .span("tasks::cluster_refresh")
-            .auto_finish();
+        let tracer = self.tracing.tracer();
+        let mut span = tracer.span("tasks.cluster_refresh").auto_finish();
+        // If the task is carring a tracing context set it as the parent span.
+        match task.trace(&tracer) {
+            Ok(Some(parent)) => span.follows(parent),
+            Ok(None) => (),
+            Err(error) => {
+                let error = failure::SyncFailure::new(error);
+                capture_fail!(
+                    &error,
+                    self.logger,
+                    "Unable to extract trace context from task";
+                    failure_info(&error),
+                );
+            }
+        };
         let result = self
             .do_handle(&task, &mut span)
             .map_err(|error| fail_span(error, &mut span));

@@ -3,6 +3,10 @@ use std::sync::Arc;
 use std::thread::panicking;
 
 use failure::ResultExt;
+use opentracingrust::ExtractFormat;
+use opentracingrust::Result as OTResult;
+use opentracingrust::SpanContext;
+use opentracingrust::Tracer;
 use serde::Deserialize;
 
 use super::metrics::TASK_ACK_ERRORS;
@@ -60,6 +64,15 @@ impl<Q: TaskQueue> Task<Q> {
     /// Access the message body
     pub fn message(&self) -> &[u8] {
         &self.message
+    }
+
+    /// Extract a span context from the task, if present.
+    ///
+    /// The extracted span context can be used by handlers to
+    /// trace the larger task across processes/systems.
+    pub fn trace(&self, tracer: &Tracer) -> OTResult<Option<SpanContext>> {
+        let format = ExtractFormat::HttpHeaders(Box::new(&self.headers));
+        tracer.extract(format)
     }
 }
 

@@ -1311,7 +1311,7 @@ dependencies = [
 
 [[package]]
 name = "opentracingrust_zipkin"
-version = "0.1.5"
+version = "0.1.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "byteorder 1.3.1 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -1472,14 +1472,14 @@ dependencies = [
  "lazy_static 1.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "libc 0.2.55 (registry+https://github.com/rust-lang/crates.io-index)",
  "procinfo 0.3.1 (registry+https://github.com/rust-lang/crates.io-index)",
- "protobuf 2.6.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "protobuf 2.6.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "quick-error 1.2.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "spin 0.4.10 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
 name = "protobuf"
-version = "2.6.0"
+version = "2.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
@@ -1952,6 +1952,7 @@ dependencies = [
  "humthreads 0.1.3 (registry+https://github.com/rust-lang/crates.io-index)",
  "lazy_static 1.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "num_cpus 1.10.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "opentracingrust 0.3.3 (registry+https://github.com/rust-lang/crates.io-index)",
  "prometheus 0.5.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "rdkafka 0.20.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "replicante_util_failure 0.1.0",
@@ -2009,7 +2010,7 @@ dependencies = [
  "humthreads 0.1.3 (registry+https://github.com/rust-lang/crates.io-index)",
  "iron 0.6.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "opentracingrust 0.3.3 (registry+https://github.com/rust-lang/crates.io-index)",
- "opentracingrust_zipkin 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)",
+ "opentracingrust_zipkin 0.1.6 (registry+https://github.com/rust-lang/crates.io-index)",
  "replicante_util_failure 0.1.0",
  "replicante_util_upkeep 0.1.0",
  "reqwest 0.9.17 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -3180,7 +3181,7 @@ dependencies = [
 "checksum openssl-probe 0.1.2 (registry+https://github.com/rust-lang/crates.io-index)" = "77af24da69f9d9341038eba93a073b1fdaaa1b788221b00a69bce9e762cb32de"
 "checksum openssl-sys 0.9.47 (registry+https://github.com/rust-lang/crates.io-index)" = "75bdd6dbbb4958d38e47a1d2348847ad1eb4dc205dc5d37473ae504391865acc"
 "checksum opentracingrust 0.3.3 (registry+https://github.com/rust-lang/crates.io-index)" = "8ac9dab3941339f602bce2fea8fe4c2805ce9bb92081f96cfd298e64bef8db9a"
-"checksum opentracingrust_zipkin 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)" = "701d4d744a373f08b24a996c96a54af29b3233e6dfa0e092cc5f71b25485d088"
+"checksum opentracingrust_zipkin 0.1.6 (registry+https://github.com/rust-lang/crates.io-index)" = "40d3120b809d50ae9a50f30a2ed949c21320a80ac306b230463cf770afee6a65"
 "checksum ordered-float 0.5.2 (registry+https://github.com/rust-lang/crates.io-index)" = "7eb5259643245d3f292c7a146b2df53bba24d7eab159410e648eb73dc164669d"
 "checksum owning_ref 0.4.0 (registry+https://github.com/rust-lang/crates.io-index)" = "49a4b8ea2179e6a2e27411d3bca09ca6dd630821cf6894c6c7c8467a8ee7ef13"
 "checksum parking_lot 0.7.1 (registry+https://github.com/rust-lang/crates.io-index)" = "ab41b4aed082705d1056416ae4468b6ea99d52599ecf3169b00088d43113e337"
@@ -3197,7 +3198,7 @@ dependencies = [
 "checksum proc-macro2 0.4.30 (registry+https://github.com/rust-lang/crates.io-index)" = "cf3d2011ab5c909338f7887f4fc896d35932e29146c12c8d01da6b22a80ba759"
 "checksum procinfo 0.3.1 (registry+https://github.com/rust-lang/crates.io-index)" = "f42e8578852a3306838981aedad8c5642ba794929aa12af0c9eb6c072b77af6c"
 "checksum prometheus 0.5.0 (registry+https://github.com/rust-lang/crates.io-index)" = "48e3f33ff50a88c73ad8458fa6c22931aa7a6e19bb4a95d62816618c153b3f02"
-"checksum protobuf 2.6.0 (registry+https://github.com/rust-lang/crates.io-index)" = "3959be8d6250192f80ef056c0a4aaaeaff8a25e904e6e7a0f5285cb1a061835f"
+"checksum protobuf 2.6.1 (registry+https://github.com/rust-lang/crates.io-index)" = "a151c11a92df0059d6ab446fafa3b21a1210aad4bc2293e1c946e8132b10db01"
 "checksum publicsuffix 1.5.2 (registry+https://github.com/rust-lang/crates.io-index)" = "5afecba86dcf1e4fd610246f89899d1924fe12e1e89f555eb7c7f710f3c5ad1d"
 "checksum quick-error 1.2.2 (registry+https://github.com/rust-lang/crates.io-index)" = "9274b940887ce9addde99c4eee6b5c44cc494b182b97e73dc8ffdcb3397fd3f0"
 "checksum quote 0.6.12 (registry+https://github.com/rust-lang/crates.io-index)" = "faf4799c5d274f3868a4aae320a0a182cbd2baee377b378f080e16a23e9d80db"

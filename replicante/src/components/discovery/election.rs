@@ -1,4 +1,7 @@
+use std::sync::Arc;
+
 use humthreads::ThreadScope;
+use opentracingrust::Tracer;
 use slog::Logger;
 
 use replicante_agent_discovery::discover;
@@ -29,6 +32,7 @@ pub struct DiscoveryElection {
     logger: Logger,
     tasks: Tasks,
     thread: ThreadScope,
+    tracer: Arc<Tracer>,
 }
 
 impl DiscoveryElection {
@@ -38,6 +42,7 @@ impl DiscoveryElection {
         logger: Logger,
         tasks: Tasks,
         thread: ThreadScope,
+        tracer: Arc<Tracer>,
     ) -> DiscoveryElection {
         DiscoveryElection {
             discovery_config,
@@ -45,6 +50,7 @@ impl DiscoveryElection {
             logger,
             tasks,
             thread,
+            tracer,
         }
     }
 }
@@ -55,13 +61,24 @@ impl DiscoveryElection {
         let cluster_id = cluster.cluster_id.clone();
         let snapshot = self.emissions.snapshot(cluster_id.clone());
         let payload = ClusterRefreshPayload::new(cluster, snapshot);
-        let task = TaskRequest::new(ReplicanteQueues::ClusterRefresh);
+        let mut task = TaskRequest::new(ReplicanteQueues::ClusterRefresh);
+        let span = self.tracer.span("cluster.discovery").auto_finish();
+        if let Err(error) = task.trace(span.context(), &self.tracer) {
+            let error = failure::SyncFailure::new(error);
+            capture_fail!(
+                &error,
+                self.logger,
+                "Unable to inject trace context in task request";
+                "cluster_id" => &cluster_id,
+                failure_info(&error),
+            );
+        }
         if let Err(error) = self.tasks.request(task, payload) {
             capture_fail!(
                 &error,
                 self.logger,
                 "Failed to request cluster refresh";
-                "cluster_id" => cluster_id,
+                "cluster_id" => &cluster_id,
                 failure_info(&error),
             );
         };

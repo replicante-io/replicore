@@ -2,6 +2,10 @@ use std::collections::HashMap;
 use std::sync::Arc;
 
 use failure::ResultExt;
+use opentracingrust::InjectFormat;
+use opentracingrust::Result as OTResult;
+use opentracingrust::SpanContext;
+use opentracingrust::Tracer;
 use serde::Serialize;
 
 use super::config::Backend as BackendConfig;
@@ -42,6 +46,11 @@ impl<Q: TaskQueue> TaskRequest<Q> {
         }
     }
 
+    /// Access the ID of this task.
+    pub fn id(&self) -> &TaskId {
+        &self.id
+    }
+
     /// Create a new task for the given queue and carring the given message.
     pub fn new(queue: Q) -> TaskRequest<Q> {
         TaskRequest {
@@ -51,14 +60,21 @@ impl<Q: TaskQueue> TaskRequest<Q> {
         }
     }
 
-    /// Access the ID of this task.
-    pub fn id(&self) -> &TaskId {
-        &self.id
-    }
-
     /// Access information about the task's queue.
     pub fn queue(&self) -> &Q {
         &self.queue
+    }
+
+    /// Inject a span context into the task request.
+    ///
+    /// Tasks handlers can then extract the span context to provide a full
+    /// trace of the larger task across processes/systems.
+    pub fn trace(&mut self, context: &SpanContext, tracer: &Tracer) -> OTResult<()> {
+        let mut headers = HashMap::new();
+        let format = InjectFormat::HttpHeaders(Box::new(&mut headers));
+        tracer.inject(context, format)?;
+        self.headers(headers);
+        Ok(())
     }
 }
 
