@@ -2,6 +2,8 @@ use std::sync::atomic::AtomicBool;
 use std::sync::atomic::Ordering;
 use std::sync::Arc;
 
+use opentracingrust::SpanContext;
+
 use super::super::backend::NonBlockingLockBehaviour;
 use super::super::Result;
 
@@ -37,9 +39,12 @@ impl NonBlockingLock {
 
 impl NonBlockingLock {
     /// Attempt to acquire the named lock.
-    pub fn acquire(&mut self) -> Result<()> {
+    pub fn acquire<S>(&mut self, span: S) -> Result<()>
+    where
+        S: Into<Option<SpanContext>>,
+    {
         NB_LOCK_ACQUIRE_TOTAL.inc();
-        self.behaviour.acquire().map_err(|error| {
+        self.behaviour.acquire(span.into()).map_err(|error| {
             NB_LOCK_ACQUIRE_FAIL.inc();
             error
         })
@@ -51,9 +56,12 @@ impl NonBlockingLock {
     }
 
     /// Attempt to release the named lock.
-    pub fn release(&mut self) -> Result<()> {
+    pub fn release<S>(&mut self, span: S) -> Result<()>
+    where
+        S: Into<Option<SpanContext>>,
+    {
         NB_LOCK_RELEASE_TOTAL.inc();
-        self.behaviour.release().map_err(|error| {
+        self.behaviour.release(span.into()).map_err(|error| {
             NB_LOCK_RELEASE_FAIL.inc();
             error
         })
@@ -108,7 +116,8 @@ mod tests {
         let mut lock = coordinator.non_blocking_lock("some/test/lock");
         let mock = mock_coordinator.non_blocking_lock("some/test/lock");
         assert_eq!(mock.locked(), false);
-        lock.acquire().expect("lock to be acquired successfully");
+        lock.acquire(None)
+            .expect("lock to be acquired successfully");
         assert_eq!(mock.locked(), true);
     }
 
@@ -120,9 +129,11 @@ mod tests {
         let mut lock2 = coordinator.non_blocking_lock("some/test/lock");
         let mock = mock_coordinator.non_blocking_lock("some/test/lock");
         assert_eq!(mock.locked(), false);
-        lock1.acquire().expect("lock to be acquired successfully");
+        lock1
+            .acquire(None)
+            .expect("lock to be acquired successfully");
         assert_eq!(mock.locked(), true);
-        match lock2.acquire() {
+        match lock2.acquire(None) {
             Ok(()) => panic!("lock acquired twice"),
             Err(error) => match error.kind() {
                 ErrorKind::LockHeld(_, _) => (),
@@ -139,10 +150,12 @@ mod tests {
         let mock = mock_coordinator.non_blocking_lock("some/test/lock");
         assert_eq!(mock.locked(), false);
         assert_eq!(false, lock.check());
-        lock.acquire().expect("lock to be acquired successfully");
+        lock.acquire(None)
+            .expect("lock to be acquired successfully");
         assert_eq!(mock.locked(), true);
         assert_eq!(true, lock.check());
-        lock.release().expect("lock to be released successfully");
+        lock.release(None)
+            .expect("lock to be released successfully");
         assert_eq!(mock.locked(), false);
         assert_eq!(false, lock.check());
     }
@@ -154,9 +167,11 @@ mod tests {
         let mut lock = coordinator.non_blocking_lock("some/test/lock");
         let mock = mock_coordinator.non_blocking_lock("some/test/lock");
         assert_eq!(mock.locked(), false);
-        lock.acquire().expect("lock to be acquired successfully");
+        lock.acquire(None)
+            .expect("lock to be acquired successfully");
         assert_eq!(mock.locked(), true);
-        lock.release().expect("lock to be released successfully");
+        lock.release(None)
+            .expect("lock to be released successfully");
         assert_eq!(mock.locked(), false);
     }
 
@@ -168,7 +183,8 @@ mod tests {
         {
             let mut lock = coordinator.non_blocking_lock("some/test/lock");
             assert_eq!(mock.locked(), false);
-            lock.acquire().expect("lock to be acquired successfully");
+            lock.acquire(None)
+                .expect("lock to be acquired successfully");
             assert_eq!(mock.locked(), true);
         }
         assert_eq!(mock.locked(), false);
@@ -181,11 +197,13 @@ mod tests {
         let mut lock = coordinator.non_blocking_lock("some/test/lock");
         let mock = mock_coordinator.non_blocking_lock("some/test/lock");
         assert_eq!(mock.locked(), false);
-        lock.acquire().expect("lock to be acquired successfully");
+        lock.acquire(None)
+            .expect("lock to be acquired successfully");
         assert_eq!(mock.locked(), true);
-        lock.release().expect("lock to be released successfully");
+        lock.release(None)
+            .expect("lock to be released successfully");
         assert_eq!(mock.locked(), false);
-        match lock.release() {
+        match lock.release(None) {
             Ok(()) => panic!("lock released twice"),
             Err(error) => match error.kind() {
                 ErrorKind::LockNotHeld(_, _) => (),

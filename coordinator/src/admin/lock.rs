@@ -61,7 +61,7 @@ mod tests {
         let mock_coordinator = mock_coordinator();
         let coordinator = mock_coordinator.mock();
         let mut held_lock = coordinator.non_blocking_lock("some/test/lock");
-        held_lock.acquire().unwrap();
+        held_lock.acquire(None).unwrap();
         let admin = mock_coordinator.admin();
         let mut locks = admin.non_blocking_locks();
         let mut lock = locks.next().unwrap().unwrap();
@@ -77,7 +77,7 @@ mod tests {
         let coordinator = mock_coordinator.mock();
         let node_id = coordinator.node_id().clone();
         let mut held_lock = coordinator.non_blocking_lock("some/test/lock");
-        held_lock.acquire().unwrap();
+        held_lock.acquire(None).unwrap();
         let admin = mock_coordinator.admin();
         let mut locks = admin.non_blocking_locks();
         let lock = locks.next().unwrap().unwrap();

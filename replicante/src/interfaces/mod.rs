@@ -44,8 +44,10 @@ impl Interfaces {
     #[allow(clippy::needless_pass_by_value)]
     pub fn new(config: &Config, logger: Logger, upkeep: &mut Upkeep) -> Result<Interfaces> {
         let metrics = Metrics::new();
-        let coordinator = Coordinator::new(config.coordinator.clone(), logger.clone())
-            .with_context(|_| ErrorKind::InterfaceInit("coordinator"))?;
+        let tracing = Tracing::new(config.tracing.clone(), logger.clone(), upkeep)?;
+        let coordinator =
+            Coordinator::new(config.coordinator.clone(), logger.clone(), tracing.tracer())
+                .with_context(|_| ErrorKind::InterfaceInit("coordinator"))?;
         let api = API::new(
             config.api.clone(),
             config
@@ -57,7 +59,6 @@ impl Interfaces {
             logger.clone(),
             &metrics,
         );
-        let tracing = Tracing::new(config.tracing.clone(), logger.clone(), upkeep)?;
         let store = Store::make(config.storage.clone(), logger.clone(), tracing.tracer())
             .with_context(|_| ErrorKind::ClientInit("store"))?;
         let streams = Streams::new(config, logger.clone(), store.clone())?;

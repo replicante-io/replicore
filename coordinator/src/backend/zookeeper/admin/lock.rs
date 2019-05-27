@@ -62,7 +62,7 @@ impl Iterator for ZookeeperNBLocks {
             .as_mut()
             .expect("ZookeeperNBLocks::locks must be Some(Vec)");
         while let Some(path) = locks.pop() {
-            let lock = Client::get_data(&keeper, &path, false);
+            let lock = Client::get_data(&keeper, &path, false, None, None);
             let lock = match lock {
                 Ok((lock, _)) => lock,
                 Err(ZkError::NoNode) => continue,
@@ -101,7 +101,7 @@ pub struct ZookeeperNBLBehaviour {
 impl NonBlockingLockAdminBehaviour for ZookeeperNBLBehaviour {
     fn force_release(&mut self) -> Result<()> {
         let keeper = self.client.get()?;
-        match Client::delete(&keeper, &self.path, None) {
+        match Client::delete(&keeper, &self.path, None, None, None) {
             Ok(()) => (),
             Err(ZkError::NoNode) => (),
             Err(error) => {

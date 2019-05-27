@@ -1,5 +1,6 @@
 use std::sync::Arc;
 
+use opentracingrust::Tracer;
 use slog::Logger;
 
 use super::backend;
@@ -30,7 +31,10 @@ pub use self::looping_election::ShutdownSender;
 pub struct Coordinator(Arc<Backend>);
 
 impl Coordinator {
-    pub fn new(config: Config, logger: Logger) -> Result<Coordinator> {
+    pub fn new<T>(config: Config, logger: Logger, tracer: T) -> Result<Coordinator>
+    where
+        T: Into<Option<Arc<Tracer>>>,
+    {
         let node_id = {
             let mut node = NodeId::new();
             node.extra(config.node_attributes);
@@ -38,7 +42,7 @@ impl Coordinator {
         };
         let backend = match config.backend {
             BackendConfig::Zookeeper(zookeeper) => Arc::new(backend::zookeeper::Zookeeper::new(
-                node_id, zookeeper, logger,
+                node_id, zookeeper, logger, tracer,
             )?),
         };
         Ok(Coordinator(backend))
@@ -53,7 +57,10 @@ impl Coordinator {
 
 impl Coordinator {
     /// Election for a single primary with secondaries ready to take over.
-    pub fn election<S: Into<String>>(&self, id: S) -> Election {
+    pub fn election<S>(&self, id: S) -> Election
+    where
+        S: Into<String>,
+    {
         self.0.election(id.into())
     }
 
@@ -73,7 +80,10 @@ impl Coordinator {
     ///
     /// If a lock is lost (the coordinator is no longer reachable or thinks we no longer
     /// hold the lock for any reason) the state is changed and applications can check this.
-    pub fn non_blocking_lock<S: Into<String>>(&self, lock: S) -> NonBlockingLock {
+    pub fn non_blocking_lock<S>(&self, lock: S) -> NonBlockingLock
+    where
+        S: Into<String>,
+    {
         self.0.non_blocking_lock(lock.into())
     }
 }

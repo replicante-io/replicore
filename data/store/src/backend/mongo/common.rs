@@ -36,7 +36,7 @@ where
     let mut span = match (tracer, span) {
         (Some(tracer), Some(context)) => {
             let opts = StartOptions::default().child_of(context);
-            let mut span = tracer.span_with_options("aggregate", opts);
+            let mut span = tracer.span_with_options("store.primary.mongodb.aggregate", opts);
             span.tag("namespace", collection.namespace.clone());
             span.tag(
                 "pipeline",
@@ -110,7 +110,7 @@ where
     let mut span = match (tracer, span) {
         (Some(tracer), Some(context)) => {
             let opts = StartOptions::default().child_of(context);
-            let mut span = tracer.span_with_options("find", opts);
+            let mut span = tracer.span_with_options("store.primary.mongodb.find", opts);
             span.tag(
                 "filter",
                 serde_json::to_string(&filter)
@@ -177,7 +177,7 @@ where
     let mut span = match (tracer, span) {
         (Some(tracer), Some(context)) => {
             let options = StartOptions::default().child_of(context);
-            let mut span = tracer.span_with_options("findOne", options);
+            let mut span = tracer.span_with_options("store.primary.mongodb.findOne", options);
             span.tag(
                 "filter",
                 serde_json::to_string(&filter)
@@ -232,7 +232,7 @@ pub fn insert_one(
     let mut span = match (tracer, span) {
         (Some(tracer), Some(context)) => {
             let opts = StartOptions::default().child_of(context);
-            let mut span = tracer.span_with_options("insertOne", opts);
+            let mut span = tracer.span_with_options("store.primary.mongodb.insertOne", opts);
             span.tag(
                 "document",
                 serde_json::to_string(&document)
@@ -278,7 +278,7 @@ pub fn replace_one(
     let mut span = match (tracer, span) {
         (Some(tracer), Some(context)) => {
             let options = StartOptions::default().child_of(context);
-            let mut span = tracer.span_with_options("replaceOne", options);
+            let mut span = tracer.span_with_options("store.primary.mongodb.replaceOne", options);
             span.tag(
                 "filter",
                 serde_json::to_string(&filter)
@@ -327,7 +327,7 @@ pub fn update_many(
     let mut span = match (tracer, span) {
         (Some(tracer), Some(context)) => {
             let options = StartOptions::default().child_of(context);
-            let mut span = tracer.span_with_options("updateMany", options);
+            let mut span = tracer.span_with_options("store.primary.mongodb.updateMany", options);
             span.tag(
                 "filter",
                 serde_json::to_string(&filter)

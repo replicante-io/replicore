@@ -82,7 +82,7 @@ impl Handler {
         let mut lock = self
             .coordinator
             .non_blocking_lock(format!("cluster_refresh/{}", discovery.cluster_id));
-        match lock.acquire() {
+        match lock.acquire(span.context().clone()) {
             Ok(()) => (),
             Err(error) => {
                 if let ::replicante_coordinator::ErrorKind::LockHeld(_, owner) = error.kind() {
@@ -118,7 +118,8 @@ impl Handler {
 
         // Done.
         timer.observe_duration();
-        lock.release().context(ErrorKind::Coordination)?;
+        lock.release(span.context().clone())
+            .context(ErrorKind::Coordination)?;
         info!(self.logger, "Cluster state refresh completed"; "cluster_id" => cluster_id);
         Ok(())
     }

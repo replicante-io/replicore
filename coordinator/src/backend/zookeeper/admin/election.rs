@@ -90,7 +90,7 @@ impl ZooKeeperElectionAdmin {
     /// Model an election rooted at the given path.
     pub fn from_path(client: Arc<Client>, path: &str) -> Result<Option<Election>> {
         let keeper = client.get()?;
-        let info = match Client::get_data(&keeper, &path, false) {
+        let info = match Client::get_data(&keeper, &path, false, None, None) {
             Ok((info, _)) => info,
             Err(ZkError::NoNode) => return Ok(None),
             Err(error) => {
@@ -140,7 +140,7 @@ impl ElectionAdminBehaviour for ZooKeeperElectionAdmin {
         };
         let path = format!("{}/{}", self.path, primary);
         let keeper = self.client.get()?;
-        let payload = match Client::get_data(&keeper, &path, false) {
+        let payload = match Client::get_data(&keeper, &path, false, None, None) {
             Ok((payload, _)) => payload,
             Err(ZkError::NoNode) => return Ok(None),
             Err(error) => {
@@ -183,7 +183,8 @@ impl ElectionAdminBehaviour for ZooKeeperElectionAdmin {
         };
         let path = format!("{}/{}", &self.path, primary);
         let keeper = self.client.get()?;
-        Client::delete(&keeper, &path, None).context(ErrorKind::Backend("election step-down"))?;
+        Client::delete(&keeper, &path, None, None, None)
+            .context(ErrorKind::Backend("election step-down"))?;
         Ok(true)
     }
 }

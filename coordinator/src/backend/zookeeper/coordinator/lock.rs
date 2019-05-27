@@ -1,9 +1,12 @@
+use std::ops::Deref;
 use std::sync::atomic::AtomicBool;
 use std::sync::atomic::Ordering;
 use std::sync::Arc;
 use std::sync::Mutex;
 
 use failure::ResultExt;
+use opentracingrust::SpanContext;
+use opentracingrust::Tracer;
 use slog::Logger;
 
 use zookeeper::Acl;
@@ -30,9 +33,6 @@ use super::super::client::Client;
 use super::super::constants::PREFIX_LOCK;
 use super::super::metrics::ZOO_NB_LOCK_DELETED;
 use super::super::metrics::ZOO_NB_LOCK_LOST;
-use super::super::metrics::ZOO_OP_DURATION;
-use super::super::metrics::ZOO_OP_ERRORS_COUNT;
-use super::super::metrics::ZOO_TIMEOUTS_COUNT;
 use super::super::NBLockInfo;
 
 /// Zookeeper non-blocking lock behaviour code.
@@ -40,15 +40,20 @@ pub struct ZookeeperNBLock {
     context: NblCallbackContext,
     listener_id: Option<Subscription>,
     payload: NBLockInfo,
+    tracer: Option<Arc<Tracer>>,
 }
 
 impl ZookeeperNBLock {
-    pub fn new(
+    pub fn new<T>(
         client: Arc<Client>,
         lock: String,
         owner: NodeId,
         logger: Logger,
-    ) -> ZookeeperNBLock {
+        tracer: T,
+    ) -> ZookeeperNBLock
+    where
+        T: Into<Option<Arc<Tracer>>>,
+    {
         let path = Client::path_from_key(PREFIX_LOCK, &lock);
         let payload = NBLockInfo {
             name: lock.clone(),
@@ -61,10 +66,12 @@ impl ZookeeperNBLock {
             path,
             state,
         };
+        let tracer = tracer.into();
         ZookeeperNBLock {
             context,
             listener_id: None,
             payload,
+            tracer,
         }
     }
 }
@@ -156,29 +163,22 @@ impl ZookeeperNBLock {
 
 impl ZookeeperNBLock {
     /// Create the lock znode or fail if the lock is taken.
-    fn create(&self, keeper: &ZooKeeper, path: &str) -> Result<()> {
+    fn create(&self, keeper: &ZooKeeper, path: &str, span: Option<SpanContext>) -> Result<()> {
         let data = serde_json::to_vec(&self.payload)
             .with_context(|_| ErrorKind::Encode("zookeeper non-blocking lock"))?;
-        let timer = ZOO_OP_DURATION.with_label_values(&["create"]).start_timer();
-        let result = keeper
-            .create(
-                path,
-                data,
-                Acl::read_unsafe().clone(),
-                CreateMode::Ephemeral,
-            )
-            .map_err(|error| {
-                ZOO_OP_ERRORS_COUNT.with_label_values(&["create"]).inc();
-                if error == ZkError::OperationTimeout {
-                    ZOO_TIMEOUTS_COUNT.inc();
-                }
-                error
-            });
-        timer.observe_duration();
+        let result = Client::create(
+            keeper,
+            path,
+            data,
+            Acl::read_unsafe().clone(),
+            CreateMode::Ephemeral,
+            span.clone(),
+            self.tracer.as_ref().map(|tracer| tracer.deref()),
+        );
         match result {
             Ok(_) => (),
             Err(ZkError::NodeExists) => {
-                let payload = self.read(keeper, path)?;
+                let payload = self.read(keeper, path, span)?;
                 let payload: NBLockInfo = serde_json::from_slice(&payload)
                     .with_context(|_| ErrorKind::Decode("zookeeper non-blocking lock"))?;
                 return Err(
@@ -193,9 +193,15 @@ impl ZookeeperNBLock {
     }
 
     /// Read the content of a znode.
-    fn read(&self, keeper: &ZooKeeper, path: &str) -> Result<Vec<u8>> {
-        let (data, _) = Client::get_data(keeper, path, false)
-            .with_context(|_| ErrorKind::Backend("lock read"))?;
+    fn read(&self, keeper: &ZooKeeper, path: &str, span: Option<SpanContext>) -> Result<Vec<u8>> {
+        let (data, _) = Client::get_data(
+            keeper,
+            path,
+            false,
+            span,
+            self.tracer.as_ref().map(|tracer| tracer.deref()),
+        )
+        .with_context(|_| ErrorKind::Backend("lock read"))?;
         Ok(data)
     }
 
@@ -215,7 +221,7 @@ impl NonBlockingLockBehaviour for ZookeeperNBLock {
     ///
     /// # Panics
     /// If attempting to acquire the lock while it is acquired.
-    fn acquire(&mut self) -> Result<()> {
+    fn acquire(&mut self, span: Option<SpanContext>) -> Result<()> {
         let (acquired, _, version) = self.context.state.inspect();
         if acquired {
             panic!(
@@ -234,14 +240,23 @@ impl NonBlockingLockBehaviour for ZookeeperNBLock {
 
         // Create ephimeral node for the lock.
         let dir = Client::container_path(&self.context.path);
-        Client::mkcontaner(&keeper, &dir)?;
-        self.create(&keeper, &self.context.path)?;
+        Client::mkcontaner(
+            &keeper,
+            &dir,
+            span.clone(),
+            self.tracer.as_ref().map(|tracer| tracer.deref()),
+        )?;
+        self.create(&keeper, &self.context.path, span.clone())?;
 
         // Check node and install delete + disconnect watcher.
         let context = self.context.clone();
-        let stats = Client::exists_w(&keeper, &self.context.path, move |event| {
-            ZookeeperNBLock::callback_event(&context, &event);
-        })
+        let stats = Client::exists_w(
+            &keeper,
+            &self.context.path,
+            move |event| ZookeeperNBLock::callback_event(&context, &event),
+            span,
+            self.tracer.as_ref().map(|tracer| tracer.deref()),
+        )
         .with_context(|_| ErrorKind::Backend("lock watching"))?;
         let stats = match stats {
             Some(stats) => stats,
@@ -254,7 +269,7 @@ impl NonBlockingLockBehaviour for ZookeeperNBLock {
         Ok(())
     }
 
-    fn release(&mut self) -> Result<()> {
+    fn release(&mut self, span: Option<SpanContext>) -> Result<()> {
         self.unsubscribe();
         let (acquired, czxid, _) = self.context.state.inspect();
         if !acquired {
@@ -266,14 +281,27 @@ impl NonBlockingLockBehaviour for ZookeeperNBLock {
 
         // Ensure we actually own the lock even though we shold release it if ever lost.
         let keeper = self.context.client.get()?;
-        let stats = Client::exists(&keeper, &self.context.path, false)
-            .with_context(|_| ErrorKind::Backend("lock stats fetching"))?;
+        let stats = Client::exists(
+            &keeper,
+            &self.context.path,
+            false,
+            span.clone(),
+            self.tracer.as_ref().map(|tracer| tracer.deref()),
+        )
+        .with_context(|_| ErrorKind::Backend("lock stats fetching"))?;
         self.context.state.release();
         match stats {
             None => (),
             Some(ref stats) if stats.czxid == czxid => {
                 // Delete the lock znode and release the internal state.
-                match keeper.delete(&self.context.path, None) {
+                let result = Client::delete(
+                    &keeper,
+                    &self.context.path,
+                    None,
+                    span,
+                    self.tracer.as_ref().map(|tracer| tracer.deref()),
+                );
+                match result {
                     Ok(()) => (),
                     Err(ZkError::NoNode) => (),
                     Err(error) => {
@@ -283,7 +311,7 @@ impl NonBlockingLockBehaviour for ZookeeperNBLock {
             }
             Some(_) => {
                 // Lock exists, we think we own it but is not the one we created.
-                let payload = self.read(&keeper, &self.context.path)?;
+                let payload = self.read(&keeper, &self.context.path, span)?;
                 let payload: NBLockInfo = serde_json::from_slice(&payload)
                     .with_context(|_| ErrorKind::Decode("zookeeper non-blocking lock"))?;
                 warn!(
@@ -302,7 +330,7 @@ impl NonBlockingLockBehaviour for ZookeeperNBLock {
         if acquired {
             NB_LOCK_DROP_TOTAL.inc();
         }
-        if let Err(error) = self.release() {
+        if let Err(error) = self.release(None) {
             NB_LOCK_DROP_FAIL.inc();
             capture_fail!(
                 &error,

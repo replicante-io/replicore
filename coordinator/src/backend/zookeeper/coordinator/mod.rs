@@ -1,5 +1,6 @@
 use std::sync::Arc;
 
+use opentracingrust::Tracer;
 use slog::Logger;
 
 use super::super::super::config::ZookeeperConfig;
@@ -23,17 +24,28 @@ pub struct Zookeeper {
     client: Arc<Client>,
     logger: Logger,
     node_id: NodeId,
+    tracer: Option<Arc<Tracer>>,
 }
 
 impl Zookeeper {
-    pub fn new(node_id: NodeId, config: ZookeeperConfig, logger: Logger) -> Result<Zookeeper> {
+    pub fn new<T>(
+        node_id: NodeId,
+        config: ZookeeperConfig,
+        logger: Logger,
+        tracer: T,
+    ) -> Result<Zookeeper>
+    where
+        T: Into<Option<Arc<Tracer>>>,
+    {
         let client = Arc::new(Client::new(config.clone(), Some(&node_id), logger.clone())?);
         let cleaner = Cleaner::new(Arc::clone(&client), config, node_id.clone(), logger.clone())?;
+        let tracer = tracer.into();
         Ok(Zookeeper {
             _cleaner: cleaner,
             client,
             logger,
             node_id,
+            tracer,
         })
     }
 }
@@ -57,6 +69,7 @@ impl Backend for Zookeeper {
             lock,
             self.node_id.clone(),
             self.logger.clone(),
+            self.tracer.clone(),
         )))
     }
 

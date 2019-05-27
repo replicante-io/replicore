@@ -4,6 +4,7 @@ extern crate failure_derive;
 extern crate humthreads;
 #[macro_use]
 extern crate lazy_static;
+extern crate opentracingrust;
 extern crate prometheus;
 extern crate serde;
 #[macro_use]
@@ -16,6 +17,7 @@ extern crate zookeeper;
 
 extern crate replicante_util_failure;
 extern crate replicante_util_rndid;
+extern crate replicante_util_tracing;
 
 pub mod admin;
 

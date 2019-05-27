@@ -6,6 +6,9 @@ use std::sync::Mutex;
 use std::time::Duration;
 
 use failure::ResultExt;
+use opentracingrust::SpanContext;
+use opentracingrust::StartOptions;
+use opentracingrust::Tracer;
 use serde_json;
 use sha2::Digest;
 use sha2::Sha256;
@@ -19,6 +22,8 @@ use zookeeper::ZkError;
 use zookeeper::ZkResult;
 use zookeeper::ZkState;
 use zookeeper::ZooKeeper;
+
+use replicante_util_tracing::fail_span;
 
 use super::super::super::config::ZookeeperConfig;
 use super::super::super::ErrorKind;
@@ -95,46 +100,131 @@ impl Client {
         payload: Vec<u8>,
         acl: Vec<Acl>,
         mode: CreateMode,
+        span: Option<SpanContext>,
+        tracer: Option<&Tracer>,
     ) -> ZkResult<String> {
+        let span = match (tracer, span) {
+            (Some(tracer), Some(context)) => {
+                let options = StartOptions::default().child_of(context);
+                let mut span = tracer.span_with_options("coordinator.zookeeper.create", options);
+                span.tag("path", path.to_string());
+                Some(span.auto_finish())
+            }
+            _ => None,
+        };
         let _timer = ZOO_OP_DURATION.with_label_values(&["create"]).start_timer();
         keeper.create(path, payload, acl, mode).map_err(|error| {
             ZOO_OP_ERRORS_COUNT.with_label_values(&["create"]).inc();
             if error == ZkError::OperationTimeout {
                 ZOO_TIMEOUTS_COUNT.inc();
             }
-            error
+            match span {
+                None => error,
+                Some(mut span) => {
+                    // Existing nodes are not an error for most create operations.
+                    if error == ZkError::NodeExists {
+                        span.tag("znode.exists", true);
+                        error
+                    } else {
+                        fail_span(error, &mut span)
+                    }
+                }
+            }
         })
     }
 
     /// Wrapper for `ZooKeeper::delete` to track metrics.
-    pub fn delete(keeper: &ZooKeeper, path: &str, version: Option<i32>) -> ZkResult<()> {
+    pub fn delete(
+        keeper: &ZooKeeper,
+        path: &str,
+        version: Option<i32>,
+        span: Option<SpanContext>,
+        tracer: Option<&Tracer>,
+    ) -> ZkResult<()> {
+        let span = match (tracer, span) {
+            (Some(tracer), Some(context)) => {
+                let options = StartOptions::default().child_of(context);
+                let mut span = tracer.span_with_options("coordinator.zookeeper.delete", options);
+                span.tag("path", path.to_string());
+                if let Some(version) = version {
+                    span.tag("version", version.to_string());
+                }
+                Some(span.auto_finish())
+            }
+            _ => None,
+        };
         let _timer = ZOO_OP_DURATION.with_label_values(&["delete"]).start_timer();
         keeper.delete(path, version).map_err(|error| {
             ZOO_OP_ERRORS_COUNT.with_label_values(&["delete"]).inc();
             if error == ZkError::OperationTimeout {
                 ZOO_TIMEOUTS_COUNT.inc();
             }
-            error
+            match span {
+                None => error,
+                Some(mut span) => {
+                    // Missing nodes are not an error for most delete operations.
+                    if error == ZkError::NoNode {
+                        span.tag("znode.exists", false);
+                        error
+                    } else {
+                        fail_span(error, &mut span)
+                    }
+                }
+            }
         })
     }
 
     /// Wrapper for `ZooKeeper::exists` to track metrics.
-    pub fn exists(keeper: &ZooKeeper, path: &str, watch: bool) -> ZkResult<Option<Stat>> {
+    pub fn exists(
+        keeper: &ZooKeeper,
+        path: &str,
+        watch: bool,
+        span: Option<SpanContext>,
+        tracer: Option<&Tracer>,
+    ) -> ZkResult<Option<Stat>> {
+        let span = match (tracer, span) {
+            (Some(tracer), Some(context)) => {
+                let options = StartOptions::default().child_of(context);
+                let mut span = tracer.span_with_options("coordinator.zookeeper.exists", options);
+                span.tag("path", path.to_string());
+                span.tag("watch", watch);
+                Some(span.auto_finish())
+            }
+            _ => None,
+        };
         let _timer = ZOO_OP_DURATION.with_label_values(&["exists"]).start_timer();
         keeper.exists(path, watch).map_err(|error| {
             ZOO_OP_ERRORS_COUNT.with_label_values(&["exists"]).inc();
             if error == ZkError::OperationTimeout {
                 ZOO_TIMEOUTS_COUNT.inc();
             }
-            error
+            match span {
+                None => error,
+                Some(mut span) => fail_span(error, &mut span),
+            }
         })
     }
 
     /// Wrapper for `ZooKeeper::exists_w` to track metrics.
-    pub fn exists_w<W>(keeper: &ZooKeeper, path: &str, watcher: W) -> ZkResult<Option<Stat>>
+    pub fn exists_w<W>(
+        keeper: &ZooKeeper,
+        path: &str,
+        watcher: W,
+        span: Option<SpanContext>,
+        tracer: Option<&Tracer>,
+    ) -> ZkResult<Option<Stat>>
     where
         W: Watcher + 'static,
     {
+        let span = match (tracer, span) {
+            (Some(tracer), Some(context)) => {
+                let options = StartOptions::default().child_of(context);
+                let mut span = tracer.span_with_options("coordinator.zookeeper.exists_w", options);
+                span.tag("path", path.to_string());
+                Some(span.auto_finish())
+            }
+            _ => None,
+        };
         let _timer = ZOO_OP_DURATION
             .with_label_values(&["exists_w"])
             .start_timer();
@@ -143,7 +233,10 @@ impl Client {
             if error == ZkError::OperationTimeout {
                 ZOO_TIMEOUTS_COUNT.inc();
             }
-            error
+            match span {
+                None => error,
+                Some(mut span) => fail_span(error, &mut span),
+            }
         })
     }
 
@@ -183,7 +276,23 @@ impl Client {
     }
 
     /// Wrapper for `ZooKeeper::get_data` to track metrics.
-    pub fn get_data(keeper: &ZooKeeper, path: &str, watch: bool) -> ZkResult<(Vec<u8>, Stat)> {
+    pub fn get_data(
+        keeper: &ZooKeeper,
+        path: &str,
+        watch: bool,
+        span: Option<SpanContext>,
+        tracer: Option<&Tracer>,
+    ) -> ZkResult<(Vec<u8>, Stat)> {
+        let span = match (tracer, span) {
+            (Some(tracer), Some(context)) => {
+                let options = StartOptions::default().child_of(context);
+                let mut span = tracer.span_with_options("coordinator.zookeeper.get_data", options);
+                span.tag("path", path.to_string());
+                span.tag("watch", watch);
+                Some(span.auto_finish())
+            }
+            _ => None,
+        };
         let _timer = ZOO_OP_DURATION
             .with_label_values(&["get_data"])
             .start_timer();
@@ -192,7 +301,10 @@ impl Client {
             if error == ZkError::OperationTimeout {
                 ZOO_TIMEOUTS_COUNT.inc();
             }
-            error
+            match span {
+                None => error,
+                Some(mut span) => fail_span(error, &mut span),
+            }
         })
     }
 
@@ -208,13 +320,20 @@ impl Client {
     ///
     /// `CreateMode::Container` requires Zookeeper 3.5.3+ and does not seem to be reliable
     /// (or maybe I failed to configure the server).
-    pub fn mkcontaner(keeper: &ZooKeeper, path: &str) -> Result<()> {
+    pub fn mkcontaner(
+        keeper: &ZooKeeper,
+        path: &str,
+        span: Option<SpanContext>,
+        tracer: Option<&Tracer>,
+    ) -> Result<()> {
         let result = Client::create(
             keeper,
             path,
             Vec::new(),
             Acl::open_unsafe().clone(),
             CreateMode::Persistent,
+            span,
+            tracer,
         );
         match result {
             Ok(_) => (),
@@ -260,7 +379,7 @@ impl Client {
         match Client::register_node_data(keeper, registry) {
             Err(ZkError::NoNode) => {
                 let path = Client::container_path(&registry.key);
-                Client::mkcontaner(keeper, &path)?;
+                Client::mkcontaner(keeper, &path, None, None)?;
                 Client::register_node_data(keeper, registry)
                     .with_context(|_| ErrorKind::Backend("node registration"))?;
             }

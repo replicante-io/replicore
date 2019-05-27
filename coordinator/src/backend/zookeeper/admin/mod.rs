@@ -59,7 +59,7 @@ impl BackendAdmin for ZookeeperAdmin {
     fn non_blocking_lock(&self, lock: &str) -> Result<NonBlockingLock> {
         let keeper = self.client.get()?;
         let path = Client::path_from_key(PREFIX_LOCK, lock);
-        let payload = Client::get_data(&keeper, &path, false);
+        let payload = Client::get_data(&keeper, &path, false, None, None);
         let payload = match payload {
             Ok((payload, _)) => payload,
             Err(ZkError::NoNode) => return Err(ErrorKind::LockNotFound(lock.to_string()).into()),
@@ -152,7 +152,7 @@ impl Iterator for ZookeeperNodes {
 
         // Ignore nodes that return ZkError::NoNode.
         while let Some(node) = nodes.pop() {
-            let result = Client::get_data(&keeper, &node, false);
+            let result = Client::get_data(&keeper, &node, false, None, None);
             let node = match result {
                 Err(ZkError::NoNode) => continue,
                 Err(error) => {

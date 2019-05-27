@@ -2,6 +2,8 @@ use std::collections::HashMap;
 use std::sync::Arc;
 use std::sync::Mutex;
 
+use opentracingrust::SpanContext;
+
 use super::super::backend::Backend;
 use super::super::backend::NonBlockingLockBehaviour;
 use super::super::coordinator::Election;
@@ -54,7 +56,7 @@ struct MockNBL {
 }
 
 impl NonBlockingLockBehaviour for MockNBL {
-    fn acquire(&mut self) -> Result<()> {
+    fn acquire(&mut self, _: Option<SpanContext>) -> Result<()> {
         let mut guard = self.nblocks.lock().expect("MockBackend::nblocks poisoned");
         let mock = guard.get(&self.lock).map(Clone::clone);
         match mock {
@@ -77,7 +79,7 @@ impl NonBlockingLockBehaviour for MockNBL {
         }
     }
 
-    fn release(&mut self) -> Result<()> {
+    fn release(&mut self, _: Option<SpanContext>) -> Result<()> {
         let mut guard = self.nblocks.lock().expect("MockBackend::nblocks poisoned");
         let mock = guard.get(&self.lock).map(Clone::clone);
         match mock {

@@ -1,3 +1,5 @@
+use opentracingrust::SpanContext;
+
 use super::admin::Election as AdminElection;
 use super::admin::Elections as AdminElections;
 use super::admin::Nodes;
@@ -88,7 +90,7 @@ pub trait NonBlockingLockAdminBehaviour {
 /// Backend specific non-blocking lock behaviours.
 pub trait NonBlockingLockBehaviour {
     /// Attempt to acquire a non-blocking lock.
-    fn acquire(&mut self) -> Result<()>;
+    fn acquire(&mut self, span: Option<SpanContext>) -> Result<()>;
 
     /// Lightweight check if the lock is held by us.
     fn check(&self) -> bool {
@@ -96,7 +98,7 @@ pub trait NonBlockingLockBehaviour {
     }
 
     /// Attempt to release a non-blocking lock.
-    fn release(&mut self) -> Result<()>;
+    fn release(&mut self, span: Option<SpanContext>) -> Result<()>;
 
     /// Attempt to release a non-blocking lock when it is dropped.
     fn release_on_drop(&mut self) -> ();

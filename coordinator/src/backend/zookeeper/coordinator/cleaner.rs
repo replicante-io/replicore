@@ -152,7 +152,7 @@ impl InnerCleaner {
             }
 
             // Delete and count.
-            match Client::delete(&client, &child, Some(stats.version)) {
+            match Client::delete(&client, &child, Some(stats.version), None, None) {
                 Err(ZkError::NoNode) | Err(ZkError::NotEmpty) | Ok(()) => (),
                 Err(error) => {
                     return Err(error).with_context(|_| ErrorKind::Backend("node delete"))?;

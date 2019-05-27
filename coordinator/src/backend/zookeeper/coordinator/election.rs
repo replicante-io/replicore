@@ -156,7 +156,7 @@ impl AtomicState {
             keeper.remove_listener(subscription);
         }
         if let Some(znode) = znode {
-            match Client::delete(&keeper, &znode, None) {
+            match Client::delete(&keeper, &znode, None, None, None) {
                 Ok(()) => (),
                 Err(ZkError::NoNode) => (),
                 Err(error) => {
@@ -207,7 +207,7 @@ impl AtomicState {
             keeper.remove_listener(subscription);
         }
         if let Some(znode) = znode {
-            match Client::delete(&keeper, &znode, None) {
+            match Client::delete(&keeper, &znode, None, None, None) {
                 Ok(()) => (),
                 Err(ZkError::NoNode) => (),
                 Err(error) => {
@@ -458,6 +458,8 @@ impl ZookeeperElection {
             payload_candidate.clone(),
             Acl::read_unsafe().clone(),
             CreateMode::EphemeralSequential,
+            None,
+            None,
         );
         match result {
             Ok(candidate) => Ok(candidate),
@@ -471,6 +473,8 @@ impl ZookeeperElection {
                     payload_election,
                     Acl::open_unsafe().clone(),
                     CreateMode::Persistent,
+                    None,
+                    None,
                 );
                 match result {
                     Ok(_) => (),
@@ -487,6 +491,8 @@ impl ZookeeperElection {
                     payload_candidate,
                     Acl::read_unsafe().clone(),
                     CreateMode::EphemeralSequential,
+                    None,
+                    None,
                 )
                 .with_context(|_| ErrorKind::Backend("election registration"))?;
                 Ok(znode)
@@ -526,7 +532,7 @@ impl ElectionBehaviour for ZookeeperElection {
             .register(state, candidate_znode.clone(), subscription)
             .map_err(|error| {
                 // Delete the candidate_znode if we failed to update the state.
-                match Client::delete(&keeper, &candidate_znode, None) {
+                match Client::delete(&keeper, &candidate_znode, None, None, None) {
                     Ok(()) => (),
                     Err(ZkError::NoNode) => (),
                     Err(error) => {
