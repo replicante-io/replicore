@@ -1,5 +1,7 @@
 use std::sync::Arc;
 
+use opentracingrust::SpanContext;
+
 use replicante_data_models::Event;
 
 use super::interface::StreamInterface;
@@ -25,11 +27,16 @@ impl MockEvents {
 }
 
 impl StreamInterface for MockEvents {
-    fn emit(&self, _event: Event) -> Result<()> {
+    fn emit(&self, _event: Event, _: Option<SpanContext>) -> Result<()> {
         Err(ErrorKind::MockNotYetImplemented("emit").into())
     }
 
-    fn scan(&self, _filters: ScanFilters, _options: ScanOptions) -> Result<Iter> {
+    fn scan(
+        &self,
+        _filters: ScanFilters,
+        _options: ScanOptions,
+        _: Option<SpanContext>,
+    ) -> Result<Iter> {
         Err(ErrorKind::MockNotYetImplemented("scan").into())
     }
 }

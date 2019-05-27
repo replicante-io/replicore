@@ -67,7 +67,7 @@ impl ShardFetcher {
                 .allocation_changed(old, shard.clone());
             let code = event.code();
             self.events
-                .emit(event)
+                .emit(event, span.context().clone())
                 .with_context(|_| ErrorKind::EventEmit(code))?;
         }
 
@@ -84,7 +84,7 @@ impl ShardFetcher {
         let event = Event::builder().shard().shard_allocation_new(shard.clone());
         let code = event.code();
         self.events
-            .emit(event)
+            .emit(event, span.context().clone())
             .with_context(|_| ErrorKind::EventEmit(code))?;
         self.store
             .persist()

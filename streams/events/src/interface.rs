@@ -1,5 +1,6 @@
 use chrono::DateTime;
 use chrono::Utc;
+use opentracingrust::SpanContext;
 
 use replicante_data_models::Event;
 
@@ -10,10 +11,15 @@ use super::Result;
 /// Allows multiple possible backends to be used as well as mocks for testing.
 pub trait StreamInterface: Send + Sync {
     /// Emit events to the events stream.
-    fn emit(&self, event: Event) -> Result<()>;
+    fn emit(&self, event: Event, span: Option<SpanContext>) -> Result<()>;
 
     /// Scan for events matching the given filters, old to new.
-    fn scan(&self, filters: ScanFilters, options: ScanOptions) -> Result<Iter>;
+    fn scan(
+        &self,
+        filters: ScanFilters,
+        options: ScanOptions,
+        span: Option<SpanContext>,
+    ) -> Result<Iter>;
 }
 
 /// Iterator over events returned by a scan operation.

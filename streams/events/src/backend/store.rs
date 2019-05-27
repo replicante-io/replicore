@@ -1,6 +1,7 @@
 use std::sync::Arc;
 
 use failure::ResultExt;
+use opentracingrust::SpanContext;
 use slog::Logger;
 
 use replicante_data_models::Event;
@@ -30,21 +31,26 @@ impl StoreInterface {
 }
 
 impl StreamInterface for StoreInterface {
-    fn emit(&self, event: Event) -> Result<()> {
+    fn emit(&self, event: Event, span: Option<SpanContext>) -> Result<()> {
         self.store
             .legacy()
-            .persist_event(event, None)
+            .persist_event(event, span)
             .with_context(|_| ErrorKind::StoreWrite("event"))
             .map_err(Error::from)
     }
 
-    fn scan(&self, filters: ScanFilters, options: ScanOptions) -> Result<Iter> {
+    fn scan(
+        &self,
+        filters: ScanFilters,
+        options: ScanOptions,
+        span: Option<SpanContext>,
+    ) -> Result<Iter> {
         let filters = into_store_filters(filters);
         let options = into_store_options(options);
         let iter = self
             .store
             .legacy()
-            .events(filters, options, None)
+            .events(filters, options, span)
             .with_context(|_| ErrorKind::StoreRead("events"))?;
         let iter = iter.map(|event| {
             event

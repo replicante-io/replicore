@@ -72,7 +72,7 @@ impl AgentFetcher {
             let event = Event::builder().agent().transition(old, agent.clone());
             let code = event.code();
             self.events
-                .emit(event)
+                .emit(event, span.context().clone())
                 .with_context(|_| ErrorKind::EventEmit(code))?;
         }
         self.store
@@ -88,7 +88,7 @@ impl AgentFetcher {
             .agent_new(agent.cluster_id.clone(), agent.host.clone());
         let code = event.code();
         self.events
-            .emit(event)
+            .emit(event, span.context().clone())
             .with_context(|_| ErrorKind::EventEmit(code))?;
 
         // Emit a synthetic transition to up.
@@ -97,7 +97,7 @@ impl AgentFetcher {
         let event = Event::builder().agent().transition(before, agent.clone());
         let code = event.code();
         self.events
-            .emit(event)
+            .emit(event, span.context().clone())
             .with_context(|_| ErrorKind::EventEmit(code))?;
         self.store
             .persist()
@@ -116,7 +116,7 @@ impl AgentFetcher {
             let event = Event::builder().agent().info().changed(old, agent.clone());
             let code = event.code();
             self.events
-                .emit(event)
+                .emit(event, span.context().clone())
                 .with_context(|_| ErrorKind::EventEmit(code))?;
         }
         // ALWAYS persist the model, even unchanged, to clear the staleness state.
@@ -131,7 +131,7 @@ impl AgentFetcher {
         let event = Event::builder().agent().info().info_new(agent.clone());
         let code = event.code();
         self.events
-            .emit(event)
+            .emit(event, span.context().clone())
             .with_context(|_| ErrorKind::EventEmit(code))?;
         self.store
             .persist()

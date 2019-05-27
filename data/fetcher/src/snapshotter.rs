@@ -45,7 +45,7 @@ impl Snapshotter {
             let event = Event::builder().snapshot().agent(status);
             let code = event.code();
             self.events
-                .emit(event)
+                .emit(event, span.context().clone())
                 .with_context(|_| ErrorKind::EventEmit(code))?;
         }
         let infos = self
@@ -58,7 +58,7 @@ impl Snapshotter {
             let event = Event::builder().snapshot().agent_info(info);
             let code = event.code();
             self.events
-                .emit(event)
+                .emit(event, span.context().clone())
                 .with_context(|_| ErrorKind::EventEmit(code))?;
         }
         Ok(())
@@ -74,7 +74,7 @@ impl Snapshotter {
             let event = Event::builder().snapshot().discovery(discovery);
             let code = event.code();
             self.events
-                .emit(event)
+                .emit(event, span.context().clone())
                 .with_context(|_| ErrorKind::EventEmit(code))?;
         }
         Ok(())
@@ -91,7 +91,7 @@ impl Snapshotter {
             let event = Event::builder().snapshot().node(node);
             let code = event.code();
             self.events
-                .emit(event)
+                .emit(event, span.context().clone())
                 .with_context(|_| ErrorKind::EventEmit(code))?;
         }
         Ok(())
@@ -108,7 +108,7 @@ impl Snapshotter {
             let event = Event::builder().snapshot().shard(shard);
             let code = event.code();
             self.events
-                .emit(event)
+                .emit(event, span.context().clone())
                 .with_context(|_| ErrorKind::EventEmit(code))?;
         }
         Ok(())

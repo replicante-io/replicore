@@ -147,7 +147,7 @@ impl Handler for Annotations {
         options.limit = Some(query.limit);
         let events = self
             .events
-            .scan(filters, options)
+            .scan(filters, options, None)
             .with_context(|_| ErrorKind::ViewStoreQuery("events"))
             .map_err(Error::from)?;
         let mut annotations: Vec<Annotation> = Vec::new();

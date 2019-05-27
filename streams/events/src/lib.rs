@@ -1,6 +1,7 @@
 extern crate chrono;
 extern crate failure;
 extern crate failure_derive;
+extern crate opentracingrust;
 extern crate prometheus;
 extern crate serde;
 #[macro_use]
@@ -13,6 +14,7 @@ extern crate replicante_data_store;
 
 use std::sync::Arc;
 
+use opentracingrust::SpanContext;
 use prometheus::Registry;
 use slog::Logger;
 
@@ -67,12 +69,18 @@ impl EventsStream {
 
 impl EventsStream {
     /// Emit events to the events stream.
-    pub fn emit(&self, event: Event) -> Result<()> {
-        self.0.emit(event)
+    pub fn emit<S>(&self, event: Event, span: S) -> Result<()>
+    where
+        S: Into<Option<SpanContext>>,
+    {
+        self.0.emit(event, span.into())
     }
 
     /// Scan for events matching the given filters, old to new.
-    pub fn scan(&self, filters: ScanFilters, options: ScanOptions) -> Result<Iter> {
-        self.0.scan(filters, options)
+    pub fn scan<S>(&self, filters: ScanFilters, options: ScanOptions, span: S) -> Result<Iter>
+    where
+        S: Into<Option<SpanContext>>,
+    {
+        self.0.scan(filters, options, span.into())
     }
 }

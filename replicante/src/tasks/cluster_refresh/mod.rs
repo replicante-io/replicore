@@ -162,13 +162,13 @@ impl Handler {
                 .changed(current_state, discovery.clone());
             let event_code = event.code();
             self.events
-                .emit(event)
+                .emit(event, span.context().clone())
                 .with_context(|_| ErrorKind::EventsStreamEmit(event_code))?;
         } else {
             let event = Event::builder().cluster().cluster_new(discovery.clone());
             let event_code = event.code();
             self.events
-                .emit(event)
+                .emit(event, span.context().clone())
                 .with_context(|_| ErrorKind::EventsStreamEmit(event_code))?;
         }
         self.store

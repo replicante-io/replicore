@@ -60,7 +60,7 @@ impl NodeFetcher {
             let event = Event::builder().node().changed(old, node.clone());
             let code = event.code();
             self.events
-                .emit(event)
+                .emit(event, span.context().clone())
                 .with_context(|_| ErrorKind::EventEmit(code))?;
         }
         // ALWAYS persist the model, even unchanged, to clear the staleness state.
@@ -75,7 +75,7 @@ impl NodeFetcher {
         let event = Event::builder().node().node_new(node.clone());
         let code = event.code();
         self.events
-            .emit(event)
+            .emit(event, span.context().clone())
             .with_context(|_| ErrorKind::EventEmit(code))?;
         self.store
             .persist()

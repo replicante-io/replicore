@@ -59,7 +59,7 @@ pub fn events<'a>(args: &ArgMatches<'a>, interfaces: &Interfaces) -> Result<()> 
 
     info!(logger, "Checking events stream ...");
     let cursor = stream
-        .scan(ScanFilters::all(), ScanOptions::default())
+        .scan(ScanFilters::all(), ScanOptions::default(), None)
         .with_context(|_| ErrorKind::CheckFailed("events"))?;
     let mut tracker = interfaces.progress("Processed more events");
     for event in cursor {
