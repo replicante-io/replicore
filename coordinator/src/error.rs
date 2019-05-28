@@ -11,8 +11,8 @@ use super::NodeId;
 pub struct Error(Context<ErrorKind>);
 
 impl Error {
-    pub fn kind(&self) -> ErrorKind {
-        self.0.get_context().clone()
+    pub fn kind(&self) -> &ErrorKind {
+        self.0.get_context()
     }
 }
 
@@ -35,6 +35,10 @@ impl Fail for Error {
 
     fn backtrace(&self) -> Option<&Backtrace> {
         self.0.backtrace()
+    }
+
+    fn name(&self) -> Option<&str> {
+        self.kind().kind_name()
     }
 }
 
@@ -82,6 +86,26 @@ pub enum ErrorKind {
 
     #[fail(display = "unable to spawn new thread for '{}'", _0)]
     SpawnThread(&'static str),
+}
+
+impl ErrorKind {
+    fn kind_name(&self) -> Option<&str> {
+        let name = match self {
+            ErrorKind::BackendConnect => "BackendConnect",
+            ErrorKind::Backend(_) => "Backend",
+            ErrorKind::Decode(_) => "Decode",
+            ErrorKind::Encode(_) => "Encode",
+            ErrorKind::ElectionLost(_) => "ElectionLost",
+            ErrorKind::ElectionNotFound(_) => "ElectionNotFound",
+            ErrorKind::ElectionRunning(_) => "ElectionRunning",
+            ErrorKind::LockHeld(_, _) => "LockHeld",
+            ErrorKind::LockLost(_) => "LockLost",
+            ErrorKind::LockNotFound(_) => "LockNotFound",
+            ErrorKind::LockNotHeld(_, _) => "LockNotHeld",
+            ErrorKind::SpawnThread(_) => "SpawnThread",
+        };
+        Some(name)
+    }
 }
 
 /// Short form alias for functions returning `Error`s.

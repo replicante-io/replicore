@@ -1,3 +1,6 @@
+use serde_derive::Deserialize;
+use serde_derive::Serialize;
+
 /// Zookeeper background cleaner configuration.
 #[derive(Clone, Eq, PartialEq, Hash, Debug, Serialize, Deserialize)]
 pub struct CleanupConfig {

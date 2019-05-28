@@ -101,11 +101,15 @@ impl NonBlockingLockWatcher {
 
 #[cfg(test)]
 mod tests {
+    use slog::o;
+    use slog::Discard;
+    use slog::Logger;
+
     use super::super::super::mock::MockCoordinator;
     use super::super::super::ErrorKind;
 
     fn mock_coordinator() -> MockCoordinator {
-        let logger = ::slog::Logger::root(::slog::Discard, o!());
+        let logger = Logger::root(Discard, o!());
         MockCoordinator::new(logger)
     }
 

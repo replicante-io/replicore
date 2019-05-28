@@ -7,6 +7,9 @@ use std::sync::Mutex;
 use failure::ResultExt;
 use opentracingrust::SpanContext;
 use opentracingrust::Tracer;
+use slog::debug;
+use slog::error;
+use slog::warn;
 use slog::Logger;
 
 use zookeeper::Acl;

@@ -4,6 +4,8 @@ use crossbeam_channel::bounded;
 use crossbeam_channel::Receiver;
 use crossbeam_channel::RecvTimeoutError;
 use crossbeam_channel::Sender;
+use slog::debug;
+use slog::info;
 use slog::Logger;
 
 use super::super::Error;
@@ -387,6 +389,7 @@ mod tests {
     use std::rc::Rc;
     use std::time::Duration;
 
+    use slog::o;
     use slog::Discard;
     use slog::Logger;
 

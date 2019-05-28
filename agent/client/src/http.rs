@@ -12,6 +12,7 @@ use reqwest::Client as ReqwestClient;
 use reqwest::RequestBuilder;
 use reqwest::StatusCode;
 use serde::de::DeserializeOwned;
+use serde_derive::Deserialize;
 use slog::Logger;
 
 use replicante_agent_models::AgentInfo;

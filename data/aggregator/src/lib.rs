@@ -1,9 +1,7 @@
 extern crate failure;
-#[macro_use]
 extern crate lazy_static;
 extern crate opentracingrust;
 extern crate prometheus;
-#[macro_use]
 extern crate slog;
 
 extern crate replicante_coordinator;
@@ -14,6 +12,7 @@ extern crate replicante_util_tracing;
 use failure::ResultExt;
 use opentracingrust::Log;
 use opentracingrust::Span;
+use slog::debug;
 use slog::Logger;
 
 use replicante_coordinator::NonBlockingLockWatcher;

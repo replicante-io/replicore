@@ -1,7 +1,9 @@
+use lazy_static::lazy_static;
 use prometheus::Counter;
 use prometheus::Histogram;
 use prometheus::HistogramOpts;
 use prometheus::Registry;
+use slog::debug;
 use slog::Logger;
 
 lazy_static! {

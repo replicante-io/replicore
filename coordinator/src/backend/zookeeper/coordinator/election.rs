@@ -4,6 +4,7 @@ use std::sync::Arc;
 use std::sync::Mutex;
 
 use failure::ResultExt;
+use slog::debug;
 use slog::Logger;
 
 use zookeeper::Acl;

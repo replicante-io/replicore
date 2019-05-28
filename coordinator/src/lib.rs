@@ -2,16 +2,13 @@ extern crate crossbeam_channel;
 extern crate failure;
 extern crate failure_derive;
 extern crate humthreads;
-#[macro_use]
 extern crate lazy_static;
 extern crate opentracingrust;
 extern crate prometheus;
 extern crate serde;
-#[macro_use]
 extern crate serde_derive;
 extern crate serde_json;
 extern crate sha2;
-#[macro_use]
 extern crate slog;
 extern crate zookeeper;
 

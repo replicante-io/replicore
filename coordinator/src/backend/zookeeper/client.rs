@@ -12,6 +12,11 @@ use opentracingrust::Tracer;
 use serde_json;
 use sha2::Digest;
 use sha2::Sha256;
+use slog::debug;
+use slog::error;
+use slog::info;
+use slog::trace;
+use slog::warn;
 use slog::Logger;
 
 use zookeeper::Acl;

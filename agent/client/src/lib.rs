@@ -1,14 +1,11 @@
 extern crate failure;
 extern crate failure_derive;
-#[macro_use]
 extern crate lazy_static;
 extern crate opentracingrust;
 extern crate prometheus;
 extern crate reqwest;
 extern crate serde;
-#[macro_use]
 extern crate serde_derive;
-#[macro_use]
 extern crate slog;
 
 extern crate replicante_agent_models;

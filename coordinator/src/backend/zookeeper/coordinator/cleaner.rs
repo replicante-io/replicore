@@ -6,6 +6,8 @@ use failure::ResultExt;
 use humthreads::Builder;
 use humthreads::Thread;
 use humthreads::ThreadScope;
+use slog::debug;
+use slog::info;
 use slog::Logger;
 use zookeeper::ZkError;
 
