@@ -4,6 +4,8 @@ use failure::Fail;
 use failure::ResultExt;
 use opentracingrust::Log;
 use opentracingrust::Span;
+use slog::debug;
+use slog::info;
 use slog::Logger;
 
 use replicante_coordinator::Coordinator;

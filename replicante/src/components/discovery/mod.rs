@@ -4,6 +4,7 @@ use std::time::Duration;
 use failure::ResultExt;
 use humthreads::Builder as ThreadBuilder;
 use opentracingrust::Tracer;
+use slog::info;
 use slog::Logger;
 
 use replicante_coordinator::Coordinator;

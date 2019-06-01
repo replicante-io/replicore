@@ -1,12 +1,13 @@
 use clap::App;
 use clap::ArgMatches;
 use clap::SubCommand;
-
 use failure::ResultExt;
+use slog::error;
+use slog::info;
+use slog::warn;
 
 use replicante::Config;
 use replicante_data_store::store::Store;
-
 use replicante_streams_events::EventsStream;
 use replicante_streams_events::ScanFilters;
 use replicante_streams_events::ScanOptions;

@@ -1,3 +1,6 @@
+use serde_derive::Deserialize;
+use serde_derive::Serialize;
+
 use replicante_streams_events::Config as EventsStreamConfig;
 
 /// Replicante events configuration options.

@@ -1,4 +1,5 @@
 use prometheus::Registry;
+use slog::info;
 use slog::Logger;
 
 use replicante_util_upkeep::Upkeep;

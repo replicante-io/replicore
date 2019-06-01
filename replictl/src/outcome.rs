@@ -1,3 +1,5 @@
+use slog::error;
+use slog::warn;
 use slog::Logger;
 
 use replicante_data_store::admin::ValidationResult;

@@ -34,6 +34,7 @@ mod tests {
     use iron_json_response::JsonResponseMiddleware;
     use iron_test::request;
     use iron_test::response;
+    use slog::o;
     use slog::Discard;
     use slog::Logger;
 

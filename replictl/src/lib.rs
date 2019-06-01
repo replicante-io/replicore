@@ -1,15 +1,9 @@
-#[macro_use]
 extern crate clap;
 extern crate failure;
-//extern crate failure_derive;
-
-#[macro_use]
 extern crate lazy_static;
 extern crate prometheus;
 extern crate reqwest;
-
 extern crate serde_yaml;
-#[macro_use]
 extern crate slog;
 extern crate slog_term;
 
@@ -22,9 +16,12 @@ extern crate replicante_streams_events;
 extern crate replicante_tasks;
 extern crate replicante_util_failure;
 
+use clap::value_t;
 use clap::App;
 use clap::Arg;
 use clap::ArgMatches;
+use slog::debug;
+use slog::error;
 
 mod commands;
 mod core;

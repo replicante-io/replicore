@@ -1,6 +1,8 @@
+use lazy_static::lazy_static;
 use prometheus::GaugeVec;
 use prometheus::Opts;
 use prometheus::Registry;
+use slog::debug;
 use slog::Logger;
 
 lazy_static! {

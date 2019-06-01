@@ -1,12 +1,13 @@
 use std::sync::Mutex;
 
+use clap::arg_enum;
+use slog::o;
 use slog::Drain;
+use slog::FnValue;
 use slog::IgnoreResult;
 use slog::Logger;
-
-use slog::FnValue;
+use slog::OwnedKVList;
 use slog::Record;
-
 use slog_term::FullFormat;
 use slog_term::TermDecorator;
 
@@ -23,11 +24,7 @@ struct LevelFilter<D: Drain>(pub D, pub ::slog::Level);
 impl<D: Drain> Drain for LevelFilter<D> {
     type Ok = ();
     type Err = D::Err;
-    fn log(
-        &self,
-        record: &::slog::Record,
-        logger_values: &::slog::OwnedKVList,
-    ) -> Result<Self::Ok, Self::Err> {
+    fn log(&self, record: &Record, logger_values: &OwnedKVList) -> Result<Self::Ok, Self::Err> {
         if record.level().is_at_least(self.1) {
             self.0.log(record, logger_values)?;
         }

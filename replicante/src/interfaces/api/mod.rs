@@ -12,6 +12,7 @@ use humthreads::Builder as ThreadBuilder;
 use iron::Iron;
 use iron_json_response::JsonResponseMiddleware;
 use opentracingrust::Tracer;
+use slog::info;
 use slog::Logger;
 
 #[cfg(test)]

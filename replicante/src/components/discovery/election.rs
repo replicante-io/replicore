@@ -2,6 +2,8 @@ use std::sync::Arc;
 
 use humthreads::ThreadScope;
 use opentracingrust::Tracer;
+use slog::debug;
+use slog::info;
 use slog::Logger;
 
 use replicante_agent_discovery::discover;

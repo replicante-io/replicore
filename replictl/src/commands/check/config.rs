@@ -6,6 +6,9 @@ use clap::SubCommand;
 use failure::Fail;
 use failure::ResultExt;
 use serde_yaml;
+use slog::error;
+use slog::info;
+use slog::warn;
 
 use replicante::Config;
 use replicante_agent_discovery::DiscoveryFileModel;

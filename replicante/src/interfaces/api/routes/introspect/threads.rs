@@ -4,6 +4,7 @@ use iron::Request;
 use iron::Response;
 use iron::Set;
 use iron_json_response::JsonResponse;
+use serde_derive::Serialize;
 
 use humthreads::registered_threads;
 use humthreads::ThreadStatus;

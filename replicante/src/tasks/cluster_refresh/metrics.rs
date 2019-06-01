@@ -1,8 +1,10 @@
+use lazy_static::lazy_static;
 use prometheus::CounterVec;
 use prometheus::HistogramOpts;
 use prometheus::HistogramVec;
 use prometheus::Opts;
 use prometheus::Registry;
+use slog::debug;
 use slog::Logger;
 
 lazy_static! {

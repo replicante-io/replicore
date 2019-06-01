@@ -1,8 +1,10 @@
 use std::io;
 use std::io::Write;
 
+use clap::value_t;
 use clap::ArgMatches;
 use failure::ResultExt;
+use slog::info;
 use slog::Logger;
 
 use super::ErrorKind;

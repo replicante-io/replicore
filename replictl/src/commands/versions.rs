@@ -2,6 +2,9 @@ use clap::App;
 use clap::ArgMatches;
 use clap::SubCommand;
 use failure::ResultExt;
+use lazy_static::lazy_static;
+use slog::info;
+use slog::warn;
 use slog::Logger;
 
 use replicante::Config;

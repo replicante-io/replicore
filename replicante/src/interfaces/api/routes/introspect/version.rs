@@ -4,6 +4,7 @@ use iron::Request;
 use iron::Response;
 use iron::Set;
 use iron_json_response::JsonResponse;
+use lazy_static::lazy_static;
 
 use replicante_data_models::api::Version;
 

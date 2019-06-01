@@ -3,6 +3,10 @@ use clap::ArgMatches;
 use clap::SubCommand;
 use failure::Fail;
 use failure::ResultExt;
+use slog::debug;
+use slog::error;
+use slog::info;
+use slog::warn;
 
 use replicante::Config;
 use replicante_data_store::admin::Admin;

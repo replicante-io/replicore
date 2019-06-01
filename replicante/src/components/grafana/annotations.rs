@@ -4,7 +4,6 @@ use chrono::DateTime;
 use chrono::Utc;
 
 use failure::ResultExt;
-
 use iron::status;
 use iron::Handler;
 use iron::IronResult;
@@ -13,7 +12,8 @@ use iron::Request;
 use iron::Response;
 use iron::Set;
 use iron_json_response::JsonResponse;
-
+use serde_derive::Deserialize;
+use serde_derive::Serialize;
 use serde_json;
 
 use replicante_data_models::Event;

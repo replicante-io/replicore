@@ -1,5 +1,6 @@
 use prometheus::process_collector::ProcessCollector;
 use prometheus::Registry;
+use slog::debug;
 use slog::Logger;
 
 use super::super::Result;
