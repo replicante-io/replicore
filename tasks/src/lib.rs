@@ -1,17 +1,14 @@
 extern crate failure;
 extern crate futures;
 extern crate humthreads;
-#[macro_use]
 extern crate lazy_static;
 extern crate num_cpus;
 extern crate opentracingrust;
 extern crate prometheus;
 extern crate rdkafka;
 extern crate serde;
-#[macro_use]
 extern crate serde_derive;
 extern crate serde_json;
-#[macro_use]
 extern crate slog;
 
 extern crate replicante_util_failure;

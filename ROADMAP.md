@@ -1,5 +1,4 @@
 ## 0.3.0 - Introspection
-- Standardise metrics names.
 - Investigate yield and harvast.
 - Check for available updates.
 - Status endpoints.

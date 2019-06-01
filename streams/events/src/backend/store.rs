@@ -2,6 +2,7 @@ use std::sync::Arc;
 
 use failure::ResultExt;
 use opentracingrust::SpanContext;
+use slog::debug;
 use slog::Logger;
 
 use replicante_data_models::Event;

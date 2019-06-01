@@ -1,6 +1,9 @@
 use std::fmt;
 use std::str::FromStr;
 
+use serde_derive::Deserialize;
+use serde_derive::Serialize;
+
 use replicante_util_rndid::RndId;
 
 /// Task (probably) unique identifiers.

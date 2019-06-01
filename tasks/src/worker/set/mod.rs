@@ -7,6 +7,8 @@ use std::time::Duration;
 use failure::ResultExt;
 use humthreads::Builder;
 use humthreads::ThreadScope;
+use slog::error;
+use slog::trace;
 use slog::Logger;
 
 use replicante_util_failure::capture_fail;
@@ -220,6 +222,7 @@ mod tests {
     use std::sync::Mutex;
     use std::time::Duration;
 
+    use slog::o;
     use slog::Discard;
     use slog::Logger;
 

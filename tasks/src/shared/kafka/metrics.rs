@@ -1,10 +1,11 @@
+use lazy_static::lazy_static;
 use prometheus::GaugeVec;
 use prometheus::Opts;
 use prometheus::Registry;
-
 use rdkafka::consumer::ConsumerContext;
 use rdkafka::statistics::Statistics;
 use rdkafka::ClientContext;
+use slog::debug;
 use slog::Logger;
 
 lazy_static! {

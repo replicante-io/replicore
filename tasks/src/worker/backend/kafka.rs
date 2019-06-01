@@ -7,7 +7,6 @@ use std::time::Instant;
 
 use failure::ResultExt;
 use futures::future::Future;
-
 use rdkafka::config::ClientConfig;
 use rdkafka::consumer::base_consumer::BaseConsumer;
 use rdkafka::consumer::CommitMode;
@@ -21,7 +20,8 @@ use rdkafka::producer::future_producer::FutureRecord;
 use rdkafka::Message;
 use rdkafka::Offset::Offset;
 use rdkafka::TopicPartitionList;
-
+use slog::debug;
+use slog::warn;
 use slog::Logger;
 
 use super::super::super::config::KafkaConfig;

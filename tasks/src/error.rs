@@ -34,6 +34,10 @@ impl Fail for Error {
     fn backtrace(&self) -> Option<&Backtrace> {
         self.0.backtrace()
     }
+
+    fn name(&self) -> Option<&str> {
+        self.kind().kind_name()
+    }
 }
 
 impl fmt::Display for Error {
@@ -95,6 +99,31 @@ pub enum ErrorKind {
 
     #[fail(display = "unable to subsribe for task delivery")]
     TaskSubscription,
+}
+
+impl ErrorKind {
+    fn kind_name(&self) -> Option<&str> {
+        let name = match self {
+            ErrorKind::BackendClientCreation => "BackendClientCreation",
+            ErrorKind::CommitFailed => "CommitFailed",
+            ErrorKind::CommitRetryStuck(_) => "CommitRetryStuck",
+            ErrorKind::FetchError => "FetchError",
+            ErrorKind::PayloadDeserialize => "PayloadDeserialize",
+            ErrorKind::PayloadSerialize => "PayloadSerialize",
+            ErrorKind::PoolSpawn => "PoolSpawn",
+            ErrorKind::QueueNameInvalid(_) => "QueueNameInvalid",
+            ErrorKind::RetryEnqueue => "RetryEnqueue",
+            ErrorKind::RetryEnqueueID(_) => "RetryEnqueueID",
+            ErrorKind::ScanCannotAck(_) => "ScanCannotAck",
+            ErrorKind::TaskHeaderInvalid(_, _) => "TaskHeaderInvalid",
+            ErrorKind::TaskInvalidID(_) => "TaskInvalidID",
+            ErrorKind::TaskNoId => "TaskNoId",
+            ErrorKind::TaskNoPayload(_) => "TaskNoPayload",
+            ErrorKind::TaskRequest => "TaskRequest",
+            ErrorKind::TaskSubscription => "TaskSubscription",
+        };
+        Some(name)
+    }
 }
 
 /// Short form alias for functions returning `Error`s.

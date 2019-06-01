@@ -34,6 +34,10 @@ impl Fail for Error {
     fn backtrace(&self) -> Option<&Backtrace> {
         self.0.backtrace()
     }
+
+    fn name(&self) -> Option<&str> {
+        self.kind().kind_name()
+    }
 }
 
 impl fmt::Display for Error {
@@ -53,6 +57,17 @@ pub enum ErrorKind {
 
     #[fail(display = "error persisting {} to the store", _0)]
     StoreWrite(&'static str),
+}
+
+impl ErrorKind {
+    fn kind_name(&self) -> Option<&str> {
+        let name = match self {
+            ErrorKind::MockNotYetImplemented(_) => "MockNotYetImplemented",
+            ErrorKind::StoreRead(_) => "StoreRead",
+            ErrorKind::StoreWrite(_) => "StoreWrite",
+        };
+        Some(name)
+    }
 }
 
 /// Short form alias for functions returning `Error`s.

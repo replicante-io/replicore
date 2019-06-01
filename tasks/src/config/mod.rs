@@ -1,10 +1,13 @@
+use serde_derive::Deserialize;
+use serde_derive::Serialize;
+
 mod kafka;
 
 pub use self::kafka::KafkaConfig;
 
 /// Task queue backend configuration.
 #[derive(Clone, Eq, PartialEq, Hash, Debug, Serialize, Deserialize)]
-#[serde(tag = "backend", content = "options", deny_unknown_fields)]
+#[serde(tag = "backend", content = "options")]
 pub enum Backend {
     /// Use kafka as a task system (recommended, default).
     #[serde(rename = "kafka")]

@@ -25,6 +25,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Improve data consistency in cases where data is unavailable.
 - Move cluster metadata to aggregation pipeline.
 - Reworked primary store interface.
+- Standardise metrics names.
 
 ### Removed
 - **BREAKING**: Removed nonsensical ordering on some models.

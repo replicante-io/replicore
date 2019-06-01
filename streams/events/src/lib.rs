@@ -4,9 +4,7 @@ extern crate failure_derive;
 extern crate opentracingrust;
 extern crate prometheus;
 extern crate serde;
-#[macro_use]
 extern crate serde_derive;
-#[macro_use]
 extern crate slog;
 
 extern crate replicante_data_models;
