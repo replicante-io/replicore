@@ -66,7 +66,7 @@ impl Find {
         router.get(
             "/clusters/find/:query",
             handler_query,
-            "/clusters/find/query",
+            "/clusters/find/:query",
         );
     }
 }

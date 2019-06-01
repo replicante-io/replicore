@@ -53,7 +53,11 @@ impl Discovery {
         let handler = Discovery {
             store: interfaces.store.clone(),
         };
-        router.get("/cluster/:cluster/discovery", handler, "/cluster/discovery");
+        router.get(
+            "/cluster/:cluster/discovery",
+            handler,
+            "/cluster/:cluster/discovery",
+        );
     }
 }
 
@@ -92,6 +96,6 @@ impl Meta {
         let handler = Meta {
             store: interfaces.store.clone(),
         };
-        router.get("/cluster/:cluster/meta", handler, "/cluster/meta");
+        router.get("/cluster/:cluster/meta", handler, "/cluster/:cluster/meta");
     }
 }

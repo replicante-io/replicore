@@ -9,6 +9,7 @@ use super::Config;
 use super::Interfaces;
 use super::Result;
 
+mod core_api;
 mod discovery;
 mod grafana;
 mod webui;
@@ -16,6 +17,7 @@ mod workers;
 
 pub use self::discovery::Config as DiscoveryConfig;
 
+use self::core_api::CoreAPI;
 use self::discovery::DiscoveryComponent as Discovery;
 use self::grafana::Grafana;
 use self::webui::WebUI;
@@ -71,6 +73,7 @@ where
 /// [`Drop`]: std/ops/trait.Drop.html
 /// [`JoinHandle`]: std/thread/struct.JoinHandle.html
 pub struct Components {
+    core_api: Option<CoreAPI>,
     discovery: Option<Discovery>,
     grafana: Option<Grafana>,
     webui: Option<WebUI>,
@@ -80,6 +83,13 @@ pub struct Components {
 impl Components {
     /// Creates and configures components.
     pub fn new(config: &Config, logger: Logger, interfaces: &mut Interfaces) -> Result<Components> {
+        let core_api = component_new(
+            "core_api",
+            "required",
+            config.components.core_api(),
+            &logger,
+            || CoreAPI::new(logger.clone(), interfaces),
+        );
         let discovery = component_new(
             "discovery",
             "required",
@@ -121,6 +131,7 @@ impl Components {
             None => None,
         };
         Ok(Components {
+            core_api,
             discovery,
             grafana,
             webui,
@@ -141,6 +152,7 @@ impl Components {
 
     /// Performs any final configuration and starts background threads.
     pub fn run(&mut self, upkeep: &mut Upkeep) -> Result<()> {
+        component_run!(self.core_api.as_mut(), upkeep);
         component_run!(self.discovery.as_mut(), upkeep);
         component_run!(self.grafana.as_mut(), upkeep);
         component_run!(self.webui.as_mut(), upkeep);

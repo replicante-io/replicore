@@ -8,16 +8,24 @@ pub struct ComponentsConfig {
     #[serde(default = "ComponentsConfig::default_default", rename = "_default")]
     default: bool,
 
+    /// Enable replicante core API endpoints.
+    #[serde(default)]
+    core_api: Option<bool>,
+
     /// Enable agent discovery.
+    #[serde(default)]
     discovery: Option<bool>,
 
     /// Enable Grafana Annotations API endpoints (optional).
+    #[serde(default)]
     grafana: Option<bool>,
 
     /// Enable the WebUI API endpoints (optional).
+    #[serde(default)]
     webui: Option<bool>,
 
     /// Enable the tasks workers pool component.
+    #[serde(default)]
     workers: Option<bool>,
 }
 
@@ -25,6 +33,7 @@ impl Default for ComponentsConfig {
     fn default() -> Self {
         Self {
             default: Self::default_default(),
+            core_api: None,
             discovery: None,
             grafana: None,
             webui: None,
@@ -41,6 +50,11 @@ impl ComponentsConfig {
 }
 
 impl ComponentsConfig {
+    /// Check if the core API component is enabled.
+    pub fn core_api(&self) -> bool {
+        self.core_api.unwrap_or(self.default)
+    }
+
     /// Check if the discovery component is enabled.
     pub fn discovery(&self) -> bool {
         self.discovery.unwrap_or(self.default)

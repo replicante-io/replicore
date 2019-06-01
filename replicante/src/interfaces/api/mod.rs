@@ -183,6 +183,9 @@ pub enum APIRoot {
     /// Endpoints in this root are NOT subject to ANY compatibility guarantees!
     UnstableAPI,
 
+    /// Replicante core APIs, unstable version.
+    UnstableCoreApi,
+
     /// Instrospection APIs not yet stable.
     UnstableIntrospect,
 
@@ -193,10 +196,12 @@ pub enum APIRoot {
 impl RootDescriptor for APIRoot {
     fn enabled(&self, flags: &HashMap<&'static str, bool>) -> bool {
         match self {
-            APIRoot::UnstableAPI | APIRoot::UnstableWebUI => match flags.get("unstable") {
-                Some(flag) => *flag,
-                None => true,
-            },
+            APIRoot::UnstableAPI | APIRoot::UnstableCoreApi | APIRoot::UnstableWebUI => {
+                match flags.get("unstable") {
+                    Some(flag) => *flag,
+                    None => true,
+                }
+            }
             APIRoot::UnstableIntrospect => match flags.get("unstable") {
                 Some(flag) if !flag => *flag,
                 _ => match flags.get("introspect") {
@@ -210,6 +215,7 @@ impl RootDescriptor for APIRoot {
     fn prefix(&self) -> &'static str {
         match self {
             APIRoot::UnstableAPI => "/api/unstable",
+            APIRoot::UnstableCoreApi => "/api/unstable/core",
             APIRoot::UnstableIntrospect => "/api/unstable/introspect",
             APIRoot::UnstableWebUI => "/api/unstable/webui",
         }
