@@ -1,6 +1,8 @@
 //! System events models and attributes.
 use chrono::DateTime;
 use chrono::Utc;
+use serde_derive::Deserialize;
+use serde_derive::Serialize;
 
 use super::Agent;
 use super::AgentInfo;

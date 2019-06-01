@@ -1,3 +1,6 @@
+use serde_derive::Deserialize;
+use serde_derive::Serialize;
+
 /// Cluster description returned by the descovery system.
 ///
 /// # Cluster membership

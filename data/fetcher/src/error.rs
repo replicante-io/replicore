@@ -34,6 +34,10 @@ impl Fail for Error {
     fn backtrace(&self) -> Option<&Backtrace> {
         self.0.backtrace()
     }
+
+    fn name(&self) -> Option<&str> {
+        self.kind().kind_name()
+    }
 }
 
 impl fmt::Display for Error {
@@ -88,6 +92,19 @@ impl ErrorKind {
             ErrorKind::StoreRead(_) => false,
             ErrorKind::StoreWrite(_) => false,
         }
+    }
+
+    fn kind_name(&self) -> Option<&str> {
+        let name = match self {
+            ErrorKind::AgentConnect(_) => "AgentConnect",
+            ErrorKind::AgentRead(_, _) => "AgentRead",
+            ErrorKind::ClusterDisplayNameDoesNotMatch(_, _, _) => "ClusterDisplayNameDoesNotMatch",
+            ErrorKind::ClusterIdDoesNotMatch(_, _, _) => "ClusterIdDoesNotMatch",
+            ErrorKind::EventEmit(_) => "EventEmit",
+            ErrorKind::StoreRead(_) => "StoreRead",
+            ErrorKind::StoreWrite(_) => "StoreWrite",
+        };
+        Some(name)
     }
 }
 

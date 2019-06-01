@@ -1,7 +1,10 @@
 use std::collections::HashMap;
 use std::collections::HashSet;
 
+use bson::bson;
+use bson::doc;
 use bson::ordered::OrderedDocument;
+use lazy_static::lazy_static;
 
 use super::validate::IndexInfo;
 

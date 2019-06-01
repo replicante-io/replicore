@@ -58,6 +58,7 @@ impl Interfaces {
             coordinator.clone(),
             logger.clone(),
             &metrics,
+            tracing.tracer(),
         );
         let store = Store::make(config.storage.clone(), logger.clone(), tracing.tracer())
             .with_context(|_| ErrorKind::ClientInit("store"))?;
@@ -135,8 +136,8 @@ impl Interfaces {
     /// Mock interfaces using the given logger and wrap them in an `Interfaces` instance.
     pub fn mock_with_logger(logger: Logger) -> (Interfaces, MockInterfaces) {
         let metrics = Metrics::mock();
-        let (api, _) = API::mock(logger.clone(), &metrics);
         let tracing = Tracing::mock();
+        let (api, _) = API::mock(logger.clone(), &metrics, tracing.tracer());
 
         let mock_coordinator = ::replicante_coordinator::mock::MockCoordinator::new(logger.clone());
         let coordinator = mock_coordinator.mock();

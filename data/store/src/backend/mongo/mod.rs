@@ -5,6 +5,8 @@ use mongodb::db::ThreadedDatabase;
 use mongodb::Client;
 use mongodb::ThreadedClient;
 use opentracingrust::Tracer;
+use slog::info;
+use slog::warn;
 use slog::Logger;
 
 use replicante_data_models::admin::Version;

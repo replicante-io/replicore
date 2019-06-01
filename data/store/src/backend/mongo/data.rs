@@ -1,3 +1,5 @@
+use bson::bson;
+use bson::doc;
 use mongodb::coll::options::FindOptions;
 use mongodb::coll::Collection;
 use mongodb::db::ThreadedDatabase;

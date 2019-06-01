@@ -1,6 +1,8 @@
 use std::ops::Deref;
 use std::sync::Arc;
 
+use bson::bson;
+use bson::doc;
 use bson::ordered::OrderedDocument;
 use mongodb::db::ThreadedDatabase;
 use mongodb::Client;

@@ -1,4 +1,6 @@
 use opentracingrust::SpanContext;
+use serde_derive::Deserialize;
+use serde_derive::Serialize;
 
 use replicante_data_models::Agent as AgentModel;
 use replicante_data_models::AgentInfo as AgentInfoModel;

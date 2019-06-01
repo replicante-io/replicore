@@ -4,12 +4,14 @@
 //! This module does not implement all of the APIs but rather provides
 //! tools for other interfaces and components to add their own endpoints.
 use std::collections::HashMap;
+use std::sync::Arc;
 use std::time::Duration;
 
 use failure::ResultExt;
 use humthreads::Builder as ThreadBuilder;
 use iron::Iron;
 use iron_json_response::JsonResponseMiddleware;
+use opentracingrust::Tracer;
 use slog::Logger;
 
 #[cfg(test)]
@@ -55,9 +57,10 @@ impl API {
         coordinator: Coordinator,
         logger: Logger,
         metrics: &Metrics,
+        tracer: Arc<Tracer>,
     ) -> API {
         let registry = metrics.registry().clone();
-        let mut router = Router::new(config.trees.clone().into());
+        let mut router = Router::new(config.trees.clone().into(), logger.clone(), tracer);
         routes::mount(&mut router, coordinator, registry);
         let state = APIDelayInit {
             router,
@@ -147,7 +150,7 @@ impl API {
 
     /// Returns an `API` instance usable as a mock.
     #[cfg(test)]
-    pub fn mock(logger: Logger, metrics: &Metrics) -> (API, MockCoordinator) {
+    pub fn mock(logger: Logger, metrics: &Metrics, tracer: Arc<Tracer>) -> (API, MockCoordinator) {
         let config = Config::default();
         let coordinator = MockCoordinator::new(logger.clone());
         let api = API::new(
@@ -156,6 +159,7 @@ impl API {
             coordinator.mock(),
             logger,
             metrics,
+            tracer,
         );
         (api, coordinator)
     }
@@ -207,6 +211,13 @@ impl RootDescriptor for APIRoot {
             APIRoot::UnstableAPI => "/api/unstable",
             APIRoot::UnstableIntrospect => "/api/unstable/introspect",
             APIRoot::UnstableWebUI => "/api/unstable/webui",
+        }
+    }
+
+    fn trace(&self) -> bool {
+        match self {
+            APIRoot::UnstableIntrospect => false,
+            _ => true,
         }
     }
 }

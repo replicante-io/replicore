@@ -34,6 +34,10 @@ impl Fail for Error {
     fn backtrace(&self) -> Option<&Backtrace> {
         self.0.backtrace()
     }
+
+    fn name(&self) -> Option<&str> {
+        self.kind().kind_name()
+    }
 }
 
 impl fmt::Display for Error {
@@ -68,6 +72,22 @@ pub enum ErrorKind {
 
     #[fail(display = "{} record with id '{}' not found", _0, _1)]
     RecordNotFound(&'static str, String),
+}
+
+impl ErrorKind {
+    fn kind_name(&self) -> Option<&str> {
+        let name = match self {
+            ErrorKind::DuplicateRecord(_, _) => "DuplicateRecord",
+            ErrorKind::InvalidRecord(_) => "InvalidRecord",
+            ErrorKind::MongoDBConnect(_) => "MongoDBConnect",
+            ErrorKind::MongoDBCursor(_) => "MongoDBCursor",
+            ErrorKind::MongoDBBsonDecode => "MongoDBBsonDecode",
+            ErrorKind::MongoDBBsonEncode => "MongoDBBsonEncode",
+            ErrorKind::MongoDBOperation(_) => "MongoDBOperation",
+            ErrorKind::RecordNotFound(_, _) => "RecordNotFound",
+        };
+        Some(name)
+    }
 }
 
 /// Short form alias for functions returning `Error`s.

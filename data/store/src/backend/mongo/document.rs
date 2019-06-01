@@ -1,4 +1,6 @@
 use bson::UtcDateTime;
+use serde_derive::Deserialize;
+use serde_derive::Serialize;
 
 use replicante_data_models::AgentInfo;
 use replicante_data_models::Event;

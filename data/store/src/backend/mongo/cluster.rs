@@ -1,11 +1,14 @@
 use std::ops::Deref;
 use std::sync::Arc;
 
+use bson::bson;
+use bson::doc;
 use mongodb::db::ThreadedDatabase;
 use mongodb::Client;
 use mongodb::ThreadedClient;
 use opentracingrust::SpanContext;
 use opentracingrust::Tracer;
+use slog::debug;
 use slog::Logger;
 
 use replicante_data_models::ClusterDiscovery;

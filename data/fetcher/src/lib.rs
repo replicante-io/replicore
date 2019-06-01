@@ -1,10 +1,8 @@
 extern crate failure;
 extern crate failure_derive;
-#[macro_use]
 extern crate lazy_static;
 extern crate opentracingrust;
 extern crate prometheus;
-#[macro_use]
 extern crate slog;
 
 extern crate replicante_agent_client;
@@ -22,6 +20,8 @@ use failure::ResultExt;
 use opentracingrust::Log;
 use opentracingrust::Span;
 use opentracingrust::Tracer;
+use slog::debug;
+use slog::warn;
 use slog::Logger;
 
 use replicante_agent_client::HttpClient;
