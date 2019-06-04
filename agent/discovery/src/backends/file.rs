@@ -5,6 +5,8 @@ use serde_yaml;
 
 use replicante_data_models::ClusterDiscovery;
 
+use super::super::metrics::DISCOVERY_ERRORS;
+use super::super::metrics::DISCOVERY_TOTAL;
 use super::super::ErrorKind;
 use super::super::Result;
 
@@ -43,12 +45,14 @@ impl Iter {
 impl Iterator for Iter {
     type Item = Result<ClusterDiscovery>;
     fn next(&mut self) -> Option<Self::Item> {
+        DISCOVERY_TOTAL.with_label_values(&["file"]).inc();
         let data: &mut DiscoveryFile = match self.data {
             Some(ref mut data) => data,
             None => {
                 match self.load_content() {
                     Ok(()) => (),
                     Err(error) => {
+                        DISCOVERY_ERRORS.with_label_values(&["file"]).inc();
                         self.data = Some(Vec::new());
                         return Some(Err(error));
                     }

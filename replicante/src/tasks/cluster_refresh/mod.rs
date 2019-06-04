@@ -88,9 +88,7 @@ impl Handler {
             Ok(()) => (),
             Err(error) => {
                 if let ::replicante_coordinator::ErrorKind::LockHeld(_, owner) = error.kind() {
-                    REFRESH_LOCKED
-                        .with_label_values(&[&discovery.cluster_id])
-                        .inc();
+                    REFRESH_LOCKED.inc();
                     info!(
                         self.logger,
                         "Skipped cluster refresh because another task is in progress";
@@ -106,9 +104,7 @@ impl Handler {
 
         // Refresh cluster state.
         let cluster_id = discovery.cluster_id.clone();
-        let timer = REFRESH_DURATION
-            .with_label_values(&[&cluster_id])
-            .start_timer();
+        let timer = REFRESH_DURATION.start_timer();
         self.emit_snapshots(&cluster_id, snapshot, span);
         self.refresh_discovery(discovery.clone(), span)?;
         self.fetcher

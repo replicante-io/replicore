@@ -1,8 +1,6 @@
 ## 0.3.0 - Introspection
-- Investigate yield and harvast.
 - Check for available updates.
 - Status endpoints.
-- Cluster refresh request endpoint.
 
 
 ## 0.3.1 - Events stream

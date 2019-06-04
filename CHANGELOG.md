@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - A better thread story.
 - Additional API server configuration options.
 - Cluster refresh operation tracing.
+- Cluster refresh request endpoint.
 - Graceful shutdown.
 - Introduce an `/api/unstable` API "version".
 - Optional `display_name` discovery attribute.
