@@ -12,6 +12,7 @@ use super::Result;
 mod core_api;
 mod discovery;
 mod grafana;
+mod update_checker;
 mod webui;
 mod workers;
 
@@ -20,6 +21,7 @@ pub use self::discovery::Config as DiscoveryConfig;
 use self::core_api::CoreAPI;
 use self::discovery::DiscoveryComponent as Discovery;
 use self::grafana::Grafana;
+use self::update_checker::UpdateChecker;
 use self::webui::WebUI;
 use self::workers::Workers;
 
@@ -76,6 +78,7 @@ pub struct Components {
     core_api: Option<CoreAPI>,
     discovery: Option<Discovery>,
     grafana: Option<Grafana>,
+    update_checker: Option<UpdateChecker>,
     webui: Option<WebUI>,
     workers: Option<Workers>,
 }
@@ -111,6 +114,13 @@ impl Components {
             &logger,
             || Grafana::new(interfaces),
         );
+        let update_checker = component_new(
+            "update_checker",
+            "optional",
+            config.components.update_checker(),
+            &logger,
+            || UpdateChecker::new(logger.clone()),
+        );
         let webui = component_new(
             "webui",
             "optional",
@@ -134,6 +144,7 @@ impl Components {
             core_api,
             discovery,
             grafana,
+            update_checker,
             webui,
             workers,
         })
@@ -156,6 +167,7 @@ impl Components {
         component_run!(self.core_api.as_mut(), upkeep);
         component_run!(self.discovery.as_mut(), upkeep);
         component_run!(self.grafana.as_mut(), upkeep);
+        component_run!(self.update_checker.as_mut(), upkeep);
         component_run!(self.webui.as_mut(), upkeep);
         component_run!(self.workers.as_mut(), upkeep);
         Ok(())

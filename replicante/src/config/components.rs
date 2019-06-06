@@ -20,6 +20,10 @@ pub struct ComponentsConfig {
     #[serde(default)]
     grafana: Option<bool>,
 
+    /// Enable the update checker (optional).
+    #[serde(default = "ComponentsConfig::default_false")]
+    update_checker: bool,
+
     /// Enable the WebUI API endpoints (optional).
     #[serde(default)]
     webui: Option<bool>,
@@ -36,6 +40,7 @@ impl Default for ComponentsConfig {
             core_api: None,
             discovery: None,
             grafana: None,
+            update_checker: Self::default_false(),
             webui: None,
             workers: None,
         }
@@ -43,9 +48,12 @@ impl Default for ComponentsConfig {
 }
 
 impl ComponentsConfig {
-    /// Default `_default` value used by serde.
     fn default_default() -> bool {
         true
+    }
+
+    fn default_false() -> bool {
+        false
     }
 }
 
@@ -63,6 +71,11 @@ impl ComponentsConfig {
     /// Check if the Grafana Annotations endpoints component is enabled.
     pub fn grafana(&self) -> bool {
         self.grafana.unwrap_or(self.default)
+    }
+
+    /// Check if the update checker component is enabled.
+    pub fn update_checker(&self) -> bool {
+        self.update_checker
     }
 
     /// Check if the WebUI endpoints component is enabled.

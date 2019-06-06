@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Optional `display_name` discovery attribute.
 - Sentry integration.
 - Threads introspection API.
+- Update checker at start (disabled by default).
 - `/api/unstable/introspect/self` endpoint.
 
 ### Changed

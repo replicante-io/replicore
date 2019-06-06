@@ -24,7 +24,7 @@ use super::super::super::tasks::ReplicanteQueues;
 use super::super::super::tasks::Tasks;
 use super::metrics::DISCOVERY_COUNT;
 use super::metrics::DISCOVERY_DURATION;
-use super::metrics::DISCOVERY_ERRORS;
+use super::metrics::DISCOVERY_LOOP_ERRORS;
 use super::snapshot::EmissionTracker;
 
 /// Main discovery logic with primary/secondaries HA support.
@@ -120,7 +120,7 @@ impl LoopingElectionLogic for DiscoveryElection {
                         "Cluster discovery error";
                         failure_info(&error),
                     );
-                    DISCOVERY_ERRORS.inc();
+                    DISCOVERY_LOOP_ERRORS.inc();
                 }
             }
         }

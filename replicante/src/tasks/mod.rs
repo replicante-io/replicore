@@ -27,7 +27,6 @@ impl TaskQueue for ReplicanteQueues {
     fn max_retry_count(&self) -> u8 {
         match self {
             ReplicanteQueues::ClusterRefresh => 3,
-            //_ => 12,
         }
     }
 
@@ -40,7 +39,6 @@ impl TaskQueue for ReplicanteQueues {
     fn retry_delay(&self) -> Duration {
         match self {
             ReplicanteQueues::ClusterRefresh => Duration::from_secs(10),
-            //_ => Duration::from_secs(5 * 60),
         }
     }
 }
