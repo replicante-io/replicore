@@ -1,5 +1,4 @@
 ## 0.3.0 - Introspection
-- Check for available updates.
 - Status endpoints.
 
 

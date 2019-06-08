@@ -23,12 +23,6 @@ lazy_static! {
     static ref CURRENT_VERSION: Version = Version::parse(env!("CARGO_PKG_VERSION")).unwrap();
 }
 
-/// Version metadata returned by the server.
-#[derive(Debug, Deserialize)]
-struct VersionMeta {
-    version: String,
-}
-
 /// Fetch information about the latest available replicante core version.
 pub struct UpdateChecker {
     logger: Logger,
@@ -43,7 +37,8 @@ impl UpdateChecker {
         let logger = self.logger.clone();
         Builder::new("r:c:update_checker")
             .full_name("replicante:component:update_checker")
-            .spawn(move |_| {
+            .spawn(move |scope| {
+                let _activity = scope.scoped_activity("checking for updates");
                 let response = reqwest::get(UPDATE_META)
                     .and_then(|mut response| response.json::<VersionMeta>());
                 let response = match response {
@@ -94,4 +89,10 @@ impl UpdateChecker {
             .with_context(|_| ErrorKind::ThreadSpawn("update_checker"))?;
         Ok(())
     }
+}
+
+/// Version metadata returned by the server.
+#[derive(Debug, Deserialize)]
+struct VersionMeta {
+    version: String,
 }
