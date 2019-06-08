@@ -301,8 +301,8 @@ mod tests {
     }
 
     mod info {
-        use replicante_agent_models::AgentInfo as WireAgentInfo;
-        use replicante_agent_models::AgentVersion;
+        use replicante_models_agent::AgentInfo as WireAgentInfo;
+        use replicante_models_agent::AgentVersion;
 
         use super::super::super::super::super::AgentInfo;
         use super::super::AgentInfoChanged;

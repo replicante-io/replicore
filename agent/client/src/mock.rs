@@ -1,8 +1,8 @@
 use opentracingrust::SpanContext;
 
-use replicante_agent_models::AgentInfo;
-use replicante_agent_models::DatastoreInfo;
-use replicante_agent_models::Shards;
+use replicante_models_agent::AgentInfo;
+use replicante_models_agent::DatastoreInfo;
+use replicante_models_agent::Shards;
 
 use super::Client;
 use super::Result;
@@ -63,13 +63,13 @@ where
 
 #[cfg(test)]
 mod tests {
-    use replicante_agent_models::AgentInfo;
-    use replicante_agent_models::AgentVersion;
-    use replicante_agent_models::CommitOffset;
-    use replicante_agent_models::DatastoreInfo;
-    use replicante_agent_models::Shard;
-    use replicante_agent_models::ShardRole;
-    use replicante_agent_models::Shards;
+    use replicante_models_agent::AgentInfo;
+    use replicante_models_agent::AgentVersion;
+    use replicante_models_agent::CommitOffset;
+    use replicante_models_agent::DatastoreInfo;
+    use replicante_models_agent::Shard;
+    use replicante_models_agent::ShardRole;
+    use replicante_models_agent::Shards;
 
     fn mock_agent_info() -> AgentInfo {
         AgentInfo::new(AgentVersion::new("a", "b", "c"))

@@ -1,7 +1,7 @@
 use serde_derive::Deserialize;
 use serde_derive::Serialize;
 
-use replicante_agent_models::AgentInfo as WireAgentInfo;
+use replicante_models_agent::AgentInfo as WireAgentInfo;
 
 /// Status of an agent.
 #[derive(Clone, Eq, PartialEq, Hash, Debug, Serialize, Deserialize)]
@@ -106,8 +106,8 @@ mod tests {
     mod agent_info {
         use serde_json;
 
-        use replicante_agent_models::AgentInfo as WireAgentInfo;
-        use replicante_agent_models::AgentVersion as WireAgentVersion;
+        use replicante_models_agent::AgentInfo as WireAgentInfo;
+        use replicante_models_agent::AgentVersion as WireAgentVersion;
 
         use super::super::AgentInfo;
 

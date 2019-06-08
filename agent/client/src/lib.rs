@@ -8,13 +8,13 @@ extern crate serde;
 extern crate serde_derive;
 extern crate slog;
 
-extern crate replicante_agent_models;
+extern crate replicante_models_agent;
 
 use opentracingrust::SpanContext;
 
-use replicante_agent_models::AgentInfo;
-use replicante_agent_models::DatastoreInfo;
-use replicante_agent_models::Shards;
+use replicante_models_agent::AgentInfo;
+use replicante_models_agent::DatastoreInfo;
+use replicante_models_agent::Shards;
 
 mod error;
 mod http;

@@ -27,6 +27,6 @@ serde = "^1.0.34"
 serde_derive = "^1.0.34"
 slog = "^2.2.0"
 
-replicante_agent_models = { path = "../../common/agent/models" }
+replicante_models_agent = { path = "../../common/models/agent" }
 replicante_util_failure = { path = "../../common/util/failure" }
 replicante_util_tracing = { path = "../../common/util/tracing" }

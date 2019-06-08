@@ -37,7 +37,7 @@ impl NodeBuilder {
 
 #[cfg(test)]
 mod tests {
-    use replicante_agent_models::DatastoreInfo as WireNode;
+    use replicante_models_agent::DatastoreInfo as WireNode;
 
     use super::Event;
     use super::EventPayload;

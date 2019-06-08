@@ -1,5 +1,5 @@
 # Crates organisation
-Status: PENDING
+Status: ONGOING
 Reason: Group related crates and keep source tree cleaner.
 Blocking something: NO
 
@@ -22,13 +22,17 @@ Crates marked as `FUTURE` are POSSIBLE things that will be added and not a commi
     * [ ] `discovery`: cluster discovery sybsystem (RENAME).
     * [ ] `fetcher`: cluster state refresh and diff (RENAME).
   * [x] `common/`: crates shared with agents or other projects (NO CHANGE).
+    * [x] `models/`: crates defining data models only (NEW).
+      * [x] `agent`: Replicante Agent API request/response models (RENAME).
+      * [x] `api`: Replicante Core API request/response models (FUTURE).
   * [x] `devtools/`: development tools and helpers (NO CHANGE).
   * [x] `docs/`: project documentation.
   * [ ] `models/`: crates defining data models only (NEW).
-    * [ ] `api`: Replicante Core API request/response models (FUTURE).
+    * [ ] `agent.md`: document location of real agent models (NEW).
+    * [ ] `api.md`: document location of real API models (NEW).
     * [ ] `core`: Replicante Core models (RENAME).
-    * `common`: Move `common/models` here??? (UNLIKELY).
   * [ ] `service/`: crates that provide services to replicante core (NEW).
+    * [ ] `healthcheck`: components/dependency health checks (NEW).
     * [ ] `coordinator`: the process coordinator create (RENAME).
     * [ ] `tasks`: the task subsystem crate (RENAME).
   * [ ] `store/`: crates focused on storing data (NEW).

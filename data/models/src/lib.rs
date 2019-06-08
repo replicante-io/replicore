@@ -5,7 +5,7 @@ extern crate serde_derive;
 #[cfg(test)]
 extern crate serde_json;
 
-extern crate replicante_agent_models;
+extern crate replicante_models_agent;
 
 mod agent;
 mod cluster;

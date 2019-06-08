@@ -39,8 +39,8 @@ impl ShardBuilder {
 
 #[cfg(test)]
 mod tests {
-    use replicante_agent_models::Shard as WireShard;
-    use replicante_agent_models::ShardRole;
+    use replicante_models_agent::Shard as WireShard;
+    use replicante_models_agent::ShardRole;
 
     use super::Event;
     use super::EventPayload;
