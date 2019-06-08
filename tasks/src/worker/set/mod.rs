@@ -55,8 +55,8 @@ where
 
 /// Worker logic run by each thread.
 struct Worker<'a, Q: TaskQueue> {
-    backend: Arc<Backend<Q>>,
-    handlers: Arc<HashMap<Q, Box<TaskHandler<Q>>>>,
+    backend: Arc<dyn Backend<Q>>,
+    handlers: Arc<HashMap<Q, Box<dyn TaskHandler<Q>>>>,
     logger: Logger,
     thread: &'a ThreadScope,
 }
@@ -64,8 +64,8 @@ struct Worker<'a, Q: TaskQueue> {
 impl<'a, Q: TaskQueue> Worker<'a, Q> {
     fn new(
         logger: Logger,
-        backend: Arc<Backend<Q>>,
-        handlers: Arc<HashMap<Q, Box<TaskHandler<Q>>>>,
+        backend: Arc<dyn Backend<Q>>,
+        handlers: Arc<HashMap<Q, Box<dyn TaskHandler<Q>>>>,
         thread: &'a ThreadScope,
     ) -> Worker<'a, Q> {
         Worker {
@@ -124,9 +124,9 @@ impl<'a, Q: TaskQueue> Worker<'a, Q> {
 
 /// Builder for a worker threads pool receiving and processing tasks.
 pub struct WorkerSet<Q: TaskQueue> {
-    backend: Arc<Backend<Q>>,
+    backend: Arc<dyn Backend<Q>>,
     config: Config,
-    handlers: HashMap<Q, Box<TaskHandler<Q>>>,
+    handlers: HashMap<Q, Box<dyn TaskHandler<Q>>>,
     logger: Logger,
 }
 

@@ -23,7 +23,7 @@ pub trait StreamInterface: Send + Sync {
 }
 
 /// Iterator over events returned by a scan operation.
-pub struct Iter(Box<Iterator<Item = Result<Event>>>);
+pub struct Iter(Box<dyn Iterator<Item = Result<Event>>>);
 
 impl Iter {
     pub fn new<I>(iter: I) -> Iter

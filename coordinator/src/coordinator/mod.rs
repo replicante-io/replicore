@@ -28,7 +28,7 @@ pub use self::looping_election::ShutdownSender;
 
 /// Interface to access distributed coordination services.
 #[derive(Clone)]
-pub struct Coordinator(Arc<Backend>);
+pub struct Coordinator(Arc<dyn Backend>);
 
 impl Coordinator {
     pub fn new<T>(config: Config, logger: Logger, tracer: T) -> Result<Coordinator>
@@ -50,7 +50,7 @@ impl Coordinator {
 
     /// Internal method to create a `Coordinator` from the given backend.
     #[cfg(debug_assertions)]
-    pub(crate) fn with_backend(backend: Arc<Backend>) -> Coordinator {
+    pub(crate) fn with_backend(backend: Arc<dyn Backend>) -> Coordinator {
         Coordinator(backend)
     }
 }

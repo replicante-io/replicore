@@ -25,7 +25,7 @@ impl ShardFetcher {
 
     pub(crate) fn process_shards(
         &self,
-        client: &Client,
+        client: &dyn Client,
         cluster: &str,
         node: &str,
         span: &mut Span,

@@ -34,7 +34,7 @@ pub use self::set::WorkerSetPool;
 /// task in each thread so there is no reason for `Task` to be `Send` or `Sync`.
 #[derive(Clone)]
 pub struct Task<Q: TaskQueue> {
-    pub(crate) ack_strategy: Arc<self::backend::AckStrategy<Q>>,
+    pub(crate) ack_strategy: Arc<dyn self::backend::AckStrategy<Q>>,
     pub(crate) headers: HashMap<String, String>,
     pub(crate) id: TaskId,
     pub(crate) message: Vec<u8>,

@@ -24,7 +24,7 @@ pub struct StoreInterface {
 }
 
 impl StoreInterface {
-    pub fn make(logger: Logger, store: Store) -> Arc<StreamInterface> {
+    pub fn make(logger: Logger, store: Store) -> Arc<dyn StreamInterface> {
         debug!(logger, "Using store backend for events stream");
         let store = StoreInterface { store };
         Arc::new(store)

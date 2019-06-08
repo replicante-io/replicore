@@ -26,7 +26,7 @@ impl NodeFetcher {
 
     pub(crate) fn process_node(
         &self,
-        client: &Client,
+        client: &dyn Client,
         id_checker: &mut ClusterIdentityChecker,
         span: &mut Span,
     ) -> Result<()> {

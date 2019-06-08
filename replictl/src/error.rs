@@ -15,7 +15,7 @@ impl Error {
 }
 
 impl Fail for Error {
-    fn cause(&self) -> Option<&Fail> {
+    fn cause(&self) -> Option<&dyn Fail> {
         self.0.cause()
     }
 

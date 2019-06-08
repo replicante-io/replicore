@@ -40,7 +40,7 @@ impl AgentFetcher {
 
     pub(crate) fn process_agent_info(
         &self,
-        client: &Client,
+        client: &dyn Client,
         cluster_id: String,
         node: String,
         span: &mut Span,

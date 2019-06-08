@@ -22,7 +22,7 @@ trait AdminBackend<Q: TaskQueue> {
 }
 
 /// Additional task subsystem tools primarily for use by `replictl`.
-pub struct TasksAdmin<Q: TaskQueue>(Arc<AdminBackend<Q>>);
+pub struct TasksAdmin<Q: TaskQueue>(Arc<dyn AdminBackend<Q>>);
 
 impl<Q: TaskQueue> TasksAdmin<Q> {
     pub fn new(logger: Logger, config: Config) -> Result<TasksAdmin<Q>> {
@@ -44,7 +44,7 @@ impl<Q: TaskQueue> TasksAdmin<Q> {
 }
 
 ///  Iterator over tasks stored in a queue.
-pub struct TasksIter<Q: TaskQueue>(Box<Iterator<Item = Result<Task<Q>>>>);
+pub struct TasksIter<Q: TaskQueue>(Box<dyn Iterator<Item = Result<Task<Q>>>>);
 impl<Q: TaskQueue> Iterator for TasksIter<Q> {
     type Item = Result<Task<Q>>;
     fn next(&mut self) -> Option<Self::Item> {

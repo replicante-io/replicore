@@ -9,7 +9,7 @@ use super::interface::StreamInterface;
 
 mod store;
 
-pub fn make(config: Config, logger: Logger, store: Store) -> Arc<StreamInterface> {
+pub fn make(config: Config, logger: Logger, store: Store) -> Arc<dyn StreamInterface> {
     match config {
         Config::Store => self::store::StoreInterface::make(logger, store),
     }

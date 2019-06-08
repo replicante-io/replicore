@@ -49,7 +49,7 @@ use self::interface::StreamInterface;
 /// The event streaming backend is configurable to allow users to pick their preferred
 /// streaming software and balance complexty, scalability, and flexibility to user needs.
 #[derive(Clone)]
-pub struct EventsStream(Arc<StreamInterface>);
+pub struct EventsStream(Arc<dyn StreamInterface>);
 
 impl EventsStream {
     pub fn new(config: Config, logger: Logger, store: Store) -> EventsStream {

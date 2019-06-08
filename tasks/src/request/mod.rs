@@ -80,7 +80,7 @@ impl<Q: TaskQueue> TaskRequest<Q> {
 
 /// Manages task requests to the queue system.
 #[derive(Clone)]
-pub struct Tasks<Q: TaskQueue>(Arc<Backend<Q>>);
+pub struct Tasks<Q: TaskQueue>(Arc<dyn Backend<Q>>);
 
 impl<Q: TaskQueue> Tasks<Q> {
     /// Create a new `Tasks` interface to enqueue new tasks.

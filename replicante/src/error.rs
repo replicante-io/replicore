@@ -22,7 +22,7 @@ impl Fail for Error {
         self.0.backtrace()
     }
 
-    fn cause(&self) -> Option<&Fail> {
+    fn cause(&self) -> Option<&dyn Fail> {
         self.0.cause()
     }
 
