@@ -3,13 +3,13 @@ name = "replictl"
 version = "0.3.0"
 authors = ["Stefano Pogliani <stefano@spogliani.net>"]
 edition = "2018"
-build = "../build.rs"
+build = "../../build.rs"
 
 description = "Replicante command line tool"
 documentation = "https://www.replicante.io/docs"
 homepage = "https://www.replicante.io/"
 repository = "https://github.com/replicante-io/replicante"
-readme = "../README.md"
+readme = "../../README.md"
 keywords = ["automation", "datastore", "operations"]
 license = "MIT"
 
@@ -35,15 +35,15 @@ serde_yaml = "^0.8.0"
 slog = "^2.1.1"
 slog-term = "^2.4.0"
 
-replicante = { path = "../bin/replicante" }
-replicante_agent_discovery = { path = "../agent/discovery" }
-replicante_coordinator = { path = "../coordinator" }
-replicante_data_models = { path = "../data/models" }
-replicante_data_store = { path = "../data/store" }
-replicante_service_healthcheck = { path = "../service/healthcheck" }
-replicante_streams_events = { path = "../streams/events" }
-replicante_tasks = { path = "../tasks" }
-replicante_util_failure = { path = "../common/util/failure" }
+replicante = { path = "../replicante" }
+replicante_agent_discovery = { path = "../../agent/discovery" }
+replicante_coordinator = { path = "../../coordinator" }
+replicante_data_models = { path = "../../data/models" }
+replicante_data_store = { path = "../../data/store" }
+replicante_service_healthcheck = { path = "../../service/healthcheck" }
+replicante_streams_events = { path = "../../streams/events" }
+replicante_tasks = { path = "../../tasks" }
+replicante_util_failure = { path = "../../common/util/failure" }
 
 
 [build-dependencies]

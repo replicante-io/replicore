@@ -13,9 +13,9 @@ Crates marked as `FUTURE` are POSSIBLE things that will be added and not a commi
 
   * [x] `agent/`: crates directly interacting with agents (NO CHANGE).
     * [x] `client`: agent client crate (NO CHANGE).
-  * [ ] `bin/`: crates that ultimatelly become binaries (NEW).
+  * [x] `bin/`: crates that ultimatelly become binaries (NEW).
     * [x] `replicante`: Replicante Core (RENAME).
-    * [ ] `replictl`: Replicante Core CLI (RENAME).
+    * [x] `replictl`: Replicante Core CLI (RENAME).
   * [x] `ci/`: CI tools (NO CHANGE).
   * [ ] `cluster/`: crates focused on cluster logic (NEW).
     * [ ] `aggregator`: aggregated view and events generator (RENAME).
