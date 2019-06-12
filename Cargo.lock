@@ -1763,8 +1763,8 @@ dependencies = [
  "prometheus 0.5.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "replicante_agent_client 0.2.1",
  "replicante_agent_discovery 0.1.1",
+ "replicante_cluster_aggregator 0.1.0",
  "replicante_coordinator 0.1.0",
- "replicante_data_aggregator 0.1.0",
  "replicante_data_fetcher 0.1.1",
  "replicante_data_models 0.2.1",
  "replicante_data_store 0.3.0",
@@ -1824,6 +1824,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "replicante_cluster_aggregator"
+version = "0.1.0"
+dependencies = [
+ "failure 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)",
+ "lazy_static 1.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "opentracingrust 0.3.3 (registry+https://github.com/rust-lang/crates.io-index)",
+ "prometheus 0.5.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "replicante_coordinator 0.1.0",
+ "replicante_data_models 0.2.1",
+ "replicante_data_store 0.3.0",
+ "replicante_util_tracing 0.2.1",
+ "slog 2.4.1 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
 name = "replicante_coordinator"
 version = "0.1.0"
 dependencies = [
@@ -1845,21 +1860,6 @@ dependencies = [
  "sha2 0.8.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "slog 2.4.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "zookeeper 0.5.6 (registry+https://github.com/rust-lang/crates.io-index)",
-]
-
-[[package]]
-name = "replicante_data_aggregator"
-version = "0.1.0"
-dependencies = [
- "failure 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)",
- "lazy_static 1.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "opentracingrust 0.3.3 (registry+https://github.com/rust-lang/crates.io-index)",
- "prometheus 0.5.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "replicante_coordinator 0.1.0",
- "replicante_data_models 0.2.1",
- "replicante_data_store 0.3.0",
- "replicante_util_tracing 0.2.1",
- "slog 2.4.1 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]

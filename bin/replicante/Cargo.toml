@@ -49,8 +49,8 @@ slog-stdlog = "^3.0.2"
 
 replicante_agent_client = { path = "../../agent/client" }
 replicante_agent_discovery = { path = "../../agent/discovery" }
+replicante_cluster_aggregator = { path = "../../cluster/aggregator" }
 replicante_coordinator = { path = "../../coordinator" }
-replicante_data_aggregator = { path = "../../data/aggregator" }
 replicante_data_fetcher = { path = "../../data/fetcher" }
 replicante_data_models = { path = "../../data/models" }
 replicante_data_store = { path = "../../data/store" }

@@ -9,7 +9,7 @@ use slog::info;
 use slog::Logger;
 
 use replicante_coordinator::Coordinator;
-use replicante_data_aggregator::Aggregator;
+use replicante_cluster_aggregator::Aggregator;
 use replicante_data_fetcher::Fetcher;
 use replicante_data_fetcher::Snapshotter;
 use replicante_data_models::ClusterDiscovery;
