@@ -17,6 +17,7 @@ members = [
   "data/store",
   "replicante",
   "replictl",
+  "service/healthcheck",
   "streams/events",
   "tasks",
 ]

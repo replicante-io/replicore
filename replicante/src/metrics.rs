@@ -15,6 +15,30 @@ lazy_static! {
         &["component", "type"]
     )
     .expect("Failed to create COMPONENTS_ENABLED gauge");
+    pub static ref HEALTHCHECK_DEGRADED: GaugeVec = GaugeVec::new(
+        Opts::new(
+            "replicore_heathcheck_degraded",
+            "Indicates if a subsystem is degraded (1) or not (0)"
+        ),
+        &["subsystem"]
+    )
+    .expect("Failed to create HEALTHCHECK_DEGRADED gauge");
+    pub static ref HEALTHCHECK_FAILED: GaugeVec = GaugeVec::new(
+        Opts::new(
+            "replicore_heathcheck_failed",
+            "Indicates if a subsystem has failed (1) or not (0)"
+        ),
+        &["subsystem"]
+    )
+    .expect("Failed to create HEALTHCHECK_FAILED gauge");
+    pub static ref HEALTHCHECK_HEALTHY: GaugeVec = GaugeVec::new(
+        Opts::new(
+            "replicore_heathcheck_healthy",
+            "Indicates if a subsystem is healthy (1) or not (0)"
+        ),
+        &["subsystem"]
+    )
+    .expect("Failed to create HEALTHCHECK_HEALTHY gauge");
     pub static ref UPDATE_AVAILABLE: Gauge = Gauge::new(
         "replicore_updateable",
         "Set to 1 when an updateded version is available (checked at start only)",
@@ -36,6 +60,15 @@ lazy_static! {
 pub fn register_metrics(logger: &Logger, registry: &Registry) {
     if let Err(error) = registry.register(Box::new(COMPONENTS_ENABLED.clone())) {
         debug!(logger, "Failed to register COMPONENTS_ENABLED"; "error" => ?error);
+    }
+    if let Err(error) = registry.register(Box::new(HEALTHCHECK_DEGRADED.clone())) {
+        debug!(logger, "Failed to register HEALTHCHECK_DEGRADED"; "error" => ?error);
+    }
+    if let Err(error) = registry.register(Box::new(HEALTHCHECK_FAILED.clone())) {
+        debug!(logger, "Failed to register HEALTHCHECK_FAILED"; "error" => ?error);
+    }
+    if let Err(error) = registry.register(Box::new(HEALTHCHECK_HEALTHY.clone())) {
+        debug!(logger, "Failed to register HEALTHCHECK_HEALTHY"; "error" => ?error);
     }
     if let Err(error) = registry.register(Box::new(UPDATE_AVAILABLE.clone())) {
         debug!(logger, "Failed to register UPDATE_AVAILABLE"; "error" => ?error);

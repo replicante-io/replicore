@@ -24,6 +24,8 @@ use slog::debug;
 use slog::warn;
 use slog::Logger;
 
+use replicante_service_healthcheck::HealthChecks;
+
 use super::super::super::config::KafkaConfig;
 use super::super::super::shared::kafka::consumer_config;
 use super::super::super::shared::kafka::producer_config;
@@ -31,6 +33,7 @@ use super::super::super::shared::kafka::queue_from_topic;
 use super::super::super::shared::kafka::topic_for_queue;
 use super::super::super::shared::kafka::topic_is_retry;
 use super::super::super::shared::kafka::ClientStatsContext;
+use super::super::super::shared::kafka::KafkaHealthChecker;
 use super::super::super::shared::kafka::TopicRole;
 use super::super::super::shared::kafka::KAFKA_TASKS_CONSUMER;
 use super::super::super::shared::kafka::KAFKA_TASKS_GROUP;
@@ -118,6 +121,7 @@ thread_local! {
 pub struct Kafka {
     commit_retries: u8,
     config: ClientConfig,
+    health: KafkaHealthChecker,
     logger: Logger,
     prefix: String,
     retry_producer: Arc<FutureProducer<ClientStatsContext>>,
@@ -127,14 +131,22 @@ pub struct Kafka {
 }
 
 impl Kafka {
-    pub fn new(config: KafkaConfig, logger: Logger) -> Result<Kafka> {
-        let kafka_config = consumer_config(&config, KAFKA_TASKS_CONSUMER, KAFKA_TASKS_GROUP);
+    pub fn new(
+        config: KafkaConfig,
+        logger: Logger,
+        healthchecks: &mut HealthChecks,
+    ) -> Result<Kafka> {
+        let health = KafkaHealthChecker::new();
+        healthchecks.register("tasks-consumer", health.clone());
+        let client_context = ClientStatsContext::with_healthcheck("retry-producer", health.clone());
         let retry_producer = producer_config(&config, KAFKA_TASKS_RETRY_PRODUCER)
-            .create_with_context(ClientStatsContext::new("retry-producer"))
+            .create_with_context(client_context)
             .with_context(|_| ErrorKind::BackendClientCreation)?;
+        let kafka_config = consumer_config(&config, KAFKA_TASKS_CONSUMER, KAFKA_TASKS_GROUP);
         Ok(Kafka {
             commit_retries: config.commit_retries,
             config: kafka_config,
+            health,
             logger,
             prefix: config.queue_prefix,
             retry_producer: Arc::new(retry_producer),
@@ -207,9 +219,10 @@ impl Kafka {
     fn consumer(&self, subscriptions: &[String]) -> Result<BaseStatsConsumer> {
         debug!(self.logger, "Starting new kafka consumer"; "subscriptions" => ?subscriptions);
         let consumer_role = format!("worker-{:?}-consumer", ::std::thread::current().id());
+        let context = ClientStatsContext::with_healthcheck(consumer_role, self.health.clone());
         let consumer: BaseStatsConsumer = self
             .config
-            .create_with_context(ClientStatsContext::new(consumer_role))
+            .create_with_context(context)
             .with_context(|_| ErrorKind::BackendClientCreation)?;
         let names: Vec<&str> = subscriptions.iter().map(String::as_str).collect();
         consumer

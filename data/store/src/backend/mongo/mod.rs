@@ -10,6 +10,9 @@ use slog::warn;
 use slog::Logger;
 
 use replicante_data_models::admin::Version;
+use replicante_models_api::HealthStatus;
+use replicante_service_healthcheck::HealthCheck;
+use replicante_service_healthcheck::HealthChecks;
 
 use super::super::config::MongoDBConfig;
 use super::super::ErrorKind;
@@ -118,7 +121,12 @@ pub struct Store {
 
 impl Store {
     /// Create a mongodb-backed primary store interface.
-    pub fn make<T>(config: MongoDBConfig, logger: Logger, tracer: T) -> Result<Store>
+    pub fn make<T>(
+        config: MongoDBConfig,
+        logger: Logger,
+        healthchecks: &mut HealthChecks,
+        tracer: T,
+    ) -> Result<Store>
     where
         T: Into<Option<Arc<Tracer>>>,
     {
@@ -127,6 +135,10 @@ impl Store {
         let client = Client::with_uri(&config.uri)
             .with_context(|_| ErrorKind::MongoDBConnect(config.uri.clone()))?;
         let tracer = tracer.into();
+        let healthcheck = MongoDBHealthChecks {
+            client: client.clone(),
+        };
+        healthchecks.register("store-primary", healthcheck);
         Ok(Store {
             client,
             db,
@@ -192,5 +204,18 @@ impl StoreInterface for Store {
         let shards =
             self::shards::Shards::new(self.client.clone(), self.db.clone(), self.tracer.clone());
         ShardsImpl::new(shards)
+    }
+}
+
+struct MongoDBHealthChecks {
+    client: Client,
+}
+
+impl HealthCheck for MongoDBHealthChecks {
+    fn check(&self) -> HealthStatus {
+        match self.client.is_master() {
+            Ok(_) => HealthStatus::Healthy,
+            Err(error) => HealthStatus::Failed(error.to_string()),
+        }
     }
 }

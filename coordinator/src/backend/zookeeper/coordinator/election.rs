@@ -113,7 +113,7 @@ impl AtomicState {
         Ok(())
     }
 
-    /// Update the election state to mark it as a primary.
+    /// Update the election state to mark it as a secondary.
     ///
     /// Does nothing if the election is in an invalid state.
     fn secondary(&self) {
@@ -171,6 +171,9 @@ impl AtomicState {
     }
 
     /// Terminate the election.
+    ///
+    /// This method is called from zookeeper callbacks or when the connection
+    /// to zookeeper is lost so there is no client to the remove_listener from.
     fn terminate<S: Into<String>>(&self, reason: S) {
         let logger = &self.context.logger;
         let name = &self.context.name;
@@ -180,7 +183,6 @@ impl AtomicState {
 
         let mut lock = self.state.lock().expect("AtomicState lock poisoned");
         let znode = lock.candidate_znode.take();
-        let subscription = lock.subscription.take();
         lock.state = ElectionStateMachine::Terminated;
         lock.terminate_reason = Some(reason);
         lock.primary_watcher.store(false, Ordering::Relaxed);
@@ -203,10 +205,7 @@ impl AtomicState {
             }
         };
 
-        // Remove subscription and candidate znode.
-        if let Some(subscription) = subscription {
-            keeper.remove_listener(subscription);
-        }
+        // Remove candidate znode.
         if let Some(znode) = znode {
             match Client::delete(&keeper, &znode, None, None, None) {
                 Ok(()) => (),
@@ -347,6 +346,10 @@ impl ZookeeperElection {
     /// Zookeeper watcher callback.
     ///
     /// Fetch the list of candidates, reinstall the watcher and updates the state.
+    ///
+    /// # Deadlock risk
+    /// This method is called from Zookeeper callbacks so it cannot manipulate
+    /// the subscriptions list.
     fn election_changed(state: &AtomicState) {
         // If the election has ended since the last time we watched it exit now.
         if !state.get().running() {
@@ -443,6 +446,10 @@ impl ZookeeperElection {
     }
 
     /// Zookeeper session closed callback.
+    ///
+    /// # Deadlock risk
+    /// This method is called from Zookeeper callbacks so it cannot manipulate
+    /// the subscriptions list.
     fn session_closed(state: &AtomicState) {
         state.terminate("zookeeper session lost");
     }

@@ -30,6 +30,8 @@ extern crate replicante_data_fetcher;
 extern crate replicante_data_models;
 extern crate replicante_data_store;
 extern crate replicante_logging;
+extern crate replicante_models_api;
+extern crate replicante_service_healthcheck;
 extern crate replicante_streams_events;
 extern crate replicante_tasks;
 extern crate replicante_util_failure;

@@ -8,6 +8,8 @@ use opentracingrust::SpanContext;
 use opentracingrust::Tracer;
 use serde::Serialize;
 
+use replicante_service_healthcheck::HealthChecks;
+
 use super::config::Backend as BackendConfig;
 use super::metrics::TASK_REQUEST_ERRORS;
 use super::metrics::TASK_REQUEST_TOTAL;
@@ -84,9 +86,9 @@ pub struct Tasks<Q: TaskQueue>(Arc<dyn Backend<Q>>);
 
 impl<Q: TaskQueue> Tasks<Q> {
     /// Create a new `Tasks` interface to enqueue new tasks.
-    pub fn new(config: Config) -> Result<Tasks<Q>> {
+    pub fn new(config: Config, healthchecks: &mut HealthChecks) -> Result<Tasks<Q>> {
         let backend = match config.backend {
-            BackendConfig::Kafka(backend) => Arc::new(Kafka::new(backend)?),
+            BackendConfig::Kafka(backend) => Arc::new(Kafka::new(backend, healthchecks)?),
         };
         Ok(Tasks(backend))
     }

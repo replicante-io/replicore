@@ -10,6 +10,10 @@ pub struct Config {
     #[serde(default = "Config::default_bind")]
     pub bind: String,
 
+    /// The health checks refresh frequency (in seconds).
+    #[serde(default = "Config::default_healthcheck_refresh")]
+    pub healthcheck_refresh: u64,
+
     /// The number of request handling threads.
     #[serde(default)]
     pub threads_count: Option<usize>,
@@ -27,6 +31,7 @@ impl Default for Config {
     fn default() -> Config {
         Config {
             bind: Config::default_bind(),
+            healthcheck_refresh: 10,
             threads_count: None,
             timeouts: Timeouts::default(),
             trees: APITrees::default(),
@@ -35,9 +40,12 @@ impl Default for Config {
 }
 
 impl Config {
-    /// Default value for `bind` used by serde.
     fn default_bind() -> String {
         String::from("127.0.0.1:16016")
+    }
+
+    fn default_healthcheck_refresh() -> u64 {
+        10
     }
 }
 

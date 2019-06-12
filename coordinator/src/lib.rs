@@ -12,6 +12,8 @@ extern crate sha2;
 extern crate slog;
 extern crate zookeeper;
 
+extern crate replicante_models_api;
+extern crate replicante_service_healthcheck;
 extern crate replicante_util_failure;
 extern crate replicante_util_rndid;
 extern crate replicante_util_tracing;

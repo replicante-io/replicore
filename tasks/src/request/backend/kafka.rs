@@ -5,6 +5,8 @@ use rdkafka::message::OwnedHeaders;
 use rdkafka::producer::FutureProducer;
 use rdkafka::producer::FutureRecord;
 
+use replicante_service_healthcheck::HealthChecks;
+
 use super::super::super::config::KafkaConfig;
 use super::super::super::shared::kafka::producer_config;
 use super::super::super::shared::kafka::topic_for_queue;
@@ -27,9 +29,11 @@ pub struct Kafka {
 }
 
 impl Kafka {
-    pub fn new(config: KafkaConfig) -> Result<Kafka> {
+    pub fn new(config: KafkaConfig, healthchecks: &mut HealthChecks) -> Result<Kafka> {
+        let client_context = ClientStatsContext::new("tasks-producer");
+        healthchecks.register("tasks-producer", client_context.healthcheck());
         let producer = producer_config(&config, KAFKA_TASKS_PRODUCER)
-            .create_with_context(ClientStatsContext::new("request-producer"))
+            .create_with_context(client_context)
             .with_context(|_| ErrorKind::BackendClientCreation)?;
         let kafka = Kafka {
             prefix: config.queue_prefix,

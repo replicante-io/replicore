@@ -40,6 +40,7 @@ replicante_agent_discovery = { path = "../agent/discovery" }
 replicante_coordinator = { path = "../coordinator" }
 replicante_data_models = { path = "../data/models" }
 replicante_data_store = { path = "../data/store" }
+replicante_service_healthcheck = { path = "../service/healthcheck" }
 replicante_streams_events = { path = "../streams/events" }
 replicante_tasks = { path = "../tasks" }
 replicante_util_failure = { path = "../common/util/failure" }

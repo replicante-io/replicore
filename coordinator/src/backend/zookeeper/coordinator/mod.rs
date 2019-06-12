@@ -3,6 +3,10 @@ use std::sync::Arc;
 use opentracingrust::Tracer;
 use slog::Logger;
 
+use replicante_models_api::HealthStatus;
+use replicante_service_healthcheck::HealthCheck;
+use replicante_service_healthcheck::HealthChecks;
+
 use super::super::super::config::ZookeeperConfig;
 use super::super::super::coordinator::Election;
 use super::super::super::coordinator::NonBlockingLock;
@@ -32,6 +36,7 @@ impl Zookeeper {
         node_id: NodeId,
         config: ZookeeperConfig,
         logger: Logger,
+        healthchecks: &mut HealthChecks,
         tracer: T,
     ) -> Result<Zookeeper>
     where
@@ -40,6 +45,10 @@ impl Zookeeper {
         let client = Arc::new(Client::new(config.clone(), Some(&node_id), logger.clone())?);
         let cleaner = Cleaner::new(Arc::clone(&client), config, node_id.clone(), logger.clone())?;
         let tracer = tracer.into();
+        let healthcheck = ZookeeperHealthCheck {
+            client: Arc::clone(&client),
+        };
+        healthchecks.register("coordination", healthcheck);
         Ok(Zookeeper {
             _cleaner: cleaner,
             client,
@@ -75,5 +84,20 @@ impl Backend for Zookeeper {
 
     fn node_id(&self) -> &NodeId {
         &self.node_id
+    }
+}
+
+/// Check that the current session is active.
+struct ZookeeperHealthCheck {
+    client: Arc<Client>,
+}
+
+impl HealthCheck for ZookeeperHealthCheck {
+    fn check(&self) -> HealthStatus {
+        if self.client.is_connected() {
+            HealthStatus::Healthy
+        } else {
+            HealthStatus::Failed("client not connected to zookeeper".to_string())
+        }
     }
 }

@@ -150,6 +150,10 @@ impl ZookeeperNBLock {
     ///
     /// If the session was closed, release the lock.
     /// Otherwise do nothing.
+    ///
+    /// # Deadlock risk
+    /// This method is called from Zookeeper callbacks so it cannot manipulate
+    /// the subscriptions list.
     fn callback_state(context: &NblCallbackContext, status: ZkState) {
         if let ZkState::Closed = status {
             error!(

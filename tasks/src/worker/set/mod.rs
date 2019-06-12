@@ -11,6 +11,7 @@ use slog::error;
 use slog::trace;
 use slog::Logger;
 
+use replicante_service_healthcheck::HealthChecks;
 use replicante_util_failure::capture_fail;
 use replicante_util_failure::failure_info;
 use replicante_util_upkeep::Upkeep;
@@ -131,9 +132,15 @@ pub struct WorkerSet<Q: TaskQueue> {
 }
 
 impl<Q: TaskQueue> WorkerSet<Q> {
-    pub fn new(logger: Logger, config: Config) -> Result<WorkerSet<Q>> {
+    pub fn new(
+        logger: Logger,
+        config: Config,
+        healthchecks: &mut HealthChecks,
+    ) -> Result<WorkerSet<Q>> {
         let backend = match config.backend.clone() {
-            BackendConfig::Kafka(backend) => Arc::new(Kafka::new(backend, logger.clone())?),
+            BackendConfig::Kafka(backend) => {
+                Arc::new(Kafka::new(backend, logger.clone(), healthchecks)?)
+            }
         };
         Ok(WorkerSet {
             backend,

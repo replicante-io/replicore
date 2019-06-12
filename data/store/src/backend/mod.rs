@@ -15,6 +15,7 @@ use replicante_data_models::ClusterMeta;
 use replicante_data_models::Event;
 use replicante_data_models::Node;
 use replicante_data_models::Shard;
+use replicante_service_healthcheck::HealthChecks;
 
 use super::admin::ValidationResult;
 use super::store::agent::AgentAttribures;
@@ -35,13 +36,18 @@ use super::Result;
 mod mongo;
 
 /// Instantiate a new storage backend based on the given configuration.
-pub fn backend_factory<T>(config: Config, logger: Logger, tracer: T) -> Result<StoreImpl>
+pub fn backend_factory<T>(
+    config: Config,
+    logger: Logger,
+    healthchecks: &mut HealthChecks,
+    tracer: T,
+) -> Result<StoreImpl>
 where
     T: Into<Option<Arc<Tracer>>>,
 {
     let store = match config {
         Config::MongoDB(config) => {
-            let store = self::mongo::Store::make(config, logger, tracer)?;
+            let store = self::mongo::Store::make(config, logger, healthchecks, tracer)?;
             StoreImpl::new(store)
         }
     };

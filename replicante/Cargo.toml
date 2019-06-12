@@ -55,6 +55,8 @@ replicante_data_fetcher = { path = "../data/fetcher" }
 replicante_data_models = { path = "../data/models" }
 replicante_data_store = { path = "../data/store" }
 replicante_logging = { path = "../common/logging" }
+replicante_models_api = { path = "../common/models/api" }
+replicante_service_healthcheck = { path = "../service/healthcheck" }
 replicante_streams_events = { path = "../streams/events" }
 replicante_tasks = { path = "../tasks" }
 replicante_util_failure = { path = "../common/util/failure" }

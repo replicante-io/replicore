@@ -16,7 +16,6 @@ use slog::debug;
 use slog::error;
 use slog::info;
 use slog::trace;
-use slog::warn;
 use slog::Logger;
 
 use zookeeper::Acl;
@@ -429,6 +428,16 @@ impl Client {
         }
         Ok(current.client())
     }
+
+    /// Check if the client is currently connected.
+    pub fn is_connected(&self) -> bool {
+        let mutex = self
+            .keeper
+            .as_ref()
+            .expect("current client must be set after creation");
+        let current = mutex.lock().expect("zookeeper client lock was poisoned");
+        current.active()
+    }
 }
 
 impl Client {
@@ -517,7 +526,7 @@ impl Client {
                     false
                 }
                 ZkState::Closed => {
-                    warn!(logger, "Zookeeper session closed");
+                    error!(logger, "Zookeeper session closed");
                     true
                 }
                 ZkState::Connected => {
@@ -525,7 +534,7 @@ impl Client {
                     false
                 }
                 ZkState::ConnectedReadOnly => {
-                    warn!(logger, "Zookeeper connection is read-only");
+                    error!(logger, "Zookeeper connection is read-only");
                     false
                 }
                 ZkState::Connecting => {

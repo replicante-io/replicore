@@ -32,6 +32,7 @@ use replicante_util_upkeep::Upkeep;
 use super::super::config::SentryCaptureApi;
 use super::super::ErrorKind;
 use super::super::Result;
+use super::healthchecks::HealthResultsCache;
 use super::metrics::Metrics;
 
 mod config;
@@ -58,11 +59,12 @@ impl API {
         coordinator: Coordinator,
         logger: Logger,
         metrics: &Metrics,
+        healthchecks: HealthResultsCache,
         tracer: Arc<Tracer>,
     ) -> API {
         let registry = metrics.registry().clone();
         let mut router = Router::new(config.trees.clone().into(), logger.clone(), tracer);
-        routes::mount(&mut router, coordinator, registry);
+        routes::mount(&mut router, coordinator, registry, healthchecks);
         let state = APIDelayInit {
             router,
             sentry_capture_api,
@@ -151,7 +153,12 @@ impl API {
 
     /// Returns an `API` instance usable as a mock.
     #[cfg(test)]
-    pub fn mock(logger: Logger, metrics: &Metrics, tracer: Arc<Tracer>) -> (API, MockCoordinator) {
+    pub fn mock(
+        logger: Logger,
+        metrics: &Metrics,
+        healthchecks: HealthResultsCache,
+        tracer: Arc<Tracer>,
+    ) -> (API, MockCoordinator) {
         let config = Config::default();
         let coordinator = MockCoordinator::new(logger.clone());
         let api = API::new(
@@ -160,6 +167,7 @@ impl API {
             coordinator.mock(),
             logger,
             metrics,
+            healthchecks,
             tracer,
         );
         (api, coordinator)

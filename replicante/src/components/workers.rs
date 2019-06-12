@@ -78,8 +78,12 @@ impl Workers {
     /// The tasks that are processed by this node are defined in the configuration file.
     pub fn new(interfaces: &mut Interfaces, logger: Logger, config: Config) -> Result<Workers> {
         let agents_timeout = Duration::from_secs(config.timeouts.agents_api);
-        let worker_set = WorkerSet::new(logger.clone(), config.tasks)
-            .with_context(|_| ErrorKind::ClientInit("tasks workers"))?;
+        let worker_set = WorkerSet::new(
+            logger.clone(),
+            config.tasks,
+            interfaces.healthchecks.register(),
+        )
+        .with_context(|_| ErrorKind::ClientInit("tasks workers"))?;
         let worker_set = configure_worker(
             worker_set,
             ReplicanteQueues::ClusterRefresh,

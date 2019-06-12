@@ -6,6 +6,16 @@ api:
   # Production environments should place an HTTPS proxy in front of the API.
   bind: '127.0.0.1:16016'
 
+  # The health checks refresh frequency (in seconds).
+  #
+  # Health checks are an internal indicator of replicante processes ability
+  # to interact with external dependencies.
+  # Since they can be expensive an have a small cost to each dependency they are run periodically
+  # in the background with the latest result made visible through the API and metrics.
+  #
+  # This option configures the amount of time (in seconds) to wait between checks.
+  healthcheck_refresh: 10
+
   # The number of request handling threads.
   #
   # By default this is 8 * number of CPUs.

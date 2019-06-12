@@ -3,6 +3,8 @@ use std::sync::Arc;
 use opentracingrust::Tracer;
 use slog::Logger;
 
+use replicante_service_healthcheck::HealthChecks;
+
 use super::backend::backend_factory;
 use super::backend::StoreImpl;
 use super::Config;
@@ -54,11 +56,16 @@ pub struct Store {
 
 impl Store {
     /// Instantiate a new storage interface.
-    pub fn make<T>(config: Config, logger: Logger, tracer: T) -> Result<Store>
+    pub fn make<T>(
+        config: Config,
+        logger: Logger,
+        healthchecks: &mut HealthChecks,
+        tracer: T,
+    ) -> Result<Store>
     where
         T: Into<Option<Arc<Tracer>>>,
     {
-        let store = backend_factory(config, logger, tracer)?;
+        let store = backend_factory(config, logger, healthchecks, tracer)?;
         Ok(Store { store })
     }
 

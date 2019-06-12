@@ -1,3 +1,5 @@
+use std::time::Duration;
+
 use failure::ResultExt;
 use prometheus::Registry;
 use slog::Logger;
@@ -13,10 +15,12 @@ use super::ErrorKind;
 use super::Result;
 
 pub mod api;
+mod healthchecks;
 pub mod metrics;
 pub mod tracing;
 
 use self::api::API;
+pub use self::healthchecks::HealthChecks;
 use self::metrics::Metrics;
 use self::tracing::Tracing;
 
@@ -32,6 +36,7 @@ use self::tracing::Tracing;
 pub struct Interfaces {
     pub api: API,
     pub coordinator: Coordinator,
+    pub healthchecks: HealthChecks,
     pub metrics: Metrics,
     pub store: Store,
     pub streams: Streams,
@@ -44,10 +49,16 @@ impl Interfaces {
     #[allow(clippy::needless_pass_by_value)]
     pub fn new(config: &Config, logger: Logger, upkeep: &mut Upkeep) -> Result<Interfaces> {
         let metrics = Metrics::new();
+        let mut healthchecks =
+            HealthChecks::new(Duration::from_secs(config.api.healthcheck_refresh));
         let tracing = Tracing::new(config.tracing.clone(), logger.clone(), upkeep)?;
-        let coordinator =
-            Coordinator::new(config.coordinator.clone(), logger.clone(), tracing.tracer())
-                .with_context(|_| ErrorKind::InterfaceInit("coordinator"))?;
+        let coordinator = Coordinator::new(
+            config.coordinator.clone(),
+            logger.clone(),
+            healthchecks.register(),
+            tracing.tracer(),
+        )
+        .with_context(|_| ErrorKind::InterfaceInit("coordinator"))?;
         let api = API::new(
             config.api.clone(),
             config
@@ -58,16 +69,23 @@ impl Interfaces {
             coordinator.clone(),
             logger.clone(),
             &metrics,
+            healthchecks.results_proxy(),
             tracing.tracer(),
         );
-        let store = Store::make(config.storage.clone(), logger.clone(), tracing.tracer())
-            .with_context(|_| ErrorKind::ClientInit("store"))?;
+        let store = Store::make(
+            config.storage.clone(),
+            logger.clone(),
+            healthchecks.register(),
+            tracing.tracer(),
+        )
+        .with_context(|_| ErrorKind::ClientInit("store"))?;
         let streams = Streams::new(config, logger.clone(), store.clone())?;
-        let tasks =
-            Tasks::new(config.tasks.clone()).with_context(|_| ErrorKind::ClientInit("tasks"))?;
+        let tasks = Tasks::new(config.tasks.clone(), healthchecks.register())
+            .with_context(|_| ErrorKind::ClientInit("tasks"))?;
         Ok(Interfaces {
             api,
             coordinator,
+            healthchecks,
             metrics,
             store,
             streams,
@@ -93,6 +111,7 @@ impl Interfaces {
     /// For example, the [`ApiInterface`] uses it to wrap the router into a server.
     pub fn run(&mut self, upkeep: &mut Upkeep) -> Result<()> {
         self.api.run(upkeep)?;
+        self.healthchecks.run(upkeep)?;
         self.metrics.run()?;
         self.tracing.run()?;
         Ok(())
@@ -136,8 +155,14 @@ impl Interfaces {
     /// Mock interfaces using the given logger and wrap them in an `Interfaces` instance.
     pub fn mock_with_logger(logger: Logger) -> (Interfaces, MockInterfaces) {
         let metrics = Metrics::mock();
+        let healthchecks = HealthChecks::new(Duration::from_secs(10));
         let tracing = Tracing::mock();
-        let (api, _) = API::mock(logger.clone(), &metrics, tracing.tracer());
+        let (api, _) = API::mock(
+            logger.clone(),
+            &metrics,
+            healthchecks.results_proxy(),
+            tracing.tracer(),
+        );
 
         let mock_coordinator = ::replicante_coordinator::mock::MockCoordinator::new(logger.clone());
         let coordinator = mock_coordinator.mock();
@@ -160,6 +185,7 @@ impl Interfaces {
         let interfaces = Interfaces {
             api,
             coordinator,
+            healthchecks,
             metrics,
             store,
             streams: Streams { events },

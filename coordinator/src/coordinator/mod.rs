@@ -3,6 +3,8 @@ use std::sync::Arc;
 use opentracingrust::Tracer;
 use slog::Logger;
 
+use replicante_service_healthcheck::HealthChecks;
+
 use super::backend;
 use super::backend::Backend;
 use super::BackendConfig;
@@ -31,7 +33,12 @@ pub use self::looping_election::ShutdownSender;
 pub struct Coordinator(Arc<dyn Backend>);
 
 impl Coordinator {
-    pub fn new<T>(config: Config, logger: Logger, tracer: T) -> Result<Coordinator>
+    pub fn new<T>(
+        config: Config,
+        logger: Logger,
+        healthchecks: &mut HealthChecks,
+        tracer: T,
+    ) -> Result<Coordinator>
     where
         T: Into<Option<Arc<Tracer>>>,
     {
@@ -42,7 +49,11 @@ impl Coordinator {
         };
         let backend = match config.backend {
             BackendConfig::Zookeeper(zookeeper) => Arc::new(backend::zookeeper::Zookeeper::new(
-                node_id, zookeeper, logger, tracer,
+                node_id,
+                zookeeper,
+                logger,
+                healthchecks,
+                tracer,
             )?),
         };
         Ok(Coordinator(backend))

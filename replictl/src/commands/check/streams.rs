@@ -8,6 +8,7 @@ use slog::warn;
 
 use replicante::Config;
 use replicante_data_store::store::Store;
+use replicante_service_healthcheck::HealthChecks;
 use replicante_streams_events::EventsStream;
 use replicante_streams_events::ScanFilters;
 use replicante_streams_events::ScanOptions;
@@ -51,10 +52,11 @@ pub fn events<'a>(args: &ArgMatches<'a>, interfaces: &Interfaces) -> Result<()> 
         return Err(ErrorKind::UserAbort.into());
     }
 
+    let mut healthchecks = HealthChecks::new();
     let mut outcomes = Outcomes::new();
     let config = args.value_of("config").unwrap();
     let config = Config::from_file(config).with_context(|_| ErrorKind::ConfigLoad)?;
-    let store = Store::make(config.storage, logger.clone(), None)
+    let store = Store::make(config.storage, logger.clone(), &mut healthchecks, None)
         .with_context(|_| ErrorKind::ClientInit("store"))?;
     let stream = EventsStream::new(config.events.stream, logger.clone(), store);
 
