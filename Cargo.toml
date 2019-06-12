@@ -2,6 +2,7 @@
 members = [
   "agent/client",
   "agent/discovery",
+  "bin/replicante",
   "common/logging",
   "common/models/agent",
   "common/models/api",
@@ -15,7 +16,6 @@ members = [
   "data/fetcher",
   "data/models",
   "data/store",
-  "replicante",
   "replictl",
   "service/healthcheck",
   "streams/events",

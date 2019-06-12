@@ -35,7 +35,7 @@ serde_yaml = "^0.8.0"
 slog = "^2.1.1"
 slog-term = "^2.4.0"
 
-replicante = { path = "../replicante" }
+replicante = { path = "../bin/replicante" }
 replicante_agent_discovery = { path = "../agent/discovery" }
 replicante_coordinator = { path = "../coordinator" }
 replicante_data_models = { path = "../data/models" }

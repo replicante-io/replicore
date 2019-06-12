@@ -3,13 +3,13 @@ name = "replicante"
 version = "0.3.0"
 authors = ["Stefano Pogliani <stefano@spogliani.net>"]
 edition = "2018"
-build = "../build.rs"
+build = "../../build.rs"
 
 description = "Safe DataStore automation"
 documentation = "https://www.replicante.io/docs"
 homepage = "https://www.replicante.io/"
 repository = "https://github.com/replicante-io/replicante"
-readme = "../README.md"
+readme = "../../README.md"
 keywords = ["automation", "datastore", "operations"]
 license = "MIT"
 
@@ -47,22 +47,22 @@ slog = "^2.1.1"
 slog-scope = "^4.0.1"
 slog-stdlog = "^3.0.2"
 
-replicante_agent_client = { path = "../agent/client" }
-replicante_agent_discovery = { path = "../agent/discovery" }
-replicante_coordinator = { path = "../coordinator" }
-replicante_data_aggregator = { path = "../data/aggregator" }
-replicante_data_fetcher = { path = "../data/fetcher" }
-replicante_data_models = { path = "../data/models" }
-replicante_data_store = { path = "../data/store" }
-replicante_logging = { path = "../common/logging" }
-replicante_models_api = { path = "../common/models/api" }
-replicante_service_healthcheck = { path = "../service/healthcheck" }
-replicante_streams_events = { path = "../streams/events" }
-replicante_tasks = { path = "../tasks" }
-replicante_util_failure = { path = "../common/util/failure" }
-replicante_util_iron = { path = "../common/util/iron" }
-replicante_util_tracing = { path = "../common/util/tracing" }
-replicante_util_upkeep = { path = "../common/util/upkeep" }
+replicante_agent_client = { path = "../../agent/client" }
+replicante_agent_discovery = { path = "../../agent/discovery" }
+replicante_coordinator = { path = "../../coordinator" }
+replicante_data_aggregator = { path = "../../data/aggregator" }
+replicante_data_fetcher = { path = "../../data/fetcher" }
+replicante_data_models = { path = "../../data/models" }
+replicante_data_store = { path = "../../data/store" }
+replicante_logging = { path = "../../common/logging" }
+replicante_models_api = { path = "../../common/models/api" }
+replicante_service_healthcheck = { path = "../../service/healthcheck" }
+replicante_streams_events = { path = "../../streams/events" }
+replicante_tasks = { path = "../../tasks" }
+replicante_util_failure = { path = "../../common/util/failure" }
+replicante_util_iron = { path = "../../common/util/iron" }
+replicante_util_tracing = { path = "../../common/util/tracing" }
+replicante_util_upkeep = { path = "../../common/util/upkeep" }
 
 
 [build-dependencies]
@@ -71,7 +71,7 @@ git2 = "^0.8.0"
 
 [dev-dependencies]
 iron-test = "^0.6.0"
-replicante_data_store = { path = "../data/store", features = ["with_test_support"] }
+replicante_data_store = { path = "../../data/store", features = ["with_test_support"] }
 
 
 [features]
