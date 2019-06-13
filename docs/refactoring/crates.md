@@ -17,10 +17,10 @@ Crates marked as `FUTURE` are POSSIBLE things that will be added and not a commi
     * [x] `replicante`: Replicante Core (RENAME).
     * [x] `replictl`: Replicante Core CLI (RENAME).
   * [x] `ci/`: CI tools (NO CHANGE).
-  * [ ] `cluster/`: crates focused on cluster logic (NEW).
+  * [x] `cluster/`: crates focused on cluster logic (NEW).
     * [x] `aggregator`: aggregated view and events generator (RENAME).
     * [x] `discovery`: cluster discovery sybsystem (RENAME).
-    * [ ] `fetcher`: cluster state refresh and diff (RENAME).
+    * [x] `fetcher`: cluster state refresh and diff (RENAME).
   * [x] `common/`: crates shared with agents or other projects (NO CHANGE).
     * [x] `models/`: crates defining data models only (NEW).
       * [x] `agent`: Replicante Agent API request/response models (RENAME).

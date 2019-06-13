@@ -1,5 +1,5 @@
 [package]
-name = "replicante_data_fetcher"
+name = "replicante_cluster_fetcher"
 version = "0.1.1"
 authors = ["Stefano Pogliani <stefano@spogliani.net>"]
 edition = "2018"
@@ -26,8 +26,8 @@ slog = "^2.1.1"
 
 replicante_agent_client = { path = "../../agent/client" }
 replicante_coordinator = { path = "../../coordinator" }
-replicante_data_models = { path = "../models" }
-replicante_data_store = { path = "../store" }
+replicante_data_models = { path = "../../data/models" }
+replicante_data_store = { path = "../../data/store" }
 replicante_streams_events = { path = "../../streams/events" }
 replicante_util_failure = { path = "../../common/util/failure" }
 replicante_util_tracing = { path = "../../common/util/tracing" }
