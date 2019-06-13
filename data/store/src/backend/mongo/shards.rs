@@ -10,7 +10,7 @@ use mongodb::ThreadedClient;
 use opentracingrust::SpanContext;
 use opentracingrust::Tracer;
 
-use replicante_data_models::Shard;
+use replicante_models_core::Shard;
 
 use super::super::super::store::shards::ShardsAttribures;
 use super::super::super::store::shards::ShardsCounts;

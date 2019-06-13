@@ -13,7 +13,7 @@ use replicante_coordinator::Error as CoordinatorError;
 use replicante_coordinator::LoopingElectionControl;
 use replicante_coordinator::LoopingElectionLogic;
 use replicante_coordinator::Result as CoordinatorResult;
-use replicante_data_models::ClusterDiscovery;
+use replicante_models_core::ClusterDiscovery;
 use replicante_tasks::TaskRequest;
 use replicante_util_failure::capture_fail;
 use replicante_util_failure::failure_info;

@@ -1,4 +1,4 @@
-use replicante_data_models::ClusterDiscovery;
+use replicante_models_core::ClusterDiscovery;
 
 use super::config::Config;
 use super::Result;
@@ -139,7 +139,7 @@ pub fn discover(config: Config) -> Iter {
 mod tests {
     use std::path::Path;
 
-    use replicante_data_models::ClusterDiscovery;
+    use replicante_models_core::ClusterDiscovery;
 
     use super::file;
     use super::Backend;

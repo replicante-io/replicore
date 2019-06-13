@@ -6,7 +6,7 @@ use iron::Set;
 use iron_json_response::JsonResponse;
 use lazy_static::lazy_static;
 
-use replicante_data_models::api::Version;
+use replicante_models_core::api::Version;
 
 lazy_static! {
     /// Compile-time constant version of core.

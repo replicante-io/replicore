@@ -7,17 +7,14 @@ extern crate serde;
 extern crate serde_derive;
 extern crate slog;
 
-extern crate replicante_data_models;
-extern crate replicante_data_store;
-
 use std::sync::Arc;
 
 use opentracingrust::SpanContext;
 use prometheus::Registry;
 use slog::Logger;
 
-use replicante_data_models::Event;
 use replicante_data_store::store::Store;
+use replicante_models_core::Event;
 
 mod backend;
 mod config;

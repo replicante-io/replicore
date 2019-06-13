@@ -1,18 +1,3 @@
-extern crate failure;
-extern crate failure_derive;
-extern crate lazy_static;
-extern crate opentracingrust;
-extern crate prometheus;
-extern crate slog;
-
-extern crate replicante_agent_client;
-extern crate replicante_coordinator;
-extern crate replicante_data_models;
-extern crate replicante_data_store;
-extern crate replicante_streams_events;
-extern crate replicante_util_failure;
-extern crate replicante_util_tracing;
-
 use std::sync::Arc;
 use std::time::Duration;
 
@@ -26,10 +11,10 @@ use slog::Logger;
 
 use replicante_agent_client::HttpClient;
 use replicante_coordinator::NonBlockingLockWatcher;
-use replicante_data_models::Agent;
-use replicante_data_models::AgentStatus;
-use replicante_data_models::ClusterDiscovery;
 use replicante_data_store::store::Store;
+use replicante_models_core::Agent;
+use replicante_models_core::AgentStatus;
+use replicante_models_core::ClusterDiscovery;
 use replicante_streams_events::EventsStream;
 use replicante_util_failure::format_fail;
 

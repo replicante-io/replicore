@@ -35,7 +35,7 @@ serde_derive = "^1.0.34"
 serde_json = "^1.0.39"
 slog = "^2.2.0"
 
-replicante_data_models = { path = "../models" }
 replicante_models_api = { path = "../../common/models/api" }
+replicante_models_core = { path = "../../models/core" }
 replicante_service_healthcheck = { path = "../../service/healthcheck" }
 replicante_util_tracing = { path = "../../common/util/tracing" }

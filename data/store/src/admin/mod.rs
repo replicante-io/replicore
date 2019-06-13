@@ -1,6 +1,6 @@
 use slog::Logger;
 
-use replicante_data_models::admin::Version;
+use replicante_models_core::admin::Version;
 
 use super::backend::backend_factory_admin;
 use super::backend::AdminImpl;

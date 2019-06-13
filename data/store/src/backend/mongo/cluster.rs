@@ -11,7 +11,7 @@ use opentracingrust::Tracer;
 use slog::debug;
 use slog::Logger;
 
-use replicante_data_models::ClusterDiscovery;
+use replicante_models_core::ClusterDiscovery;
 
 use super::super::super::store::cluster::ClusterAttribures;
 use super::super::super::Result;

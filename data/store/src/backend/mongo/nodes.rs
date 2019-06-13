@@ -12,7 +12,7 @@ use mongodb::ThreadedClient;
 use opentracingrust::SpanContext;
 use opentracingrust::Tracer;
 
-use replicante_data_models::Node;
+use replicante_models_core::Node;
 
 use super::super::super::store::nodes::NodesAttribures;
 use super::super::super::Cursor;

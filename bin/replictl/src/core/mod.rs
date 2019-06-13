@@ -2,7 +2,7 @@ use clap::ArgMatches;
 use failure::ResultExt;
 use reqwest::Client as ReqwestClient;
 
-use replicante_data_models::api::Version;
+use replicante_models_core::api::Version;
 
 use super::ErrorKind;
 use super::Result;

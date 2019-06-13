@@ -1,6 +1,6 @@
 use opentracingrust::SpanContext;
 
-use replicante_data_models::Node as NodeModel;
+use replicante_models_core::Node as NodeModel;
 
 use super::super::backend::NodeImpl;
 use super::super::Result;

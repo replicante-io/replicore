@@ -2,8 +2,8 @@ use chrono::DateTime;
 use chrono::Utc;
 use opentracingrust::SpanContext;
 
-use replicante_data_models::ClusterMeta;
-use replicante_data_models::Event;
+use replicante_models_core::ClusterMeta;
+use replicante_models_core::Event;
 
 use super::super::backend::LegacyImpl;
 use super::super::Cursor;

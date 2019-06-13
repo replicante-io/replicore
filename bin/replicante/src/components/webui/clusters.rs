@@ -118,8 +118,8 @@ mod tests {
         use iron_test::request;
         use iron_test::response;
 
-        use replicante_data_models::ClusterMeta;
         use replicante_data_store::mock::Mock as MockStore;
+        use replicante_models_core::ClusterMeta;
 
         use super::super::Top;
 

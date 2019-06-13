@@ -3,8 +3,8 @@ use std::sync::Mutex;
 
 use opentracingrust::SpanContext;
 
-use replicante_data_models::ClusterMeta;
-use replicante_data_models::Event;
+use replicante_models_core::ClusterMeta;
+use replicante_models_core::Event;
 
 use super::super::backend::AgentImpl;
 use super::super::backend::AgentsImpl;

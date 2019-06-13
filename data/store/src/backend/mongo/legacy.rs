@@ -13,8 +13,8 @@ use opentracingrust::SpanContext;
 use opentracingrust::Tracer;
 use regex;
 
-use replicante_data_models::ClusterMeta;
-use replicante_data_models::Event;
+use replicante_models_core::ClusterMeta;
+use replicante_models_core::Event;
 
 use super::super::super::store::legacy::EventsFilters;
 use super::super::super::store::legacy::EventsOptions;

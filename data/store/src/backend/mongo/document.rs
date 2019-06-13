@@ -2,11 +2,11 @@ use bson::UtcDateTime;
 use serde_derive::Deserialize;
 use serde_derive::Serialize;
 
-use replicante_data_models::AgentInfo;
-use replicante_data_models::Event;
-use replicante_data_models::EventPayload;
-use replicante_data_models::Node;
-use replicante_data_models::Shard;
+use replicante_models_core::AgentInfo;
+use replicante_models_core::Event;
+use replicante_models_core::EventPayload;
+use replicante_models_core::Node;
+use replicante_models_core::Shard;
 
 /// Wrap an `AgentInfo` with store only and MongoDB specific fields.
 #[derive(Clone, Eq, PartialEq, Hash, Debug, Serialize, Deserialize)]

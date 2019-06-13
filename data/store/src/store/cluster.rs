@@ -1,6 +1,6 @@
 use opentracingrust::SpanContext;
 
-use replicante_data_models::ClusterDiscovery;
+use replicante_models_core::ClusterDiscovery;
 
 use super::super::backend::ClusterImpl;
 use super::super::Result;

@@ -16,8 +16,8 @@ use serde_derive::Deserialize;
 use serde_derive::Serialize;
 use serde_json;
 
-use replicante_data_models::Event;
-use replicante_data_models::EventPayload;
+use replicante_models_core::Event;
+use replicante_models_core::EventPayload;
 use replicante_streams_events::EventsStream;
 use replicante_streams_events::ScanFilters;
 use replicante_streams_events::ScanOptions;

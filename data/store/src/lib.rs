@@ -1,22 +1,3 @@
-extern crate bson;
-extern crate chrono;
-extern crate failure;
-extern crate lazy_static;
-extern crate mongodb;
-extern crate opentracingrust;
-extern crate prometheus;
-extern crate regex;
-extern crate semver;
-extern crate serde;
-extern crate serde_derive;
-extern crate serde_json;
-extern crate slog;
-
-extern crate replicante_data_models;
-extern crate replicante_models_api;
-extern crate replicante_service_healthcheck;
-extern crate replicante_util_tracing;
-
 mod backend;
 mod config;
 mod error;

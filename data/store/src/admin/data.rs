@@ -1,10 +1,10 @@
-use replicante_data_models::Agent;
-use replicante_data_models::AgentInfo;
-use replicante_data_models::ClusterDiscovery;
-use replicante_data_models::ClusterMeta;
-use replicante_data_models::Event;
-use replicante_data_models::Node;
-use replicante_data_models::Shard;
+use replicante_models_core::Agent;
+use replicante_models_core::AgentInfo;
+use replicante_models_core::ClusterDiscovery;
+use replicante_models_core::ClusterMeta;
+use replicante_models_core::Event;
+use replicante_models_core::Node;
+use replicante_models_core::Shard;
 
 use super::super::backend::DataImpl;
 use super::super::Cursor;

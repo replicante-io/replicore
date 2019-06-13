@@ -10,8 +10,8 @@ use mongodb::ThreadedClient;
 use opentracingrust::SpanContext;
 use opentracingrust::Tracer;
 
-use replicante_data_models::Agent as AgentModel;
-use replicante_data_models::AgentInfo as AgentInfoModel;
+use replicante_models_core::Agent as AgentModel;
+use replicante_models_core::AgentInfo as AgentInfoModel;
 
 use super::super::super::store::agents::AgentsAttribures;
 use super::super::super::store::agents::AgentsCounts;

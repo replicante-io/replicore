@@ -9,8 +9,8 @@ use slog::info;
 use slog::warn;
 use slog::Logger;
 
-use replicante_data_models::admin::Version;
 use replicante_models_api::HealthStatus;
+use replicante_models_core::admin::Version;
 use replicante_service_healthcheck::HealthCheck;
 use replicante_service_healthcheck::HealthChecks;
 

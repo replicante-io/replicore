@@ -1,7 +1,7 @@
 use serde_derive::Deserialize;
 use serde_derive::Serialize;
 
-use replicante_data_models::ClusterDiscovery;
+use replicante_models_core::ClusterDiscovery;
 
 /// Cluster refresh task parameters.
 #[derive(Clone, Eq, PartialEq, Hash, Debug, Serialize, Deserialize)]

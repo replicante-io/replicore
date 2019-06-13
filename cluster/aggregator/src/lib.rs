@@ -1,14 +1,3 @@
-extern crate failure;
-extern crate lazy_static;
-extern crate opentracingrust;
-extern crate prometheus;
-extern crate slog;
-
-extern crate replicante_coordinator;
-extern crate replicante_data_models;
-extern crate replicante_data_store;
-extern crate replicante_util_tracing;
-
 use failure::ResultExt;
 use opentracingrust::Log;
 use opentracingrust::Span;
@@ -16,8 +5,8 @@ use slog::debug;
 use slog::Logger;
 
 use replicante_coordinator::NonBlockingLockWatcher;
-use replicante_data_models::ClusterDiscovery;
 use replicante_data_store::store::Store;
+use replicante_models_core::ClusterDiscovery;
 use replicante_util_tracing::fail_span;
 
 mod cluster_meta;

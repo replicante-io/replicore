@@ -3,7 +3,7 @@ use std::fs::File;
 use failure::ResultExt;
 use serde_yaml;
 
-use replicante_data_models::ClusterDiscovery;
+use replicante_models_core::ClusterDiscovery;
 
 use super::super::metrics::DISCOVERY_ERRORS;
 use super::super::metrics::DISCOVERY_TOTAL;
@@ -66,7 +66,7 @@ impl Iterator for Iter {
 
 #[cfg(test)]
 mod tests {
-    use replicante_data_models::ClusterDiscovery;
+    use replicante_models_core::ClusterDiscovery;
 
     use super::super::super::ErrorKind;
     use super::super::tests::fixture_path;

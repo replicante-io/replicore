@@ -5,10 +5,10 @@ use opentracingrust::SpanContext;
 use slog::debug;
 use slog::Logger;
 
-use replicante_data_models::Event;
 use replicante_data_store::store::legacy::EventsFilters;
 use replicante_data_store::store::legacy::EventsOptions;
 use replicante_data_store::store::Store;
+use replicante_models_core::Event;
 
 use super::super::Error;
 use super::super::ErrorKind;

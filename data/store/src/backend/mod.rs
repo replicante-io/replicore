@@ -7,14 +7,14 @@ use opentracingrust::Tracer;
 use prometheus::Registry;
 use slog::Logger;
 
-use replicante_data_models::admin::Version;
-use replicante_data_models::Agent;
-use replicante_data_models::AgentInfo;
-use replicante_data_models::ClusterDiscovery;
-use replicante_data_models::ClusterMeta;
-use replicante_data_models::Event;
-use replicante_data_models::Node;
-use replicante_data_models::Shard;
+use replicante_models_core::admin::Version;
+use replicante_models_core::Agent;
+use replicante_models_core::AgentInfo;
+use replicante_models_core::ClusterDiscovery;
+use replicante_models_core::ClusterMeta;
+use replicante_models_core::Event;
+use replicante_models_core::Node;
+use replicante_models_core::Shard;
 use replicante_service_healthcheck::HealthChecks;
 
 use super::admin::ValidationResult;

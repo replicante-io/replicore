@@ -1,6 +1,6 @@
 use opentracingrust::SpanContext;
 
-use replicante_data_models::Shard as ShardModel;
+use replicante_models_core::Shard as ShardModel;
 
 use super::super::backend::ShardImpl;
 use super::super::Result;
