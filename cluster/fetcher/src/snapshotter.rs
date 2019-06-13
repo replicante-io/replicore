@@ -3,7 +3,7 @@ use opentracingrust::Span;
 
 use replicante_models_core::Event;
 use replicante_store_primary::store::Store;
-use replicante_streams_events::EventsStream;
+use replicante_stream_events::EventsStream;
 
 use super::ErrorKind;
 use super::Result;

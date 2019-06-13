@@ -17,7 +17,7 @@ use replicante_service_coordinator::Coordinator;
 use replicante_service_coordinator::ErrorKind as CoordinatorErrorKind;
 use replicante_service_tasks::TaskHandler;
 use replicante_store_primary::store::Store;
-use replicante_streams_events::EventsStream;
+use replicante_stream_events::EventsStream;
 use replicante_util_failure::capture_fail;
 use replicante_util_failure::failure_info;
 use replicante_util_tracing::fail_span;

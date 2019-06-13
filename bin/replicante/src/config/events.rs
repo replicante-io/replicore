@@ -1,7 +1,7 @@
 use serde_derive::Deserialize;
 use serde_derive::Serialize;
 
-use replicante_streams_events::Config as EventsStreamConfig;
+use replicante_stream_events::Config as EventsStreamConfig;
 
 /// Replicante events configuration options.
 #[derive(Clone, Eq, PartialEq, Hash, Debug, Serialize, Deserialize)]

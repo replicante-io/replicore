@@ -6,7 +6,7 @@ use slog::Logger;
 
 use replicante_service_coordinator::Coordinator;
 use replicante_store_primary::store::Store;
-use replicante_streams_events::EventsStream;
+use replicante_stream_events::EventsStream;
 use replicante_util_upkeep::Upkeep;
 
 use super::config::Config;
@@ -135,7 +135,7 @@ impl Streams {
 #[cfg(test)]
 pub struct MockInterfaces {
     pub coordinator: replicante_service_coordinator::mock::MockCoordinator,
-    pub events: std::sync::Arc<replicante_streams_events::mock::MockEvents>,
+    pub events: std::sync::Arc<replicante_stream_events::mock::MockEvents>,
     pub store: replicante_store_primary::mock::Mock,
     pub tasks: std::sync::Arc<super::tasks::MockTasks>,
 }
@@ -168,9 +168,9 @@ impl Interfaces {
             replicante_service_coordinator::mock::MockCoordinator::new(logger.clone());
         let coordinator = mock_coordinator.mock();
 
-        let mock_events = replicante_streams_events::mock::MockEvents::new();
+        let mock_events = replicante_stream_events::mock::MockEvents::new();
         let mock_events = std::sync::Arc::new(mock_events);
-        let events = replicante_streams_events::mock::MockEvents::mock(mock_events.clone());
+        let events = replicante_stream_events::mock::MockEvents::mock(mock_events.clone());
 
         let mock_store = replicante_store_primary::mock::Mock::default();
         let store = mock_store.store();

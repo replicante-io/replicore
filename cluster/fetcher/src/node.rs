@@ -5,7 +5,7 @@ use replicante_agent_client::Client;
 use replicante_models_core::Event;
 use replicante_models_core::Node;
 use replicante_store_primary::store::Store;
-use replicante_streams_events::EventsStream;
+use replicante_stream_events::EventsStream;
 
 use super::ClusterIdentityChecker;
 use super::Error;

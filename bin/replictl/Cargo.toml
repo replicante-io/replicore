@@ -42,7 +42,7 @@ replicante_service_coordinator = { path = "../../service/coordinator" }
 replicante_service_healthcheck = { path = "../../service/healthcheck" }
 replicante_service_tasks = { path = "../../service/tasks" }
 replicante_store_primary = { path = "../../store/primary" }
-replicante_streams_events = { path = "../../streams/events" }
+replicante_stream_events = { path = "../../stream/events" }
 replicante_util_failure = { path = "../../common/util/failure" }
 
 

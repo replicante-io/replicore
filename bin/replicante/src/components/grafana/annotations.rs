@@ -18,9 +18,9 @@ use serde_json;
 
 use replicante_models_core::Event;
 use replicante_models_core::EventPayload;
-use replicante_streams_events::EventsStream;
-use replicante_streams_events::ScanFilters;
-use replicante_streams_events::ScanOptions;
+use replicante_stream_events::EventsStream;
+use replicante_stream_events::ScanFilters;
+use replicante_stream_events::ScanOptions;
 
 use super::super::super::interfaces::api::APIRoot;
 use super::super::super::Error;

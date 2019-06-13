@@ -9,9 +9,9 @@ use slog::warn;
 use replicante::Config;
 use replicante_service_healthcheck::HealthChecks;
 use replicante_store_primary::store::Store;
-use replicante_streams_events::EventsStream;
-use replicante_streams_events::ScanFilters;
-use replicante_streams_events::ScanOptions;
+use replicante_stream_events::EventsStream;
+use replicante_stream_events::ScanFilters;
+use replicante_stream_events::ScanOptions;
 use replicante_util_failure::format_fail;
 
 use super::super::super::ErrorKind;
