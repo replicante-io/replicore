@@ -1,6 +1,6 @@
 use prometheus::Registry;
 
-use replicante_coordinator::Coordinator;
+use replicante_service_coordinator::Coordinator;
 use replicante_util_iron::MetricsHandler;
 use replicante_util_iron::Router;
 

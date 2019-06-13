@@ -8,12 +8,12 @@ use slog::Logger;
 
 use replicante_cluster_discovery::discover;
 use replicante_cluster_discovery::Config as DiscoveryConfig;
-use replicante_coordinator::Election;
-use replicante_coordinator::Error as CoordinatorError;
-use replicante_coordinator::LoopingElectionControl;
-use replicante_coordinator::LoopingElectionLogic;
-use replicante_coordinator::Result as CoordinatorResult;
 use replicante_models_core::ClusterDiscovery;
+use replicante_service_coordinator::Election;
+use replicante_service_coordinator::Error as CoordinatorError;
+use replicante_service_coordinator::LoopingElectionControl;
+use replicante_service_coordinator::LoopingElectionLogic;
+use replicante_service_coordinator::Result as CoordinatorResult;
 use replicante_tasks::TaskRequest;
 use replicante_util_failure::capture_fail;
 use replicante_util_failure::failure_info;

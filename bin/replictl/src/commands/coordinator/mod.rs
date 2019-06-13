@@ -4,7 +4,7 @@ use clap::SubCommand;
 use failure::ResultExt;
 
 use replicante::Config;
-use replicante_coordinator::Admin;
+use replicante_service_coordinator::Admin;
 
 use super::super::ErrorKind;
 use super::super::Interfaces;

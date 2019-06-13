@@ -4,9 +4,9 @@ use opentracingrust::Span;
 use slog::debug;
 use slog::Logger;
 
-use replicante_coordinator::NonBlockingLockWatcher;
 use replicante_data_store::store::Store;
 use replicante_models_core::ClusterDiscovery;
+use replicante_service_coordinator::NonBlockingLockWatcher;
 use replicante_util_tracing::fail_span;
 
 mod cluster_meta;

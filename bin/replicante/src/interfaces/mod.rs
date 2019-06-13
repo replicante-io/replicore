@@ -4,8 +4,8 @@ use failure::ResultExt;
 use prometheus::Registry;
 use slog::Logger;
 
-use replicante_coordinator::Coordinator;
 use replicante_data_store::store::Store;
+use replicante_service_coordinator::Coordinator;
 use replicante_streams_events::EventsStream;
 use replicante_util_upkeep::Upkeep;
 
@@ -98,9 +98,9 @@ impl Interfaces {
     ///
     /// Metrics that fail to register are logged and ignored.
     pub fn register_metrics(logger: &Logger, registry: &Registry) {
-        ::replicante_coordinator::register_metrics(logger, registry);
-        ::replicante_data_store::register_metrics(logger, registry);
-        ::replicante_tasks::register_metrics(logger, registry);
+        replicante_service_coordinator::register_metrics(logger, registry);
+        replicante_data_store::register_metrics(logger, registry);
+        replicante_tasks::register_metrics(logger, registry);
         EventsStream::register_metrics(logger, registry);
         self::api::register_metrics(logger, registry);
         self::metrics::register_metrics(logger, registry);
@@ -134,7 +134,7 @@ impl Streams {
 /// A container for mocks used by interfaces.
 #[cfg(test)]
 pub struct MockInterfaces {
-    pub coordinator: ::replicante_coordinator::mock::MockCoordinator,
+    pub coordinator: replicante_service_coordinator::mock::MockCoordinator,
     pub events: ::std::sync::Arc<::replicante_streams_events::mock::MockEvents>,
     pub store: ::replicante_data_store::mock::Mock,
     pub tasks: ::std::sync::Arc<super::tasks::MockTasks>,
@@ -164,16 +164,17 @@ impl Interfaces {
             tracing.tracer(),
         );
 
-        let mock_coordinator = ::replicante_coordinator::mock::MockCoordinator::new(logger.clone());
+        let mock_coordinator =
+            replicante_service_coordinator::mock::MockCoordinator::new(logger.clone());
         let coordinator = mock_coordinator.mock();
 
-        let mock_events = ::replicante_streams_events::mock::MockEvents::new();
-        let mock_events = ::std::sync::Arc::new(mock_events);
-        let events = ::replicante_streams_events::mock::MockEvents::mock(mock_events.clone());
+        let mock_events = replicante_streams_events::mock::MockEvents::new();
+        let mock_events = std::sync::Arc::new(mock_events);
+        let events = replicante_streams_events::mock::MockEvents::mock(mock_events.clone());
 
-        let mock_store = ::replicante_data_store::mock::Mock::default();
+        let mock_store = replicante_data_store::mock::Mock::default();
         let store = mock_store.store();
-        let tasks = ::std::sync::Arc::new(super::tasks::MockTasks::new());
+        let tasks = std::sync::Arc::new(super::tasks::MockTasks::new());
 
         // Wrap things up.
         let mocks = MockInterfaces {

@@ -7,10 +7,10 @@ use serde_derive::Deserialize;
 use serde_derive::Serialize;
 use serde_yaml;
 
-use replicante_coordinator::Config as CoordinatorConfig;
 use replicante_data_store::Config as StorageConfig;
 use replicante_logging::Config as LoggingConfig;
 use replicante_logging::LoggingLevel;
+use replicante_service_coordinator::Config as CoordinatorConfig;
 use replicante_tasks::Config as TasksConfig;
 use replicante_util_tracing::Config as TracingConfig;
 

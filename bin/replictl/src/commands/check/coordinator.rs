@@ -8,7 +8,7 @@ use slog::warn;
 use slog::Logger;
 
 use replicante::Config;
-use replicante_coordinator::Admin;
+use replicante_service_coordinator::Admin;
 
 use super::super::super::ErrorKind;
 use super::super::super::Interfaces;

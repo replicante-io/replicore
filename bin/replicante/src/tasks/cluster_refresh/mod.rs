@@ -11,10 +11,11 @@ use slog::Logger;
 use replicante_cluster_aggregator::Aggregator;
 use replicante_cluster_fetcher::Fetcher;
 use replicante_cluster_fetcher::Snapshotter;
-use replicante_coordinator::Coordinator;
 use replicante_data_store::store::Store;
 use replicante_models_core::ClusterDiscovery;
 use replicante_models_core::Event;
+use replicante_service_coordinator::Coordinator;
+use replicante_service_coordinator::ErrorKind as CoordinatorErrorKind;
 use replicante_streams_events::EventsStream;
 use replicante_tasks::TaskHandler;
 use replicante_util_failure::capture_fail;
@@ -87,7 +88,7 @@ impl Handler {
         match lock.acquire(span.context().clone()) {
             Ok(()) => (),
             Err(error) => {
-                if let ::replicante_coordinator::ErrorKind::LockHeld(_, owner) = error.kind() {
+                if let CoordinatorErrorKind::LockHeld(_, owner) = error.kind() {
                     REFRESH_LOCKED.inc();
                     info!(
                         self.logger,

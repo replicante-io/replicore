@@ -1,7 +1,7 @@
 //! Module that defines a set of core routes for the API interface.
 use prometheus::Registry;
 
-use replicante_coordinator::Coordinator;
+use replicante_service_coordinator::Coordinator;
 use replicante_util_iron::Router;
 
 use super::super::healthchecks::HealthResultsCache;

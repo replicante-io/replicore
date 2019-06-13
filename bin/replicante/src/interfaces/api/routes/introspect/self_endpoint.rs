@@ -5,7 +5,7 @@ use iron::Response;
 use iron::Set;
 use iron_json_response::JsonResponse;
 
-use replicante_coordinator::Coordinator;
+use replicante_service_coordinator::Coordinator;
 
 /// Report information about the node itself.
 pub struct Handler {
@@ -38,7 +38,7 @@ mod tests {
     use slog::Discard;
     use slog::Logger;
 
-    use replicante_coordinator::mock::MockCoordinator;
+    use replicante_service_coordinator::mock::MockCoordinator;
 
     use super::Handler;
 

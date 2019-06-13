@@ -7,9 +7,9 @@ use opentracingrust::Tracer;
 use slog::info;
 use slog::Logger;
 
-use replicante_coordinator::Coordinator;
-use replicante_coordinator::LoopingElection;
-use replicante_coordinator::LoopingElectionOpts;
+use replicante_service_coordinator::Coordinator;
+use replicante_service_coordinator::LoopingElection;
+use replicante_service_coordinator::LoopingElectionOpts;
 use replicante_util_upkeep::Upkeep;
 
 use super::super::config::EventsSnapshotsConfig;

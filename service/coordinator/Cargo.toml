@@ -1,5 +1,5 @@
 [package]
-name = "replicante_coordinator"
+name = "replicante_service_coordinator"
 version = "0.1.0"
 authors = ["Stefano Pogliani <stefano@spogliani.net>"]
 edition = "2018"
@@ -27,8 +27,8 @@ sha2 = "^0.8.0"
 slog = "^2.1.1"
 zookeeper = "^0.5.5"
 
-replicante_models_api = { path = "../common/models/api" }
-replicante_service_healthcheck = { path = "../service/healthcheck" }
-replicante_util_failure = { path = "../common/util/failure" }
-replicante_util_rndid = { path = "../common/util/rndid" }
-replicante_util_tracing = { path = "../common/util/tracing" }
+replicante_models_api = { path = "../../common/models/api" }
+replicante_service_healthcheck = { path = "../healthcheck" }
+replicante_util_failure = { path = "../../common/util/failure" }
+replicante_util_rndid = { path = "../../common/util/rndid" }
+replicante_util_tracing = { path = "../../common/util/tracing" }

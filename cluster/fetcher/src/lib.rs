@@ -10,11 +10,11 @@ use slog::warn;
 use slog::Logger;
 
 use replicante_agent_client::HttpClient;
-use replicante_coordinator::NonBlockingLockWatcher;
 use replicante_data_store::store::Store;
 use replicante_models_core::Agent;
 use replicante_models_core::AgentStatus;
 use replicante_models_core::ClusterDiscovery;
+use replicante_service_coordinator::NonBlockingLockWatcher;
 use replicante_streams_events::EventsStream;
 use replicante_util_failure::format_fail;
 

@@ -51,11 +51,11 @@ replicante_agent_client = { path = "../../agent/client" }
 replicante_cluster_aggregator = { path = "../../cluster/aggregator" }
 replicante_cluster_discovery = { path = "../../cluster/discovery" }
 replicante_cluster_fetcher = { path = "../../cluster/fetcher" }
-replicante_coordinator = { path = "../../coordinator" }
 replicante_data_store = { path = "../../data/store" }
 replicante_logging = { path = "../../common/logging" }
 replicante_models_api = { path = "../../common/models/api" }
 replicante_models_core = { path = "../../models/core" }
+replicante_service_coordinator = { path = "../../service/coordinator" }
 replicante_service_healthcheck = { path = "../../service/healthcheck" }
 replicante_streams_events = { path = "../../streams/events" }
 replicante_tasks = { path = "../../tasks" }

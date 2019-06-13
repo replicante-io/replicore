@@ -16,9 +16,8 @@ use slog::info;
 use slog::Logger;
 
 #[cfg(test)]
-use replicante_coordinator::mock::MockCoordinator;
-use replicante_coordinator::Coordinator;
-
+use replicante_service_coordinator::mock::MockCoordinator;
+use replicante_service_coordinator::Coordinator;
 use replicante_util_failure::capture_fail;
 use replicante_util_failure::failure_info;
 use replicante_util_iron::MetricsMiddleware;
