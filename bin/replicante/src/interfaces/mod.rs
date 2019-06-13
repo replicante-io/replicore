@@ -4,8 +4,8 @@ use failure::ResultExt;
 use prometheus::Registry;
 use slog::Logger;
 
-use replicante_data_store::store::Store;
 use replicante_service_coordinator::Coordinator;
+use replicante_store_primary::store::Store;
 use replicante_streams_events::EventsStream;
 use replicante_util_upkeep::Upkeep;
 
@@ -100,7 +100,7 @@ impl Interfaces {
     pub fn register_metrics(logger: &Logger, registry: &Registry) {
         replicante_service_coordinator::register_metrics(logger, registry);
         replicante_service_tasks::register_metrics(logger, registry);
-        replicante_data_store::register_metrics(logger, registry);
+        replicante_store_primary::register_metrics(logger, registry);
         EventsStream::register_metrics(logger, registry);
         self::api::register_metrics(logger, registry);
         self::metrics::register_metrics(logger, registry);
@@ -135,9 +135,9 @@ impl Streams {
 #[cfg(test)]
 pub struct MockInterfaces {
     pub coordinator: replicante_service_coordinator::mock::MockCoordinator,
-    pub events: ::std::sync::Arc<::replicante_streams_events::mock::MockEvents>,
-    pub store: ::replicante_data_store::mock::Mock,
-    pub tasks: ::std::sync::Arc<super::tasks::MockTasks>,
+    pub events: std::sync::Arc<replicante_streams_events::mock::MockEvents>,
+    pub store: replicante_store_primary::mock::Mock,
+    pub tasks: std::sync::Arc<super::tasks::MockTasks>,
 }
 
 #[cfg(test)]
@@ -172,7 +172,7 @@ impl Interfaces {
         let mock_events = std::sync::Arc::new(mock_events);
         let events = replicante_streams_events::mock::MockEvents::mock(mock_events.clone());
 
-        let mock_store = replicante_data_store::mock::Mock::default();
+        let mock_store = replicante_store_primary::mock::Mock::default();
         let store = mock_store.store();
         let tasks = std::sync::Arc::new(super::tasks::MockTasks::new());
 

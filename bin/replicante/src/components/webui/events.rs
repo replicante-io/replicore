@@ -9,9 +9,9 @@ use iron::Response;
 use iron::Set;
 use iron_json_response::JsonResponse;
 
-use replicante_data_store::store::legacy::EventsFilters;
-use replicante_data_store::store::legacy::EventsOptions;
-use replicante_data_store::store::Store;
+use replicante_store_primary::store::legacy::EventsFilters;
+use replicante_store_primary::store::legacy::EventsOptions;
+use replicante_store_primary::store::Store;
 
 use super::super::super::interfaces::api::APIRoot;
 use super::super::super::interfaces::Interfaces;

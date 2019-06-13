@@ -1,7 +1,3 @@
-## 0.3.0 - Introspection
-- Status endpoints.
-
-
 ## 0.3.1 - Events stream
 - Emit events to stream (and not store).
 - Follow/consume streams by group.

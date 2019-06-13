@@ -1765,13 +1765,13 @@ dependencies = [
  "replicante_cluster_aggregator 0.1.0",
  "replicante_cluster_discovery 0.1.1",
  "replicante_cluster_fetcher 0.1.1",
- "replicante_data_store 0.3.0",
  "replicante_logging 0.1.2",
  "replicante_models_api 0.1.0",
  "replicante_models_core 0.2.1",
  "replicante_service_coordinator 0.1.0",
  "replicante_service_healthcheck 0.1.0",
  "replicante_service_tasks 0.1.0",
+ "replicante_store_primary 0.3.0",
  "replicante_streams_events 0.1.1",
  "replicante_util_failure 0.1.0",
  "replicante_util_iron 0.1.3",
@@ -1816,9 +1816,9 @@ dependencies = [
  "lazy_static 1.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "opentracingrust 0.3.3 (registry+https://github.com/rust-lang/crates.io-index)",
  "prometheus 0.5.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "replicante_data_store 0.3.0",
  "replicante_models_core 0.2.1",
  "replicante_service_coordinator 0.1.0",
+ "replicante_store_primary 0.3.0",
  "replicante_util_tracing 0.2.1",
  "slog 2.4.1 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
@@ -1848,35 +1848,12 @@ dependencies = [
  "opentracingrust 0.3.3 (registry+https://github.com/rust-lang/crates.io-index)",
  "prometheus 0.5.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "replicante_agent_client 0.2.1",
- "replicante_data_store 0.3.0",
  "replicante_models_core 0.2.1",
  "replicante_service_coordinator 0.1.0",
+ "replicante_store_primary 0.3.0",
  "replicante_streams_events 0.1.1",
  "replicante_util_failure 0.1.0",
  "replicante_util_tracing 0.2.1",
- "slog 2.4.1 (registry+https://github.com/rust-lang/crates.io-index)",
-]
-
-[[package]]
-name = "replicante_data_store"
-version = "0.3.0"
-dependencies = [
- "bson 0.13.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "chrono 0.4.6 (registry+https://github.com/rust-lang/crates.io-index)",
- "failure 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)",
- "lazy_static 1.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "mongodb 0.3.12 (registry+https://github.com/rust-lang/crates.io-index)",
- "opentracingrust 0.3.3 (registry+https://github.com/rust-lang/crates.io-index)",
- "prometheus 0.5.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "regex 1.1.6 (registry+https://github.com/rust-lang/crates.io-index)",
- "replicante_models_api 0.1.0",
- "replicante_models_core 0.2.1",
- "replicante_service_healthcheck 0.1.0",
- "replicante_util_tracing 0.2.1",
- "semver 0.9.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "serde 1.0.92 (registry+https://github.com/rust-lang/crates.io-index)",
- "serde_derive 1.0.92 (registry+https://github.com/rust-lang/crates.io-index)",
- "serde_json 1.0.39 (registry+https://github.com/rust-lang/crates.io-index)",
  "slog 2.4.1 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
@@ -1976,6 +1953,29 @@ dependencies = [
 ]
 
 [[package]]
+name = "replicante_store_primary"
+version = "0.3.0"
+dependencies = [
+ "bson 0.13.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "chrono 0.4.6 (registry+https://github.com/rust-lang/crates.io-index)",
+ "failure 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)",
+ "lazy_static 1.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "mongodb 0.3.12 (registry+https://github.com/rust-lang/crates.io-index)",
+ "opentracingrust 0.3.3 (registry+https://github.com/rust-lang/crates.io-index)",
+ "prometheus 0.5.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "regex 1.1.6 (registry+https://github.com/rust-lang/crates.io-index)",
+ "replicante_models_api 0.1.0",
+ "replicante_models_core 0.2.1",
+ "replicante_service_healthcheck 0.1.0",
+ "replicante_util_tracing 0.2.1",
+ "semver 0.9.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "serde 1.0.92 (registry+https://github.com/rust-lang/crates.io-index)",
+ "serde_derive 1.0.92 (registry+https://github.com/rust-lang/crates.io-index)",
+ "serde_json 1.0.39 (registry+https://github.com/rust-lang/crates.io-index)",
+ "slog 2.4.1 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
 name = "replicante_streams_events"
 version = "0.1.1"
 dependencies = [
@@ -1984,8 +1984,8 @@ dependencies = [
  "failure_derive 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)",
  "opentracingrust 0.3.3 (registry+https://github.com/rust-lang/crates.io-index)",
  "prometheus 0.5.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "replicante_data_store 0.3.0",
  "replicante_models_core 0.2.1",
+ "replicante_store_primary 0.3.0",
  "serde 1.0.92 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde_derive 1.0.92 (registry+https://github.com/rust-lang/crates.io-index)",
  "slog 2.4.1 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -2072,11 +2072,11 @@ dependencies = [
  "prometheus 0.5.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "replicante 0.3.0",
  "replicante_cluster_discovery 0.1.1",
- "replicante_data_store 0.3.0",
  "replicante_models_core 0.2.1",
  "replicante_service_coordinator 0.1.0",
  "replicante_service_healthcheck 0.1.0",
  "replicante_service_tasks 0.1.0",
+ "replicante_store_primary 0.3.0",
  "replicante_streams_events 0.1.1",
  "replicante_util_failure 0.1.0",
  "reqwest 0.9.18 (registry+https://github.com/rust-lang/crates.io-index)",

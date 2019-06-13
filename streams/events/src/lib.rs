@@ -1,20 +1,11 @@
-extern crate chrono;
-extern crate failure;
-extern crate failure_derive;
-extern crate opentracingrust;
-extern crate prometheus;
-extern crate serde;
-extern crate serde_derive;
-extern crate slog;
-
 use std::sync::Arc;
 
 use opentracingrust::SpanContext;
 use prometheus::Registry;
 use slog::Logger;
 
-use replicante_data_store::store::Store;
 use replicante_models_core::Event;
+use replicante_store_primary::store::Store;
 
 mod backend;
 mod config;

@@ -2,9 +2,9 @@ use failure::ResultExt;
 use opentracingrust::Span;
 
 use replicante_agent_client::Client;
-use replicante_data_store::store::Store;
 use replicante_models_core::Event;
 use replicante_models_core::Shard;
+use replicante_store_primary::store::Store;
 use replicante_streams_events::EventsStream;
 
 use super::Error;

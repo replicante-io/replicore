@@ -22,5 +22,5 @@ serde = "^1.0.34"
 serde_derive = "^1.0.34"
 slog = "^2.2.0"
 
-replicante_data_store = { path = "../../data/store" }
 replicante_models_core = { path = "../../models/core" }
+replicante_store_primary = { path = "../../store/primary" }

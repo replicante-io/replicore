@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use slog::Logger;
 
-use replicante_data_store::store::Store;
+use replicante_store_primary::store::Store;
 
 use super::config::Config;
 use super::interface::StreamInterface;

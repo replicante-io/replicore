@@ -2,7 +2,7 @@ use slog::error;
 use slog::warn;
 use slog::Logger;
 
-use replicante_data_store::admin::ValidationResult;
+use replicante_store_primary::admin::ValidationResult;
 
 const GROUP_PERF_ABUSE: &str = "perf/abuse";
 

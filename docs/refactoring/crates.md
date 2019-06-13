@@ -36,10 +36,10 @@ Crates marked as `FUTURE` are POSSIBLE things that will be added and not a commi
     * [x] `coordinator`: the process coordinator create (RENAME).
     * [x] `healthcheck`: components/dependency health checks (NEW).
     * [x] `tasks`: the task subsystem crate (RENAME).
-  * [ ] `store/`: crates focused on storing data (NEW).
-    * [ ] `metrics`|`stats`: store agent/cluster time-series data (FUTURE).
-    * [ ] `primary`: the primary store crate currently `data/store` (RENAME).
-    * [ ] `view`: store data used to generate API or other views (NEW).
+  * [x] `store/`: crates focused on storing data (NEW).
+    * [x] `metrics`|`stats`: store agent/cluster time-series data (FUTURE).
+    * [x] `primary`: the primary store crate currently `data/store` (RENAME).
+    * [x] `view`: store data used to generate API or other views (NEW).
   * [ ] `stream/`: crates to manage event streams (RENAME).
     * [ ] `actions`: actions state and result stream (FUTURE).
     * [ ] `audit`: auditing records streams (FUTURE).

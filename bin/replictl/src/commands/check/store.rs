@@ -9,10 +9,10 @@ use slog::info;
 use slog::warn;
 
 use replicante::Config;
-use replicante_data_store::admin::Admin;
-use replicante_data_store::admin::ValidationResult;
-use replicante_data_store::Cursor;
-use replicante_data_store::ErrorKind as StoreErrorKind;
+use replicante_store_primary::admin::Admin;
+use replicante_store_primary::admin::ValidationResult;
+use replicante_store_primary::Cursor;
+use replicante_store_primary::ErrorKind as StoreErrorKind;
 use replicante_util_failure::format_fail;
 
 use super::super::super::outcome::Error;
@@ -169,7 +169,7 @@ pub fn data<'a>(args: &ArgMatches<'a>, interfaces: &Interfaces) -> Result<()> {
 }
 
 fn scan_collection<Model>(
-    cursor: ::replicante_data_store::Result<Cursor<Model>>,
+    cursor: replicante_store_primary::Result<Cursor<Model>>,
     collection: &str,
     outcomes: &mut Outcomes,
     interfaces: &Interfaces,

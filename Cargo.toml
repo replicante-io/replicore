@@ -14,11 +14,11 @@ members = [
   "common/util/rndid",
   "common/util/tracing",
   "common/util/upkeep",
-  "data/store",
   "models/core",
   "service/coordinator",
   "service/healthcheck",
   "service/tasks",
+  "store/primary",
   "streams/events",
 ]
 

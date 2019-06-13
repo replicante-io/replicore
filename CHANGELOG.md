@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Sentry integration.
 - Threads introspection API.
 - Update checker at start (disabled by default).
+- `/api/unstable/introspect/health` endpoint.
 - `/api/unstable/introspect/self` endpoint.
 
 ### Changed

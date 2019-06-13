@@ -10,7 +10,7 @@ use iron::Set;
 use iron_json_response::JsonResponse;
 use router::Router;
 
-use replicante_data_store::store::Store;
+use replicante_store_primary::store::Store;
 
 use super::super::super::interfaces::api::APIRoot;
 use super::super::super::interfaces::Interfaces;
@@ -118,8 +118,8 @@ mod tests {
         use iron_test::request;
         use iron_test::response;
 
-        use replicante_data_store::mock::Mock as MockStore;
         use replicante_models_core::ClusterMeta;
+        use replicante_store_primary::mock::Mock as MockStore;
 
         use super::super::Top;
 
