@@ -18,8 +18,8 @@ members = [
   "models/core",
   "service/coordinator",
   "service/healthcheck",
+  "service/tasks",
   "streams/events",
-  "tasks",
 ]
 
 # This patch is needed to make openssl (needed by kafka) work with openssl 1.0+

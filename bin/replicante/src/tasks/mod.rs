@@ -1,7 +1,7 @@
 use std::str::FromStr;
 use std::time::Duration;
 
-use replicante_tasks::TaskQueue;
+use replicante_service_tasks::TaskQueue;
 
 pub mod cluster_refresh;
 pub mod payload;
@@ -44,11 +44,11 @@ impl TaskQueue for ReplicanteQueues {
 }
 
 /// Type-specialised task model.
-pub type Task = ::replicante_tasks::Task<ReplicanteQueues>;
+pub type Task = replicante_service_tasks::Task<ReplicanteQueues>;
 
 /// Type-specialised task requester.
-pub type Tasks = ::replicante_tasks::Tasks<ReplicanteQueues>;
+pub type Tasks = replicante_service_tasks::Tasks<ReplicanteQueues>;
 
 /// Type-specialised task requester mock.
 #[cfg(test)]
-pub type MockTasks = ::replicante_tasks::MockTasks<ReplicanteQueues>;
+pub type MockTasks = replicante_service_tasks::MockTasks<ReplicanteQueues>;

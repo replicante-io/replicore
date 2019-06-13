@@ -4,10 +4,10 @@ use failure::ResultExt;
 use prometheus::Registry;
 use slog::Logger;
 
-use replicante_tasks::TaskHandler;
-use replicante_tasks::TaskQueue;
-use replicante_tasks::WorkerSet;
-use replicante_tasks::WorkerSetPool;
+use replicante_service_tasks::TaskHandler;
+use replicante_service_tasks::TaskQueue;
+use replicante_service_tasks::WorkerSet;
+use replicante_service_tasks::WorkerSetPool;
 use replicante_util_upkeep::Upkeep;
 
 use super::super::config::Config;

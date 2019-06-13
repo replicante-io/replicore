@@ -14,7 +14,7 @@ use serde_derive::Serialize;
 use slog::Logger;
 
 use replicante_data_store::store::Store;
-use replicante_tasks::TaskRequest;
+use replicante_service_tasks::TaskRequest;
 use replicante_util_failure::capture_fail;
 use replicante_util_failure::failure_info;
 use replicante_util_iron::request_span;

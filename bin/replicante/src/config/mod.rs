@@ -11,7 +11,7 @@ use replicante_data_store::Config as StorageConfig;
 use replicante_logging::Config as LoggingConfig;
 use replicante_logging::LoggingLevel;
 use replicante_service_coordinator::Config as CoordinatorConfig;
-use replicante_tasks::Config as TasksConfig;
+use replicante_service_tasks::Config as TasksConfig;
 use replicante_util_tracing::Config as TracingConfig;
 
 use super::components::DiscoveryConfig;

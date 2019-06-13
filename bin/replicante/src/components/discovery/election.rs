@@ -14,7 +14,7 @@ use replicante_service_coordinator::Error as CoordinatorError;
 use replicante_service_coordinator::LoopingElectionControl;
 use replicante_service_coordinator::LoopingElectionLogic;
 use replicante_service_coordinator::Result as CoordinatorResult;
-use replicante_tasks::TaskRequest;
+use replicante_service_tasks::TaskRequest;
 use replicante_util_failure::capture_fail;
 use replicante_util_failure::failure_info;
 

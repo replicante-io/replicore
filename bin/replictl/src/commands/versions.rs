@@ -12,7 +12,7 @@ use replicante::ReplicanteQueues;
 use replicante::VERSION as REPLICANTE_VERSION;
 use replicante_data_store::admin::Admin as StoreAdmin;
 use replicante_service_coordinator::Admin as CoordinatorAdmin;
-use replicante_tasks::Admin as TasksAdmin;
+use replicante_service_tasks::Admin as TasksAdmin;
 use replicante_util_failure::failure_info;
 
 use super::super::core::Client;

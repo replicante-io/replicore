@@ -31,11 +31,11 @@ Crates marked as `FUTURE` are POSSIBLE things that will be added and not a commi
     * [x] `agent.md`: document location of real agent models (NEW).
     * [x] `api.md`: document location of real API models (NEW).
     * [x] `core`: Replicante Core models (RENAME).
-  * [ ] `service/`: crates that provide services to replicante core (NEW).
+  * [x] `service/`: crates that provide services to replicante core (NEW).
     * [x] `cache`: optional caching layer to speed up other stores (FUTURE).
     * [x] `coordinator`: the process coordinator create (RENAME).
     * [x] `healthcheck`: components/dependency health checks (NEW).
-    * [ ] `tasks`: the task subsystem crate (RENAME).
+    * [x] `tasks`: the task subsystem crate (RENAME).
   * [ ] `store/`: crates focused on storing data (NEW).
     * [ ] `metrics`|`stats`: store agent/cluster time-series data (FUTURE).
     * [ ] `primary`: the primary store crate currently `data/store` (RENAME).

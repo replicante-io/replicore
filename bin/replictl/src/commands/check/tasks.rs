@@ -10,8 +10,8 @@ use slog::Logger;
 use replicante::task_payload::ClusterRefreshPayload;
 use replicante::Config;
 use replicante::ReplicanteQueues;
-use replicante_tasks::admin::TasksAdmin;
-use replicante_tasks::TaskQueue;
+use replicante_service_tasks::admin::TasksAdmin;
+use replicante_service_tasks::TaskQueue;
 use replicante_util_failure::format_fail;
 
 use super::super::super::outcome::Error;

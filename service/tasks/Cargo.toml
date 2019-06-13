@@ -1,5 +1,5 @@
 [package]
-name = "replicante_tasks"
+name = "replicante_service_tasks"
 version = "0.1.0"
 authors = ["Stefano Pogliani <stefano@spogliani.net>"]
 edition = "2018"
@@ -26,8 +26,8 @@ serde_derive = "^1.0.34"
 serde_json = "^1.0.0"
 slog = "^2.2.0"
 
-replicante_models_api = { path = "../common/models/api" }
-replicante_service_healthcheck = { path = "../service/healthcheck" }
-replicante_util_failure = { path = "../common/util/failure" }
-replicante_util_rndid = { path = "../common/util/rndid" }
-replicante_util_upkeep = { path = "../common/util/upkeep" }
+replicante_models_api = { path = "../../common/models/api" }
+replicante_service_healthcheck = { path = "../healthcheck" }
+replicante_util_failure = { path = "../../common/util/failure" }
+replicante_util_rndid = { path = "../../common/util/rndid" }
+replicante_util_upkeep = { path = "../../common/util/upkeep" }

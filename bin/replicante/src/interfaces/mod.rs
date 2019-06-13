@@ -99,8 +99,8 @@ impl Interfaces {
     /// Metrics that fail to register are logged and ignored.
     pub fn register_metrics(logger: &Logger, registry: &Registry) {
         replicante_service_coordinator::register_metrics(logger, registry);
+        replicante_service_tasks::register_metrics(logger, registry);
         replicante_data_store::register_metrics(logger, registry);
-        replicante_tasks::register_metrics(logger, registry);
         EventsStream::register_metrics(logger, registry);
         self::api::register_metrics(logger, registry);
         self::metrics::register_metrics(logger, registry);

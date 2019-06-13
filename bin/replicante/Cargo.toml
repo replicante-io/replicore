@@ -57,8 +57,8 @@ replicante_models_api = { path = "../../common/models/api" }
 replicante_models_core = { path = "../../models/core" }
 replicante_service_coordinator = { path = "../../service/coordinator" }
 replicante_service_healthcheck = { path = "../../service/healthcheck" }
+replicante_service_tasks = { path = "../../service/tasks" }
 replicante_streams_events = { path = "../../streams/events" }
-replicante_tasks = { path = "../../tasks" }
 replicante_util_failure = { path = "../../common/util/failure" }
 replicante_util_iron = { path = "../../common/util/iron" }
 replicante_util_tracing = { path = "../../common/util/tracing" }
