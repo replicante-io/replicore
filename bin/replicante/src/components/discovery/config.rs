@@ -1,7 +1,7 @@
 use serde_derive::Deserialize;
 use serde_derive::Serialize;
 
-use replicante_agent_discovery::Config as BackendsConfig;
+use replicante_cluster_discovery::Config as BackendsConfig;
 
 /// Agent discovery configuration options.
 #[derive(Clone, Eq, PartialEq, Hash, Debug, Serialize, Deserialize)]

@@ -6,8 +6,8 @@ use slog::debug;
 use slog::info;
 use slog::Logger;
 
-use replicante_agent_discovery::discover;
-use replicante_agent_discovery::Config as DiscoveryConfig;
+use replicante_cluster_discovery::discover;
+use replicante_cluster_discovery::Config as DiscoveryConfig;
 use replicante_coordinator::Election;
 use replicante_coordinator::Error as CoordinatorError;
 use replicante_coordinator::LoopingElectionControl;

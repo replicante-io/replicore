@@ -19,7 +19,7 @@ Crates marked as `FUTURE` are POSSIBLE things that will be added and not a commi
   * [x] `ci/`: CI tools (NO CHANGE).
   * [ ] `cluster/`: crates focused on cluster logic (NEW).
     * [x] `aggregator`: aggregated view and events generator (RENAME).
-    * [ ] `discovery`: cluster discovery sybsystem (RENAME).
+    * [x] `discovery`: cluster discovery sybsystem (RENAME).
     * [ ] `fetcher`: cluster state refresh and diff (RENAME).
   * [x] `common/`: crates shared with agents or other projects (NO CHANGE).
     * [x] `models/`: crates defining data models only (NEW).
@@ -32,11 +32,11 @@ Crates marked as `FUTURE` are POSSIBLE things that will be added and not a commi
     * [ ] `api.md`: document location of real API models (NEW).
     * [ ] `core`: Replicante Core models (RENAME).
   * [ ] `service/`: crates that provide services to replicante core (NEW).
+    * [ ] `cache`: optional caching layer to speed up other stores (FUTURE).
     * [ ] `coordinator`: the process coordinator create (RENAME).
     * [x] `healthcheck`: components/dependency health checks (NEW).
     * [ ] `tasks`: the task subsystem crate (RENAME).
   * [ ] `store/`: crates focused on storing data (NEW).
-    * [ ] `cache`: optional caching layer to speed up other stores (FUTURE).
     * [ ] `metrics`|`stats`: store agent/cluster time-series data (FUTURE).
     * [ ] `primary`: the primary store crate currently `data/store` (RENAME).
     * [ ] `view`: store data used to generate API or other views (NEW).

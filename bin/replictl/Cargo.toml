@@ -36,7 +36,7 @@ slog = "^2.1.1"
 slog-term = "^2.4.0"
 
 replicante = { path = "../replicante" }
-replicante_agent_discovery = { path = "../../agent/discovery" }
+replicante_cluster_discovery = { path = "../../cluster/discovery" }
 replicante_coordinator = { path = "../../coordinator" }
 replicante_data_models = { path = "../../data/models" }
 replicante_data_store = { path = "../../data/store" }

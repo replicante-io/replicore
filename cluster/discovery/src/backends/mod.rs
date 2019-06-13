@@ -100,12 +100,9 @@ impl Iterator for Iter {
 /// # Example
 ///
 /// ```
-/// # extern crate failure;
-/// # extern crate replicante_agent_discovery;
-/// #
-/// # use replicante_agent_discovery::Config;
-/// # use replicante_agent_discovery::Result;
-/// # use replicante_agent_discovery::discover;
+/// # use replicante_cluster_discovery::Config;
+/// # use replicante_cluster_discovery::Result;
+/// # use replicante_cluster_discovery::discover;
 /// #
 /// # fn run() -> Result<()> {
 ///     let config = Config::default();

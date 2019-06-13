@@ -157,8 +157,8 @@ impl Components {
         self::discovery::register_metrics(logger, registry);
         self::workers::register_metrics(logger, registry);
         replicante_agent_client::register_metrics(logger, registry);
-        replicante_agent_discovery::register_metrics(logger, registry);
         replicante_cluster_aggregator::register_metrics(logger, registry);
+        replicante_cluster_discovery::register_metrics(logger, registry);
         replicante_data_fetcher::register_metrics(logger, registry);
     }
 

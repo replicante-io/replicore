@@ -11,7 +11,7 @@ use slog::info;
 use slog::warn;
 
 use replicante::Config;
-use replicante_agent_discovery::DiscoveryFileModel;
+use replicante_cluster_discovery::DiscoveryFileModel;
 use replicante_util_failure::format_fail;
 
 use super::super::super::ErrorKind;

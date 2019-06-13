@@ -48,8 +48,8 @@ slog-scope = "^4.0.1"
 slog-stdlog = "^3.0.2"
 
 replicante_agent_client = { path = "../../agent/client" }
-replicante_agent_discovery = { path = "../../agent/discovery" }
 replicante_cluster_aggregator = { path = "../../cluster/aggregator" }
+replicante_cluster_discovery = { path = "../../cluster/discovery" }
 replicante_coordinator = { path = "../../coordinator" }
 replicante_data_fetcher = { path = "../../data/fetcher" }
 replicante_data_models = { path = "../../data/models" }

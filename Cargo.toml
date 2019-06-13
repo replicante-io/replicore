@@ -1,10 +1,10 @@
 [workspace]
 members = [
   "agent/client",
-  "agent/discovery",
   "bin/replicante",
   "bin/replictl",
   "cluster/aggregator",
+  "cluster/discovery",
   "common/logging",
   "common/models/agent",
   "common/models/api",

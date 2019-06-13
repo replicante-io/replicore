@@ -1,22 +1,3 @@
-extern crate clap;
-extern crate failure;
-extern crate lazy_static;
-extern crate prometheus;
-extern crate reqwest;
-extern crate serde_yaml;
-extern crate slog;
-extern crate slog_term;
-
-extern crate replicante;
-extern crate replicante_agent_discovery;
-extern crate replicante_coordinator;
-extern crate replicante_data_models;
-extern crate replicante_data_store;
-extern crate replicante_service_healthcheck;
-extern crate replicante_streams_events;
-extern crate replicante_tasks;
-extern crate replicante_util_failure;
-
 use clap::value_t;
 use clap::App;
 use clap::Arg;
