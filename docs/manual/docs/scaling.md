@@ -70,5 +70,5 @@ source of information but some replicante-specific details are presented in thes
 
   * [Primary Store](scaling-store.md): where the current state of the system is stored.
   * [Tasks](scaling-tasks.md): for asynchronously processing data and performing tasks.
-  * [Event streams](scaling-events.md): for ordered events occurring across the system.
+  * [Streams](scaling-streams.md): for ordered events occurring across the system.
   * [Coordinator](scaling-coordinator.md): for all processes to agree on work being done.

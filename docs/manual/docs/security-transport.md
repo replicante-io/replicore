@@ -4,7 +4,7 @@ title: Agent Transports
 sidebar_label: Agent Transports
 ---
 
-Replicante core issues commands to the agents.
+Replicante Core issues commands to the agents.
 This design simplifies the agent interaction logic and allows for dynamic scaling controlled at core.
 
 By default, communication with agents is performed over HTTP(s) as detailed below.
@@ -18,24 +18,24 @@ Replicante may at some point include other agent transports.
 
 **Unimplemented feature warning**
 
-This page makes several mentions to **agent actions**.
+This page makes several mentions of **agent actions**.
 This feature is not yet implemented but it will be a key part of the system.
-For this reason plans consider actions for from the early stages.
+For this reason actions are considered for from the early design stages.
 
 </blockquote>
 
 
 ## Transport security
-Because a network is (likely) involved in the core-agent communication there are
+Because a network is involved in the core-agent communication there are
 some security aspects that must be considered and precautions to take.
 
 There are two main ways for the transport to be abused:
 
   * Agent information and monitoring data could be faked.
     This would lead Replicante to infer the incorrect state of the node and issue corrective
-    actions that could harm the healthy node.
+    actions that could harm a healthy node.
   * Actions sent to agents could be faked.
-    This would cause the agents to take actions that are issued with malignant intent.
+    This would cause the agents to take actions that are issued with malicious intent.
 
 There is also the possibility of packets being dropped by the transport layer.
 This could result in a lack of visibility and/or an inability to issue actions to the node.
@@ -50,7 +50,7 @@ The HTTP transport is the easiest to use but also the least secure.
 
 With this transport Replicante core act as an HTTP client for the agent.
 Connections are established by replicante core and closed when no longer needed to avoid all
-the complexity of long-running TCP connections (i.e, need for heart-beats, reconnect logic)
+the complexity of long-running TCP connections (for example need for heart-beats and reconnect logic)
 although this comes at the cost of repeated TPC connection handshakes.
 
 As mentioned, HTTP is an insecure protocol but there are ways to add security to it.
@@ -66,7 +66,7 @@ integrity from Replicante Core by signing messages:
 
 The HTTP transport was mainly inspired by the advantages shown by
 [Prometheus](https://prometheus.io/docs/introduction/faq/#why-do-you-pull-rather-than-push?)
-but also for the added benefit of a simpler scalability architecture for replicante core.
+but also for the added benefit of a simpler architecture for replicante core.
 
 
 ### Configuration

@@ -16,6 +16,7 @@ use slog::debug;
 use slog::error;
 use slog::info;
 use slog::trace;
+use slog::warn;
 use slog::Logger;
 
 use zookeeper::Acl;
@@ -526,7 +527,7 @@ impl Client {
                     false
                 }
                 ZkState::Closed => {
-                    error!(logger, "Zookeeper session closed");
+                    warn!(logger, "Zookeeper session closed");
                     true
                 }
                 ZkState::Connected => {
@@ -548,7 +549,7 @@ impl Client {
             };
             if reset {
                 notify_close.store(false, Ordering::Relaxed);
-                debug!(logger, "Zookeeper session marked as not active");
+                trace!(logger, "Zookeeper session marked as not active");
             }
         });
 

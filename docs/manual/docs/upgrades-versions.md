@@ -18,6 +18,7 @@ The table below shows a summary of supported agent protocols and minimum upgrade
 
 | Replicante Version | Supported Agent API | Upgrade from |
 | ------------------ | ------------------- | ------------ |
+| 0.3.x              | v1                  | N/A*         |
 | 0.2.x              | v1                  | N/A*         |
 | 0.1.x              | v1                  | -            |
 

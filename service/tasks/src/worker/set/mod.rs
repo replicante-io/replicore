@@ -157,8 +157,8 @@ impl<Q: TaskQueue> WorkerSet<Q> {
 
         for idx in 0..self.config.threads_count {
             let logger = self.logger.clone();
-            let name = format!("replicore:tasks:worker:{}", idx);
-            let short_name = format!("r:t:worker:{}", idx);
+            let name = format!("replicore:service:tasks:worker:{}", idx);
+            let short_name = format!("r:s:tasks:worker:{}", idx);
             let still_running = Arc::clone(&running);
             let thread_backend = Arc::clone(&self.backend);
             let thread_handlers = Arc::clone(&handlers);
@@ -166,7 +166,7 @@ impl<Q: TaskQueue> WorkerSet<Q> {
             let thread = Builder::new(short_name)
                 .full_name(name)
                 .spawn(move |scope| {
-                    scope.activity("waiting for tasks to process");
+                    scope.activity("(idle) waiting for tasks to process");
                     let worker: Worker<Q> =
                         Worker::new(logger, thread_backend, thread_handlers, &scope);
                     while still_running.load(Ordering::Relaxed) && !scope.should_shutdown() {

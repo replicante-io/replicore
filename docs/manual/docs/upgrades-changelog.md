@@ -9,6 +9,35 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] - 2019-06-??
+### Added
+- A better thread story.
+- Additional API server configuration options.
+- Cluster refresh operation tracing.
+- Cluster refresh request endpoint.
+- Graceful shutdown.
+- Introduce an `/api/unstable` API "version".
+- Optional `display_name` discovery attribute.
+- Sentry integration.
+- Threads introspection API.
+- Update checker at start (disabled by default).
+- `/api/unstable/introspect/health` endpoint.
+- `/api/unstable/introspect/self` endpoint.
+
+### Changed
+- **BREAKING**: Agent client uses `unstable` API.
+- **BREAKING**: Cluster ID and Friendly name.
+- **BREAKING**: Rename incorrectly named v1 API as unstable.
+- **BREAKING**: Rename node's `name` to `node_id`.
+- **BREAKING**: Rename shard's `id` to `shard_id`.
+- Improve data consistency in cases where data is unavailable.
+- Move cluster metadata to aggregation pipeline.
+- Reworked primary store interface.
+- Standardise metrics names.
+
+### Removed
+- **BREAKING**: Removed nonsensical ordering on some models.
+
 ## [0.2.1] - 2019-03-28
 ### Added
 - Add `rustfmt` to CI and move in that direction.
@@ -92,5 +121,6 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - WebUI endpoints for initial UI.
 
 
+[0.3.0]: https://github.com/replicante-io/replicante/compare/v0.2.1...v0.3.0
 [0.2.1]: https://github.com/replicante-io/replicante/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/replicante-io/replicante/compare/v0.1.0...v0.2.0

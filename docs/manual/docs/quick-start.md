@@ -36,7 +36,32 @@ $ cd playgrounds
 ```
 
 
-## 2. Running a MongoDB replica set
+## 2. Prepare the network
+All playgrounds projects share the same [docker network](https://docs.docker.com/network/)
+to allow tools managed by separate docker-compose projects to interact with each datastore
+without having to reference resources created and managed by external docker-compose projects.
+
+Ensure the `replicante_playgrounds` docker network exists:
+```bash
+# Check for the network.
+$ docker network ls --filter 'name=replicante_playgrounds'
+NETWORK ID          NAME                DRIVER              SCOPE
+
+# Create the network since it is missing.
+$ docker network create --driver 'bridge' --subnet '172.64.0.0/16' replicante_playgrounds
+<NETWORK ID>
+
+# Check again.
+$ docker network ls --filter 'name=replicante_playgrounds'
+NETWORK ID          NAME                     DRIVER              SCOPE
+<NETWORK ID>        replicante_playgrounds   bridge              local
+```
+
+The IP range used for this network is `172.64.0.0/16` and is described here:
+http://jodies.de/ipcalc?host=172.64.0.0&mask1=16&mask2=
+
+
+## 3. Running a MongoDB replica set
 In this example we will run a MongoDB three node replica set configuration with agents.
 The same commands can be used to run any number of playgrounds so they will not be repeated.
 
@@ -48,7 +73,7 @@ Keep in mind that initialisation can take up to a minute.
 The optional `-d` runs the processes in the background if you don't care for the logs.
 
 ```bash
-$ cd mongo/rs
+$ cd stores/mongo/rs
 $ docker-compose -f docker-compose.yml -f docker-compose-agents.yml up [-d]
 ```
 
@@ -67,9 +92,9 @@ rs_node2_1        docker-entrypoint.sh mongo ...   Up       27017/tcp
 rs_node3_1        docker-entrypoint.sh mongo ...   Up       27017/tcp
 ```
 
-## 3. Start replicante core and the WebUI
-Just like other projects, a initialisation script is run to initialise and configure datastores
-if needed.
+## 4. Start Replicante Core and the WebUI
+Just like other projects, an initialisation script is run to initialise and configure
+datastores if needed.
 It could take a couple of minutes to initialise everything the first time.
 
 The configuration defaults to discovering all nodes for the clusters available in the playground
@@ -80,31 +105,22 @@ $ cd tools/replicore/
 $ docker-compose up
 ```
 
-If you see any errors about missing networks you may need to have other playgrounds
-create their networks first.
-
-```bash
-cd path/to/missing/project
-$ docker-compose up --no-build --no-start
-```
-
-
 Once everything is up and running the WebUI will be available at http://localhost:3000/:
 
 ![webui](assets/webui.png)
 
 
-## 4. Experimenting with the playground
-Now that all processes are up and running we can interfear with systems and see what happens.
+## 5. Experimenting with the playground
+Now that all processes are up and running we can interfere with systems and see what happens.
 Try things like:
 
-  * Stop/start datanodes and/or agents.
-  * Fail over pimaries.
-  * Use the awesome kernel features and tools to symulate network issues (`tc`) and other limits (`cgroups`).
+  * Stop/start data nodes and/or agents.
+  * Fail over primaries.
+  * Use the awesome kernel features and tools to simulate network issues (`tc`) and other limits (`cgroups`).
 
 
-## 5. Clean up
-Each cluster runs as a signle docker-compose project and stores data in docker volumes.
+## 6. Clean up
+Each cluster runs as a single docker-compose project and stores data in docker volumes.
 
 To clean up after you no longer need these processes,
 remove all the docker containers, images, and volumes run:

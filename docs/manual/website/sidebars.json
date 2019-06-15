@@ -5,13 +5,6 @@
       "quick-start",
       "architecture"
     ],
-    "Administration": [
-      "admin-deps",
-      "admin-install",
-      "admin-config",
-      "admin-flexible-deployment",
-      "admin-tasks"
-    ],
     "Features": [
       "features",
       "features-discovery",
@@ -22,6 +15,13 @@
     "Security": [
       "security",
       "security-transport"
+    ],
+    "Administration": [
+      "admin-deps",
+      "admin-install",
+      "admin-config",
+      "admin-flexible-deployment",
+      "admin-tasks"
     ],
     "Upgrades": [
       "upgrades-rolling",
@@ -37,15 +37,16 @@
     ],
     "API Reference": [
       "api",
-      "api-introspection",
+      "api-core",
       "api-grafana",
+      "api-introspection",
       "api-webui"
     ],
     "Scaling": [
       "scaling",
       "scaling-store",
       "scaling-tasks",
-      "scaling-events",
+      "scaling-streams",
       "scaling-coordinator"
     ]
   }

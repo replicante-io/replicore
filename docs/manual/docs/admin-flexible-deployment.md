@@ -87,9 +87,9 @@ task_workers:
   <TASK_TYPE>: true
 ```
 
-While such a diverse deployment requires a bit more effort to manage it does have several advantages:
+While such a diverse deployment requires more effort to manage it does have several advantages:
 
-  * Each component and/or task worker can scale independently as needed.
+  * Each component and/or task worker can scale independently as much or as little as needed.
   * Components are isolated from each other (through the user's preferred process isolation solution).
 
 
@@ -103,9 +103,10 @@ replicante exposes metrics for which components are enabled on each node.
 The following prometheus queries can aid operators monitor components and task workers across
 all nodes in a Replicante Core cluster:
 
-  * `replicore_components_enabled{type="required"}`: should be `>= 1` for each component.
-  * `replicore_workers_enabled`: should be `>= 1` for each worker.
+  * `sum(replicore_components_enabled{type="required"}) by (component)`: should be `>= 1` for each `component`.
+  * `sum(replicore_workers_enabled) by (worker)`: should be `>= 1` for each task `worker`.
 
-There is also a query to count optional components: `replicore_components_enabled{type="optional"}`.
+There is also a query to check optional components:
+`sum(replicore_components_enabled{type="optional"}) by (components)`.  
 Users that would like to make use of optional features should ensure that components providing
 such features are available somewhere in the cluster.

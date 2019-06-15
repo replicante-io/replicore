@@ -4,11 +4,11 @@ title: Features Overview
 sidebar_label: Overview
 ---
 
-## Agent discovery
-A single inventory for all your hosts should be all that you need.
+## Cluster discovery
+A single inventory for all your servers/instances should be all that you need.
 
 Inspired by [Prometheus](https://prometheus.io/), Replicante uses
-[agent discovery](features-discovery.md) to know what agents it needs to manage and how
+[cluster discovery](features-discovery.md) to know what agents it needs to manage and how
 to connect to them.
 
 
@@ -22,7 +22,7 @@ Your user's data is important.
 Being able to trust the software that manages you datastore is important as well.
 
 Words are cheap, trust is not: replicante provides [introspection](features-introspection.md)
-tools and integrations to let users monitor and understand what the system is doing and why.
+tools and integrations to let operators monitor and understand what the system is doing and why.
 
 
 ## WebUI

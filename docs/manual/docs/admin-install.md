@@ -4,7 +4,7 @@ title: Installation
 sidebar_label: Installation
 ---
 
-This page documents the step to install replicante for production use.
+This page documents the step to install Replicante Core for production use.
 It does NOT detail the installation process of the needed [dependences](admin-deps.md).
 
 If you are looking for a development/test/demo environment the
@@ -57,7 +57,7 @@ chmod +x replicante replictl
 ```
 
 ### From code
-The following instructions where executed on a clean Fedora 28 install but should work for any
+The following instructions where executed on a clean Fedora 30 install but should work for any
 Linux system given the correct package manager and package names:
 
 ```bash
@@ -98,8 +98,8 @@ Whatever your choice, the store needs some initialisation before it can be used.
 The requirements depend on the selected store and are documented in the code:
 
   * MongoDB:
-    * Requirements: https://github.com/replicante-io/replicante/blob/master/data/store/src/backend/mongo/mod.rs#L50
-    * Playground example: https://github.com/replicante-io/playgrounds/blob/master/images/replicante/indexes.js
+    * Requirements: https://github.com/replicante-io/replicante/blob/7655d363749aaa3d5cabbf603d4233b6a69efd45/store/primary/src/backend/mongo/mod.rs#L100-L114
+    * Playground example: https://github.com/replicante-io/playgrounds/blob/master/tools/replicore/init-files/indexes.js
 
 It is possible to verify the store configuration with [`replictl check store schema`](replictl-check.md).
 `replictl` requires replicante to be [configured](admin-config.md) before the tests can work.

@@ -6,8 +6,8 @@ sidebar_label: Security Considerations
 
 This section covers Replicante security design and features.
 
-Replicante aims to provide a reasonable level of security by default but will require tuning
-to ensure that configuration meats users requirements.
+Replicante aims to provide a reasonable level of security by default.
+Tuning will be required to ensure users make the best of the offered features.
 
 
 ## Design expectations
@@ -16,7 +16,7 @@ Replicante is developed with some expectation about data, users, and runtime env
   * Agents can be trusted and respect the [specification](https://www.replicante.io/docs/specs/).
   * Users that have access to the system can be trusted.
   * Replicante processes can trust each other.
-  * Agent actions can be harmful so the authenticity and integrity of action requests must be guaranteed.
+  * Agent actions can be harmful so the authenticity and integrity of action requests MUST be guaranteed.
   * Collected data and generated events are sensitive information (precautions are taken to avoid
     unauthorised reads) but are not confidential (no permanent or irreparable harm is done if data
     is leaked).

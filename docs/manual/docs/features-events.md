@@ -6,14 +6,16 @@ sidebar_label: Events
 
 Before you can react to a change in the system you need to know that something has changed.
 
-Replicante first task is to observe all nodes and generate events to reflect changes to nodes and clusters.
-These events are internally used to drive features but are also recoded for the user to see.
+Replicante's first task is to observe all nodes and generate events to reflect changes to nodes and clusters.
+These events are internally used to drive features but are also recoded for users to see.
 
-Having access to historical events can provide valuable insight.
-Increase error rates? Is/was the datastore down or in the middle of a failover?
+Having access to historical events can provide valuable insight:
+
+ * Was the datastore down or in the middle of a failover when increased error rates was reported?
+ * Did something unexpected happen after a configuration change?
 
 Being able to correlate datastore events with application errors, performance issues,
-or other unusual activity is key into improving your own code.
+or other unusual activity is key into improving your services and products.
 
 
 ## WebUI history view
@@ -21,12 +23,6 @@ The simplest way to view the events history is to check out the `Events` page in
 
 
 ## Stream subscription
-Observed and generated events are emitted onto a stream.
-
-Events order is guaranteed for events in the same cluster but events from different clusters
-can be interleaved in any order.
-System events order is also guaranteed with respect to other system events but not to cluster events.
-
 <blockquote class="warning">
 
 Events are currently emitted to the primary store (MongoDB) and will be moved to
@@ -36,7 +32,13 @@ Most features related to events streaming will not be available until then.
 
 </blockquote>
 
-The stream of events acts as the source of state information for most of the system
+Observed and generated events are emitted onto a stream.
+
+Events order is guaranteed for events in the same cluster but events from different clusters
+can be interleaved in any order.
+System events order is also guaranteed with respect to other system events but not to cluster events.
+
+The stream of events acts as the source of raw information for most of the system
 and drives the actions subsystem.
 Both causes and effects of system state changes will be reflected in this stream.
 
@@ -54,7 +56,7 @@ To name just a few:
 
 
 ### Snapshot events
-Replicante periodically emits a special kind of event to describe the current state of an item.
+Replicante periodically emits a special kind of event to describe the current state of an entity.
 
 Since Replicante monitors distributed systems it is not possible to consistently provide a
 point in time view of monitored clusters.
@@ -100,7 +102,7 @@ so most of the configuration is on the Grafana side:
 
   1. Install the [simple JSON datasource](https://grafana.com/plugins/grafana-simple-json-datasource)
      plugin if not already installed.
-  2. Configure a new `simple JSON` datasource to point to
+  2. Configure a new `Simple JSON` datasource to point to
      `http://REPLICANTE_HOST:REPLICANTE_PORT/api/unstable/grafana` if not already available.
   3. On a dashboard, configure a new annotation query using the newly created datesource.
   4. (Optional) Filter events by adding JSON encoded filters as the query text.

@@ -11,6 +11,19 @@ The WebUI aims to be minimal and self-explicatory so just install it and click a
 
 
 ## Install
+### With Docker
+A docker image with the pre-built WebUI is available:
+https://hub.docker.com/r/replicanteio/webui
+
+To use it, simply pull it and start it:
+```bash
+docker pull replicanteio/webui:v0
+docker run --rm -it \
+  -p 3000:3000 -e 'REPLI_BACKEND_ROOT=http://replicante.api:16016'
+  replicanteio/webui:v0
+```
+
+### From code
 The WebUI lives in a dedicated repository and is an nodejs application.
 It can be installed by fetching the code, installing dependences, building static assets.
 

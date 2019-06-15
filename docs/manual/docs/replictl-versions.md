@@ -14,12 +14,12 @@ This command requires access to all configured services for the version report t
 
 ```text
 $ replictl versions
-Jun 12 21:58:54.512 INFO Showing versions, version: b73969f8b19a17cd881f4e04741cdc764757b7ef, module: replictl::commands::versions
-Jun 12 21:58:54.513 INFO Configuring MongoDB as storage validator, version: b73969f8b19a17cd881f4e04741cdc764757b7ef, module: replicante_data_store::backend::mongo
-replictl: 0.1.0 [b73969f8b19a17cd881f4e04741cdc764757b7ef; index and working directory tainted]
-Replicante (statically determined): 0.1.0 [f7a52185302d119cc1707b9d0a69bf29ac5b4633; working directory tainted]
-Replicante (dynamically determined): 0.1.0 [f7a52185302d119cc1707b9d0a69bf29ac5b4633; working directory tainted]
-Store: MongoDB 3.6.4
+replictl: 0.3.0 [7655d363749aaa3d5cabbf603d4233b6a69efd45; working directory tainted]
+Replicante (statically determined): 0.3.0 [7655d363749aaa3d5cabbf603d4233b6a69efd45; working directory tainted]
+Replicante (dynamically determined): 0.3.0 [7655d363749aaa3d5cabbf603d4233b6a69efd45; working directory tainted]
+Coordinator: Zookeeper (version not reported)
+Primary Store: MongoDB 4.0.10
+Tasks Queue: Kafka (version not reported)
 ```
 
 ## Replicante versions
@@ -27,4 +27,4 @@ The command returns three replicante versions:
 
   * `replictl` is the same as `replictl --version`.
   * `Replicante (statically determined)` is the version of replicante compiled with `replictl`.
-  * `Replicante (dynamically determined)` is the version of replicante detected over the HTTP api.
+  * `Replicante (dynamically determined)` is the version of replicante detected over the HTTP API.

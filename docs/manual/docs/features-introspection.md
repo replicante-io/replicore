@@ -7,7 +7,7 @@ sidebar_label: Introspection
 In an ideal world software, once installed and configured, runs perfectly without ever needing attention.
 Of course reality tells a different story.
 
-Software bugs and evolution, transient network issues, miss-configurations ...
+Software evolves, software has bugs, transient network issues, miss-configurations ...  
 Many things can go wrong and the symptoms are often unclear.
 Distributed systems also mean that errors often propagate across processes
 and servers so the location an error is reported is far from the location of the error origin.
@@ -22,7 +22,8 @@ Replicante provides a set of features to introspect the system and trace its act
 
 ## Events trail
 Replicante is an event-driven system at its core.
-Because of that, most activities of the system can be explained and monitored by looking at events.
+Because of that, most activities of the system can be explained and monitored
+by looking at the events stream.
 
 The [events](features-events.md) section explains how to view and programmatically follow events.
 
@@ -55,7 +56,7 @@ Below are the supported backends:
   * `json` (default) outputs logs to standard output in JSON format:
     * The output is not the easiest to read directly.
     * It works well with process supervisors that expect logs from standard output (i.e, docker).
-    * Lines can be processed by any tools that understand JSON (i.e, `jq` or crafted scripts).
+    * Lines can be processed by any tools that understand JSON (`fluentd`, `logstash`, `jq` or crafted scripts).
   * `journald` sends logs to journald directly (systemd's logging facility):
     * `journald` is available only if enabled at compile time.
     * `journald` is requires a server running systemd.
@@ -76,6 +77,19 @@ Replicante supports integration with some distributed tracing tools compatible w
 
 By default distributed tracing is disabled but it can be [configured](admin-config.md)
 with the options under the `tracing` section.
+
+
+## Sentry
+[Sentry](https://sentry.io/) is a really powerful, open source, tool to collect
+and understand errors reported by applications.
+
+Replicante integrates with sentry to inform operators about unexpected situations.
+
+Not everything reported is an error, and not every error is critical.
+Some errors may not even require attention but are instead an indication of temporary
+issues: transient network issues and dependencies failover may lead to errors
+being reported to sentry.
+These are symptoms of an external conditions that you may or may not need to look into.
 
 
 ## Introspection API

@@ -13,7 +13,9 @@ as well as advanced setup where the user has the power to fine tune most details
 Some options do not have reasonable defaults so users will have to set them explicitly:
 
   * [Agents discovery](features-discovery.md) (vastly depends on user needs).
-  * Storage configuration (specifically: address of the DB server).
+  * Coordinator configuration, mainly connection settings: `coordinator.backend` and `coordinator.options`.
+  * Storage configuration, mainly connection settings: `storage.backend` and `storage.options`.
+  * Tasks queue configuration, mainly connection settings: `tasks.backend` and `tasks.options`.
 
 
 ## Configuration options
@@ -41,6 +43,61 @@ api:
   # By default, only bind to the loopback interface.
   # Production environments should place an HTTPS proxy in front of the API.
   bind: '127.0.0.1:16016'
+
+  # The health checks refresh frequency (in seconds).
+  #
+  # Health checks are an internal indicator of replicante processes ability
+  # to interact with external dependencies.
+  # Since they can be expensive an have a small cost to each dependency they are run periodically
+  # in the background with the latest result made visible through the API and metrics.
+  #
+  # This option configures the amount of time (in seconds) to wait between checks.
+  healthcheck_refresh: 10
+
+  # The number of request handling threads.
+  #
+  # By default this is 8 * number of CPUs.
+  threads_count: ~
+
+  # API server timeouts.
+  timeouts:
+    # Controls the timeout, in seconds, for keep alive connections.
+    #
+    # NOTE: Setting this to null (~) will turn off keep alive.
+    keep_alive: 5
+
+    # Control the timeout, in seconds, for reads on existing connections.
+    #
+    # NOTE: Setting this to null (~) will turn off read timeouts.
+    read: 5
+
+    # Control the timeout, in seconds, for writes on existing connections.
+    #
+    # NOTE: Setting this to null (~) will turn off write timeouts.
+    write: 1
+
+  # Enable/disable entire API trees.
+  #
+  # Useful for advanced operators that which to control access to experimental or legacy
+  # API versions or reduce attack surfices by removing endpoints that are not needed.
+  #
+  # Example use cases are:
+  #
+  #   * Upgrade prep: testing new API versions while having a quick rollback plan.
+  #   * Controlled rollout: be prepared for when verions are no longer supported.
+  #   * Disable unstable/experimental APIs: to enusre integrated tools only use stable APIs.
+  trees:
+    # Enable/disable the introspection APIs.
+    #
+    # The introspection API is very usesul to gain insight into the system.
+    # It can also be used to monitor the system for failures or performance degradation.
+    introspect: true
+
+    # Enable/disable the unstable APIs.
+    #
+    # The unstable APIs are for endpoints in the early development cycle
+    # where the attributes and parameters can change a lot and often.
+    unstable: true
 
 
 # Components enabling configuration.
@@ -101,6 +158,16 @@ components:
 
   # Enable Grafana Annotations API endpoints (optional).
   grafana: null
+
+  # Enable the update checker (optional).
+  #
+  # The check is performed only once in the background as the process starts.
+  # If a new version is available a notice will be logged and captured as a sentry event.
+  #
+  # This component is disabled by default and does not follow the _defaul attribute
+  # to ensure the user privacy is respected (HTTP requests can be tracked).
+  # If this option is not enabled, you will have to make sure you keep replicante up to date.
+  update_checker: false
 
   # Enable the WebUI API endpoints (optional).
   #
@@ -310,6 +377,26 @@ logging:
   verbose: false
 
 
+# Optional sentry.io integration configuration (desabled by default).
+#
+# Set a DSN parameter to enable centralised error reporting.
+#sentry:
+#  # Sentry API response capture filter.
+#  #
+#  # When sentry is enabled, API error responses returned to clients can be recorded
+#  # as sentry events to detect and debug issues.
+#  #
+#  # This option sets the severity level of responses that are reported:
+#  #  * `no`: disable sentry capturing of API error responses.
+#  #  * `client`: report client side errors and above (status code >= 400).
+#  #  * `server`: only report server side errors (status code >= 500).
+#  capture_api_errors: 'server'
+#
+#  # (required) The DSN to use to configure sentry.
+#  dsn: 'https://key@server.domain:port/project'
+sentry: ~
+
+
 # The section below is for storage configuration.
 storage:
   # The database to use for persistent storage.
@@ -332,7 +419,7 @@ storage:
     #
     # To change this option you will need to "Update by rebuild".
     # See the documentation for more details on this process.
-    db: replicante  # (recommended)
+    db: replicore  # (recommended)
 
     # URI of the MongoDB Replica Set or sharded cluster to connect to.
     uri: mongodb://localhost:27017/
@@ -413,7 +500,7 @@ tasks:
       socket: 60000
 
   # Number of task processing threads to spawn.
-  #threads_count: 8 * number of CPUs
+  #threads_count: number of CPUs
 
 
 # Timeouts configured here are used throughout the system for various reasons.
@@ -437,16 +524,46 @@ tracing:
   #
   # Zipkin options
   #options:
-  #  # (required) The service name for this zipkin endpoint.
-  #  service_name: replicante
+  #  # (required) The transport to send tracing information to zipkin.
+  #  #
+  #  # Available options:
+  #  #
+  #  #  * 'http'
+  #  #  * 'kafka'
+  #  transport: 'http'
   #
-  #  # (required) List of kafka seed hostnames.
-  #  kafka:
-  #    - HOST1:9092
-  #    - HOST2:9092
+  #  # Any transport-specific option is set here.
+  #  # The available options vary and are documented below.
+  #  #
+  #  # HTTP transport options
+  #  options:
+  #    # Number of buffered spans that should trigger a flush.
+  #    #
+  #    # This option is a best-effort configuration and the size of the buffer may grow
+  #    # slightly above this threshold.
+  #    flush_count: 100
   #
-  #  # The kafka topic to publish spans to.
-  #  topic: zipkin
+  #    # Muximum delay between span flushes in milliseconds.
+  #    #
+  #    # This option is a best-effort configuration and the size of the buffer may grow
+  #    # slightly above this threshold.
+  #    flush_timeout_millis: 2000
+  #
+  #    # Custom headers to attach to POST requests.
+  #    headers: {}
+  #
+  #    # (required) Target URL to POST spans to.
+  #    url: 'https://zipkin.corp/'
+  #
+  #  # Kafka transport options
+  #  options:
+  #    # (required) List of kafka seed hostnames.
+  #    kafka:
+  #      - HOST1:9092
+  #      - HOST2:9092
+  #
+  #    # The kafka topic to publish spans to.
+  #    topic: zipkin
 ```
 
 

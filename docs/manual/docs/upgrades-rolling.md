@@ -23,11 +23,11 @@ Once all nodes are up to date and restarted the upgrade is complete.
 
   1. Read the [upgrade notes](upgrades-notes.md) for any special consideration for the version you are upgrading to.
   2. Obtain a copy of the code to update to (see the [install](admin-install.md) section).
-  3. Test configuration and store contents compatibility (see [`replictl check upgrade`](replictl-check.md)).
+  3. Test configuration and data for compatibility issues (see [`replictl check upgrade`](replictl-check.md)).
   4. For each Replicante server:
      1. [Install](admin-install.md) the new binary.
      2. Restart the process on the node.
-     3. Check the logs to ensure everything works as expect.
+     3. Check the logs to ensure everything works as expected.
 
 Once the upgrade is complete you should review the configuration to enable new options
 and disable any deprecated features.

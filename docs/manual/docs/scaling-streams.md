@@ -1,33 +1,34 @@
 ---
-id: scaling-events
-title: Event streams
-sidebar_label: Event streams
+id: scaling-streams
+title: Streams
+sidebar_label: Streams
 ---
 
-Scaling the event streams is generally left to the streaming platform itself.
+Scaling streams is generally left to the streaming platform itself.
 Available options vary based on the selected backend.
 
-Replicante works on the assumption that event streams provide some level of ordering guarantees:
+Replicante works on the assumption that streams provide some level of ordering guarantees:
 
-  * Events that share the same key MUST be guaranteed with respect to each other.
-  * No ordering guarantees are expected of events that do not share keys.
+  * Messages that share the same key MUST be delivered in the order of publishing to the streaming platform.
+  * No ordering guarantees are expected of messages that do not share the key.
 
-This expectation usually makes it more difficult to scale events streams without downtime.
+This expectation usually makes it more difficult to scale streams without, at least partial, downtime.
 
-
-## Kafka
 <blockquote class="warning">
 
-Event streams are not yet implemented but are on their way.
+Streams are not yet implemented but are on their way.
 
 The notes in this page are based on the expected design of the feature and will be
-updated once event streams are implemented to reflect the final result.
+updated once streams are implemented to reflect the final result.
 
-This notes are provided as guidelines for prospecting users for what to expect.
+This notes are provided as guidelines to prospecting users for what to expect.
 
 </blockquote>
 
 
+## Events stream
+
+### Kafka
 [Kafka](https://kafka.apache.org/)'s scaling is based on the idea of
 [topic partitions](https://kafka.apache.org/documentation/#intro_topics).
 
@@ -48,5 +49,6 @@ to the partitions counts while the system is operating.
 While future versions may support online partition scaling they will still be a complex operation.
 You are advised to over-provision the number of partitions on event streams to limit,
 or even avoid, the need to change the number of partitions while the system is running.
+At the same time be mindful of over-provisioning too much as that will complicate Kafka.
 
 </blockquote>

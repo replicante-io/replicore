@@ -10,7 +10,7 @@ Replicante uses a central system that interacts with nodes though agents.
 
 
 ## Agents
-An agent process is deployed along-side each datastore process.
+An agent process is deployed along side each datastore process.
 Agents are intermediaries between the central system and the datastore nodes themselves.
 They perform the following tasks:
 

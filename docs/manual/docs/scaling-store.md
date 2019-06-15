@@ -1,14 +1,16 @@
 ---
 id: scaling-store
-title: Primary Store
-sidebar_label: Primary Store
+title: Stores
+sidebar_label: Stores
 ---
 
+
+## Primary Store
 Scaling the primary store is generally left to the primary store itself.
 Available options vary based on the selected backend.
 
 
-## MongoDB
+### MongoDB
 [MongoDB](https://www.mongodb.com/) is the currently recommended backend for the primary store.
 
 A single replica set should be able to handle most installations.
@@ -26,9 +28,9 @@ If that is the case [please report](https://github.com/replicante-io/replicante/
 </blockquote>
 
 
-MongoDB sharding works by dividing the data across different (shard) replica sets.
+MongoDB sharding works by dividing the data across different replica sets (shards).
 To know how data should be divided and what data is needed by each query, MongoDB needs a
-[shard key](https://docs.mongodb.com/manual/sharding/#shard-keys).
+[shard key](https://docs.mongodb.com/manual/sharding/#shard-keys) for each collection.
 
 The selection of a good shard key is critical to the performance of a sharded cluster
 and depends on the exact schema of the data stored in each collection.
@@ -46,20 +48,21 @@ upgrade paths will be if/when the sharding key changes.
 
 </blockquote>
 
-As of version 0.2.0, the suggested sharding keys for each collection are below:
+As of version 0.3.0, the suggested sharding keys for each collection are below:
 
-  * `agents`: `(cluster: 1, host: 1)`
-  * `agents_info`: `(cluster: 1, host: 1)`
-  * `clusters_meta`: `name: 1`
-  * `discoveries`: `name: 1`
-  * `nodes`: `(cluster: 1, name: 1)`
-  * `shards`: `(cluster: 1, node: 1, id: 1)`
+  * `agents`: `(cluster_id: 1, host: 1)`
+  * `agents_info`: `(cluster_id: 1, host: 1)`
+  * `clusters_meta`: `cluster_id: 1`
+  * `discoveries`: `cluster_id: 1`
+  * `nodes`: `(cluster_id: 1, node_id: 1)`
+  * `shards`: `(cluster_id: 1, shard_id: 1, node_id: 1)`
 
 
 <blockquote class="info">
 
 If you do run a Replicante cluster and plan to use sharding we would be very pleased to know.
 
-Please let us know by [opening an issue](https://github.com/replicante-io/replicante/issues).
+Please let us know via [gitter](https://gitter.im/replicante-io/community)
+or by [opening an issue](https://github.com/replicante-io/replicante/issues).
 
 </blockquote>

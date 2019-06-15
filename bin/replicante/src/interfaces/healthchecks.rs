@@ -62,6 +62,7 @@ impl HealthChecks {
         let thread = Builder::new("r:i:healthchecks")
             .full_name("replicante:interface:healthchecks")
             .spawn(move |scope| {
+                scope.activity("(idle) waiting for the next healthchecks run");
                 let mut last_check = Instant::now() - (delay * 2);
                 while !scope.should_shutdown() {
                     if last_check.elapsed() > delay {

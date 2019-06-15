@@ -55,8 +55,8 @@ impl Cleaner {
     ) -> Result<Cleaner> {
         let (sender, receiver) = LoopingElectionOpts::shutdown_channel();
         let inner_logger = logger.clone();
-        let handle = Builder::new("r:coordinator:zoo:cleaner")
-            .full_name("replicore:coordinator:zookeeper:cleaner")
+        let handle = Builder::new("r:s:coordinator:zoo:c")
+            .full_name("replicore:service:coordinator:zookeeper:cleaner")
             .spawn(move |scope| {
                 scope.activity("initialising zookeeper cleaner election");
                 let logger = inner_logger;

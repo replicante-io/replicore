@@ -7,6 +7,8 @@ use replicante_models_core::api::Version;
 use super::ErrorKind;
 use super::Result;
 
+const ENDPOINT_VERSION: &str = "/api/unstable/introspect/version";
+
 /// Replicante core HTTP API client.
 pub struct Client {
     client: ReqwestClient,
@@ -25,11 +27,11 @@ impl Client {
 
     /// Fetches the version Replicante over the API.
     pub fn version(&self) -> Result<Version> {
-        let endpoint = self.endpoint("/api/v1/version");
+        let endpoint = self.endpoint(ENDPOINT_VERSION);
         let request = self.client.get(&endpoint);
         let mut response = request
             .send()
-            .with_context(|_| ErrorKind::ReplicanteRequest("/api/v1/version"))?;
+            .with_context(|_| ErrorKind::ReplicanteRequest(ENDPOINT_VERSION))?;
         let version = response
             .json()
             .with_context(|_| ErrorKind::ReplicanteJsonDecode)?;
