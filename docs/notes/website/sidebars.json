@@ -13,10 +13,12 @@
       "optimizations",
       "concurrent-agent-fetch",
       "dynamic-config",
+      "kafka-consumer",
+      "kafka-scale",
       "layered-config",
       "lock-validation-writes",
       "multi-cache",
-      "optimisable-store-methods"
+      "zookeeper-elections"
     ],
     "Dreamland": [
       "dreamland",

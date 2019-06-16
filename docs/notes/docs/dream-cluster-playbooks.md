@@ -12,7 +12,7 @@ The main focus to start with is a safe, no downtime, rolling restart:
      2. Drain it and wait for it to be drained
      3. Restart the node
      4. Un-drain the node
-     5. Move on to next node
+     5. Move on to next unprocessed node
 
 
 ## Open questions

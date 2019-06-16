@@ -21,11 +21,7 @@ to interact with the store, regardless of the functionality it exposes.
 
 
 ## Why a documents store?
-This is not strictly true: a SQL backend could be implemented for the core to store
-data in a relational database.
-Transactions would still not be used though so the value of this would be limited.
-
-Anyway, the main reasons for choosing [MongoDB](https://www.mongodb.com/) as the store are:
+The main reasons for choosing [MongoDB](https://www.mongodb.com/) as the store are:
 
   * *Flexible document format*: since Replicante is in early development stages the data format
     has not yet being tried and tested.
@@ -35,7 +31,7 @@ Anyway, the main reasons for choosing [MongoDB](https://www.mongodb.com/) as the
   * *MongoDB is quite easy to setup and support*: Replication, rolling restarts and upgrades,
     automated failover are also requirements for an "always on" solution like Replicante that
     are not easily available out of the box in traditional SQL servers.
-  * *Scalability*: MongoDB comes in replica set mode for high available as well as a slightly
+  * *Scalability*: MongoDB comes in replica set mode for high availability as well as a slightly
     more complex sharded cluster mode.
     Since Replicante logically groups data by cluster (maybe one day by organisation instead?)
     it is possible to shard large collections and grow/parallelise work (although if you get
@@ -54,7 +50,7 @@ recently added support for transactions in non-sharded collections.
 
 Finally the value of transactions is questionable since the data source has no
 atomicity guarantee to begin with.
-When refreshing the state of each node, all we can say is the data returned by a single
-call to an agent endpoint is consistent in itself.
+When refreshing the state of each cluster node, all we can say is the data returned by
+a single call to an agent endpoint is consistent in itself.
 There are no guarantees the result of two calls to the same agent, one after the other,
 would return results that are consistent across the two calls.

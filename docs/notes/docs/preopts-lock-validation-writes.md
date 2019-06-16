@@ -40,3 +40,9 @@ but not by the coordinator is limited but still large.
 
 Replicante could check its locks before every write operation to reduce that window
 of opportunity to a write operation alone.
+
+
+## Why wait?
+
+  * This has not caused issues yet.
+  * There is no definitive solutions, just ways to make it slightly better.

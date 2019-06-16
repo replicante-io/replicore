@@ -20,13 +20,14 @@ Distributed coordination is used to achieve this:
   * If a leader does not exist the process becomes the leader and starts performing its function.
   * Before acting, and within reason, the primary process should check if it is still primary.
     This is to make sure that connection issues to the coordinator do not lead to double primary.
-    * A process based on a periodic loop can check its status at the start of each run.
+    * For example a process based on a periodic loop can check its status at the start of each run.
 
-The implementation details may very over time and based on backends (i.e, Consul vs Zookeeper).
+The implementation details may very over time and based on backends (Consul vs Zookeeper).
 
 ### Uses for component election
 
   * Cluster discovery process (periodically discovers clusters and pushes tasks to workers).
+  * Zookeeper coordinator has a cleanup background thread to "implement" container nodes in zookeeper versions below 3.5
 
 
 ## Exclusive operations (locks)

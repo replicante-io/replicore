@@ -29,7 +29,14 @@ configuration place (no need to update every configuration file on every server)
      * Possibly not so the cost/risk of dynamic lookup can be exposed.
      * Consider a dynamic configuration loader that returns a static view on the full
        dynamic configuration options vs dynamic loading of individual attributes.
-     * Keep the stored format decoupled from the exposed interface (mostly store the full
+     * Keep the stored format decoupled from the exposed interface (mainly the full
        configuration should be stored and picked from by the API).
      * Provide an official way to update dynamic configuration (`replictl`).
   3. Update user code, if needed, to use a dynamic fetch API.
+  4. At startup, warn if the dynamic config loaded is not the same as the dynamic config file?
+
+
+## Why wait?
+
+  * Needs are yet unkown.
+  * Config will see likely large changes.
