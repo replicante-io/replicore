@@ -1,7 +1,7 @@
 #########################
 # Build replicante core #
 #########################
-ARG RUST_VERSION=1.34.0
+ARG RUST_VERSION=1.35.0
 FROM rust:$RUST_VERSION as builder
 
 # Add the code and compile core.
