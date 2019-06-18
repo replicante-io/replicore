@@ -20,6 +20,7 @@ members = [
   "service/tasks",
   "store/primary",
   "stream/events",
+  "stream/stream",
 ]
 
 # This patch is needed to make openssl (needed by kafka) work with openssl 1.0+

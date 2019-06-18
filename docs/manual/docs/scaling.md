@@ -54,7 +54,7 @@ The list below provides suggestions of what to look at for each component.
       event streams backup (rate of incoming events is higher then events processing rate).
       These components are similar to tasks (below) but must process events in order.
       Scaling the number of event consumers is as easy as running more instances.
-      The complication may be with scaling the [event streaming platform](scaling-events.md).
+      The complication may be with scaling the [streaming platform](scaling-streams.md).
   * Task workers (`components.workers`):
       task queue backup (rate of incoming tasks is higher then task processing rate).
       Scaling the number of task workers is as easy as running more instances.

@@ -1,0 +1,15 @@
+[package]
+name = "replicante_stream"
+version = "0.1.0"
+authors = ["Stefano Pogliani <stefano@spogliani.net>"]
+edition = "2018"
+
+description = "Replicante common streaming logic"
+documentation = "https://www.replicante.io/docs"
+homepage = "https://www.replicante.io/"
+repository = "https://github.com/replicante-io/replicante"
+keywords = ["replicante"]
+license = "MIT"
+
+
+[dependencies]
