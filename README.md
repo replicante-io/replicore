@@ -61,6 +61,7 @@ $ devtools/initialise.sh
 
 ### Build dependences
 
+  * clang: for rdkafka
   * cmake
   * openssl-devel
 

@@ -29,7 +29,7 @@ clap = "^2.31.2"
 failure = "^0.1.3"
 failure_derive = "^0.1.3"
 lazy_static = "^1.0.0"
-prometheus = "^0.5.0"
+prometheus = "^0.7.0"
 reqwest = "^0.9.1"
 serde_yaml = "^0.8.0"
 slog = "^2.1.1"
@@ -47,4 +47,4 @@ replicante_util_failure = { path = "../../common/util/failure" }
 
 
 [build-dependencies]
-git2 = "^0.8.0"
+git2 = "^0.9.0"

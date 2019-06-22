@@ -21,7 +21,10 @@ use crate::Message;
 use crate::Result;
 use crate::Stream;
 
-/// TODO
+/// Generic mock Stream to write tests against.
+///
+/// This mock DOES NOT support multiple follower groups.
+/// Every message emitted is delivered to ONLY ONE follower.
 #[derive(Clone)]
 pub struct MockStream {
     receiver: Receiver<EmitMessage>,
