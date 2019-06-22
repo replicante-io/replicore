@@ -138,7 +138,8 @@ impl Kafka {
     ) -> Result<Kafka> {
         let health = KafkaHealthChecker::new();
         healthchecks.register("tasks-consumer", health.clone());
-        let client_context = ClientStatsContext::with_healthcheck("retry-producer", health.clone());
+        let client_context =
+            ClientStatsContext::with_healthcheck("tasks:producer:retry", health.clone());
         let retry_producer = producer_config(&config, KAFKA_TASKS_RETRY_PRODUCER)
             .create_with_context(client_context)
             .with_context(|_| ErrorKind::BackendClientCreation)?;
@@ -218,7 +219,7 @@ impl Kafka {
     /// Create a new consumer subscribed to the given partitions.
     fn consumer(&self, subscriptions: &[String]) -> Result<BaseStatsConsumer> {
         debug!(self.logger, "Starting new kafka consumer"; "subscriptions" => ?subscriptions);
-        let consumer_role = format!("worker-{:?}-consumer", ::std::thread::current().id());
+        let consumer_role = format!("tasks:consumer:worker:{:?}", ::std::thread::current().id());
         let context = ClientStatsContext::with_healthcheck(consumer_role, self.health.clone());
         let consumer: BaseStatsConsumer = self
             .config

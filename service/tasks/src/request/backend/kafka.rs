@@ -30,7 +30,7 @@ pub struct Kafka {
 
 impl Kafka {
     pub fn new(config: KafkaConfig, healthchecks: &mut HealthChecks) -> Result<Kafka> {
-        let client_context = ClientStatsContext::new("tasks-producer");
+        let client_context = ClientStatsContext::new("tasks:producer");
         healthchecks.register("tasks-producer", client_context.healthcheck());
         let producer = producer_config(&config, KAFKA_TASKS_PRODUCER)
             .create_with_context(client_context)
