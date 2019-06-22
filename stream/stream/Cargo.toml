@@ -12,4 +12,23 @@ keywords = ["replicante"]
 license = "MIT"
 
 
+[features]
+with_test_support = ["crossbeam-channel"]
+
+
 [dependencies]
+crossbeam-channel = { version = "^0.3.8", optional = true }
+humthreads = "^0.1.4"
+failure = "^0.1.5"
+lazy_static = "^1.0.0"
+opentracingrust = "^0.3.3"
+prometheus = "^0.5.0"
+rand = "^0.6.0"
+serde = "^1.0.34"
+serde_derive = "^1.0.34"
+serde_json = "^1.0.39"
+slog = "^2.1.1"
+
+
+[dev-dependencies]
+humthreads = { version = "^0.1.4", features = ["with_test_support"] }
