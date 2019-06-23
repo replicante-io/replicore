@@ -1,16 +1,11 @@
 use rdkafka::config::ClientConfig;
 use rdkafka::config::RDKafkaLogLevel;
 
-use super::super::config::KafkaConfig;
+use crate::config::KafkaConfig;
 
-mod client;
 mod constants;
-mod metrics;
 
-pub use self::client::ClientStatsContext;
-pub use self::client::KafkaHealthChecker;
 pub use self::constants::*;
-pub use self::metrics::register_metrics;
 
 const RETRY_LEN: usize = 6;
 const SKIP_LEN: usize = 8;

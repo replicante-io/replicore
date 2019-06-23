@@ -5,12 +5,12 @@ use rdkafka::message::OwnedHeaders;
 use rdkafka::producer::FutureProducer;
 use rdkafka::producer::FutureRecord;
 
+use replicante_externals_kafka::ClientStatsContext;
 use replicante_service_healthcheck::HealthChecks;
 
 use super::super::super::config::KafkaConfig;
 use super::super::super::shared::kafka::producer_config;
 use super::super::super::shared::kafka::topic_for_queue;
-use super::super::super::shared::kafka::ClientStatsContext;
 use super::super::super::shared::kafka::TopicRole;
 use super::super::super::shared::kafka::KAFKA_TASKS_ID_HEADER;
 use super::super::super::shared::kafka::KAFKA_TASKS_PRODUCER;

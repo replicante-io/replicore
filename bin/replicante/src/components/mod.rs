@@ -156,10 +156,6 @@ impl Components {
     pub fn register_metrics(logger: &Logger, registry: &Registry) {
         self::discovery::register_metrics(logger, registry);
         self::workers::register_metrics(logger, registry);
-        replicante_agent_client::register_metrics(logger, registry);
-        replicante_cluster_aggregator::register_metrics(logger, registry);
-        replicante_cluster_discovery::register_metrics(logger, registry);
-        replicante_cluster_fetcher::register_metrics(logger, registry);
     }
 
     /// Performs any final configuration and starts background threads.

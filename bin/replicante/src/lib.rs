@@ -2,6 +2,7 @@ use clap::App;
 use clap::Arg;
 use failure::ResultExt;
 use lazy_static::lazy_static;
+use prometheus::Registry;
 use sentry::integrations::failure::capture_fail;
 use sentry::internals::ClientInitGuard;
 use sentry::internals::IntoDsn;
@@ -62,6 +63,7 @@ fn initialise_and_run(config: Config, logger: Logger) -> Result<bool> {
     // Need to initialise the interfaces before we can register all metrics.
     info!(logger, "Initialising sub-systems ...");
     let mut interfaces = Interfaces::new(&config, logger.clone(), &mut upkeep)?;
+    register_crates_metrics(&logger, interfaces.metrics.registry());
     Interfaces::register_metrics(&logger, interfaces.metrics.registry());
     Components::register_metrics(&logger, interfaces.metrics.registry());
     self::metrics::register_metrics(&logger, interfaces.metrics.registry());
@@ -110,6 +112,20 @@ pub fn initialise_sentry(config: Option<SentryConfig>, logger: &Logger) -> Resul
         sentry::integrations::panic::register_panic_handler();
     }
     Ok(client)
+}
+
+/// Attemps to register all metrics from other replicante_* crates.
+///
+/// Metrics that fail to register are logged and ignored.
+pub fn register_crates_metrics(logger: &Logger, registry: &Registry) {
+    replicante_agent_client::register_metrics(logger, registry);
+    replicante_cluster_aggregator::register_metrics(logger, registry);
+    replicante_cluster_discovery::register_metrics(logger, registry);
+    replicante_cluster_fetcher::register_metrics(logger, registry);
+    replicante_externals_kafka::register_metrics(logger, registry);
+    replicante_service_coordinator::register_metrics(logger, registry);
+    replicante_service_tasks::register_metrics(logger, registry);
+    replicante_store_primary::register_metrics(logger, registry);
 }
 
 /// Parse command line, load configuration, initialise logger.

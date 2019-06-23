@@ -8,7 +8,7 @@ use slog::Logger;
 lazy_static! {
     pub static ref KAFKA_BROKER_OUTBUF_CNT: GaugeVec = GaugeVec::new(
         Opts::new(
-            "replicore_tasks_kafka_broker_outbuf_cnt",
+            "replicore_kafka_broker_outbuf_cnt",
             "Number of requests awaiting transmission to broker"
         ),
         &["role", "broker"]
@@ -16,7 +16,7 @@ lazy_static! {
     .expect("Failed to create KAFKA_BROKER_OUTBUF_CNT gauge");
     pub static ref KAFKA_BROKER_OUTBUF_MSG_CNT: GaugeVec = GaugeVec::new(
         Opts::new(
-            "replicore_tasks_kafka_broker_outbuf_msg_cnt",
+            "replicore_kafka_broker_outbuf_msg_cnt",
             "Number of messages awaiting transmission to broker"
         ),
         &["role", "broker"]
@@ -24,7 +24,7 @@ lazy_static! {
     .expect("Failed to create KAFKA_BROKER_OUTBUF_MSG_CNT gauge");
     pub static ref KAFKA_BROKER_REQ_TIMEOUTS: GaugeVec = GaugeVec::new(
         Opts::new(
-            "replicore_tasks_kafka_broker_req_timeouts",
+            "replicore_kafka_broker_req_timeouts",
             "Total number of requests timed out"
         ),
         &["role", "broker"]
@@ -32,7 +32,7 @@ lazy_static! {
     .expect("Failed to create KAFKA_BROKER_REQ_TIMEOUTS gauge");
     pub static ref KAFKA_BROKER_RX: GaugeVec = GaugeVec::new(
         Opts::new(
-            "replicore_tasks_kafka_broker_rx",
+            "replicore_kafka_broker_rx",
             "Total number of responses received"
         ),
         &["role", "broker"]
@@ -40,7 +40,7 @@ lazy_static! {
     .expect("Failed to create KAFKA_BROKER_RX gauge");
     pub static ref KAFKA_BROKER_RXBYTES: GaugeVec = GaugeVec::new(
         Opts::new(
-            "replicore_tasks_kafka_broker_rxbytes",
+            "replicore_kafka_broker_rxbytes",
             "Total number of bytes received"
         ),
         &["role", "broker"]
@@ -48,7 +48,7 @@ lazy_static! {
     .expect("Failed to create KAFKA_BROKER_RXBYTES gauge");
     pub static ref KAFKA_BROKER_RXCORRIDERRS: GaugeVec = GaugeVec::new(
         Opts::new(
-            "replicore_tasks_kafka_broker_rxcorriderrs",
+            "replicore_kafka_broker_rxcorriderrs",
             "Total number of unmatched correlation ids in response"
         ),
         &["role", "broker"]
@@ -56,7 +56,7 @@ lazy_static! {
     .expect("Failed to create KAFKA_BROKER_RXCORRIDERRS gauge");
     pub static ref KAFKA_BROKER_RXERRS: GaugeVec = GaugeVec::new(
         Opts::new(
-            "replicore_tasks_kafka_broker_rxerrs",
+            "replicore_kafka_broker_rxerrs",
             "Total number of receive errors"
         ),
         &["role", "broker"]
@@ -64,23 +64,20 @@ lazy_static! {
     .expect("Failed to create KAFKA_BROKER_RXERRS gauge");
     pub static ref KAFKA_BROKER_RXPARTIAL: GaugeVec = GaugeVec::new(
         Opts::new(
-            "replicore_tasks_kafka_broker_rxpartial",
+            "replicore_kafka_broker_rxpartial",
             "Total number of partial MessageSets received"
         ),
         &["role", "broker"]
     )
     .expect("Failed to create KAFKA_BROKER_RXPARTIAL gauge");
     pub static ref KAFKA_BROKER_TX: GaugeVec = GaugeVec::new(
-        Opts::new(
-            "replicore_tasks_kafka_broker_tx",
-            "Total number of requests sent"
-        ),
+        Opts::new("replicore_kafka_broker_tx", "Total number of requests sent"),
         &["role", "broker"]
     )
     .expect("Failed to create KAFKA_BROKER_TX gauge");
     pub static ref KAFKA_BROKER_TXBYTES: GaugeVec = GaugeVec::new(
         Opts::new(
-            "replicore_tasks_kafka_broker_txbytes",
+            "replicore_kafka_broker_txbytes",
             "Total number of bytes sent"
         ),
         &["role", "broker"]
@@ -88,7 +85,7 @@ lazy_static! {
     .expect("Failed to create KAFKA_BROKER_TXBYTES gauge");
     pub static ref KAFKA_BROKER_TXERRS: GaugeVec = GaugeVec::new(
         Opts::new(
-            "replicore_tasks_kafka_broker_txerrs",
+            "replicore_kafka_broker_txerrs",
             "Total number of transmission errors"
         ),
         &["role", "broker"]
@@ -96,7 +93,7 @@ lazy_static! {
     .expect("Failed to create KAFKA_BROKER_TXERRS gauge");
     pub static ref KAFKA_BROKER_TXRETRIES: GaugeVec = GaugeVec::new(
         Opts::new(
-            "replicore_tasks_kafka_broker_txretries",
+            "replicore_kafka_broker_txretries",
             "Total number of request retries"
         ),
         &["role", "broker"]
@@ -104,7 +101,7 @@ lazy_static! {
     .expect("Failed to create KAFKA_BROKER_TXRETRIES gauge");
     pub static ref KAFKA_BROKER_WAITRESP_CNT: GaugeVec = GaugeVec::new(
         Opts::new(
-            "replicore_tasks_kafka_broker_waitresp_cnt",
+            "replicore_kafka_broker_waitresp_cnt",
             "Number of requests in-flight to broker awaiting response"
         ),
         &["role", "broker"]
@@ -112,7 +109,7 @@ lazy_static! {
     .expect("Failed to create KAFKA_BROKER_WAITRESP_CNT gauge");
     pub static ref KAFKA_BROKER_WAITRESP_MSG_CNT: GaugeVec = GaugeVec::new(
         Opts::new(
-            "replicore_tasks_kafka_broker_waitresp_msg_cnt",
+            "replicore_kafka_broker_waitresp_msg_cnt",
             "Number of messages in-flight to broker awaitign response"
         ),
         &["role", "broker"]
@@ -120,7 +117,7 @@ lazy_static! {
     .expect("Failed to create KAFKA_BROKER_WAITRESP_MSG_CNT gauge");
     pub static ref KAFKA_BROKER_WAKEUPS: GaugeVec = GaugeVec::new(
         Opts::new(
-            "replicore_tasks_kafka_broker_wakeups",
+            "replicore_kafka_broker_wakeups",
             "Broker thread poll wakeups"
         ),
         &["role", "broker"]
@@ -128,7 +125,7 @@ lazy_static! {
     .expect("Failed to create KAFKA_BROKER_WAKEUPS gauge");
     pub static ref KAFKA_BROKER_ZBUF_GROW: GaugeVec = GaugeVec::new(
         Opts::new(
-            "replicore_tasks_kafka_broker_zbuf_grow",
+            "replicore_kafka_broker_zbuf_grow",
             "Total number of decompression buffer size increases"
         ),
         &["role", "broker"]
@@ -136,7 +133,7 @@ lazy_static! {
     .expect("Failed to create KAFKA_BROKER_ZBUF_GROW gauge");
     pub static ref KAFKA_CGRP_ASSIGNMENT_SIZE: GaugeVec = GaugeVec::new(
         Opts::new(
-            "replicore_tasks_kafka_cgrp_assignment_size",
+            "replicore_kafka_cgrp_assignment_size",
             "Current assignment's partition count"
         ),
         &["role"]
@@ -144,7 +141,7 @@ lazy_static! {
     .expect("Failed to create KAFKA_CGRP_ASSIGNMENT_SIZE gauge");
     pub static ref KAFKA_MSG_CNT: GaugeVec = GaugeVec::new(
         Opts::new(
-            "replicore_tasks_kafka_msg_cnt",
+            "replicore_kafka_msg_cnt",
             "Current number of messages in producer queues"
         ),
         &["role"]
@@ -152,7 +149,7 @@ lazy_static! {
     .expect("Failed to create KAFKA_MSG_CNT gauge");
     pub static ref KAFKA_PARTITION_COMMITTED_OFFSET: GaugeVec = GaugeVec::new(
         Opts::new(
-            "replicore_tasks_kafka_partition_committed_offset",
+            "replicore_kafka_partition_committed_offset",
             "Last committed offset"
         ),
         &["role", "topic", "partition"]
@@ -160,7 +157,7 @@ lazy_static! {
     .expect("Failed to create KAFKA_PARTITION_COMMITTED_OFFSET gauge");
     pub static ref KAFKA_PARTITION_CONSUMER_LAG: GaugeVec = GaugeVec::new(
         Opts::new(
-            "replicore_tasks_kafka_partition_consumer_lag",
+            "replicore_kafka_partition_consumer_lag",
             "Difference between hi_offset - max(app_offset, committed_offset)"
         ),
         &["role", "topic", "partition"]
@@ -168,23 +165,20 @@ lazy_static! {
     .expect("Failed to create KAFKA_PARTITION_CONSUMER_LAG gauge");
     pub static ref KAFKA_PARTITION_FETCHQ_CNT: GaugeVec = GaugeVec::new(
         Opts::new(
-            "replicore_tasks_kafka_partition_fetchq_cnt",
+            "replicore_kafka_partition_fetchq_cnt",
             "Number of pre-fetched messages in fetch queue"
         ),
         &["role", "topic", "partition"]
     )
     .expect("Failed to create KAFKA_PARTITION_FETCHQ_CNT gauge");
     pub static ref KAFKA_PARTITION_FETCHQ_SIZE: GaugeVec = GaugeVec::new(
-        Opts::new(
-            "replicore_tasks_kafka_partition_fetchq_size",
-            "Bytes in fetchq"
-        ),
+        Opts::new("replicore_kafka_partition_fetchq_size", "Bytes in fetchq"),
         &["role", "topic", "partition"]
     )
     .expect("Failed to create KAFKA_PARTITION_FETCHQ_SIZE gauge");
     pub static ref KAFKA_PARTITION_MSGQ_BYTES: GaugeVec = GaugeVec::new(
         Opts::new(
-            "replicore_tasks_kafka_partition_msgq_bytes",
+            "replicore_kafka_partition_msgq_bytes",
             "Number of bytes in msgq_cnt"
         ),
         &["role", "topic", "partition"]
@@ -192,7 +186,7 @@ lazy_static! {
     .expect("Failed to create KAFKA_PARTITION_MSGQ_BYTES gauge");
     pub static ref KAFKA_PARTITION_MSGQ_CNT: GaugeVec = GaugeVec::new(
         Opts::new(
-            "replicore_tasks_kafka_partition_msgq_cnt",
+            "replicore_kafka_partition_msgq_cnt",
             "Number of messages waiting to be produced in first-level queue"
         ),
         &["role", "topic", "partition"]
@@ -200,7 +194,7 @@ lazy_static! {
     .expect("Failed to create KAFKA_PARTITION_MSGQ_CNT gauge");
     pub static ref KAFKA_PARTITION_TXBYTES: GaugeVec = GaugeVec::new(
         Opts::new(
-            "replicore_tasks_kafka_partition_txbytes",
+            "replicore_kafka_partition_txbytes",
             "Total number of bytes transmitted for txmsgs"
         ),
         &["role", "topic", "partition"]
@@ -208,7 +202,7 @@ lazy_static! {
     .expect("Failed to create KAFKA_PARTITION_TXBYTES gauge");
     pub static ref KAFKA_PARTITION_TXMSGS: GaugeVec = GaugeVec::new(
         Opts::new(
-            "replicore_tasks_kafka_partition_txmsgs",
+            "replicore_kafka_partition_txmsgs",
             "Total number of messages transmitted (produced)"
         ),
         &["role", "topic", "partition"]
@@ -216,7 +210,7 @@ lazy_static! {
     .expect("Failed to create KAFKA_PARTITION_TXMSGS gauge");
     pub static ref KAFKA_PARTITION_XMIT_MSGQ_BYTES: GaugeVec = GaugeVec::new(
         Opts::new(
-            "replicore_tasks_kafka_partition_xmit_msgq_bytes",
+            "replicore_kafka_partition_xmit_msgq_bytes",
             "Number of bytes in xmit_msgq"
         ),
         &["role", "topic", "partition"]
@@ -224,7 +218,7 @@ lazy_static! {
     .expect("Failed to create KAFKA_PARTITION_XMIT_MSGQ_BYTES gauge");
     pub static ref KAFKA_PARTITION_XMIT_MSGQ_CNT: GaugeVec = GaugeVec::new(
         Opts::new(
-            "replicore_tasks_kafka_partition_xmit_msgq_cnt",
+            "replicore_kafka_partition_xmit_msgq_cnt",
             "Number of messages ready to be produced in transmit queue"
         ),
         &["role", "topic", "partition"]
@@ -232,7 +226,7 @@ lazy_static! {
     .expect("Failed to create KAFKA_PARTITION_XMIT_MSGQ_CNT gauge");
     pub static ref KAFKA_REPLYQ: GaugeVec = GaugeVec::new(
         Opts::new(
-            "replicore_tasks_kafka_replyq",
+            "replicore_kafka_replyq",
             "Number of ops waiting in queue for application to serve with rd_kafka_poll()"
         ),
         &["role"]

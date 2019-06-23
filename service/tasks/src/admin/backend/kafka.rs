@@ -11,11 +11,12 @@ use rdkafka::message::BorrowedMessage;
 use rdkafka::message::Headers;
 use rdkafka::Message;
 
+use replicante_externals_kafka::ClientStatsContext;
+
 use super::super::super::config::KafkaConfig;
 use super::super::super::shared::kafka::consumer_config;
 use super::super::super::shared::kafka::queue_from_topic;
 use super::super::super::shared::kafka::topic_for_queue;
-use super::super::super::shared::kafka::ClientStatsContext;
 use super::super::super::shared::kafka::TopicRole;
 use super::super::super::shared::kafka::KAFKA_ADMIN_CONSUMER;
 use super::super::super::shared::kafka::KAFKA_ADMIN_GROUP;

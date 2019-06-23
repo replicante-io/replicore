@@ -8,7 +8,7 @@ use rdkafka::ClientContext;
 use replicante_models_api::HealthStatus;
 use replicante_service_healthcheck::HealthCheck;
 
-use super::metrics::*;
+use crate::metrics::*;
 
 /// A kafka client context to expose stats over prometheus.
 pub struct ClientStatsContext {
@@ -189,5 +189,11 @@ impl HealthCheck for KafkaHealthChecker {
             .lock()
             .expect("KafkaHealthChecker mutex poisoned")
             .clone()
+    }
+}
+
+impl Default for KafkaHealthChecker {
+    fn default() -> KafkaHealthChecker {
+        KafkaHealthChecker::new()
     }
 }

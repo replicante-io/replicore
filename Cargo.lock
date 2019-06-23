@@ -1845,6 +1845,7 @@ dependencies = [
  "replicante_cluster_aggregator 0.1.0",
  "replicante_cluster_discovery 0.1.1",
  "replicante_cluster_fetcher 0.1.1",
+ "replicante_externals_kafka 0.1.0",
  "replicante_logging 0.1.3",
  "replicante_models_api 0.1.0",
  "replicante_models_core 0.2.1",
@@ -1938,6 +1939,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "replicante_externals_kafka"
+version = "0.1.0"
+dependencies = [
+ "lazy_static 1.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "prometheus 0.7.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "rdkafka 0.21.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "replicante_models_api 0.1.0",
+ "replicante_service_healthcheck 0.1.0",
+ "slog 2.4.1 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
 name = "replicante_logging"
 version = "0.1.3"
 dependencies = [
@@ -2021,7 +2034,7 @@ dependencies = [
  "opentracingrust 0.3.3 (registry+https://github.com/rust-lang/crates.io-index)",
  "prometheus 0.7.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "rdkafka 0.21.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "replicante_models_api 0.1.0",
+ "replicante_externals_kafka 0.1.0",
  "replicante_service_healthcheck 0.1.0",
  "replicante_util_failure 0.1.1",
  "replicante_util_rndid 0.1.0",

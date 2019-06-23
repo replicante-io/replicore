@@ -24,6 +24,8 @@ use slog::debug;
 use slog::warn;
 use slog::Logger;
 
+use replicante_externals_kafka::ClientStatsContext;
+use replicante_externals_kafka::KafkaHealthChecker;
 use replicante_service_healthcheck::HealthChecks;
 
 use super::super::super::config::KafkaConfig;
@@ -32,8 +34,6 @@ use super::super::super::shared::kafka::producer_config;
 use super::super::super::shared::kafka::queue_from_topic;
 use super::super::super::shared::kafka::topic_for_queue;
 use super::super::super::shared::kafka::topic_is_retry;
-use super::super::super::shared::kafka::ClientStatsContext;
-use super::super::super::shared::kafka::KafkaHealthChecker;
 use super::super::super::shared::kafka::TopicRole;
 use super::super::super::shared::kafka::KAFKA_TASKS_CONSUMER;
 use super::super::super::shared::kafka::KAFKA_TASKS_GROUP;

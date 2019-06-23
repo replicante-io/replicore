@@ -1,22 +1,3 @@
-extern crate failure;
-extern crate futures;
-extern crate humthreads;
-extern crate lazy_static;
-extern crate num_cpus;
-extern crate opentracingrust;
-extern crate prometheus;
-extern crate rdkafka;
-extern crate serde;
-extern crate serde_derive;
-extern crate serde_json;
-extern crate slog;
-
-extern crate replicante_models_api;
-extern crate replicante_service_healthcheck;
-extern crate replicante_util_failure;
-extern crate replicante_util_rndid;
-extern crate replicante_util_upkeep;
-
 use std::hash::Hash;
 use std::str::FromStr;
 use std::time::Duration;
@@ -75,5 +56,4 @@ pub trait TaskQueue:
 /// Metrics that fail to register are logged and ignored.
 pub fn register_metrics(logger: &Logger, registry: &Registry) {
     self::metrics::register_metrics(logger, registry);
-    self::shared::kafka::register_metrics(logger, registry);
 }
