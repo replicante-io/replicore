@@ -1,9 +1,13 @@
 use prometheus::Registry;
 use slog::Logger;
 
+mod config;
 mod metrics;
 mod stats;
 
+pub use self::config::AckLevel;
+pub use self::config::CommonConfig;
+pub use self::config::Timeouts;
 pub use self::stats::ClientStatsContext;
 pub use self::stats::KafkaHealthChecker;
 

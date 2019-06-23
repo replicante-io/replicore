@@ -15,6 +15,8 @@ license = "MIT"
 lazy_static = "^1.0.0"
 prometheus = "^0.7.0"
 rdkafka = "^0.21.0"
+serde = "^1.0.34"
+serde_derive = "^1.0.34"
 slog = "^2.2.0"
 
 replicante_models_api = { path = "../../common/models/api" }

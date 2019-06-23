@@ -23,18 +23,30 @@ fn common_config(config: &KafkaConfig, client_id: &str) -> ClientConfig {
     kafka_config
         .set("auto.commit.enable", "false")
         .set("auto.offset.reset", "smallest")
-        .set("bootstrap.servers", &config.brokers)
+        .set("bootstrap.servers", &config.common.brokers)
         .set("client.id", client_id)
         .set("enable.auto.offset.store", "false")
         .set("enable.partition.eof", "false")
-        .set("heartbeat.interval.ms", &config.heartbeat.to_string())
+        .set(
+            "heartbeat.interval.ms",
+            &config.common.heartbeat.to_string(),
+        )
         .set(
             "metadata.request.timeout.ms",
-            &config.timeouts.metadata.to_string(),
+            &config.common.timeouts.metadata.to_string(),
         )
-        .set("request.timeout.ms", &config.timeouts.request.to_string())
-        .set("session.timeout.ms", &config.timeouts.session.to_string())
-        .set("socket.timeout.ms", &config.timeouts.socket.to_string())
+        .set(
+            "request.timeout.ms",
+            &config.common.timeouts.request.to_string(),
+        )
+        .set(
+            "session.timeout.ms",
+            &config.common.timeouts.session.to_string(),
+        )
+        .set(
+            "socket.timeout.ms",
+            &config.common.timeouts.socket.to_string(),
+        )
         .set("statistics.interval.ms", KAFKA_STATS_INTERVAL)
         .set_log_level(RDKafkaLogLevel::Debug);
     kafka_config
@@ -56,7 +68,7 @@ pub fn producer_config(config: &KafkaConfig, client_id: &str) -> ClientConfig {
         .set("queue.buffering.max.ms", "0") // Do not buffer messages.
         .set(
             "request.required.acks",
-            config.ack_level.as_rdkafka_option(),
+            config.common.ack_level.as_rdkafka_option(),
         );
     kafka_config
 }

@@ -38,7 +38,7 @@ impl Kafka {
         let kafka = Kafka {
             prefix: config.queue_prefix,
             producer,
-            timeout: i64::from(config.timeouts.request),
+            timeout: i64::from(config.common.timeouts.request),
         };
         Ok(kafka)
     }

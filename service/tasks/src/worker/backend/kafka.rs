@@ -152,7 +152,7 @@ impl Kafka {
             prefix: config.queue_prefix,
             retry_producer: Arc::new(retry_producer),
             retry_subscriptions: Vec::new(),
-            retry_timeout: config.timeouts.request,
+            retry_timeout: config.common.timeouts.request,
             subscriptions: Vec::new(),
         })
     }

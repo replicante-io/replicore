@@ -73,7 +73,6 @@ pub struct Config {
     pub task_workers: TaskWorkers,
 
     /// Tasks system configuration.
-    #[serde(default)]
     pub tasks: TasksConfig,
 
     /// Timeouts configured here are used throughout the system for various reasons.
@@ -83,25 +82,6 @@ pub struct Config {
     /// Distributed tracing configuration.
     #[serde(default)]
     pub tracing: TracingConfig,
-}
-
-impl Default for Config {
-    fn default() -> Config {
-        Config {
-            api: APIConfig::default(),
-            components: ComponentsConfig::default(),
-            coordinator: CoordinatorConfig::default(),
-            discovery: DiscoveryConfig::default(),
-            events: EventsConfig::default(),
-            logging: LoggingConfig::default(),
-            sentry: None,
-            storage: StorageConfig::default(),
-            task_workers: TaskWorkers::default(),
-            tasks: TasksConfig::default(),
-            timeouts: TimeoutsConfig::default(),
-            tracing: TracingConfig::default(),
-        }
-    }
 }
 
 impl Config {
@@ -158,7 +138,7 @@ mod tests {
 
     #[test]
     fn from_reader_ok() {
-        let cursor = Cursor::new("{}");
+        let cursor = Cursor::new("tasks: {backend: 'kafka', options: {brokers: 'host:9092'}}");
         Config::from_reader(cursor).unwrap();
     }
 }

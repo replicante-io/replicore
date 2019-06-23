@@ -1,3 +1,4 @@
+mod config;
 mod error;
 mod iter;
 mod message;
@@ -9,6 +10,7 @@ pub mod test_support;
 mod tests;
 mod traits;
 
+pub use self::config::StreamConfig;
 pub use self::error::Error;
 pub use self::error::ErrorKind;
 pub use self::error::Result;
@@ -17,3 +19,4 @@ pub use self::message::EmitMessage;
 pub use self::message::Message;
 pub use self::metrics::register_metrics;
 pub use self::stream::Stream;
+pub use self::stream::StreamOpts;

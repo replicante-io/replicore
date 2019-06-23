@@ -10,6 +10,7 @@ use crate::traits::StreamInterface;
 use crate::EmitMessage;
 use crate::Iter;
 use crate::Result;
+use crate::StreamConfig;
 
 /// Generic stream provider.
 ///
@@ -34,6 +35,11 @@ impl<T> Stream<T>
 where
     T: DeserializeOwned + Serialize + 'static,
 {
+    pub fn new(_config: StreamConfig, _opts: StreamOpts) -> Stream<T> {
+        // TODO
+        panic!("TODO: Stream::new");
+    }
+
     // TODO: remove once the first real backend uses this.
     #[allow(dead_code)]
     pub(crate) fn with_backend(
@@ -62,8 +68,6 @@ where
     ///
     /// Once the iterator reaches the end of the stream it will block waiting for
     /// new messages to be emitted onto the stream.
-    /// # TODO: stop consuming on shutdown?
-    /// # TODO: stop consuming on stream end?
     ///
     /// The `Iterator` will belong to the group of followers identified by `group`.
     /// Followers in the same group receive a partition of the overall stream.
@@ -72,6 +76,16 @@ where
     /// message processed for this `group`.
     /// If no message was ever processed for the `group` the `Iterator` will start
     /// following messages from the oldest available message.
+    ///
+    /// # Shutdown and activity report
+    /// In Replicante Core, followers are expected to run a background threads.
+    ///
+    /// To allow for a clean shutdown, Replicante uses a threads wrapper library that provides
+    /// a `ThreadScope` object that can be used to check if the system is shutting down
+    /// as well as to report the current thread activity.
+    ///
+    /// Followers must be passed a reference to the `ThreadScope` so that backends and
+    /// backoff can check if the user requested a shutdown as well as report process.
     pub fn follow<'a, S>(&self, group: S, thread: &'a ThreadScope) -> Result<Iter<'a, T>>
     where
         S: Into<String>,
@@ -85,5 +99,16 @@ where
         S: Into<String>,
     {
         self.inner.follow(group.into(), thread, false)
+    }
+}
+
+/// Stream programmatic options, those that should not be user configuration
+pub struct StreamOpts {
+    stream_id: &'static str,
+}
+
+impl StreamOpts {
+    pub fn new(stream_id: &'static str) -> StreamOpts {
+        StreamOpts { stream_id }
     }
 }

@@ -14,12 +14,6 @@ pub enum Backend {
     Kafka(KafkaConfig),
 }
 
-impl Default for Backend {
-    fn default() -> Backend {
-        Backend::Kafka(KafkaConfig::default())
-    }
-}
-
 /// Tasks configuration options.
 #[derive(Clone, Eq, PartialEq, Hash, Debug, Serialize, Deserialize)]
 pub struct Config {
@@ -29,15 +23,6 @@ pub struct Config {
     /// Number of task processing threads to spawn
     #[serde(default = "Config::default_threads_count")]
     pub threads_count: u16,
-}
-
-impl Default for Config {
-    fn default() -> Config {
-        Config {
-            backend: Backend::default(),
-            threads_count: Config::default_threads_count(),
-        }
-    }
 }
 
 impl Config {

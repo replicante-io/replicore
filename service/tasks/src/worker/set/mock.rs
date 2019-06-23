@@ -5,11 +5,17 @@ use std::sync::Mutex;
 
 use slog::Logger;
 
-use super::super::super::Config;
-use super::super::backend::mock::MockBackend;
-use super::super::backend::mock::TaskTemplate;
-use super::super::TaskQueue;
+use replicante_externals_kafka::AckLevel;
+use replicante_externals_kafka::CommonConfig;
+use replicante_externals_kafka::Timeouts;
+
 use super::WorkerSet;
+use crate::config::Backend;
+use crate::config::KafkaConfig;
+use crate::worker::backend::mock::MockBackend;
+use crate::worker::backend::mock::TaskTemplate;
+use crate::Config;
+use crate::TaskQueue;
 
 /// Mock tools to test `WorkerSet` users.
 #[derive(Default)]
@@ -27,8 +33,21 @@ impl<Q: TaskQueue> MockWorkerSet<Q> {
 
     /// Return the non-mock interface to interact with this mock using the default configuration.
     pub fn mock(&self, logger: Logger) -> WorkerSet<Q> {
-        let mut config = Config::default();
-        config.threads_count = 2;
+        let common = CommonConfig {
+            ack_level: AckLevel::default(),
+            brokers: "localhost:9092".into(),
+            heartbeat: 3000,
+            timeouts: Timeouts::default(),
+        };
+        let backend = Backend::Kafka(KafkaConfig {
+            common,
+            commit_retries: 8,
+            queue_prefix: "queue".into(),
+        });
+        let config = Config {
+            backend,
+            threads_count: 2,
+        };
         self.mock_with_config(logger, config)
     }
 
