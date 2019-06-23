@@ -49,6 +49,9 @@ impl From<ErrorKind> for Error {
 /// Exhaustive list of possible errors emitted by this crate.
 #[derive(Debug, Fail)]
 pub enum ErrorKind {
+    #[fail(display = "unable to create a client to the backend")]
+    BackendClientCreation,
+
     #[fail(display = "unable to emit message")]
     EmitFailed,
 
@@ -62,6 +65,7 @@ pub enum ErrorKind {
 impl ErrorKind {
     fn kind_name(&self) -> Option<&str> {
         let name = match self {
+            ErrorKind::BackendClientCreation => "BackendClientCreation",
             ErrorKind::EmitFailed => "EmitFailed",
             ErrorKind::PayloadEncode => "PayloadEncode",
             ErrorKind::PayloadDecode => "PayloadDecode",

@@ -1,6 +1,5 @@
 use failure::ResultExt;
 use futures::Future;
-
 use rdkafka::message::OwnedHeaders;
 use rdkafka::producer::FutureProducer;
 use rdkafka::producer::FutureRecord;

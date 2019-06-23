@@ -4,6 +4,9 @@ use humthreads::ThreadScope;
 use serde::de::DeserializeOwned;
 use serde::Serialize;
 
+use replicante_service_healthcheck::HealthChecks;
+
+use crate::backend;
 use crate::metrics::EMIT_ERROR;
 use crate::metrics::EMIT_TOTAL;
 use crate::traits::StreamInterface;
@@ -35,13 +38,14 @@ impl<T> Stream<T>
 where
     T: DeserializeOwned + Serialize + 'static,
 {
-    pub fn new(_config: StreamConfig, _opts: StreamOpts) -> Stream<T> {
-        // TODO
-        panic!("TODO: Stream::new");
+    pub fn new(config: StreamConfig, opts: StreamOpts) -> Result<Stream<T>> {
+        let stream_id = opts.stream_id;
+        let backend = match config {
+            StreamConfig::Kafka(config) => backend::kafka(config, opts)?,
+        };
+        Ok(Stream::with_backend(stream_id, backend))
     }
 
-    // TODO: remove once the first real backend uses this.
-    #[allow(dead_code)]
     pub(crate) fn with_backend(
         stream_id: &'static str,
         inner: Arc<dyn StreamInterface<T>>,
@@ -103,12 +107,16 @@ where
 }
 
 /// Stream programmatic options, those that should not be user configuration
-pub struct StreamOpts {
-    stream_id: &'static str,
+pub struct StreamOpts<'a> {
+    pub(crate) healthchecks: &'a mut HealthChecks,
+    pub(crate) stream_id: &'static str,
 }
 
-impl StreamOpts {
-    pub fn new(stream_id: &'static str) -> StreamOpts {
-        StreamOpts { stream_id }
+impl<'a> StreamOpts<'a> {
+    pub fn new(stream_id: &'static str, healthchecks: &'a mut HealthChecks) -> StreamOpts<'a> {
+        StreamOpts {
+            healthchecks,
+            stream_id,
+        }
     }
 }
