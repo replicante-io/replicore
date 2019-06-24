@@ -108,8 +108,6 @@ impl<T> Message<T>
 where
     T: DeserializeOwned + 'static,
 {
-    // TODO: remove once the first real backend uses this.
-    #[allow(dead_code)]
     pub(crate) fn with_backend(
         stream_id: &'static str,
         follow_id: String,

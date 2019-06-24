@@ -49,11 +49,23 @@ impl From<ErrorKind> for Error {
 /// Exhaustive list of possible errors emitted by this crate.
 #[derive(Debug, Fail)]
 pub enum ErrorKind {
+    #[fail(display = "unable to acknowledge message")]
+    AckFailed,
+
     #[fail(display = "unable to create a client to the backend")]
     BackendClientCreation,
 
     #[fail(display = "unable to emit message")]
     EmitFailed,
+
+    #[fail(display = "unable to follow stream")]
+    FollowFailed,
+
+    #[fail(display = "unable to decode value for header '{}'", _0)]
+    MessageInvalidHeader(String),
+
+    #[fail(display = "unable to decode message without a payload")]
+    MessageNoPayload,
 
     #[fail(display = "unable to encode message payload")]
     PayloadEncode,
@@ -65,8 +77,12 @@ pub enum ErrorKind {
 impl ErrorKind {
     fn kind_name(&self) -> Option<&str> {
         let name = match self {
+            ErrorKind::AckFailed => "AckFailed",
             ErrorKind::BackendClientCreation => "BackendClientCreation",
             ErrorKind::EmitFailed => "EmitFailed",
+            ErrorKind::FollowFailed => "FollowFailed",
+            ErrorKind::MessageInvalidHeader(_) => "MessageInvalidHeader",
+            ErrorKind::MessageNoPayload => "MessageNoPayload",
             ErrorKind::PayloadEncode => "PayloadEncode",
             ErrorKind::PayloadDecode => "PayloadDecode",
         };

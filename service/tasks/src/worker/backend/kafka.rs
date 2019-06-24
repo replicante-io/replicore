@@ -12,7 +12,6 @@ use rdkafka::consumer::base_consumer::BaseConsumer;
 use rdkafka::consumer::CommitMode;
 use rdkafka::consumer::Consumer;
 use rdkafka::message::BorrowedMessage;
-use rdkafka::message::Headers;
 use rdkafka::message::OwnedHeaders;
 use rdkafka::message::OwnedMessage;
 use rdkafka::producer::future_producer::FutureProducer;
@@ -24,6 +23,7 @@ use slog::debug;
 use slog::warn;
 use slog::Logger;
 
+use replicante_externals_kafka::headers_to_map;
 use replicante_externals_kafka::ClientStatsContext;
 use replicante_externals_kafka::KafkaHealthChecker;
 use replicante_service_healthcheck::HealthChecks;
@@ -253,28 +253,9 @@ impl Kafka {
             .payload()
             .ok_or_else(|| ErrorKind::TaskNoPayload(message_id))?
             .to_vec();
-        let mut headers = match message.headers() {
-            None => HashMap::new(),
-            Some(headers) => {
-                let mut hdrs = HashMap::new();
-                for idx in 0..headers.count() {
-                    let (key, value) = headers
-                        .get(idx)
-                        .expect("should not decode header that does not exist");
-                    let key = String::from(key);
-                    let value = match String::from_utf8(value.to_vec()) {
-                        Ok(value) => value,
-                        Err(error) => {
-                            return Err(error)
-                                .context(ErrorKind::TaskHeaderInvalid(key, "<not-utf8>".into()))
-                                .map_err(Error::from)
-                        }
-                    };
-                    hdrs.insert(key, value);
-                }
-                hdrs
-            }
-        };
+        let mut headers = headers_to_map(message.headers()).with_context(|e| {
+            ErrorKind::TaskHeaderInvalid(e.header.clone(), "<not-utf8>".into())
+        })?;
         let id: TaskId = match headers.remove(KAFKA_TASKS_ID_HEADER) {
             None => return Err(ErrorKind::TaskNoId.into()),
             Some(id) => id

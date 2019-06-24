@@ -1,9 +1,9 @@
 use failure::ResultExt;
 use futures::Future;
-use rdkafka::message::OwnedHeaders;
 use rdkafka::producer::FutureProducer;
 use rdkafka::producer::FutureRecord;
 
+use replicante_externals_kafka::headers_from_map;
 use replicante_externals_kafka::ClientStatsContext;
 use replicante_service_healthcheck::HealthChecks;
 
@@ -45,10 +45,7 @@ impl Kafka {
 
 impl<Q: TaskQueue> Backend<Q> for Kafka {
     fn request(&self, task: TaskRequest<Q>, message: &[u8]) -> Result<()> {
-        let mut headers = OwnedHeaders::new_with_capacity(task.headers.len());
-        for (key, value) in &task.headers {
-            headers = headers.add(key, value);
-        }
+        let mut headers = headers_from_map(&task.headers);
         headers = headers.add(KAFKA_TASKS_ID_HEADER, &task.id.to_string());
         let topic = topic_for_queue(&self.prefix, &task.queue.name(), TopicRole::Queue);
         let record: FutureRecord<(), [u8]> =

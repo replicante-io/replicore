@@ -98,8 +98,6 @@ impl<'a, T> Iter<'a, T>
 where
     T: DeserializeOwned + 'static,
 {
-    // TODO: remove once the first real backend uses this.
-    #[allow(dead_code)]
     pub(crate) fn with_iter(
         stream_id: &'static str,
         follow_id: String,
@@ -179,8 +177,6 @@ pub struct Backoff {
 
 impl Backoff {
     /// Default backoff strategy.
-    // TODO: remove once a real backend exists.
-    #[allow(dead_code)]
     pub fn new() -> Backoff {
         Backoff {
             attempt: 0,

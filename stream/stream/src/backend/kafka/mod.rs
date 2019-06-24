@@ -2,16 +2,18 @@ use failure::ResultExt;
 use futures::Future;
 use humthreads::ThreadScope;
 use rdkafka::config::ClientConfig;
-use rdkafka::config::RDKafkaLogLevel;
-use rdkafka::message::OwnedHeaders;
+use rdkafka::consumer::Consumer;
 use rdkafka::producer::FutureProducer;
 use rdkafka::producer::FutureRecord;
 use serde::de::DeserializeOwned;
 use serde::Serialize;
 
+use replicante_externals_kafka::headers_from_map;
 use replicante_externals_kafka::ClientStatsContext;
+use replicante_externals_kafka::KafkaHealthChecker;
 
 use crate::config::KafkaConfig;
+use crate::iter::Backoff;
 use crate::traits::StreamInterface;
 use crate::EmitMessage;
 use crate::ErrorKind;
@@ -19,57 +21,45 @@ use crate::Iter;
 use crate::Result;
 use crate::StreamOpts;
 
-static KAFKA_STATS_INTERVAL: &'static str = "1000";
+mod client;
+mod iter;
+
+use self::iter::KafkaIter;
 
 /// Generic stream backed by Kafka.
 pub struct KafkaStream {
+    consumers_config: ClientConfig,
+    consumers_health: KafkaHealthChecker,
     producer: FutureProducer<ClientStatsContext>,
-    timeout: i64,
+    producer_timeout: i64,
     topic: String,
+    stream_id: &'static str,
 }
 
 impl KafkaStream {
     pub fn new(config: KafkaConfig, opts: StreamOpts) -> Result<KafkaStream> {
-        let timeout = i64::from(config.common.timeouts.request);
-        let topic = format!("{}_{}", config.topic_prefix, opts.stream_id);
-        let producer = KafkaStream::producer(config, opts)?;
-        Ok(KafkaStream {
-            producer,
-            timeout,
-            topic,
-        })
-    }
+        let stream_id = opts.stream_id;
+        let healthchecks = opts.healthchecks;
 
-    fn producer(
-        config: KafkaConfig,
-        opts: StreamOpts,
-    ) -> Result<FutureProducer<ClientStatsContext>> {
-        let client_id = format!("stream:{}:producer", opts.stream_id);
-        let client_context = ClientStatsContext::new(client_id.as_str());
-        opts.healthchecks
-            .register(client_id.as_str(), client_context.healthcheck());
-        let mut kafka_config = ClientConfig::new();
-        kafka_config
-            .set("bootstrap.servers", &config.common.brokers)
-            .set("client.id", &client_id)
-            .set(
-                "metadata.request.timeout.ms",
-                &config.common.timeouts.metadata.to_string(),
-            )
-            .set(
-                "request.timeout.ms",
-                &config.common.timeouts.request.to_string(),
-            )
-            .set(
-                "socket.timeout.ms",
-                &config.common.timeouts.socket.to_string(),
-            )
-            .set("statistics.interval.ms", KAFKA_STATS_INTERVAL)
-            .set_log_level(RDKafkaLogLevel::Debug);
-        let producer = kafka_config
-            .create_with_context(client_context)
-            .with_context(|_| ErrorKind::BackendClientCreation)?;
-        Ok(producer)
+        // Attributes used to generate consumers to follow streams.
+        let consumers_config = client::consumers_config(&config);
+        let consumers_health = KafkaHealthChecker::new();
+        let consumers_health_id = format!("stream:{}:followers", stream_id);
+        healthchecks.register(consumers_health_id, consumers_health.clone());
+
+        // Producer instance used to emit messages.
+        let producer = client::producer(&config, stream_id, healthchecks)?;
+        let producer_timeout = i64::from(config.common.timeouts.request);
+        let topic = format!("{}_{}", config.topic_prefix, stream_id);
+
+        Ok(KafkaStream {
+            consumers_config,
+            consumers_health,
+            producer,
+            producer_timeout,
+            topic,
+            stream_id,
+        })
     }
 }
 
@@ -78,16 +68,13 @@ where
     T: DeserializeOwned + Serialize + 'static,
 {
     fn emit(&self, message: EmitMessage) -> Result<()> {
-        let mut headers = OwnedHeaders::new_with_capacity(message.headers.len());
-        for (key, value) in &message.headers {
-            headers = headers.add(key, value);
-        }
+        let headers = headers_from_map(&message.headers);
         let record: FutureRecord<String, [u8]> = FutureRecord::to(&self.topic)
             .headers(headers)
             .key(&message.id)
             .payload(&message.payload);
         self.producer
-            .send(record, self.timeout)
+            .send(record, self.producer_timeout)
             .wait()
             .with_context(|_| ErrorKind::EmitFailed)?
             .map_err(|(error, _)| error)
@@ -97,10 +84,32 @@ where
 
     fn follow<'a>(
         &self,
-        _group: String,
-        _thread: &'a ThreadScope,
-        _tail: bool,
+        group: String,
+        thread: &'a ThreadScope,
+        tail: bool,
     ) -> Result<Iter<'a, T>> {
-        panic!("TODO: KafkaStream::follow");
+        let consumer = client::consumer(
+            self.consumers_config.clone(),
+            self.consumers_health.clone(),
+            self.stream_id,
+            &group,
+        )?;
+        consumer
+            .subscribe(&[&self.topic])
+            .with_context(|_| ErrorKind::BackendClientCreation)?;
+        let iter = Box::new(KafkaIter::new(
+            consumer,
+            group.clone(),
+            self.stream_id,
+            tail,
+            thread,
+        ));
+        Ok(Iter::with_iter(
+            self.stream_id,
+            group,
+            Backoff::new(),
+            thread,
+            iter,
+        ))
     }
 }
