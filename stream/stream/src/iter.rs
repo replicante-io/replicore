@@ -6,8 +6,15 @@ use std::time::Instant;
 
 use humthreads::ThreadScope;
 use rand::Rng;
+use sentry;
+use sentry::protocol::Breadcrumb;
+use sentry::protocol::Map;
 use serde::de::DeserializeOwned;
 
+use crate::metrics::BACKOFF_DURATION;
+use crate::metrics::BACKOFF_REPEAT;
+use crate::metrics::BACKOFF_REQUIRED;
+use crate::metrics::BACKOFF_TOTAL;
 use crate::metrics::DELIVERED_ERROR;
 use crate::metrics::DELIVERED_RETRY;
 use crate::metrics::DELIVERED_TOTAL;
@@ -134,12 +141,16 @@ where
                     DELIVERED_ERROR
                         .with_label_values(&[self.stream_id, &self.follow_id])
                         .inc();
-                    self.backoff
-                        .wait(self.thread, &self.stream_id, "<fetch error>");
+                    self.backoff.wait(
+                        self.thread,
+                        self.stream_id,
+                        &self.follow_id,
+                        "<fetch error>",
+                    );
                     return error;
                 }
             };
-            self.backoff.reset();
+            self.backoff.reset(self.stream_id, &self.follow_id);
             self.in_progress_acked = self
                 .in_progress
                 .as_ref()
@@ -151,7 +162,8 @@ where
                 .as_ref()
                 .expect("need message for re-delvery")
                 .id();
-            self.backoff.wait(self.thread, &self.stream_id, &message_id);
+            self.backoff
+                .wait(self.thread, self.stream_id, &self.follow_id, &message_id);
             DELIVERED_RETRY
                 .with_label_values(&[self.stream_id, &self.follow_id])
                 .inc();
@@ -202,15 +214,22 @@ impl Backoff {
     }
 
     /// Reset the backoff attempts count after a successful operation.
-    pub fn reset(&mut self) {
+    pub fn reset(&mut self, stream_id: &str, group: &str) {
+        BACKOFF_REQUIRED
+            .with_label_values(&[stream_id, group])
+            .observe(f64::from(self.attempt));
         self.attempt = 0;
     }
 
     /// Wait for an appropriate backoff time.
     ///
     /// Additionally, update the internal state to backoff more if called again.
-    pub fn wait(&mut self, thread: &ThreadScope, stream_id: &str, message_id: &str) {
-        self.check_limit(stream_id, message_id);
+    pub fn wait(&mut self, thread: &ThreadScope, stream_id: &str, group: &str, message_id: &str) {
+        self.check_limit(stream_id, group, message_id);
+        BACKOFF_TOTAL.with_label_values(&[stream_id, group]).inc();
+        if self.attempt > 0 {
+            BACKOFF_REPEAT.with_label_values(&[stream_id, group]).inc();
+        }
         self.attempt += 1;
         let start = Instant::now();
         let delay = self.delay();
@@ -218,16 +237,36 @@ impl Backoff {
             "backing off stream follower for {} seconds",
             delay.as_secs()
         ));
+        let _timer = BACKOFF_DURATION
+            .with_label_values(&[stream_id, group])
+            .start_timer();
         while start.elapsed() < delay && !thread.should_shutdown() {
             thread::sleep(Duration::from_millis(500));
         }
     }
 
-    fn check_limit(&self, stream_id: &str, message_id: &str) {
+    fn check_limit(&self, stream_id: &str, group: &str, message_id: &str) {
         if self.attempt > self.attempts_limit {
-            panic!(
-                "Stream unable to handle message; stream={}, message={}",
-                stream_id, message_id,
+            sentry::with_scope(
+                |_| (),
+                || {
+                    sentry::add_breadcrumb(Breadcrumb {
+                        category: Some("stream.follower".into()),
+                        message: Some("Stream unable to handle message".into()),
+                        data: {
+                            let mut map = Map::new();
+                            map.insert("stream_id".into(), stream_id.into());
+                            map.insert("following_group".into(), group.into());
+                            map.insert("message_id".into(), message_id.into());
+                            map
+                        },
+                        ..Default::default()
+                    });
+                    panic!(
+                        "Stream unable to handle message; stream={}, group={}, message={}",
+                        stream_id, group, message_id,
+                    );
+                },
             );
         }
     }
@@ -266,9 +305,9 @@ mod tests {
         let mut backoff = Backoff::new();
         backoff.attempts_limit = 10;
         backoff.increment = Duration::from_secs(0);
-        backoff.wait(&scope.scope(), "stream", "par1/off5");
-        backoff.wait(&scope.scope(), "stream", "par1/off5");
-        backoff.wait(&scope.scope(), "stream", "par1/off5");
+        backoff.wait(&scope.scope(), "stream", "test", "par1/off5");
+        backoff.wait(&scope.scope(), "stream", "test", "par1/off5");
+        backoff.wait(&scope.scope(), "stream", "test", "par1/off5");
         assert_eq!(backoff.attempt, 3);
     }
 
@@ -301,12 +340,14 @@ mod tests {
     }
 
     #[test]
-    #[should_panic(expected = "Stream unable to handle message; stream=stream, message=par1/off5")]
+    #[should_panic(
+        expected = "Stream unable to handle message; stream=stream, group=test, message=par1/off5"
+    )]
     fn panic_after_limit() {
         let mut backoff = Backoff::new();
         backoff.attempt = 5;
         backoff.attempts_limit = 1;
-        backoff.check_limit("stream", "par1/off5");
+        backoff.check_limit("stream", "test", "par1/off5");
     }
 
     #[test]
@@ -321,7 +362,7 @@ mod tests {
         scope.set_shutdown(true);
         // Time the wait to ensure it is less then the periodic sleep + a margin of error.
         let start = std::time::Instant::now();
-        backoff.wait(&scope.scope(), "stream", "par1/off5");
+        backoff.wait(&scope.scope(), "stream", "test", "par1/off5");
         assert!(
             start.elapsed() < Duration::from_secs(1),
             "backoff did not return in time"

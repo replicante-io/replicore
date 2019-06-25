@@ -138,7 +138,7 @@ impl Store {
         let healthcheck = MongoDBHealthChecks {
             client: client.clone(),
         };
-        healthchecks.register("store-primary", healthcheck);
+        healthchecks.register("store:primary", healthcheck);
         Ok(Store {
             client,
             db,

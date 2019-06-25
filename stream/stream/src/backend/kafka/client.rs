@@ -78,7 +78,7 @@ pub fn producer(
     stream_id: &'static str,
     healthchecks: &mut HealthChecks,
 ) -> Result<FutureProducer<ClientStatsContext>> {
-    let client_id = format!("stream:{}:producer", stream_id);
+    let client_id = format!("stream:{}:emitter", stream_id);
     let client_context = ClientStatsContext::new(client_id.as_str());
     healthchecks.register(client_id.as_str(), client_context.healthcheck());
     let mut kafka_config = ClientConfig::new();

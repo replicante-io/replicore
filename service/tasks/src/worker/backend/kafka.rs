@@ -35,11 +35,11 @@ use super::super::super::shared::kafka::queue_from_topic;
 use super::super::super::shared::kafka::topic_for_queue;
 use super::super::super::shared::kafka::topic_is_retry;
 use super::super::super::shared::kafka::TopicRole;
-use super::super::super::shared::kafka::KAFKA_TASKS_CONSUMER;
+use super::super::super::shared::kafka::KAFKA_CLIENT_ID_CONSUMER;
+use super::super::super::shared::kafka::KAFKA_CLIENT_ID_RETRY_PRODUCER;
 use super::super::super::shared::kafka::KAFKA_TASKS_GROUP;
 use super::super::super::shared::kafka::KAFKA_TASKS_ID_HEADER;
 use super::super::super::shared::kafka::KAFKA_TASKS_RETRY_HEADER;
-use super::super::super::shared::kafka::KAFKA_TASKS_RETRY_PRODUCER;
 use super::super::super::Error;
 use super::super::super::ErrorKind;
 use super::super::super::Result;
@@ -137,13 +137,13 @@ impl Kafka {
         healthchecks: &mut HealthChecks,
     ) -> Result<Kafka> {
         let health = KafkaHealthChecker::new();
-        healthchecks.register("tasks-consumer", health.clone());
+        healthchecks.register("tasks:workers", health.clone());
         let client_context =
-            ClientStatsContext::with_healthcheck("tasks:producer:retry", health.clone());
-        let retry_producer = producer_config(&config, KAFKA_TASKS_RETRY_PRODUCER)
+            ClientStatsContext::with_healthcheck("tasks:workers:retrier", health.clone());
+        let retry_producer = producer_config(&config, KAFKA_CLIENT_ID_RETRY_PRODUCER)
             .create_with_context(client_context)
             .with_context(|_| ErrorKind::BackendClientCreation)?;
-        let kafka_config = consumer_config(&config, KAFKA_TASKS_CONSUMER, KAFKA_TASKS_GROUP);
+        let kafka_config = consumer_config(&config, KAFKA_CLIENT_ID_CONSUMER, KAFKA_TASKS_GROUP);
         Ok(Kafka {
             commit_retries: config.commit_retries,
             config: kafka_config,

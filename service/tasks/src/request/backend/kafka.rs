@@ -11,8 +11,8 @@ use super::super::super::config::KafkaConfig;
 use super::super::super::shared::kafka::producer_config;
 use super::super::super::shared::kafka::topic_for_queue;
 use super::super::super::shared::kafka::TopicRole;
+use super::super::super::shared::kafka::KAFKA_CLIENT_ID_TASKS_PRODUCER;
 use super::super::super::shared::kafka::KAFKA_TASKS_ID_HEADER;
-use super::super::super::shared::kafka::KAFKA_TASKS_PRODUCER;
 use super::super::super::ErrorKind;
 use super::super::super::Result;
 
@@ -29,9 +29,9 @@ pub struct Kafka {
 
 impl Kafka {
     pub fn new(config: KafkaConfig, healthchecks: &mut HealthChecks) -> Result<Kafka> {
-        let client_context = ClientStatsContext::new("tasks:producer");
-        healthchecks.register("tasks-producer", client_context.healthcheck());
-        let producer = producer_config(&config, KAFKA_TASKS_PRODUCER)
+        let client_context = ClientStatsContext::new("tasks:requester");
+        healthchecks.register("tasks:requester", client_context.healthcheck());
+        let producer = producer_config(&config, KAFKA_CLIENT_ID_TASKS_PRODUCER)
             .create_with_context(client_context)
             .with_context(|_| ErrorKind::BackendClientCreation)?;
         let kafka = Kafka {
