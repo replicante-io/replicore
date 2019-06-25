@@ -32,15 +32,15 @@ pub struct StoreMock {
 
 impl StoreInterface for StoreMock {
     fn agent(&self) -> AgentImpl {
-        panic!("TODO");
+        panic!("TODO: StoreMock::agent");
     }
 
     fn agents(&self) -> AgentsImpl {
-        panic!("TODO");
+        panic!("TODO: StoreMock::agents");
     }
 
     fn cluster(&self) -> ClusterImpl {
-        panic!("TODO");
+        panic!("TODO: StoreMock::cluster");
     }
 
     fn legacy(&self) -> LegacyImpl {
@@ -51,23 +51,23 @@ impl StoreInterface for StoreMock {
     }
 
     fn node(&self) -> NodeImpl {
-        panic!("TODO");
+        panic!("TODO: StoreMock::node");
     }
 
     fn nodes(&self) -> NodesImpl {
-        panic!("TODO");
+        panic!("TODO: StoreMock::nodes");
     }
 
     fn persist(&self) -> PersistImpl {
-        panic!("TODO");
+        panic!("TODO: StoreMock::persist");
     }
 
     fn shard(&self) -> ShardImpl {
-        panic!("TODO");
+        panic!("TODO: StoreMock::shard");
     }
 
     fn shards(&self) -> ShardsImpl {
-        panic!("TODO");
+        panic!("TODO: StoreMock::shards");
     }
 }
 
