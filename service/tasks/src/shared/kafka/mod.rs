@@ -21,7 +21,7 @@ pub enum TopicRole {
 fn common_config(config: &KafkaConfig, client_id: &str) -> ClientConfig {
     let mut kafka_config = ClientConfig::new();
     kafka_config
-        .set("auto.commit.enable", "false")
+        .set("enable.auto.commit", "false")
         .set("auto.offset.reset", "smallest")
         .set("bootstrap.servers", &config.common.brokers)
         .set("client.id", client_id)

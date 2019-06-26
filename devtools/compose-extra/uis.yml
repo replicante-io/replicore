@@ -10,32 +10,19 @@ version: '3.7'
 
 
 services:
-  kafka-rest:
+  kafkaui:
     depends_on:
       - zookeeper
       - kafka
     environment:
-      KAFKA_REST_HOST_NAME: '172.128.0.253'
-      KAFKA_REST_LISTENERS: 'http://0.0.0.0:8082'
-      KAFKA_REST_ZOOKEEPER_CONNECT: 'zookeeper:2181/kafka'
-    hostname: 'kafka-rest'
-    image: 'confluentinc/cp-kafka-rest:5.0.0'
-    init: true
-    networks:
-      default:
-        ipv4_address: '172.128.0.253'
-
-  kafka-webui:
-    depends_on:
-      - kafka-rest
-    environment:
-      KAFKA_REST_PROXY_URL: 'http://172.128.0.253:8082'
-      PROXY: 'true'
-    hostname: 'kafka-webui'
-    image: 'landoop/kafka-topics-ui'
+      JVM_OPTS: '-Xms32M -Xmx64M'
+      KAFKA_BROKERCONNECT: 'kafka:9092'
+      ZOOKEEPER_CONNECT: 'zookeeper:2181/kafka'
+    hostname: 'kafkaui'
+    image: 'obsidiandynamics/kafdrop'
     init: true
     ports:
-      - '8001:8000'
+      - '8001:9000'
 
   mongoui:
     command:
