@@ -31,7 +31,7 @@ where
     /// should respect that definition of acknowledgement.
     ///
     /// Also see `Stream::emit` for more details.
-    fn emit(&self, message: EmitMessage) -> Result<()>;
+    fn emit(&self, message: EmitMessage<T>) -> Result<()>;
 
     /// Return an `Iterator` that will fetch and return messages from the stream.
     ///

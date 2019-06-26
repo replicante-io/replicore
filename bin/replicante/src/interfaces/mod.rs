@@ -1,12 +1,15 @@
+use std::sync::Arc;
 use std::time::Duration;
 
 use failure::ResultExt;
+use opentracingrust::Tracer;
 use prometheus::Registry;
 use slog::Logger;
 
 use replicante_service_coordinator::Coordinator;
+use replicante_service_healthcheck::HealthChecks as HealthChecksRegister;
 use replicante_store_primary::store::Store;
-use replicante_stream_events::EventsStream;
+use replicante_stream_events::Stream as EventsStream;
 use replicante_util_upkeep::Upkeep;
 
 use super::config::Config;
@@ -79,7 +82,12 @@ impl Interfaces {
             tracing.tracer(),
         )
         .with_context(|_| ErrorKind::ClientInit("store"))?;
-        let streams = Streams::new(config, logger.clone(), store.clone())?;
+        let streams = Streams::new(
+            config,
+            logger.clone(),
+            healthchecks.register(),
+            tracing.tracer(),
+        )?;
         let tasks = Tasks::new(config.tasks.clone(), healthchecks.register())
             .with_context(|_| ErrorKind::ClientInit("tasks"))?;
         Ok(Interfaces {
@@ -98,7 +106,6 @@ impl Interfaces {
     ///
     /// Metrics that fail to register are logged and ignored.
     pub fn register_metrics(logger: &Logger, registry: &Registry) {
-        EventsStream::register_metrics(logger, registry);
         self::api::register_metrics(logger, registry);
         self::metrics::register_metrics(logger, registry);
     }
@@ -121,8 +128,14 @@ pub struct Streams {
 }
 
 impl Streams {
-    pub fn new(config: &Config, logger: Logger, store: Store) -> Result<Streams> {
-        let events = EventsStream::new(config.events.stream.clone(), logger, store);
+    pub fn new(
+        config: &Config,
+        logger: Logger,
+        healthchecks: &mut HealthChecksRegister,
+        tracer: Arc<Tracer>,
+    ) -> Result<Streams> {
+        let events = EventsStream::new(config.events.stream.clone(), logger, healthchecks, tracer)
+            .with_context(|_| ErrorKind::InterfaceInit("events stream"))?;
         Ok(Streams { events })
     }
 }
@@ -132,7 +145,6 @@ impl Streams {
 #[cfg(test)]
 pub struct MockInterfaces {
     pub coordinator: replicante_service_coordinator::mock::MockCoordinator,
-    pub events: std::sync::Arc<replicante_stream_events::mock::MockEvents>,
     pub store: replicante_store_primary::mock::Mock,
     pub tasks: std::sync::Arc<super::tasks::MockTasks>,
 }
@@ -164,10 +176,7 @@ impl Interfaces {
         let mock_coordinator =
             replicante_service_coordinator::mock::MockCoordinator::new(logger.clone());
         let coordinator = mock_coordinator.mock();
-
-        let mock_events = replicante_stream_events::mock::MockEvents::new();
-        let mock_events = std::sync::Arc::new(mock_events);
-        let events = replicante_stream_events::mock::MockEvents::mock(mock_events.clone());
+        let events = replicante_stream_events::Stream::mock();
 
         let mock_store = replicante_store_primary::mock::Mock::default();
         let store = mock_store.store();
@@ -176,7 +185,6 @@ impl Interfaces {
         // Wrap things up.
         let mocks = MockInterfaces {
             coordinator: mock_coordinator,
-            events: mock_events,
             store: mock_store,
             tasks,
         };

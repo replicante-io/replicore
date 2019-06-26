@@ -30,23 +30,26 @@ impl MessageInterface for VecMessage {
 
 #[derive(Clone)]
 struct VecStream {
-    pub messages: Arc<Mutex<Vec<EmitMessage>>>,
+    pub messages: Arc<Mutex<Vec<EmitMessage<String>>>>,
     pub stream_id: &'static str,
 }
 
 impl VecStream {
-    fn new() -> VecStream {
+    fn new() -> (VecStream, Stream<String>) {
         let messages = Arc::new(Mutex::new(Vec::new()));
         let stream_id = "stream_tests";
-        VecStream {
+        let backend = VecStream {
             messages,
             stream_id,
-        }
+        };
+        let logger = slog::Logger::root(slog::Discard, slog::o!());
+        let stream = Stream::with_backend(stream_id, Arc::new(backend.clone()), logger, None);
+        (backend, stream)
     }
 }
 
 impl StreamInterface<String> for VecStream {
-    fn emit(&self, message: EmitMessage) -> Result<()> {
+    fn emit(&self, message: EmitMessage<String>) -> Result<()> {
         self.messages.lock().unwrap().push(message);
         Ok(())
     }
@@ -85,30 +88,38 @@ impl StreamInterface<String> for VecStream {
 
 #[test]
 fn emit() {
-    let backend = VecStream::new();
-    let stream = Stream::with_backend(backend.stream_id, Arc::new(backend.clone()));
+    let (backend, stream) = VecStream::new();
     stream
-        .emit(EmitMessage::with("key", "value").unwrap())
+        .emit(EmitMessage::with("key", "value".into()).unwrap())
         .unwrap();
-    stream.emit(EmitMessage::with("a", "b").unwrap()).unwrap();
+    stream
+        .emit(EmitMessage::with("a", "b".into()).unwrap())
+        .unwrap();
     let messages = backend.messages.lock().unwrap().clone();
+    let messages: Vec<(String, String)> = messages
+        .into_iter()
+        .map(|message| {
+            (
+                message.id,
+                serde_json::from_slice(&message.payload).unwrap(),
+            )
+        })
+        .collect();
     assert_eq!(
         messages,
-        vec![
-            EmitMessage::with("key", "value").unwrap(),
-            EmitMessage::with("a", "b").unwrap(),
-        ]
+        vec![("key".into(), "value".into()), ("a".into(), "b".into())]
     );
 }
 
 #[test]
 fn follow_moves_on_after_ack() {
-    let backend = VecStream::new();
-    let stream = Stream::with_backend(backend.stream_id, Arc::new(backend));
+    let (_, stream) = VecStream::new();
     stream
-        .emit(EmitMessage::with("key", "value").unwrap())
+        .emit(EmitMessage::with("key", "value".into()).unwrap())
         .unwrap();
-    stream.emit(EmitMessage::with("a", "b").unwrap()).unwrap();
+    stream
+        .emit(EmitMessage::with("a", "b".into()).unwrap())
+        .unwrap();
     let scope = MockThreadScope::new().scope();
     let mut iter = stream.follow("test", &scope).unwrap();
     let m1 = iter.next().unwrap().unwrap();
@@ -124,12 +135,13 @@ fn follow_moves_on_after_ack() {
 
 #[test]
 fn follow_repeats_on_retry() {
-    let backend = VecStream::new();
-    let stream = Stream::with_backend(backend.stream_id, Arc::new(backend));
+    let (_, stream) = VecStream::new();
     stream
-        .emit(EmitMessage::with("key", "value").unwrap())
+        .emit(EmitMessage::with("key", "value".into()).unwrap())
         .unwrap();
-    stream.emit(EmitMessage::with("a", "b").unwrap()).unwrap();
+    stream
+        .emit(EmitMessage::with("a", "b".into()).unwrap())
+        .unwrap();
     let scope = MockThreadScope::new().scope();
     let mut iter = stream.follow("test", &scope).unwrap();
     let m1 = iter.next().unwrap().unwrap();
@@ -141,12 +153,13 @@ fn follow_repeats_on_retry() {
 
 #[test]
 fn follow_repeats_unacked_message() {
-    let backend = VecStream::new();
-    let stream = Stream::with_backend(backend.stream_id, Arc::new(backend));
+    let (_, stream) = VecStream::new();
     stream
-        .emit(EmitMessage::with("key", "value").unwrap())
+        .emit(EmitMessage::with("key", "value".into()).unwrap())
         .unwrap();
-    stream.emit(EmitMessage::with("a", "b").unwrap()).unwrap();
+    stream
+        .emit(EmitMessage::with("a", "b".into()).unwrap())
+        .unwrap();
     let scope = MockThreadScope::new().scope();
     let mut iter = stream.follow("test", &scope).unwrap();
     let m1 = iter.next().unwrap().unwrap();

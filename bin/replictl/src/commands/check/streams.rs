@@ -1,25 +1,21 @@
 use clap::App;
 use clap::ArgMatches;
 use clap::SubCommand;
-use failure::ResultExt;
+//use failure::ResultExt;
 use slog::error;
 use slog::info;
-use slog::warn;
+//use slog::warn;
 
-use replicante::Config;
-use replicante_service_healthcheck::HealthChecks;
-use replicante_store_primary::store::Store;
-use replicante_stream_events::EventsStream;
-use replicante_stream_events::ScanFilters;
-use replicante_stream_events::ScanOptions;
-use replicante_util_failure::format_fail;
+//use replicante::Config;
+//use replicante_store_primary::store::Store;
+//use replicante_stream_events::Stream as EventsStream;
+//use replicante_util_failure::format_fail;
 
-use super::super::super::ErrorKind;
-use super::super::super::Interfaces;
-use super::super::super::Result;
-
-use super::super::super::outcome::Error;
-use super::super::super::outcome::Outcomes;
+//use crate::outcome::Error;
+//use crate::outcome::Outcomes;
+use crate::ErrorKind;
+use crate::Interfaces;
+use crate::Result;
 
 pub const COMMAND: &str = "streams";
 const COMMAND_EVENTS: &str = "events";
@@ -39,7 +35,7 @@ pub fn command() -> App<'static, 'static> {
 /// The following checks are performed:
 ///
 ///   * Each content item is loaded and parsed.
-pub fn events<'a>(args: &ArgMatches<'a>, interfaces: &Interfaces) -> Result<()> {
+pub fn events<'a>(_args: &ArgMatches<'a>, interfaces: &Interfaces) -> Result<()> {
     let logger = interfaces.logger();
     info!(logger, "Checking events stream");
     let confirm = interfaces.prompt().confirm_danger(
@@ -52,39 +48,40 @@ pub fn events<'a>(args: &ArgMatches<'a>, interfaces: &Interfaces) -> Result<()> 
         return Err(ErrorKind::UserAbort.into());
     }
 
-    let mut healthchecks = HealthChecks::new();
-    let mut outcomes = Outcomes::new();
-    let config = args.value_of("config").unwrap();
-    let config = Config::from_file(config).with_context(|_| ErrorKind::ConfigLoad)?;
-    let store = Store::make(config.storage, logger.clone(), &mut healthchecks, None)
-        .with_context(|_| ErrorKind::ClientInit("store"))?;
-    let stream = EventsStream::new(config.events.stream, logger.clone(), store);
+    panic!("TODO: rework stream checks")
+    //let mut healthchecks = HealthChecks::new();
+    //let mut outcomes = Outcomes::new();
+    //let config = args.value_of("config").unwrap();
+    //let config = Config::from_file(config).with_context(|_| ErrorKind::ConfigLoad)?;
+    //let store = Store::make(config.storage, logger.clone(), &mut healthchecks, None)
+    //    .with_context(|_| ErrorKind::ClientInit("store"))?;
+    //let stream = EventsStream::new(config.events.stream, logger.clone(), store);
 
-    info!(logger, "Checking events stream ...");
-    let cursor = stream
-        .scan(ScanFilters::all(), ScanOptions::default(), None)
-        .with_context(|_| ErrorKind::CheckFailed("events"))?;
-    let mut tracker = interfaces.progress("Processed more events");
-    for event in cursor {
-        if let Err(error) = event {
-            let error = format_fail(&error);
-            outcomes.error(Error::GenericError(error));
-        }
-        tracker.track();
-    }
-    outcomes.report(&logger);
+    //info!(logger, "Checking events stream ...");
+    //let cursor = stream
+    //    .scan(ScanFilters::all(), ScanOptions::default(), None)
+    //    .with_context(|_| ErrorKind::CheckFailed("events"))?;
+    //let mut tracker = interfaces.progress("Processed more events");
+    //for event in cursor {
+    //    if let Err(error) = event {
+    //        let error = format_fail(&error);
+    //        outcomes.error(Error::GenericError(error));
+    //    }
+    //    tracker.track();
+    //}
+    //outcomes.report(&logger);
 
-    // Report results.
-    if outcomes.has_errors() {
-        error!(logger, "Events stream checks failed");
-        return Err(ErrorKind::CheckWithErrors("events stream").into());
-    }
-    if outcomes.has_warnings() {
-        warn!(logger, "Events stream checks passed with warnings");
-        return Ok(());
-    }
-    info!(logger, "Events stream checks passed");
-    Ok(())
+    //// Report results.
+    //if outcomes.has_errors() {
+    //    error!(logger, "Events stream checks failed");
+    //    return Err(ErrorKind::CheckWithErrors("events stream").into());
+    //}
+    //if outcomes.has_warnings() {
+    //    warn!(logger, "Events stream checks passed with warnings");
+    //    return Ok(());
+    //}
+    //info!(logger, "Events stream checks passed");
+    //Ok(())
 }
 
 /// Check all streams for incompatibilities.

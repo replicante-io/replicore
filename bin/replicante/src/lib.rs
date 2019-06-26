@@ -126,6 +126,7 @@ pub fn register_crates_metrics(logger: &Logger, registry: &Registry) {
     replicante_service_coordinator::register_metrics(logger, registry);
     replicante_service_tasks::register_metrics(logger, registry);
     replicante_store_primary::register_metrics(logger, registry);
+    replicante_stream::register_metrics(logger, registry);
 }
 
 /// Parse command line, load configuration, initialise logger.

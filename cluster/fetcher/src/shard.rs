@@ -5,7 +5,8 @@ use replicante_agent_client::Client;
 use replicante_models_core::Event;
 use replicante_models_core::Shard;
 use replicante_store_primary::store::Store;
-use replicante_stream_events::EventsStream;
+use replicante_stream_events::EmitMessage;
+use replicante_stream_events::Stream as EventsStream;
 
 use super::Error;
 use super::ErrorKind;
@@ -65,8 +66,12 @@ impl ShardFetcher {
                 .shard()
                 .allocation_changed(old, shard.clone());
             let code = event.code();
+            let stream_id = event.stream_id();
+            let event = EmitMessage::with(stream_id, event)
+                .with_context(|_| ErrorKind::EventEmit(code))?
+                .trace(span.context().clone());
             self.events
-                .emit(event, span.context().clone())
+                .emit(event)
                 .with_context(|_| ErrorKind::EventEmit(code))?;
         }
 
@@ -82,8 +87,12 @@ impl ShardFetcher {
     fn process_shard_new(&self, shard: Shard, span: &mut Span) -> Result<()> {
         let event = Event::builder().shard().shard_allocation_new(shard.clone());
         let code = event.code();
+        let stream_id = event.stream_id();
+        let event = EmitMessage::with(stream_id, event)
+            .with_context(|_| ErrorKind::EventEmit(code))?
+            .trace(span.context().clone());
         self.events
-            .emit(event, span.context().clone())
+            .emit(event)
             .with_context(|_| ErrorKind::EventEmit(code))?;
         self.store
             .persist()

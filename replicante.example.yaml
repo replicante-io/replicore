@@ -243,7 +243,7 @@ events:
     # this will happen, especially in the presence of some prolonged (total or partial) failures.
     frequency: 60
 
-  # Configuration of the streaming platform events are emitted to.
+  # (required) Configuration of the streaming platform events are emitted to.
   stream:
     # The backend to emit events to.
     # 
@@ -253,14 +253,46 @@ events:
     #
     # Available options are:
     #
-    #   * 'store': use the configured datastore as the backend for the events stream too.
-    backend: 'store'
+    #   * 'kafka' (recommended)
+    backend: kafka
 
     # Any backend-specific option is set here.
     # The available options vary from backend to backend and are documented below.
     #
-    # *** None available at this time ***
-    #options:
+    # Kafka options:
+    options:
+      # Acknowledgement level for published messages.
+      #
+      # Possible values are:
+      #
+      #   * 'all': all in-sync-replicas for the partition published to must ack messages
+      #            (default; required for consistency; see kafka documentation for details).
+      #   * 'leader_only': only the leader of the partition published to must ack messages.
+      #   * 'none': no acknowledgements are required for produced messages.
+      ack_level: 'all'
+
+      # (required) Comma separated list of seed brokers.
+      brokers: 'localhost:9092'
+
+      # Client session keepalive heartbeat interval (in milliseconds).
+      heartbeat: 3000
+
+      # Kafka-specific timeout options.
+      timeouts:
+        # Timeout (in millisecond) for non-topic requests.
+        metadata: 60000
+
+        # Timeout (in milliseconds) for tasks to be acknowledged.
+        request: 5000
+
+        # Timeout (in milliseconds) after which workers are presumed dead by the brokers.
+        session: 10000
+
+        # Default timeout (in milliseconds) for network requests.
+        socket: 60000
+
+      # Prefix for the stream's topic name.
+      topic_prefix: 'stream'
 
 
 # The section below is for logging configuration.

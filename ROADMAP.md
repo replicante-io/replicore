@@ -1,5 +1,4 @@
 ## 0.3.1 - Events stream
-- Emit events to stream (and not store).
 - Follow/consume streams by group.
 - Relay events from stream to store.
 

@@ -15,7 +15,7 @@ use replicante_models_core::AgentStatus;
 use replicante_models_core::ClusterDiscovery;
 use replicante_service_coordinator::NonBlockingLockWatcher;
 use replicante_store_primary::store::Store;
-use replicante_stream_events::EventsStream;
+use replicante_stream_events::Stream as EventsStream;
 use replicante_util_failure::format_fail;
 
 mod agent;

@@ -1,10 +1,14 @@
 use std::sync::Arc;
 
 use humthreads::ThreadScope;
+use opentracingrust::Tracer;
 use serde::de::DeserializeOwned;
 use serde::Serialize;
+use slog::Logger;
 
 use replicante_service_healthcheck::HealthChecks;
+use replicante_util_failure::capture_fail;
+use replicante_util_failure::failure_info;
 
 use crate::backend;
 use crate::metrics::EMIT_ERROR;
@@ -31,7 +35,9 @@ where
     T: DeserializeOwned + Serialize + 'static,
 {
     inner: Arc<dyn StreamInterface<T>>,
+    logger: Logger,
     stream_id: &'static str,
+    tracer: Option<Arc<Tracer>>,
 }
 
 impl<T> Stream<T>
@@ -39,18 +45,31 @@ where
     T: DeserializeOwned + Serialize + 'static,
 {
     pub fn new(config: StreamConfig, opts: StreamOpts) -> Result<Stream<T>> {
+        let logger = opts.logger.clone();
         let stream_id = opts.stream_id;
+        let tracer = opts.tracer.clone();
         let backend = match config {
             StreamConfig::Kafka(config) => backend::kafka(config, opts)?,
         };
-        Ok(Stream::with_backend(stream_id, backend))
+        Ok(Stream::with_backend(stream_id, backend, logger, tracer))
     }
 
-    pub(crate) fn with_backend(
+    pub(crate) fn with_backend<TR>(
         stream_id: &'static str,
         inner: Arc<dyn StreamInterface<T>>,
-    ) -> Stream<T> {
-        Stream { inner, stream_id }
+        logger: Logger,
+        tracer: TR,
+    ) -> Stream<T>
+    where
+        TR: Into<Option<Arc<Tracer>>>,
+    {
+        let tracer = tracer.into();
+        Stream {
+            inner,
+            logger,
+            stream_id,
+            tracer,
+        }
     }
 
     /// Emit a message to the stream.
@@ -60,8 +79,17 @@ where
     /// Messages with the same `id` are guaranteed to be delivered in the same order
     /// they are emitted.
     /// Messages with different `id`s have no ordering guarantees relative to each other.
-    pub fn emit(&self, message: EmitMessage) -> Result<()> {
+    pub fn emit(&self, mut message: EmitMessage<T>) -> Result<()> {
         EMIT_TOTAL.with_label_values(&[&self.stream_id]).inc();
+        if let Err(error) = message.trace_inject(self.tracer.as_ref()) {
+            let error = failure::SyncFailure::new(error);
+            capture_fail!(
+                &error,
+                self.logger,
+                "Unable to inject trace context while emiting stream message";
+                failure_info(&error),
+            );
+        }
         self.inner.emit(message).map_err(|error| {
             EMIT_ERROR.with_label_values(&[&self.stream_id]).inc();
             error
@@ -109,14 +137,27 @@ where
 /// Stream programmatic options, those that should not be user configuration
 pub struct StreamOpts<'a> {
     pub(crate) healthchecks: &'a mut HealthChecks,
+    pub(crate) logger: Logger,
     pub(crate) stream_id: &'static str,
+    pub(crate) tracer: Option<Arc<Tracer>>,
 }
 
 impl<'a> StreamOpts<'a> {
-    pub fn new(stream_id: &'static str, healthchecks: &'a mut HealthChecks) -> StreamOpts<'a> {
+    pub fn new<T>(
+        stream_id: &'static str,
+        healthchecks: &'a mut HealthChecks,
+        logger: Logger,
+        tracer: T,
+    ) -> StreamOpts<'a>
+    where
+        T: Into<Option<Arc<Tracer>>>,
+    {
+        let tracer = tracer.into();
         StreamOpts {
             healthchecks,
+            logger,
             stream_id,
+            tracer,
         }
     }
 }

@@ -3,7 +3,8 @@ use opentracingrust::Span;
 
 use replicante_models_core::Event;
 use replicante_store_primary::store::Store;
-use replicante_stream_events::EventsStream;
+use replicante_stream_events::EmitMessage;
+use replicante_stream_events::Stream as EventsStream;
 
 use super::ErrorKind;
 use super::Result;
@@ -44,8 +45,12 @@ impl Snapshotter {
             let status = status.with_context(|_| ErrorKind::StoreRead("agent status"))?;
             let event = Event::builder().snapshot().agent(status);
             let code = event.code();
+            let stream_id = event.stream_id();
+            let event = EmitMessage::with(stream_id, event)
+                .with_context(|_| ErrorKind::EventEmit(code))?
+                .trace(span.context().clone());
             self.events
-                .emit(event, span.context().clone())
+                .emit(event)
                 .with_context(|_| ErrorKind::EventEmit(code))?;
         }
         let infos = self
@@ -57,8 +62,12 @@ impl Snapshotter {
             let info = info.with_context(|_| ErrorKind::StoreRead("agent info"))?;
             let event = Event::builder().snapshot().agent_info(info);
             let code = event.code();
+            let stream_id = event.stream_id();
+            let event = EmitMessage::with(stream_id, event)
+                .with_context(|_| ErrorKind::EventEmit(code))?
+                .trace(span.context().clone());
             self.events
-                .emit(event, span.context().clone())
+                .emit(event)
                 .with_context(|_| ErrorKind::EventEmit(code))?;
         }
         Ok(())
@@ -73,8 +82,12 @@ impl Snapshotter {
         if let Some(discovery) = discovery {
             let event = Event::builder().snapshot().discovery(discovery);
             let code = event.code();
+            let stream_id = event.stream_id();
+            let event = EmitMessage::with(stream_id, event)
+                .with_context(|_| ErrorKind::EventEmit(code))?
+                .trace(span.context().clone());
             self.events
-                .emit(event, span.context().clone())
+                .emit(event)
                 .with_context(|_| ErrorKind::EventEmit(code))?;
         }
         Ok(())
@@ -90,8 +103,12 @@ impl Snapshotter {
             let node = node.with_context(|_| ErrorKind::StoreRead("node"))?;
             let event = Event::builder().snapshot().node(node);
             let code = event.code();
+            let stream_id = event.stream_id();
+            let event = EmitMessage::with(stream_id, event)
+                .with_context(|_| ErrorKind::EventEmit(code))?
+                .trace(span.context().clone());
             self.events
-                .emit(event, span.context().clone())
+                .emit(event)
                 .with_context(|_| ErrorKind::EventEmit(code))?;
         }
         Ok(())
@@ -107,8 +124,12 @@ impl Snapshotter {
             let shard = shard.with_context(|_| ErrorKind::StoreRead("shard"))?;
             let event = Event::builder().snapshot().shard(shard);
             let code = event.code();
+            let stream_id = event.stream_id();
+            let event = EmitMessage::with(stream_id, event)
+                .with_context(|_| ErrorKind::EventEmit(code))?
+                .trace(span.context().clone());
             self.events
-                .emit(event, span.context().clone())
+                .emit(event)
                 .with_context(|_| ErrorKind::EventEmit(code))?;
         }
         Ok(())

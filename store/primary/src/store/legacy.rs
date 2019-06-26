@@ -35,6 +35,18 @@ pub struct EventsFilters {
 impl EventsFilters {
     /// Return all events, don't skip any.
     pub fn all() -> EventsFilters {
+        EventsFilters {
+            cluster_id: None,
+            event: None,
+            exclude_snapshots: false,
+            exclude_system_events: false,
+            start_from: None,
+            stop_at: None,
+        }
+    }
+
+    /// Return all events except for `SNAPSHOT_*` events.
+    pub fn most() -> EventsFilters {
         Self::default()
     }
 }

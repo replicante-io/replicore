@@ -2,6 +2,7 @@ use std::cell::RefCell;
 use std::collections::HashMap;
 use std::marker::PhantomData;
 use std::rc::Rc;
+use std::sync::Arc;
 
 use failure::ResultExt;
 use opentracingrust::ExtractFormat;
@@ -20,55 +21,77 @@ use crate::ErrorKind;
 use crate::Result;
 
 /// Wrap metadata and payload to emit to a stream.
-#[derive(Clone, Eq, PartialEq, Debug)]
-pub struct EmitMessage {
+#[derive(Clone, Debug)]
+pub struct EmitMessage<T>
+where
+    T: Serialize + 'static,
+{
+    _enfoce_paylod_type: PhantomData<T>,
     pub(crate) id: String,
     pub(crate) headers: HashMap<String, String>,
     pub(crate) payload: Vec<u8>,
+    span_context: Option<SpanContext>,
 }
 
-impl EmitMessage {
+impl<T> EmitMessage<T>
+where
+    T: Serialize + 'static,
+{
     /// Create an `EmitMessage` request with the given message ID and payload.
-    pub fn with<S, T>(id: S, payload: T) -> Result<EmitMessage>
+    pub fn with<S>(id: S, payload: T) -> Result<EmitMessage<T>>
     where
         S: Into<String>,
-        T: Serialize,
     {
         let payload = serde_json::to_vec(&payload).with_context(|_| ErrorKind::PayloadEncode)?;
         let id = id.into();
         let headers = HashMap::new();
         Ok(EmitMessage {
+            _enfoce_paylod_type: PhantomData,
             id,
             headers,
             payload,
+            span_context: None,
         })
     }
 
     /// Attach or update an header to the message.
-    pub fn header<S1, S2>(&mut self, header: S1, value: S2)
+    pub fn header<S1, S2>(&mut self, header: S1, value: S2) -> &mut Self
     where
         S1: Into<String>,
         S2: Into<String>,
     {
         self.headers.insert(header.into(), value.into());
+        self
     }
 
     /// Attach or update a set of headers to the message.
-    pub fn headers(&mut self, headers: HashMap<String, String>) {
+    pub fn headers(&mut self, headers: HashMap<String, String>) -> &mut Self {
         for (key, value) in headers {
             self.headers.insert(key, value);
         }
+        self
     }
 
     /// Inject a span context into the task request.
     ///
-    /// Tasks handlers can then extract the span context to provide a full
+    /// Followers can then extract the span context to provide a full
     /// trace of the larger task across processes/systems.
-    pub fn trace(&mut self, context: &SpanContext, tracer: &Tracer) -> OTResult<()> {
-        let mut headers = HashMap::new();
-        let format = InjectFormat::HttpHeaders(Box::new(&mut headers));
-        tracer.inject(context, format)?;
-        self.headers(headers);
+    pub fn trace<S>(mut self, context: S) -> Self
+    where
+        S: Into<Option<SpanContext>>,
+    {
+        self.span_context = context.into();
+        self
+    }
+
+    /// Inject the stored span context, if any, into the headers.
+    pub(crate) fn trace_inject(&mut self, tracer: Option<&Arc<Tracer>>) -> OTResult<()> {
+        if let (Some(tracer), Some(context)) = (tracer, self.span_context.take()) {
+            let mut headers = HashMap::new();
+            let format = InjectFormat::HttpHeaders(Box::new(&mut headers));
+            tracer.inject(&context, format)?;
+            self.headers(headers);
+        }
         Ok(())
     }
 }

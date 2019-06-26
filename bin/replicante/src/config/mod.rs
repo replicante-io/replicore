@@ -53,7 +53,6 @@ pub struct Config {
     pub discovery: DiscoveryConfig,
 
     /// Events configuration.
-    #[serde(default)]
     pub events: EventsConfig,
 
     /// Logging configuration.
@@ -120,25 +119,5 @@ impl Config {
                 .or_insert(LoggingLevel::Debug);
         }
         self
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use std::io::Cursor;
-
-    use super::Config;
-
-    #[test]
-    #[should_panic(expected = "invalid type: string")]
-    fn from_reader_error() {
-        let cursor = Cursor::new("some other text");
-        Config::from_reader(cursor).unwrap();
-    }
-
-    #[test]
-    fn from_reader_ok() {
-        let cursor = Cursor::new("tasks: {backend: 'kafka', options: {brokers: 'host:9092'}}");
-        Config::from_reader(cursor).unwrap();
     }
 }

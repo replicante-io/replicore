@@ -5,7 +5,8 @@ use replicante_agent_client::Client;
 use replicante_models_core::Event;
 use replicante_models_core::Node;
 use replicante_store_primary::store::Store;
-use replicante_stream_events::EventsStream;
+use replicante_stream_events::EmitMessage;
+use replicante_stream_events::Stream as EventsStream;
 
 use super::ClusterIdentityChecker;
 use super::Error;
@@ -58,8 +59,12 @@ impl NodeFetcher {
         if node != old {
             let event = Event::builder().node().changed(old, node.clone());
             let code = event.code();
+            let stream_id = event.stream_id();
+            let event = EmitMessage::with(stream_id, event)
+                .with_context(|_| ErrorKind::EventEmit(code))?
+                .trace(span.context().clone());
             self.events
-                .emit(event, span.context().clone())
+                .emit(event)
                 .with_context(|_| ErrorKind::EventEmit(code))?;
         }
         // ALWAYS persist the model, even unchanged, to clear the staleness state.
@@ -73,8 +78,12 @@ impl NodeFetcher {
     fn process_node_new(&self, node: Node, span: &mut Span) -> Result<()> {
         let event = Event::builder().node().node_new(node.clone());
         let code = event.code();
+        let stream_id = event.stream_id();
+        let event = EmitMessage::with(stream_id, event)
+            .with_context(|_| ErrorKind::EventEmit(code))?
+            .trace(span.context().clone());
         self.events
-            .emit(event, span.context().clone())
+            .emit(event)
             .with_context(|_| ErrorKind::EventEmit(code))?;
         self.store
             .persist()

@@ -204,6 +204,11 @@ impl Event {
             EventPayload::SnapshotShard(_) => "SNAPSHOT_SHARD",
         }
     }
+
+    /// Returns the "ordering ID" for correctly streaming the event.
+    pub fn stream_id(&self) -> String {
+        self.cluster_id().unwrap_or("<system>").to_string()
+    }
 }
 
 #[cfg(test)]

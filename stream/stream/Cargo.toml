@@ -34,6 +34,7 @@ slog = "^2.1.1"
 
 replicante_externals_kafka = { path = "../../externals/kafka" }
 replicante_service_healthcheck = { path = "../../service/healthcheck" }
+replicante_util_failure = { path = "../../common/util/failure" }
 
 
 [dev-dependencies]

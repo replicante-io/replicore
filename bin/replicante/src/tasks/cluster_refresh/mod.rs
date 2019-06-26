@@ -17,7 +17,8 @@ use replicante_service_coordinator::Coordinator;
 use replicante_service_coordinator::ErrorKind as CoordinatorErrorKind;
 use replicante_service_tasks::TaskHandler;
 use replicante_store_primary::store::Store;
-use replicante_stream_events::EventsStream;
+use replicante_stream_events::EmitMessage;
+use replicante_stream_events::Stream as EventsStream;
 use replicante_util_failure::capture_fail;
 use replicante_util_failure::failure_info;
 use replicante_util_tracing::fail_span;
@@ -159,16 +160,24 @@ impl Handler {
             let event = Event::builder()
                 .cluster()
                 .changed(current_state, discovery.clone());
-            let event_code = event.code();
+            let code = event.code();
+            let stream_id = event.stream_id();
+            let event = EmitMessage::with(stream_id, event)
+                .with_context(|_| ErrorKind::EventsStreamEmit(code))?
+                .trace(span.context().clone());
             self.events
-                .emit(event, span.context().clone())
-                .with_context(|_| ErrorKind::EventsStreamEmit(event_code))?;
+                .emit(event)
+                .with_context(|_| ErrorKind::EventsStreamEmit(code))?;
         } else {
             let event = Event::builder().cluster().cluster_new(discovery.clone());
-            let event_code = event.code();
+            let code = event.code();
+            let stream_id = event.stream_id();
+            let event = EmitMessage::with(stream_id, event)
+                .with_context(|_| ErrorKind::EventsStreamEmit(code))?
+                .trace(span.context().clone());
             self.events
-                .emit(event, span.context().clone())
-                .with_context(|_| ErrorKind::EventsStreamEmit(event_code))?;
+                .emit(event)
+                .with_context(|_| ErrorKind::EventsStreamEmit(code))?;
         }
         self.store
             .persist()

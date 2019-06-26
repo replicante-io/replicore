@@ -5,7 +5,7 @@ sidebar_label: Grafana
 ---
 
 Endpoints for use with Grafana integration.  
-Not really designed for general consumption in other contexts.
+Not designed for use in other contexts.
 
 
 <div class="rest">

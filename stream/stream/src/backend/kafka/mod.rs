@@ -67,7 +67,7 @@ impl<T> StreamInterface<T> for KafkaStream
 where
     T: DeserializeOwned + Serialize + 'static,
 {
-    fn emit(&self, message: EmitMessage) -> Result<()> {
+    fn emit(&self, message: EmitMessage<T>) -> Result<()> {
         let headers = headers_from_map(&message.headers);
         let record: FutureRecord<String, [u8]> = FutureRecord::to(&self.topic)
             .headers(headers)

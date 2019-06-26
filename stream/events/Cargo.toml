@@ -8,19 +8,17 @@ description = "Replicante streaming interface for events"
 documentation = "https://www.replicante.io/docs"
 homepage = "https://www.replicante.io/"
 repository = "https://github.com/replicante-io/replicante"
-keywords = ["automation", "datastore", "operations"]
 license = "MIT"
 
 
+[features]
+with_test_support = ["replicante_stream/with_test_support"]
+
+
 [dependencies]
-chrono = "^0.4.6"
-failure = "^0.1.5"
-failure_derive = "^0.1.5"
 opentracingrust = "^0.3.3"
-prometheus = "^0.7.0"
-serde = "^1.0.34"
-serde_derive = "^1.0.34"
-slog = "^2.2.0"
+slog = "^2.1.1"
 
 replicante_models_core = { path = "../../models/core" }
-replicante_store_primary = { path = "../../store/primary" }
+replicante_service_healthcheck = { path = "../../service/healthcheck" }
+replicante_stream = { path = "../stream" }

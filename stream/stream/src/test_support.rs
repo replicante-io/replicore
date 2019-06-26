@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::marker::PhantomData;
 use std::rc::Rc;
 use std::sync::Arc;
@@ -27,8 +28,8 @@ use crate::Stream;
 /// Every message emitted is delivered to ONLY ONE follower.
 #[derive(Clone)]
 pub struct MockStream {
-    receiver: Receiver<EmitMessage>,
-    sender: Sender<EmitMessage>,
+    receiver: Receiver<SerialisedMessage>,
+    sender: Sender<SerialisedMessage>,
     stream_id: &'static str,
 }
 
@@ -37,13 +38,14 @@ impl MockStream {
     where
         T: DeserializeOwned + Serialize + 'static,
     {
+        let logger = slog::Logger::root(slog::Discard, slog::o!());
         let (sender, receiver) = unbounded();
         let stream = MockStream {
             receiver,
             sender,
             stream_id,
         };
-        Stream::with_backend(stream_id, Arc::new(stream))
+        Stream::with_backend(stream_id, Arc::new(stream), logger, None)
     }
 }
 
@@ -51,9 +53,9 @@ impl<T> StreamInterface<T> for MockStream
 where
     T: DeserializeOwned + Serialize + 'static,
 {
-    fn emit(&self, message: EmitMessage) -> Result<()> {
+    fn emit(&self, message: EmitMessage<T>) -> Result<()> {
         self.sender
-            .send(message)
+            .send(SerialisedMessage::serialise(message)?)
             .with_context(|_| ErrorKind::EmitFailed)?;
         Ok(())
     }
@@ -76,7 +78,7 @@ where
         } else {
             let follow_id = group.clone();
             Box::new(self.receiver.clone().into_iter().map(move |message| {
-                let message = ChannelMessage::decode(stream_id, follow_id.clone(), message);
+                let message = message.deserialize(stream_id, follow_id.clone());
                 Ok(message)
             }))
         };
@@ -96,7 +98,7 @@ where
 {
     _enfoce_paylod_type: PhantomData<T>,
     follow_id: String,
-    receiver: Receiver<EmitMessage>,
+    receiver: Receiver<SerialisedMessage>,
     stream_id: &'static str,
     thread: &'a ThreadScope,
 }
@@ -114,7 +116,7 @@ where
                 Err(error) if error.is_timeout() => continue,
                 Err(_) => return None,
             };
-            let message = ChannelMessage::decode(self.stream_id, self.follow_id.clone(), message);
+            let message = message.deserialize(self.stream_id, self.follow_id.clone());
             return Some(Ok(message));
         }
         None
@@ -125,22 +127,6 @@ struct ChannelMessage {
     id: String,
 }
 
-impl ChannelMessage {
-    fn decode<T>(stream_id: &'static str, follow_id: String, message: EmitMessage) -> Message<T>
-    where
-        T: DeserializeOwned + 'static,
-    {
-        let inner = Rc::new(ChannelMessage { id: message.id });
-        Message::with_backend(
-            stream_id,
-            follow_id,
-            message.headers,
-            message.payload,
-            inner,
-        )
-    }
-}
-
 impl MessageInterface for ChannelMessage {
     fn async_ack(&self) -> Result<()> {
         Ok(())
@@ -148,5 +134,34 @@ impl MessageInterface for ChannelMessage {
 
     fn id(&self) -> &str {
         &self.id
+    }
+}
+
+struct SerialisedMessage {
+    headers: HashMap<String, String>,
+    id: String,
+    payload: Vec<u8>,
+}
+
+impl SerialisedMessage {
+    fn deserialize<T>(self, stream_id: &'static str, follow_id: String) -> Message<T>
+    where
+        T: DeserializeOwned + 'static,
+    {
+        let inner = Rc::new(ChannelMessage { id: self.id });
+        Message::with_backend(stream_id, follow_id, self.headers, self.payload, inner)
+    }
+
+    fn serialise<T>(message: EmitMessage<T>) -> Result<SerialisedMessage>
+    where
+        T: Serialize + 'static,
+    {
+        let payload =
+            serde_json::to_vec(&message.payload).with_context(|_| ErrorKind::PayloadEncode)?;
+        Ok(SerialisedMessage {
+            headers: message.headers,
+            id: message.id,
+            payload,
+        })
     }
 }

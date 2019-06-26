@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## [Unreleased]
 ### Added
 - Common streams logic.
+- Emit events to stream (and not store).
+- Kafka as a stream backend.
 
 ## [0.3.0] - 2019-06-16
 ### Added

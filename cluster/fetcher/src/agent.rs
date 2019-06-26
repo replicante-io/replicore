@@ -7,7 +7,8 @@ use replicante_models_core::AgentInfo;
 use replicante_models_core::AgentStatus;
 use replicante_models_core::Event;
 use replicante_store_primary::store::Store;
-use replicante_stream_events::EventsStream;
+use replicante_stream_events::EmitMessage;
+use replicante_stream_events::Stream as EventsStream;
 
 use super::Error;
 use super::ErrorKind;
@@ -71,8 +72,12 @@ impl AgentFetcher {
         if agent.status != old.status {
             let event = Event::builder().agent().transition(old, agent.clone());
             let code = event.code();
+            let stream_id = event.stream_id();
+            let event = EmitMessage::with(stream_id, event)
+                .with_context(|_| ErrorKind::EventEmit(code))?
+                .trace(span.context().clone());
             self.events
-                .emit(event, span.context().clone())
+                .emit(event)
                 .with_context(|_| ErrorKind::EventEmit(code))?;
         }
         self.store
@@ -87,8 +92,12 @@ impl AgentFetcher {
             .agent()
             .agent_new(agent.cluster_id.clone(), agent.host.clone());
         let code = event.code();
+        let stream_id = event.stream_id();
+        let event = EmitMessage::with(stream_id, event)
+            .with_context(|_| ErrorKind::EventEmit(code))?
+            .trace(span.context().clone());
         self.events
-            .emit(event, span.context().clone())
+            .emit(event)
             .with_context(|_| ErrorKind::EventEmit(code))?;
 
         // Emit a synthetic transition to up.
@@ -96,8 +105,12 @@ impl AgentFetcher {
         let before = Agent::new(agent.cluster_id.clone(), agent.host.clone(), before);
         let event = Event::builder().agent().transition(before, agent.clone());
         let code = event.code();
+        let stream_id = event.stream_id();
+        let event = EmitMessage::with(stream_id, event)
+            .with_context(|_| ErrorKind::EventEmit(code))?
+            .trace(span.context().clone());
         self.events
-            .emit(event, span.context().clone())
+            .emit(event)
             .with_context(|_| ErrorKind::EventEmit(code))?;
         self.store
             .persist()
@@ -115,8 +128,12 @@ impl AgentFetcher {
         if agent != old {
             let event = Event::builder().agent().info().changed(old, agent.clone());
             let code = event.code();
+            let stream_id = event.stream_id();
+            let event = EmitMessage::with(stream_id, event)
+                .with_context(|_| ErrorKind::EventEmit(code))?
+                .trace(span.context().clone());
             self.events
-                .emit(event, span.context().clone())
+                .emit(event)
                 .with_context(|_| ErrorKind::EventEmit(code))?;
         }
         // ALWAYS persist the model, even unchanged, to clear the staleness state.
@@ -130,8 +147,12 @@ impl AgentFetcher {
     fn process_agent_info_new(&self, agent: AgentInfo, span: &mut Span) -> Result<()> {
         let event = Event::builder().agent().info().info_new(agent.clone());
         let code = event.code();
+        let stream_id = event.stream_id();
+        let event = EmitMessage::with(stream_id, event)
+            .with_context(|_| ErrorKind::EventEmit(code))?
+            .trace(span.context().clone());
         self.events
-            .emit(event, span.context().clone())
+            .emit(event)
             .with_context(|_| ErrorKind::EventEmit(code))?;
         self.store
             .persist()

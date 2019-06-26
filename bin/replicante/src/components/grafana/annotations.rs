@@ -18,14 +18,15 @@ use serde_json;
 
 use replicante_models_core::Event;
 use replicante_models_core::EventPayload;
-use replicante_stream_events::EventsStream;
-use replicante_stream_events::ScanFilters;
-use replicante_stream_events::ScanOptions;
+use replicante_store_primary::store::legacy::EventsFilters;
+use replicante_store_primary::store::legacy::EventsOptions;
+use replicante_store_primary::store::Store;
+use replicante_util_iron::request_span;
 
-use super::super::super::interfaces::api::APIRoot;
-use super::super::super::Error;
-use super::super::super::ErrorKind;
-use super::Interfaces;
+use crate::interfaces::api::APIRoot;
+use crate::Error;
+use crate::ErrorKind;
+use crate::Interfaces;
 
 /// Advanced query parameters passed as JSON blob in the annotation.query field.
 #[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
@@ -104,9 +105,9 @@ struct AnnotationRequestRange {
     to: DateTime<Utc>,
 }
 
-/// Grafana check endpoint (`/api/v1/grafana/annotations`) handler.
+/// Grafana annotations endpoint handler.
 pub struct Annotations {
-    events: EventsStream,
+    store: Store,
 }
 
 impl Handler for Annotations {
@@ -128,26 +129,30 @@ impl Handler for Annotations {
             return Ok(resp);
         }
 
-        // Fetch and collect annotations.
+        // Build request filters.
         let query = match request.annotation.query.as_ref() {
+            None => AdvancedQuery::default(),
             Some(query) if query == "" => AdvancedQuery::default(),
             Some(query) => serde_json::from_str(query)
                 .with_context(|_| ErrorKind::APIRequestBodyInvalid)
                 .map_err(Error::from)?,
-            None => AdvancedQuery::default(),
         };
-        let mut filters = ScanFilters::most();
-        let mut options = ScanOptions::default();
+        let mut filters = EventsFilters::most();
         filters.cluster_id = query.cluster_id;
         filters.event = query.event;
         filters.exclude_snapshots = query.exclude_snapshots;
         filters.exclude_system_events = query.exclude_system_events;
         filters.start_from = Some(request.range.from);
         filters.stop_at = Some(request.range.to);
+        let mut options = EventsOptions::default();
         options.limit = Some(query.limit);
+
+        // Fetch and format annotations.
+        let span = request_span(req);
         let events = self
-            .events
-            .scan(filters, options, None)
+            .store
+            .legacy()
+            .events(filters, options, span.context().clone())
             .with_context(|_| ErrorKind::ViewStoreQuery("events"))
             .map_err(Error::from)?;
         let mut annotations: Vec<Annotation> = Vec::new();
@@ -179,7 +184,7 @@ impl Annotations {
     pub fn attach(interfaces: &mut Interfaces) {
         let mut router = interfaces.api.router_for(&APIRoot::UnstableAPI);
         let handler = Annotations {
-            events: interfaces.streams.events.clone(),
+            store: interfaces.store.clone(),
         };
         router.post("/grafana/annotations", handler, "/grafana/annotations");
     }

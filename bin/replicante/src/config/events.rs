@@ -1,7 +1,7 @@
 use serde_derive::Deserialize;
 use serde_derive::Serialize;
 
-use replicante_stream_events::Config as EventsStreamConfig;
+use replicante_stream::StreamConfig;
 
 /// Replicante events configuration options.
 #[derive(Clone, Eq, PartialEq, Hash, Debug, Serialize, Deserialize)]
@@ -11,17 +11,7 @@ pub struct EventsConfig {
     pub snapshots: SnapshotsConfig,
 
     /// Events streaming backend.
-    #[serde(default)]
-    pub stream: EventsStreamConfig,
-}
-
-impl Default for EventsConfig {
-    fn default() -> Self {
-        Self {
-            snapshots: SnapshotsConfig::default(),
-            stream: EventsStreamConfig::default(),
-        }
-    }
+    pub stream: StreamConfig,
 }
 
 /// Periodic state snapshots configuration.

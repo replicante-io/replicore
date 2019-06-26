@@ -1,72 +1,56 @@
+use std::ops::Deref;
 use std::sync::Arc;
 
-use opentracingrust::SpanContext;
-use prometheus::Registry;
+use opentracingrust::Tracer;
 use slog::Logger;
 
 use replicante_models_core::Event;
-use replicante_store_primary::store::Store;
+use replicante_service_healthcheck::HealthChecks;
+use replicante_stream::EmitMessage as BaseEmitMessage;
+use replicante_stream::Iter as BaseIter;
+use replicante_stream::Result;
+use replicante_stream::Stream as BaseStream;
+use replicante_stream::StreamConfig;
+use replicante_stream::StreamOpts;
 
-mod backend;
-mod config;
-mod error;
-mod interface;
+const STREAM_ID: &str = "events";
 
-// Cargo builds dependencies in debug mode instead of test mode.
-// That means that `cfg(test)` cannot be used if the mock is used outside the crate.
-#[cfg(debug_assertions)]
-pub mod mock;
+/// `replicante_stream::EmitMessage` specialised to `Event`s
+pub type EmitMessage = BaseEmitMessage<Event>;
 
-pub use self::config::Config;
+/// `replicante_stream::Iter` specialised to `Event`s
+pub type Iter<'a> = BaseIter<'a, Event>;
 
-pub use self::error::Error;
-pub use self::error::ErrorKind;
-pub use self::error::Result;
-
-pub use self::interface::Iter;
-pub use self::interface::ScanFilters;
-pub use self::interface::ScanOptions;
-use self::interface::StreamInterface;
-
-/// Public interface to the events streaming system.
-///
-/// This interface abstracts every interaction with the event streaming layer and
-/// hides implementation details about straming software and data encoding.
-///
-/// # Backends
-/// The event streaming backend is configurable to allow users to pick their preferred
-/// streaming software and balance complexty, scalability, and flexibility to user needs.
+/// `replicante_stream::Stream` specialised to `Event`s
 #[derive(Clone)]
-pub struct EventsStream(Arc<dyn StreamInterface>);
+pub struct Stream(BaseStream<Event>);
 
-impl EventsStream {
-    pub fn new(config: Config, logger: Logger, store: Store) -> EventsStream {
-        let stream = self::backend::make(config, logger, store);
-        EventsStream(stream)
+impl Stream {
+    pub fn new<T>(
+        config: StreamConfig,
+        logger: Logger,
+        healthchecks: &mut HealthChecks,
+        tracer: T,
+    ) -> Result<Stream>
+    where
+        T: Into<Option<Arc<Tracer>>>,
+    {
+        let opts = StreamOpts::new(STREAM_ID, healthchecks, logger, tracer);
+        BaseStream::new(config, opts).map(Stream)
     }
 
-    /// Attemps to register metrics with the Registry.
-    ///
-    /// Metrics that fail to register are logged and ignored.
-    pub fn register_metrics(_logger: &Logger, _registry: &Registry) {
-        // NOOP
+    /// Return a `MockStream` version of the `Event`s stream for tests.
+    #[cfg(feature = "with_test_support")]
+    pub fn mock() -> Stream {
+        let inner = replicante_stream::test_support::MockStream::make(STREAM_ID);
+        Stream(inner)
     }
 }
 
-impl EventsStream {
-    /// Emit events to the events stream.
-    pub fn emit<S>(&self, event: Event, span: S) -> Result<()>
-    where
-        S: Into<Option<SpanContext>>,
-    {
-        self.0.emit(event, span.into())
-    }
+impl Deref for Stream {
+    type Target = BaseStream<Event>;
 
-    /// Scan for events matching the given filters, old to new.
-    pub fn scan<S>(&self, filters: ScanFilters, options: ScanOptions, span: S) -> Result<Iter>
-    where
-        S: Into<Option<SpanContext>>,
-    {
-        self.0.scan(filters, options, span.into())
+    fn deref(&self) -> &Self::Target {
+        &self.0
     }
 }
