@@ -37,7 +37,7 @@ humthreads = "^0.1.1"
 iron = "^0.6.0"
 iron-json-response = "^0.6.0"
 lazy_static = "^1.0.0"
-opentracingrust = "^0.3.3"
+opentracingrust = "^0.3.4"
 prometheus = { version = "^0.7.0", features = ["process"] }
 reqwest = "^0.9.1"
 router = "^0.6.0"

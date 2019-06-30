@@ -11,6 +11,7 @@ use super::Result;
 
 mod core_api;
 mod discovery;
+mod events_indexer;
 mod grafana;
 mod update_checker;
 mod webui;
@@ -20,6 +21,7 @@ pub use self::discovery::Config as DiscoveryConfig;
 
 use self::core_api::CoreAPI;
 use self::discovery::DiscoveryComponent as Discovery;
+use self::events_indexer::EventsIndexer;
 use self::grafana::Grafana;
 use self::update_checker::UpdateChecker;
 use self::webui::WebUI;
@@ -77,6 +79,7 @@ where
 pub struct Components {
     core_api: Option<CoreAPI>,
     discovery: Option<Discovery>,
+    events_indexer: Option<EventsIndexer>,
     grafana: Option<Grafana>,
     update_checker: Option<UpdateChecker>,
     webui: Option<WebUI>,
@@ -106,6 +109,13 @@ impl Components {
                     interfaces,
                 )
             },
+        );
+        let events_indexer = component_new(
+            "events_indexer",
+            "required",
+            config.components.events_indexer(),
+            &logger,
+            || EventsIndexer::new(logger.clone(), interfaces),
         );
         let grafana = component_new(
             "grafana",
@@ -143,6 +153,7 @@ impl Components {
         Ok(Components {
             core_api,
             discovery,
+            events_indexer,
             grafana,
             update_checker,
             webui,
@@ -162,6 +173,7 @@ impl Components {
     pub fn run(&mut self, upkeep: &mut Upkeep) -> Result<()> {
         component_run!(self.core_api.as_mut(), upkeep);
         component_run!(self.discovery.as_mut(), upkeep);
+        component_run!(self.events_indexer.as_mut(), upkeep);
         component_run!(self.grafana.as_mut(), upkeep);
         component_run!(self.update_checker.as_mut(), upkeep);
         component_run!(self.webui.as_mut(), upkeep);

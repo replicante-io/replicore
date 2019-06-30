@@ -22,3 +22,9 @@ slog = "^2.1.1"
 replicante_models_core = { path = "../../models/core" }
 replicante_service_healthcheck = { path = "../../service/healthcheck" }
 replicante_stream = { path = "../stream" }
+
+
+[dev-dependencies]
+serde_json = "^1.0.39"
+
+replicante_stream = { path = "../stream", features = ["with_test_support"] }

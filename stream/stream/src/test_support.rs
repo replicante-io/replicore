@@ -22,6 +22,32 @@ use crate::Message;
 use crate::Result;
 use crate::Stream;
 
+/// Return a mocked `Message` with the given parameters.
+#[allow(clippy::implicit_hasher)]
+pub fn mock_message<T1, T2, S1, S2>(
+    stream_id: &'static str,
+    follow_id: S1,
+    id: S2,
+    headers: HashMap<String, String>,
+    payload: T1,
+) -> Result<Message<T2>>
+where
+    T1: Serialize + 'static,
+    T2: DeserializeOwned + 'static,
+    S1: Into<String>,
+    S2: Into<String>,
+{
+    let payload = serde_json::to_vec(&payload).with_context(|_| ErrorKind::PayloadEncode)?;
+    let inner = Rc::new(ChannelMessage { id: id.into() });
+    Ok(Message::with_backend(
+        stream_id,
+        follow_id.into(),
+        headers,
+        payload,
+        inner,
+    ))
+}
+
 /// Generic mock Stream to write tests against.
 ///
 /// This mock DOES NOT support multiple follower groups.

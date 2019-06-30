@@ -171,6 +171,13 @@ where
         self.inner.id()
     }
 
+    /// Extract the payload from this message as a JSON value.
+    pub fn json_payload(&self) -> Result<serde_json::Value> {
+        serde_json::from_slice(&self.payload)
+            .with_context(|_| ErrorKind::PayloadDecode)
+            .map_err(Error::from)
+    }
+
     /// Extract the payload from this message.
     pub fn payload(&self) -> Result<T> {
         serde_json::from_slice(&self.payload)

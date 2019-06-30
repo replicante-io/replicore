@@ -118,6 +118,9 @@ components:
   # Enable/disable agent discovery.
   discovery: null
 
+  # Enable events stream indexing.
+  events_indexer: null
+
   # Enable Grafana Annotations API endpoints (optional).
   grafana: null
 

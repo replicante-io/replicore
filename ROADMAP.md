@@ -1,8 +1,3 @@
-## 0.3.1 - Events stream
-- Follow/consume streams by group.
-- Relay events from stream to store.
-
-
 ## 0.4.0 - Split "view" database
 - Move the indexed event collection to dedicated interface (still in mongo but different DB).
 - Emit messages to kafka instead of the store.

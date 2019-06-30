@@ -16,6 +16,10 @@ pub struct ComponentsConfig {
     #[serde(default)]
     discovery: Option<bool>,
 
+    /// Enable events stream indexing.
+    #[serde(default)]
+    events_indexer: Option<bool>,
+
     /// Enable Grafana Annotations API endpoints (optional).
     #[serde(default)]
     grafana: Option<bool>,
@@ -39,6 +43,7 @@ impl Default for ComponentsConfig {
             default: Self::default_default(),
             core_api: None,
             discovery: None,
+            events_indexer: None,
             grafana: None,
             update_checker: Self::default_false(),
             webui: None,
@@ -66,6 +71,11 @@ impl ComponentsConfig {
     /// Check if the discovery component is enabled.
     pub fn discovery(&self) -> bool {
         self.discovery.unwrap_or(self.default)
+    }
+
+    /// Check if the events indexer component is enabled.
+    pub fn events_indexer(&self) -> bool {
+        self.events_indexer.unwrap_or(self.default)
     }
 
     /// Check if the Grafana Annotations endpoints component is enabled.

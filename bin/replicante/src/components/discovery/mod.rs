@@ -4,7 +4,7 @@ use std::time::Duration;
 use failure::ResultExt;
 use humthreads::Builder as ThreadBuilder;
 use opentracingrust::Tracer;
-use slog::info;
+use slog::debug;
 use slog::Logger;
 
 use replicante_service_coordinator::Coordinator;
@@ -71,7 +71,7 @@ impl DiscoveryComponent {
         let tracer = Arc::clone(&self.tracer);
         let (shutdown_sender, shutdown_receiver) = LoopingElectionOpts::shutdown_channel();
 
-        info!(self.logger, "Starting Agent Discovery thread");
+        debug!(self.logger, "Starting Agent Discovery thread");
         let thread = ThreadBuilder::new("r:c:discovery")
             .full_name("replicore:component:discovery")
             .spawn(move |scope| {

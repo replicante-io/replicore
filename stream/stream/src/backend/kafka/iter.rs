@@ -135,7 +135,9 @@ impl KafkaMessage {
 
 impl MessageInterface for KafkaMessage {
     fn async_ack(&self) -> Result<()> {
-        let offset = Offset::Offset(self.offset);
+        // Kafka needs us to commit the offset of the NEXT message to FETCH,
+        // not the offset of the last message processed.
+        let offset = Offset::Offset(self.offset + 1);
         let mut request = TopicPartitionList::with_capacity(1);
         request.add_partition_offset(&self.topic, self.partition, offset);
         self.consumer

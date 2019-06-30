@@ -85,6 +85,9 @@ pub enum ErrorKind {
     #[fail(display = "could not emit a '{}' to the events stream", _0)]
     EventsStreamEmit(&'static str),
 
+    #[fail(display = "could not follow the events stream with group '{}'", _0)]
+    EventsStreamFollow(&'static str),
+
     #[fail(display = "could not run already running interface '{}'", _0)]
     InterfaceAlreadyRunning(&'static str),
 
@@ -127,6 +130,7 @@ impl ErrorKind {
             ErrorKind::ComponentAlreadyRunning(_) => "ComponentAlreadyRunning",
             ErrorKind::Deserialize(_, _) => "Deserialize",
             ErrorKind::EventsStreamEmit(_) => "EventsStreamEmit",
+            ErrorKind::EventsStreamFollow(_) => "EventsStreamFollow",
             ErrorKind::InterfaceAlreadyRunning(_) => "InterfaceAlreadyRunning",
             ErrorKind::InterfaceInit(_) => "InterfaceInit",
             ErrorKind::ModelNotFound(_, _) => "ModelNotFound",
