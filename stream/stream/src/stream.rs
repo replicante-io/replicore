@@ -118,19 +118,21 @@ where
     ///
     /// Followers must be passed a reference to the `ThreadScope` so that backends and
     /// backoff can check if the user requested a shutdown as well as report process.
-    pub fn follow<'a, S>(&self, group: S, thread: &'a ThreadScope) -> Result<Iter<'a, T>>
+    pub fn follow<'a, S, TS>(&self, group: S, thread: TS) -> Result<Iter<'a, T>>
     where
         S: Into<String>,
+        TS: Into<Option<&'a ThreadScope>>,
     {
-        self.inner.follow(group.into(), thread, true)
+        self.inner.follow(group.into(), thread.into(), true)
     }
 
     /// Similar to `Stream::follow` but stops iterating at the end instead of blocking.
-    pub fn short_follow<'a, S>(&self, group: S, thread: &'a ThreadScope) -> Result<Iter<'a, T>>
+    pub fn short_follow<'a, S, TS>(&self, group: S, thread: TS) -> Result<Iter<'a, T>>
     where
         S: Into<String>,
+        TS: Into<Option<&'a ThreadScope>>,
     {
-        self.inner.follow(group.into(), thread, false)
+        self.inner.follow(group.into(), thread.into(), false)
     }
 }
 

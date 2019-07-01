@@ -98,7 +98,7 @@ where
     in_progress_acked: Rc<RefCell<bool>>,
     inner: Box<dyn Iterator<Item = Result<Message<T>>> + 'a>,
     stream_id: &'static str,
-    thread: &'a ThreadScope,
+    thread: Option<&'a ThreadScope>,
 }
 
 impl<'a, T> Iter<'a, T>
@@ -109,7 +109,7 @@ where
         stream_id: &'static str,
         follow_id: String,
         backoff: Backoff,
-        thread: &'a ThreadScope,
+        thread: Option<&'a ThreadScope>,
         iter: Box<dyn Iterator<Item = Result<Message<T>>> + 'a>,
     ) -> Iter<'a, T> {
         Iter {
@@ -224,7 +224,13 @@ impl Backoff {
     /// Wait for an appropriate backoff time.
     ///
     /// Additionally, update the internal state to backoff more if called again.
-    pub fn wait(&mut self, thread: &ThreadScope, stream_id: &str, group: &str, message_id: &str) {
+    pub fn wait(
+        &mut self,
+        thread: Option<&ThreadScope>,
+        stream_id: &str,
+        group: &str,
+        message_id: &str,
+    ) {
         self.check_limit(stream_id, group, message_id);
         BACKOFF_TOTAL.with_label_values(&[stream_id, group]).inc();
         if self.attempt > 0 {
@@ -233,14 +239,16 @@ impl Backoff {
         self.attempt += 1;
         let start = Instant::now();
         let delay = self.delay();
-        let _activity = thread.scoped_activity(format!(
-            "backing off stream follower for {} seconds",
-            delay.as_secs()
-        ));
+        let _activity = thread.map(|thread| {
+            thread.scoped_activity(format!(
+                "backing off stream follower for {} seconds",
+                delay.as_secs()
+            ))
+        });
         let _timer = BACKOFF_DURATION
             .with_label_values(&[stream_id, group])
             .start_timer();
-        while start.elapsed() < delay && !thread.should_shutdown() {
+        while start.elapsed() < delay && !thread.map(|t| t.should_shutdown()).unwrap_or(false) {
             thread::sleep(Duration::from_millis(500));
         }
     }
@@ -305,9 +313,9 @@ mod tests {
         let mut backoff = Backoff::new();
         backoff.attempts_limit = 10;
         backoff.increment = Duration::from_secs(0);
-        backoff.wait(&scope.scope(), "stream", "test", "par1/off5");
-        backoff.wait(&scope.scope(), "stream", "test", "par1/off5");
-        backoff.wait(&scope.scope(), "stream", "test", "par1/off5");
+        backoff.wait(Some(&scope.scope()), "stream", "test", "par1/off5");
+        backoff.wait(Some(&scope.scope()), "stream", "test", "par1/off5");
+        backoff.wait(Some(&scope.scope()), "stream", "test", "par1/off5");
         assert_eq!(backoff.attempt, 3);
     }
 
@@ -362,7 +370,7 @@ mod tests {
         scope.set_shutdown(true);
         // Time the wait to ensure it is less then the periodic sleep + a margin of error.
         let start = std::time::Instant::now();
-        backoff.wait(&scope.scope(), "stream", "test", "par1/off5");
+        backoff.wait(Some(&scope.scope()), "stream", "test", "par1/off5");
         assert!(
             start.elapsed() < Duration::from_secs(1),
             "backoff did not return in time"

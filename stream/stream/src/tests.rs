@@ -57,7 +57,7 @@ impl StreamInterface<String> for VecStream {
     fn follow<'a>(
         &self,
         group: String,
-        thread: &'a ThreadScope,
+        thread: Option<&'a ThreadScope>,
         _tail: bool,
     ) -> Result<Iter<'a, String>> {
         let messages = self.messages.lock().unwrap().clone();

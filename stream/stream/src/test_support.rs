@@ -89,7 +89,7 @@ where
     fn follow<'a>(
         &self,
         group: String,
-        thread: &'a ThreadScope,
+        thread: Option<&'a ThreadScope>,
         tail: bool,
     ) -> Result<Iter<'a, T>> {
         let stream_id: &'static str = self.stream_id;
@@ -126,7 +126,7 @@ where
     follow_id: String,
     receiver: Receiver<SerialisedMessage>,
     stream_id: &'static str,
-    thread: &'a ThreadScope,
+    thread: Option<&'a ThreadScope>,
 }
 
 impl<'a, T> Iterator for ChannelIter<'a, T>
@@ -136,7 +136,7 @@ where
     type Item = Result<Message<T>>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        while !self.thread.should_shutdown() {
+        while !self.thread.map(|t| t.should_shutdown()).unwrap_or(false) {
             let message = match self.receiver.recv_timeout(Duration::from_millis(50)) {
                 Ok(message) => message,
                 Err(error) if error.is_timeout() => continue,

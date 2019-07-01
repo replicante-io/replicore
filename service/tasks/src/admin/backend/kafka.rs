@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 use std::sync::Arc;
 use std::time::Duration;
+use std::time::Instant;
 
 use failure::ResultExt;
 use slog::Logger;
@@ -12,25 +13,26 @@ use rdkafka::message::Headers;
 use rdkafka::Message;
 
 use replicante_externals_kafka::ClientStatsContext;
+use replicante_util_rndid::RndId;
 
-use super::super::super::config::KafkaConfig;
-use super::super::super::shared::kafka::consumer_config;
-use super::super::super::shared::kafka::queue_from_topic;
-use super::super::super::shared::kafka::topic_for_queue;
-use super::super::super::shared::kafka::TopicRole;
-use super::super::super::shared::kafka::KAFKA_ADMIN_CONSUMER;
-use super::super::super::shared::kafka::KAFKA_ADMIN_GROUP;
-use super::super::super::shared::kafka::KAFKA_TASKS_ID_HEADER;
-use super::super::super::shared::kafka::KAFKA_TASKS_RETRY_HEADER;
-use super::super::super::worker::AckStrategy;
-use super::super::super::Error;
-use super::super::super::ErrorKind;
-use super::super::super::Result;
-use super::super::super::Task;
-use super::super::super::TaskId;
-use super::super::super::TaskQueue;
 use super::super::AdminBackend;
 use super::super::TasksIter;
+use crate::config::KafkaConfig;
+use crate::shared::kafka::consumer_config;
+use crate::shared::kafka::queue_from_topic;
+use crate::shared::kafka::topic_for_queue;
+use crate::shared::kafka::TopicRole;
+use crate::shared::kafka::KAFKA_ADMIN_CONSUMER;
+use crate::shared::kafka::KAFKA_ADMIN_GROUP;
+use crate::shared::kafka::KAFKA_TASKS_ID_HEADER;
+use crate::shared::kafka::KAFKA_TASKS_RETRY_HEADER;
+use crate::worker::AckStrategy;
+use crate::Error;
+use crate::ErrorKind;
+use crate::Result;
+use crate::Task;
+use crate::TaskId;
+use crate::TaskQueue;
 
 const TIMEOUT_MS_POLL: u64 = 500;
 
@@ -53,10 +55,9 @@ impl<Q: TaskQueue> AdminBackend<Q> for Kafka {
         let queue_name = queue.name();
 
         // Generate consumer IDs.
-        // TODO: Are these enough or do they need to be more unique?
-        let client_id = format!("{}-{}", KAFKA_ADMIN_CONSUMER, queue_name);
-        let group_id = format!("{}-{}", KAFKA_ADMIN_GROUP, queue_name);
-        let stats_id = format!("admin-{}-consumer", queue_name);
+        let client_id = format!("{}:{}", KAFKA_ADMIN_CONSUMER, queue_name);
+        let group_id = format!("{}:{}:{}", KAFKA_ADMIN_GROUP, queue_name, RndId::new());
+        let stats_id = format!("tasks:admin:{}:consumer", queue_name);
         let kafka_config = consumer_config(&self.config, &client_id, &group_id);
 
         // Create consumer and subscribe to queue's topics.
@@ -73,6 +74,7 @@ impl<Q: TaskQueue> AdminBackend<Q> for Kafka {
             _queue: ::std::marker::PhantomData,
             consumer,
             prefix: self.config.queue_prefix.clone(),
+            stream_started: false,
         })))
     }
 
@@ -86,6 +88,7 @@ struct KafkaIter<Q: TaskQueue> {
     _queue: ::std::marker::PhantomData<Q>,
     consumer: BaseStatsConsumer,
     prefix: String,
+    stream_started: bool,
 }
 
 impl<Q: TaskQueue> KafkaIter<Q> {
@@ -151,16 +154,29 @@ impl<Q: TaskQueue> KafkaIter<Q> {
 impl<Q: TaskQueue> Iterator for KafkaIter<Q> {
     type Item = Result<Task<Q>>;
     fn next(&mut self) -> Option<Self::Item> {
-        match self.consumer.poll(Duration::from_millis(TIMEOUT_MS_POLL)) {
-            None => None,
-            Some(Err(error)) => {
-                let error = Err(error)
-                    .with_context(|_| ErrorKind::FetchError)
-                    .map_err(Error::from);
-                Some(error)
+        let start = Instant::now();
+        while start.elapsed() < Duration::from_secs(60) {
+            match self.consumer.poll(Duration::from_millis(TIMEOUT_MS_POLL)) {
+                // Keep trying to fetch messages if we never got any.
+                // This allows kafka to perform group balancing and other initialisation tasks.
+                None if !self.stream_started => continue,
+                None => return None,
+                Some(Err(error)) => {
+                    self.stream_started = true;
+                    let error = Err(error)
+                        .with_context(|_| ErrorKind::FetchError)
+                        .map_err(Error::from);
+                    return Some(error);
+                }
+                Some(Ok(message)) => {
+                    self.stream_started = true;
+                    return Some(self.parse_message(message));
+                }
             }
-            Some(Ok(message)) => Some(self.parse_message(message)),
         }
+        // If kafka did not return anything in more then WAIT_TASKS_START
+        // give up and assume the topics are empty.
+        None
     }
 }
 

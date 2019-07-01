@@ -85,7 +85,7 @@ where
     fn follow<'a>(
         &self,
         group: String,
-        thread: &'a ThreadScope,
+        thread: Option<&'a ThreadScope>,
         tail: bool,
     ) -> Result<Iter<'a, T>> {
         let consumer = client::consumer(

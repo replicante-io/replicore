@@ -2,7 +2,6 @@ use clap::App;
 use clap::ArgMatches;
 use clap::SubCommand;
 use failure::ResultExt;
-use humthreads::test_support::MockThreadScope;
 use slog::error;
 use slog::info;
 use slog::warn;
@@ -63,10 +62,13 @@ pub fn events<'a>(args: &ArgMatches<'a>, interfaces: &Interfaces) -> Result<()> 
     .with_context(|_| ErrorKind::ClientInit("events stream"))?;
 
     info!(logger, "Checking events stream ...");
-    let group = format!("replictl.events.{}", RndId::new());
-    let scope = MockThreadScope::new().scope();
+    warn!(
+        logger,
+        "This check may block until at least one message is on the stream",
+    );
+    let group = format!("replictl:events:{}", RndId::new());
     let iter = stream
-        .short_follow(group, &scope)
+        .short_follow(group, None)
         .with_context(|_| ErrorKind::CheckFailed("events"))?;
     let mut tracker = interfaces.progress("Processed more events");
     for message in iter {
@@ -80,6 +82,8 @@ pub fn events<'a>(args: &ArgMatches<'a>, interfaces: &Interfaces) -> Result<()> 
                     let error = format_fail(&error);
                     outcomes.error(Error::GenericError(error));
                 }
+                // Ignore errors sending acks for the scan.
+                let _ = message.async_ack();
             }
         };
         tracker.track();

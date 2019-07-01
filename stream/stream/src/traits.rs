@@ -39,6 +39,10 @@ where
     /// and persist the latest commited offset.
     ///
     /// Also see `Stream::follow` for more details.
-    fn follow<'a>(&self, group: String, thread: &'a ThreadScope, tail: bool)
-        -> Result<Iter<'a, T>>;
+    fn follow<'a>(
+        &self,
+        group: String,
+        thread: Option<&'a ThreadScope>,
+        tail: bool,
+    ) -> Result<Iter<'a, T>>;
 }

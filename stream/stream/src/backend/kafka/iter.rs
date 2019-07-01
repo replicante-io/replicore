@@ -29,8 +29,9 @@ where
     consumer: Rc<StatsConsumer>,
     follow_id: String,
     stream_id: &'static str,
+    stream_started: bool,
     tail: bool,
-    thread: &'a ThreadScope,
+    thread: Option<&'a ThreadScope>,
 }
 
 impl<'a, T> KafkaIter<'a, T>
@@ -42,7 +43,7 @@ where
         follow_id: String,
         stream_id: &'static str,
         tail: bool,
-        thread: &'a ThreadScope,
+        thread: Option<&'a ThreadScope>,
     ) -> KafkaIter<'a, T> {
         let consumer = Rc::new(consumer);
         KafkaIter {
@@ -50,6 +51,7 @@ where
             consumer,
             follow_id,
             stream_id,
+            stream_started: false,
             tail,
             thread,
         }
@@ -63,9 +65,13 @@ where
     type Item = Result<Message<T>>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        while !self.thread.should_shutdown() {
+        while !self.thread.map(|t| t.should_shutdown()).unwrap_or(false) {
             let record = match self.consumer.poll(Duration::from_millis(500)) {
                 None if self.tail => continue,
+                // Streams take some time to start receiving messages from kafka.
+                // If we are not tailing the stream, keep checking until we get at least
+                // one message, after that we can return at the first empty poll.
+                None if !self.stream_started => continue,
                 None => return None,
                 Some(Ok(record)) => record,
                 Some(Err(error)) => {
@@ -75,6 +81,7 @@ where
                     return Some(error);
                 }
             };
+            self.stream_started = true;
             return Some(KafkaMessage::decode(
                 Rc::clone(&self.consumer),
                 self.stream_id,
