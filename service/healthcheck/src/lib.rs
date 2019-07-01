@@ -22,7 +22,7 @@ where
 /// Generic healh check manager and register.
 #[derive(Default)]
 pub struct HealthChecks {
-    checks: BTreeMap<String, Box<HealthCheck>>,
+    checks: BTreeMap<String, Box<dyn HealthCheck>>,
 }
 
 impl HealthChecks {
