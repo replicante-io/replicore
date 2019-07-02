@@ -9,6 +9,9 @@ node_modules/
 **/Cargo.lock
 !Cargo.lock
 
+# Ignore documentation's package-lock.json to avoig GitHub unfixed security issues.
+docs/**/package-lock.json
+
 # Local testing and development tools.
 .env
 deps.dot
