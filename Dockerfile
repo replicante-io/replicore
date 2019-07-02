@@ -24,7 +24,7 @@ RUN addgroup --gid $REPLI_GID $REPLI_GNAME \
 
 # Install needed runtime dependencies.
 RUN DEBIAN_FRONTEND=noninteractive apt-get update \
-    && apt-get install -y libssl1.1 \
+    && apt-get install -y clang libssl1.1 \
     && apt-get clean all
 
 # Install tini supervisor
