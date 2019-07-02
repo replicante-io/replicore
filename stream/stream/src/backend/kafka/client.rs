@@ -12,10 +12,10 @@ use crate::config::KafkaConfig;
 use crate::ErrorKind;
 use crate::Result;
 
-static KAFKA_CLIENT_ID_CONSUMER: &'static str = "replicante:stream:consumer";
-static KAFKA_CLIENT_ID_PRODUCER: &'static str = "replicante:stream:producer";
-static KAFKA_MESSAGE_QUEUE_MIN: &'static str = "5";
-static KAFKA_STATS_INTERVAL: &'static str = "1000";
+static KAFKA_CLIENT_ID_CONSUMER: &str = "replicante:stream:consumer";
+static KAFKA_CLIENT_ID_PRODUCER: &str = "replicante:stream:producer";
+static KAFKA_MESSAGE_QUEUE_MIN: &str = "5";
+static KAFKA_STATS_INTERVAL: &str = "1000";
 
 /// Type alias for a BaseConsumer that has a ClientStatsContext context.
 pub type StatsConsumer = BaseConsumer<ClientStatsContext>;
