@@ -25,6 +25,7 @@
     ],
     "Upgrades": [
       "upgrades-rolling",
+      "upgrades-fresh",
       "upgrades-versions",
       "upgrades-notes",
       "upgrades-changelog"

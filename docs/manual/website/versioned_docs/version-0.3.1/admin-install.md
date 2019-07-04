@@ -1,7 +1,8 @@
 ---
-id: admin-install
+id: version-0.3.1-admin-install
 title: Installation
 sidebar_label: Installation
+original_id: admin-install
 ---
 
 This page documents the step to install Replicante Core for production use.

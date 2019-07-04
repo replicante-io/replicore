@@ -1,7 +1,8 @@
 ---
-id: admin-config
+id: version-0.3.1-admin-config
 title: Configuration
 sidebar_label: Configuration
+original_id: admin-config
 ---
 
 Replicante provides a large set of configuration options with reasonable defaults.

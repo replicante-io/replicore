@@ -1,7 +1,8 @@
 ---
-id: features-events
+id: version-0.3.1-features-events
 title: Events
 sidebar_label: Events
+original_id: features-events
 ---
 
 Before you can react to a change in the system you need to know that something has changed.

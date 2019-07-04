@@ -1,7 +1,8 @@
 ---
-id: features-introspection
+id: version-0.3.1-features-introspection
 title: Introspection
 sidebar_label: Introspection
+original_id: features-introspection
 ---
 
 In an ideal world software, once installed and configured, runs perfectly without ever needing attention.

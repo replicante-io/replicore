@@ -1,0 +1,49 @@
+{
+  "version-0.3.1-docs": {
+    "Architectural Notes": [
+      "version-0.3.1-architecture",
+      "version-0.3.1-from-discovery-to-events",
+      "version-0.3.1-cluster-view",
+      "version-0.3.1-data-storage-format",
+      "version-0.3.1-scaling",
+      "version-0.3.1-coordinator",
+      "version-0.3.1-archnotes-fail-locks"
+    ],
+    "Premature Optimisations": [
+      "version-0.3.1-optimizations",
+      "version-0.3.1-concurrent-agent-fetch",
+      "version-0.3.1-dynamic-config",
+      "version-0.3.1-kafka-consumer",
+      "version-0.3.1-kafka-scale",
+      "version-0.3.1-layered-config",
+      "version-0.3.1-lock-validation-writes",
+      "version-0.3.1-multi-cache",
+      "version-0.3.1-stream-batches",
+      "version-0.3.1-zookeeper-elections"
+    ],
+    "Dreamland": [
+      "version-0.3.1-dreamland",
+      "version-0.3.1-actions",
+      "version-0.3.1-auditing",
+      "version-0.3.1-best-checklists",
+      "version-0.3.1-cluster-groups",
+      "version-0.3.1-cluster-playbooks",
+      "version-0.3.1-cluster-tags",
+      "version-0.3.1-core-bootstrap",
+      "version-0.3.1-failure-trigger-recognition",
+      "version-0.3.1-generic-backends",
+      "version-0.3.1-metrics-insight",
+      "version-0.3.1-migration-backend",
+      "version-0.3.1-multiple-transports",
+      "version-0.3.1-node-events",
+      "version-0.3.1-organisations",
+      "version-0.3.1-provisioners",
+      "version-0.3.1-rate-limits",
+      "version-0.3.1-read-only-mode",
+      "version-0.3.1-replication-window",
+      "version-0.3.1-resync-webui",
+      "version-0.3.1-secrets",
+      "version-0.3.1-tls-rotation"
+    ]
+  }
+}

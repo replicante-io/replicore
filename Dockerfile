@@ -4,6 +4,11 @@
 ARG RUST_VERSION=1.35.0
 FROM rust:$RUST_VERSION as builder
 
+# Add packages needed to build core.
+# There is no need to cleanup as this is a builder image.
+RUN apt-get update \
+    && apt-get install -y clang
+
 # Add the code and compile core.
 COPY . /code
 RUN cd /code && cargo build --release --locked
