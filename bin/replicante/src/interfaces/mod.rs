@@ -76,7 +76,7 @@ impl Interfaces {
             tracing.tracer(),
         );
         let store = Store::make(
-            config.storage.clone(),
+            config.storage.primary.clone(),
             logger.clone(),
             healthchecks.register(),
             tracing.tracer(),

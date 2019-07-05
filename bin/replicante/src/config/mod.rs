@@ -11,17 +11,17 @@ use replicante_logging::Config as LoggingConfig;
 use replicante_logging::LoggingLevel;
 use replicante_service_coordinator::Config as CoordinatorConfig;
 use replicante_service_tasks::Config as TasksConfig;
-use replicante_store_primary::Config as StorageConfig;
 use replicante_util_tracing::Config as TracingConfig;
 
-use super::components::DiscoveryConfig;
-use super::interfaces::api::Config as APIConfig;
-use super::ErrorKind;
-use super::Result;
+use crate::components::DiscoveryConfig;
+use crate::interfaces::api::Config as APIConfig;
+use crate::ErrorKind;
+use crate::Result;
 
 mod components;
 mod events;
 mod sentry;
+mod storage;
 mod task_workers;
 mod timeouts;
 
@@ -30,6 +30,7 @@ pub use self::events::EventsConfig;
 pub use self::events::SnapshotsConfig as EventsSnapshotsConfig;
 pub use self::sentry::SentryCaptureApi;
 pub use self::sentry::SentryConfig;
+pub use self::storage::StorageConfig;
 pub use self::task_workers::TaskWorkers;
 pub use self::timeouts::TimeoutsConfig;
 
@@ -64,7 +65,6 @@ pub struct Config {
     pub sentry: Option<SentryConfig>,
 
     /// Storage layer configuration.
-    #[serde(default)]
     pub storage: StorageConfig,
 
     /// Task workers enabling configuration.

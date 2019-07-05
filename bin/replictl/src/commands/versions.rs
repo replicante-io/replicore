@@ -95,12 +95,12 @@ fn coordinator_version(config: &Config, logger: &Logger) -> Result<()> {
 
 /// Collect version information for the configured primary store.
 fn primary_store_version(config: &Config, logger: &Logger) -> Result<()> {
-    let version = StoreAdmin::make(config.storage.clone(), logger.clone())
+    let version = StoreAdmin::make(config.storage.primary.clone(), logger.clone())
         .with_context(|_| ErrorKind::AdminInit("primary store"))
         .and_then(|store| {
             store
                 .version()
-                .with_context(|_| ErrorKind::FetchVersion("store"))
+                .with_context(|_| ErrorKind::FetchVersion("primary store"))
         })
         .map_err(Error::from)
         .map(|v| format!("{} {}", v.tag, v.version));

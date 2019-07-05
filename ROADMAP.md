@@ -1,6 +1,4 @@
 ## 0.4.0 - Split "view" database
-- Move the indexed event collection to dedicated interface (still in mongo but different DB).
-- Emit messages to kafka instead of the store.
 - Store every event in the "view" database.
 
 

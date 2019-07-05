@@ -484,7 +484,7 @@ impl Client {
 
     /// Return a new Zookeeper client that will clear itself when disconnected.
     fn new_client(&self) -> Result<CurrentClient> {
-        info!(self.logger, "Initiating new zookeeper session");
+        info!(self.logger, "Starting new zookeeper session");
         let timeout = Duration::from_secs(self.config.timeout);
         ZOO_CONNECTION_COUNT.inc();
         let timer = ZOO_OP_DURATION

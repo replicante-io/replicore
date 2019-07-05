@@ -59,7 +59,7 @@ pub struct Admin {
 
 impl Admin {
     pub fn make(config: MongoDBConfig, logger: Logger) -> Result<Admin> {
-        info!(logger, "Instantiating primary store admin for MongoDB");
+        info!(logger, "Initialising primary store admin for MongoDB");
         let db = config.db.clone();
         let client = Client::with_uri(&config.uri)
             .with_context(|_| ErrorKind::MongoDBConnect(config.uri.clone()))?;
@@ -130,7 +130,7 @@ impl Store {
     where
         T: Into<Option<Arc<Tracer>>>,
     {
-        info!(logger, "Instantiating primary store backed by MongoDB");
+        info!(logger, "Initialising primary store backed by MongoDB");
         let db = config.db.clone();
         let client = Client::with_uri(&config.uri)
             .with_context(|_| ErrorKind::MongoDBConnect(config.uri.clone()))?;

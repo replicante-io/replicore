@@ -29,10 +29,11 @@ events:
 
 
 storage:
-  backend: mongodb
-  options:
-    db: replicore
-    uri: mongodb://localhost:27017/
+  primary:
+    backend: mongodb
+    options:
+      db: replicore
+      uri: mongodb://localhost:27017/
 
 
 tasks:

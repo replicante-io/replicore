@@ -85,7 +85,7 @@ pub fn data<'a>(args: &ArgMatches<'a>, interfaces: &Interfaces) -> Result<()> {
     let mut outcomes = Outcomes::new();
     let config = args.value_of("config").unwrap();
     let config = Config::from_file(config).with_context(|_| ErrorKind::ConfigLoad)?;
-    let admin = Admin::make(config.storage.clone(), logger.clone())
+    let admin = Admin::make(config.storage.primary.clone(), logger.clone())
         .with_context(|_| ErrorKind::AdminInit("store"))?;
 
     info!(logger, "Checking records for the '{}' model", MODEL_AGENT);
@@ -222,7 +222,7 @@ pub fn schema<'a>(args: &ArgMatches<'a>, interfaces: &Interfaces) -> Result<()> 
 
     let config = args.value_of("config").unwrap();
     let config = Config::from_file(config).with_context(|_| ErrorKind::ConfigLoad)?;
-    let store = Admin::make(config.storage, logger.clone())
+    let store = Admin::make(config.storage.primary, logger.clone())
         .with_context(|_| ErrorKind::AdminInit("store"))?;
     let mut outcomes = Outcomes::new();
 

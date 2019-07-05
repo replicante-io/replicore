@@ -92,10 +92,11 @@ events:
 
 
 storage:
-  backend: mongodb
-  options:
-    db: replicore
-    uri: mongodb://localhost:27017/
+  primary:
+    backend: mongodb
+    options:
+      db: replicore
+      uri: mongodb://localhost:27017/
 
 
 tasks:
@@ -260,6 +261,9 @@ coordinator:
   # This option is to allow users to choose a supported software that best fits
   # their use and environment.
   #
+  # To change this option, follow the instructions to rebuild your system:
+  #   https://www.replicante.io/docs/manual/docs/upgrades-fresh/
+  #
   # Available options:
   #
   #   * 'zookeeper' (recommended)
@@ -362,6 +366,9 @@ events:
     # !!! DO NOT CHANGE AFTER INITIAL CONFIGURATION !!!
     # This option is to allow users to choose a supported software that best fits
     # their use and environment.
+    #
+    # To change this option, follow the instructions to rebuild your system:
+    #   https://www.replicante.io/docs/manual/docs/upgrades-fresh/
     #
     # Available options are:
     #
@@ -505,30 +512,35 @@ sentry: ~
 
 # The section below is for storage configuration.
 storage:
-  # The database to use for persistent storage.
-  #
-  # !!! DO NOT CHANGE AFTER INITIAL CONFIGURATION !!!
-  # This option is to allow users to choose a supported database that best fits
-  # their use and environment.
-  #
-  # Available options:
-  #
-  #   * 'mongodb' (recommended)
-  backend: mongodb
-
-  # Any backend-specific option is set here.
-  # The available options vary from backend to backend and are documented below.
-  #
-  # MongoDB options:
-  options:
-    # Name of the MongoDB database to use for persistence.
+  # The primary store where data needed by the core Replicante logic is stored.
+  primary:
+    # The database to persistent data in.
     #
-    # To change this option you will need to "Update by rebuild".
-    # See the documentation for more details on this process.
-    db: replicore  # (recommended)
+    # !!! DO NOT CHANGE AFTER INITIAL CONFIGURATION !!!
+    # This option is to allow users to choose a supported database that best fits
+    # their use and environment.
+    #
+    # To change this option, follow the instructions to rebuild your system:
+    #   https://www.replicante.io/docs/manual/docs/upgrades-fresh/
+    #
+    # Available options:
+    #
+    #   * 'mongodb' (recommended)
+    backend: mongodb
 
-    # URI of the MongoDB Replica Set or sharded cluster to connect to.
-    uri: mongodb://localhost:27017/
+    # Any backend-specific option is set here.
+    # The available options vary from backend to backend and are documented below.
+    #
+    # MongoDB options:
+    options:
+      # Name of the MongoDB database to use for persistence.
+      #
+      # To change this option you will need to "Update by rebuild".
+      # See the documentation for more details on this process.
+      db: replicore  # (recommended)
+
+      # URI of the MongoDB Replica Set or sharded cluster to connect to.
+      uri: mongodb://localhost:27017/
 
 
 # Task workers enabling configuration.
@@ -558,6 +570,9 @@ tasks:
   # !!! DO NOT CHANGE AFTER INITIAL CONFIGURATION !!!
   # This option is to allow users to choose a supported software that best fits
   # their use and environment.
+  #
+  # To change this option, follow the instructions to rebuild your system:
+  #   https://www.replicante.io/docs/manual/docs/upgrades-fresh/
   #
   # Available options:
   #
