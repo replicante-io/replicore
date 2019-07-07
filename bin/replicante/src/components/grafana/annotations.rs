@@ -184,7 +184,7 @@ impl Annotations {
     pub fn attach(interfaces: &mut Interfaces) {
         let mut router = interfaces.api.router_for(&APIRoot::UnstableAPI);
         let handler = Annotations {
-            store: interfaces.store.clone(),
+            store: interfaces.stores.primary.clone(),
         };
         router.post("/grafana/annotations", handler, "/grafana/annotations");
     }

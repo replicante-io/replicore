@@ -39,7 +39,7 @@ impl EventsIndexer {
         EventsIndexer {
             events: Some(interfaces.streams.events.clone()),
             logger: Some(logger),
-            store: Some(interfaces.store.clone()),
+            store: Some(interfaces.stores.primary.clone()),
             tracer: Some(interfaces.tracing.tracer()),
         }
     }

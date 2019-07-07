@@ -57,10 +57,10 @@ impl Find {
     pub fn attach(interfaces: &mut Interfaces) {
         let mut router = interfaces.api.router_for(&APIRoot::UnstableWebUI);
         let handler_root = Find {
-            store: interfaces.store.clone(),
+            store: interfaces.stores.primary.clone(),
         };
         let handler_query = Find {
-            store: interfaces.store.clone(),
+            store: interfaces.stores.primary.clone(),
         };
         router.get("/clusters/find", handler_root, "/clusters/find");
         router.get(
@@ -103,7 +103,7 @@ impl Top {
     pub fn attach(interfaces: &mut Interfaces) {
         let mut router = interfaces.api.router_for(&APIRoot::UnstableWebUI);
         let handler = Top {
-            store: interfaces.store.clone(),
+            store: interfaces.stores.primary.clone(),
         };
         router.get("/clusters/top", handler, "/clusters/top");
     }

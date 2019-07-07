@@ -50,17 +50,17 @@ pub struct Handler {
 
 impl Handler {
     pub fn new(interfaces: &Interfaces, logger: Logger, agents_timeout: Duration) -> Handler {
-        let aggregator = Aggregator::new(logger.clone(), interfaces.store.clone());
+        let store = interfaces.stores.primary.clone();
+        let aggregator = Aggregator::new(logger.clone(), store.clone());
         let coordinator = interfaces.coordinator.clone();
         let events = interfaces.streams.events.clone();
         let fetcher = Fetcher::new(
             logger.clone(),
             interfaces.streams.events.clone(),
-            interfaces.store.clone(),
+            store.clone(),
             agents_timeout,
             interfaces.tracing.tracer(),
         );
-        let store = interfaces.store.clone();
         let tracing = interfaces.tracing.clone();
         Handler {
             aggregator,

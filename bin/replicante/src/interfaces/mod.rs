@@ -8,7 +8,7 @@ use slog::Logger;
 
 use replicante_service_coordinator::Coordinator;
 use replicante_service_healthcheck::HealthChecks as HealthChecksRegister;
-use replicante_store_primary::store::Store;
+use replicante_store_primary::store::Store as PrimaryStore;
 use replicante_stream_events::Stream as EventsStream;
 use replicante_util_upkeep::Upkeep;
 
@@ -41,7 +41,7 @@ pub struct Interfaces {
     pub coordinator: Coordinator,
     pub healthchecks: HealthChecks,
     pub metrics: Metrics,
-    pub store: Store,
+    pub stores: Stores,
     pub streams: Streams,
     pub tasks: Tasks,
     pub tracing: Tracing,
@@ -75,13 +75,12 @@ impl Interfaces {
             healthchecks.results_proxy(),
             tracing.tracer(),
         );
-        let store = Store::make(
-            config.storage.primary.clone(),
+        let stores = Stores::new(
+            &config,
             logger.clone(),
             healthchecks.register(),
             tracing.tracer(),
-        )
-        .with_context(|_| ErrorKind::ClientInit("store"))?;
+        )?;
         let streams = Streams::new(
             config,
             logger.clone(),
@@ -95,7 +94,7 @@ impl Interfaces {
             coordinator,
             healthchecks,
             metrics,
-            store,
+            stores,
             streams,
             tasks,
             tracing,
@@ -119,6 +118,29 @@ impl Interfaces {
         self.metrics.run()?;
         self.tracing.run()?;
         Ok(())
+    }
+}
+
+/// Collection of all the storage interfaces.
+pub struct Stores {
+    pub primary: PrimaryStore,
+}
+
+impl Stores {
+    pub fn new(
+        config: &Config,
+        logger: Logger,
+        healthchecks: &mut HealthChecksRegister,
+        tracer: Arc<Tracer>,
+    ) -> Result<Stores> {
+        let primary = PrimaryStore::make(
+            config.storage.primary.clone(),
+            logger.clone(),
+            healthchecks,
+            tracer,
+        )
+        .with_context(|_| ErrorKind::ClientInit("primary store"))?;
+        Ok(Stores { primary })
     }
 }
 
@@ -179,7 +201,9 @@ impl Interfaces {
         let events = replicante_stream_events::Stream::mock();
 
         let mock_store = replicante_store_primary::mock::Mock::default();
-        let store = mock_store.store();
+        let stores = Stores {
+            primary: mock_store.store(),
+        };
         let tasks = std::sync::Arc::new(super::tasks::MockTasks::new());
 
         // Wrap things up.
@@ -193,7 +217,7 @@ impl Interfaces {
             coordinator,
             healthchecks,
             metrics,
-            store,
+            stores,
             streams: Streams { events },
             tasks: mocks.tasks.mock(),
             tracing,

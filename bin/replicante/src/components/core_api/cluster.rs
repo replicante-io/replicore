@@ -29,7 +29,7 @@ use super::super::super::ErrorKind;
 
 /// Attach cluster-related core API handlers.
 pub fn attach(logger: Logger, interfaces: &mut Interfaces) {
-    let store = interfaces.store.clone();
+    let store = interfaces.stores.primary.clone();
     let tasks = interfaces.tasks.clone();
     let tracer = interfaces.tracing.tracer();
     let mut router = interfaces.api.router_for(&APIRoot::UnstableCoreApi);
