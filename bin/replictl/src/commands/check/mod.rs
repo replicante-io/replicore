@@ -4,13 +4,13 @@ use clap::SubCommand;
 
 mod config;
 mod coordinator;
-mod store;
+mod stores;
 mod streams;
 mod tasks;
 
-use super::super::ErrorKind;
-use super::super::Interfaces;
-use super::super::Result;
+use crate::ErrorKind;
+use crate::Interfaces;
+use crate::Result;
 
 pub const COMMAND: &str = "check";
 const DEEP_COMMAND: &str = "deep";
@@ -23,7 +23,7 @@ pub fn command() -> App<'static, 'static> {
         .about("Perform checks on the system to find issues")
         .subcommand(config::command())
         .subcommand(coordinator::command())
-        .subcommand(store::command())
+        .subcommand(stores::command())
         .subcommand(streams::command())
         .subcommand(tasks::command())
         .subcommand(
@@ -47,7 +47,7 @@ pub fn run<'a>(args: &ArgMatches<'a>, interfaces: &Interfaces) -> Result<()> {
     match command {
         Some(config::COMMAND) => config::run(args, interfaces),
         Some(coordinator::COMMAND) => coordinator::run(args, interfaces),
-        Some(store::COMMAND) => store::run(args, interfaces),
+        Some(stores::COMMAND) => stores::run(args, interfaces),
         Some(streams::COMMAND) => streams::run(args, interfaces),
         Some(tasks::COMMAND) => tasks::run(args, interfaces),
         Some(DEEP_COMMAND) => run_deep(args, interfaces),
@@ -63,14 +63,12 @@ pub fn run<'a>(args: &ArgMatches<'a>, interfaces: &Interfaces) -> Result<()> {
 fn run_deep<'a>(args: &ArgMatches<'a>, interfaces: &Interfaces) -> Result<()> {
     let config = config::run(args, interfaces);
     let coordinator = coordinator::run(args, interfaces);
-    let store_schema = store::schema(args, interfaces);
-    let store_data = store::data(args, interfaces);
+    let stores = stores::run_deep(args, interfaces);
     let streams_events = streams::events(args, interfaces);
     let tasks_data = tasks::data(args, interfaces);
     config?;
     coordinator?;
-    store_schema?;
-    store_data?;
+    stores?;
     streams_events?;
     tasks_data?;
     Ok(())

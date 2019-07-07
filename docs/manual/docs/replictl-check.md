@@ -8,6 +8,7 @@ Perform various checks on different aspects of the system.
 
 ```text
 $ replictl check help
+replictl-check
 Perform checks on the system to find issues
 
 USAGE:
@@ -31,7 +32,7 @@ SUBCOMMANDS:
     deep           Run all checks INCLUDING the ones that iterate over ALL data
     help           Prints this message or the help of the given subcommand(s)
     quick          Run all checks that do NOT iterate over data (default command)
-    store          Check the primary store for incompatibilities
+    stores         Check stores for incompatibilities
     streams        Check all streams for incompatibilities
     tasks          Check commands for the tasks subsystem
     update         Run all checks to confirm an update is possible (iterates over ALL data!)
@@ -91,14 +92,14 @@ replictl check quick
 ```
 
 
-## store data
+## stores primary data
 Scan every item in the store to look for incompatible data.
 
 Useful to reveal schema conflicts between the version of the currently running Replicante cluster
 and the version of Replicante compiled against the `replictl` version.
 
 ```bash
-replictl check store data
+replictl check stores primary data
 ```
 
 <blockquote class="danger">
@@ -110,13 +111,14 @@ Be careful when using this command against an active replicante system.
 
 </blockquote>
 
-## store schema
+
+## stores primary schema
 Checks the storage layer metadata for required and suggested items (collections, indexes, tables, ...).
 
 Also checks for the existence of items (collections, indexes, tables, ...) that belong to older versions of replicante.
 
 ```bash
-replictl check store schema
+replictl check stores primary schema
 ```
 
 
