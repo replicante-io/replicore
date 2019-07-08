@@ -11,17 +11,18 @@ use mongodb::db::ThreadedDatabase;
 use mongodb::Client;
 use mongodb::ThreadedClient;
 
-use super::super::super::admin::ValidationResult;
-use super::super::super::ErrorKind;
-use super::super::super::Result;
+use replicante_externals_mongodb::metrics::MONGODB_OPS_COUNT;
+use replicante_externals_mongodb::metrics::MONGODB_OPS_DURATION;
+use replicante_externals_mongodb::metrics::MONGODB_OP_ERRORS_COUNT;
+
 use super::super::ValidateInterface;
 use super::constants::COLLECTION_EVENTS;
 use super::constants::VALIDATE_EXPECTED_COLLECTIONS;
 use super::constants::VALIDATE_INDEXES_NEEDED;
 use super::constants::VALIDATE_INDEXES_SUGGESTED;
-use super::metrics::MONGODB_OPS_COUNT;
-use super::metrics::MONGODB_OPS_DURATION;
-use super::metrics::MONGODB_OP_ERRORS_COUNT;
+use crate::admin::ValidationResult;
+use crate::ErrorKind;
+use crate::Result;
 
 const GROUP_PERF_INDEX: &str = "perf/index";
 const GROUP_STORE_MISSING: &str = "store/missing";
@@ -43,11 +44,10 @@ fn collections(db: Database) -> Result<HashMap<String, CollectionInfo>> {
                 .inc();
             error
         })
-        .with_context(|_| ErrorKind::MongoDBOperation("listCollections"))?;
+        .with_context(|_| ErrorKind::MongoDBListCollectionsOp)?;
     let mut collections = HashMap::new();
     for collection in cursor {
-        let collection =
-            collection.with_context(|_| ErrorKind::MongoDBCursor("listCollections"))?;
+        let collection = collection.with_context(|_| ErrorKind::MongoDBListCollectionsCursor)?;
         let name = collection
             .get_str("name")
             .expect("Unable to determine collection name")
@@ -93,9 +93,9 @@ fn fetch_indexes(collection: &Collection) -> Result<HashSet<IndexInfo>> {
                 .inc();
             error
         })
-        .with_context(|_| ErrorKind::MongoDBOperation("listIndexes"))?;
+        .with_context(|_| ErrorKind::MongoDBListIndexesOp)?;
     for index in cursor {
-        let index = index.with_context(|_| ErrorKind::MongoDBCursor("listIndexes"))?;
+        let index = index.with_context(|_| ErrorKind::MongoDBListIndexesCursor)?;
         let index = IndexInfo::parse(&index)?;
         indexes.insert(index);
     }

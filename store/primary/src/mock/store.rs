@@ -4,26 +4,23 @@ use std::sync::Mutex;
 use opentracingrust::SpanContext;
 
 use replicante_models_core::ClusterMeta;
-use replicante_models_core::Event;
 
-use super::super::backend::AgentImpl;
-use super::super::backend::AgentsImpl;
-use super::super::backend::ClusterImpl;
-use super::super::backend::LegacyImpl;
-use super::super::backend::LegacyInterface;
-use super::super::backend::NodeImpl;
-use super::super::backend::NodesImpl;
-use super::super::backend::PersistImpl;
-use super::super::backend::ShardImpl;
-use super::super::backend::ShardsImpl;
-use super::super::backend::StoreImpl;
-use super::super::backend::StoreInterface;
-use super::super::store::legacy::EventsFilters;
-use super::super::store::legacy::EventsOptions;
-use super::super::store::Store;
-use super::super::Cursor;
-use super::super::Result;
 use super::MockState;
+use crate::backend::AgentImpl;
+use crate::backend::AgentsImpl;
+use crate::backend::ClusterImpl;
+use crate::backend::LegacyImpl;
+use crate::backend::LegacyInterface;
+use crate::backend::NodeImpl;
+use crate::backend::NodesImpl;
+use crate::backend::PersistImpl;
+use crate::backend::ShardImpl;
+use crate::backend::ShardsImpl;
+use crate::backend::StoreImpl;
+use crate::backend::StoreInterface;
+use crate::store::Store;
+use crate::Cursor;
+use crate::Result;
 
 /// Mock implementation of the `StoreInterface`.
 pub struct StoreMock {
@@ -92,15 +89,6 @@ impl LegacyInterface for Legacy {
         panic!("mocking primary store::legacy::cluster_meta not yet supportd");
     }
 
-    fn events(
-        &self,
-        _filters: EventsFilters,
-        _options: EventsOptions,
-        _: Option<SpanContext>,
-    ) -> Result<Cursor<Event>> {
-        panic!("mocking primary store::legacy::events not yet supportd");
-    }
-
     fn find_clusters(
         &self,
         _search: String,
@@ -112,10 +100,6 @@ impl LegacyInterface for Legacy {
 
     fn persist_cluster_meta(&self, _meta: ClusterMeta, _: Option<SpanContext>) -> Result<()> {
         panic!("mocking primary store::legacy::persist_cluster_meta not yet supportd");
-    }
-
-    fn persist_event(&self, _event: Event, _: Option<SpanContext>) -> Result<()> {
-        panic!("mocking primary store::legacy::persist_event not yet supportd");
     }
 
     fn top_clusters(&self, _: Option<SpanContext>) -> Result<Cursor<ClusterMeta>> {

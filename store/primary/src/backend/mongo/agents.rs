@@ -4,12 +4,16 @@ use std::sync::Arc;
 use bson::bson;
 use bson::doc;
 use bson::ordered::OrderedDocument;
+use failure::Fail;
+use failure::ResultExt;
 use mongodb::db::ThreadedDatabase;
 use mongodb::Client;
 use mongodb::ThreadedClient;
 use opentracingrust::SpanContext;
 use opentracingrust::Tracer;
 
+use replicante_externals_mongodb::operations::aggregate;
+use replicante_externals_mongodb::operations::find;
 use replicante_models_core::Agent as AgentModel;
 use replicante_models_core::AgentInfo as AgentInfoModel;
 
@@ -19,8 +23,6 @@ use super::super::super::Cursor;
 use super::super::super::ErrorKind;
 use super::super::super::Result;
 use super::super::AgentsInterface;
-use super::common::aggregate;
-use super::common::find;
 use super::constants::COLLECTION_AGENTS;
 use super::constants::COLLECTION_AGENTS_INFO;
 use super::document::AgentInfoDocument;
@@ -75,9 +77,10 @@ impl AgentsInterface for Agents {
             pipeline,
             span,
             self.tracer.as_ref().map(|tracer| tracer.deref()),
-        )?;
+        )
+        .with_context(|_| ErrorKind::MongoDBOperation)?;
         let counts: AgentsCounts = match cursor.next() {
-            Some(counts) => counts?,
+            Some(counts) => counts.with_context(|_| ErrorKind::MongoDBCursor)?,
             None => {
                 return Ok(AgentsCounts {
                     agents_down: 0,
@@ -101,12 +104,15 @@ impl AgentsInterface for Agents {
     ) -> Result<Cursor<AgentModel>> {
         let filter = doc! {"cluster_id" => &attrs.cluster_id};
         let collection = self.client.db(&self.db).collection(COLLECTION_AGENTS);
-        find(
+        let cursor = find(
             collection,
             filter,
             span,
             self.tracer.as_ref().map(|tracer| tracer.deref()),
         )
+        .with_context(|_| ErrorKind::MongoDBOperation)?
+        .map(|item| item.map_err(|error| error.context(ErrorKind::MongoDBCursor).into()));
+        Ok(Cursor::new(cursor))
     }
 
     fn iter_info(
@@ -121,8 +127,10 @@ impl AgentsInterface for Agents {
             filter,
             span,
             self.tracer.as_ref().map(|tracer| tracer.deref()),
-        )?
+        )
+        .with_context(|_| ErrorKind::MongoDBOperation)?
+        .map(|item| item.map_err(|error| error.context(ErrorKind::MongoDBCursor).into()))
         .map(|result: Result<AgentInfoDocument>| result.map(AgentInfoModel::from));
-        Ok(Cursor(Box::new(cursor)))
+        Ok(Cursor::new(cursor))
     }
 }

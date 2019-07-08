@@ -3,6 +3,7 @@ use std::sync::Arc;
 
 use bson::bson;
 use bson::doc;
+use failure::ResultExt;
 use mongodb::db::ThreadedDatabase;
 use mongodb::Client;
 use mongodb::ThreadedClient;
@@ -11,15 +12,16 @@ use opentracingrust::Tracer;
 use slog::debug;
 use slog::Logger;
 
+use replicante_externals_mongodb::operations::find_one;
+use replicante_externals_mongodb::operations::update_many;
 use replicante_models_core::ClusterDiscovery;
 
-use super::super::super::store::cluster::ClusterAttribures;
-use super::super::super::Result;
 use super::super::ClusterInterface;
-use super::common::find_one;
-use super::common::update_many;
 use super::constants::COLLECTION_DISCOVERIES;
 use super::constants::STALE_COLLECTIONS;
+use crate::store::cluster::ClusterAttribures;
+use crate::ErrorKind;
+use crate::Result;
 
 /// Clusters operations implementation using MongoDB.
 pub struct Cluster {
@@ -52,12 +54,14 @@ impl ClusterInterface for Cluster {
     ) -> Result<Option<ClusterDiscovery>> {
         let filter = doc! {"cluster_id" => &attrs.cluster_id};
         let collection = self.client.db(&self.db).collection(COLLECTION_DISCOVERIES);
-        find_one(
+        let discovery = find_one(
             collection,
             filter,
             span,
             self.tracer.as_ref().map(|tracer| tracer.deref()),
         )
+        .with_context(|_| ErrorKind::MongoDBOperation)?;
+        Ok(discovery)
     }
 
     fn mark_stale(&self, attrs: &ClusterAttribures, span: Option<SpanContext>) -> Result<()> {
@@ -71,7 +75,8 @@ impl ClusterInterface for Cluster {
                 mark,
                 span.clone(),
                 self.tracer.as_ref().map(|tracer| tracer.deref()),
-            )?;
+            )
+            .with_context(|_| ErrorKind::MongoDBOperation)?;
             debug!(
                 self.logger, "Marked cluster as stale";
                 "cluster_id" => &attrs.cluster_id,

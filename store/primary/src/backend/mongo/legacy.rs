@@ -4,6 +4,7 @@ use std::sync::Arc;
 use bson::bson;
 use bson::doc;
 use bson::Bson;
+use failure::Fail;
 use failure::ResultExt;
 use mongodb::coll::options::FindOptions;
 use mongodb::db::ThreadedDatabase;
@@ -13,24 +14,17 @@ use opentracingrust::SpanContext;
 use opentracingrust::Tracer;
 use regex;
 
+use replicante_externals_mongodb::operations::find_one;
+use replicante_externals_mongodb::operations::find_with_options;
+use replicante_externals_mongodb::operations::replace_one;
 use replicante_models_core::ClusterMeta;
-use replicante_models_core::Event;
 
-use super::super::super::store::legacy::EventsFilters;
-use super::super::super::store::legacy::EventsOptions;
-use super::super::super::Cursor;
-use super::super::super::ErrorKind;
-use super::super::super::Result;
 use super::super::LegacyInterface;
-use super::common::find_one;
-use super::common::find_with_options;
-use super::common::insert_one;
-use super::common::replace_one;
 use super::constants::COLLECTION_CLUSTER_META;
-use super::constants::COLLECTION_EVENTS;
-use super::constants::EVENTS_FILTER_NOT_SNAPSHOT;
 use super::constants::TOP_CLUSTERS_LIMIT;
-use super::document::EventDocument;
+use crate::Cursor;
+use crate::ErrorKind;
+use crate::Result;
 
 /// Legacy operations implementation using MongoDB.
 pub struct Legacy {
@@ -57,64 +51,14 @@ impl LegacyInterface for Legacy {
     ) -> Result<Option<ClusterMeta>> {
         let filter = doc! {"cluster_id" => &cluster_id};
         let collection = self.client.db(&self.db).collection(COLLECTION_CLUSTER_META);
-        find_one(
+        let meta = find_one(
             collection,
             filter,
             span,
             self.tracer.as_ref().map(|tracer| tracer.deref()),
         )
-    }
-
-    fn events(
-        &self,
-        filters: EventsFilters,
-        opts: EventsOptions,
-        span: Option<SpanContext>,
-    ) -> Result<Cursor<Event>> {
-        let mut options = FindOptions::new();
-        options.limit = opts.limit;
-        options.sort = Some(doc! {"$natural" => if opts.reverse { -1 } else { 1 }});
-
-        let mut filter = Vec::new();
-        if let Some(cluster_id) = filters.cluster_id {
-            // Include events without a cluster ID to support cmobined system events.
-            filter.push(Bson::from(doc! {"$or": [
-                {"data.cluster_id" => {"$eq" => cluster_id}},
-                {"data.cluster_id" => {"$exists" => false}},
-            ]}));
-        }
-        if let Some(event) = filters.event {
-            filter.push(Bson::from(doc! {"event" => {"$eq" => event}}));
-        }
-        if filters.exclude_snapshots {
-            filter.push(Bson::from(doc! {
-                "event" => EVENTS_FILTER_NOT_SNAPSHOT.clone()
-            }));
-        }
-        if filters.exclude_system_events {
-            filter.push(Bson::from(doc! {"data.cluster_id" => {"$exists" => false}}));
-        }
-        if let Some(start_from) = filters.start_from {
-            filter.push(Bson::from(doc! {"timestamp" => {"$gte" => start_from}}));
-        }
-        if let Some(stop_at) = filters.stop_at {
-            filter.push(Bson::from(doc! {"timestamp" => {"$lte" => stop_at}}));
-        }
-        let filter = if !filter.is_empty() {
-            doc! {"$and" => filter}
-        } else {
-            doc! {}
-        };
-        let collection = self.client.db(&self.db).collection(COLLECTION_EVENTS);
-        let cursor = find_with_options(
-            collection,
-            filter,
-            options,
-            span,
-            self.tracer.as_ref().map(|tracer| tracer.deref()),
-        )?
-        .map(|result: Result<EventDocument>| result.map(Event::from));
-        Ok(Cursor(Box::new(cursor)))
+        .with_context(|_| ErrorKind::MongoDBOperation)?;
+        Ok(meta)
     }
 
     fn find_clusters(
@@ -131,13 +75,16 @@ impl LegacyInterface for Legacy {
         let collection = self.client.db(&self.db).collection(COLLECTION_CLUSTER_META);
         let mut options = FindOptions::new();
         options.limit = Some(i64::from(limit));
-        find_with_options(
+        let cursor = find_with_options(
             collection,
             filter,
             options,
             span,
             self.tracer.as_ref().map(|tracer| tracer.deref()),
         )
+        .with_context(|_| ErrorKind::MongoDBOperation)?
+        .map(|item| item.map_err(|error| error.context(ErrorKind::MongoDBCursor).into()));
+        Ok(Cursor::new(cursor))
     }
 
     fn persist_cluster_meta(&self, meta: ClusterMeta, span: Option<SpanContext>) -> Result<()> {
@@ -155,22 +102,8 @@ impl LegacyInterface for Legacy {
             span,
             self.tracer.as_ref().map(|tracer| tracer.deref()),
         )
-    }
-
-    fn persist_event(&self, event: Event, span: Option<SpanContext>) -> Result<()> {
-        let collection = self.client.db(&self.db).collection(COLLECTION_EVENTS);
-        let event = EventDocument::from(event);
-        let document = bson::to_bson(&event).with_context(|_| ErrorKind::MongoDBBsonEncode)?;
-        let document = match document {
-            Bson::Document(document) => document,
-            _ => panic!("Event failed to encode as BSON document"),
-        };
-        insert_one(
-            collection,
-            document,
-            span,
-            self.tracer.as_ref().map(|tracer| tracer.deref()),
-        )
+        .with_context(|_| ErrorKind::MongoDBOperation)?;
+        Ok(())
     }
 
     fn top_clusters(&self, span: Option<SpanContext>) -> Result<Cursor<ClusterMeta>> {
@@ -184,12 +117,15 @@ impl LegacyInterface for Legacy {
         options.limit = Some(i64::from(TOP_CLUSTERS_LIMIT));
         options.sort = Some(sort);
         let collection = self.client.db(&self.db).collection(COLLECTION_CLUSTER_META);
-        find_with_options(
+        let cursor = find_with_options(
             collection,
             filter,
             options,
             span,
             self.tracer.as_ref().map(|tracer| tracer.deref()),
         )
+        .with_context(|_| ErrorKind::MongoDBOperation)?
+        .map(|item| item.map_err(|error| error.context(ErrorKind::MongoDBCursor).into()));
+        Ok(Cursor::new(cursor))
     }
 }

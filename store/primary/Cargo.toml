@@ -4,16 +4,11 @@ version = "0.3.0"
 authors = ["Stefano Pogliani <stefano@spogliani.net>"]
 edition = "2018"
 
-description = "Replicante data storage interface"
+description = "Replicante primary data store interface"
 documentation = "https://www.replicante.io/docs"
 homepage = "https://www.replicante.io/"
 repository = "https://github.com/replicante-io/replicante"
-keywords = ["automation", "datastore", "operations"]
 license = "MIT"
-
-
-[badges]
-maintenance = { status = "actively-developed" }
 
 
 [features]
@@ -22,12 +17,10 @@ with_test_support = []
 
 [dependencies]
 bson = "=0.13.0"
-chrono = "^0.4.6"
 failure = "^0.1.5"
 lazy_static = "^1.0.0"
 mongodb = "^0.3.10"
 opentracingrust = "^0.3.3"
-prometheus = "^0.7.0"
 regex = "^1.0.0"
 semver = { version = "^0.9.0", features = ["serde"] }
 serde = "^1.0.34"
@@ -35,6 +28,7 @@ serde_derive = "^1.0.34"
 serde_json = "^1.0.39"
 slog = "^2.2.0"
 
+replicante_externals_mongodb = { path = "../../externals/mongodb" }
 replicante_models_api = { path = "../../common/models/api" }
 replicante_models_core = { path = "../../models/core" }
 replicante_service_healthcheck = { path = "../../service/healthcheck" }

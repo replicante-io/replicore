@@ -56,6 +56,7 @@ replicante_cluster_aggregator = { path = "../../cluster/aggregator" }
 replicante_cluster_discovery = { path = "../../cluster/discovery" }
 replicante_cluster_fetcher = { path = "../../cluster/fetcher" }
 replicante_externals_kafka = { path = "../../externals/kafka" }
+replicante_externals_mongodb = { path = "../../externals/mongodb" }
 replicante_logging = { path = "../../common/logging" }
 replicante_models_api = { path = "../../common/models/api" }
 replicante_models_core = { path = "../../models/core" }
@@ -63,6 +64,7 @@ replicante_service_coordinator = { path = "../../service/coordinator" }
 replicante_service_healthcheck = { path = "../../service/healthcheck" }
 replicante_service_tasks = { path = "../../service/tasks" }
 replicante_store_primary = { path = "../../store/primary" }
+replicante_store_view = { path = "../../store/view" }
 replicante_stream = { path = "../../stream/stream" }
 replicante_stream_events = { path = "../../stream/events" }
 replicante_util_failure = { path = "../../common/util/failure" }
@@ -78,4 +80,5 @@ git2 = "^0.9.0"
 [dev-dependencies]
 iron-test = "^0.6.0"
 replicante_store_primary = { path = "../../store/primary", features = ["with_test_support"] }
+replicante_store_view = { path = "../../store/view", features = ["with_test_support"] }
 replicante_stream_events = { path = "../../stream/events", features = ["with_test_support"] }

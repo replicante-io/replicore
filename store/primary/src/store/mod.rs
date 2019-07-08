@@ -5,10 +5,10 @@ use slog::Logger;
 
 use replicante_service_healthcheck::HealthChecks;
 
-use super::backend::backend_factory;
-use super::backend::StoreImpl;
-use super::Config;
-use super::Result;
+use crate::backend::backend_factory;
+use crate::backend::StoreImpl;
+use crate::Config;
+use crate::Result;
 
 pub mod agent;
 pub mod agents;

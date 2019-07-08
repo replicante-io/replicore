@@ -9,6 +9,7 @@ use slog::Logger;
 use replicante_service_coordinator::Coordinator;
 use replicante_service_healthcheck::HealthChecks as HealthChecksRegister;
 use replicante_store_primary::store::Store as PrimaryStore;
+use replicante_store_view::store::Store as ViewStore;
 use replicante_stream_events::Stream as EventsStream;
 use replicante_util_upkeep::Upkeep;
 
@@ -21,6 +22,9 @@ pub mod api;
 mod healthchecks;
 pub mod metrics;
 pub mod tracing;
+
+#[cfg(test)]
+pub mod test_support;
 
 use self::api::API;
 pub use self::healthchecks::HealthChecks;
@@ -124,6 +128,7 @@ impl Interfaces {
 /// Collection of all the storage interfaces.
 pub struct Stores {
     pub primary: PrimaryStore,
+    pub view: ViewStore,
 }
 
 impl Stores {
@@ -137,10 +142,12 @@ impl Stores {
             config.storage.primary.clone(),
             logger.clone(),
             healthchecks,
-            tracer,
+            Arc::clone(&tracer),
         )
         .with_context(|_| ErrorKind::ClientInit("primary store"))?;
-        Ok(Stores { primary })
+        let view = ViewStore::new(config.storage.view.clone(), logger, healthchecks, tracer)
+            .with_context(|_| ErrorKind::ClientInit("view store"))?;
+        Ok(Stores { primary, view })
     }
 }
 
@@ -162,78 +169,13 @@ impl Streams {
     }
 }
 
-// *** Implement interfaces mocks for tests *** //
-/// A container for mocks used by interfaces.
-#[cfg(test)]
-pub struct MockInterfaces {
-    pub coordinator: replicante_service_coordinator::mock::MockCoordinator,
-    pub store: replicante_store_primary::mock::Mock,
-    pub tasks: std::sync::Arc<super::tasks::MockTasks>,
-}
-
-#[cfg(test)]
-impl Interfaces {
-    /// Mock interfaces and wrap them in an `Interfaces` instance.
-    ///
-    /// This method will use a JSON logger to stdout.
-    /// Use `Interfaces::mock_with_logger` to specify the logger.
-    pub fn mock() -> (Interfaces, MockInterfaces) {
-        let logger_opts = ::replicante_logging::Opts::new(env!("GIT_BUILD_HASH").into());
-        let logger = ::replicante_logging::starter(&logger_opts);
-        Interfaces::mock_with_logger(logger)
-    }
-
-    /// Mock interfaces using the given logger and wrap them in an `Interfaces` instance.
-    pub fn mock_with_logger(logger: Logger) -> (Interfaces, MockInterfaces) {
-        let metrics = Metrics::mock();
-        let healthchecks = HealthChecks::new(Duration::from_secs(10));
-        let tracing = Tracing::mock();
-        let (api, _) = API::mock(
-            logger.clone(),
-            &metrics,
-            healthchecks.results_proxy(),
-            tracing.tracer(),
-        );
-
-        let mock_coordinator =
-            replicante_service_coordinator::mock::MockCoordinator::new(logger.clone());
-        let coordinator = mock_coordinator.mock();
-        let events = replicante_stream_events::Stream::mock();
-
-        let mock_store = replicante_store_primary::mock::Mock::default();
-        let stores = Stores {
-            primary: mock_store.store(),
-        };
-        let tasks = std::sync::Arc::new(super::tasks::MockTasks::new());
-
-        // Wrap things up.
-        let mocks = MockInterfaces {
-            coordinator: mock_coordinator,
-            store: mock_store,
-            tasks,
-        };
-        let interfaces = Interfaces {
-            api,
-            coordinator,
-            healthchecks,
-            metrics,
-            stores,
-            streams: Streams { events },
-            tasks: mocks.tasks.mock(),
-            tracing,
-        };
-        (interfaces, mocks)
-    }
-}
-
 #[cfg(test)]
 mod tests {
-    use super::Interfaces;
+    use super::test_support::MockInterfaces;
 
     #[test]
     fn instantiate_mocks() {
-        let (interfaces, mocks) = Interfaces::mock();
-        drop(interfaces);
-        drop(mocks);
+        let mocks = MockInterfaces::mock();
+        let _interfaces = mocks.interfaces();
     }
 }

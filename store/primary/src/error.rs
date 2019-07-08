@@ -55,20 +55,35 @@ pub enum ErrorKind {
     #[fail(display = "found invalid record with id '{}'", _0)]
     InvalidRecord(String),
 
-    #[fail(display = "failed to connect to MongoDB URI '{}'", _0)]
-    MongoDBConnect(String),
-
-    #[fail(display = "failed to read MongoDB cursor for {} operation", _0)]
-    MongoDBCursor(&'static str),
-
     #[fail(display = "MongoDB BSON decode failed")]
     MongoDBBsonDecode,
 
     #[fail(display = "MongoDB BSON encode failed")]
     MongoDBBsonEncode,
 
-    #[fail(display = "MongoDB {} operation failed", _0)]
-    MongoDBOperation(&'static str),
+    #[fail(display = "failed to connect to MongoDB URI '{}'", _0)]
+    MongoDBConnect(String),
+
+    #[fail(display = "failed to read MongoDB cursor")]
+    MongoDBCursor,
+
+    #[fail(display = "failed to read MongoDB cursor for listCollections operation")]
+    MongoDBListCollectionsCursor,
+
+    #[fail(display = "MongoDB listCollections operation failed")]
+    MongoDBListCollectionsOp,
+
+    #[fail(display = "failed to read MongoDB cursor for listIndexes operation")]
+    MongoDBListIndexesCursor,
+
+    #[fail(display = "MongoDB listIndexes operation failed")]
+    MongoDBListIndexesOp,
+
+    #[fail(display = "MongoDB operation failed")]
+    MongoDBOperation,
+
+    #[fail(display = "MongoDB version operation failed")]
+    MongoDBVersion,
 
     #[fail(display = "{} record with id '{}' not found", _0, _1)]
     RecordNotFound(&'static str, String),
@@ -79,11 +94,16 @@ impl ErrorKind {
         let name = match self {
             ErrorKind::DuplicateRecord(_, _) => "DuplicateRecord",
             ErrorKind::InvalidRecord(_) => "InvalidRecord",
-            ErrorKind::MongoDBConnect(_) => "MongoDBConnect",
-            ErrorKind::MongoDBCursor(_) => "MongoDBCursor",
             ErrorKind::MongoDBBsonDecode => "MongoDBBsonDecode",
             ErrorKind::MongoDBBsonEncode => "MongoDBBsonEncode",
-            ErrorKind::MongoDBOperation(_) => "MongoDBOperation",
+            ErrorKind::MongoDBConnect(_) => "MongoDBConnect",
+            ErrorKind::MongoDBCursor => "MongoDBCursor",
+            ErrorKind::MongoDBListCollectionsCursor => "MongoDBListCollectionsCursor",
+            ErrorKind::MongoDBListCollectionsOp => "MongoDBListCollectionsOp",
+            ErrorKind::MongoDBListIndexesCursor => "MongoDBListIndexesCursor",
+            ErrorKind::MongoDBListIndexesOp => "MongoDBListIndexesOp",
+            ErrorKind::MongoDBOperation => "MongoDBOperation",
+            ErrorKind::MongoDBVersion => "MongoDBVersion",
             ErrorKind::RecordNotFound(_, _) => "RecordNotFound",
         };
         Some(name)

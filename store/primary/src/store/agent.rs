@@ -3,8 +3,8 @@ use opentracingrust::SpanContext;
 use replicante_models_core::Agent as AgentModel;
 use replicante_models_core::AgentInfo as AgentInfoModel;
 
-use super::super::backend::AgentImpl;
-use super::super::Result;
+use crate::backend::AgentImpl;
+use crate::Result;
 
 /// Operate on the agent identified by the provided cluster_id and host.
 pub struct Agent {

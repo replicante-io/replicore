@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## [Unreleased]
 ### Changed
 - **BREAKING**: Change `storage` configuration to `storage.primary`.
+- **BREAKING**: Store every event in the "view" database.
 
 ## [0.3.1] - 2019-07-04
 ### Added

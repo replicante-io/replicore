@@ -15,11 +15,13 @@ members = [
   "common/util/tracing",
   "common/util/upkeep",
   "externals/kafka",
+  "externals/mongodb",
   "models/core",
   "service/coordinator",
   "service/healthcheck",
   "service/tasks",
   "store/primary",
+  "store/view",
   "stream/events",
   "stream/stream",
 ]

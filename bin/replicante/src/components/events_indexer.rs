@@ -11,7 +11,7 @@ use slog::debug;
 use slog::Logger;
 
 use replicante_models_core::Event;
-use replicante_store_primary::store::Store;
+use replicante_store_view::store::Store;
 use replicante_stream::Error;
 use replicante_stream_events::Message;
 use replicante_stream_events::Stream;
@@ -39,7 +39,7 @@ impl EventsIndexer {
         EventsIndexer {
             events: Some(interfaces.streams.events.clone()),
             logger: Some(logger),
-            store: Some(interfaces.stores.primary.clone()),
+            store: Some(interfaces.stores.view.clone()),
             tracer: Some(interfaces.tracing.tracer()),
         }
     }
@@ -191,7 +191,10 @@ impl<'a> WorkerThread<'a> {
 
     fn store_event(&self, event: Event, message: Message, mut span: Option<AutoFinishingSpan>) {
         let message_id = message.id().to_string();
-        let result = self.store.legacy().persist_event(event, None);
+        let result = self
+            .store
+            .persist()
+            .event(event, span.as_ref().map(|span| span.context().clone()));
         if let Err(error) = result {
             capture_fail!(
                 &error,

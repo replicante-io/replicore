@@ -9,14 +9,14 @@ use iron::Response;
 use iron::Set;
 use iron_json_response::JsonResponse;
 
-use replicante_store_primary::store::legacy::EventsFilters;
-use replicante_store_primary::store::legacy::EventsOptions;
-use replicante_store_primary::store::Store;
+use replicante_store_view::store::events::EventsFilters;
+use replicante_store_view::store::events::EventsOptions;
+use replicante_store_view::store::Store;
 
-use super::super::super::interfaces::api::APIRoot;
-use super::super::super::interfaces::Interfaces;
-use super::super::super::Error;
-use super::super::super::ErrorKind;
+use crate::interfaces::api::APIRoot;
+use crate::interfaces::Interfaces;
+use crate::Error;
+use crate::ErrorKind;
 
 const RECENT_EVENTS_LIMIT: i64 = 100;
 
@@ -32,8 +32,8 @@ impl Handler for Events {
         options.reverse = true;
         let iter = self
             .store
-            .legacy()
-            .events(EventsFilters::all(), options, None)
+            .events()
+            .range(EventsFilters::all(), options, None)
             .with_context(|_| ErrorKind::PrimaryStoreQuery("events"))
             .map_err(Error::from)?;
         let mut events = Vec::new();
@@ -54,7 +54,7 @@ impl Events {
     pub fn attach(interfaces: &mut Interfaces) {
         let mut router = interfaces.api.router_for(&APIRoot::UnstableWebUI);
         let handler = Events {
-            store: interfaces.stores.primary.clone(),
+            store: interfaces.stores.view.clone(),
         };
         router.get("/events", handler, "/events");
     }

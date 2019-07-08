@@ -11,16 +11,14 @@ use mongodb::ThreadedClient;
 use opentracingrust::SpanContext;
 use opentracingrust::Tracer;
 
+use replicante_externals_mongodb::operations::replace_one;
 use replicante_models_core::Agent as AgentModel;
 use replicante_models_core::AgentInfo as AgentInfoModel;
 use replicante_models_core::ClusterDiscovery as ClusterDiscoveryModel;
 use replicante_models_core::Node as NodeModel;
 use replicante_models_core::Shard as ShardModel;
 
-use super::super::super::ErrorKind;
-use super::super::super::Result;
 use super::super::PersistInterface;
-use super::common::replace_one;
 use super::constants::COLLECTION_AGENTS;
 use super::constants::COLLECTION_AGENTS_INFO;
 use super::constants::COLLECTION_DISCOVERIES;
@@ -29,6 +27,8 @@ use super::constants::COLLECTION_SHARDS;
 use super::document::AgentInfoDocument;
 use super::document::NodeDocument;
 use super::document::ShardDocument;
+use crate::ErrorKind;
+use crate::Result;
 
 /// Persistence operations implementation using MongoDB.
 pub struct Persist {
@@ -66,6 +66,8 @@ impl PersistInterface for Persist {
             span,
             self.tracer.as_ref().map(|tracer| tracer.deref()),
         )
+        .with_context(|_| ErrorKind::MongoDBOperation)?;
+        Ok(())
     }
 
     fn agent_info(&self, agent: AgentInfoModel, span: Option<SpanContext>) -> Result<()> {
@@ -87,6 +89,8 @@ impl PersistInterface for Persist {
             span,
             self.tracer.as_ref().map(|tracer| tracer.deref()),
         )
+        .with_context(|_| ErrorKind::MongoDBOperation)?;
+        Ok(())
     }
 
     fn cluster_discovery(
@@ -108,6 +112,8 @@ impl PersistInterface for Persist {
             span,
             self.tracer.as_ref().map(|tracer| tracer.deref()),
         )
+        .with_context(|_| ErrorKind::MongoDBOperation)?;
+        Ok(())
     }
 
     fn node(&self, node: NodeModel, span: Option<SpanContext>) -> Result<()> {
@@ -129,6 +135,8 @@ impl PersistInterface for Persist {
             span,
             self.tracer.as_ref().map(|tracer| tracer.deref()),
         )
+        .with_context(|_| ErrorKind::MongoDBOperation)?;
+        Ok(())
     }
 
     fn shard(&self, shard: ShardModel, span: Option<SpanContext>) -> Result<()> {
@@ -151,5 +159,7 @@ impl PersistInterface for Persist {
             span,
             self.tracer.as_ref().map(|tracer| tracer.deref()),
         )
+        .with_context(|_| ErrorKind::MongoDBOperation)?;
+        Ok(())
     }
 }

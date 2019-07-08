@@ -3,20 +3,22 @@ use std::sync::Arc;
 
 use bson::bson;
 use bson::doc;
+use failure::ResultExt;
 use mongodb::db::ThreadedDatabase;
 use mongodb::Client;
 use mongodb::ThreadedClient;
 use opentracingrust::SpanContext;
 use opentracingrust::Tracer;
 
+use replicante_externals_mongodb::operations::find_one;
 use replicante_models_core::Shard as ShardModel;
 
-use super::super::super::store::shard::ShardAttribures;
-use super::super::super::Result;
 use super::super::ShardInterface;
-use super::common::find_one;
 use super::constants::COLLECTION_SHARDS;
 use super::document::ShardDocument;
+use crate::store::shard::ShardAttribures;
+use crate::ErrorKind;
+use crate::Result;
 
 /// Shard operations implementation using MongoDB.
 pub struct Shard {
@@ -52,7 +54,8 @@ impl ShardInterface for Shard {
             filter,
             span,
             self.tracer.as_ref().map(|tracer| tracer.deref()),
-        )?;
+        )
+        .with_context(|_| ErrorKind::MongoDBOperation)?;
         Ok(document.map(ShardModel::from))
     }
 }

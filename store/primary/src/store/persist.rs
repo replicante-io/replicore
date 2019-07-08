@@ -6,8 +6,8 @@ use replicante_models_core::ClusterDiscovery as ClusterDiscoveryModel;
 use replicante_models_core::Node as NodeModel;
 use replicante_models_core::Shard as ShardModel;
 
-use super::super::backend::PersistImpl;
-use super::super::Result;
+use crate::backend::PersistImpl;
+use crate::Result;
 
 /// Persist (insert or update) models to the store.
 pub struct Persist {

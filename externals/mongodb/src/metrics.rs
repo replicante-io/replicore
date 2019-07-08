@@ -10,7 +10,7 @@ use slog::Logger;
 lazy_static! {
     pub static ref MONGODB_OP_ERRORS_COUNT: CounterVec = CounterVec::new(
         Opts::new(
-            "replicore_pristore_mongodb_operation_errors",
+            "replicore_mongodb_operation_errors",
             "Number of MongoDB operations failed"
         ),
         &["operation"]
@@ -18,7 +18,7 @@ lazy_static! {
     .expect("Failed to create replicante_mongodb_operation_errors counter");
     pub static ref MONGODB_OPS_COUNT: CounterVec = CounterVec::new(
         Opts::new(
-            "replicore_pristore_mongodb_operations",
+            "replicore_mongodb_operations",
             "Number of MongoDB operations issued"
         ),
         &["operation"]
@@ -26,7 +26,7 @@ lazy_static! {
     .expect("Failed to create replicante_mongodb_operations counter");
     pub static ref MONGODB_OPS_DURATION: HistogramVec = HistogramVec::new(
         HistogramOpts::new(
-            "replicore_pristore_mongodb_operations_duration",
+            "replicore_mongodb_operations_duration",
             "Duration (in seconds) of MongoDB operations"
         ),
         &["operation"]

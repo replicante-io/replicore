@@ -5,6 +5,7 @@ use std::sync::Arc;
 use bson::bson;
 use bson::doc;
 use bson::Bson;
+use failure::Fail;
 use failure::ResultExt;
 use mongodb::db::ThreadedDatabase;
 use mongodb::Client;
@@ -12,17 +13,17 @@ use mongodb::ThreadedClient;
 use opentracingrust::SpanContext;
 use opentracingrust::Tracer;
 
+use replicante_externals_mongodb::operations::aggregate;
+use replicante_externals_mongodb::operations::find;
 use replicante_models_core::Node;
 
-use super::super::super::store::nodes::NodesAttribures;
-use super::super::super::Cursor;
-use super::super::super::ErrorKind;
-use super::super::super::Result;
 use super::super::NodesInterface;
-use super::common::aggregate;
-use super::common::find;
 use super::constants::COLLECTION_NODES;
 use super::document::NodeDocument;
+use crate::store::nodes::NodesAttribures;
+use crate::Cursor;
+use crate::ErrorKind;
+use crate::Result;
 
 /// Nodes operations implementation using MongoDB.
 pub struct Nodes {
@@ -50,9 +51,11 @@ impl NodesInterface for Nodes {
             filter,
             span,
             self.tracer.as_ref().map(|tracer| tracer.deref()),
-        )?
+        )
+        .with_context(|_| ErrorKind::MongoDBOperation)?
+        .map(|item| item.map_err(|error| error.context(ErrorKind::MongoDBCursor).into()))
         .map(|result: Result<NodeDocument>| result.map(Node::from));
-        Ok(Cursor(Box::new(cursor)))
+        Ok(Cursor::new(cursor))
     }
 
     fn kinds(&self, attrs: &NodesAttribures, span: Option<SpanContext>) -> Result<HashSet<String>> {
@@ -74,10 +77,11 @@ impl NodesInterface for Nodes {
             pipeline,
             span,
             self.tracer.as_ref().map(|tracer| tracer.deref()),
-        )?;
+        )
+        .with_context(|_| ErrorKind::MongoDBOperation)?;
         let kinds: Bson = match cursor.next() {
             None => return Ok(HashSet::new()),
-            Some(kinds) => kinds?,
+            Some(kinds) => kinds.with_context(|_| ErrorKind::MongoDBCursor)?,
         };
         if cursor.next().is_some() {
             return Err(ErrorKind::DuplicateRecord(

@@ -4,7 +4,6 @@ use std::sync::Arc;
 
 use opentracingrust::SpanContext;
 use opentracingrust::Tracer;
-use prometheus::Registry;
 use slog::Logger;
 
 use replicante_models_core::admin::Version;
@@ -17,21 +16,19 @@ use replicante_models_core::Node;
 use replicante_models_core::Shard;
 use replicante_service_healthcheck::HealthChecks;
 
-use super::admin::ValidationResult;
-use super::store::agent::AgentAttribures;
-use super::store::agents::AgentsAttribures;
-use super::store::agents::AgentsCounts;
-use super::store::cluster::ClusterAttribures;
-use super::store::legacy::EventsFilters;
-use super::store::legacy::EventsOptions;
-use super::store::node::NodeAttribures;
-use super::store::nodes::NodesAttribures;
-use super::store::shard::ShardAttribures;
-use super::store::shards::ShardsAttribures;
-use super::store::shards::ShardsCounts;
-use super::Config;
-use super::Cursor;
-use super::Result;
+use crate::admin::ValidationResult;
+use crate::store::agent::AgentAttribures;
+use crate::store::agents::AgentsAttribures;
+use crate::store::agents::AgentsCounts;
+use crate::store::cluster::ClusterAttribures;
+use crate::store::node::NodeAttribures;
+use crate::store::nodes::NodesAttribures;
+use crate::store::shard::ShardAttribures;
+use crate::store::shards::ShardsAttribures;
+use crate::store::shards::ShardsCounts;
+use crate::Config;
+use crate::Cursor;
+use crate::Result;
 
 mod mongo;
 
@@ -60,10 +57,6 @@ pub fn backend_factory_admin(config: Config, logger: Logger) -> Result<AdminImpl
         Config::MongoDB(config) => AdminImpl::new(self::mongo::Admin::make(config, logger)?),
     };
     Ok(admin)
-}
-
-pub fn register_metrics(logger: &Logger, registry: &Registry) {
-    self::mongo::register_metrics(logger, registry);
 }
 
 /// Definition of top level store administration operations.
@@ -218,12 +211,6 @@ pub trait LegacyInterface: Send + Sync {
         cluster_id: String,
         span: Option<SpanContext>,
     ) -> Result<Option<ClusterMeta>>;
-    fn events(
-        &self,
-        filters: EventsFilters,
-        options: EventsOptions,
-        span: Option<SpanContext>,
-    ) -> Result<Cursor<Event>>;
     fn find_clusters(
         &self,
         search: String,
@@ -231,7 +218,6 @@ pub trait LegacyInterface: Send + Sync {
         span: Option<SpanContext>,
     ) -> Result<Cursor<ClusterMeta>>;
     fn persist_cluster_meta(&self, meta: ClusterMeta, span: Option<SpanContext>) -> Result<()>;
-    fn persist_event(&self, event: Event, span: Option<SpanContext>) -> Result<()>;
     fn top_clusters(&self, span: Option<SpanContext>) -> Result<Cursor<ClusterMeta>>;
 }
 

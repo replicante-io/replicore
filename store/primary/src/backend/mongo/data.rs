@@ -1,5 +1,7 @@
 use bson::bson;
 use bson::doc;
+use failure::Fail;
+use failure::ResultExt;
 use mongodb::coll::options::FindOptions;
 use mongodb::coll::Collection;
 use mongodb::db::ThreadedDatabase;
@@ -7,6 +9,7 @@ use mongodb::Client;
 use mongodb::ThreadedClient;
 use serde::Deserialize;
 
+use replicante_externals_mongodb::operations::find_with_options;
 use replicante_models_core::Agent;
 use replicante_models_core::AgentInfo;
 use replicante_models_core::ClusterDiscovery;
@@ -15,10 +18,7 @@ use replicante_models_core::Event;
 use replicante_models_core::Node;
 use replicante_models_core::Shard;
 
-use super::super::super::Cursor;
-use super::super::super::Result;
 use super::super::DataInterface;
-use super::common::find_with_options;
 use super::constants::COLLECTION_AGENTS;
 use super::constants::COLLECTION_AGENTS_INFO;
 use super::constants::COLLECTION_CLUSTER_META;
@@ -30,19 +30,25 @@ use super::document::AgentInfoDocument;
 use super::document::EventDocument;
 use super::document::NodeDocument;
 use super::document::ShardDocument;
+use crate::Cursor;
+use crate::ErrorKind;
+use crate::Result;
 
 /// Scan all documents in a collection.
 ///
 /// Intended for data validation purposes.
 pub fn scan_collection<'de, T>(collection: Collection) -> Result<Cursor<T>>
 where
-    T: Deserialize<'de>,
+    T: Deserialize<'de> + 'static,
 {
     let filter = doc! {};
     let sort = doc! {"_id" => 1};
     let mut options = FindOptions::new();
     options.sort = Some(sort);
-    find_with_options(collection, filter, options, None, None)
+    let cursor = find_with_options(collection, filter, options, None, None)
+        .with_context(|_| ErrorKind::MongoDBOperation)?
+        .map(|item| item.map_err(|error| error.context(ErrorKind::MongoDBCursor).into()));
+    Ok(Cursor::new(cursor))
 }
 
 /// Data admin operations implementation using MongoDB.

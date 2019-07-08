@@ -1,0 +1,28 @@
+[package]
+name = "replicante_externals_mongodb"
+version = "0.1.0"
+authors = ["Stefano Pogliani <stefano@spogliani.net>"]
+edition = "2018"
+
+description = "Replicante reusable logic for MongoDB"
+documentation = "https://www.replicante.io/docs"
+homepage = "https://www.replicante.io/"
+repository = "https://github.com/replicante-io/replicante"
+license = "MIT"
+
+
+[dependencies]
+bson = "=0.13.0"
+failure = "^0.1.5"
+lazy_static = "^1.0.0"
+mongodb = "^0.3.10"
+opentracingrust = "^0.3.3"
+prometheus = "^0.7.0"
+serde = "^1.0.34"
+serde_derive = "^1.0.34"
+serde_json = "^1.0.39"
+slog = "^2.2.0"
+
+replicante_models_api = { path = "../../common/models/api" }
+replicante_service_healthcheck = { path = "../../service/healthcheck" }
+replicante_util_tracing = { path = "../../common/util/tracing" }

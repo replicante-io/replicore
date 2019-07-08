@@ -3,20 +3,22 @@ use std::sync::Arc;
 
 use bson::bson;
 use bson::doc;
+use failure::ResultExt;
 use mongodb::db::ThreadedDatabase;
 use mongodb::Client;
 use mongodb::ThreadedClient;
 use opentracingrust::SpanContext;
 use opentracingrust::Tracer;
 
+use replicante_externals_mongodb::operations::find_one;
 use replicante_models_core::Node as NodeModel;
 
-use super::super::super::store::node::NodeAttribures;
-use super::super::super::Result;
 use super::super::NodeInterface;
-use super::common::find_one;
 use super::constants::COLLECTION_NODES;
 use super::document::NodeDocument;
+use crate::store::node::NodeAttribures;
+use crate::ErrorKind;
+use crate::Result;
 
 /// Node operations implementation using MongoDB.
 pub struct Node {
@@ -47,7 +49,8 @@ impl NodeInterface for Node {
             filter,
             span,
             self.tracer.as_ref().map(|tracer| tracer.deref()),
-        )?;
+        )
+        .with_context(|_| ErrorKind::MongoDBOperation)?;
         Ok(document.map(NodeModel::from))
     }
 }

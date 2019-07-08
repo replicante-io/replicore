@@ -1,7 +1,3 @@
-## 0.4.0 - Split "view" database
-- Store every event in the "view" database.
-
-
 ## 0.4.1 - Additional data in the UI
 - Add agents information to the UI.
 - Add shards information to the UI.

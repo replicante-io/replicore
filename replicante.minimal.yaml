@@ -32,8 +32,12 @@ storage:
   primary:
     backend: mongodb
     options:
-      db: replicore
-      uri: mongodb://localhost:27017/
+      uri: 'mongodb://localhost:27017/'
+
+  view:
+    backend: mongodb
+    options:
+      uri: 'mongodb://localhost:27017/'
 
 
 tasks:

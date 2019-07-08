@@ -9,14 +9,13 @@ use slog::info;
 use slog::warn;
 use slog::Logger;
 
-use replicante_models_api::HealthStatus;
+use replicante_externals_mongodb::MongoDBHealthCheck;
 use replicante_models_core::admin::Version;
-use replicante_service_healthcheck::HealthCheck;
 use replicante_service_healthcheck::HealthChecks;
 
-use super::super::config::MongoDBConfig;
-use super::super::ErrorKind;
-use super::super::Result;
+use crate::config::MongoDBConfig;
+use crate::ErrorKind;
+use crate::Result;
 
 use super::AdminInterface;
 use super::AgentImpl;
@@ -35,20 +34,16 @@ use super::ValidateImpl;
 mod agent;
 mod agents;
 mod cluster;
-mod common;
 mod constants;
 mod data;
 mod document;
 mod legacy;
-mod metrics;
 mod node;
 mod nodes;
 mod persist;
 mod shard;
 mod shards;
 mod validate;
-
-pub use self::metrics::register_metrics;
 
 /// Primary store admin using MongoDB.
 pub struct Admin {
@@ -61,8 +56,8 @@ impl Admin {
     pub fn make(config: MongoDBConfig, logger: Logger) -> Result<Admin> {
         info!(logger, "Initialising primary store admin for MongoDB");
         let db = config.db.clone();
-        let client = Client::with_uri(&config.uri)
-            .with_context(|_| ErrorKind::MongoDBConnect(config.uri.clone()))?;
+        let client = Client::with_uri(&config.common.uri)
+            .with_context(|_| ErrorKind::MongoDBConnect(config.common.uri.clone()))?;
         Ok(Admin { client, db, logger })
     }
 }
@@ -80,9 +75,7 @@ impl AdminInterface for Admin {
 
     fn version(&self) -> Result<Version> {
         let db = self.client.db(&self.db);
-        let version = db
-            .version()
-            .with_context(|_| ErrorKind::MongoDBOperation("version"))?;
+        let version = db.version().with_context(|_| ErrorKind::MongoDBVersion)?;
         // The mongodb crate uses semver ^0.8.0 while replicante uses latest.
         // "Convert" the version object across crate versions.
         let version: ::semver::Version = match version.to_string().parse() {
@@ -132,12 +125,10 @@ impl Store {
     {
         info!(logger, "Initialising primary store backed by MongoDB");
         let db = config.db.clone();
-        let client = Client::with_uri(&config.uri)
-            .with_context(|_| ErrorKind::MongoDBConnect(config.uri.clone()))?;
+        let client = Client::with_uri(&config.common.uri)
+            .with_context(|_| ErrorKind::MongoDBConnect(config.common.uri.clone()))?;
         let tracer = tracer.into();
-        let healthcheck = MongoDBHealthChecks {
-            client: client.clone(),
-        };
+        let healthcheck = MongoDBHealthCheck::new(client.clone());
         healthchecks.register("store:primary", healthcheck);
         Ok(Store {
             client,
@@ -204,18 +195,5 @@ impl StoreInterface for Store {
         let shards =
             self::shards::Shards::new(self.client.clone(), self.db.clone(), self.tracer.clone());
         ShardsImpl::new(shards)
-    }
-}
-
-struct MongoDBHealthChecks {
-    client: Client,
-}
-
-impl HealthCheck for MongoDBHealthChecks {
-    fn check(&self) -> HealthStatus {
-        match self.client.is_master() {
-            Ok(_) => HealthStatus::Healthy,
-            Err(error) => HealthStatus::Failed(error.to_string()),
-        }
     }
 }

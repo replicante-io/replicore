@@ -18,9 +18,9 @@ use serde_json;
 
 use replicante_models_core::Event;
 use replicante_models_core::EventPayload;
-use replicante_store_primary::store::legacy::EventsFilters;
-use replicante_store_primary::store::legacy::EventsOptions;
-use replicante_store_primary::store::Store;
+use replicante_store_view::store::events::EventsFilters;
+use replicante_store_view::store::events::EventsOptions;
+use replicante_store_view::store::Store;
 use replicante_util_iron::request_span;
 
 use crate::interfaces::api::APIRoot;
@@ -151,8 +151,8 @@ impl Handler for Annotations {
         let span = request_span(req);
         let events = self
             .store
-            .legacy()
-            .events(filters, options, span.context().clone())
+            .events()
+            .range(filters, options, span.context().clone())
             .with_context(|_| ErrorKind::ViewStoreQuery("events"))
             .map_err(Error::from)?;
         let mut annotations: Vec<Annotation> = Vec::new();
@@ -184,7 +184,7 @@ impl Annotations {
     pub fn attach(interfaces: &mut Interfaces) {
         let mut router = interfaces.api.router_for(&APIRoot::UnstableAPI);
         let handler = Annotations {
-            store: interfaces.stores.primary.clone(),
+            store: interfaces.stores.view.clone(),
         };
         router.post("/grafana/annotations", handler, "/grafana/annotations");
     }

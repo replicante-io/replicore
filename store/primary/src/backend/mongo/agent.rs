@@ -3,22 +3,24 @@ use std::sync::Arc;
 
 use bson::bson;
 use bson::doc;
+use failure::ResultExt;
 use mongodb::db::ThreadedDatabase;
 use mongodb::Client;
 use mongodb::ThreadedClient;
 use opentracingrust::SpanContext;
 use opentracingrust::Tracer;
 
+use replicante_externals_mongodb::operations::find_one;
 use replicante_models_core::Agent as AgentModel;
 use replicante_models_core::AgentInfo as AgentInfoModel;
 
-use super::super::super::store::agent::AgentAttribures;
-use super::super::super::Result;
 use super::super::AgentInterface;
-use super::common::find_one;
 use super::constants::COLLECTION_AGENTS;
 use super::constants::COLLECTION_AGENTS_INFO;
 use super::document::AgentInfoDocument;
+use crate::store::agent::AgentAttribures;
+use crate::ErrorKind;
+use crate::Result;
 
 /// Agent operations implementation using MongoDB.
 pub struct Agent {
@@ -48,12 +50,14 @@ impl AgentInterface for Agent {
             "host" => &attrs.host,
         };
         let collection = self.client.db(&self.db).collection(COLLECTION_AGENTS);
-        find_one(
+        let agent = find_one(
             collection,
             filter,
             span,
             self.tracer.as_ref().map(|tracer| tracer.deref()),
         )
+        .with_context(|_| ErrorKind::MongoDBOperation)?;
+        Ok(agent)
     }
 
     fn info(
@@ -71,7 +75,8 @@ impl AgentInterface for Agent {
             filter,
             span,
             self.tracer.as_ref().map(|tracer| tracer.deref()),
-        )?;
+        )
+        .with_context(|_| ErrorKind::MongoDBOperation)?;
         Ok(document.map(AgentInfoModel::from))
     }
 }

@@ -1,7 +1,6 @@
 mod backend;
 mod config;
 mod error;
-mod metrics;
 
 pub mod admin;
 #[cfg(feature = "with_test_support")]
@@ -12,10 +11,18 @@ pub use self::config::Config;
 pub use self::error::Error;
 pub use self::error::ErrorKind;
 pub use self::error::Result;
-pub use self::metrics::register_metrics;
 
 /// Iterator over models in the store.
 pub struct Cursor<Model>(Box<dyn Iterator<Item = Result<Model>>>);
+
+impl<Model> Cursor<Model> {
+    pub(crate) fn new<C>(cursor: C) -> Cursor<Model>
+    where
+        C: Iterator<Item = Result<Model>> + 'static,
+    {
+        Cursor(Box::new(cursor))
+    }
+}
 
 impl<Model> Iterator for Cursor<Model> {
     type Item = Result<Model>;

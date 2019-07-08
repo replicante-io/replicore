@@ -4,24 +4,26 @@ use std::sync::Arc;
 use bson::bson;
 use bson::doc;
 use bson::ordered::OrderedDocument;
+use failure::Fail;
+use failure::ResultExt;
 use mongodb::db::ThreadedDatabase;
 use mongodb::Client;
 use mongodb::ThreadedClient;
 use opentracingrust::SpanContext;
 use opentracingrust::Tracer;
 
+use replicante_externals_mongodb::operations::aggregate;
+use replicante_externals_mongodb::operations::find;
 use replicante_models_core::Shard;
 
-use super::super::super::store::shards::ShardsAttribures;
-use super::super::super::store::shards::ShardsCounts;
-use super::super::super::Cursor;
-use super::super::super::ErrorKind;
-use super::super::super::Result;
 use super::super::ShardsInterface;
-use super::common::aggregate;
-use super::common::find;
 use super::constants::COLLECTION_SHARDS;
 use super::document::ShardDocument;
+use crate::store::shards::ShardsAttribures;
+use crate::store::shards::ShardsCounts;
+use crate::Cursor;
+use crate::ErrorKind;
+use crate::Result;
 
 /// Return a document to count shards in given state as part of the $group stage.
 fn aggregate_count_role(role: &'static str) -> OrderedDocument {
@@ -85,9 +87,10 @@ impl ShardsInterface for Shards {
             pipeline,
             span,
             self.tracer.as_ref().map(|tracer| tracer.deref()),
-        )?;
+        )
+        .with_context(|_| ErrorKind::MongoDBOperation)?;
         let counts: ShardsCounts = match cursor.next() {
-            Some(counts) => counts?,
+            Some(counts) => counts.with_context(|_| ErrorKind::MongoDBCursor)?,
             None => {
                 return Ok(ShardsCounts {
                     shards: 0,
@@ -111,8 +114,10 @@ impl ShardsInterface for Shards {
             filter,
             span,
             self.tracer.as_ref().map(|tracer| tracer.deref()),
-        )?
+        )
+        .with_context(|_| ErrorKind::MongoDBOperation)?
+        .map(|item| item.map_err(|error| error.context(ErrorKind::MongoDBCursor).into()))
         .map(|result: Result<ShardDocument>| result.map(Shard::from));
-        Ok(Cursor(Box::new(cursor)))
+        Ok(Cursor::new(cursor))
     }
 }
