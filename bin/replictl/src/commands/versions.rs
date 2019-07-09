@@ -12,7 +12,8 @@ use replicante::ReplicanteQueues;
 use replicante::VERSION as REPLICANTE_VERSION;
 use replicante_service_coordinator::Admin as CoordinatorAdmin;
 use replicante_service_tasks::Admin as TasksAdmin;
-use replicante_store_primary::admin::Admin as StoreAdmin;
+use replicante_store_primary::admin::Admin as PrimaryStoreAdmin;
+use replicante_store_view::admin::Admin as ViewStoreAdmin;
 use replicante_util_failure::failure_info;
 
 use super::super::core::Client;
@@ -71,7 +72,8 @@ pub fn run<'a>(args: &ArgMatches<'a>, interfaces: &Interfaces) -> Result<()> {
 
     replicante_versions(args, logger)?;
     coordinator_version(&config, logger)?;
-    primary_store_version(&config, logger)?;
+    store_primary_version(&config, logger)?;
+    store_view_version(&config, logger)?;
     task_queue_version(&config, logger)?;
     Ok(())
 }
@@ -94,8 +96,8 @@ fn coordinator_version(config: &Config, logger: &Logger) -> Result<()> {
 }
 
 /// Collect version information for the configured primary store.
-fn primary_store_version(config: &Config, logger: &Logger) -> Result<()> {
-    let version = StoreAdmin::make(config.storage.primary.clone(), logger.clone())
+fn store_primary_version(config: &Config, logger: &Logger) -> Result<()> {
+    let version = PrimaryStoreAdmin::make(config.storage.primary.clone(), logger.clone())
         .with_context(|_| ErrorKind::AdminInit("primary store"))
         .and_then(|store| {
             store
@@ -107,6 +109,24 @@ fn primary_store_version(config: &Config, logger: &Logger) -> Result<()> {
     println!(
         "Primary Store: {}",
         value_or_error(logger, "primary store", version)
+    );
+    Ok(())
+}
+
+/// Collect version information for the configured view store.
+fn store_view_version(config: &Config, logger: &Logger) -> Result<()> {
+    let version = ViewStoreAdmin::make(config.storage.view.clone(), logger.clone())
+        .with_context(|_| ErrorKind::AdminInit("view store"))
+        .and_then(|store| {
+            store
+                .version()
+                .with_context(|_| ErrorKind::FetchVersion("view store"))
+        })
+        .map_err(Error::from)
+        .map(|v| format!("{} {}", v.tag, v.version));
+    println!(
+        "View Store: {}",
+        value_or_error(logger, "view store", version)
     );
     Ok(())
 }

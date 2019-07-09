@@ -1,3 +1,5 @@
+use bson::bson;
+use bson::doc;
 use bson::ordered::OrderedDocument;
 use failure::Fail;
 use failure::ResultExt;
@@ -311,6 +313,23 @@ pub fn replace_one(
             None => error,
         })?;
     Ok(())
+}
+
+/// Scan all documents in a collection.
+///
+/// Intended for data validation purposes.
+pub fn scan_collection<'de, T>(collection: Collection) -> Result<impl Iterator<Item = Result<T>>>
+where
+    T: Deserialize<'de> + 'static,
+{
+    let filter = doc! {};
+    let sort = doc! {"_id" => 1};
+    let mut options = FindOptions::new();
+    options.sort = Some(sort);
+    let cursor = find_with_options(collection, filter, options, None, None)
+        .with_context(|_| ErrorKind::FindOp)?
+        .map(|item| item.map_err(|error| error.context(ErrorKind::FindCursor).into()));
+    Ok(cursor)
 }
 
 /// Perform an [`updateMany`] operation.

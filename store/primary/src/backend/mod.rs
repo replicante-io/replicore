@@ -6,17 +6,16 @@ use opentracingrust::SpanContext;
 use opentracingrust::Tracer;
 use slog::Logger;
 
+use replicante_externals_mongodb::admin::ValidationResult;
 use replicante_models_core::admin::Version;
 use replicante_models_core::Agent;
 use replicante_models_core::AgentInfo;
 use replicante_models_core::ClusterDiscovery;
 use replicante_models_core::ClusterMeta;
-use replicante_models_core::Event;
 use replicante_models_core::Node;
 use replicante_models_core::Shard;
 use replicante_service_healthcheck::HealthChecks;
 
-use crate::admin::ValidationResult;
 use crate::store::agent::AgentAttribures;
 use crate::store::agents::AgentsAttribures;
 use crate::store::agents::AgentsCounts;
@@ -180,7 +179,6 @@ pub trait DataInterface: Send + Sync {
     fn agents_info(&self) -> Result<Cursor<AgentInfo>>;
     fn cluster_discoveries(&self) -> Result<Cursor<ClusterDiscovery>>;
     fn clusters_meta(&self) -> Result<Cursor<ClusterMeta>>;
-    fn events(&self) -> Result<Cursor<Event>>;
     fn nodes(&self) -> Result<Cursor<Node>>;
     fn shards(&self) -> Result<Cursor<Shard>>;
 }

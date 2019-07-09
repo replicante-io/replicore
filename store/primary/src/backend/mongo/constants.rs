@@ -1,31 +1,25 @@
 use std::collections::HashMap;
 use std::collections::HashSet;
 
-use bson::bson;
-use bson::doc;
-use bson::ordered::OrderedDocument;
 use lazy_static::lazy_static;
 
-use super::validate::IndexInfo;
+use replicante_externals_mongodb::admin::IndexInfo;
 
 pub const COLLECTION_AGENTS: &str = "agents";
 pub const COLLECTION_AGENTS_INFO: &str = "agents_info";
 pub const COLLECTION_CLUSTER_META: &str = "clusters_meta";
 pub const COLLECTION_DISCOVERIES: &str = "discoveries";
-pub const COLLECTION_EVENTS: &str = "events";
 pub const COLLECTION_NODES: &str = "nodes";
 pub const COLLECTION_SHARDS: &str = "shards";
 
 pub const TOP_CLUSTERS_LIMIT: u32 = 10;
 
 lazy_static! {
-    pub static ref EVENTS_FILTER_NOT_SNAPSHOT: OrderedDocument = doc! {"$nin" => [
-        "SNAPSHOT_AGENT",
-        "SNAPSHOT_AGENT_INFO",
-        "SNAPSHOT_DISCOVERY",
-        "SNAPSHOT_NODE",
-        "SNAPSHOT_SHARD",
-    ]};
+    pub static ref REMOVED_COLLECTIONS: HashSet<&'static str> = {
+        let mut set = HashSet::new();
+        set.insert("events");
+        set
+    };
     pub static ref STALE_COLLECTIONS: HashSet<&'static str> = {
         let mut set = HashSet::new();
         set.insert(COLLECTION_AGENTS_INFO);
@@ -39,7 +33,6 @@ lazy_static! {
         set.insert(COLLECTION_AGENTS_INFO);
         set.insert(COLLECTION_CLUSTER_META);
         set.insert(COLLECTION_DISCOVERIES);
-        set.insert(COLLECTION_EVENTS);
         set.insert(COLLECTION_NODES);
         set.insert(COLLECTION_SHARDS);
         set
@@ -78,7 +71,6 @@ lazy_static! {
                 unique: true,
             }],
         );
-        map.insert(COLLECTION_EVENTS, vec![]);
         map.insert(
             COLLECTION_NODES,
             vec![IndexInfo {
@@ -125,7 +117,6 @@ lazy_static! {
             ],
         );
         map.insert(COLLECTION_DISCOVERIES, vec![]);
-        map.insert(COLLECTION_EVENTS, vec![]);
         map.insert(COLLECTION_NODES, vec![]);
         map.insert(COLLECTION_SHARDS, vec![]);
         map

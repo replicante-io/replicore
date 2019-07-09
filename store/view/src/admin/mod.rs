@@ -13,7 +13,7 @@ mod validate;
 use self::data::Data;
 use self::validate::Validate;
 
-/// Interface to manage Replicante primary store layer.
+/// Interface to manage Replicante view store layer.
 ///
 /// This interface abstracts every interaction with the persistence layer and
 /// hides implementation details about storage software and data encoding.

@@ -1,14 +1,13 @@
 use std::sync::Arc;
 
 use failure::ResultExt;
-use mongodb::db::ThreadedDatabase;
 use mongodb::Client;
 use mongodb::ThreadedClient;
 use opentracingrust::Tracer;
 use slog::info;
-use slog::warn;
 use slog::Logger;
 
+use replicante_externals_mongodb::version as detect_version;
 use replicante_externals_mongodb::MongoDBHealthCheck;
 use replicante_models_core::admin::Version;
 use replicante_service_healthcheck::HealthChecks;
@@ -74,18 +73,8 @@ impl AdminInterface for Admin {
     }
 
     fn version(&self) -> Result<Version> {
-        let db = self.client.db(&self.db);
-        let version = db.version().with_context(|_| ErrorKind::MongoDBVersion)?;
-        // The mongodb crate uses semver ^0.8.0 while replicante uses latest.
-        // "Convert" the version object across crate versions.
-        let version: ::semver::Version = match version.to_string().parse() {
-            Ok(version) => version,
-            Err(_) => {
-                warn!(self.logger, "Failed to convert response to semver"; "version" => %version);
-                ::semver::Version::new(version.major, version.minor, version.patch)
-            }
-        };
-        let version = Version::new("MongoDB", version);
+        let version = detect_version(&self.client, &self.db, &self.logger)
+            .with_context(|_| ErrorKind::MongoDBOperation)?;
         Ok(version)
     }
 }

@@ -37,11 +37,13 @@ slog-term = "^2.4.0"
 
 replicante = { path = "../replicante" }
 replicante_cluster_discovery = { path = "../../cluster/discovery" }
+replicante_externals_mongodb = { path = "../../externals/mongodb" }
 replicante_models_core = { path = "../../models/core" }
 replicante_service_coordinator = { path = "../../service/coordinator" }
 replicante_service_healthcheck = { path = "../../service/healthcheck" }
 replicante_service_tasks = { path = "../../service/tasks" }
 replicante_store_primary = { path = "../../store/primary" }
+replicante_store_view = { path = "../../store/view" }
 replicante_stream_events = { path = "../../stream/events" }
 replicante_util_failure = { path = "../../common/util/failure" }
 replicante_util_rndid = { path = "../../common/util/rndid" }

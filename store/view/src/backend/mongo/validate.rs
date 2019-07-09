@@ -2,12 +2,10 @@ use failure::ResultExt;
 use mongodb::Client;
 
 use replicante_externals_mongodb::admin::validate_indexes;
-use replicante_externals_mongodb::admin::validate_removed_collections;
 use replicante_externals_mongodb::admin::validate_schema;
 use replicante_externals_mongodb::admin::ValidationResult;
 
 use super::super::ValidateInterface;
-use super::constants::REMOVED_COLLECTIONS;
 use super::constants::VALIDATE_EXPECTED_COLLECTIONS;
 use super::constants::VALIDATE_INDEXES_NEEDED;
 use super::constants::VALIDATE_INDEXES_SUGGESTED;
@@ -40,9 +38,8 @@ impl ValidateInterface for Validate {
     }
 
     fn removed_entities(&self) -> Result<Vec<ValidationResult>> {
-        let results = validate_removed_collections(&self.client, &self.db, &REMOVED_COLLECTIONS)
-            .with_context(|_| ErrorKind::MongoDBOperation)?;
-        Ok(results)
+        // There is nothing removed yet.
+        Ok(vec![])
     }
 
     fn schema(&self) -> Result<Vec<ValidationResult>> {

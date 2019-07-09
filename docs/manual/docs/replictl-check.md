@@ -122,6 +122,36 @@ replictl check stores primary schema
 ```
 
 
+## stores view data
+Scan every item in the store to look for incompatible data.
+
+Useful to reveal schema conflicts between the version of the currently running Replicante cluster
+and the version of Replicante compiled against the `replictl` version.
+
+```bash
+replictl check stores view data
+```
+
+<blockquote class="danger">
+
+**This check will scan the full content of the storage layer**
+
+As a result it may take a while to complete and could impact performance on large instances.  
+Be careful when using this command against an active replicante system.
+
+</blockquote>
+
+
+## stores view schema
+Checks the storage layer metadata for required and suggested items (collections, indexes, tables, ...).
+
+Also checks for the existence of items (collections, indexes, tables, ...) that belong to older versions of replicante.
+
+```bash
+replictl check stores view schema
+```
+
+
 ## streams events
 Scan every item in the `events` stream to look for schema incompatibilities.
 

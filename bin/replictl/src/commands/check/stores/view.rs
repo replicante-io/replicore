@@ -10,9 +10,8 @@ use slog::warn;
 
 use replicante::Config;
 use replicante_externals_mongodb::admin::ValidationResult;
-use replicante_store_primary::admin::Admin;
-use replicante_store_primary::Cursor;
-use replicante_store_primary::ErrorKind as StoreErrorKind;
+use replicante_store_view::admin::Admin;
+use replicante_store_view::Cursor;
 use replicante_util_failure::format_fail;
 
 use crate::outcome::Error;
@@ -22,29 +21,22 @@ use crate::ErrorKind;
 use crate::Interfaces;
 use crate::Result;
 
-pub const COMMAND: &str = "primary";
+pub const COMMAND: &str = "view";
 
 const COMMAND_DATA: &str = "data";
 const COMMAND_SCHEMA: &str = "schema";
+const MODEL_EVENT: &str = "Event";
 
-const MODEL_AGENT: &str = "Agent";
-const MODEL_AGENT_INFO: &str = "AgentInfo";
-const MODEL_CLUSTER_META: &str = "ClusterMeta";
-const MODEL_CLUSTER_DISCOVERY: &str = "ClusterDiscovery";
-const MODEL_NODE: &str = "Node";
-const MODEL_SHARD: &str = "Shard";
-
-/// Configure the `replictl check stores primary` command parser.
+/// Configure the `replictl check stores view` command parser.
 pub fn command() -> App<'static, 'static> {
     SubCommand::with_name(COMMAND)
-        .about("Check the primary store for incompatibilities")
+        .about("Check the view store for incompatibilities")
         .subcommand(SubCommand::with_name(COMMAND_DATA).about(
-            "Check ALL primary store content for compatibility with this version of replicante",
+            "Check ALL view store content for compatibility with this version of replicante",
         ))
         .subcommand(
-            SubCommand::with_name(COMMAND_SCHEMA).about(
-                "Check the primary store schema compatibility with this version of replicante",
-            ),
+            SubCommand::with_name(COMMAND_SCHEMA)
+                .about("Check the view store schema compatibility with this version of replicante"),
         )
 }
 
@@ -57,25 +49,23 @@ pub fn run<'a>(args: &ArgMatches<'a>, interfaces: &Interfaces) -> Result<()> {
     match command {
         Some(COMMAND_DATA) => data(args, interfaces),
         Some(COMMAND_SCHEMA) => schema(args, interfaces),
-        None => Err(ErrorKind::NoCommand("replictl check stores primary").into()),
-        Some(name) => Err(ErrorKind::UnkownSubcommand(
-            "replictl check stores primary",
-            name.to_string(),
-        )
-        .into()),
+        None => Err(ErrorKind::NoCommand("replictl check stores view").into()),
+        Some(name) => {
+            Err(ErrorKind::UnkownSubcommand("replictl check stores view", name.to_string()).into())
+        }
     }
 }
 
-/// Check ALL primary store content for compatibility with this version of replicante.
+/// Check ALL view store content for compatibility with this version of replicante.
 ///
 /// The following checks are performed:
 ///
 ///   * Each content item is loaded and parsed.
 pub fn data<'a>(args: &ArgMatches<'a>, interfaces: &Interfaces) -> Result<()> {
     let logger = interfaces.logger();
-    info!(logger, "Checking primary store data");
+    info!(logger, "Checking view store data");
     let confirm = interfaces.prompt().confirm_danger(
-        "About to scan ALL content of the primary store. \
+        "About to scan ALL content of the view store. \
          This could impact your production system. \
          Would you like to proceed?",
     )?;
@@ -87,62 +77,13 @@ pub fn data<'a>(args: &ArgMatches<'a>, interfaces: &Interfaces) -> Result<()> {
     let mut outcomes = Outcomes::new();
     let config = args.value_of("config").unwrap();
     let config = Config::from_file(config).with_context(|_| ErrorKind::ConfigLoad)?;
-    let admin = Admin::make(config.storage.primary.clone(), logger.clone())
-        .with_context(|_| ErrorKind::AdminInit("primary store"))?;
+    let admin = Admin::make(config.storage.view.clone(), logger.clone())
+        .with_context(|_| ErrorKind::AdminInit("view store"))?;
 
-    info!(logger, "Checking records for the '{}' model", MODEL_AGENT);
+    info!(logger, "Checking records for the '{}' model", MODEL_EVENT);
     scan_collection(
-        admin.data().agents(),
-        MODEL_AGENT,
-        &mut outcomes,
-        interfaces,
-    );
-    outcomes.report(&logger);
-
-    info!(
-        logger,
-        "Checking records for the '{}' model", MODEL_AGENT_INFO
-    );
-    scan_collection(
-        admin.data().agents_info(),
-        MODEL_AGENT_INFO,
-        &mut outcomes,
-        interfaces,
-    );
-    outcomes.report(&logger);
-
-    info!(
-        logger,
-        "Checking records for the '{}' model", MODEL_CLUSTER_META
-    );
-    scan_collection(
-        admin.data().clusters_meta(),
-        MODEL_CLUSTER_META,
-        &mut outcomes,
-        interfaces,
-    );
-    outcomes.report(&logger);
-
-    info!(
-        logger,
-        "Checking records for the '{}' model", MODEL_CLUSTER_DISCOVERY
-    );
-    scan_collection(
-        admin.data().cluster_discoveries(),
-        MODEL_CLUSTER_DISCOVERY,
-        &mut outcomes,
-        interfaces,
-    );
-    outcomes.report(&logger);
-
-    info!(logger, "Checking records for the '{}' model", MODEL_NODE);
-    scan_collection(admin.data().nodes(), MODEL_NODE, &mut outcomes, interfaces);
-    outcomes.report(&logger);
-
-    info!(logger, "Checking records for the '{}' model", MODEL_SHARD);
-    scan_collection(
-        admin.data().shards(),
-        MODEL_SHARD,
+        admin.data().events(),
+        MODEL_EVENT,
         &mut outcomes,
         interfaces,
     );
@@ -150,19 +91,19 @@ pub fn data<'a>(args: &ArgMatches<'a>, interfaces: &Interfaces) -> Result<()> {
 
     // Report results.
     if outcomes.has_errors() {
-        error!(logger, "Store data checks failed");
-        return Err(ErrorKind::CheckWithErrors("primary store data").into());
+        error!(logger, "View store data checks failed");
+        return Err(ErrorKind::CheckWithErrors("view store data").into());
     }
     if outcomes.has_warnings() {
-        warn!(logger, "Primary store data checks passed with warnings");
+        warn!(logger, "View store data checks passed with warnings");
         return Ok(());
     }
-    info!(logger, "Primary store data checks passed");
+    info!(logger, "View store data checks passed");
     Ok(())
 }
 
 fn scan_collection<Model>(
-    cursor: replicante_store_primary::Result<Cursor<Model>>,
+    cursor: replicante_store_view::Result<Cursor<Model>>,
     collection: &str,
     outcomes: &mut Outcomes,
     interfaces: &Interfaces,
@@ -180,23 +121,8 @@ fn scan_collection<Model>(
     let mut tracker = interfaces.progress(format!("Scanned more {} documents", collection));
     for item in cursor {
         if let Err(error) = item {
-            match error.kind() {
-                StoreErrorKind::InvalidRecord(ref id) => {
-                    let cause =
-                        format_fail(error.cause().expect(
-                            "primary store ErrorKind::InvalidRecord error must have a cause",
-                        ));
-                    outcomes.error(Error::UnableToParseModel(
-                        collection.to_string(),
-                        id.to_string(),
-                        cause,
-                    ));
-                }
-                _ => {
-                    let error = format_fail(&error);
-                    outcomes.error(Error::GenericError(error));
-                }
-            }
+            let error = format_fail(&error);
+            outcomes.error(Error::GenericError(error));
         }
         tracker.track();
     }
@@ -211,12 +137,12 @@ fn scan_collection<Model>(
 ///   * No dropped collections/tables or indexes exist.
 pub fn schema<'a>(args: &ArgMatches<'a>, interfaces: &Interfaces) -> Result<()> {
     let logger = interfaces.logger();
-    info!(logger, "Checking primary store schema");
+    info!(logger, "Checking view store schema");
 
     let config = args.value_of("config").unwrap();
     let config = Config::from_file(config).with_context(|_| ErrorKind::ConfigLoad)?;
-    let store = Admin::make(config.storage.primary, logger.clone())
-        .with_context(|_| ErrorKind::AdminInit("primary store"))?;
+    let store = Admin::make(config.storage.view, logger.clone())
+        .with_context(|_| ErrorKind::AdminInit("view store"))?;
     let mut outcomes = Outcomes::new();
 
     debug!(logger, "Checking schema");
@@ -251,14 +177,14 @@ pub fn schema<'a>(args: &ArgMatches<'a>, interfaces: &Interfaces) -> Result<()> 
 
     // Finish up.
     if outcomes.has_errors() {
-        error!(logger, "Primary store schema checks failed");
+        error!(logger, "View store schema checks failed");
         return Err(ErrorKind::CheckWithErrors("primary store schema").into());
     }
     if outcomes.has_warnings() {
-        warn!(logger, "Primary store schema checks passed with warnings");
+        warn!(logger, "View store schema checks passed with warnings");
         return Ok(());
     }
-    info!(logger, "Primary store schema checks passed");
+    info!(logger, "View store schema checks passed");
     Ok(())
 }
 

@@ -76,5 +76,9 @@ fn run_deep<'a>(args: &ArgMatches<'a>, interfaces: &Interfaces) -> Result<()> {
 
 /// Run all checks that do NOT iterate over data.
 fn run_quick<'a>(args: &ArgMatches<'a>, interfaces: &Interfaces) -> Result<()> {
-    config::run(args, interfaces)
+    let config = config::run(args, interfaces);
+    let stores = stores::run_quick(args, interfaces);
+    config?;
+    stores?;
+    Ok(())
 }

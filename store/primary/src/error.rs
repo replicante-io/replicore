@@ -67,23 +67,8 @@ pub enum ErrorKind {
     #[fail(display = "failed to read MongoDB cursor")]
     MongoDBCursor,
 
-    #[fail(display = "failed to read MongoDB cursor for listCollections operation")]
-    MongoDBListCollectionsCursor,
-
-    #[fail(display = "MongoDB listCollections operation failed")]
-    MongoDBListCollectionsOp,
-
-    #[fail(display = "failed to read MongoDB cursor for listIndexes operation")]
-    MongoDBListIndexesCursor,
-
-    #[fail(display = "MongoDB listIndexes operation failed")]
-    MongoDBListIndexesOp,
-
     #[fail(display = "MongoDB operation failed")]
     MongoDBOperation,
-
-    #[fail(display = "MongoDB version operation failed")]
-    MongoDBVersion,
 
     #[fail(display = "{} record with id '{}' not found", _0, _1)]
     RecordNotFound(&'static str, String),
@@ -98,12 +83,7 @@ impl ErrorKind {
             ErrorKind::MongoDBBsonEncode => "MongoDBBsonEncode",
             ErrorKind::MongoDBConnect(_) => "MongoDBConnect",
             ErrorKind::MongoDBCursor => "MongoDBCursor",
-            ErrorKind::MongoDBListCollectionsCursor => "MongoDBListCollectionsCursor",
-            ErrorKind::MongoDBListCollectionsOp => "MongoDBListCollectionsOp",
-            ErrorKind::MongoDBListIndexesCursor => "MongoDBListIndexesCursor",
-            ErrorKind::MongoDBListIndexesOp => "MongoDBListIndexesOp",
             ErrorKind::MongoDBOperation => "MongoDBOperation",
-            ErrorKind::MongoDBVersion => "MongoDBVersion",
             ErrorKind::RecordNotFound(_, _) => "RecordNotFound",
         };
         Some(name)

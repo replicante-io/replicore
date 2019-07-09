@@ -70,11 +70,26 @@ pub enum ErrorKind {
     #[fail(display = "found invalid record with id '{}'", _0)]
     InvalidRecord(String),
 
+    #[fail(display = "failed to read MongoDB cursor for listCollections operation")]
+    ListCollectionsCursor,
+
+    #[fail(display = "MongoDB listCollections operation failed")]
+    ListCollectionsOp,
+
+    #[fail(display = "failed to read MongoDB cursor for listIndexes operation")]
+    ListIndexesCursor,
+
+    #[fail(display = "MongoDB listIndexes operation failed")]
+    ListIndexesOp,
+
     #[fail(display = "MongoDB replaceOne failed")]
     ReplaceOne,
 
     #[fail(display = "MongoDB updateMany failed")]
     UpdateMany,
+
+    #[fail(display = "unable to detect MongoDb version")]
+    Version,
 }
 
 impl ErrorKind {
@@ -87,8 +102,13 @@ impl ErrorKind {
             ErrorKind::FindOp => "FindOp",
             ErrorKind::InsertOne => "InsertOne",
             ErrorKind::InvalidRecord(_) => "InvalidRecord",
+            ErrorKind::ListCollectionsCursor => "ListCollectionsCursor",
+            ErrorKind::ListCollectionsOp => "ListCollectionsOp",
+            ErrorKind::ListIndexesCursor => "ListIndexesCursor",
+            ErrorKind::ListIndexesOp => "ListIndexesOp",
             ErrorKind::ReplaceOne => "ReplaceOne",
             ErrorKind::UpdateMany => "UpdateMany",
+            ErrorKind::Version => "Version",
         };
         Some(name)
     }

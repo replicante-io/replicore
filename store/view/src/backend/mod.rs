@@ -5,6 +5,8 @@ use opentracingrust::SpanContext;
 use opentracingrust::Tracer;
 use slog::Logger;
 
+use replicante_externals_mongodb::admin::ValidationResult;
+use replicante_models_core::admin::Version;
 use replicante_models_core::Event;
 use replicante_service_healthcheck::HealthChecks;
 
@@ -45,6 +47,66 @@ pub trait EventsInterface: Send + Sync {
         options: EventsOptions,
         span: Option<SpanContext>,
     ) -> Result<Cursor<Event>>;
+}
+
+/// Instantiate a new storage admin backend based on the given configuration.
+pub fn backend_factory_admin(config: Config, logger: Logger) -> Result<AdminImpl> {
+    let admin = match config {
+        Config::MongoDB(config) => AdminImpl::new(self::mongo::Admin::make(config, logger)?),
+    };
+    Ok(admin)
+}
+
+/// Definition of top level store administration operations.
+///
+/// Mainly a way to return interfaces to grouped store operations.
+///
+/// See `admin::Admin` for descriptions of methods.
+pub trait AdminInterface: Send + Sync {
+    fn data(&self) -> DataImpl;
+    fn validate(&self) -> ValidateImpl;
+    fn version(&self) -> Result<Version>;
+}
+
+/// Dynamic dispatch all operations to a backend-specific implementation.
+#[derive(Clone)]
+pub struct AdminImpl(Arc<dyn AdminInterface>);
+
+impl AdminImpl {
+    pub fn new<A: AdminInterface + 'static>(admin: A) -> AdminImpl {
+        AdminImpl(Arc::new(admin))
+    }
+}
+
+impl Deref for AdminImpl {
+    type Target = dyn AdminInterface + 'static;
+    fn deref(&self) -> &(dyn AdminInterface + 'static) {
+        self.0.deref()
+    }
+}
+
+/// Definition of supported data admin operations.
+///
+/// See `admin::data::Data` for descriptions of methods.
+pub trait DataInterface: Send + Sync {
+    fn events(&self) -> Result<Cursor<Event>>;
+}
+
+/// Dynamic dispatch all data admin operations to a backend-specific implementation.
+#[derive(Clone)]
+pub struct DataImpl(Arc<dyn DataInterface>);
+
+impl DataImpl {
+    pub fn new<D: DataInterface + 'static>(data: D) -> DataImpl {
+        DataImpl(Arc::new(data))
+    }
+}
+
+impl Deref for DataImpl {
+    type Target = dyn DataInterface + 'static;
+    fn deref(&self) -> &(dyn DataInterface + 'static) {
+        self.0.deref()
+    }
 }
 
 /// Dynamic dispatch events operations to a backend-specific implementation.
@@ -111,6 +173,32 @@ impl StoreImpl {
 impl Deref for StoreImpl {
     type Target = dyn StoreInterface + 'static;
     fn deref(&self) -> &(dyn StoreInterface + 'static) {
+        self.0.deref()
+    }
+}
+
+/// Definition of supported validation operations.
+///
+/// See `admin::validate::Validate` for descriptions of methods.
+pub trait ValidateInterface: Send + Sync {
+    fn indexes(&self) -> Result<Vec<ValidationResult>>;
+    fn removed_entities(&self) -> Result<Vec<ValidationResult>>;
+    fn schema(&self) -> Result<Vec<ValidationResult>>;
+}
+
+/// Dynamic dispatch validate operations to a backend-specific implementation.
+#[derive(Clone)]
+pub struct ValidateImpl(Arc<dyn ValidateInterface>);
+
+impl ValidateImpl {
+    pub fn new<V: ValidateInterface + 'static>(validate: V) -> ValidateImpl {
+        ValidateImpl(Arc::new(validate))
+    }
+}
+
+impl Deref for ValidateImpl {
+    type Target = dyn ValidateInterface + 'static;
+    fn deref(&self) -> &(dyn ValidateInterface + 'static) {
         self.0.deref()
     }
 }

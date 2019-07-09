@@ -1,7 +1,12 @@
+use std::collections::HashMap;
+use std::collections::HashSet;
+
 use bson::bson;
 use bson::doc;
 use bson::ordered::OrderedDocument;
 use lazy_static::lazy_static;
+
+use replicante_externals_mongodb::admin::IndexInfo;
 
 pub const COLLECTION_EVENTS: &str = "events";
 
@@ -13,4 +18,26 @@ lazy_static! {
         "SNAPSHOT_NODE",
         "SNAPSHOT_SHARD",
     ]};
+    pub static ref VALIDATE_EXPECTED_COLLECTIONS: HashSet<&'static str> = {
+        let mut set = HashSet::new();
+        set.insert(COLLECTION_EVENTS);
+        set
+    };
+    pub static ref VALIDATE_INDEXES_NEEDED: HashMap<&'static str, Vec<IndexInfo>> = {
+        let mut map = HashMap::new();
+        map.insert(
+            COLLECTION_EVENTS,
+            vec![IndexInfo {
+                expires: true,
+                key: vec![("timestamp".into(), 1)],
+                unique: false,
+            }],
+        );
+        map
+    };
+    pub static ref VALIDATE_INDEXES_SUGGESTED: HashMap<&'static str, Vec<IndexInfo>> = {
+        let mut map = HashMap::new();
+        map.insert(COLLECTION_EVENTS, vec![]);
+        map
+    };
 }

@@ -2,13 +2,12 @@ use replicante_models_core::Agent;
 use replicante_models_core::AgentInfo;
 use replicante_models_core::ClusterDiscovery;
 use replicante_models_core::ClusterMeta;
-use replicante_models_core::Event;
 use replicante_models_core::Node;
 use replicante_models_core::Shard;
 
-use super::super::backend::DataImpl;
-use super::super::Cursor;
-use super::super::Result;
+use crate::backend::DataImpl;
+use crate::Cursor;
+use crate::Result;
 
 /// Data validation operations.
 pub struct Data {
@@ -38,11 +37,6 @@ impl Data {
     /// Iterate over all cluster metadata in the store.
     pub fn clusters_meta(&self) -> Result<Cursor<ClusterMeta>> {
         self.data.clusters_meta()
-    }
-
-    /// Iterate over all events in the store.
-    pub fn events(&self) -> Result<Cursor<Event>> {
-        self.data.events()
     }
 
     /// Iterate over all nodes in the store.
