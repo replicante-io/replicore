@@ -27,25 +27,36 @@ use self::update_checker::UpdateChecker;
 use self::webui::WebUI;
 use self::workers::Workers;
 
-/// Helper macro to keep `Components::run` simpler in the presence of optional components.
-macro_rules! component_run {
-    ($component:expr, $upkeep:expr) => {
-        if let Some(component) = $component {
-            component.run($upkeep)?;
-        }
-    };
-}
-
 /// Helper function to keep `Components::new` simpler in the presence of optional components.
-fn component_new<C, F>(
+fn init_component<C, F>(
+    components: &mut Vec<Box<dyn Component>>,
     component: &str,
     mode: &str,
     enabled: bool,
     logger: &Logger,
     factory: F,
-) -> Option<C>
-where
+) where
+    C: Component + 'static,
     F: FnOnce() -> C,
+{
+    init_component_result(components, component, mode, enabled, logger, || {
+        Ok(factory())
+    })
+    .expect("component failed. Use init_component_result to propagate");
+}
+
+/// Helper function to keep `Components::new` simpler in the presence of optional components.
+fn init_component_result<C, F>(
+    components: &mut Vec<Box<dyn Component>>,
+    component: &str,
+    mode: &str,
+    enabled: bool,
+    logger: &Logger,
+    factory: F,
+) -> Result<()>
+where
+    C: Component + 'static,
+    F: FnOnce() -> Result<C>,
 {
     info!(
         logger,
@@ -58,13 +69,19 @@ where
         COMPONENTS_ENABLED
             .with_label_values(&[component, mode])
             .set(1.0);
-        Some(factory())
+        components.push(Box::new(factory()?));
     } else {
         COMPONENTS_ENABLED
             .with_label_values(&[component, mode])
             .set(0.0);
-        None
     }
+    Ok(())
+}
+
+/// Generic replicante core component that does something.
+trait Component {
+    /// Start the component, registering any thread or shutdown signals.
+    fn run(&mut self, upkeep: &mut Upkeep) -> Result<()>;
 }
 
 /// A container for replicante components.
@@ -77,26 +94,23 @@ where
 /// [`Drop`]: std/ops/trait.Drop.html
 /// [`JoinHandle`]: std/thread/struct.JoinHandle.html
 pub struct Components {
-    core_api: Option<CoreAPI>,
-    discovery: Option<Discovery>,
-    events_indexer: Option<EventsIndexer>,
-    grafana: Option<Grafana>,
-    update_checker: Option<UpdateChecker>,
-    webui: Option<WebUI>,
-    workers: Option<Workers>,
+    components: Vec<Box<dyn Component>>,
 }
 
 impl Components {
     /// Creates and configures components.
     pub fn new(config: &Config, logger: Logger, interfaces: &mut Interfaces) -> Result<Components> {
-        let core_api = component_new(
+        let mut components = Vec::new();
+        init_component(
+            &mut components,
             "core_api",
             "required",
             config.components.core_api(),
             &logger,
             || CoreAPI::new(logger.clone(), interfaces),
         );
-        let discovery = component_new(
+        init_component(
+            &mut components,
             "discovery",
             "required",
             config.components.discovery(),
@@ -110,55 +124,47 @@ impl Components {
                 )
             },
         );
-        let events_indexer = component_new(
+        init_component(
+            &mut components,
             "events_indexer",
             "required",
             config.components.events_indexer(),
             &logger,
             || EventsIndexer::new(logger.clone(), interfaces),
         );
-        let grafana = component_new(
+        init_component(
+            &mut components,
             "grafana",
             "optional",
             config.components.grafana(),
             &logger,
             || Grafana::new(interfaces),
         );
-        let update_checker = component_new(
+        init_component(
+            &mut components,
             "update_checker",
             "optional",
             config.components.update_checker(),
             &logger,
             || UpdateChecker::new(logger.clone()),
         );
-        let webui = component_new(
+        init_component(
+            &mut components,
             "webui",
             "optional",
             config.components.webui(),
             &logger,
             || WebUI::new(interfaces),
         );
-        let workers = component_new(
+        init_component_result(
+            &mut components,
             "workers",
             "required",
             config.components.workers(),
             &logger,
             || Workers::new(interfaces, logger.clone(), config.clone()),
-        );
-        let workers = match workers {
-            Some(Err(error)) => return Err(error),
-            Some(Ok(workers)) => Some(workers),
-            None => None,
-        };
-        Ok(Components {
-            core_api,
-            discovery,
-            events_indexer,
-            grafana,
-            update_checker,
-            webui,
-            workers,
-        })
+        )?;
+        Ok(Components { components })
     }
 
     /// Attemps to register all components metrics with the Registry.
@@ -171,13 +177,9 @@ impl Components {
 
     /// Performs any final configuration and starts background threads.
     pub fn run(&mut self, upkeep: &mut Upkeep) -> Result<()> {
-        component_run!(self.core_api.as_mut(), upkeep);
-        component_run!(self.discovery.as_mut(), upkeep);
-        component_run!(self.events_indexer.as_mut(), upkeep);
-        component_run!(self.grafana.as_mut(), upkeep);
-        component_run!(self.update_checker.as_mut(), upkeep);
-        component_run!(self.webui.as_mut(), upkeep);
-        component_run!(self.workers.as_mut(), upkeep);
+        for component in &mut self.components {
+            component.run(upkeep)?;
+        }
         Ok(())
     }
 }

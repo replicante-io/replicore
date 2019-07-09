@@ -10,16 +10,15 @@ use replicante_service_tasks::WorkerSet;
 use replicante_service_tasks::WorkerSetPool;
 use replicante_util_upkeep::Upkeep;
 
-use super::super::config::Config;
-use super::super::interfaces::Interfaces;
-use super::super::metrics::WORKERS_ENABLED;
-
-use super::super::tasks::cluster_refresh;
-use super::super::tasks::ReplicanteQueues;
-
-use super::super::Error;
-use super::super::ErrorKind;
-use super::super::Result;
+use super::Component;
+use crate::config::Config;
+use crate::interfaces::Interfaces;
+use crate::metrics::WORKERS_ENABLED;
+use crate::tasks::cluster_refresh;
+use crate::tasks::ReplicanteQueues;
+use crate::Error;
+use crate::ErrorKind;
+use crate::Result;
 
 /// Attemps to register metrics with the Registry.
 ///
@@ -94,9 +93,11 @@ impl Workers {
             state: Some(State::Configured(worker_set)),
         })
     }
+}
 
+impl Component for Workers {
     /// Convert the WorkerSet configuration into a runnning WorkerSetPool.
-    pub fn run(&mut self, upkeep: &mut Upkeep) -> Result<()> {
+    fn run(&mut self, upkeep: &mut Upkeep) -> Result<()> {
         if let Some(State::Configured(worker_set)) = self.state.take() {
             let workers = worker_set
                 .run(upkeep)

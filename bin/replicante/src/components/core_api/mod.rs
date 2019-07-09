@@ -2,8 +2,9 @@ use slog::Logger;
 
 use replicante_util_upkeep::Upkeep;
 
-use super::super::interfaces::Interfaces;
-use super::super::Result;
+use super::Component;
+use crate::interfaces::Interfaces;
+use crate::Result;
 
 mod cluster;
 
@@ -15,9 +16,10 @@ impl CoreAPI {
         self::cluster::attach(logger, interfaces);
         CoreAPI {}
     }
+}
 
-    /// Noop method for standard interface.
-    pub fn run(&self, _: &mut Upkeep) -> Result<()> {
+impl Component for CoreAPI {
+    fn run(&mut self, _: &mut Upkeep) -> Result<()> {
         Ok(())
     }
 }

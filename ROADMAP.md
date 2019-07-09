@@ -7,6 +7,7 @@
 
 
 ## 0.4.2 - More agents?
+- PostgreSQL
 - Redis?
 - Cassandra?
 

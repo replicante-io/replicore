@@ -12,11 +12,12 @@ use replicante_service_coordinator::LoopingElection;
 use replicante_service_coordinator::LoopingElectionOpts;
 use replicante_util_upkeep::Upkeep;
 
-use super::super::config::EventsSnapshotsConfig;
-use super::super::tasks::Tasks;
-use super::super::ErrorKind;
-use super::super::Result;
+use super::Component;
 use super::Interfaces;
+use crate::config::EventsSnapshotsConfig;
+use crate::tasks::Tasks;
+use crate::ErrorKind;
+use crate::Result;
 
 mod config;
 mod election;
@@ -58,9 +59,11 @@ impl DiscoveryComponent {
             tracer: interfaces.tracing.tracer(),
         }
     }
+}
 
+impl Component for DiscoveryComponent {
     /// Starts the agent discovery process in a background thread.
-    pub fn run(&mut self, upkeep: &mut Upkeep) -> Result<()> {
+    fn run(&mut self, upkeep: &mut Upkeep) -> Result<()> {
         let config = self.config.backends.clone();
         let coordinator = self.coordinator.clone();
         let interval = self.interval;

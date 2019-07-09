@@ -20,6 +20,7 @@ use replicante_util_failure::failure_info;
 use replicante_util_tracing::fail_span;
 use replicante_util_upkeep::Upkeep;
 
+use super::Component;
 use crate::interfaces::Interfaces;
 use crate::ErrorKind;
 use crate::Result;
@@ -43,8 +44,10 @@ impl EventsIndexer {
             tracer: Some(interfaces.tracing.tracer()),
         }
     }
+}
 
-    pub fn run(&mut self, upkeep: &mut Upkeep) -> Result<()> {
+impl Component for EventsIndexer {
+    fn run(&mut self, upkeep: &mut Upkeep) -> Result<()> {
         let events = self
             .events
             .take()

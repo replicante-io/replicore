@@ -12,9 +12,10 @@ use replicante_util_failure::capture_fail;
 use replicante_util_failure::failure_info;
 use replicante_util_upkeep::Upkeep;
 
-use super::super::metrics::UPDATE_AVAILABLE;
-use super::super::ErrorKind;
-use super::super::Result;
+use super::Component;
+use crate::metrics::UPDATE_AVAILABLE;
+use crate::ErrorKind;
+use crate::Result;
 
 const UPDATE_META: &str =
     "https://raw.githubusercontent.com/replicante-io/metadata/master/replicante/core/latest.json";
@@ -32,8 +33,10 @@ impl UpdateChecker {
     pub fn new(logger: Logger) -> UpdateChecker {
         UpdateChecker { logger }
     }
+}
 
-    pub fn run(&self, _: &mut Upkeep) -> Result<()> {
+impl Component for UpdateChecker {
+    fn run(&mut self, _: &mut Upkeep) -> Result<()> {
         let logger = self.logger.clone();
         Builder::new("r:c:update_checker")
             .full_name("replicante:component:update_checker")

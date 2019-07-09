@@ -1,7 +1,8 @@
 use replicante_util_upkeep::Upkeep;
 
-use super::super::interfaces::Interfaces;
-use super::super::Result;
+use super::Component;
+use crate::interfaces::Interfaces;
+use crate::Result;
 
 mod annotations;
 mod check;
@@ -19,9 +20,11 @@ impl Grafana {
         self::check::Check::attach(interfaces);
         Grafana {}
     }
+}
 
+impl Component for Grafana {
     /// Noop method for standard interface.
-    pub fn run(&self, _: &mut Upkeep) -> Result<()> {
+    fn run(&mut self, _: &mut Upkeep) -> Result<()> {
         Ok(())
     }
 }

@@ -1,7 +1,8 @@
 use replicante_util_upkeep::Upkeep;
 
-use super::super::interfaces::Interfaces;
-use super::super::Result;
+use super::Component;
+use crate::interfaces::Interfaces;
+use crate::Result;
 
 mod cluster;
 mod clusters;
@@ -25,9 +26,11 @@ impl WebUI {
         self::events::Events::attach(interfaces);
         WebUI {}
     }
+}
 
+impl Component for WebUI {
     /// Noop method for standard interface.
-    pub fn run(&self, _: &mut Upkeep) -> Result<()> {
+    fn run(&mut self, _: &mut Upkeep) -> Result<()> {
         Ok(())
     }
 }
