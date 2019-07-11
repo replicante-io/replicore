@@ -1,0 +1,8 @@
+{
+  "cursor": null,
+  "clusters": [{
+    "cluster_id": "replistore",
+    "display_name": "Replicante Store",
+    "nodes": ["http://localhost:37017"]
+  }]
+}

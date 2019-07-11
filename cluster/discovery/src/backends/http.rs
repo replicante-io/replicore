@@ -15,6 +15,7 @@ use serde_json::Value;
 use replicante_models_core::ClusterDiscovery;
 
 use crate::config::HttpConfig;
+use crate::config::HttpRequestMethod;
 use crate::metrics::DISCOVERY_ERRORS;
 use crate::metrics::DISCOVERY_TOTAL;
 use crate::Error;
@@ -44,12 +45,14 @@ pub struct Iter {
     config: Option<HttpConfig>,
     cursor: Option<String>,
     failed_or_done: bool,
+    method: HttpRequestMethod,
     url: String,
 }
 
 impl Iter {
     pub fn new(config: HttpConfig) -> Iter {
         let body = config.body.clone().unwrap_or_default();
+        let method = config.method.clone();
         let url = config.url.clone();
         Iter {
             body,
@@ -58,6 +61,7 @@ impl Iter {
             config: Some(config),
             cursor: None,
             failed_or_done: false,
+            method,
             url,
         }
     }
@@ -124,15 +128,19 @@ impl Iter {
             Some(Err(error)) => return Some(Err(error)),
             Some(Ok(())) => self.client.as_ref().expect("client not initialised"),
         };
-        let mut body = self.body.clone();
-        let cursor = match self.cursor.clone() {
-            None => Value::Null,
-            Some(cursor) => Value::String(cursor),
+        let response = match &self.method {
+            HttpRequestMethod::Get => client.get(&self.url),
+            HttpRequestMethod::Post => {
+                let mut body = self.body.clone();
+                let cursor = match self.cursor.clone() {
+                    None => Value::Null,
+                    Some(cursor) => Value::String(cursor),
+                };
+                body.insert("cursor".into(), cursor);
+                client.post(&self.url).json(&body)
+            }
         };
-        body.insert("cursor".into(), cursor);
-        let response = client
-            .post(&self.url)
-            .json(&body)
+        let response = response
             .send()
             .with_context(|_| ErrorKind::HttpRequest)
             .map_err(Error::from);

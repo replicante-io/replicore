@@ -18,7 +18,9 @@ coordinator:
 
 discovery:
   backends:
-    files: []
+    http:
+      - url: 'http://static.server:port/discovery.json'
+        method: GET
 
 
 events:

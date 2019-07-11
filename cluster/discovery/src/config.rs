@@ -37,6 +37,10 @@ pub struct HttpConfig {
     #[serde(default)]
     pub headers: BTreeMap<String, String>,
 
+    /// HTTP method to send the request as.
+    #[serde(default)]
+    pub method: HttpRequestMethod,
+
     /// HTTP Requests timeout (in milliseconds).
     #[serde(default = "HttpConfig::default_timeout")]
     pub timeout: u64,
@@ -71,6 +75,25 @@ impl HttpConfig {
     }
 }
 
+/// HTTP Method to use when sending requests.
+///
+/// This impacts the use of pagination and body, which are only possible with POST requests.
+#[derive(Clone, Eq, PartialEq, Hash, Debug, Serialize, Deserialize)]
+pub enum HttpRequestMethod {
+    #[serde(rename = "GET")]
+    Get,
+
+    #[serde(rename = "POST")]
+    Post,
+}
+
+impl Default for HttpRequestMethod {
+    fn default() -> HttpRequestMethod {
+        HttpRequestMethod::Post
+    }
+}
+
+/// TLS configuration used to connect to the remote server.
 #[derive(Clone, Eq, PartialEq, Hash, Debug, Serialize, Deserialize)]
 pub struct HttpTlsConfig {
     /// Optional path to a CA certificates bundle to validate servers with.

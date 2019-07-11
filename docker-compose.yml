@@ -70,6 +70,18 @@ services:
         target: '/conf/zoo.cfg'
         read_only: false
 
+  static_server:
+    hostname: 'static_server'
+    image: 'nginx:1.17'
+    init: true
+    ports:
+      - '8081:80'
+    volumes:
+      - type: bind
+        source: './devtools/static_server/'
+        target: '/usr/share/nginx/html'
+        read_only: true
+
 
 networks:
   default:
@@ -81,7 +93,6 @@ networks:
     # Known containers with fixed IPs:
     #
     #   - 172.128.0.254: kafka
-    #   - 172.128.0.253: kafka-rest
     ipam:
       config:
         - subnet: 172.128.0.0/24
