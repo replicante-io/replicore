@@ -1,26 +1,18 @@
-use std::fs::File;
-
 use clap::App;
 use clap::ArgMatches;
 use clap::SubCommand;
-use failure::Fail;
 use failure::ResultExt;
-use serde_yaml;
 use slog::error;
 use slog::info;
 use slog::warn;
 
 use replicante::Config;
-use replicante_cluster_discovery::DiscoveryFileModel;
-use replicante_util_failure::format_fail;
 
-use super::super::super::ErrorKind;
-use super::super::super::Interfaces;
-use super::super::super::Result;
-
-use super::super::super::outcome::Error;
-use super::super::super::outcome::Outcomes;
-use super::super::super::outcome::Warning;
+use crate::outcome::Outcomes;
+use crate::outcome::Warning;
+use crate::ErrorKind;
+use crate::Interfaces;
+use crate::Result;
 
 pub const COMMAND: &str = "config";
 const DISCOVERY_INTERVAL_THRESHOLD: u64 = 15;
@@ -53,14 +45,6 @@ pub fn run<'a>(args: &ArgMatches<'a>, interfaces: &Interfaces) -> Result<()> {
             DISCOVERY_INTERVAL_THRESHOLD,
         ));
     }
-    outcomes.report(&logger);
-
-    // Check each file discovery config.
-    let mut tracker = interfaces.progress("Processed more file discovery configurations");
-    for file in config.discovery.backends.files.iter() {
-        check_discovery_file(file, &mut outcomes);
-        tracker.track();
-    }
 
     // Report results.
     outcomes.report(&logger);
@@ -74,30 +58,4 @@ pub fn run<'a>(args: &ArgMatches<'a>, interfaces: &Interfaces) -> Result<()> {
     }
     info!(logger, "Configuration checks passed");
     Ok(())
-}
-
-/// Attempt to load and parse file.
-fn check_discovery_file(path: &str, outcomes: &mut Outcomes) {
-    let file = match File::open(path) {
-        Ok(file) => file,
-        Err(error) => {
-            let error = error.context(ErrorKind::ConfigLoad);
-            let error = format_fail(&error);
-            outcomes.error(Error::GenericError(error));
-            return;
-        }
-    };
-    let _content: DiscoveryFileModel = match serde_yaml::from_reader(file) {
-        Ok(content) => content,
-        Err(error) => {
-            let error = error.context(ErrorKind::Config("not a valid file discovery source"));
-            let error = format_fail(&error);
-            outcomes.error(Error::UnableToParseModel(
-                "DiscoveryFile".into(),
-                path.to_string(),
-                error,
-            ));
-            return;
-        }
-    };
 }

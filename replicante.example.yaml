@@ -210,17 +210,8 @@ discovery:
   #
   # Available backends are:
   #
-  #   * `files`: discover agents from local configuration files.
+  #   * `http`: discover clusters by querying remote HTTP servers.
   backends:
-    # The `files` backend discovers clusters from files.
-    #
-    # It can be useful to delegate discovery to unsupported systems.
-    # Examples are configuration management tools (ansible, chef, puppet, ...).
-    #
-    # This is a list of files that are periodically read to perform discovery.
-    # When running replicated nodes for HA users must ensure every node has the same set of files.
-    files: []
-
     # HTTP cluster discovery configurations.
     #
     # A POST request is performed to fetch cluster discoveries.
@@ -253,6 +244,9 @@ discovery:
     #   # Optional path to a PEM HTTP client certificate file.
     #   client_cert: ~
     # ```
+    #
+    # Static discovery can be achieved by serving a fixed JSON response file with
+    # any one of the many HTTP servers that support static serving (Apache, NGINX, ...).
     http: []
 
   # Interval (in seconds) to wait between agent discovery runs.

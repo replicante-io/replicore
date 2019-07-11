@@ -63,12 +63,6 @@ pub enum ErrorKind {
 
     #[fail(display = "HTTP request failed")]
     HttpRequest,
-
-    #[fail(display = "I/O Error for '{}'", _0)]
-    Io(String),
-
-    #[fail(display = "invalid YAML read from '{}'", _0)]
-    YamlFile(String),
 }
 
 impl ErrorKind {
@@ -79,8 +73,6 @@ impl ErrorKind {
             ErrorKind::HttpHeaderName(_) => "HttpHeaderName",
             ErrorKind::HttpHeaderValue(_) => "HttpHeaderValue",
             ErrorKind::HttpRequest => "HttpRequest",
-            ErrorKind::Io(_) => "Io",
-            ErrorKind::YamlFile(_) => "YamlFile",
         };
         Some(name)
     }

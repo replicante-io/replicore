@@ -11,18 +11,12 @@ use serde_json::Value;
 #[derive(Clone, Eq, PartialEq, Hash, Debug, Serialize, Deserialize)]
 pub struct Config {
     #[serde(default)]
-    pub files: Vec<String>,
-
-    #[serde(default)]
     pub http: Vec<HttpConfig>,
 }
 
 impl Default for Config {
     fn default() -> Config {
-        Config {
-            files: Vec::new(),
-            http: Vec::new(),
-        }
+        Config { http: Vec::new() }
     }
 }
 

@@ -13,7 +13,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - **BREAKING**: Store every event in the "view" database.
 
 ### Removed
-- **BREAKING**: TODO: File Discovery
+- **BREAKING**: File Discovery
 
 ## [0.3.1] - 2019-07-04
 ### Added
