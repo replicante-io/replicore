@@ -36,8 +36,50 @@ struct DiscoveryResponse {
 /// Response pagination is handled transparently as part of this process.
 ///
 /// ## Writing a server
-/// TODO: request format (POST + JSON body)
-/// TODO: response format (clusters + cursor)
+/// The HTTP discovery client is designed to be as flexible as needed.
+///
+/// Client side configuration is minimal to get things started (only a URL is needed)
+/// but allows many advanced settings with an optional JSON payload and headers.
+/// The configurable JSON payload can be used to pass specific parameters to generic
+/// servers, thus allowing the same endpoint to be reused (for example a generic AWS
+/// discovery with support for region and other filters).
+/// Security can also be added with HTTPS certificates and API tokens support.
+///
+/// Pagination support is also available by attaching an optional "cursor" returned
+/// by the server to future requests until a null "cursor" is returned.
+/// What the cursor means is determied by the server itself and could be a page number
+/// or a more complex serialised state to allow for stateless servers.
+/// Pagination can also be disabled by returning a null cursor.
+///
+/// ### HTTP Request Method
+/// By default `POST` requests are issued to the server.
+/// The method can be changed to issue `GET` requests to the server.
+///
+/// Using `GET` requests automatically disable features that attach a body to requests:
+///
+///   * Pagination, since the `cursor` attribute cannot be sent to the server.
+///   * Configurable JSON body.
+///
+/// ### HTTP Request Body
+/// For `GET` requests the body is not set following the HTTP standard.
+///
+/// For `POST` requests, a JSON object is sent to the server.
+/// This object is composed of two things:
+///
+///   1. The JSON object in the client configuration.
+///   2. A `cursor` value set to `null` for the first request.
+///
+/// If the server returns a response with a non-`null` `cursor` attribute further requests
+/// are performed by setting the `cursor` attribute to the value from the server until
+/// a response with a `null` `cursor` is received.
+///
+/// ### HTTP Response Format
+/// The server response MUST be a JSON object which deserialises to a `DiscoveryResponse`.
+/// This means it must have the following attributes:
+///
+///   * `clusters`: a list, possibly empty, of cluster discovery records.
+///   * `cursor`: an optional string used for pagination, the server MUST return `null` when
+///               there are no more discovery records to fetch on the same "cursor".
 pub struct Iter {
     body: Map<String, Value>,
     buffer: Vec<ClusterDiscovery>,
