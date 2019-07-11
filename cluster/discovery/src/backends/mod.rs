@@ -1,15 +1,17 @@
 use replicante_models_core::ClusterDiscovery;
 
-use super::config::Config;
-use super::Result;
+use crate::config::Config;
+use crate::Result;
 
 mod file;
+mod http;
 
 pub use self::file::DiscoveryFile as DiscoveryFileModel;
 
 /// Enumerate supported backends to access their iterators.
 enum Backend {
     File(self::file::Iter),
+    Http(Box<self::http::Iter>),
 }
 
 impl Iterator for Backend {
@@ -17,6 +19,7 @@ impl Iterator for Backend {
     fn next(&mut self) -> Option<Self::Item> {
         match *self {
             Backend::File(ref mut iter) => iter.next(),
+            Backend::Http(ref mut iter) => iter.next(),
         }
     }
 }
@@ -131,6 +134,10 @@ pub fn discover(config: Config) -> Iter {
     for file in config.files {
         let backend = file::Iter::new(file);
         backends.push(Backend::File(backend));
+    }
+    for remote in config.http {
+        let backend = Box::new(http::Iter::new(remote));
+        backends.push(Backend::Http(backend));
     }
     Iter::new(backends)
 }

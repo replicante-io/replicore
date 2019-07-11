@@ -5,9 +5,15 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+### Added
+- HTTP Discovery
+
 ### Changed
 - **BREAKING**: Change `storage` configuration to `storage.primary`.
 - **BREAKING**: Store every event in the "view" database.
+
+### Removed
+- **BREAKING**: TODO: File Discovery
 
 ## [0.3.1] - 2019-07-04
 ### Added

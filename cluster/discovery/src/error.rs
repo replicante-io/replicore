@@ -49,6 +49,21 @@ impl fmt::Display for Error {
 /// Exhaustive list of possible errors emitted by this crate.
 #[derive(Debug, Fail)]
 pub enum ErrorKind {
+    #[fail(display = "unable to load PEM certificate for HTTP client")]
+    HttpCertLoad,
+
+    #[fail(display = "unable to initialise HTTP client")]
+    HttpClient,
+
+    #[fail(display = "invalid HTTP header name '{}'", _0)]
+    HttpHeaderName(String),
+
+    #[fail(display = "invalid HTTP header value '{}'", _0)]
+    HttpHeaderValue(String),
+
+    #[fail(display = "HTTP request failed")]
+    HttpRequest,
+
     #[fail(display = "I/O Error for '{}'", _0)]
     Io(String),
 
@@ -59,6 +74,11 @@ pub enum ErrorKind {
 impl ErrorKind {
     fn kind_name(&self) -> Option<&str> {
         let name = match self {
+            ErrorKind::HttpCertLoad => "HttpCertLoad",
+            ErrorKind::HttpClient => "HttpClient",
+            ErrorKind::HttpHeaderName(_) => "HttpHeaderName",
+            ErrorKind::HttpHeaderValue(_) => "HttpHeaderValue",
+            ErrorKind::HttpRequest => "HttpRequest",
             ErrorKind::Io(_) => "Io",
             ErrorKind::YamlFile(_) => "YamlFile",
         };

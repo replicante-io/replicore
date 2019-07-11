@@ -212,7 +212,7 @@ discovery:
   #
   #   * `files`: discover agents from local configuration files.
   backends:
-    # The `files` backend discovers agents from files.
+    # The `files` backend discovers clusters from files.
     #
     # It can be useful to delegate discovery to unsupported systems.
     # Examples are configuration management tools (ansible, chef, puppet, ...).
@@ -220,6 +220,28 @@ discovery:
     # This is a list of files that are periodically read to perform discovery.
     # When running replicated nodes for HA users must ensure every node has the same set of files.
     files: []
+
+    # HTTP cluster discovery configurations.
+    #
+    # A POST request is performed to fetch cluster discoveries.
+    # Requests are issued against the configured list of targets.
+    # Each target has the following options:
+    #
+    # ```yaml
+    # # URL of the remote target to request clusters to.
+    # url: 'https://inventory.corp:1234/replicante/some/path'
+    # # Optional JSON object to send along every request.
+    # body: ~
+    # # Headers to send along every request.
+    # headers: {}
+    # # TLS confifuration options.
+    # tls:
+    #   # Optional path to a PEM CA certificate file to validate servers with.
+    #   ca_cert: ~
+    #   # Optional path to a PEM HTTP client certificate file.
+    #   client_cert: ~
+    # ```
+    http: []
 
   # Interval (in seconds) to wait between agent discovery runs.
   interval: 60

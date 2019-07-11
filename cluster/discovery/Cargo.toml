@@ -21,8 +21,10 @@ failure = "^0.1.5"
 failure_derive = "^0.1.5"
 lazy_static = "^1.0.0"
 prometheus = "^0.7.0"
+reqwest = { version = "^0.9.18", features = ["rustls-tls"] }
 serde = "^1.0.34"
 serde_derive = "^1.0.34"
+serde_json = "^1.0.13"
 serde_yaml = "^0.8.0"
 slog = "^2.2.0"
 

@@ -11,7 +11,8 @@ dist: xenial
 
 # Configure the build jobs.
 language: rust
-cache: cargo
+# Try to disable cache as it grows fast and takes ages unpack and generate.
+#cache: cargo
 rust:
   - stable   # Target rust version.
   - 1.35.0   # Earliest supported rust version.

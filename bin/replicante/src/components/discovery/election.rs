@@ -18,14 +18,14 @@ use replicante_service_tasks::TaskRequest;
 use replicante_util_failure::capture_fail;
 use replicante_util_failure::failure_info;
 
-use super::super::super::config::EventsSnapshotsConfig;
-use super::super::super::task_payload::ClusterRefreshPayload;
-use super::super::super::tasks::ReplicanteQueues;
-use super::super::super::tasks::Tasks;
 use super::metrics::DISCOVERY_COUNT;
 use super::metrics::DISCOVERY_DURATION;
 use super::metrics::DISCOVERY_LOOP_ERRORS;
 use super::snapshot::EmissionTracker;
+use crate::config::EventsSnapshotsConfig;
+use crate::task_payload::ClusterRefreshPayload;
+use crate::tasks::ReplicanteQueues;
+use crate::tasks::Tasks;
 
 /// Main discovery logic with primary/secondaries HA support.
 pub struct DiscoveryElection {
