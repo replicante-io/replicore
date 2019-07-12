@@ -12,13 +12,11 @@ use iron_json_response::JsonResponse;
 use replicante_store_view::store::events::EventsFilters;
 use replicante_store_view::store::events::EventsOptions;
 use replicante_store_view::store::Store;
+use replicante_util_iron::request_span;
 
-use crate::interfaces::api::APIRoot;
-use crate::interfaces::Interfaces;
+use super::constants::RECENT_EVENTS_LIMIT;
 use crate::Error;
 use crate::ErrorKind;
-
-const RECENT_EVENTS_LIMIT: i64 = 100;
 
 /// Cluster discovery (`/webui/events`) handler.
 pub struct Events {
@@ -26,14 +24,16 @@ pub struct Events {
 }
 
 impl Handler for Events {
-    fn handle(&self, _req: &mut Request) -> IronResult<Response> {
+    fn handle(&self, req: &mut Request) -> IronResult<Response> {
         let mut options = EventsOptions::default();
         options.limit = Some(RECENT_EVENTS_LIMIT);
         options.reverse = true;
+
+        let span = request_span(req);
         let iter = self
             .store
             .events()
-            .range(EventsFilters::all(), options, None)
+            .range(EventsFilters::all(), options, span.context().clone())
             .with_context(|_| ErrorKind::PrimaryStoreQuery("events"))
             .map_err(Error::from)?;
         let mut events = Vec::new();
@@ -51,11 +51,7 @@ impl Handler for Events {
 }
 
 impl Events {
-    pub fn attach(interfaces: &mut Interfaces) {
-        let mut router = interfaces.api.router_for(&APIRoot::UnstableWebUI);
-        let handler = Events {
-            store: interfaces.stores.view.clone(),
-        };
-        router.get("/events", handler, "/events");
+    pub fn new(store: Store) -> Self {
+        Events { store }
     }
 }

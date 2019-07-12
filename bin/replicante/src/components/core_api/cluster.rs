@@ -19,13 +19,13 @@ use replicante_util_failure::capture_fail;
 use replicante_util_failure::failure_info;
 use replicante_util_iron::request_span;
 
-use super::super::super::interfaces::api::APIRoot;
-use super::super::super::interfaces::Interfaces;
-use super::super::super::task_payload::ClusterRefreshPayload;
-use super::super::super::tasks::ReplicanteQueues;
-use super::super::super::tasks::Tasks;
-use super::super::super::Error;
-use super::super::super::ErrorKind;
+use crate::interfaces::api::APIRoot;
+use crate::interfaces::Interfaces;
+use crate::task_payload::ClusterRefreshPayload;
+use crate::tasks::ReplicanteQueues;
+use crate::tasks::Tasks;
+use crate::Error;
+use crate::ErrorKind;
 
 /// Attach cluster-related core API handlers.
 pub fn attach(logger: Logger, interfaces: &mut Interfaces) {

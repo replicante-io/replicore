@@ -10,16 +10,19 @@ use iron::Set;
 use iron_json_response::JsonResponse;
 use router::Router;
 
-use replicante_store_primary::store::Store;
+use replicante_store_primary::store::Store as PrimaryStore;
+use replicante_store_view::store::events::EventsFilters;
+use replicante_store_view::store::events::EventsOptions;
+use replicante_store_view::store::Store as ViewStore;
+use replicante_util_iron::request_span;
 
-use super::super::super::interfaces::api::APIRoot;
-use super::super::super::interfaces::Interfaces;
-use super::super::super::Error;
-use super::super::super::ErrorKind;
+use super::constants::RECENT_EVENTS_LIMIT;
+use crate::Error;
+use crate::ErrorKind;
 
 /// Cluster discovery (`/webui/cluster/:cluster/discovery`) handler.
 pub struct Discovery {
-    store: Store,
+    store: PrimaryStore,
 }
 
 impl Handler for Discovery {
@@ -32,10 +35,11 @@ impl Handler for Discovery {
             .map(String::from)
             .ok_or_else(|| ErrorKind::APIRequestParameterNotFound("cluster"))
             .map_err(Error::from)?;
+        let span = request_span(req);
         let discovery = self
             .store
             .cluster(cluster.clone())
-            .discovery(None)
+            .discovery(span.context().clone())
             .with_context(|_| ErrorKind::PrimaryStoreQuery("cluster_discovery"))
             .map_err(Error::from)?
             .ok_or_else(|| ErrorKind::ModelNotFound("cluster_discovery", cluster))
@@ -48,22 +52,63 @@ impl Handler for Discovery {
 }
 
 impl Discovery {
-    pub fn attach(interfaces: &mut Interfaces) {
-        let mut router = interfaces.api.router_for(&APIRoot::UnstableWebUI);
-        let handler = Discovery {
-            store: interfaces.stores.primary.clone(),
-        };
-        router.get(
-            "/cluster/:cluster/discovery",
-            handler,
-            "/cluster/:cluster/discovery",
-        );
+    pub fn new(store: PrimaryStore) -> Self {
+        Discovery { store }
+    }
+}
+
+/// Cluster events (`/webui/cluster/:cluster/events`) handler.
+pub struct Events {
+    store: ViewStore,
+}
+
+impl Handler for Events {
+    fn handle(&self, req: &mut Request) -> IronResult<Response> {
+        let cluster = req
+            .extensions
+            .get::<Router>()
+            .expect("Iron Router extension not found")
+            .find("cluster")
+            .map(String::from)
+            .ok_or_else(|| ErrorKind::APIRequestParameterNotFound("cluster"))
+            .map_err(Error::from)?;
+
+        let mut filters = EventsFilters::all();
+        filters.cluster_id = Some(cluster);
+        let mut options = EventsOptions::default();
+        options.limit = Some(RECENT_EVENTS_LIMIT);
+        options.reverse = true;
+
+        let span = request_span(req);
+        let iter = self
+            .store
+            .events()
+            .range(filters, options, span.context().clone())
+            .with_context(|_| ErrorKind::PrimaryStoreQuery("events"))
+            .map_err(Error::from)?;
+        let mut events = Vec::new();
+        for event in iter {
+            let event = event
+                .with_context(|_| ErrorKind::Deserialize("event record", "Event"))
+                .map_err(Error::from)?;
+            events.push(event);
+        }
+
+        let mut resp = Response::new();
+        resp.set_mut(JsonResponse::json(events)).set_mut(status::Ok);
+        Ok(resp)
+    }
+}
+
+impl Events {
+    pub fn new(store: ViewStore) -> Self {
+        Events { store }
     }
 }
 
 /// Cluster meta (`/webui/cluster/:cluster/meta`) handler.
 pub struct Meta {
-    store: Store,
+    store: PrimaryStore,
 }
 
 impl Handler for Meta {
@@ -76,10 +121,11 @@ impl Handler for Meta {
             .map(String::from)
             .ok_or_else(|| ErrorKind::APIRequestParameterNotFound("cluster"))
             .map_err(Error::from)?;
+        let span = request_span(req);
         let meta = self
             .store
             .legacy()
-            .cluster_meta(cluster.clone(), None)
+            .cluster_meta(cluster.clone(), span.context().clone())
             .with_context(|_| ErrorKind::PrimaryStoreQuery("cluster_meta"))
             .map_err(Error::from)?
             .ok_or_else(|| ErrorKind::ModelNotFound("cluster_meta", cluster))
@@ -91,11 +137,7 @@ impl Handler for Meta {
 }
 
 impl Meta {
-    pub fn attach(interfaces: &mut Interfaces) {
-        let mut router = interfaces.api.router_for(&APIRoot::UnstableWebUI);
-        let handler = Meta {
-            store: interfaces.stores.primary.clone(),
-        };
-        router.get("/cluster/:cluster/meta", handler, "/cluster/:cluster/meta");
+    pub fn new(store: PrimaryStore) -> Self {
+        Meta { store }
     }
 }

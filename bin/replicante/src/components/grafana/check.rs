@@ -5,8 +5,8 @@ use iron::IronResult;
 use iron::Request;
 use iron::Response;
 
-use super::super::super::interfaces::api::APIRoot;
-use super::Interfaces;
+use crate::interfaces::api::APIRoot;
+use crate::Interfaces;
 
 /// Grafana check endpoint (`/grafana`) handler.
 pub struct Check {}

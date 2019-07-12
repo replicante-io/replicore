@@ -1,11 +1,13 @@
 use replicante_util_upkeep::Upkeep;
 
 use super::Component;
+use crate::interfaces::api::APIRoot;
 use crate::interfaces::Interfaces;
 use crate::Result;
 
 mod cluster;
 mod clusters;
+mod constants;
 mod events;
 
 /// Component to mount /webui endpoints.
@@ -19,12 +21,49 @@ pub struct WebUI {}
 impl WebUI {
     /// Create a new component and mounts all `/webui` endpoints.
     pub fn new(interfaces: &mut Interfaces) -> WebUI {
-        self::cluster::Discovery::attach(interfaces);
-        self::cluster::Meta::attach(interfaces);
-        self::clusters::Find::attach(interfaces);
-        self::clusters::Top::attach(interfaces);
-        self::events::Events::attach(interfaces);
+        WebUI::mount_unstable_api(interfaces);
         WebUI {}
+    }
+
+    fn mount_unstable_api(interfaces: &mut Interfaces) {
+        let primary = interfaces.stores.primary.clone();
+        let view = interfaces.stores.view.clone();
+        let mut router = interfaces.api.router_for(&APIRoot::UnstableWebUI);
+        router.get(
+            "/cluster/:cluster/discovery",
+            self::cluster::Discovery::new(primary.clone()),
+            "/cluster/:cluster/discovery",
+        );
+        router.get(
+            "/cluster/:cluster/events",
+            self::cluster::Events::new(view.clone()),
+            "/cluster/:cluster/events",
+        );
+        router.get(
+            "/cluster/:cluster/meta",
+            self::cluster::Meta::new(primary.clone()),
+            "/cluster/:cluster/meta",
+        );
+        router.get(
+            "/clusters/find",
+            self::clusters::Find::new(primary.clone()),
+            "/clusters/find",
+        );
+        router.get(
+            "/clusters/find/:query",
+            self::clusters::Find::new(primary.clone()),
+            "/clusters/find/:query",
+        );
+        router.get(
+            "/clusters/top",
+            self::clusters::Top::new(primary.clone()),
+            "/clusters/top",
+        );
+        router.get(
+            "/events",
+            self::events::Events::new(view.clone()),
+            "/events",
+        );
     }
 }
 

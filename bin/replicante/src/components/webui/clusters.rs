@@ -11,13 +11,11 @@ use iron_json_response::JsonResponse;
 use router::Router;
 
 use replicante_store_primary::store::Store;
+use replicante_util_iron::request_span;
 
-use super::super::super::interfaces::api::APIRoot;
-use super::super::super::interfaces::Interfaces;
-use super::super::super::Error;
-use super::super::super::ErrorKind;
-
-static FIND_CLUSTERS_LIMIT: u8 = 25;
+use super::constants::FIND_CLUSTERS_LIMIT;
+use crate::Error;
+use crate::ErrorKind;
 
 /// Clusters find (`/webui/clusters/find`) handler.
 pub struct Find {
@@ -26,6 +24,7 @@ pub struct Find {
 
 impl Handler for Find {
     fn handle(&self, req: &mut Request) -> IronResult<Response> {
+        let span_context = request_span(req).context().clone();
         let query = req
             .extensions
             .get::<Router>()
@@ -35,7 +34,7 @@ impl Handler for Find {
         let clusters = self
             .store
             .legacy()
-            .find_clusters(query.to_string(), FIND_CLUSTERS_LIMIT, None)
+            .find_clusters(query.to_string(), FIND_CLUSTERS_LIMIT, span_context)
             .with_context(|_| ErrorKind::PrimaryStoreQuery("find_clusters"))
             .map_err(Error::from)?;
         let mut response = Vec::new();
@@ -53,21 +52,8 @@ impl Handler for Find {
 }
 
 impl Find {
-    /// Attaches the handler for `/webui/clusters/find/:query`.
-    pub fn attach(interfaces: &mut Interfaces) {
-        let mut router = interfaces.api.router_for(&APIRoot::UnstableWebUI);
-        let handler_root = Find {
-            store: interfaces.stores.primary.clone(),
-        };
-        let handler_query = Find {
-            store: interfaces.stores.primary.clone(),
-        };
-        router.get("/clusters/find", handler_root, "/clusters/find");
-        router.get(
-            "/clusters/find/:query",
-            handler_query,
-            "/clusters/find/:query",
-        );
+    pub fn new(store: Store) -> Self {
+        Find { store }
     }
 }
 
@@ -77,11 +63,12 @@ pub struct Top {
 }
 
 impl Handler for Top {
-    fn handle(&self, _: &mut Request) -> IronResult<Response> {
+    fn handle(&self, req: &mut Request) -> IronResult<Response> {
+        let span = request_span(req);
         let clusters = self
             .store
             .legacy()
-            .top_clusters(None)
+            .top_clusters(span.context().clone())
             .with_context(|_| ErrorKind::PrimaryStoreQuery("top_clusters"))
             .map_err(Error::from)?;
         let mut response = Vec::new();
@@ -99,27 +86,27 @@ impl Handler for Top {
 }
 
 impl Top {
-    /// Attaches the handler for `/webui/clusters/top`.
-    pub fn attach(interfaces: &mut Interfaces) {
-        let mut router = interfaces.api.router_for(&APIRoot::UnstableWebUI);
-        let handler = Top {
-            store: interfaces.stores.primary.clone(),
-        };
-        router.get("/clusters/top", handler, "/clusters/top");
+    pub fn new(store: Store) -> Self {
+        Top { store }
     }
 }
 
 #[cfg(test)]
 mod tests {
     mod top {
+        use std::sync::Arc;
+
         use iron::Chain;
         use iron::Headers;
         use iron_json_response::JsonResponseMiddleware;
         use iron_test::request;
         use iron_test::response;
+        use opentracingrust::tracers::NoopTracer;
+        use opentracingrust::Tracer;
 
         use replicante_models_core::ClusterMeta;
         use replicante_store_primary::mock::Mock as MockStore;
+        use replicante_util_iron::mock_request_span;
 
         use super::super::Top;
 
@@ -146,10 +133,10 @@ mod tests {
             mock_store
         }
 
-        fn handler(mock: &MockStore) -> Chain {
+        fn handler(mock: &MockStore, tracer: Arc<Tracer>) -> Chain {
             let store = mock.store();
             let handler = Top { store };
-            let mut handler = Chain::new(handler);
+            let mut handler = Chain::new(mock_request_span(tracer, handler));
             handler.link_after(JsonResponseMiddleware::new());
             handler
         }
@@ -157,7 +144,9 @@ mod tests {
         #[test]
         fn get_top_clusers() {
             let mock_store = mockstore();
-            let handler = handler(&mock_store);
+            let (tracer, _) = NoopTracer::new();
+            let tracer = Arc::new(tracer);
+            let handler = handler(&mock_store, tracer);
             let response = request::get("http://host:16016/", Headers::new(), &handler).unwrap();
             let result_body = response::extract_body_to_bytes(response);
             let result: Vec<ClusterMeta> = serde_json::from_slice(&result_body).unwrap();
