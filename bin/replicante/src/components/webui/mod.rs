@@ -50,6 +50,11 @@ impl WebUI {
             "/cluster/:cluster/meta",
         );
         router.get(
+            "/cluster/:cluster/nodes",
+            self::cluster::Nodes::new(primary.clone()),
+            "/cluster/:cluster/nodes",
+        );
+        router.get(
             "/clusters/find",
             self::clusters::Find::new(primary.clone()),
             "/clusters/find",
