@@ -3,7 +3,7 @@ set -e
 
 
 usage() {
-  echo 'Usage: ci/release/gh-per-built.sh [OPTIONS] VERSION'
+  echo 'Usage: ci/release/gh-pre-built.sh [OPTIONS] VERSION'
   echo
   echo 'VERSION is the version to collect binaries for and is in the format vX.Y.Z'
   echo

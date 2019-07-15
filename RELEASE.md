@@ -17,6 +17,7 @@
   - Build and push docker image
   - Build pre-built binaries
 - Manual steps 3:
+  - [ ] Create GitHub release
   - [ ] Release pre-built binaries
   - [ ] Release documentation
 
