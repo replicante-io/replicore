@@ -81,7 +81,9 @@ coordinator:
 
 discovery:
   backends:
-    files: []
+    http:
+      - url: 'http://static.server:port/discovery.json'
+        method: GET
 
 
 events:
@@ -95,8 +97,12 @@ storage:
   primary:
     backend: mongodb
     options:
-      db: replicore
-      uri: mongodb://localhost:27017/
+      uri: 'mongodb://localhost:27017/'
+
+  view:
+    backend: mongodb
+    options:
+      uri: 'mongodb://localhost:27017/'
 
 
 tasks:
@@ -320,16 +326,42 @@ discovery:
   #
   # Available backends are:
   #
-  #   * `files`: discover agents from local configuration files.
+  #   * `http`: discover clusters by querying remote HTTP servers.
   backends:
-    # The `files` backend discovers agents from files.
+    # HTTP cluster discovery configurations.
     #
-    # It can be useful to delegate discovery to unsupported systems.
-    # Examples are configuration management tools (ansible, chef, puppet, ...).
+    # A POST request is performed to fetch cluster discoveries.
+    # Requests are issued against the configured list of targets.
+    # Each target has the following options:
     #
-    # This is a list of files that are periodically read to perform discovery.
-    # When running replicated nodes for HA users must ensure every node has the same set of files.
-    files: []
+    #   # URL of the remote target to request clusters to.
+    #   url: 'https://inventory.corp:1234/replicante/some/path'
+    #
+    #   # HTTP method to send the request as.
+    #   # Valid options are GET and POST.
+    #   # If the method is changed to GET, pagination support is disabled and as a result
+    #   # responses with a non-null cursor may cause endless loops.
+    #   method: POST
+    #
+    #   # Optional JSON object to send along every POST request.
+    #   body: ~
+    #
+    #   # Headers to send along every request.
+    #   headers: {}
+    #
+    #   # HTTP Requests timeout (in milliseconds).
+    #   timeout: 30000
+    #
+    #   # TLS confifuration options.
+    #   tls:
+    #     # Optional path to a PEM CA certificate file to validate servers with.
+    #     ca_cert: ~
+    #     # Optional path to a PEM HTTP client certificate file.
+    #     client_cert: ~
+    #
+    # Static discovery can be achieved by serving a fixed JSON response file with
+    # any one of the many HTTP servers that support static serving (Apache, NGINX, ...).
+    http: []
 
   # Interval (in seconds) to wait between agent discovery runs.
   interval: 60
@@ -538,6 +570,36 @@ storage:
       # To change this option you will need to "Update by rebuild".
       # See the documentation for more details on this process.
       db: replicore  # (recommended)
+
+      # URI of the MongoDB Replica Set or sharded cluster to connect to.
+      uri: mongodb://localhost:27017/
+
+  # The view store where data used to answer user queries is stored.
+  view:
+    # The database to persistent data in.
+    #
+    # !!! DO NOT CHANGE AFTER INITIAL CONFIGURATION !!!
+    # This option is to allow users to choose a supported database that best fits
+    # their use and environment.
+    #
+    # To change this option, follow the instructions to rebuild your system:
+    #   https://www.replicante.io/docs/manual/docs/upgrades-fresh/
+    #
+    # Available options:
+    #
+    #   * 'mongodb' (recommended)
+    backend: mongodb
+
+    # Any backend-specific option is set here.
+    # The available options vary from backend to backend and are documented below.
+    #
+    # MongoDB options:
+    options:
+      # Name of the MongoDB database to use for persistence.
+      #
+      # To change this option you will need to "Update by rebuild".
+      # See the documentation for more details on this process.
+      db: repliview  # (recommended)
 
       # URI of the MongoDB Replica Set or sharded cluster to connect to.
       uri: mongodb://localhost:27017/

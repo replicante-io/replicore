@@ -9,6 +9,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [0.4.0] - 2019-07-15
+### Added
+- Cluster specific agents API (`/cluster/:id/agents`).
+- Cluster specific events API (`/cluster/:id/events`).
+- Cluster specific nodes API (`/cluster/:id/nodes`).
+- HTTP Discovery.
+- Partial release automation.
+
+### Changed
+- **BREAKING**: Change `storage` configuration to `storage.primary`.
+- **BREAKING**: Store every event in the "view" database.
+
+### Removed
+- **BREAKING**: File Discovery.
+
 ## [0.3.1] - 2019-07-04
 ### Added
 - Common streams logic.
@@ -129,6 +144,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - WebUI endpoints for initial UI.
 
 
+[Unreleased]: https://github.com/replicante-io/replicante/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/replicante-io/replicante/compare/v0.3.1...v0.4.0
 [0.3.1]: https://github.com/replicante-io/replicante/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/replicante-io/replicante/compare/v0.2.1...v0.3.0
 [0.2.1]: https://github.com/replicante-io/replicante/compare/v0.2.0...v0.2.1

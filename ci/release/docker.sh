@@ -1,22 +1,30 @@
 #!/bin/env bash
 set -e
 
+# Constants.
+DOCKER_ORG="replicanteio"
+
 # Confguration variables.
-COMMAND=""
-DOCKE_REPO="replicanteio"
-VERSON=""
-VERBOSE="no"
+cmd=""
+docker_repo="replicante"
+sudo=""
+version=""
+verbose="no"
 
 # Parse CLI args.
 usage() {
-  echo 'Usage: ci/release/docker.sh [OPTIONS] vX.Y.Z COMMAND'
+  echo 'Usage: ci/release/docker.sh [OPTIONS] VERSION COMMAND'
   echo
-  echo 'Valid COMMANDs are:'
-  echo ' * check: check the docker image can be built'
-  echo ' * release: build the images from scratch (no caches) and pushes them'
+  echo 'VERSION is the Replicante Core version to build and is in the format vX.Y.Z'
   echo
-  echo 'Valid OPTIONS are:'
-  echo ' * --verbose: enable verbose logging'
+  echo 'Available commands:'
+  echo '  check      Check the docker image can be built'
+  echo '  release    Build the images from scratch (no caches) and pushes them'
+  echo
+  echo 'Available options:'
+  echo '  --repo REPO    The docker repository to build images for'
+  echo '  --sudo         Use sudo for docker commands'
+  echo '  --verbose      Enable verbose logging'
 }
 
 while [[ $# -ne 0 ]]; do
@@ -24,16 +32,18 @@ while [[ $# -ne 0 ]]; do
   shift
 
   case "${arg}" in
-    v[0-9].[0-9].[0-9]) VERSON=$arg;;
+    v[0-9].[0-9].[0-9]) version=$arg;;
     check|release)
-      if [[ ! -z "${COMMAND}" ]]; then
+      if [[ ! -z "${cmd}" ]]; then
         echo 'Specify only one of check or release'
         usage;
         exit 1
       fi
-      COMMAND=$arg
+      cmd=$arg
       ;;
-    --verbose) VERBOSE="yes";;
+    --repo) docker_repo=$1; shift 1;;
+    --sudo) sudo="sudo";;
+    --verbose) verbose="yes";;
 
     --help|help|-h|h)
       usage
@@ -46,19 +56,19 @@ while [[ $# -ne 0 ]]; do
   esac
 done
 
-if [[ -z ${VERSON} ]]; then
-  echo 'Need a VERSON to build'
+if [[ -z ${version} ]]; then
+  echo 'Need a version to build'
   usage
   exit 1
 fi
-if [[ -z ${COMMAND} ]]; then
-  echo 'Need a COMMAND to run'
+if [[ -z ${cmd} ]]; then
+  echo 'Need a command to run'
   usage
   exit 1
 fi
 
 # Check git status in release mode.
-if [[ ${COMMAND} == "release" ]]; then
+if [[ ${cmd} == "release" ]]; then
   if [[ ! -z "$(git status --porcelain)" ]]; then
     git status
     echo '==> Uncommitted changes to the working directory!'
@@ -69,11 +79,11 @@ fi
 
 # Build and tag image.
 echo '==> Building docker image'
-full_tag="${DOCKE_REPO}:${VERSON}"
-minor_tag="${DOCKE_REPO}:${VERSON%\.[0-9]}"
-major_tag="${DOCKE_REPO}:${VERSON%\.[0-9]\.[0-9]}"
-latest_tag="${DOCKE_REPO}:latest"
-if [[ ${VERBOSE} == "yes" ]]; then
+full_tag="${DOCKER_ORG}/${docker_repo}:${version}"
+minor_tag="${DOCKER_ORG}/${docker_repo}:${version%\.[0-9]}"
+major_tag="${DOCKER_ORG}/${docker_repo}:${version%\.[0-9]\.[0-9]}"
+latest_tag="${DOCKER_ORG}/${docker_repo}:latest"
+if [[ ${verbose} == "yes" ]]; then
   echo '---> Image will be tagged with:'
   echo "--->   - ${full_tag}"
   echo "--->   - ${minor_tag}"
@@ -82,13 +92,13 @@ if [[ ${VERBOSE} == "yes" ]]; then
 fi
 
 docker_cache=""
-if [[ ${COMMAND} == "release" ]]; then
+if [[ ${cmd} == "release" ]]; then
   docker_cache="--no-cache"
-  if [[ ${VERBOSE} == "yes" ]]; then
+  if [[ ${verbose} == "yes" ]]; then
     echo '---> Skipping docker cache for release build'
   fi
 fi
-docker build ${docker_cache} --force-rm \
+${sudo} docker build ${docker_cache} --force-rm \
   --tag "${full_tag}" \
   --tag "${minor_tag}" \
   --tag "${major_tag}" \
@@ -96,10 +106,10 @@ docker build ${docker_cache} --force-rm \
   .
 
 # Push images in release mode
-if [[ ${COMMAND} == "release" ]]; then
+if [[ ${cmd} == "release" ]]; then
   echo '==> Pushing docker images'
-  docker push "${full_tag}"
-  docker push "${minor_tag}"
-  docker push "${major_tag}"
-  docker push "${latest_tag}"
+  ${sudo} docker push "${full_tag}"
+  ${sudo} docker push "${minor_tag}"
+  ${sudo} docker push "${major_tag}"
+  ${sudo} docker push "${latest_tag}"
 fi

@@ -218,32 +218,30 @@ discovery:
     # Requests are issued against the configured list of targets.
     # Each target has the following options:
     #
-    # ```yaml
-    # # URL of the remote target to request clusters to.
-    # url: 'https://inventory.corp:1234/replicante/some/path'
+    #   # URL of the remote target to request clusters to.
+    #   url: 'https://inventory.corp:1234/replicante/some/path'
     #
-    # # HTTP method to send the request as.
-    # # Valid options are GET and POST.
-    # # If the method is changed to GET, pagination support is disabled and as a result
-    # # responses with a non-null cursor may cause endless loops.
-    # method: POST
+    #   # HTTP method to send the request as.
+    #   # Valid options are GET and POST.
+    #   # If the method is changed to GET, pagination support is disabled and as a result
+    #   # responses with a non-null cursor may cause endless loops.
+    #   method: POST
     #
-    # # Optional JSON object to send along every POST request.
-    # body: ~
+    #   # Optional JSON object to send along every POST request.
+    #   body: ~
     #
-    # # Headers to send along every request.
-    # headers: {}
+    #   # Headers to send along every request.
+    #   headers: {}
     #
-    # # HTTP Requests timeout (in milliseconds).
-    # timeout: 30000
+    #   # HTTP Requests timeout (in milliseconds).
+    #   timeout: 30000
     #
-    # # TLS confifuration options.
-    # tls:
-    #   # Optional path to a PEM CA certificate file to validate servers with.
-    #   ca_cert: ~
-    #   # Optional path to a PEM HTTP client certificate file.
-    #   client_cert: ~
-    # ```
+    #   # TLS confifuration options.
+    #   tls:
+    #     # Optional path to a PEM CA certificate file to validate servers with.
+    #     ca_cert: ~
+    #     # Optional path to a PEM HTTP client certificate file.
+    #     client_cert: ~
     #
     # Static discovery can be achieved by serving a fixed JSON response file with
     # any one of the many HTTP servers that support static serving (Apache, NGINX, ...).

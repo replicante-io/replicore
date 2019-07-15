@@ -27,9 +27,5 @@ They **DO NOT** aim to be fully portable across major linux distributions.
 In particular they use a relatively recent version of `glibc` that is unlikely
 to be available on older or "slower" distributions (ubuntu 14.04, CentOS, ...).
 
-To collect the pre-built binaries, once docker images have been published:
-```bash
-ci/release/gh-per-built.sh --clean vX.Y.Z
-ci/release/gh-per-built.sh --clean --repo agents vX.Y.Z
-ci/release/gh-per-built.sh --repo agent-kafka vX.Y.Z
-```
+The `ci/release/artefacts.sh` script will produce the pre-built binaries
+to upload to GitHub in the `target/gh-releases` directory.

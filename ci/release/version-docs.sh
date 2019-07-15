@@ -2,11 +2,13 @@
 set -e
 
 # Confguration variables.
-VERSON=""
+version=""
 
 # Parse CLI args.
 usage() {
-  echo 'Usage: ci/release/version-docs.sh vX.Y.Z'
+  echo 'Usage: ci/release/version-docs.sh VERSION'
+  echo
+  echo 'VERSION is the version to tag documents with and is in the format vX.Y.Z'
 }
 
 while [[ $# -ne 0 ]]; do
@@ -14,7 +16,8 @@ while [[ $# -ne 0 ]]; do
   shift
 
   case "${arg}" in
-    v[0-9].[0-9].[0-9]) VERSON=$arg;;
+    v[0-9].[0-9].[0-9]) version=$arg;;
+
     --help|help|-h|h)
       usage
       exit 0
@@ -26,8 +29,8 @@ while [[ $# -ne 0 ]]; do
   esac
 done
 
-if [[ -z ${VERSON} ]]; then
-  echo 'Need a VERSON to release'
+if [[ -z ${version} ]]; then
+  echo 'Need a version to release'
   usage
   exit 1
 fi
@@ -36,7 +39,7 @@ fi
 version_project() {
   echo "==> Versioning $1 ..."
   pushd $1 > /dev/null
-  npm run version "${VERSON#v}"
+  npm run version "${version#v}"
   popd > /dev/null
 }
 
