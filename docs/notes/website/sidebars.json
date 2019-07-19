@@ -18,6 +18,7 @@
       "layered-config",
       "lock-validation-writes",
       "multi-cache",
+      "split-discovery",
       "stream-batches",
       "zookeeper-elections"
     ],

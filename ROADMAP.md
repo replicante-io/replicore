@@ -1,8 +1,5 @@
-## 0.?.? - Actions?
-
 ## 0.?.? - Additional data in the UI
 - Add shards information to the UI.
-
 
 ## 0.?.? - More agents?
 - PostgreSQL
