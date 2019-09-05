@@ -1,7 +1,7 @@
 ---
 id: agent-shards
-title: Shards Information
-sidebar_label: Shards Information
+title: Shards Information API
+sidebar_label: Shards Information API
 ---
 
 <blockquote class="warning">

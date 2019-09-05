@@ -3,6 +3,25 @@
   background-image: url('/docs/notes/img/gplay.png');
 }
 
+
+/* "Alert" block */
+blockquote.danger {
+  background-color: rgba(255, 100, 100, 0.3);
+  border-left-color: rgb(255, 100, 100);
+}
+
+blockquote.info {
+  background-color: rgba(100, 205, 255, 0.3);
+  border-left-color: rgb(100, 205, 255);
+}
+
+blockquote.warning {
+  background-color: rgba(255, 229, 100, 0.3);
+  border-left-color: rgb(255, 229, 100);
+}
+
+
+/* Refine styles based on screen size */
 @media only screen and (min-device-width: 360px) and (max-device-width: 736px) {
 }
 

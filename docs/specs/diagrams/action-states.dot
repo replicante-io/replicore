@@ -1,0 +1,26 @@
+digraph ActionStates {
+  //cancel [label="CANCEL"];
+  //cancelled [label="CANCELLED"];
+  //cancelling [label="CANCELLING"];
+  done [label="DONE"];
+  failed [label="FAILED"];
+  new [label="NEW"];
+  running [label="RUNNING"];
+
+  // Actions start as new.
+  //new -> cancel;
+  new -> failed;
+  new -> running;
+  new -> done;
+
+  // Actions are cancelled by processing a cancel state.
+  //cancel -> cancelling;
+  //cancelling -> cancelled;
+  //cancelling -> failed;
+
+  // Running actions can need more time or complete.
+  //running -> cancel;
+  running -> failed;
+  running -> running;
+  running -> done;
+}

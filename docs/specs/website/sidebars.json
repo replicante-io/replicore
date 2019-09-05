@@ -15,7 +15,8 @@
     "The Agent Protocol": [
       "agent",
       "agent-info",
-      "agent-shards"
+      "agent-shards",
+      "agent-actions"
     ],
     "Model ChangeLog": [
       "changelog"

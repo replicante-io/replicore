@@ -1,7 +1,7 @@
 ---
 id: agent-info
-title: Agent Information
-sidebar_label: Agent Information
+title: Agent Information API
+sidebar_label: Agent Information API
 ---
 
 <blockquote class="warning">

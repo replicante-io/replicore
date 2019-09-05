@@ -4,7 +4,7 @@
       "architecture",
       "from-discovery-to-events",
       "cluster-view",
-      "data-storage-format",
+      "archnotes-models",
       "scaling",
       "coordinator",
       "archnotes-fail-locks"
