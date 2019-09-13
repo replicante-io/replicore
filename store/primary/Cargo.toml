@@ -16,10 +16,10 @@ with_test_support = []
 
 
 [dependencies]
-bson = "=0.13.0"
+bson = "^0.14.0" # bound by mongodb crate
 failure = "^0.1.5"
 lazy_static = "^1.0.0"
-mongodb = "^0.3.10"
+mongodb = "^0.4.0"
 opentracingrust = "^0.3.3"
 regex = "^1.0.0"
 serde = "^1.0.34"

@@ -42,14 +42,14 @@ prometheus = { version = "^0.7.0", features = ["process"] }
 reqwest = "^0.9.1"
 router = "^0.6.0"
 semver = "^0.9.0"
-sentry = "^0.16.0"
+sentry = "^0.17.0"
 serde = "^1.0.34"
 serde_derive = "^1.0.34"
 serde_json = "^1.0.13"
 serde_yaml = "^0.8.0"
 slog = "^2.1.1"
 slog-scope = "^4.0.1"
-slog-stdlog = "^3.0.2"
+slog-stdlog = "^4.0.0"
 
 replicante_agent_client = { path = "../../agent/client" }
 replicante_cluster_aggregator = { path = "../../cluster/aggregator" }
@@ -74,7 +74,7 @@ replicante_util_upkeep = { path = "../../common/util/upkeep" }
 
 
 [build-dependencies]
-git2 = "^0.9.0"
+git2 = "^0.10.0"
 
 
 [dev-dependencies]

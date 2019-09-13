@@ -431,8 +431,8 @@ impl<Q: TaskQueue> Backend<Q> for Kafka {
 
         // Check if there is a cached task to re-deliver.
         let cache = THREAD_TASK_CACHE.with(|cache| cache.borrow().as_ref().cloned());
-        if cache.is_some() {
-            let task = cache.unwrap().task()?;
+        if let Some(cache) = cache {
+            let task = cache.task()?;
             warn!(
                 self.logger,
                 "Kafka thread cache contains a task, injecting delay before re-delivering";
