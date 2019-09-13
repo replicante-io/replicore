@@ -131,7 +131,7 @@ impl Client {
                         span.tag("znode.exists", true);
                         error
                     } else {
-                        fail_span(error, &mut span)
+                        fail_span(error, &mut *span)
                     }
                 }
             }
@@ -172,7 +172,7 @@ impl Client {
                         span.tag("znode.exists", false);
                         error
                     } else {
-                        fail_span(error, &mut span)
+                        fail_span(error, &mut *span)
                     }
                 }
             }
@@ -205,7 +205,7 @@ impl Client {
             }
             match span {
                 None => error,
-                Some(mut span) => fail_span(error, &mut span),
+                Some(mut span) => fail_span(error, &mut *span),
             }
         })
     }
@@ -240,7 +240,7 @@ impl Client {
             }
             match span {
                 None => error,
-                Some(mut span) => fail_span(error, &mut span),
+                Some(mut span) => fail_span(error, &mut *span),
             }
         })
     }
@@ -308,7 +308,7 @@ impl Client {
             }
             match span {
                 None => error,
-                Some(mut span) => fail_span(error, &mut span),
+                Some(mut span) => fail_span(error, &mut *span),
             }
         })
     }

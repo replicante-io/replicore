@@ -207,7 +207,7 @@ impl TaskHandler<ReplicanteQueues> for Handler {
         };
         let result = self
             .do_handle(&task, &mut span)
-            .map_err(|error| fail_span(error, &mut span));
+            .map_err(|error| fail_span(error, &mut *span));
         match result {
             Ok(()) => {
                 if let Err(error) = task.success() {

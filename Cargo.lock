@@ -960,8 +960,8 @@ dependencies = [
 
 [[package]]
 name = "kafka"
-version = "0.7.0"
-source = "git+https://github.com/l4l/kafka-rust?branch=update/openssl#ceb365d9b7740037368fd00126527bd7e338af5f"
+version = "0.8.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "byteorder 0.5.3 (registry+https://github.com/rust-lang/crates.io-index)",
  "crc 1.8.1 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -1269,7 +1269,7 @@ dependencies = [
 
 [[package]]
 name = "nix"
-version = "0.14.1"
+version = "0.15.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "bitflags 1.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -1385,13 +1385,13 @@ dependencies = [
 
 [[package]]
 name = "opentracingrust_zipkin"
-version = "0.1.6"
+version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "byteorder 1.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "crossbeam-channel 0.3.9 (registry+https://github.com/rust-lang/crates.io-index)",
  "data-encoding 2.1.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "kafka 0.7.0 (git+https://github.com/l4l/kafka-rust?branch=update/openssl)",
+ "kafka 0.8.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "opentracingrust 0.3.4 (registry+https://github.com/rust-lang/crates.io-index)",
  "ordered-float 0.5.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "rand 0.4.6 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -1924,14 +1924,14 @@ dependencies = [
  "replicante_store_view 0.1.0",
  "replicante_stream 0.1.0",
  "replicante_stream_events 0.1.1",
- "replicante_util_failure 0.1.1",
+ "replicante_util_failure 0.1.2",
  "replicante_util_iron 0.2.0",
- "replicante_util_tracing 0.3.1",
+ "replicante_util_tracing 0.3.2",
  "replicante_util_upkeep 0.1.0",
  "reqwest 0.9.20 (registry+https://github.com/rust-lang/crates.io-index)",
  "router 0.6.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "semver 0.9.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "sentry 0.15.5 (registry+https://github.com/rust-lang/crates.io-index)",
+ "sentry 0.16.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde 1.0.100 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde_derive 1.0.100 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde_json 1.0.40 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -1951,8 +1951,8 @@ dependencies = [
  "opentracingrust 0.3.4 (registry+https://github.com/rust-lang/crates.io-index)",
  "prometheus 0.7.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "replicante_models_agent 0.3.0",
- "replicante_util_failure 0.1.1",
- "replicante_util_tracing 0.3.1",
+ "replicante_util_failure 0.1.2",
+ "replicante_util_tracing 0.3.2",
  "reqwest 0.9.20 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde 1.0.100 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde_derive 1.0.100 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -1970,7 +1970,7 @@ dependencies = [
  "replicante_models_core 0.2.1",
  "replicante_service_coordinator 0.1.0",
  "replicante_store_primary 0.4.0",
- "replicante_util_tracing 0.3.1",
+ "replicante_util_tracing 0.3.2",
  "slog 2.5.2 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
@@ -2004,8 +2004,8 @@ dependencies = [
  "replicante_service_coordinator 0.1.0",
  "replicante_store_primary 0.4.0",
  "replicante_stream_events 0.1.1",
- "replicante_util_failure 0.1.1",
- "replicante_util_tracing 0.3.1",
+ "replicante_util_failure 0.1.2",
+ "replicante_util_tracing 0.3.2",
  "slog 2.5.2 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
@@ -2037,7 +2037,7 @@ dependencies = [
  "replicante_models_api 0.1.0",
  "replicante_models_core 0.2.1",
  "replicante_service_healthcheck 0.1.0",
- "replicante_util_tracing 0.3.1",
+ "replicante_util_tracing 0.3.2",
  "semver 0.9.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde 1.0.100 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde_derive 1.0.100 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -2099,9 +2099,9 @@ dependencies = [
  "prometheus 0.7.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "replicante_models_api 0.1.0",
  "replicante_service_healthcheck 0.1.0",
- "replicante_util_failure 0.1.1",
+ "replicante_util_failure 0.1.2",
  "replicante_util_rndid 0.1.0",
- "replicante_util_tracing 0.3.1",
+ "replicante_util_tracing 0.3.2",
  "serde 1.0.100 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde_derive 1.0.100 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde_json 1.0.40 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -2131,7 +2131,7 @@ dependencies = [
  "rdkafka 0.21.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "replicante_externals_kafka 0.1.0",
  "replicante_service_healthcheck 0.1.0",
- "replicante_util_failure 0.1.1",
+ "replicante_util_failure 0.1.2",
  "replicante_util_rndid 0.1.0",
  "replicante_util_upkeep 0.1.0",
  "serde 1.0.100 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -2154,7 +2154,7 @@ dependencies = [
  "replicante_models_api 0.1.0",
  "replicante_models_core 0.2.1",
  "replicante_service_healthcheck 0.1.0",
- "replicante_util_tracing 0.3.1",
+ "replicante_util_tracing 0.3.2",
  "serde 1.0.100 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde_derive 1.0.100 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde_json 1.0.40 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -2194,8 +2194,8 @@ dependencies = [
  "rdkafka 0.21.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "replicante_externals_kafka 0.1.0",
  "replicante_service_healthcheck 0.1.0",
- "replicante_util_failure 0.1.1",
- "sentry 0.15.5 (registry+https://github.com/rust-lang/crates.io-index)",
+ "replicante_util_failure 0.1.2",
+ "sentry 0.16.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde 1.0.100 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde_derive 1.0.100 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde_json 1.0.40 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -2216,10 +2216,10 @@ dependencies = [
 
 [[package]]
 name = "replicante_util_failure"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
  "failure 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)",
- "sentry 0.15.5 (registry+https://github.com/rust-lang/crates.io-index)",
+ "sentry 0.16.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde 1.0.100 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde_derive 1.0.100 (registry+https://github.com/rust-lang/crates.io-index)",
  "slog 2.5.2 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -2235,10 +2235,10 @@ dependencies = [
  "iron-test 0.6.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "opentracingrust 0.3.4 (registry+https://github.com/rust-lang/crates.io-index)",
  "prometheus 0.7.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "replicante_util_failure 0.1.1",
- "replicante_util_tracing 0.3.1",
+ "replicante_util_failure 0.1.2",
+ "replicante_util_tracing 0.3.2",
  "router 0.6.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "sentry 0.15.5 (registry+https://github.com/rust-lang/crates.io-index)",
+ "sentry 0.16.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde_json 1.0.40 (registry+https://github.com/rust-lang/crates.io-index)",
  "slog 2.5.2 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
@@ -2248,21 +2248,21 @@ name = "replicante_util_rndid"
 version = "0.1.0"
 dependencies = [
  "data-encoding 2.1.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "rand 0.6.5 (registry+https://github.com/rust-lang/crates.io-index)",
+ "rand 0.7.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde 1.0.100 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde_derive 1.0.100 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
 name = "replicante_util_tracing"
-version = "0.3.1"
+version = "0.3.2"
 dependencies = [
  "failure 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)",
  "humthreads 0.1.4 (registry+https://github.com/rust-lang/crates.io-index)",
  "iron 0.6.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "opentracingrust 0.3.4 (registry+https://github.com/rust-lang/crates.io-index)",
- "opentracingrust_zipkin 0.1.6 (registry+https://github.com/rust-lang/crates.io-index)",
- "replicante_util_failure 0.1.1",
+ "opentracingrust_zipkin 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "replicante_util_failure 0.1.2",
  "replicante_util_upkeep 0.1.0",
  "reqwest 0.9.20 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde 1.0.100 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -2277,8 +2277,8 @@ version = "0.1.0"
 dependencies = [
  "crossbeam-channel 0.3.9 (registry+https://github.com/rust-lang/crates.io-index)",
  "humthreads 0.1.4 (registry+https://github.com/rust-lang/crates.io-index)",
- "nix 0.14.1 (registry+https://github.com/rust-lang/crates.io-index)",
- "replicante_util_failure 0.1.1",
+ "nix 0.15.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "replicante_util_failure 0.1.2",
  "signal-hook 0.1.10 (registry+https://github.com/rust-lang/crates.io-index)",
  "slog 2.5.2 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
@@ -2303,7 +2303,7 @@ dependencies = [
  "replicante_store_primary 0.4.0",
  "replicante_store_view 0.1.0",
  "replicante_stream_events 0.1.1",
- "replicante_util_failure 0.1.1",
+ "replicante_util_failure 0.1.2",
  "replicante_util_rndid 0.1.0",
  "reqwest 0.9.20 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde_yaml 0.8.9 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -2514,7 +2514,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
 name = "sentry"
-version = "0.15.5"
+version = "0.16.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "backtrace 0.3.37 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -3606,7 +3606,7 @@ dependencies = [
 "checksum iron-test 0.6.0 (registry+https://github.com/rust-lang/crates.io-index)" = "b1944bcf30f8b3f51ebf01e715517dd9755e9480934778d6de70179a41d283c1"
 "checksum itoa 0.4.4 (registry+https://github.com/rust-lang/crates.io-index)" = "501266b7edd0174f8530248f87f99c88fbe60ca4ef3dd486835b8d8d53136f7f"
 "checksum js-sys 0.3.27 (registry+https://github.com/rust-lang/crates.io-index)" = "1efc4f2a556c58e79c5500912e221dd826bec64ff4aabd8ce71ccef6da02d7d4"
-"checksum kafka 0.7.0 (git+https://github.com/l4l/kafka-rust?branch=update/openssl)" = "<none>"
+"checksum kafka 0.8.0 (registry+https://github.com/rust-lang/crates.io-index)" = "f37f068eb07305e1141453ea2dccfb4f278153a4261bb9a519f10d1eb13d25a8"
 "checksum kernel32-sys 0.2.2 (registry+https://github.com/rust-lang/crates.io-index)" = "7507624b29483431c0ba2d82aece8ca6cdba9382bff4ddd0f7490560c056098d"
 "checksum language-tags 0.2.2 (registry+https://github.com/rust-lang/crates.io-index)" = "a91d884b6667cd606bb5a69aa0c99ba811a115fc68915e7056ec08a46e93199a"
 "checksum lazy_static 1.4.0 (registry+https://github.com/rust-lang/crates.io-index)" = "e2abad23fbc42b3700f2f279844dc832adb2b2eb069b2df918f455c4e18cc646"
@@ -3639,7 +3639,7 @@ dependencies = [
 "checksum mongodb 0.3.12 (registry+https://github.com/rust-lang/crates.io-index)" = "d558c8c1ee6140954f82b53558135bb9ecb7b258e10dbd7206d985d134d388e0"
 "checksum native-tls 0.2.3 (registry+https://github.com/rust-lang/crates.io-index)" = "4b2df1a4c22fd44a62147fd8f13dd0f95c9d8ca7b2610299b2a2f9cf8964274e"
 "checksum net2 0.2.33 (registry+https://github.com/rust-lang/crates.io-index)" = "42550d9fb7b6684a6d404d9fa7250c2eb2646df731d1c06afc06dcee9e1bcf88"
-"checksum nix 0.14.1 (registry+https://github.com/rust-lang/crates.io-index)" = "6c722bee1037d430d0f8e687bbdbf222f27cc6e4e68d5caf630857bb2b6dbdce"
+"checksum nix 0.15.0 (registry+https://github.com/rust-lang/crates.io-index)" = "3b2e0b4f3320ed72aaedb9a5ac838690a8047c7b275da22711fddff4f8a14229"
 "checksum nodrop 0.1.13 (registry+https://github.com/rust-lang/crates.io-index)" = "2f9667ddcc6cc8a43afc9b7917599d7216aa09c463919ea32c59ed6cac8bc945"
 "checksum nom 1.2.4 (registry+https://github.com/rust-lang/crates.io-index)" = "a5b8c256fd9471521bcb84c3cdba98921497f1a331cbc15b8030fc63b82050ce"
 "checksum nom 4.2.3 (registry+https://github.com/rust-lang/crates.io-index)" = "2ad2a91a8e869eeb30b9cb3119ae87773a8f4ae617f41b1eb9c154b2905f7bd6"
@@ -3653,7 +3653,7 @@ dependencies = [
 "checksum openssl-probe 0.1.2 (registry+https://github.com/rust-lang/crates.io-index)" = "77af24da69f9d9341038eba93a073b1fdaaa1b788221b00a69bce9e762cb32de"
 "checksum openssl-sys 0.9.49 (registry+https://github.com/rust-lang/crates.io-index)" = "f4fad9e54bd23bd4cbbe48fdc08a1b8091707ac869ef8508edea2fec77dcc884"
 "checksum opentracingrust 0.3.4 (registry+https://github.com/rust-lang/crates.io-index)" = "290ec7047b41c93d4dcb7d41e21b476520f94d38455d73efefca9551cd794ce7"
-"checksum opentracingrust_zipkin 0.1.6 (registry+https://github.com/rust-lang/crates.io-index)" = "40d3120b809d50ae9a50f30a2ed949c21320a80ac306b230463cf770afee6a65"
+"checksum opentracingrust_zipkin 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)" = "4d115e3d5f7aeefe0ce37b0ec9e559d4151b57dc545949b3036e3ba3a883144b"
 "checksum ordered-float 0.5.2 (registry+https://github.com/rust-lang/crates.io-index)" = "7eb5259643245d3f292c7a146b2df53bba24d7eab159410e648eb73dc164669d"
 "checksum owning_ref 0.4.0 (registry+https://github.com/rust-lang/crates.io-index)" = "49a4b8ea2179e6a2e27411d3bca09ca6dd630821cf6894c6c7c8467a8ee7ef13"
 "checksum parking_lot 0.7.1 (registry+https://github.com/rust-lang/crates.io-index)" = "ab41b4aed082705d1056416ae4468b6ea99d52599ecf3169b00088d43113e337"
@@ -3731,7 +3731,7 @@ dependencies = [
 "checksum semver 0.8.0 (registry+https://github.com/rust-lang/crates.io-index)" = "bee2bc909ab2d8d60dab26e8cad85b25d795b14603a0dcb627b78b9d30b6454b"
 "checksum semver 0.9.0 (registry+https://github.com/rust-lang/crates.io-index)" = "1d7eb9ef2c18661902cc47e535f9bc51b78acd254da71d375c2f6720d9a40403"
 "checksum semver-parser 0.7.0 (registry+https://github.com/rust-lang/crates.io-index)" = "388a1df253eca08550bef6c72392cfe7c30914bf41df5269b68cbd6ff8f570a3"
-"checksum sentry 0.15.5 (registry+https://github.com/rust-lang/crates.io-index)" = "95129dccb5a12b47b030697dac994e59fb63fe4e8294c1dc4c78ab7b54b49c22"
+"checksum sentry 0.16.0 (registry+https://github.com/rust-lang/crates.io-index)" = "509c5fbb9e875fafcd9c4612c0e49d476083b848bf87380cfe1126ebc745c140"
 "checksum sentry-types 0.11.0 (registry+https://github.com/rust-lang/crates.io-index)" = "b23e3d9c8c6e4a1523f24df6753c4088bfe16c44a73c8881c1d23c70f28ae280"
 "checksum separator 0.3.1 (registry+https://github.com/rust-lang/crates.io-index)" = "7acc4d818f952ed02e7911df5da8098c8b00a3c5ba2832e035a750b56e8fc32b"
 "checksum serde 1.0.100 (registry+https://github.com/rust-lang/crates.io-index)" = "f4473e8506b213730ff2061073b48fa51dcc66349219e2e7c5608f0296a1d95a"
