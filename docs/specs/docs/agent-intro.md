@@ -17,6 +17,10 @@ The Agents interface is a JSON encoded HTTP API.
 The API is versioned so that breaking changes can be rolled out gradually
 with version compatibility "windows".
 
+Any date or time returned or receiver by the agent API MUST be in UTC.
+The Agent API MUST expose dates and times as
+[RFC 3339](https://tools.ietf.org/html/rfc3339) encoded strings.
+
 
 ## Information and Monitoring
 One of the tasks an agent is expected to do is provide specialised information and monitoring data.
@@ -66,6 +70,11 @@ but that is outside the scope of this specification.
 ## Actions
 Another task the agent is responsible for is the execution of actions.
 Actions are the execution layer on which any automation is built.
+
+Agents allow clients to schedule as many actions as they like and can start rejecting actions
+if too many actions are schedule and have not been processed yet.
+Agents MUST execute only one action at a time.
+Actions MUST be executed in the order they have been successfully scheduled with the agent.
 
 Actions have the following set of properties:
 

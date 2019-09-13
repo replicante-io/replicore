@@ -2,12 +2,15 @@
   "docs": {
     "Architectural Notes": [
       "architecture",
-      "from-discovery-to-events",
       "cluster-view",
+      "archnotes-global-clock",
+      "archnotes-discovery-refresh",
+      "archnotes-scheduling-actions",
+      "archnotes-playbooks",
       "archnotes-models",
-      "scaling",
       "coordinator",
-      "archnotes-fail-locks"
+      "archnotes-fail-locks",
+      "scaling"
     ],
     "Premature Optimisations": [
       "optimizations",
