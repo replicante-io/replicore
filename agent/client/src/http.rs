@@ -15,9 +15,9 @@ use serde::de::DeserializeOwned;
 use serde_derive::Deserialize;
 use slog::Logger;
 
-use replicante_models_agent::AgentInfo;
-use replicante_models_agent::DatastoreInfo;
-use replicante_models_agent::Shards;
+use replicante_models_agent::info::AgentInfo;
+use replicante_models_agent::info::DatastoreInfo;
+use replicante_models_agent::info::Shards;
 use replicante_util_failure::capture_fail;
 use replicante_util_failure::failure_info;
 use replicante_util_tracing::carriers::reqwest::HeadersCarrier;

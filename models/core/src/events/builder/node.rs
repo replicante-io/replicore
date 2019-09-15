@@ -1,8 +1,8 @@
-use super::super::super::Node;
-use super::super::Event;
-use super::super::EventBuilder;
-use super::super::EventPayload;
-use super::super::NodeChanged;
+use crate::events::Event;
+use crate::events::EventBuilder;
+use crate::events::EventPayload;
+use crate::events::NodeChanged;
+use crate::Node;
 
 /// Build `Event`s that belongs to the node family.
 pub struct NodeBuilder {
@@ -37,7 +37,7 @@ impl NodeBuilder {
 
 #[cfg(test)]
 mod tests {
-    use replicante_models_agent::DatastoreInfo as WireNode;
+    use replicante_models_agent::info::DatastoreInfo as WireNode;
 
     use super::Event;
     use super::EventPayload;

@@ -12,9 +12,9 @@ extern crate replicante_models_agent;
 
 use opentracingrust::SpanContext;
 
-use replicante_models_agent::AgentInfo;
-use replicante_models_agent::DatastoreInfo;
-use replicante_models_agent::Shards;
+use replicante_models_agent::info::AgentInfo;
+use replicante_models_agent::info::DatastoreInfo;
+use replicante_models_agent::info::Shards;
 
 mod error;
 mod http;

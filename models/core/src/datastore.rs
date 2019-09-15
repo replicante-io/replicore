@@ -1,14 +1,14 @@
 use serde_derive::Deserialize;
 use serde_derive::Serialize;
 
-use replicante_models_agent::DatastoreInfo as WireNode;
-use replicante_models_agent::Shard as WireShard;
+use replicante_models_agent::info::DatastoreInfo as WireNode;
+use replicante_models_agent::info::Shard as WireShard;
 
 // Re-export some models for core to use.
 // This opens up the option of replacing the implementation without changing dependants.
-pub use replicante_models_agent::CommitOffset;
-pub use replicante_models_agent::CommitUnit;
-pub use replicante_models_agent::ShardRole;
+pub use replicante_models_agent::info::CommitOffset;
+pub use replicante_models_agent::info::CommitUnit;
+pub use replicante_models_agent::info::ShardRole;
 
 /// Datastore version details.
 #[derive(Clone, Eq, PartialEq, Hash, Debug, Serialize, Deserialize)]
@@ -65,7 +65,7 @@ mod tests {
     mod node {
         use serde_json;
 
-        use replicante_models_agent::DatastoreInfo as WireNode;
+        use replicante_models_agent::info::DatastoreInfo as WireNode;
 
         use super::super::Node;
 
@@ -97,9 +97,9 @@ mod tests {
     mod shard {
         use serde_json;
 
-        use replicante_models_agent::CommitOffset;
-        use replicante_models_agent::Shard as WireShard;
-        use replicante_models_agent::ShardRole;
+        use replicante_models_agent::info::CommitOffset;
+        use replicante_models_agent::info::Shard as WireShard;
+        use replicante_models_agent::info::ShardRole;
 
         use super::super::Shard;
 

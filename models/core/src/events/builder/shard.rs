@@ -1,8 +1,8 @@
-use super::super::super::Shard;
-use super::super::Event;
-use super::super::EventBuilder;
-use super::super::EventPayload;
-use super::super::ShardAllocationChanged;
+use crate::events::Event;
+use crate::events::EventBuilder;
+use crate::events::EventPayload;
+use crate::events::ShardAllocationChanged;
+use crate::Shard;
 
 /// Build `Event`s that belongs to the shard family.
 pub struct ShardBuilder {
@@ -39,8 +39,8 @@ impl ShardBuilder {
 
 #[cfg(test)]
 mod tests {
-    use replicante_models_agent::Shard as WireShard;
-    use replicante_models_agent::ShardRole;
+    use replicante_models_agent::info::Shard as WireShard;
+    use replicante_models_agent::info::ShardRole;
 
     use super::Event;
     use super::EventPayload;
