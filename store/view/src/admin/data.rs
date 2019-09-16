@@ -1,4 +1,4 @@
-use replicante_models_core::Event;
+use replicante_models_core::events::Event;
 
 use crate::backend::DataImpl;
 use crate::Cursor;

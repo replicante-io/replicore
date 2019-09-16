@@ -7,7 +7,7 @@ use slog::Logger;
 
 use replicante_externals_mongodb::admin::ValidationResult;
 use replicante_models_core::admin::Version;
-use replicante_models_core::Event;
+use replicante_models_core::events::Event;
 use replicante_service_healthcheck::HealthChecks;
 
 use crate::store::events::EventsFilters;

@@ -1,7 +1,7 @@
 use failure::ResultExt;
 use opentracingrust::Span;
 
-use replicante_models_core::Event;
+use replicante_models_core::events::Event;
 use replicante_store_primary::store::Store;
 use replicante_stream_events::EmitMessage;
 use replicante_stream_events::Stream as EventsStream;

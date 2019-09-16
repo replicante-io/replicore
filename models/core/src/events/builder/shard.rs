@@ -1,8 +1,8 @@
+use crate::agent::Shard;
 use crate::events::Event;
 use crate::events::EventBuilder;
 use crate::events::EventPayload;
 use crate::events::ShardAllocationChanged;
-use crate::Shard;
 
 /// Build `Event`s that belongs to the shard family.
 pub struct ShardBuilder {

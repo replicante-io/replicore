@@ -2,7 +2,7 @@ use opentracingrust::SpanContext;
 use serde_derive::Deserialize;
 use serde_derive::Serialize;
 
-use replicante_models_core::Shard as ShardModel;
+use replicante_models_core::agent::Shard as ShardModel;
 
 use super::super::backend::ShardsImpl;
 use super::super::Cursor;

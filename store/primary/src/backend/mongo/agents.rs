@@ -14,8 +14,8 @@ use opentracingrust::Tracer;
 
 use replicante_externals_mongodb::operations::aggregate;
 use replicante_externals_mongodb::operations::find;
-use replicante_models_core::Agent as AgentModel;
-use replicante_models_core::AgentInfo as AgentInfoModel;
+use replicante_models_core::agent::Agent as AgentModel;
+use replicante_models_core::agent::AgentInfo as AgentInfoModel;
 
 use super::super::super::store::agents::AgentsAttribures;
 use super::super::super::store::agents::AgentsCounts;

@@ -4,12 +4,12 @@ use chrono::Utc;
 use serde_derive::Deserialize;
 use serde_derive::Serialize;
 
-use super::Agent;
-use super::AgentInfo;
-use super::AgentStatus;
-use super::ClusterDiscovery;
-use super::Node;
-use super::Shard;
+use crate::agent::Agent;
+use crate::agent::AgentInfo;
+use crate::agent::AgentStatus;
+use crate::agent::Node;
+use crate::agent::Shard;
+use crate::cluster::ClusterDiscovery;
 
 mod builder;
 
@@ -217,8 +217,8 @@ mod tests {
     use chrono::Utc;
     use serde_json;
 
-    use super::super::ClusterDiscovery;
     use super::Event;
+    use crate::cluster::ClusterDiscovery;
 
     #[test]
     fn from_json() {

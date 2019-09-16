@@ -12,11 +12,11 @@ use opentracingrust::SpanContext;
 use opentracingrust::Tracer;
 
 use replicante_externals_mongodb::operations::replace_one;
-use replicante_models_core::Agent as AgentModel;
-use replicante_models_core::AgentInfo as AgentInfoModel;
-use replicante_models_core::ClusterDiscovery as ClusterDiscoveryModel;
-use replicante_models_core::Node as NodeModel;
-use replicante_models_core::Shard as ShardModel;
+use replicante_models_core::agent::Agent as AgentModel;
+use replicante_models_core::agent::AgentInfo as AgentInfoModel;
+use replicante_models_core::agent::Node as NodeModel;
+use replicante_models_core::agent::Shard as ShardModel;
+use replicante_models_core::cluster::ClusterDiscovery as ClusterDiscoveryModel;
 
 use super::super::PersistInterface;
 use super::constants::COLLECTION_AGENTS;

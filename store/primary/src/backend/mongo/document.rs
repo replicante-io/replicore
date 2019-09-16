@@ -1,9 +1,9 @@
 use serde_derive::Deserialize;
 use serde_derive::Serialize;
 
-use replicante_models_core::AgentInfo;
-use replicante_models_core::Node;
-use replicante_models_core::Shard;
+use replicante_models_core::agent::AgentInfo;
+use replicante_models_core::agent::Node;
+use replicante_models_core::agent::Shard;
 
 /// Wrap an `AgentInfo` with store only and MongoDB specific fields.
 #[derive(Clone, Eq, PartialEq, Hash, Debug, Serialize, Deserialize)]

@@ -4,7 +4,7 @@ use std::sync::Arc;
 use opentracingrust::Tracer;
 use slog::Logger;
 
-use replicante_models_core::Event;
+use replicante_models_core::events::Event;
 use replicante_service_healthcheck::HealthChecks;
 use replicante_stream::EmitMessage as BaseEmitMessage;
 use replicante_stream::ErrorKind;
@@ -77,8 +77,8 @@ mod tests {
 
     use serde_json::json;
 
-    use replicante_models_core::ClusterDiscovery;
-    use replicante_models_core::Event;
+    use replicante_models_core::cluster::ClusterDiscovery;
+    use replicante_models_core::events::Event;
     use replicante_stream::test_support::mock_message;
     use replicante_stream::ErrorKind;
 

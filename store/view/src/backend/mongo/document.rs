@@ -2,8 +2,8 @@ use bson::UtcDateTime;
 use serde_derive::Deserialize;
 use serde_derive::Serialize;
 
-use replicante_models_core::Event;
-use replicante_models_core::EventPayload;
+use replicante_models_core::events::Event;
+use replicante_models_core::events::EventPayload;
 
 /// Wrap an `Event` to allow BSON to encode/decode timestamps correctly.
 #[derive(Clone, Eq, PartialEq, Debug, Serialize, Deserialize)]

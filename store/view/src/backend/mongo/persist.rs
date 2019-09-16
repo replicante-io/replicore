@@ -10,7 +10,7 @@ use opentracingrust::SpanContext;
 use opentracingrust::Tracer;
 
 use replicante_externals_mongodb::operations::insert_one;
-use replicante_models_core::Event;
+use replicante_models_core::events::Event;
 
 use super::super::PersistInterface;
 use super::constants::COLLECTION_EVENTS;

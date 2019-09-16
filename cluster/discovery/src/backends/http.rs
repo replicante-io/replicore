@@ -12,7 +12,7 @@ use serde_derive::Serialize;
 use serde_json::Map;
 use serde_json::Value;
 
-use replicante_models_core::ClusterDiscovery;
+use replicante_models_core::cluster::ClusterDiscovery;
 
 use crate::config::HttpConfig;
 use crate::config::HttpRequestMethod;

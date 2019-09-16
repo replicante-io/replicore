@@ -11,7 +11,7 @@ use opentracingrust::SpanContext;
 use opentracingrust::Tracer;
 
 use replicante_externals_mongodb::operations::find_one;
-use replicante_models_core::Node as NodeModel;
+use replicante_models_core::agent::Node as NodeModel;
 
 use super::super::NodeInterface;
 use super::constants::COLLECTION_NODES;

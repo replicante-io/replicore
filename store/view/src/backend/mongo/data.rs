@@ -5,7 +5,7 @@ use mongodb::Client;
 use mongodb::ThreadedClient;
 
 use replicante_externals_mongodb::operations::scan_collection;
-use replicante_models_core::Event;
+use replicante_models_core::events::Event;
 
 use super::constants::COLLECTION_EVENTS;
 use super::document::EventDocument;

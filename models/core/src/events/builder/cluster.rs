@@ -1,8 +1,8 @@
-use super::super::super::ClusterDiscovery;
-use super::super::ClusterChanged;
-use super::super::Event;
-use super::super::EventBuilder;
-use super::super::EventPayload;
+use crate::cluster::ClusterDiscovery;
+use crate::events::ClusterChanged;
+use crate::events::Event;
+use crate::events::EventBuilder;
+use crate::events::EventPayload;
 
 /// Build `Event`s that belongs to the cluster family.
 pub struct ClusterBuilder {

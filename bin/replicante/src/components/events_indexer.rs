@@ -11,7 +11,7 @@ use sentry::protocol::Map;
 use slog::debug;
 use slog::Logger;
 
-use replicante_models_core::Event;
+use replicante_models_core::events::Event;
 use replicante_store_view::store::Store;
 use replicante_stream::Error;
 use replicante_stream_events::Message;

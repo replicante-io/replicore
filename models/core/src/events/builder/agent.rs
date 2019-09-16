@@ -1,3 +1,5 @@
+use crate::agent::Agent;
+use crate::agent::AgentInfo;
 use crate::events::AgentInfoChanged;
 use crate::events::AgentNew;
 use crate::events::AgentStatus;
@@ -5,8 +7,6 @@ use crate::events::AgentStatusChange;
 use crate::events::Event;
 use crate::events::EventBuilder;
 use crate::events::EventPayload;
-use crate::Agent;
-use crate::AgentInfo;
 
 /// Build `Event`s that belongs to the agnet family.
 pub struct AgentBuilder {
@@ -140,8 +140,8 @@ mod tests {
     use super::Agent;
     use super::Event;
     use super::EventPayload;
+    use crate::agent::AgentStatus;
     use crate::events::AgentNew;
-    use crate::AgentStatus;
 
     #[test]
     fn new() {
@@ -303,10 +303,10 @@ mod tests {
         use replicante_models_agent::info::AgentInfo as WireAgentInfo;
         use replicante_models_agent::info::AgentVersion;
 
-        use super::super::super::super::super::AgentInfo;
-        use super::super::AgentInfoChanged;
         use super::Event;
         use super::EventPayload;
+        use crate::agent::AgentInfo;
+        use crate::events::AgentInfoChanged;
 
         #[test]
         fn changed() {

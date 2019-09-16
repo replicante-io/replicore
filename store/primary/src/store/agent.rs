@@ -1,7 +1,7 @@
 use opentracingrust::SpanContext;
 
-use replicante_models_core::Agent as AgentModel;
-use replicante_models_core::AgentInfo as AgentInfoModel;
+use replicante_models_core::agent::Agent as AgentModel;
+use replicante_models_core::agent::AgentInfo as AgentInfoModel;
 
 use crate::backend::AgentImpl;
 use crate::Result;

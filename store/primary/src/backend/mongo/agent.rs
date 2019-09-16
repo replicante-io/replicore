@@ -11,8 +11,8 @@ use opentracingrust::SpanContext;
 use opentracingrust::Tracer;
 
 use replicante_externals_mongodb::operations::find_one;
-use replicante_models_core::Agent as AgentModel;
-use replicante_models_core::AgentInfo as AgentInfoModel;
+use replicante_models_core::agent::Agent as AgentModel;
+use replicante_models_core::agent::AgentInfo as AgentInfoModel;
 
 use super::super::AgentInterface;
 use super::constants::COLLECTION_AGENTS;

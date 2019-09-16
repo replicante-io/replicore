@@ -11,7 +11,7 @@ use opentracingrust::SpanContext;
 use opentracingrust::Tracer;
 
 use replicante_externals_mongodb::operations::find_one;
-use replicante_models_core::Shard as ShardModel;
+use replicante_models_core::agent::Shard as ShardModel;
 
 use super::super::ShardInterface;
 use super::constants::COLLECTION_SHARDS;

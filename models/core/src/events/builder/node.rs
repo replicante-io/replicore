@@ -1,8 +1,8 @@
+use crate::agent::Node;
 use crate::events::Event;
 use crate::events::EventBuilder;
 use crate::events::EventPayload;
 use crate::events::NodeChanged;
-use crate::Node;
 
 /// Build `Event`s that belongs to the node family.
 pub struct NodeBuilder {

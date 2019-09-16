@@ -2,10 +2,10 @@ use failure::ResultExt;
 use opentracingrust::Span;
 
 use replicante_agent_client::Client;
-use replicante_models_core::Agent;
-use replicante_models_core::AgentInfo;
-use replicante_models_core::AgentStatus;
-use replicante_models_core::Event;
+use replicante_models_core::agent::Agent;
+use replicante_models_core::agent::AgentInfo;
+use replicante_models_core::agent::AgentStatus;
+use replicante_models_core::events::Event;
 use replicante_store_primary::store::Store;
 use replicante_stream_events::EmitMessage;
 use replicante_stream_events::Stream as EventsStream;

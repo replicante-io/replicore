@@ -1,6 +1,6 @@
 use opentracingrust::SpanContext;
 
-use replicante_models_core::ClusterMeta;
+use replicante_models_core::cluster::ClusterMeta;
 
 use crate::backend::LegacyImpl;
 use crate::Cursor;

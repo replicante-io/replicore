@@ -17,7 +17,7 @@ use regex;
 use replicante_externals_mongodb::operations::find_one;
 use replicante_externals_mongodb::operations::find_with_options;
 use replicante_externals_mongodb::operations::replace_one;
-use replicante_models_core::ClusterMeta;
+use replicante_models_core::cluster::ClusterMeta;
 
 use super::super::LegacyInterface;
 use super::constants::COLLECTION_CLUSTER_META;

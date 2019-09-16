@@ -14,7 +14,7 @@ use opentracingrust::Tracer;
 
 use replicante_externals_mongodb::operations::aggregate;
 use replicante_externals_mongodb::operations::find;
-use replicante_models_core::Shard;
+use replicante_models_core::agent::Shard;
 
 use super::super::ShardsInterface;
 use super::constants::COLLECTION_SHARDS;

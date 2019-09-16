@@ -1,6 +1,6 @@
 use opentracingrust::SpanContext;
 
-use replicante_models_core::Event;
+use replicante_models_core::events::Event;
 
 use crate::backend::PersistImpl;
 use crate::Result;

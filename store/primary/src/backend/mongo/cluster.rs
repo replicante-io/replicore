@@ -14,7 +14,7 @@ use slog::Logger;
 
 use replicante_externals_mongodb::operations::find_one;
 use replicante_externals_mongodb::operations::update_many;
-use replicante_models_core::ClusterDiscovery;
+use replicante_models_core::cluster::ClusterDiscovery;
 
 use super::super::ClusterInterface;
 use super::constants::COLLECTION_DISCOVERIES;

@@ -12,9 +12,9 @@ use router::Router;
 use serde_derive::Deserialize;
 use serde_derive::Serialize;
 
-use replicante_models_core::Agent;
-use replicante_models_core::AgentInfo;
-use replicante_models_core::AgentStatus;
+use replicante_models_core::agent::Agent;
+use replicante_models_core::agent::AgentInfo;
+use replicante_models_core::agent::AgentStatus;
 use replicante_store_primary::store::Store as PrimaryStore;
 use replicante_util_iron::request_span;
 

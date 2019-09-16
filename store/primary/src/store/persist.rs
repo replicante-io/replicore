@@ -1,10 +1,10 @@
 use opentracingrust::SpanContext;
 
-use replicante_models_core::Agent as AgentModel;
-use replicante_models_core::AgentInfo as AgentInfoModel;
-use replicante_models_core::ClusterDiscovery as ClusterDiscoveryModel;
-use replicante_models_core::Node as NodeModel;
-use replicante_models_core::Shard as ShardModel;
+use replicante_models_core::agent::Agent as AgentModel;
+use replicante_models_core::agent::AgentInfo as AgentInfoModel;
+use replicante_models_core::agent::Node as NodeModel;
+use replicante_models_core::agent::Shard as ShardModel;
+use replicante_models_core::cluster::ClusterDiscovery as ClusterDiscoveryModel;
 
 use crate::backend::PersistImpl;
 use crate::Result;

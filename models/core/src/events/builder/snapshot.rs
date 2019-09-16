@@ -1,12 +1,12 @@
-use super::super::super::Agent;
-use super::super::super::AgentInfo;
-use super::super::super::ClusterDiscovery;
-use super::super::super::Node;
-use super::super::super::Shard;
+use crate::agent::Agent;
+use crate::agent::AgentInfo;
+use crate::agent::Node;
+use crate::agent::Shard;
+use crate::cluster::ClusterDiscovery;
 
-use super::super::Event;
-use super::super::EventBuilder;
-use super::super::EventPayload;
+use crate::events::Event;
+use crate::events::EventBuilder;
+use crate::events::EventPayload;
 
 /// Build `Event`s that belongs to the snapshot family.
 pub struct SnapshotBuilder {

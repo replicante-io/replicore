@@ -10,9 +10,9 @@ use slog::warn;
 use slog::Logger;
 
 use replicante_agent_client::HttpClient;
-use replicante_models_core::Agent;
-use replicante_models_core::AgentStatus;
-use replicante_models_core::ClusterDiscovery;
+use replicante_models_core::agent::Agent;
+use replicante_models_core::agent::AgentStatus;
+use replicante_models_core::cluster::ClusterDiscovery;
 use replicante_service_coordinator::NonBlockingLockWatcher;
 use replicante_store_primary::store::Store;
 use replicante_stream_events::Stream as EventsStream;

@@ -104,7 +104,7 @@ mod tests {
         use opentracingrust::tracers::NoopTracer;
         use opentracingrust::Tracer;
 
-        use replicante_models_core::ClusterMeta;
+        use replicante_models_core::cluster::ClusterMeta;
         use replicante_store_primary::mock::Mock as MockStore;
         use replicante_util_iron::mock_request_span;
 

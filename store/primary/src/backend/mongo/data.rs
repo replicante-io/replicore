@@ -5,12 +5,12 @@ use mongodb::Client;
 use mongodb::ThreadedClient;
 
 use replicante_externals_mongodb::operations::scan_collection;
-use replicante_models_core::Agent;
-use replicante_models_core::AgentInfo;
-use replicante_models_core::ClusterDiscovery;
-use replicante_models_core::ClusterMeta;
-use replicante_models_core::Node;
-use replicante_models_core::Shard;
+use replicante_models_core::agent::Agent;
+use replicante_models_core::agent::AgentInfo;
+use replicante_models_core::agent::Node;
+use replicante_models_core::agent::Shard;
+use replicante_models_core::cluster::ClusterDiscovery;
+use replicante_models_core::cluster::ClusterMeta;
 
 use super::super::DataInterface;
 use super::constants::COLLECTION_AGENTS;

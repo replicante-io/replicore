@@ -14,7 +14,7 @@ use opentracingrust::SpanContext;
 use opentracingrust::Tracer;
 
 use replicante_externals_mongodb::operations::find_with_options;
-use replicante_models_core::Event;
+use replicante_models_core::events::Event;
 
 use super::super::EventsInterface;
 use super::constants::COLLECTION_EVENTS;
