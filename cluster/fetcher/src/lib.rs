@@ -13,6 +13,7 @@ use replicante_agent_client::HttpClient;
 use replicante_models_core::agent::Agent;
 use replicante_models_core::agent::AgentStatus;
 use replicante_models_core::cluster::ClusterDiscovery;
+use replicante_models_core::scope::Namespace;
 use replicante_service_coordinator::NonBlockingLockWatcher;
 use replicante_store_primary::store::Store;
 use replicante_stream_events::Stream as EventsStream;
@@ -142,21 +143,24 @@ impl Fetcher {
     /// as part of the state refersh operation.
     pub fn fetch(
         &self,
+        ns: Namespace,
         cluster: ClusterDiscovery,
         lock: NonBlockingLockWatcher,
         span: &mut Span,
     ) -> Result<()> {
         span.log(Log::new().log("stage", "fetch"));
         let _timer = FETCHER_DURATION.start_timer();
-        self.fetch_checked(cluster, lock, span).map_err(|error| {
-            FETCHER_ERRORS_COUNT.inc();
-            error
-        })
+        self.fetch_checked(ns, cluster, lock, span)
+            .map_err(|error| {
+                FETCHER_ERRORS_COUNT.inc();
+                error
+            })
     }
 
     /// Wrapped version of `fetch` so stats can be accounted for once.
     fn fetch_checked(
         &self,
+        ns: Namespace,
         cluster: ClusterDiscovery,
         lock: NonBlockingLockWatcher,
         span: &mut Span,
@@ -180,19 +184,21 @@ impl Fetcher {
                 );
                 return Ok(());
             }
-            self.process_target(&cluster_id, &node, &mut id_checker, span)?;
+            self.process_target(&ns, &cluster_id, &node, &mut id_checker, span)?;
         }
         Ok(())
     }
 
     fn process_target(
         &self,
+        ns: &Namespace,
         cluster: &str,
         node: &str,
         id_checker: &mut ClusterIdentityChecker,
         span: &mut Span,
     ) -> Result<()> {
-        let client = HttpClient::make(
+        let client = HttpClient::new(
+            ns,
             node.to_string(),
             self.timeout,
             self.logger.clone(),

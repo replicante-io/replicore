@@ -9,6 +9,8 @@ use serde_yaml;
 
 use replicante_logging::Config as LoggingConfig;
 use replicante_logging::LoggingLevel;
+use replicante_models_core::scope::Namespace;
+use replicante_models_core::scope::NsHttpsTransport;
 use replicante_service_coordinator::Config as CoordinatorConfig;
 use replicante_service_tasks::Config as TasksConfig;
 use replicante_util_tracing::Config as TracingConfig;
@@ -81,6 +83,10 @@ pub struct Config {
     /// Distributed tracing configuration.
     #[serde(default)]
     pub tracing: TracingConfig,
+
+    /// Settings that will move to the DB once namespaces are fully introduced.
+    #[serde(default)]
+    pub tmp_namespace_settings: TmpNsSettings,
 }
 
 impl Config {
@@ -120,4 +126,34 @@ impl Config {
         }
         self
     }
+}
+
+/// Settings that will move to the DB once namespaces are fully introduced.
+#[derive(Clone, Default, Eq, PartialEq, Hash, Debug, Serialize, Deserialize)]
+pub struct TmpNsSettings {
+    /// HTTPS configuration for agent transport.
+    #[serde(default)]
+    pub https_transport: TmpNsSettingsHttps,
+}
+
+impl From<TmpNsSettings> for Namespace {
+    fn from(config: TmpNsSettings) -> Namespace {
+        Namespace {
+            ns_id: "tmp_global_namespace".into(),
+            https_transport: NsHttpsTransport {
+                ca_bundle: config.https_transport.ca_bundle,
+                client_key_id: config.https_transport.client_key,
+            },
+        }
+    }
+}
+
+/// HTTPS configuration for agent transport.
+#[derive(Clone, Default, Eq, PartialEq, Hash, Debug, Serialize, Deserialize)]
+pub struct TmpNsSettingsHttps {
+    /// PEM formatted bundle of CA certificates to validate agent certificates.
+    pub ca_bundle: Option<String>,
+
+    /// Path to a PEM formatted HTTPS client **private** key.
+    pub client_key: Option<String>,
 }

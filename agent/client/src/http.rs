@@ -1,4 +1,6 @@
+use std::fs::File;
 use std::io;
+use std::io::Read;
 use std::sync::Arc;
 use std::time::Duration;
 
@@ -8,7 +10,9 @@ use opentracingrust::SpanContext;
 use opentracingrust::StartOptions;
 use opentracingrust::Tracer;
 use reqwest::header::HeaderMap;
+use reqwest::Certificate;
 use reqwest::Client as ReqwestClient;
+use reqwest::Identity;
 use reqwest::RequestBuilder;
 use reqwest::StatusCode;
 use serde::de::DeserializeOwned;
@@ -18,6 +22,7 @@ use slog::Logger;
 use replicante_models_agent::info::AgentInfo;
 use replicante_models_agent::info::DatastoreInfo;
 use replicante_models_agent::info::Shards;
+use replicante_models_core::scope::Namespace;
 use replicante_util_failure::capture_fail;
 use replicante_util_failure::failure_info;
 use replicante_util_tracing::carriers::reqwest::HeadersCarrier;
@@ -116,13 +121,44 @@ impl Client for HttpClient {
 
 impl HttpClient {
     /// Create a new HTTP client to interact with the agent.
-    pub fn make<S, T>(target: S, timeout: Duration, logger: Logger, tracer: T) -> Result<HttpClient>
+    pub fn new<S, T>(
+        ns: &Namespace,
+        target: S,
+        timeout: Duration,
+        logger: Logger,
+        tracer: T,
+    ) -> Result<HttpClient>
     where
         S: Into<String>,
         T: Into<Option<Arc<Tracer>>>,
     {
-        let client = ReqwestClient::builder()
-            .timeout(timeout)
+        let mut client = ReqwestClient::builder().timeout(timeout);
+
+        // Set up HTTPS configuration as needed.
+        client = client.use_rustls_tls();
+        if let Some(ca_bundle_file) = ns.https_transport.ca_bundle.as_ref() {
+            let mut ca_bundle = Vec::new();
+            File::open(ca_bundle_file)
+                .with_context(|_| ErrorKind::Transport("HTTP"))?
+                .read_to_end(&mut ca_bundle)
+                .with_context(|_| ErrorKind::Transport("HTTP"))?;
+            let ca_bundle =
+                Certificate::from_pem(&ca_bundle).with_context(|_| ErrorKind::Transport("HTTP"))?;
+            client = client.add_root_certificate(ca_bundle);
+        }
+        if let Some(client_key_file) = ns.https_transport.client_key_id.as_ref() {
+            let mut client_key = Vec::new();
+            File::open(client_key_file)
+                .with_context(|_| ErrorKind::Transport("HTTP"))?
+                .read_to_end(&mut client_key)
+                .with_context(|_| ErrorKind::Transport("HTTP"))?;
+            let client_key =
+                Identity::from_pem(&client_key).with_context(|_| ErrorKind::Transport("HTTP"))?;
+            client = client.identity(client_key);
+        }
+
+        // Create reqwest::Client and the wrapping HttpClient.
+        let client = client
             .build()
             .with_context(|_| ErrorKind::Transport("HTTP"))?;
         let target = target.into();
@@ -231,29 +267,62 @@ mod tests {
     use slog::Discard;
     use slog::Logger;
 
+    use replicante_models_core::scope::Namespace;
+    use replicante_models_core::scope::NsHttpsTransport;
+
     use super::HttpClient;
 
     #[test]
     fn enpoint_concat() {
+        let ns = Namespace {
+            ns_id: "test".into(),
+            https_transport: NsHttpsTransport::default(),
+        };
         let logger = Logger::root(Discard, o!());
-        let client =
-            HttpClient::make("proto://host:port", Duration::from_secs(15), logger, None).unwrap();
+        let client = HttpClient::new(
+            &ns,
+            "proto://host:port",
+            Duration::from_secs(15),
+            logger,
+            None,
+        )
+        .unwrap();
         assert_eq!(client.endpoint("some/path"), "proto://host:port/some/path");
     }
 
     #[test]
     fn enpoint_trim_root() {
+        let ns = Namespace {
+            ns_id: "test".into(),
+            https_transport: NsHttpsTransport::default(),
+        };
         let logger = Logger::root(Discard, o!());
-        let client =
-            HttpClient::make("proto://host:port", Duration::from_secs(15), logger, None).unwrap();
+        let client = HttpClient::new(
+            &ns,
+            "proto://host:port",
+            Duration::from_secs(15),
+            logger,
+            None,
+        )
+        .unwrap();
         assert_eq!(client.endpoint("some/path"), "proto://host:port/some/path");
     }
 
     #[test]
     fn enpoint_trim_path_prefix() {
+        let ns = Namespace {
+            ns_id: "test".into(),
+            https_transport: NsHttpsTransport::default(),
+        };
         let logger = Logger::root(Discard, o!());
-        let client =
-            HttpClient::make("proto://host:port", Duration::from_secs(15), logger, None).unwrap();
+        let client = HttpClient::new(
+            &ns,
+            "proto://host:port",
+            Duration::from_secs(15),
+            logger,
+            None,
+        )
+        .unwrap();
         assert_eq!(client.endpoint("/some/path"), "proto://host:port/some/path");
     }
 }

@@ -13,6 +13,7 @@ use replicante_cluster_fetcher::Fetcher;
 use replicante_cluster_fetcher::Snapshotter;
 use replicante_models_core::cluster::ClusterDiscovery;
 use replicante_models_core::events::Event;
+use replicante_models_core::scope::Namespace;
 use replicante_service_coordinator::Coordinator;
 use replicante_service_coordinator::ErrorKind as CoordinatorErrorKind;
 use replicante_service_tasks::TaskHandler;
@@ -23,13 +24,14 @@ use replicante_util_failure::capture_fail;
 use replicante_util_failure::failure_info;
 use replicante_util_tracing::fail_span;
 
-use super::super::interfaces::tracing::Tracing;
-use super::super::ErrorKind;
-use super::super::Interfaces;
-use super::super::Result;
 use super::payload::ClusterRefreshPayload;
 use super::ReplicanteQueues;
 use super::Task;
+use crate::interfaces::tracing::Tracing;
+use crate::Config;
+use crate::ErrorKind;
+use crate::Interfaces;
+use crate::Result;
 
 mod metrics;
 
@@ -46,10 +48,18 @@ pub struct Handler {
     logger: Logger,
     store: Store,
     tracing: Tracing,
+
+    // TODO: remove when namespaces are done properly from the primary store.
+    tmp_global_namespace: Namespace,
 }
 
 impl Handler {
-    pub fn new(interfaces: &Interfaces, logger: Logger, agents_timeout: Duration) -> Handler {
+    pub fn new(
+        config: &Config,
+        interfaces: &Interfaces,
+        logger: Logger,
+        agents_timeout: Duration,
+    ) -> Handler {
         let store = interfaces.stores.primary.clone();
         let aggregator = Aggregator::new(logger.clone(), store.clone());
         let coordinator = interfaces.coordinator.clone();
@@ -62,6 +72,7 @@ impl Handler {
             interfaces.tracing.tracer(),
         );
         let tracing = interfaces.tracing.clone();
+        let tmp_global_namespace = config.tmp_namespace_settings.clone().into();
         Handler {
             aggregator,
             coordinator,
@@ -70,6 +81,7 @@ impl Handler {
             logger,
             store,
             tracing,
+            tmp_global_namespace,
         }
     }
 
@@ -104,13 +116,17 @@ impl Handler {
             }
         };
 
+        // Fetch cluster's namespace model.
+        // TODO: replace with store access when namespaces are done properly.
+        let ns = self.tmp_global_namespace.clone();
+
         // Refresh cluster state.
         let cluster_id = discovery.cluster_id.clone();
         let timer = REFRESH_DURATION.start_timer();
         self.emit_snapshots(&cluster_id, snapshot, span);
         self.refresh_discovery(discovery.clone(), span)?;
         self.fetcher
-            .fetch(discovery.clone(), lock.watch(), span)
+            .fetch(ns, discovery.clone(), lock.watch(), span)
             .with_context(|_| ErrorKind::ClusterRefresh)?;
         self.aggregator
             .aggregate(discovery, lock.watch(), span)

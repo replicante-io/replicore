@@ -631,3 +631,20 @@ tracing:
   #
   #    # The kafka topic to publish spans to.
   #    topic: zipkin
+
+
+# Section for settings that will move to the DB once namespaces are fully introduced.
+# For the time being, these options allow the system to pretend a namespace is available
+# when needed but without hacing to implement all the details around them
+# (DB changes, API changes, namespace provisioning, more ...)
+#
+# This is hardly good design but it helps more quickly get to playbooks.
+# Once initial playbooks functionality is implemented, namespaces WILL be added next.
+tmp_namespace_settings:
+  # HTTPS configuration for agent transport.
+  https_transport:
+    # PEM formatted bundle of CA certificates to validate agent certificates.
+    ca_bundle: ~
+
+    # Path to a PEM formatted HTTPS client **private** key.
+    client_key: ~

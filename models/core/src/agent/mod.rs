@@ -11,7 +11,6 @@ pub use self::datastore::Node;
 pub use self::datastore::Shard;
 pub use self::datastore::ShardRole;
 
-
 /// Status of an agent.
 #[derive(Clone, Eq, PartialEq, Hash, Debug, Serialize, Deserialize)]
 pub struct Agent {

@@ -46,3 +46,11 @@ tasks:
   backend: 'kafka'
   options:
     brokers: 'localhost:9092'
+
+
+# As suggested by the name, temporary settings for future namesapces.
+# At the moment sets the HTTPS certifictes for communication with agents.
+tmp_namespace_settings:
+  https_transport:
+    ca_bundle: '/path/to/pki/ca.pem'
+    client_key: '/path/to/pki/core-key.pem'

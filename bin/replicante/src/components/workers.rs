@@ -79,7 +79,7 @@ impl Workers {
         let agents_timeout = Duration::from_secs(config.timeouts.agents_api);
         let worker_set = WorkerSet::new(
             logger.clone(),
-            config.tasks,
+            config.tasks.clone(),
             interfaces.healthchecks.register(),
         )
         .with_context(|_| ErrorKind::ClientInit("tasks workers"))?;
@@ -87,7 +87,14 @@ impl Workers {
             worker_set,
             ReplicanteQueues::ClusterRefresh,
             config.task_workers.cluster_refresh(),
-            || self::cluster_refresh::Handler::new(interfaces, logger.clone(), agents_timeout),
+            || {
+                self::cluster_refresh::Handler::new(
+                    &config,
+                    interfaces,
+                    logger.clone(),
+                    agents_timeout,
+                )
+            },
         )?;
         Ok(Workers {
             state: Some(State::Configured(worker_set)),
