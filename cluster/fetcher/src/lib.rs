@@ -17,7 +17,6 @@ use replicante_models_core::scope::Namespace;
 use replicante_service_coordinator::NonBlockingLockWatcher;
 use replicante_store_primary::store::Store;
 use replicante_stream_events::Stream as EventsStream;
-use replicante_util_failure::format_fail;
 
 mod agent;
 mod error;
@@ -76,18 +75,10 @@ impl ClusterIdentityChecker {
     }
 }
 
-/// Node (agent and datastore) status fetching and processing logic.
+/// Agent state and actions fetching and processing logic.
 ///
-/// The Fetcher is responsible for:
-///
-///   1. For each node:
-///     1. Attempt to fetch agent info.
-///     2. Persist `AgentInfo` record (if fetch succeeded).
-///     3. Attempt to fetch node info (if agent is up).
-///     4. Persist `Node` record (if fetch succeeded).
-///     5. Attempt to fetch shards status (only if agent and datastore are up).
-///     6. Persist each `Shard` record (if fetch succeeded).
-///     7. Persist the `Agent` record.
+/// Fetches agent data to "refresh" the persisted view of cluster nodes.
+/// See bin/replicante/tasks/cluster_refresh/mod.rs for details on the sync process.
 pub struct Fetcher {
     agent: AgentFetcher,
     logger: Logger,
@@ -143,7 +134,7 @@ impl Fetcher {
     ) -> Result<()> {
         span.log(Log::new().log("stage", "fetch"));
         let _timer = FETCHER_DURATION.start_timer();
-        self.fetch_checked(ns, cluster, refresh_id, lock, span)
+        self.fetch_inner(ns, cluster, refresh_id, lock, span)
             .map_err(|error| {
                 FETCHER_ERRORS_COUNT.inc();
                 error
@@ -151,7 +142,7 @@ impl Fetcher {
     }
 
     /// Wrapped version of `fetch` so stats can be accounted for once.
-    fn fetch_checked(
+    fn fetch_inner(
         &self,
         ns: Namespace,
         cluster: ClusterDiscovery,
@@ -178,7 +169,23 @@ impl Fetcher {
                 );
                 return Ok(());
             }
-            self.process_target(&ns, &cluster_id, &node, refresh_id, &mut id_checker, span)?;
+
+            // Process the target node and inspect the result.
+            // If an error within Replicante Core is reported pass it back to the caller
+            // and abort the refresh operation, otherwise update the agent status.
+            let target =
+                self.process_target(&ns, &cluster_id, &node, refresh_id, &mut id_checker, span);
+            let agent_status = match target {
+                Err(error) => match error.agent_status() {
+                    None => return Err(error),
+                    Some(status) => status,
+                },
+                Ok(()) => AgentStatus::Up,
+            };
+            self.agent.process_agent(
+                Agent::new(cluster_id.to_string(), node.to_string(), agent_status),
+                span,
+            )?;
         }
         Ok(())
     }
@@ -200,42 +207,12 @@ impl Fetcher {
             Arc::clone(&self.tracer),
         )
         .with_context(|_| ErrorKind::AgentConnect(node.to_string()))?;
-        let mut agent = Agent::new(cluster.to_string(), node.to_string(), AgentStatus::Up);
-        let result =
-            self.agent
-                .process_agent_info(&client, cluster.to_string(), node.to_string(), span);
-        if let Err(error) = result {
-            let message = format_fail(&error);
-            agent.status = AgentStatus::AgentDown(message);
-            self.agent.process_agent(agent, span)?;
-            if error.kind().is_agent() {
-                return Ok(());
-            }
-            return Err(error);
-        };
 
-        let result = self.node.process_node(&client, id_checker, span);
-        if let Err(error) = result {
-            let message = format_fail(&error);
-            agent.status = AgentStatus::NodeDown(message);
-            self.agent.process_agent(agent, span)?;
-            if error.kind().is_agent() {
-                return Ok(());
-            }
-            return Err(error);
-        };
+        self.agent
+            .process_agent_info(&client, cluster.to_string(), node.to_string(), span)?;
+        self.node.process_node(&client, id_checker, span)?;
+        self.shard.process_shards(&client, cluster, node, span)?;
 
-        let result = self.shard.process_shards(&client, cluster, node, span);
-        if let Err(error) = result {
-            let message = format_fail(&error);
-            agent.status = AgentStatus::NodeDown(message);
-            self.agent.process_agent(agent, span)?;
-            if error.kind().is_agent() {
-                return Ok(());
-            }
-            return Err(error);
-        };
-
-        self.agent.process_agent(agent, span)
+        Ok(())
     }
 }

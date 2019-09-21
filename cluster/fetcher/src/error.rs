@@ -4,11 +4,49 @@ use failure::Backtrace;
 use failure::Context;
 use failure::Fail;
 
+use replicante_models_core::agent::AgentStatus;
+use replicante_util_failure::format_fail;
+
 /// Error information returned by functions in case of errors.
 #[derive(Debug)]
 pub struct Error(Context<ErrorKind>);
 
 impl Error {
+    /// Return the `AgentStatus` based on the reported error.
+    ///
+    /// The `Error` itself can be used to determie if the issue is with the
+    /// agent or with the datastore.
+    ///
+    /// `None` is returned if the error is with Replicante Core itself.
+    ///
+    /// # Examples
+    ///
+    ///   * An `AgentConnect` error kind results in an `AgentStatus::AgentDown`.
+    ///   * A `DatastoreDown` error kind results in an `AgentStatus::NodeDown`.
+    ///   * A `StoreRead` error kind results in a `None` as it indicats an error between
+    ///     Replicante Core and its store and is unrelated the the agent itself.
+    pub(crate) fn agent_status(&self) -> Option<AgentStatus> {
+        match self.kind() {
+            ErrorKind::AgentConnect(_) |
+            ErrorKind::AgentDown(_, _) |
+            // TODO: Consider splitting the agent state from a sync error.
+            //       These are technically AgentStatus::Up but missconfigured.
+            //       Alternatively add an AgentStatus::Degraded or AgentStatus::Missconfigured
+            //       to support a more realistic interpretation of these.
+            ErrorKind::ClusterDisplayNameDoesNotMatch(_, _, _) |
+            ErrorKind::ClusterIdDoesNotMatch(_, _, _) => {
+                let message = format_fail(self);
+                Some(AgentStatus::AgentDown(message))
+            }
+            ErrorKind::DatastoreDown(_, _) => {
+                let message = format_fail(self);
+                Some(AgentStatus::NodeDown(message))
+            }
+            _ => None,
+        }
+    }
+
+    /// Return more information about this error.
     pub fn kind(&self) -> &ErrorKind {
         self.0.get_context()
     }
@@ -53,7 +91,10 @@ pub enum ErrorKind {
     AgentConnect(String),
 
     #[fail(display = "error fetching {} from agent {}", _0, _1)]
-    AgentRead(&'static str, String),
+    AgentDown(&'static str, String),
+
+    #[fail(display = "error fetching {} from agent {}", _0, _1)]
+    DatastoreDown(&'static str, String),
 
     #[fail(
         display = "expected cluster display name '{}' but found '{}' for node with ID '{}'",
@@ -78,26 +119,11 @@ pub enum ErrorKind {
 }
 
 impl ErrorKind {
-    /// Returns true if the error was specific to an agent and not the core system.
-    ///
-    /// For example: a connection error or an invalid response are agent specific errors
-    /// while database or events stream errors are about the platform.
-    pub fn is_agent(&self) -> bool {
-        match self {
-            ErrorKind::AgentConnect(_) => true,
-            ErrorKind::AgentRead(_, _) => true,
-            ErrorKind::ClusterDisplayNameDoesNotMatch(_, _, _) => true,
-            ErrorKind::ClusterIdDoesNotMatch(_, _, _) => true,
-            ErrorKind::EventEmit(_) => false,
-            ErrorKind::StoreRead(_) => false,
-            ErrorKind::StoreWrite(_) => false,
-        }
-    }
-
     fn kind_name(&self) -> Option<&str> {
         let name = match self {
             ErrorKind::AgentConnect(_) => "AgentConnect",
-            ErrorKind::AgentRead(_, _) => "AgentRead",
+            ErrorKind::AgentDown(_, _) => "AgentDown",
+            ErrorKind::DatastoreDown(_, _) => "DatastoreDown",
             ErrorKind::ClusterDisplayNameDoesNotMatch(_, _, _) => "ClusterDisplayNameDoesNotMatch",
             ErrorKind::ClusterIdDoesNotMatch(_, _, _) => "ClusterIdDoesNotMatch",
             ErrorKind::EventEmit(_) => "EventEmit",

@@ -32,7 +32,7 @@ impl ShardFetcher {
     ) -> Result<()> {
         let shards = client
             .shards(span.context().clone().into())
-            .with_context(|_| ErrorKind::AgentRead("shards", client.id().to_string()))?;
+            .with_context(|_| ErrorKind::AgentDown("shards", client.id().to_string()))?;
         for shard in shards.shards {
             let shard = Shard::new(cluster.to_string(), node.to_string(), shard);
             self.process_shard(shard, span)?;

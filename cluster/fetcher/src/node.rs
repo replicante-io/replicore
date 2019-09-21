@@ -32,7 +32,9 @@ impl NodeFetcher {
     ) -> Result<()> {
         let info = client
             .datastore_info(span.context().clone().into())
-            .with_context(|_| ErrorKind::AgentRead("datastore info", client.id().to_string()))?;
+            .with_context(|_| {
+                ErrorKind::DatastoreDown("datastore info", client.id().to_string())
+            })?;
         let node = Node::new(info);
         id_checker.check_id(&node.cluster_id, &node.node_id)?;
         if let Some(display_name) = node.cluster_display_name.as_ref() {

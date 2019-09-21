@@ -48,7 +48,7 @@ impl AgentFetcher {
     ) -> Result<()> {
         let info = client
             .agent_info(span.context().clone().into())
-            .with_context(|_| ErrorKind::AgentRead("agent info", client.id().to_string()))?;
+            .with_context(|_| ErrorKind::AgentDown("agent info", client.id().to_string()))?;
         let info = AgentInfo::new(cluster_id, node, info);
         let old = self
             .store
