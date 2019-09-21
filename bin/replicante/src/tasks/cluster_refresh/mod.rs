@@ -1,5 +1,51 @@
+//! Implmentation of the cluster state refresh process.
+//!
+//! # Overview
+//! Given a `ClusterDiscovery` record, the refresh task works as follows:
+//!
+//!   1. A cluster-unique `refresh_id` is generated for the refresh.
+//!      At this time the `refresh_id` is the current time at the start of the task.
+//!   2. Emit snapshot events for all nodes in the cluster (if needed).
+//!   3. Refresh the state of each node in the `ClusterDiscovery` record sequencially:
+//!      1. Refresh agent information.
+//!      2. Refresh node information.
+//!      3. Refresh agent/node state.
+//!      4. Refresh node's shards information.
+//!      5. Refresh node's actions:
+//!         a. Fetch actions queue and finished actions.
+//!            This is done sequentially and in this order so that actions finishing
+//!            while the refresh process are not missed (at the risk of reporting them
+//!            twice).
+//!         b. Fetch the state of these actions from the primary store.
+//!            Only look to see if an action is `Finished`, `Found` or `NotFound`.
+//!            Skip fetching the full action document for now.
+//!         c. Determine actions to be synced.
+//!            This includes all the actions in the queue as well as any action
+//!            finished on the agent but not `Finished` according to the primary store.
+//!            When scanning finished actions stop at the first `Finished` action
+//!            found as REQUIRED ordering properties of the agent lists mean all actions
+//!            listed after a `Finished` action MUST be `Finished` as well.
+//!         d. Fetch each action's details from the agent and update/record them.
+//!         e. Mark unfinished actions in the primary store but no longer on the agent as `Lost`.
+//!            This can be done efficiently by looking for all unfinihsed actions with a
+//!            `refresh_id` different from the current task's `referesh_id`.
+//!            Actions can be `Lost` if core records them but they get cleaned up by the agent
+//!            before a new refresh occurs to update the state in the primary store.
+//!            Actions can also be lost due to many other scenarios such as miss-configuration
+//!            or loss of the agent database.
+//!   4. Aggregate the latest state data to generate and persist aggregated views.
+//!
+//! ## Why sequentially?
+//! Because it is simpler (for me) to implement at first.
+//!
+//! Nodes can, and eventually should, be processed in parallel.
+//! This change from sequential to parallel sync can actually be achieved incrementally
+//! within the scope of of this task and without requiring the entire process to become async.
+//! Because of this I am not concerned with it: as soon as the sync becomes too slow because
+//! it is sequential it will be re-implemented/adapted to be asynchronous.
 use std::time::Duration;
 
+use chrono::Utc;
 use failure::Fail;
 use failure::ResultExt;
 use opentracingrust::Log;
@@ -122,11 +168,12 @@ impl Handler {
 
         // Refresh cluster state.
         let cluster_id = discovery.cluster_id.clone();
+        let refresh_id = Utc::now().timestamp();
         let timer = REFRESH_DURATION.start_timer();
         self.emit_snapshots(&cluster_id, snapshot, span);
         self.refresh_discovery(discovery.clone(), span)?;
         self.fetcher
-            .fetch(ns, discovery.clone(), lock.watch(), span)
+            .fetch(ns, discovery.clone(), refresh_id, lock.watch(), span)
             .with_context(|_| ErrorKind::ClusterRefresh)?;
         self.aggregator
             .aggregate(discovery, lock.watch(), span)

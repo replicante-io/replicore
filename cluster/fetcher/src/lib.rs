@@ -133,24 +133,17 @@ impl Fetcher {
     ///
     /// Remote errors are logged and accounted for as part of the refresh process (a remote agent
     /// crashing should not prevent the full cluster from being checked).
-    /// Refresh the optimistic view on a cluster state.
-    ///
-    /// If the refrsh process fails due to core-related issues (store errors,
-    /// internal logic, ...) the process is aborted and the error propagated.
-    ///
-    /// If the refresh process encounters an agent error (invalid response or state,
-    /// network issue, ...) the error is NOT propagated and is instead accounted for
-    /// as part of the state refersh operation.
     pub fn fetch(
         &self,
         ns: Namespace,
         cluster: ClusterDiscovery,
+        refresh_id: i64,
         lock: NonBlockingLockWatcher,
         span: &mut Span,
     ) -> Result<()> {
         span.log(Log::new().log("stage", "fetch"));
         let _timer = FETCHER_DURATION.start_timer();
-        self.fetch_checked(ns, cluster, lock, span)
+        self.fetch_checked(ns, cluster, refresh_id, lock, span)
             .map_err(|error| {
                 FETCHER_ERRORS_COUNT.inc();
                 error
@@ -162,6 +155,7 @@ impl Fetcher {
         &self,
         ns: Namespace,
         cluster: ClusterDiscovery,
+        refresh_id: i64,
         lock: NonBlockingLockWatcher,
         span: &mut Span,
     ) -> Result<()> {
@@ -184,7 +178,7 @@ impl Fetcher {
                 );
                 return Ok(());
             }
-            self.process_target(&ns, &cluster_id, &node, &mut id_checker, span)?;
+            self.process_target(&ns, &cluster_id, &node, refresh_id, &mut id_checker, span)?;
         }
         Ok(())
     }
@@ -194,6 +188,7 @@ impl Fetcher {
         ns: &Namespace,
         cluster: &str,
         node: &str,
+        _refresh_id: i64,
         id_checker: &mut ClusterIdentityChecker,
         span: &mut Span,
     ) -> Result<()> {
