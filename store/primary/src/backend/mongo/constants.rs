@@ -6,6 +6,7 @@ use lazy_static::lazy_static;
 use replicante_externals_mongodb::admin::IndexInfo;
 
 pub const COLLECTION_AGENTS: &str = "agents";
+pub const COLLECTION_ACTIONS: &str = "actions";
 pub const COLLECTION_AGENTS_INFO: &str = "agents_info";
 pub const COLLECTION_CLUSTER_META: &str = "clusters_meta";
 pub const COLLECTION_DISCOVERIES: &str = "discoveries";

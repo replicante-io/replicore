@@ -1,12 +1,16 @@
+use std::collections::HashMap;
 use std::collections::HashSet;
 use std::ops::Deref;
+use std::ops::DerefMut;
 use std::sync::Arc;
 
 use opentracingrust::SpanContext;
 use opentracingrust::Tracer;
 use slog::Logger;
+use uuid::Uuid;
 
 use replicante_externals_mongodb::admin::ValidationResult;
+use replicante_models_core::actions::Action;
 use replicante_models_core::admin::Version;
 use replicante_models_core::agent::Agent;
 use replicante_models_core::agent::AgentInfo;
@@ -16,6 +20,8 @@ use replicante_models_core::cluster::ClusterDiscovery;
 use replicante_models_core::cluster::ClusterMeta;
 use replicante_service_healthcheck::HealthChecks;
 
+use crate::store::actions::ActionSyncState;
+use crate::store::actions::ActionsAttributes;
 use crate::store::agent::AgentAttribures;
 use crate::store::agents::AgentsAttribures;
 use crate::store::agents::AgentsCounts;
@@ -56,6 +62,99 @@ pub fn backend_factory_admin(config: Config, logger: Logger) -> Result<AdminImpl
         Config::MongoDB(config) => AdminImpl::new(self::mongo::Admin::make(config, logger)?),
     };
     Ok(admin)
+}
+
+// Macro definition to generate an interface trait with a wrapping wrapper
+// for dynamic dispatch to Send + Sync + 'static implementations.
+macro_rules! arc_interface {
+    (
+        $(#[$struct_meta:meta])*
+        struct $struct_name:ident,
+        $(#[$trait_meta:meta])*
+        trait $trait_name:ident,
+        interface $trait_def:tt
+    ) => {
+        $(#[$trait_meta])*
+        pub trait $trait_name: Send + Sync $trait_def
+
+        $(#[$struct_meta])*
+        #[derive(Clone)]
+        pub struct $struct_name(Arc<dyn $trait_name>);
+
+        impl $struct_name {
+            pub fn new<I: $trait_name + 'static>(interface: I) -> Self {
+                Self(Arc::new(interface))
+            }
+        }
+
+        impl Deref for $struct_name {
+            type Target = dyn $trait_name + 'static;
+            fn deref(&self) -> &(dyn $trait_name + 'static) {
+                self.0.deref()
+            }
+        }
+    }
+}
+macro_rules! box_interface {
+    (
+        $(#[$struct_meta:meta])*
+        struct $struct_name:ident,
+        $(#[$trait_meta:meta])*
+        trait $trait_name:ident,
+        interface $trait_def:tt
+    ) => {
+        $(#[$trait_meta])*
+        pub trait $trait_name $trait_def
+
+        $(#[$struct_meta])*
+        pub struct $struct_name(Box<dyn $trait_name>);
+
+        impl $struct_name {
+            pub fn new<I: $trait_name + 'static>(interface: I) -> Self {
+                Self(Box::new(interface))
+            }
+        }
+
+        impl Deref for $struct_name {
+            type Target = dyn $trait_name + 'static;
+            fn deref(&self) -> &(dyn $trait_name + 'static) {
+                self.0.deref()
+            }
+        }
+
+        impl DerefMut for $struct_name {
+            fn deref_mut(&mut self) -> &mut (dyn $trait_name + 'static) {
+                self.0.deref_mut()
+            }
+        }
+    };
+}
+
+box_interface! {
+    /// Dynamic dispatch all operations to a backend-specific implementation.
+    struct ActionsImpl,
+
+    /// Definition of supported operations on `Action`s.
+    ///
+    /// See `store::actions::Actions` for descriptions of methods.
+    trait ActionsInterface,
+
+    interface {
+        fn mark_lost(
+            &self,
+            attrs: &ActionsAttributes,
+            node_id: String,
+            refresh_id: i64,
+            span: Option<SpanContext>,
+        ) -> Result<()>;
+        fn state_for_sync(
+            &self,
+            attrs: &ActionsAttributes,
+            node_id: String,
+            action_ids: &[Uuid],
+            span: Option<SpanContext>,
+        ) -> Result<HashMap<Uuid, ActionSyncState>>;
+    }
 }
 
 /// Definition of top level store administration operations.
@@ -285,69 +384,51 @@ impl Deref for NodesImpl {
     }
 }
 
-/// Definition of model persist operations.
-///
-/// See `store::persist::Persist` for descriptions of methods.
-pub trait PersistInterface: Send + Sync {
-    fn agent(&self, agent: Agent, span: Option<SpanContext>) -> Result<()>;
-    fn agent_info(&self, agent: AgentInfo, span: Option<SpanContext>) -> Result<()>;
-    fn cluster_discovery(
-        &self,
-        discovery: ClusterDiscovery,
-        span: Option<SpanContext>,
-    ) -> Result<()>;
-    fn node(&self, node: Node, span: Option<SpanContext>) -> Result<()>;
-    fn shard(&self, shard: Shard, span: Option<SpanContext>) -> Result<()>;
-}
+box_interface! {
+    /// Dynamic dispatch persist operations to a backend-specific implementation.
+    struct PersistImpl,
 
-/// Dynamic dispatch persist operations to a backend-specific implementation.
-#[derive(Clone)]
-pub struct PersistImpl(Arc<dyn PersistInterface>);
+    /// Definition of model persist operations.
+    ///
+    /// See `store::persist::Persist` for descriptions of methods.
+    trait PersistInterface,
 
-impl PersistImpl {
-    pub fn new<P: PersistInterface + 'static>(persist: P) -> PersistImpl {
-        PersistImpl(Arc::new(persist))
+    interface {
+        fn action(&self, action: Action, span: Option<SpanContext>) -> Result<()>;
+        fn agent(&self, agent: Agent, span: Option<SpanContext>) -> Result<()>;
+        fn agent_info(&self, agent: AgentInfo, span: Option<SpanContext>) -> Result<()>;
+        fn cluster_discovery(
+            &self,
+            discovery: ClusterDiscovery,
+            span: Option<SpanContext>,
+        ) -> Result<()>;
+        fn node(&self, node: Node, span: Option<SpanContext>) -> Result<()>;
+        fn shard(&self, shard: Shard, span: Option<SpanContext>) -> Result<()>;
     }
 }
 
-impl Deref for PersistImpl {
-    type Target = dyn PersistInterface + 'static;
-    fn deref(&self) -> &(dyn PersistInterface + 'static) {
-        self.0.deref()
-    }
-}
+arc_interface! {
+    /// Dynamic dispatch all operations to a backend-specific implementation.
+    struct StoreImpl,
 
-/// Definition of top level store operations.
-///
-/// Mainly a way to return interfaces to grouped store operations.
-///
-/// See `store::Store` for descriptions of methods.
-pub trait StoreInterface: Send + Sync {
-    fn agent(&self) -> AgentImpl;
-    fn agents(&self) -> AgentsImpl;
-    fn cluster(&self) -> ClusterImpl;
-    fn legacy(&self) -> LegacyImpl;
-    fn node(&self) -> NodeImpl;
-    fn nodes(&self) -> NodesImpl;
-    fn persist(&self) -> PersistImpl;
-    fn shard(&self) -> ShardImpl;
-    fn shards(&self) -> ShardsImpl;
-}
+    /// Definition of top level store operations.
+    ///
+    /// Mainly a way to return interfaces to grouped store operations.
+    ///
+    /// See `store::Store` for descriptions of methods.
+    trait StoreInterface,
 
-/// Dynamic dispatch all operations to a backend-specific implementation.
-#[derive(Clone)]
-pub struct StoreImpl(Arc<dyn StoreInterface>);
-
-impl StoreImpl {
-    pub fn new<S: StoreInterface + 'static>(store: S) -> StoreImpl {
-        StoreImpl(Arc::new(store))
-    }
-}
-
-impl Deref for StoreImpl {
-    type Target = dyn StoreInterface + 'static;
-    fn deref(&self) -> &(dyn StoreInterface + 'static) {
-        self.0.deref()
+    interface {
+        fn actions(&self) -> ActionsImpl;
+        fn agent(&self) -> AgentImpl;
+        fn agents(&self) -> AgentsImpl;
+        fn cluster(&self) -> ClusterImpl;
+        fn legacy(&self) -> LegacyImpl;
+        fn node(&self) -> NodeImpl;
+        fn nodes(&self) -> NodesImpl;
+        fn persist(&self) -> PersistImpl;
+        fn shard(&self) -> ShardImpl;
+        fn shards(&self) -> ShardsImpl;
     }
 }
 

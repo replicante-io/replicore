@@ -1,11 +1,23 @@
+use std::collections::HashMap;
 use std::sync::Arc;
 use std::sync::Mutex;
 
+use chrono::Utc;
 use opentracingrust::SpanContext;
+use uuid::Uuid;
 
+use replicante_models_core::actions::Action;
+use replicante_models_core::actions::ActionState;
+use replicante_models_core::agent::Agent;
+use replicante_models_core::agent::AgentInfo;
+use replicante_models_core::agent::Node;
+use replicante_models_core::agent::Shard;
+use replicante_models_core::cluster::ClusterDiscovery;
 use replicante_models_core::cluster::ClusterMeta;
 
 use super::MockState;
+use crate::backend::ActionsImpl;
+use crate::backend::ActionsInterface;
 use crate::backend::AgentImpl;
 use crate::backend::AgentsImpl;
 use crate::backend::ClusterImpl;
@@ -14,10 +26,13 @@ use crate::backend::LegacyInterface;
 use crate::backend::NodeImpl;
 use crate::backend::NodesImpl;
 use crate::backend::PersistImpl;
+use crate::backend::PersistInterface;
 use crate::backend::ShardImpl;
 use crate::backend::ShardsImpl;
 use crate::backend::StoreImpl;
 use crate::backend::StoreInterface;
+use crate::store::actions::ActionSyncState;
+use crate::store::actions::ActionsAttributes;
 use crate::store::Store;
 use crate::Cursor;
 use crate::Result;
@@ -28,6 +43,13 @@ pub struct StoreMock {
 }
 
 impl StoreInterface for StoreMock {
+    fn actions(&self) -> ActionsImpl {
+        let actions = Actions {
+            state: Arc::clone(&self.state),
+        };
+        ActionsImpl::new(actions)
+    }
+
     fn agent(&self) -> AgentImpl {
         panic!("TODO: StoreMock::agent");
     }
@@ -56,7 +78,10 @@ impl StoreInterface for StoreMock {
     }
 
     fn persist(&self) -> PersistImpl {
-        panic!("TODO: StoreMock::persist");
+        let persist = Persist {
+            state: Arc::clone(&self.state),
+        };
+        PersistImpl::new(persist)
     }
 
     fn shard(&self) -> ShardImpl {
@@ -72,6 +97,61 @@ impl From<StoreMock> for Store {
     fn from(store: StoreMock) -> Store {
         let store = StoreImpl::new(store);
         Store::with_impl(store)
+    }
+}
+
+/// Mock implementation of the `ActionsInterface`.
+struct Actions {
+    state: Arc<Mutex<MockState>>,
+}
+
+impl ActionsInterface for Actions {
+    fn mark_lost(
+        &self,
+        attrs: &ActionsAttributes,
+        node_id: String,
+        refresh_id: i64,
+        _: Option<SpanContext>,
+    ) -> Result<()> {
+        let now = Utc::now();
+        let cluster_id = &attrs.cluster_id;
+        let mut store = self.state.lock().expect("MockStore state lock is poisoned");
+        let actions = store.actions.iter_mut().filter(|(key, action)| {
+            key.0 == *cluster_id && key.1 == *node_id && action.refresh_id != refresh_id
+        });
+        for (_, action) in actions {
+            action.state = ActionState::Lost;
+            action.finished_ts = Some(now);
+        }
+        Ok(())
+    }
+
+    fn state_for_sync(
+        &self,
+        attrs: &ActionsAttributes,
+        node_id: String,
+        action_ids: &[Uuid],
+        _: Option<SpanContext>,
+    ) -> Result<HashMap<Uuid, ActionSyncState>> {
+        let mut results = HashMap::new();
+        // Check ids in the state map.
+        let store = self.state.lock().expect("MockStore state lock is poisoned");
+        for id in action_ids {
+            let state = store
+                .actions
+                .get(&(attrs.cluster_id.clone(), node_id.clone(), *id))
+                .map(|action| action.finished_ts.map(|_| ActionSyncState::Finished))
+                // Flatten Option<Option<ActionSyncState::Finished>> into an ActionSyncState.
+                .map(|state| state.unwrap_or(ActionSyncState::Found))
+                .unwrap_or(ActionSyncState::NotFound);
+            results.insert(*id, state);
+        }
+
+        // Add other ids as not found.
+        for id in action_ids {
+            results.entry(*id).or_insert(ActionSyncState::NotFound);
+        }
+        Ok(results)
     }
 }
 
@@ -110,5 +190,50 @@ impl LegacyInterface for Legacy {
         let results: Vec<Result<ClusterMeta>> = results.into_iter().map(Ok).collect();
         let cursor = Cursor(Box::new(results.into_iter()));
         Ok(cursor)
+    }
+}
+
+/// Mock implementation of the `PersistInterface`.
+struct Persist {
+    state: Arc<Mutex<MockState>>,
+}
+
+impl PersistInterface for Persist {
+    fn action(&self, action: Action, _: Option<SpanContext>) -> Result<()> {
+        let key = (
+            action.cluster_id.clone(),
+            action.node_id.clone(),
+            action.action_id,
+        );
+        self.state
+            .lock()
+            .expect("MockStore state lock poisoned")
+            .actions
+            .insert(key, action);
+        Ok(())
+    }
+
+    fn agent(&self, _agent: Agent, _: Option<SpanContext>) -> Result<()> {
+        panic!("TODO: MockStore::Persist::agent")
+    }
+
+    fn agent_info(&self, _agent: AgentInfo, _: Option<SpanContext>) -> Result<()> {
+        panic!("TODO: MockStore::Persist::agent_info")
+    }
+
+    fn cluster_discovery(
+        &self,
+        _discovery: ClusterDiscovery,
+        _: Option<SpanContext>,
+    ) -> Result<()> {
+        panic!("TODO: MockStore::Persist::cluster_discovery")
+    }
+
+    fn node(&self, _node: Node, _: Option<SpanContext>) -> Result<()> {
+        panic!("TODO: MockStore::Persist::node")
+    }
+
+    fn shard(&self, _shard: Shard, _: Option<SpanContext>) -> Result<()> {
+        panic!("TODO: MockStore::Persist::shard")
     }
 }

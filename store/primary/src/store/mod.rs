@@ -10,6 +10,7 @@ use crate::backend::StoreImpl;
 use crate::Config;
 use crate::Result;
 
+pub mod actions;
 pub mod agent;
 pub mod agents;
 pub mod cluster;
@@ -20,6 +21,7 @@ pub mod persist;
 pub mod shard;
 pub mod shards;
 
+use self::actions::Actions;
 use self::agent::Agent;
 use self::agents::Agents;
 use self::cluster::Cluster;
@@ -73,6 +75,13 @@ impl Store {
     #[cfg(feature = "with_test_support")]
     pub(crate) fn with_impl(store: StoreImpl) -> Store {
         Store { store }
+    }
+
+    /// Operate on actions for the cluster identified by cluster_id.
+    pub fn actions(&self, cluster_id: String) -> Actions {
+        let actions = self.store.actions();
+        let attrs = self::actions::ActionsAttributes { cluster_id };
+        Actions::new(actions, attrs)
     }
 
     /// Operate on the agent identified by the provided cluster_id and host.

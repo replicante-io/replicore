@@ -1,5 +1,6 @@
 use opentracingrust::SpanContext;
 
+use replicante_models_core::actions::Action as ActionModel;
 use replicante_models_core::agent::Agent as AgentModel;
 use replicante_models_core::agent::AgentInfo as AgentInfoModel;
 use replicante_models_core::agent::Node as NodeModel;
@@ -17,6 +18,14 @@ pub struct Persist {
 impl Persist {
     pub(crate) fn new(persist: PersistImpl) -> Persist {
         Persist { persist }
+    }
+
+    /// Create or update an agent `Action` record.
+    pub fn action<S>(&self, action: ActionModel, span: S) -> Result<()>
+    where
+        S: Into<Option<SpanContext>>,
+    {
+        self.persist.action(action, span.into())
     }
 
     /// Create or update an Agent record.

@@ -12,6 +12,7 @@ use opentracingrust::SpanContext;
 use opentracingrust::Tracer;
 
 use replicante_externals_mongodb::operations::replace_one;
+use replicante_models_core::actions::Action as ActionModel;
 use replicante_models_core::agent::Agent as AgentModel;
 use replicante_models_core::agent::AgentInfo as AgentInfoModel;
 use replicante_models_core::agent::Node as NodeModel;
@@ -19,11 +20,13 @@ use replicante_models_core::agent::Shard as ShardModel;
 use replicante_models_core::cluster::ClusterDiscovery as ClusterDiscoveryModel;
 
 use super::super::PersistInterface;
+use super::constants::COLLECTION_ACTIONS;
 use super::constants::COLLECTION_AGENTS;
 use super::constants::COLLECTION_AGENTS_INFO;
 use super::constants::COLLECTION_DISCOVERIES;
 use super::constants::COLLECTION_NODES;
 use super::constants::COLLECTION_SHARDS;
+use super::document::ActionDocument;
 use super::document::AgentInfoDocument;
 use super::document::NodeDocument;
 use super::document::ShardDocument;
@@ -48,6 +51,30 @@ impl Persist {
 }
 
 impl PersistInterface for Persist {
+    fn action(&self, action: ActionModel, span: Option<SpanContext>) -> Result<()> {
+        let action = ActionDocument::from(action);
+        let filter = doc! {
+            "cluster_id" => &action.cluster_id,
+            "node_id" => &action.node_id,
+            "action_id" => &action.action_id,
+        };
+        let collection = self.client.db(&self.db).collection(COLLECTION_ACTIONS);
+        let document = bson::to_bson(&action).with_context(|_| ErrorKind::MongoDBBsonEncode)?;
+        let document = match document {
+            Bson::Document(document) => document,
+            _ => panic!("Action failed to encode as BSON document"),
+        };
+        replace_one(
+            collection,
+            filter,
+            document,
+            span,
+            self.tracer.as_ref().map(|tracer| tracer.deref()),
+        )
+        .with_context(|_| ErrorKind::MongoDBOperation)?;
+        Ok(())
+    }
+
     fn agent(&self, agent: AgentModel, span: Option<SpanContext>) -> Result<()> {
         let filter = doc! {
             "cluster_id" => &agent.cluster_id,

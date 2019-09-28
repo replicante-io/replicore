@@ -1,11 +1,17 @@
-use opentracingrust::SpanContext;
+use std::collections::HashMap;
 
+use opentracingrust::SpanContext;
+use uuid::Uuid;
+
+use replicante_models_agent::actions::api::ActionInfoResponse;
+use replicante_models_agent::actions::ActionListItem;
 use replicante_models_agent::info::AgentInfo;
 use replicante_models_agent::info::DatastoreInfo;
 use replicante_models_agent::info::Shards;
 
-use super::Client;
-use super::Result;
+use crate::Client;
+use crate::ErrorKind;
+use crate::Result;
 
 /// A mock `Client` for tests.
 pub struct MockClient<A, D, S>
@@ -17,6 +23,9 @@ where
     agent_info: A,
     datastore_info: D,
     shards: S,
+    pub actions: HashMap<Uuid, ActionInfoResponse>,
+    pub actions_finished: Vec<ActionListItem>,
+    pub actions_queue: Vec<ActionListItem>,
     pub id: String,
 }
 
@@ -26,6 +35,23 @@ where
     D: Fn() -> Result<DatastoreInfo>,
     S: Fn() -> Result<Shards>,
 {
+    fn action_info(&self, id: &Uuid, _: Option<SpanContext>) -> Result<ActionInfoResponse> {
+        let action = self
+            .actions
+            .get(id)
+            .cloned()
+            .ok_or_else(|| ErrorKind::NotFound("action", id.to_string()))?;
+        Ok(action)
+    }
+
+    fn actions_finished(&self, _: Option<SpanContext>) -> Result<Vec<ActionListItem>> {
+        Ok(self.actions_finished.clone())
+    }
+
+    fn actions_queue(&self, _: Option<SpanContext>) -> Result<Vec<ActionListItem>> {
+        Ok(self.actions_queue.clone())
+    }
+
     fn agent_info(&self, _: Option<SpanContext>) -> Result<AgentInfo> {
         (self.agent_info)()
     }
@@ -53,6 +79,9 @@ where
     pub fn new(agent_info: A, datastore_info: D, shards: S) -> MockClient<A, D, S> {
         let id = "mock://agent".to_string();
         MockClient {
+            actions: HashMap::new(),
+            actions_finished: Vec::new(),
+            actions_queue: Vec::new(),
             agent_info,
             datastore_info,
             id,

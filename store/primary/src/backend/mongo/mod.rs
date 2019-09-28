@@ -12,10 +12,7 @@ use replicante_externals_mongodb::MongoDBHealthCheck;
 use replicante_models_core::admin::Version;
 use replicante_service_healthcheck::HealthChecks;
 
-use crate::config::MongoDBConfig;
-use crate::ErrorKind;
-use crate::Result;
-
+use super::ActionsImpl;
 use super::AdminInterface;
 use super::AgentImpl;
 use super::AgentsImpl;
@@ -29,7 +26,11 @@ use super::ShardImpl;
 use super::ShardsImpl;
 use super::StoreInterface;
 use super::ValidateImpl;
+use crate::config::MongoDBConfig;
+use crate::ErrorKind;
+use crate::Result;
 
+mod actions;
 mod agent;
 mod agents;
 mod cluster;
@@ -129,6 +130,12 @@ impl Store {
 }
 
 impl StoreInterface for Store {
+    fn actions(&self) -> ActionsImpl {
+        let actions =
+            self::actions::Actions::new(self.client.clone(), self.db.clone(), self.tracer.clone());
+        ActionsImpl::new(actions)
+    }
+
     fn agent(&self) -> AgentImpl {
         let agent =
             self::agent::Agent::new(self.client.clone(), self.db.clone(), self.tracer.clone());

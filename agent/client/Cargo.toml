@@ -16,6 +16,10 @@ license = "MIT"
 maintenance = { status = "actively-developed" }
 
 
+[features]
+with_test_support = []
+
+
 [dependencies]
 failure = "^0.1.5"
 failure_derive = "^0.1.5"
@@ -26,6 +30,7 @@ reqwest = { version = "^0.9.18", features = ["rustls-tls"] }
 serde = "^1.0.34"
 serde_derive = "^1.0.34"
 slog = "^2.2.0"
+uuid = { version = "^0.7", features = ["serde", "v4"] }
 
 replicante_models_agent = { path = "../../common/models/agent" }
 replicante_models_core = { path = "../../models/core" }

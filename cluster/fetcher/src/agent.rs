@@ -10,9 +10,9 @@ use replicante_store_primary::store::Store;
 use replicante_stream_events::EmitMessage;
 use replicante_stream_events::Stream as EventsStream;
 
-use super::Error;
-use super::ErrorKind;
-use super::Result;
+use crate::Error;
+use crate::ErrorKind;
+use crate::Result;
 
 /// Subset of fetcher logic that deals specifically with agents.
 pub(crate) struct AgentFetcher {

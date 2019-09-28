@@ -5,9 +5,9 @@ use serde_derive::Serialize;
 use replicante_models_core::agent::Agent as AgentModel;
 use replicante_models_core::agent::AgentInfo as AgentInfoModel;
 
-use super::super::backend::AgentsImpl;
-use super::super::Cursor;
-use super::super::Result;
+use crate::backend::AgentsImpl;
+use crate::Cursor;
+use crate::Result;
 
 /// Operate on all agent in the cluster identified by cluster_id.
 pub struct Agents {

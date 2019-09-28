@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Added
 - Actions and Actions API to the specification.
 - Support mutually authenticated HTTPS transport.
+- Agent actions sync.
 
 ## [0.4.0] - 2019-07-15
 ### Added

@@ -18,6 +18,7 @@ use replicante_service_coordinator::NonBlockingLockWatcher;
 use replicante_store_primary::store::Store;
 use replicante_stream_events::Stream as EventsStream;
 
+mod actions;
 mod agent;
 mod error;
 mod metrics;
@@ -25,6 +26,7 @@ mod node;
 mod shard;
 mod snapshotter;
 
+use self::actions::ActionsFetcher;
 use self::agent::AgentFetcher;
 use self::metrics::FETCHER_DURATION;
 use self::metrics::FETCHER_ERRORS_COUNT;
@@ -80,6 +82,7 @@ impl ClusterIdentityChecker {
 /// Fetches agent data to "refresh" the persisted view of cluster nodes.
 /// See bin/replicante/tasks/cluster_refresh/mod.rs for details on the sync process.
 pub struct Fetcher {
+    actions: ActionsFetcher,
     agent: AgentFetcher,
     logger: Logger,
     node: NodeFetcher,
@@ -97,10 +100,12 @@ impl Fetcher {
         timeout: Duration,
         tracer: Arc<Tracer>,
     ) -> Fetcher {
+        let actions = ActionsFetcher::new(store.clone());
         let agent = AgentFetcher::new(events.clone(), store.clone());
         let node = NodeFetcher::new(events.clone(), store.clone());
         let shard = ShardFetcher::new(events, store.clone());
         Fetcher {
+            actions,
             agent,
             logger,
             node,
@@ -195,7 +200,7 @@ impl Fetcher {
         ns: &Namespace,
         cluster: &str,
         node: &str,
-        _refresh_id: i64,
+        refresh_id: i64,
         id_checker: &mut ClusterIdentityChecker,
         span: &mut Span,
     ) -> Result<()> {
@@ -212,6 +217,8 @@ impl Fetcher {
             .process_agent_info(&client, cluster.to_string(), node.to_string(), span)?;
         self.node.process_node(&client, id_checker, span)?;
         self.shard.process_shards(&client, cluster, node, span)?;
+        self.actions
+            .sync(&client, cluster, node, refresh_id, span)?;
 
         Ok(())
     }

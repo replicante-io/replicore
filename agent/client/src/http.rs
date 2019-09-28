@@ -18,7 +18,10 @@ use reqwest::StatusCode;
 use serde::de::DeserializeOwned;
 use serde_derive::Deserialize;
 use slog::Logger;
+use uuid::Uuid;
 
+use replicante_models_agent::actions::api::ActionInfoResponse;
+use replicante_models_agent::actions::ActionListItem;
 use replicante_models_agent::info::AgentInfo;
 use replicante_models_agent::info::DatastoreInfo;
 use replicante_models_agent::info::Shards;
@@ -54,6 +57,67 @@ pub struct HttpClient {
 }
 
 impl Client for HttpClient {
+    fn action_info(&self, id: &Uuid, span: Option<SpanContext>) -> Result<ActionInfoResponse> {
+        let endpoint = self.endpoint(format!("/api/unstable/actions/info/{}", id));
+        let request = self.client.get(&endpoint);
+        let span = match (self.tracer.as_ref(), span) {
+            (Some(tracer), Some(parent)) => {
+                let options = StartOptions::default().child_of(parent);
+                let mut span = tracer
+                    .span_with_options("agent.client.http.actions.info", options)
+                    .auto_finish();
+                span.tag("action.id", id.to_string());
+                Some(span)
+            }
+            _ => None,
+        };
+        let context = span.as_ref().map(|span| span.context().clone());
+        self.perform(request, context).map_err(|error| match span {
+            None => error,
+            Some(mut span) => fail_span(error, span.as_mut()),
+        })
+    }
+
+    fn actions_finished(&self, span: Option<SpanContext>) -> Result<Vec<ActionListItem>> {
+        let endpoint = self.endpoint("/api/unstable/actions/finished");
+        let request = self.client.get(&endpoint);
+        let span = match (self.tracer.as_ref(), span) {
+            (Some(tracer), Some(parent)) => {
+                let options = StartOptions::default().child_of(parent);
+                let span = tracer
+                    .span_with_options("agent.client.http.actions.finished", options)
+                    .auto_finish();
+                Some(span)
+            }
+            _ => None,
+        };
+        let context = span.as_ref().map(|span| span.context().clone());
+        self.perform(request, context).map_err(|error| match span {
+            None => error,
+            Some(mut span) => fail_span(error, span.as_mut()),
+        })
+    }
+
+    fn actions_queue(&self, span: Option<SpanContext>) -> Result<Vec<ActionListItem>> {
+        let endpoint = self.endpoint("/api/unstable/actions/queue");
+        let request = self.client.get(&endpoint);
+        let span = match (self.tracer.as_ref(), span) {
+            (Some(tracer), Some(parent)) => {
+                let options = StartOptions::default().child_of(parent);
+                let span = tracer
+                    .span_with_options("agent.client.http.actions.queue", options)
+                    .auto_finish();
+                Some(span)
+            }
+            _ => None,
+        };
+        let context = span.as_ref().map(|span| span.context().clone());
+        self.perform(request, context).map_err(|error| match span {
+            None => error,
+            Some(mut span) => fail_span(error, span.as_mut()),
+        })
+    }
+
     fn agent_info(&self, span: Option<SpanContext>) -> Result<AgentInfo> {
         let endpoint = self.endpoint("/api/unstable/info/agent");
         let request = self.client.get(&endpoint);
@@ -236,7 +300,7 @@ impl HttpClient {
         CLIENT_HTTP_STATUS
             .with_label_values(&[&endpoint, status.as_str()])
             .inc();
-        if response.status() < StatusCode::BAD_REQUEST {
+        if status < StatusCode::BAD_REQUEST {
             response
                 .json()
                 .with_context(|_| ErrorKind::JsonDecode)

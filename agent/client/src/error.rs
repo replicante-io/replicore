@@ -12,6 +12,14 @@ impl Error {
     pub fn kind(&self) -> &ErrorKind {
         self.0.get_context()
     }
+
+    /// True if the error was caused by missing information on the agent.
+    pub fn not_found(&self) -> bool {
+        match self.kind() {
+            ErrorKind::NotFound(_, _) => true,
+            _ => false,
+        }
+    }
 }
 
 impl From<Context<ErrorKind>> for Error {
@@ -52,6 +60,9 @@ pub enum ErrorKind {
     #[fail(display = "unable to decode JSON data")]
     JsonDecode,
 
+    #[fail(display = "no {} with id '{}' found", _0, _1)]
+    NotFound(&'static str, String),
+
     #[fail(display = "remote error: {}", _0)]
     Remote(String),
 
@@ -63,6 +74,7 @@ impl ErrorKind {
     fn kind_name(&self) -> Option<&str> {
         let name = match self {
             ErrorKind::JsonDecode => "JsonDecode",
+            ErrorKind::NotFound(_, _) => "NotFound",
             ErrorKind::Remote(_) => "Remote",
             ErrorKind::Transport(_) => "Transport",
         };
