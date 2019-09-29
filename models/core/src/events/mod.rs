@@ -9,15 +9,15 @@ pub mod node;
 pub mod shard;
 pub mod snapshot;
 
-/// TODO
+/// Attempt to deserialize an event or return its code if desertification fails.
 #[macro_export]
 macro_rules! deserialize_event {
     ($decoder:path, $source:expr) => {
         match $decoder($source) {
-            Ok(event) => EventDecode::Ok(event),
+            Ok(event) => DeserializeResult::Ok(event),
             Err(error) => match $decoder($source) {
-                Ok(code) => EventDecode::Unknown(code),
-                Err(_) => EventDecode::Err(error),
+                Ok(code) => DeserializeResult::Unknown(code, error),
+                Err(_) => DeserializeResult::Err(error),
             },
         }
     };
@@ -134,23 +134,26 @@ impl EventBuilder {
     }
 }
 
-/// TODO
+/// Event identification codes.
+///
+/// Useful to deal with unknown events, usually emitted from newer/older version of Replicante.
+/// At a minimum it can be used to provide more informative error messages.
 #[derive(Clone, Eq, PartialEq, Hash, Debug, Serialize, Deserialize)]
 pub struct EventCode {
     pub category: String,
     pub event: String,
 }
 
-/// TODO
+/// Result of a `deserialize_event` operation.
 #[allow(clippy::large_enum_variant)]
-pub enum EventDecode<E> {
-    /// TODO
+pub enum DeserializeResult<E> {
+    /// The event was deserialized correctly.
     Ok(Event),
 
-    /// TODO
-    Unknown(EventCode),
+    /// The event failed to deserialize but identification codes were extracted.
+    Unknown(EventCode, E),
 
-    /// TODO
+    /// The event failed to deserialize and identification codes could not be expected.
     Err(E),
 }
 
@@ -217,9 +220,9 @@ mod tests {
     use chrono::Utc;
     use serde_json;
 
+    use super::DeserializeResult;
     use super::Event;
     use super::EventCode;
-    use super::EventDecode;
     use super::Payload;
     use super::TestEvent;
     use crate::deserialize_event;
@@ -242,9 +245,9 @@ mod tests {
     fn test_decode_err() {
         let encoded = r#"{"event":"TEST_UNKOWN","payload":1}"#;
         let actual = match deserialize_event!(serde_json::from_str, &encoded) {
-            EventDecode::Ok(_) => panic!("event decoding should fail"),
-            EventDecode::Unknown(_) => panic!("unknown event code"),
-            EventDecode::Err(error) => error,
+            DeserializeResult::Ok(_) => panic!("event decoding should fail"),
+            DeserializeResult::Unknown(_, _) => panic!("unknown event code"),
+            DeserializeResult::Err(error) => error,
         };
         let actual = format!("{:?}", actual);
         let expected = r#"Error("missing field `timestamp`", line: 1, column: 35)"#.to_string();
@@ -258,9 +261,9 @@ mod tests {
             r#""timestamp":"2014-07-08T09:10:11.012Z"}"#
         );
         let actual = match deserialize_event!(serde_json::from_str, &encoded) {
-            EventDecode::Ok(expected) => expected,
-            EventDecode::Unknown(_) => panic!("unknown event code"),
-            EventDecode::Err(error) => panic!("{:?}", error),
+            DeserializeResult::Ok(expected) => expected,
+            DeserializeResult::Unknown(_, _) => panic!("unknown event code"),
+            DeserializeResult::Err(error) => panic!("{:?}", error),
         };
         let expected = Event {
             payload: Payload::Test(TestEvent::New(1)),
@@ -276,9 +279,9 @@ mod tests {
             r#""timestamp":"2014-07-08T09:10:11.012Z"}"#
         );
         let actual = match deserialize_event!(serde_json::from_str, &encoded) {
-            EventDecode::Ok(_) => panic!("event decoding should fail"),
-            EventDecode::Unknown(expected) => expected,
-            EventDecode::Err(error) => panic!("{:?}", error),
+            DeserializeResult::Ok(_) => panic!("event decoding should fail"),
+            DeserializeResult::Unknown(expected, _) => expected,
+            DeserializeResult::Err(error) => panic!("{:?}", error),
         };
         let expected = EventCode {
             category: "TEST".into(),
