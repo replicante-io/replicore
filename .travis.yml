@@ -15,7 +15,7 @@ language: rust
 #cache: cargo
 rust:
   - stable   # Target rust version.
-  - 1.36.0   # Earliest supported rust version.
+  - 1.37.0   # Earliest supported rust version.
   - nightly  # "The Rust team appreciates" according to Travis.
 
 env:
