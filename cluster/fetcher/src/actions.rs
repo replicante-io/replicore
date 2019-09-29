@@ -10,6 +10,8 @@ use replicante_store_primary::store::actions::ActionSyncState;
 use replicante_store_primary::store::actions::MAX_ACTIONS_STATE_FOR_SYNC;
 use replicante_store_primary::store::Store;
 
+use crate::metrics::FETCHER_ACTIONS_CHUNKS;
+use crate::metrics::FETCHER_ACTIONS_SYNCED;
 use crate::ErrorKind;
 use crate::Result;
 
@@ -34,10 +36,12 @@ impl ActionsFetcher {
     ) -> Result<()> {
         let remote_ids = self.remote_ids(client, node_id, span)?;
         let sync_ids = self.check_ids_to_sync(cluster_id, node_id, remote_ids, span)?;
+        let sync_size = sync_ids.len();
         for action_id in sync_ids {
             self.sync_action(client, cluster_id, node_id, action_id, refresh_id, span)?;
         }
         self.mark_lost_actions(cluster_id, node_id, refresh_id, span)?;
+        FETCHER_ACTIONS_SYNCED.observe(sync_size as f64);
         Ok(())
     }
 
@@ -51,6 +55,7 @@ impl ActionsFetcher {
     ) -> Result<Vec<Uuid>> {
         let mut results = Vec::new();
         let chunks = remote_ids.chunks(MAX_ACTIONS_STATE_FOR_SYNC);
+        let chunks_count = chunks.len();
         for ids in chunks {
             let states = self
                 .store
@@ -70,6 +75,7 @@ impl ActionsFetcher {
                 }
             }
         }
+        FETCHER_ACTIONS_CHUNKS.observe(chunks_count as f64);
         Ok(results)
     }
 

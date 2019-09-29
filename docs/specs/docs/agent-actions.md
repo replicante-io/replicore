@@ -20,6 +20,8 @@ and is subject to (potentially breaking) change.
   <div class="desc get rtl">Returns a list of finished actions</div>
 </div>
 
+Actions MUST be listed in order from newest to oldest.
+
 When an action is finished, the agent will never change its state.
 
 Finished actions should be cleaned up periodically to prevent this list
@@ -61,6 +63,8 @@ Example:
   <div class="url get">/api/unstable/actions/queue</div>
   <div class="desc get rtl">Returns a list of currently running or queued actions</div>
 </div>
+
+Actions MUST be listed in order from oldest to newest.
 
 The format of elements in this list is the same as the one of items
 returned by `/api/unstable/actions/finished`.
