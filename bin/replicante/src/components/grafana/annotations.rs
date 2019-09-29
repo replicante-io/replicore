@@ -16,8 +16,12 @@ use serde_derive::Deserialize;
 use serde_derive::Serialize;
 use serde_json;
 
+use replicante_models_core::events::agent::AgentEvent;
+use replicante_models_core::events::cluster::ClusterEvent;
+use replicante_models_core::events::node::NodeEvent;
+use replicante_models_core::events::shard::ShardEvent;
 use replicante_models_core::events::Event;
-use replicante_models_core::events::EventPayload;
+use replicante_models_core::events::Payload;
 use replicante_store_view::store::events::EventsFilters;
 use replicante_store_view::store::events::EventsOptions;
 use replicante_store_view::store::Store;
@@ -197,61 +201,93 @@ impl Annotations {
     }
 
     fn text(event: &Event) -> String {
-        match event.payload {
-            EventPayload::AgentDown(ref data) => {
-                format!("Agent {} is down or non-responsive", data.host)
-            }
-            EventPayload::AgentInfoChanged(ref data) => {
-                format!("Details about agent on {} changed", data.before.host)
-            }
-            EventPayload::AgentInfoNew(ref data) => {
-                format!("A new agent was detected on host {}", data.host)
-            }
-            EventPayload::AgentNew(ref data) => {
-                format!("A new agent was detected on host {}", data.host)
-            }
-            EventPayload::AgentUp(ref data) => format!("Agent {} is now up", data.host),
-            EventPayload::ClusterChanged(_) => String::from(concat!(
-                "Cluster discovery record changed (most commonly, this indicates",
-                "a membership change)"
-            )),
-            EventPayload::ClusterNew(_) => String::from("Cluster discovered for the first time"),
-            EventPayload::NodeChanged(ref data) => {
-                format!("Details about datastore node {} changed", data.node_id)
-            }
-            EventPayload::NodeDown(ref data) => format!(
-                "Node {} is down or non-responsive but the agent on the node could be reached",
-                data.host
-            ),
-            EventPayload::NodeNew(_) => "A new datastore node was detected".into(),
-            EventPayload::NodeUp(ref data) => format!("Datastore node {} is now up", data.host),
-            EventPayload::ShardAllocationChanged(ref data) => format!(
-                "Status of shard {} on node {} have changed",
-                data.shard_id, data.node_id
-            ),
-            EventPayload::ShardAllocationNew(ref data) => format!(
-                "Shard {} found on node {} for the first time",
-                data.shard_id, data.node_id
-            ),
+        match &event.payload {
+            Payload::Agent(agent) => match agent {
+                AgentEvent::Down(state) => {
+                    format!("Agent {} is down or non-responsive", &state.host)
+                }
+                AgentEvent::InfoChanged(change) => {
+                    format!("Details about agent on {} changed", &change.before.host)
+                }
+                AgentEvent::InfoNew(info) => {
+                    format!("A new agent was detected on host {}", &info.host)
+                }
+                AgentEvent::New(agent) => {
+                    format!("A new agent was detected on host {}", &agent.host)
+                }
+                AgentEvent::Up(change) => format!("Agent {} is now up", &change.host),
+                // TODO: for when #[non_exhaustive] is usable
+                //_ => agent.code().to_string(),
+            },
+            Payload::Cluster(cluster) => match cluster {
+                ClusterEvent::Changed(_) => String::from(concat!(
+                    "Cluster discovery record changed (most commonly, this",
+                    " indicates a membership change)",
+                )),
+                ClusterEvent::New(_) => "Cluster discovered for the first time".into(),
+                // TODO: for when #[non_exhaustive] is usable
+                //_ => cluster.code().to_string(),
+            },
+            Payload::Node(node) => match node {
+                NodeEvent::Changed(change) => {
+                    format!("Details about datastore node {} changed", &change.node_id)
+                }
+                NodeEvent::Down(state) => format!(
+                    "Node {} is down or non-responsive but the agent on the node could be reached",
+                    &state.host,
+                ),
+                NodeEvent::New(_) => "A new datastore node was detected".into(),
+                NodeEvent::Up(change) => format!("Datastore node {} is now up", &change.host),
+                // TODO: for when #[non_exhaustive] is usable
+                //_ => node.code().to_string(),
+            },
+            Payload::Shard(shard) => match shard {
+                ShardEvent::AllocationChanged(change) => format!(
+                    "Status of shard {} on node {} have changed",
+                    &change.shard_id, &change.node_id
+                ),
+                ShardEvent::AllocationNew(shard) => format!(
+                    "Shard {} found on node {} for the first time",
+                    &shard.shard_id, &shard.node_id
+                ),
+                // TODO: for when #[non_exhaustive] is usable
+                //_ => shard.code().to_string(),
+            },
             _ => event.code().to_string(),
         }
     }
 
     fn title(event: &Event) -> String {
-        match event.payload {
-            EventPayload::AgentDown(_) => "Agent is down".into(),
-            EventPayload::AgentInfoChanged(_) => "Agent details changed".into(),
-            EventPayload::AgentInfoNew(_) => "New agent detected".into(),
-            EventPayload::AgentNew(_) => "New agent detected".into(),
-            EventPayload::AgentUp(_) => "Agent is up".into(),
-            EventPayload::ClusterChanged(_) => "Cluster changed".into(),
-            EventPayload::ClusterNew(_) => "New cluster detected".into(),
-            EventPayload::NodeChanged(_) => "Datastore node details changed".into(),
-            EventPayload::NodeDown(_) => "Datastore node is down".into(),
-            EventPayload::NodeNew(_) => "New datastore node detected".into(),
-            EventPayload::NodeUp(_) => "Datastore node is up".into(),
-            EventPayload::ShardAllocationChanged(_) => "Shard status on node changed".into(),
-            EventPayload::ShardAllocationNew(_) => "Shard found on node".into(),
+        match &event.payload {
+            Payload::Agent(agent) => match agent {
+                AgentEvent::Down(_) => "Agent is down".into(),
+                AgentEvent::InfoChanged(_) => "Agent details changed".into(),
+                AgentEvent::InfoNew(_) => "New agent detected".into(),
+                AgentEvent::New(_) => "New agent detected".into(),
+                AgentEvent::Up(_) => "Agent is up".into(),
+                // TODO: for when #[non_exhaustive] is usable
+                //_ => agent.code().to_string(),
+            },
+            Payload::Cluster(cluster) => match cluster {
+                ClusterEvent::Changed(_) => "Cluster changed".into(),
+                ClusterEvent::New(_) => "New cluster detected".into(),
+                // TODO: for when #[non_exhaustive] is usable
+                //_ => cluster.code().to_string(),
+            },
+            Payload::Node(node) => match node {
+                NodeEvent::Changed(_) => "Datastore node details changed".into(),
+                NodeEvent::Down(_) => "Datastore node is down".into(),
+                NodeEvent::New(_) => "New datastore node detected".into(),
+                NodeEvent::Up(_) => "Datastore node is up".into(),
+                // TODO: for when #[non_exhaustive] is usable
+                //_ => node.code().to_string(),
+            },
+            Payload::Shard(shard) => match shard {
+                ShardEvent::AllocationChanged(_) => "Shard status on node changed".into(),
+                ShardEvent::AllocationNew(_) => "Shard found on node".into(),
+                // TODO: for when #[non_exhaustive] is usable
+                //_ => shard.code().to_string(),
+            },
             _ => event.code().to_string(),
         }
     }

@@ -224,18 +224,18 @@ impl Handler {
                 .cluster()
                 .changed(current_state, discovery.clone());
             let code = event.code();
-            let stream_id = event.stream_id();
-            let event = EmitMessage::with(stream_id, event)
+            let stream_key = event.stream_key();
+            let event = EmitMessage::with(stream_key, event)
                 .with_context(|_| ErrorKind::EventsStreamEmit(code))?
                 .trace(span.context().clone());
             self.events
                 .emit(event)
                 .with_context(|_| ErrorKind::EventsStreamEmit(code))?;
         } else {
-            let event = Event::builder().cluster().cluster_new(discovery.clone());
+            let event = Event::builder().cluster().new_cluster(discovery.clone());
             let code = event.code();
-            let stream_id = event.stream_id();
-            let event = EmitMessage::with(stream_id, event)
+            let stream_key = event.stream_key();
+            let event = EmitMessage::with(stream_key, event)
                 .with_context(|_| ErrorKind::EventsStreamEmit(code))?
                 .trace(span.context().clone());
             self.events

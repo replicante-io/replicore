@@ -3,13 +3,13 @@ use serde_derive::Deserialize;
 use serde_derive::Serialize;
 
 use replicante_models_core::events::Event;
-use replicante_models_core::events::EventPayload;
+use replicante_models_core::events::Payload;
 
 /// Wrap an `Event` to allow BSON to encode/decode timestamps correctly.
 #[derive(Clone, Eq, PartialEq, Debug, Serialize, Deserialize)]
 pub struct EventDocument {
     #[serde(flatten)]
-    pub payload: EventPayload,
+    pub payload: Payload,
     pub timestamp: UtcDateTime,
 }
 

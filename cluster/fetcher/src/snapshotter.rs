@@ -45,8 +45,8 @@ impl Snapshotter {
             let status = status.with_context(|_| ErrorKind::StoreRead("agent status"))?;
             let event = Event::builder().snapshot().agent(status);
             let code = event.code();
-            let stream_id = event.stream_id();
-            let event = EmitMessage::with(stream_id, event)
+            let stream_key = event.stream_key();
+            let event = EmitMessage::with(stream_key, event)
                 .with_context(|_| ErrorKind::EventEmit(code))?
                 .trace(span.context().clone());
             self.events
@@ -62,8 +62,8 @@ impl Snapshotter {
             let info = info.with_context(|_| ErrorKind::StoreRead("agent info"))?;
             let event = Event::builder().snapshot().agent_info(info);
             let code = event.code();
-            let stream_id = event.stream_id();
-            let event = EmitMessage::with(stream_id, event)
+            let stream_key = event.stream_key();
+            let event = EmitMessage::with(stream_key, event)
                 .with_context(|_| ErrorKind::EventEmit(code))?
                 .trace(span.context().clone());
             self.events
@@ -82,8 +82,8 @@ impl Snapshotter {
         if let Some(discovery) = discovery {
             let event = Event::builder().snapshot().discovery(discovery);
             let code = event.code();
-            let stream_id = event.stream_id();
-            let event = EmitMessage::with(stream_id, event)
+            let stream_key = event.stream_key();
+            let event = EmitMessage::with(stream_key, event)
                 .with_context(|_| ErrorKind::EventEmit(code))?
                 .trace(span.context().clone());
             self.events
@@ -103,8 +103,8 @@ impl Snapshotter {
             let node = node.with_context(|_| ErrorKind::StoreRead("node"))?;
             let event = Event::builder().snapshot().node(node);
             let code = event.code();
-            let stream_id = event.stream_id();
-            let event = EmitMessage::with(stream_id, event)
+            let stream_key = event.stream_key();
+            let event = EmitMessage::with(stream_key, event)
                 .with_context(|_| ErrorKind::EventEmit(code))?
                 .trace(span.context().clone());
             self.events
@@ -124,8 +124,8 @@ impl Snapshotter {
             let shard = shard.with_context(|_| ErrorKind::StoreRead("shard"))?;
             let event = Event::builder().snapshot().shard(shard);
             let code = event.code();
-            let stream_id = event.stream_id();
-            let event = EmitMessage::with(stream_id, event)
+            let stream_key = event.stream_key();
+            let event = EmitMessage::with(stream_key, event)
                 .with_context(|_| ErrorKind::EventEmit(code))?
                 .trace(span.context().clone());
             self.events

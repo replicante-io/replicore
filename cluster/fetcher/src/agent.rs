@@ -72,8 +72,8 @@ impl AgentFetcher {
         if agent.status != old.status {
             let event = Event::builder().agent().transition(old, agent.clone());
             let code = event.code();
-            let stream_id = event.stream_id();
-            let event = EmitMessage::with(stream_id, event)
+            let stream_key = event.stream_key();
+            let event = EmitMessage::with(stream_key, event)
                 .with_context(|_| ErrorKind::EventEmit(code))?
                 .trace(span.context().clone());
             self.events
@@ -88,12 +88,10 @@ impl AgentFetcher {
     }
 
     fn process_agent_new(&self, agent: Agent, span: &mut Span) -> Result<()> {
-        let event = Event::builder()
-            .agent()
-            .agent_new(agent.cluster_id.clone(), agent.host.clone());
+        let event = Event::builder().agent().new_agent(agent.clone());
         let code = event.code();
-        let stream_id = event.stream_id();
-        let event = EmitMessage::with(stream_id, event)
+        let stream_key = event.stream_key();
+        let event = EmitMessage::with(stream_key, event)
             .with_context(|_| ErrorKind::EventEmit(code))?
             .trace(span.context().clone());
         self.events
@@ -105,8 +103,8 @@ impl AgentFetcher {
         let before = Agent::new(agent.cluster_id.clone(), agent.host.clone(), before);
         let event = Event::builder().agent().transition(before, agent.clone());
         let code = event.code();
-        let stream_id = event.stream_id();
-        let event = EmitMessage::with(stream_id, event)
+        let stream_key = event.stream_key();
+        let event = EmitMessage::with(stream_key, event)
             .with_context(|_| ErrorKind::EventEmit(code))?
             .trace(span.context().clone());
         self.events
@@ -126,10 +124,10 @@ impl AgentFetcher {
         span: &mut Span,
     ) -> Result<()> {
         if agent != old {
-            let event = Event::builder().agent().info().changed(old, agent.clone());
+            let event = Event::builder().agent().info_changed(old, agent.clone());
             let code = event.code();
-            let stream_id = event.stream_id();
-            let event = EmitMessage::with(stream_id, event)
+            let stream_key = event.stream_key();
+            let event = EmitMessage::with(stream_key, event)
                 .with_context(|_| ErrorKind::EventEmit(code))?
                 .trace(span.context().clone());
             self.events
@@ -145,10 +143,10 @@ impl AgentFetcher {
     }
 
     fn process_agent_info_new(&self, agent: AgentInfo, span: &mut Span) -> Result<()> {
-        let event = Event::builder().agent().info().info_new(agent.clone());
+        let event = Event::builder().agent().new_agent_info(agent.clone());
         let code = event.code();
-        let stream_id = event.stream_id();
-        let event = EmitMessage::with(stream_id, event)
+        let stream_key = event.stream_key();
+        let event = EmitMessage::with(stream_key, event)
             .with_context(|_| ErrorKind::EventEmit(code))?
             .trace(span.context().clone());
         self.events

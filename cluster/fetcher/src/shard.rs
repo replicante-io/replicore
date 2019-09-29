@@ -66,8 +66,8 @@ impl ShardFetcher {
                 .shard()
                 .allocation_changed(old, shard.clone());
             let code = event.code();
-            let stream_id = event.stream_id();
-            let event = EmitMessage::with(stream_id, event)
+            let stream_key = event.stream_key();
+            let event = EmitMessage::with(stream_key, event)
                 .with_context(|_| ErrorKind::EventEmit(code))?
                 .trace(span.context().clone());
             self.events
@@ -85,10 +85,10 @@ impl ShardFetcher {
     }
 
     fn process_shard_new(&self, shard: Shard, span: &mut Span) -> Result<()> {
-        let event = Event::builder().shard().shard_allocation_new(shard.clone());
+        let event = Event::builder().shard().new_allocation(shard.clone());
         let code = event.code();
-        let stream_id = event.stream_id();
-        let event = EmitMessage::with(stream_id, event)
+        let stream_key = event.stream_key();
+        let event = EmitMessage::with(stream_key, event)
             .with_context(|_| ErrorKind::EventEmit(code))?
             .trace(span.context().clone());
         self.events

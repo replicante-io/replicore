@@ -15,8 +15,8 @@ db.shards.createIndex({cluster_id: 1, shard_id: 1, node_id: 1}, {unique: true});
 //   Indexes for performance reasons.
 db.clusters_meta.createIndex({shards: -1, nodes: -1, cluster_id: 1});
 
-//   TTL indexes for cleanup.
-db.events.createIndex({finished_ts: 1}, {expireAfterSeconds: 1209600});
+//   TTL indexes for cleanup (14 days).
+db.actions.createIndex({finished_ts: 1}, {expireAfterSeconds: 1209600});
 
 
 /*** VIEW STORE ***/

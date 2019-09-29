@@ -87,7 +87,7 @@ mod tests {
     #[test]
     fn event_code_ok() {
         let cluster = ClusterDiscovery::new("test", vec![]);
-        let event = Event::builder().cluster().cluster_new(cluster);
+        let event = Event::builder().cluster().new_cluster(cluster);
         let message = mock_message("stream", "group", "id", HashMap::new(), event).unwrap();
         let event_code = Stream::event_code(&message).unwrap();
         assert_eq!(event_code, "CLUSTER_NEW");

@@ -10,6 +10,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Support mutually authenticated HTTPS transport.
 - Agent actions sync.
 
+### Changed
+- **BREAKING**: Refactor `Event`s model.
+
 ## [0.4.0] - 2019-07-15
 ### Added
 - Cluster specific agents API (`/cluster/:id/agents`).
