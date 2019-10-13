@@ -131,11 +131,7 @@ impl KafkaMessage {
             None => return Err(ErrorKind::MessageNoPayload.into()),
         };
         Ok(Message::with_backend(
-            stream_id,
-            follow_id.clone(),
-            headers,
-            payload,
-            inner,
+            stream_id, follow_id, headers, payload, inner,
         ))
     }
 }
