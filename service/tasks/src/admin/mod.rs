@@ -26,7 +26,7 @@ pub struct TasksAdmin<Q: TaskQueue>(Arc<dyn AdminBackend<Q>>);
 
 impl<Q: TaskQueue> TasksAdmin<Q> {
     pub fn new(logger: Logger, config: Config) -> Result<TasksAdmin<Q>> {
-        let backend = match config.backend.clone() {
+        let backend = match config.backend {
             BackendConfig::Kafka(backend) => Arc::new(Kafka::new(logger.clone(), backend)?),
         };
         Ok(TasksAdmin(backend))

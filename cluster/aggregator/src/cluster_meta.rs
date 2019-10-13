@@ -61,7 +61,7 @@ impl ClusterMetaAggregator {
         // Build the model.
         let cluster_id = self.cluster_id;
         let cluster_display_name = self.cluster_display_name.take().unwrap();
-        let mut meta = ClusterMeta::new(cluster_id.clone(), cluster_display_name);
+        let mut meta = ClusterMeta::new(cluster_id, cluster_display_name);
         meta.agents_down = self.agents_down;
         meta.kinds = self.kinds.into_iter().collect();
         meta.nodes = self.nodes;

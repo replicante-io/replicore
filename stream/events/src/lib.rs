@@ -57,6 +57,9 @@ impl Stream {
                 return DeserializeResult::Err(error.into());
             }
         };
+        // payload.clone is marked as redundant but the macro may use the value twice
+        // in case it needs to be decoded a second time to look for the codes.
+        #[allow(clippy::redundant_clone)]
         match deserialize_event!(serde_json::from_value, payload.clone()) {
             DeserializeResult::Ok(event) => DeserializeResult::Ok(event),
             DeserializeResult::Unknown(code, error) => {

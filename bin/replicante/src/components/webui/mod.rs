@@ -66,14 +66,10 @@ impl WebUI {
         );
         router.get(
             "/clusters/top",
-            self::clusters::Top::new(primary.clone()),
+            self::clusters::Top::new(primary),
             "/clusters/top",
         );
-        router.get(
-            "/events",
-            self::events::Events::new(view.clone()),
-            "/events",
-        );
+        router.get("/events", self::events::Events::new(view), "/events");
     }
 }
 

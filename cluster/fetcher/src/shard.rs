@@ -48,7 +48,7 @@ impl ShardFetcher {
         let shard_id = shard.shard_id.clone();
         let old = self
             .store
-            .shard(cluster_id.clone(), node_id.clone(), shard_id.clone())
+            .shard(cluster_id, node_id, shard_id)
             .get(span.context().clone());
         match old {
             Err(error) => Err(error)

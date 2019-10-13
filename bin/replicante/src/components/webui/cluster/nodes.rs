@@ -34,7 +34,7 @@ impl Handler for Nodes {
         let mut nodes = Vec::new();
         let iter = self
             .store
-            .nodes(cluster.clone())
+            .nodes(cluster)
             .iter(span.context().clone())
             .with_context(|_| ErrorKind::PrimaryStoreQuery("nodes.iter"))
             .map_err(Error::from)?;

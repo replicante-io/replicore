@@ -77,7 +77,7 @@ pub fn data<'a>(args: &ArgMatches<'a>, interfaces: &Interfaces) -> Result<()> {
     let mut outcomes = Outcomes::new();
     let config = args.value_of("config").unwrap();
     let config = Config::from_file(config).with_context(|_| ErrorKind::ConfigLoad)?;
-    let admin = Admin::make(config.storage.view.clone(), logger.clone())
+    let admin = Admin::make(config.storage.view, logger.clone())
         .with_context(|_| ErrorKind::AdminInit("view store"))?;
 
     info!(logger, "Checking records for the '{}' model", MODEL_EVENT);

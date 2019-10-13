@@ -85,7 +85,7 @@ impl Handler for Agents {
         let mut details = HashMap::new();
         let iter = self
             .store
-            .agents(cluster.clone())
+            .agents(cluster)
             .iter_info(span.context().clone())
             .with_context(|_| ErrorKind::PrimaryStoreQuery("agents.iter_info"))
             .map_err(Error::from)?;
