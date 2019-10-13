@@ -58,8 +58,8 @@ impl EventsInterface for Events {
         if let Some(cluster_id) = filters.cluster_id {
             // Include events without a cluster ID to support cmobined system events.
             filter.push(Bson::from(doc! {"$or": [
-                {"data.cluster_id" => {"$eq" => cluster_id}},
-                {"data.cluster_id" => {"$exists" => false}},
+                {"payload.cluster_id" => {"$eq" => cluster_id}},
+                {"payload.cluster_id" => {"$exists" => false}},
             ]}));
         }
         if let Some(event) = filters.event {
@@ -71,7 +71,9 @@ impl EventsInterface for Events {
             }));
         }
         if filters.exclude_system_events {
-            filter.push(Bson::from(doc! {"data.cluster_id" => {"$exists" => false}}));
+            filter.push(Bson::from(
+                doc! {"payload.cluster_id" => {"$exists" => false}},
+            ));
         }
         if let Some(start_from) = filters.start_from {
             filter.push(Bson::from(doc! {"timestamp" => {"$gte" => start_from}}));

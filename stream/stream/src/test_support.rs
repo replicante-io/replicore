@@ -182,12 +182,10 @@ impl SerialisedMessage {
     where
         T: Serialize + 'static,
     {
-        let payload =
-            serde_json::to_vec(&message.payload).with_context(|_| ErrorKind::PayloadEncode)?;
         Ok(SerialisedMessage {
             headers: message.headers,
             id: message.id,
-            payload,
+            payload: message.payload,
         })
     }
 }

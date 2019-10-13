@@ -3,6 +3,7 @@ use chrono::Utc;
 use serde_derive::Deserialize;
 use serde_derive::Serialize;
 
+pub mod action;
 pub mod agent;
 pub mod cluster;
 pub mod node;
@@ -10,21 +11,37 @@ pub mod shard;
 pub mod snapshot;
 
 /// Attempt to deserialize an event or return its code if desertification fails.
+///
+/// # Example
+/// ```rust
+/// use replicante_models_core::events::DeserializeResult;
+/// use replicante_models_core::deserialize_event;
+///
+/// let encoded = concat!(
+///     r#"{"category":"TEST","event":"TEST_NEW","payload":1,"#,
+///     r#""timestamp":"2014-07-08T09:10:11.012Z"}"#
+/// );
+/// match deserialize_event!(serde_json::from_str, &encoded) {
+///     DeserializeResult::Ok(event) => println!("Event: {:?}", event),
+///     DeserializeResult::Unknown(code, _) => println!("unknown event code {:?}", code),
+///     DeserializeResult::Err(error) => println!("{:?}", error),
+/// };
+/// ```
 #[macro_export]
 macro_rules! deserialize_event {
     ($decoder:path, $source:expr) => {
         match $decoder($source) {
-            Ok(event) => DeserializeResult::Ok(event),
+            Ok(event) => $crate::events::DeserializeResult::Ok(event),
             Err(error) => match $decoder($source) {
-                Ok(code) => DeserializeResult::Unknown(code, error),
-                Err(_) => DeserializeResult::Err(error),
+                Ok(code) => $crate::events::DeserializeResult::Unknown(code, error),
+                Err(_) => $crate::events::DeserializeResult::Err(error),
             },
         }
     };
 }
 
 /// Model an event that is emitted by the system.
-#[derive(Clone, Eq, PartialEq, Hash, Debug, Serialize, Deserialize)]
+#[derive(Clone, PartialEq, Debug, Serialize, Deserialize)]
 pub struct Event {
     #[serde(flatten)]
     pub payload: Payload,
@@ -40,6 +57,7 @@ impl Event {
     /// Look up the cluster ID for the event, if they have one.
     pub fn cluster_id(&self) -> Option<&str> {
         match &self.payload {
+            Payload::Action(event) => event.cluster_id(),
             Payload::Agent(event) => event.cluster_id(),
             Payload::Cluster(event) => event.cluster_id(),
             Payload::Node(event) => event.cluster_id(),
@@ -53,6 +71,7 @@ impl Event {
     /// Return the event "code", the string that represents the event type.
     pub fn code(&self) -> &'static str {
         match &self.payload {
+            Payload::Action(event) => event.code(),
             Payload::Agent(event) => event.code(),
             Payload::Cluster(event) => event.code(),
             Payload::Node(event) => event.code(),
@@ -71,6 +90,7 @@ impl Event {
     /// Equivalent to `Event::stream_key` without conversion to `String`.
     pub fn stream_key_str(&self) -> &str {
         match &self.payload {
+            Payload::Action(event) => event.stream_key(),
             Payload::Agent(event) => event.stream_key(),
             Payload::Cluster(event) => event.stream_key(),
             Payload::Node(event) => event.stream_key(),
@@ -92,6 +112,11 @@ impl EventBuilder {
     /// Create an empty `Event` builder.
     pub fn new() -> EventBuilder {
         EventBuilder::default()
+    }
+
+    /// Build action events.
+    pub fn action(self) -> self::action::ActionEventBuilder {
+        self::action::ActionEventBuilder { builder: self }
     }
 
     /// Build agent events.
@@ -158,10 +183,14 @@ pub enum DeserializeResult<E> {
 }
 
 /// Enumerates all possible events emitted by the system.
-#[derive(Clone, Eq, PartialEq, Hash, Debug, Serialize, Deserialize)]
+#[derive(Clone, PartialEq, Debug, Serialize, Deserialize)]
 #[serde(tag = "category")]
 // TODO: use when possible #[non_exhaustive]
 pub enum Payload {
+    /// Action related events.
+    #[serde(rename = "ACTION")]
+    Action(self::action::ActionEvent),
+
     /// Agent related events.
     #[serde(rename = "AGENT")]
     Agent(self::agent::AgentEvent),

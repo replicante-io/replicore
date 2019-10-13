@@ -11,7 +11,9 @@ use sentry::protocol::Map;
 use slog::debug;
 use slog::Logger;
 
+use replicante_models_core::events::DeserializeResult;
 use replicante_models_core::events::Event;
+use replicante_models_core::events::EventCode;
 use replicante_store_view::store::Store;
 use replicante_stream::Error;
 use replicante_stream_events::Message;
@@ -137,30 +139,26 @@ impl<'a> WorkerThread<'a> {
                     None
                 }
             };
-            let event = message.payload();
+            let event = Stream::deserialize_event(&message);
             match event {
-                Ok(event) => self.store_event(event, message, span),
-                Err(error) => self.invalid_event(error, message, span),
+                DeserializeResult::Ok(event) => self.store_event(event, message, span),
+                DeserializeResult::Err(error) => self.invalid_event(error, None, message, span),
+                DeserializeResult::Unknown(code, error) => {
+                    self.invalid_event(error, Some(code), message, span)
+                }
             };
         }
         Ok(())
     }
 
-    fn invalid_event(&self, error: Error, message: Message, mut span: Option<AutoFinishingSpan>) {
+    fn invalid_event(
+        &self,
+        error: Error,
+        code: Option<EventCode>,
+        message: Message,
+        mut span: Option<AutoFinishingSpan>,
+    ) {
         let message_id = message.id().to_string();
-        let event_code = match Stream::event_code(&message) {
-            Ok(event_code) => event_code,
-            Err(error) => {
-                capture_fail!(
-                    &error,
-                    self.logger,
-                    "Unable to extract the event code";
-                    "message.id" => &message_id,
-                    failure_info(&error),
-                );
-                return;
-            }
-        };
         sentry::with_scope(
             |_| (),
             || {
@@ -169,25 +167,35 @@ impl<'a> WorkerThread<'a> {
                     message: Some("Unrecognised event".into()),
                     data: {
                         let mut map = Map::new();
-                        map.insert("event_code".into(), event_code.clone().into());
-                        map.insert("message_id".into(), message_id.clone().into());
+                        map.insert("message.id".into(), message_id.clone().into());
+                        if let Some(code) = code.as_ref() {
+                            map.insert("event.category".into(), code.category.clone().into());
+                            map.insert("event.code".into(), code.event.clone().into());
+                        }
                         map
                     },
                     ..Default::default()
                 });
+                let event_code = code
+                    .as_ref()
+                    .map(|code| code.event.clone())
+                    .unwrap_or_else(|| "<unknown>".to_string());
                 capture_fail!(
                     &error,
                     self.logger,
                     "Unrecognised event";
-                    "event.code" => &event_code,
+                    "event.code" => event_code,
                     "message.id" => &message_id,
                     failure_info(&error),
                 );
             },
         );
         if let Some(span) = span.as_mut().map(DerefMut::deref_mut) {
-            span.tag("event.code", event_code.as_str());
             span.tag("message.id", message_id.as_str());
+            if let Some(code) = code.as_ref() {
+                span.tag("event.category", code.category.as_str());
+                span.tag("event.code", code.event.as_str());
+            }
             fail_span(error, span);
         }
         message.retry();

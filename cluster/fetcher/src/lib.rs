@@ -100,7 +100,7 @@ impl Fetcher {
         timeout: Duration,
         tracer: Arc<Tracer>,
     ) -> Fetcher {
-        let actions = ActionsFetcher::new(store.clone());
+        let actions = ActionsFetcher::new(events.clone(), store.clone());
         let agent = AgentFetcher::new(events.clone(), store.clone());
         let node = NodeFetcher::new(events.clone(), store.clone());
         let shard = ShardFetcher::new(events, store.clone());

@@ -1,12 +1,16 @@
 use std::ops::Deref;
 use std::sync::Arc;
 
+use failure::Fail;
 use opentracingrust::Tracer;
 use slog::Logger;
 
+use replicante_models_core::deserialize_event;
+use replicante_models_core::events::DeserializeResult;
 use replicante_models_core::events::Event;
 use replicante_service_healthcheck::HealthChecks;
 use replicante_stream::EmitMessage as BaseEmitMessage;
+use replicante_stream::Error;
 use replicante_stream::ErrorKind;
 use replicante_stream::Iter as BaseIter;
 use replicante_stream::Message as BaseMessage;
@@ -44,15 +48,26 @@ impl Stream {
         BaseStream::new(config, opts).map(Stream)
     }
 
-    /// Extract the `Event::code` from the message.
-    pub fn event_code(message: &Message) -> Result<String> {
-        message
-            .json_payload()?
-            .get("event")
-            .ok_or_else(|| ErrorKind::MessageInvalidAttribute("event", "attribute missing"))?
-            .as_str()
-            .ok_or_else(|| ErrorKind::MessageInvalidAttribute("event", "not a string").into())
-            .map(|code| code.to_string())
+    /// Attemt to deserialize and event or return an event code if deserialization fails.
+    pub fn deserialize_event(message: &Message) -> DeserializeResult<Error> {
+        let payload = match message.json_payload() {
+            Ok(json) => json,
+            Err(error) => {
+                let error = error.context(ErrorKind::PayloadDecode);
+                return DeserializeResult::Err(error.into());
+            }
+        };
+        match deserialize_event!(serde_json::from_value, payload.clone()) {
+            DeserializeResult::Ok(event) => DeserializeResult::Ok(event),
+            DeserializeResult::Unknown(code, error) => {
+                let error = error.context(ErrorKind::PayloadDecode);
+                DeserializeResult::Unknown(code, error.into())
+            }
+            DeserializeResult::Err(error) => {
+                let error = error.context(ErrorKind::PayloadDecode);
+                DeserializeResult::Err(error.into())
+            }
+        }
     }
 
     /// Return a `MockStream` version of the `Event`s stream for tests.
@@ -78,9 +93,9 @@ mod tests {
     use serde_json::json;
 
     use replicante_models_core::cluster::ClusterDiscovery;
+    use replicante_models_core::events::DeserializeResult;
     use replicante_models_core::events::Event;
     use replicante_stream::test_support::mock_message;
-    use replicante_stream::ErrorKind;
 
     use crate::Stream;
 
@@ -89,22 +104,21 @@ mod tests {
         let cluster = ClusterDiscovery::new("test", vec![]);
         let event = Event::builder().cluster().new_cluster(cluster);
         let message = mock_message("stream", "group", "id", HashMap::new(), event).unwrap();
-        let event_code = Stream::event_code(&message).unwrap();
-        assert_eq!(event_code, "CLUSTER_NEW");
+        match Stream::deserialize_event(&message) {
+            DeserializeResult::Ok(_) => (),
+            DeserializeResult::Unknown(_, _) => panic!("unknown event found"),
+            DeserializeResult::Err(_) => panic!("failed to decode event"),
+        };
     }
 
     #[test]
     fn event_code_missing() {
         let event = json!({});
         let message = mock_message("stream", "group", "id", HashMap::new(), event).unwrap();
-        match Stream::event_code(&message) {
-            Ok(_) => panic!("should not have an event code"),
-            Err(error) => match error.kind() {
-                ErrorKind::MessageInvalidAttribute(_, reason) => {
-                    assert_eq!(*reason, "attribute missing")
-                }
-                _ => panic!("unexpected error {:?}", error),
-            },
+        match Stream::deserialize_event(&message) {
+            DeserializeResult::Ok(_) => panic!("unexpected event found"),
+            DeserializeResult::Unknown(_, _) => panic!("unknown event found"),
+            DeserializeResult::Err(_) => (),
         };
     }
 
@@ -112,14 +126,10 @@ mod tests {
     fn event_code_not_string() {
         let event = json!({"event": 42});
         let message = mock_message("stream", "group", "id", HashMap::new(), event).unwrap();
-        match Stream::event_code(&message) {
-            Ok(_) => panic!("should not have an event code"),
-            Err(error) => match error.kind() {
-                ErrorKind::MessageInvalidAttribute(_, reason) => {
-                    assert_eq!(*reason, "not a string")
-                }
-                _ => panic!("unexpected error {:?}", error),
-            },
+        match Stream::deserialize_event(&message) {
+            DeserializeResult::Ok(_) => panic!("unexpected event found"),
+            DeserializeResult::Unknown(_, _) => panic!("unknown event found"),
+            DeserializeResult::Err(_) => (),
         };
     }
 }

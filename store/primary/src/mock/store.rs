@@ -2,6 +2,7 @@ use std::collections::HashMap;
 use std::sync::Arc;
 use std::sync::Mutex;
 
+use chrono::DateTime;
 use chrono::Utc;
 use opentracingrust::SpanContext;
 use uuid::Uuid;
@@ -106,14 +107,41 @@ struct Actions {
 }
 
 impl ActionsInterface for Actions {
+    fn iter_lost(
+        &self,
+        attrs: &ActionsAttributes,
+        node_id: String,
+        refresh_id: i64,
+        finished_ts: DateTime<Utc>,
+        _: Option<SpanContext>,
+    ) -> Result<Cursor<Action>> {
+        let store = self.state.lock().expect("MockStore state lock is poisoned");
+        let cluster_id = &attrs.cluster_id;
+        let cursor: Vec<Action> = store
+            .actions
+            .iter()
+            .filter(|(key, action)| {
+                key.0 == *cluster_id && key.1 == *node_id && action.refresh_id != refresh_id
+            })
+            .map(|(_, action)| {
+                // Simulate the changes that will be performed by `mark_lost` for clients.
+                let mut action = action.clone();
+                action.state = ActionState::Lost;
+                action.finished_ts = Some(finished_ts);
+                action
+            })
+            .collect();
+        Ok(Cursor::new(cursor.into_iter().map(Ok)))
+    }
+
     fn mark_lost(
         &self,
         attrs: &ActionsAttributes,
         node_id: String,
         refresh_id: i64,
+        finished_ts: DateTime<Utc>,
         _: Option<SpanContext>,
     ) -> Result<()> {
-        let now = Utc::now();
         let cluster_id = &attrs.cluster_id;
         let mut store = self.state.lock().expect("MockStore state lock is poisoned");
         let actions = store.actions.iter_mut().filter(|(key, action)| {
@@ -121,7 +149,7 @@ impl ActionsInterface for Actions {
         });
         for (_, action) in actions {
             action.state = ActionState::Lost;
-            action.finished_ts = Some(now);
+            action.finished_ts = Some(finished_ts);
         }
         Ok(())
     }
@@ -140,9 +168,13 @@ impl ActionsInterface for Actions {
             let state = store
                 .actions
                 .get(&(attrs.cluster_id.clone(), node_id.clone(), *id))
-                .map(|action| action.finished_ts.map(|_| ActionSyncState::Finished))
-                // Flatten Option<Option<ActionSyncState::Finished>> into an ActionSyncState.
-                .map(|state| state.unwrap_or(ActionSyncState::Found))
+                .map(|action| {
+                    if action.finished_ts.is_some() {
+                        ActionSyncState::Finished
+                    } else {
+                        ActionSyncState::Found(action.clone())
+                    }
+                })
                 .unwrap_or(ActionSyncState::NotFound);
             results.insert(*id, state);
         }

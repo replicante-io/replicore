@@ -4,6 +4,8 @@ use std::ops::Deref;
 use std::ops::DerefMut;
 use std::sync::Arc;
 
+use chrono::DateTime;
+use chrono::Utc;
 use opentracingrust::SpanContext;
 use opentracingrust::Tracer;
 use slog::Logger;
@@ -140,11 +142,20 @@ box_interface! {
     trait ActionsInterface,
 
     interface {
+        fn iter_lost(
+            &self,
+            attrs: &ActionsAttributes,
+            node_id: String,
+            refresh_id: i64,
+            finished_ts: DateTime<Utc>,
+            span: Option<SpanContext>,
+        ) -> Result<Cursor<Action>>;
         fn mark_lost(
             &self,
             attrs: &ActionsAttributes,
             node_id: String,
             refresh_id: i64,
+            finished_ts: DateTime<Utc>,
             span: Option<SpanContext>,
         ) -> Result<()>;
         fn state_for_sync(

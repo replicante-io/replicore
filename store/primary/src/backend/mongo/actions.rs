@@ -8,9 +8,9 @@ use bson::doc;
 use bson::Bson;
 use bson::Document;
 use bson::UtcDateTime;
+use chrono::DateTime;
 use chrono::Utc;
 use failure::ResultExt;
-use mongodb::coll::options::FindOptions;
 use mongodb::db::ThreadedDatabase;
 use mongodb::Client;
 use mongodb::ThreadedClient;
@@ -18,16 +18,36 @@ use opentracingrust::SpanContext;
 use opentracingrust::Tracer;
 use uuid::Uuid;
 
-use replicante_externals_mongodb::operations::find_with_options;
+use replicante_externals_mongodb::operations::find;
 use replicante_externals_mongodb::operations::update_many;
+use replicante_models_core::actions::Action;
 use replicante_models_core::actions::ActionState;
 
 use super::constants::COLLECTION_ACTIONS;
+use super::document::ActionDocument;
 use crate::backend::ActionsInterface;
 use crate::store::actions::ActionSyncState;
 use crate::store::actions::ActionsAttributes;
+use crate::Cursor;
 use crate::ErrorKind;
 use crate::Result;
+
+/// Generate the lost actions filter document.
+///
+/// This is called by `Actions::iter_lost` and `Actions::mark_lost` to ensure
+/// that both methods will always operate on the same set of documents.
+fn lost_actions_filter(
+    attrs: &ActionsAttributes,
+    node_id: &str,
+    refresh_id: i64,
+) -> bson::Document {
+    doc! {
+        "cluster_id": &attrs.cluster_id,
+        "finished_ts": null,
+        "node_id": node_id,
+        "refresh_id": { "$ne": refresh_id }
+    }
+}
 
 /// Actions operations implementation using MongoDB.
 pub struct Actions {
@@ -47,23 +67,47 @@ impl Actions {
 }
 
 impl ActionsInterface for Actions {
+    fn iter_lost(
+        &self,
+        attrs: &ActionsAttributes,
+        node_id: String,
+        refresh_id: i64,
+        finished_ts: DateTime<Utc>,
+        span: Option<SpanContext>,
+    ) -> Result<Cursor<Action>> {
+        let filter = lost_actions_filter(attrs, &node_id, refresh_id);
+        let collection = self.client.db(&self.db).collection(COLLECTION_ACTIONS);
+        let cursor = find(
+            collection,
+            filter,
+            span,
+            self.tracer.as_ref().map(|tracer| tracer.deref()),
+        )
+        .with_context(|_| ErrorKind::MongoDBOperation)?;
+        // Simulate the changes that will be performed by `mark_lost` for clients.
+        let cursor = cursor.map(move |action| {
+            let action: ActionDocument = action.with_context(|_| ErrorKind::MongoDBCursor)?;
+            let mut action: Action = action.into();
+            action.state = ActionState::Lost;
+            action.finished_ts = Some(finished_ts);
+            Ok(action)
+        });
+        Ok(Cursor::new(cursor))
+    }
+
     fn mark_lost(
         &self,
         attrs: &ActionsAttributes,
         node_id: String,
         refresh_id: i64,
+        finished_ts: DateTime<Utc>,
         span: Option<SpanContext>,
     ) -> Result<()> {
-        let filter = doc! {
-            "cluster_id": &attrs.cluster_id,
-            "finished_ts": null,
-            "node_id": node_id,
-            "refresh_id": { "$ne": refresh_id }
-        };
-        let now = UtcDateTime(Utc::now());
+        let filter = lost_actions_filter(attrs, &node_id, refresh_id);
+        let finished_ts = UtcDateTime(finished_ts);
         let update = doc! {
             "$set": {
-                "finished_ts": bson::to_bson(&now).unwrap(),
+                "finished_ts": bson::to_bson(&finished_ts).unwrap(),
                 "state": bson::to_bson(&ActionState::Lost).unwrap(),
             }
         };
@@ -101,17 +145,10 @@ impl ActionsInterface for Actions {
                 "$in" => action_ids_bson,
             },
         };
-        let projection = doc! {
-            "action_id" => 1,
-            "finished_ts" => 1,
-        };
         let collection = self.client.db(&self.db).collection(COLLECTION_ACTIONS);
-        let mut options = FindOptions::default();
-        options.projection = Some(projection);
-        let cursor = find_with_options(
+        let cursor = find(
             collection,
             filter,
-            options,
             span,
             self.tracer.as_ref().map(|tracer| tracer.deref()),
         )
@@ -125,11 +162,14 @@ impl ActionsInterface for Actions {
             let uuid = document
                 .get_str("action_id")
                 .with_context(|_| ErrorKind::InvalidRecord(id.clone()))?;
-            let uuid = Uuid::from_str(uuid).with_context(|_| ErrorKind::InvalidRecord(id))?;
+            let uuid =
+                Uuid::from_str(uuid).with_context(|_| ErrorKind::InvalidRecord(id.clone()))?;
             let finished_ts = if document.is_null("finished_ts") {
-                ActionSyncState::Finished
+                let action: ActionDocument = bson::from_bson(document.into())
+                    .with_context(|_| ErrorKind::InvalidRecord(id))?;
+                ActionSyncState::Found(action.into())
             } else {
-                ActionSyncState::Found
+                ActionSyncState::Finished
             };
             results.insert(uuid, finished_ts);
         }

@@ -17,6 +17,7 @@ maintenance = { status = "actively-developed" }
 
 
 [dependencies]
+chrono = { version = "^0.4.0", features = ["serde"] }
 failure = "^0.1.5"
 failure_derive = "^0.1.5"
 lazy_static = "^1.0.0"
@@ -35,9 +36,9 @@ replicante_util_tracing = { path = "../../common/util/tracing" }
 
 
 [dev-dependencies]
-chrono = { version = "^0.4.0", features = ["serde"] }
 serde_json = "^1.0.0"
 
 replicante_agent_client = { path = "../../agent/client", features = ["with_test_support"] }
 replicante_models_agent = { path = "../../common/models/agent" }
 replicante_store_primary = { path = "../../store/primary", features = ["with_test_support"] }
+replicante_stream_events = { path = "../../stream/events", features = ["with_test_support"] }

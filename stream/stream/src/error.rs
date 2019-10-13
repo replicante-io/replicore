@@ -61,9 +61,6 @@ pub enum ErrorKind {
     #[fail(display = "unable to follow stream")]
     FollowFailed,
 
-    #[fail(display = "unable to decode '{}' attribute from message: {}", _0, _1)]
-    MessageInvalidAttribute(&'static str, &'static str),
-
     #[fail(display = "unable to decode value for header '{}'", _0)]
     MessageInvalidHeader(String),
 
@@ -84,7 +81,6 @@ impl ErrorKind {
             ErrorKind::BackendClientCreation => "BackendClientCreation",
             ErrorKind::EmitFailed => "EmitFailed",
             ErrorKind::FollowFailed => "FollowFailed",
-            ErrorKind::MessageInvalidAttribute(_, _) => "MessageInvalidAttribute",
             ErrorKind::MessageInvalidHeader(_) => "MessageInvalidHeader",
             ErrorKind::MessageNoPayload => "MessageNoPayload",
             ErrorKind::PayloadEncode => "PayloadEncode",

@@ -1,9 +1,14 @@
 use std::collections::HashMap;
 
+use chrono::DateTime;
+use chrono::Utc;
 use opentracingrust::SpanContext;
 use uuid::Uuid;
 
+use replicante_models_core::actions::Action;
+
 use crate::backend::ActionsImpl;
+use crate::Cursor;
 use crate::Result;
 
 pub const MAX_ACTIONS_STATE_FOR_SYNC: usize = 20;
@@ -19,16 +24,41 @@ impl Actions {
         Actions { actions, attrs }
     }
 
-    /// Update all unfinished actions on the node which were NOT updated during `refresh_id`.
+    /// Iterate over all unfinished actions on the node which were NOT updated during `refresh_id`.
     ///
-    /// This method sets the state to `ActionState::Lost` and the finished timestamp to `Utc::now`.
-    /// The method does NOT generate an action transition history record for the event.
-    pub fn mark_lost<S>(&self, node_id: String, refresh_id: i64, span: S) -> Result<()>
+    /// This method MUST return the same actions that `Actions::mark_lost` would modify.
+    /// To keep callers logic simple, the `Action`s are returned as if the changes from
+    /// `Actions::mark_lost` were already applied.
+    pub fn iter_lost<S>(
+        &self,
+        node_id: String,
+        refresh_id: i64,
+        finished_ts: DateTime<Utc>,
+        span: S,
+    ) -> Result<Cursor<Action>>
     where
         S: Into<Option<SpanContext>>,
     {
         self.actions
-            .mark_lost(&self.attrs, node_id, refresh_id, span.into())
+            .iter_lost(&self.attrs, node_id, refresh_id, finished_ts, span.into())
+    }
+
+    /// Update all unfinished actions on the node which were NOT updated during `refresh_id`.
+    ///
+    /// This method sets the state to `ActionState::Lost` and the finished timestamp to `Utc::now`.
+    /// The method does NOT generate an action transition history record for the event.
+    pub fn mark_lost<S>(
+        &self,
+        node_id: String,
+        refresh_id: i64,
+        finished_ts: DateTime<Utc>,
+        span: S,
+    ) -> Result<()>
+    where
+        S: Into<Option<SpanContext>>,
+    {
+        self.actions
+            .mark_lost(&self.attrs, node_id, refresh_id, finished_ts, span.into())
     }
 
     /// Return information about the given action IDs for use by the agent sync process.
@@ -59,8 +89,10 @@ pub struct ActionsAttributes {
 }
 
 /// Action state in the primary store used by the agent sync process.
+#[derive(Clone, Debug, PartialEq)]
+#[allow(clippy::large_enum_variant)]
 pub enum ActionSyncState {
     Finished,
-    Found,
+    Found(Action),
     NotFound,
 }

@@ -6,7 +6,7 @@ use replicante_models_core::events::Event;
 use replicante_models_core::events::Payload;
 
 /// Wrap an `Event` to allow BSON to encode/decode timestamps correctly.
-#[derive(Clone, Eq, PartialEq, Debug, Serialize, Deserialize)]
+#[derive(Clone, PartialEq, Debug, Serialize, Deserialize)]
 pub struct EventDocument {
     #[serde(flatten)]
     pub payload: Payload,
