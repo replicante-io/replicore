@@ -6,9 +6,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 ### Added
+- API to fetch action details.
+- API to search cluster actions.
 - Actions and Actions API to the specification.
-- Support mutually authenticated HTTPS transport.
+- Actions and actins history stored in the view store.
 - Agent actions sync and events.
+- Support mutually authenticated HTTPS transport.
 
 ### Changed
 - **BREAKING**: Refactor `Event`s model.

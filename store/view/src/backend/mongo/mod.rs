@@ -16,6 +16,7 @@ use crate::config::MongoDBConfig;
 use crate::ErrorKind;
 use crate::Result;
 
+use super::ActionsImpl;
 use super::AdminInterface;
 use super::DataImpl;
 use super::EventsImpl;
@@ -23,6 +24,7 @@ use super::PersistImpl;
 use super::StoreInterface;
 use super::ValidateImpl;
 
+mod actions;
 mod constants;
 mod data;
 mod document;
@@ -99,6 +101,16 @@ impl Store {
 }
 
 impl StoreInterface for Store {
+    fn actions(&self, cluster_id: String) -> ActionsImpl {
+        let actions = self::actions::Actions::new(
+            self.client.clone(),
+            self.db.clone(),
+            self.tracer.clone(),
+            cluster_id,
+        );
+        ActionsImpl::new(actions)
+    }
+
     fn events(&self) -> EventsImpl {
         let events =
             self::events::Events::new(self.client.clone(), self.db.clone(), self.tracer.clone());

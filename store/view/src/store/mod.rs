@@ -10,9 +10,11 @@ use crate::backend::StoreImpl;
 use crate::Config;
 use crate::Result;
 
+pub mod actions;
 pub mod events;
 pub mod persist;
 
+use self::actions::Actions;
 use self::events::Events;
 use self::persist::Persist;
 
@@ -57,6 +59,12 @@ impl Store {
     #[cfg(feature = "with_test_support")]
     pub(crate) fn with_impl(store: StoreImpl) -> Store {
         Store { store }
+    }
+
+    /// Operate on actions.
+    pub fn actions(&self, cluster_id: String) -> Actions {
+        let actions = self.store.actions(cluster_id);
+        Actions::new(actions)
     }
 
     /// Operate on events.

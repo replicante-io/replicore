@@ -48,7 +48,7 @@ impl NodeFetcher {
             .get(span.context().clone());
         match record {
             Err(error) => Err(error)
-                .with_context(|_| ErrorKind::StoreRead("node"))
+                .with_context(|_| ErrorKind::PrimaryStoreRead("node"))
                 .map_err(Error::from),
             Ok(None) => self.process_node_new(node, span),
             Ok(Some(old)) => self.process_node_existing(node, old, span),
@@ -73,7 +73,7 @@ impl NodeFetcher {
         self.store
             .persist()
             .node(node, span.context().clone())
-            .with_context(|_| ErrorKind::StoreWrite("node update"))
+            .with_context(|_| ErrorKind::PrimaryStoreWrite("node update"))
             .map_err(Error::from)
     }
 
@@ -90,7 +90,7 @@ impl NodeFetcher {
         self.store
             .persist()
             .node(node, span.context().clone())
-            .with_context(|_| ErrorKind::StoreWrite("new node"))
+            .with_context(|_| ErrorKind::PrimaryStoreWrite("new node"))
             .map_err(Error::from)
     }
 }

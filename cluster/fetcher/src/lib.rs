@@ -15,7 +15,8 @@ use replicante_models_core::agent::AgentStatus;
 use replicante_models_core::cluster::ClusterDiscovery;
 use replicante_models_core::scope::Namespace;
 use replicante_service_coordinator::NonBlockingLockWatcher;
-use replicante_store_primary::store::Store;
+use replicante_store_primary::store::Store as PrimaryStore;
+use replicante_store_view::store::Store as ViewStore;
 use replicante_stream_events::Stream as EventsStream;
 
 mod actions;
@@ -87,7 +88,7 @@ pub struct Fetcher {
     logger: Logger,
     node: NodeFetcher,
     shard: ShardFetcher,
-    store: Store,
+    primary_store: PrimaryStore,
     timeout: Duration,
     tracer: Arc<Tracer>,
 }
@@ -96,21 +97,22 @@ impl Fetcher {
     pub fn new(
         logger: Logger,
         events: EventsStream,
-        store: Store,
+        primary_store: PrimaryStore,
+        view_store: ViewStore,
         timeout: Duration,
         tracer: Arc<Tracer>,
     ) -> Fetcher {
-        let actions = ActionsFetcher::new(events.clone(), store.clone());
-        let agent = AgentFetcher::new(events.clone(), store.clone());
-        let node = NodeFetcher::new(events.clone(), store.clone());
-        let shard = ShardFetcher::new(events, store.clone());
+        let actions = ActionsFetcher::new(events.clone(), primary_store.clone(), view_store);
+        let agent = AgentFetcher::new(events.clone(), primary_store.clone());
+        let node = NodeFetcher::new(events.clone(), primary_store.clone());
+        let shard = ShardFetcher::new(events, primary_store.clone());
         Fetcher {
             actions,
             agent,
             logger,
             node,
+            primary_store,
             shard,
-            store,
             timeout,
             tracer,
         }
@@ -158,10 +160,10 @@ impl Fetcher {
         let cluster_id = cluster.cluster_id;
         debug!(self.logger, "Refreshing cluster state"; "cluster_id" => &cluster_id);
         let mut id_checker = ClusterIdentityChecker::new(cluster_id.clone(), cluster.display_name);
-        self.store
+        self.primary_store
             .cluster(cluster_id.clone())
             .mark_stale(span.context().clone())
-            .with_context(|_| ErrorKind::StoreWrite("cluster staleness"))?;
+            .with_context(|_| ErrorKind::PrimaryStoreWrite("cluster staleness"))?;
 
         for node in cluster.nodes {
             // Exit early if lock was lost.

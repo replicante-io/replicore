@@ -30,6 +30,16 @@ impl WebUI {
         let view = interfaces.stores.view.clone();
         let mut router = interfaces.api.router_for(&APIRoot::UnstableWebUI);
         router.get(
+            "/cluster/:cluster/action/:action",
+            self::cluster::ActionDetails::new(view.clone()),
+            "/cluster/:cluster/action/:action",
+        );
+        router.post(
+            "/cluster/:cluster/actions",
+            self::cluster::Actions::new(view.clone()),
+            "/cluster/:cluster/actions",
+        );
+        router.get(
             "/cluster/:cluster/agents",
             self::cluster::Agents::new(primary.clone()),
             "/cluster/:cluster/agents",

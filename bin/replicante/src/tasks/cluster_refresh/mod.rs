@@ -106,14 +106,16 @@ impl Handler {
         logger: Logger,
         agents_timeout: Duration,
     ) -> Handler {
-        let store = interfaces.stores.primary.clone();
-        let aggregator = Aggregator::new(logger.clone(), store.clone());
+        let primary_store = interfaces.stores.primary.clone();
+        let view_store = interfaces.stores.view.clone();
+        let aggregator = Aggregator::new(logger.clone(), primary_store.clone());
         let coordinator = interfaces.coordinator.clone();
         let events = interfaces.streams.events.clone();
         let fetcher = Fetcher::new(
             logger.clone(),
             interfaces.streams.events.clone(),
-            store.clone(),
+            primary_store.clone(),
+            view_store,
             agents_timeout,
             interfaces.tracing.tracer(),
         );
@@ -125,7 +127,7 @@ impl Handler {
             events,
             fetcher,
             logger,
-            store,
+            store: primary_store,
             tracing,
             tmp_global_namespace,
         }

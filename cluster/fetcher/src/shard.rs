@@ -52,7 +52,7 @@ impl ShardFetcher {
             .get(span.context().clone());
         match old {
             Err(error) => Err(error)
-                .with_context(|_| ErrorKind::StoreRead("shard"))
+                .with_context(|_| ErrorKind::PrimaryStoreRead("shard"))
                 .map_err(Error::from),
             Ok(None) => self.process_shard_new(shard, span),
             Ok(Some(old)) => self.process_shard_existing(shard, old, span),
@@ -80,7 +80,7 @@ impl ShardFetcher {
         self.store
             .persist()
             .shard(shard, span.context().clone())
-            .with_context(|_| ErrorKind::StoreWrite("shard update"))
+            .with_context(|_| ErrorKind::PrimaryStoreWrite("shard update"))
             .map_err(Error::from)
     }
 
@@ -97,7 +97,7 @@ impl ShardFetcher {
         self.store
             .persist()
             .shard(shard, span.context().clone())
-            .with_context(|_| ErrorKind::StoreWrite("new shard"))
+            .with_context(|_| ErrorKind::PrimaryStoreWrite("new shard"))
             .map_err(Error::from)
     }
 

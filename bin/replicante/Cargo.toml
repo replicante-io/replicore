@@ -50,6 +50,7 @@ serde_yaml = "^0.8.0"
 slog = "^2.1.1"
 slog-scope = "^4.0.1"
 slog-stdlog = "^4.0.0"
+uuid = { version = "^0.7", features = ["serde", "v4"] }
 
 replicante_agent_client = { path = "../../agent/client" }
 replicante_cluster_aggregator = { path = "../../cluster/aggregator" }

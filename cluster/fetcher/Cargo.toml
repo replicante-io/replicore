@@ -27,9 +27,11 @@ slog = "^2.1.1"
 uuid = { version = "^0.7", features = ["serde", "v4"] }
 
 replicante_agent_client = { path = "../../agent/client" }
+replicante_models_agent = { path = "../../common/models/agent" }
 replicante_models_core = { path = "../../models/core" }
 replicante_service_coordinator = { path = "../../service/coordinator" }
 replicante_store_primary = { path = "../../store/primary" }
+replicante_store_view = { path = "../../store/view" }
 replicante_stream_events = { path = "../../stream/events" }
 replicante_util_failure = { path = "../../common/util/failure" }
 replicante_util_tracing = { path = "../../common/util/tracing" }
@@ -39,6 +41,6 @@ replicante_util_tracing = { path = "../../common/util/tracing" }
 serde_json = "^1.0.0"
 
 replicante_agent_client = { path = "../../agent/client", features = ["with_test_support"] }
-replicante_models_agent = { path = "../../common/models/agent" }
 replicante_store_primary = { path = "../../store/primary", features = ["with_test_support"] }
+replicante_store_view = { path = "../../store/view", features = ["with_test_support"] }
 replicante_stream_events = { path = "../../stream/events", features = ["with_test_support"] }

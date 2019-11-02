@@ -64,6 +64,9 @@ pub enum ErrorKind {
     #[fail(display = "MongoDB find failed")]
     FindOp,
 
+    #[fail(display = "MongoDB insertMany failed")]
+    InsertMany,
+
     #[fail(display = "MongoDB insertOne failed")]
     InsertOne,
 
@@ -100,6 +103,7 @@ impl ErrorKind {
             ErrorKind::FindCursor => "FindCursor",
             ErrorKind::FindOne => "FindOne",
             ErrorKind::FindOp => "FindOp",
+            ErrorKind::InsertMany => "InsertMany",
             ErrorKind::InsertOne => "InsertOne",
             ErrorKind::InvalidRecord(_) => "InvalidRecord",
             ErrorKind::ListCollectionsCursor => "ListCollectionsCursor",

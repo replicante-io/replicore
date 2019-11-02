@@ -1,6 +1,8 @@
 use std::ops::Deref;
 use std::sync::Arc;
 
+use bson::bson;
+use bson::doc;
 use bson::Bson;
 use failure::ResultExt;
 use mongodb::db::ThreadedDatabase;
@@ -9,11 +11,19 @@ use mongodb::ThreadedClient;
 use opentracingrust::SpanContext;
 use opentracingrust::Tracer;
 
+use replicante_externals_mongodb::operations::insert_many;
 use replicante_externals_mongodb::operations::insert_one;
+use replicante_externals_mongodb::operations::replace_one;
+use replicante_models_core::actions::Action;
+use replicante_models_core::actions::ActionHistory;
 use replicante_models_core::events::Event;
 
 use super::super::PersistInterface;
+use super::constants::COLLECTION_ACTIONS;
+use super::constants::COLLECTION_ACTIONS_HISTORY;
 use super::constants::COLLECTION_EVENTS;
+use super::document::ActionDocument;
+use super::document::ActionHistoryDocument;
 use super::document::EventDocument;
 use crate::Error;
 use crate::ErrorKind;
@@ -37,6 +47,56 @@ impl Persist {
 }
 
 impl PersistInterface for Persist {
+    fn action(&self, action: Action, span: Option<SpanContext>) -> Result<()> {
+        let collection = self.client.db(&self.db).collection(COLLECTION_ACTIONS);
+        let action = ActionDocument::from(action);
+        let filter = doc! {
+            "cluster_id" => &action.cluster_id,
+            "node_id" => &action.node_id,
+            "action_id" => &action.action_id,
+        };
+        let action = bson::to_bson(&action).with_context(|_| ErrorKind::MongoDBBsonEncode)?;
+        let action = match action {
+            Bson::Document(action) => action,
+            _ => panic!("Action failed to encode as BSON document"),
+        };
+        replace_one(
+            collection,
+            filter,
+            action,
+            span,
+            self.tracer.as_ref().map(|tracer| tracer.deref()),
+        )
+        .with_context(|_| ErrorKind::MongoDBOperation)
+        .map_err(Error::from)?;
+        Ok(())
+    }
+
+    fn action_history(&self, history: Vec<ActionHistory>, span: Option<SpanContext>) -> Result<()> {
+        let collection = self
+            .client
+            .db(&self.db)
+            .collection(COLLECTION_ACTIONS_HISTORY);
+        let mut records = Vec::new();
+        for item in history.into_iter() {
+            let item = ActionHistoryDocument::from(item);
+            let document = bson::to_bson(&item).with_context(|_| ErrorKind::MongoDBBsonEncode)?;
+            let document = match document {
+                Bson::Document(document) => document,
+                _ => panic!("Event failed to encode as BSON document"),
+            };
+            records.push(document);
+        }
+        insert_many(
+            collection,
+            records,
+            span,
+            self.tracer.as_ref().map(|tracer| tracer.deref()),
+        )
+        .with_context(|_| ErrorKind::MongoDBOperation)
+        .map_err(Error::from)
+    }
+
     fn event(&self, event: Event, span: Option<SpanContext>) -> Result<()> {
         let collection = self.client.db(&self.db).collection(COLLECTION_EVENTS);
         let event = EventDocument::from(event);

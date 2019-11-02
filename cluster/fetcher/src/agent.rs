@@ -32,7 +32,7 @@ impl AgentFetcher {
             .get(span.context().clone());
         match old {
             Err(error) => Err(error)
-                .with_context(|_| ErrorKind::StoreRead("agent"))
+                .with_context(|_| ErrorKind::PrimaryStoreRead("agent"))
                 .map_err(Error::from),
             Ok(None) => self.process_agent_new(agent, span),
             Ok(Some(old)) => self.process_agent_existing(agent, old, span),
@@ -56,7 +56,7 @@ impl AgentFetcher {
             .info(span.context().clone());
         match old {
             Err(error) => Err(error)
-                .with_context(|_| ErrorKind::StoreRead("agent info"))
+                .with_context(|_| ErrorKind::PrimaryStoreRead("agent info"))
                 .map_err(Error::from),
             Ok(None) => self.process_agent_info_new(info, span),
             Ok(Some(old)) => self.process_agent_info_existing(info, old, span),
@@ -83,7 +83,7 @@ impl AgentFetcher {
         self.store
             .persist()
             .agent(agent, span.context().clone())
-            .with_context(|_| ErrorKind::StoreWrite("agent update"))
+            .with_context(|_| ErrorKind::PrimaryStoreWrite("agent update"))
             .map_err(Error::from)
     }
 
@@ -113,7 +113,7 @@ impl AgentFetcher {
         self.store
             .persist()
             .agent(agent, span.context().clone())
-            .with_context(|_| ErrorKind::StoreWrite("new agent"))
+            .with_context(|_| ErrorKind::PrimaryStoreWrite("new agent"))
             .map_err(Error::from)
     }
 
@@ -138,7 +138,7 @@ impl AgentFetcher {
         self.store
             .persist()
             .agent_info(agent, span.context().clone())
-            .with_context(|_| ErrorKind::StoreWrite("agent info update"))
+            .with_context(|_| ErrorKind::PrimaryStoreWrite("agent info update"))
             .map_err(Error::from)
     }
 
@@ -155,7 +155,7 @@ impl AgentFetcher {
         self.store
             .persist()
             .agent_info(agent, span.context().clone())
-            .with_context(|_| ErrorKind::StoreWrite("new agent info"))
+            .with_context(|_| ErrorKind::PrimaryStoreWrite("new agent info"))
             .map_err(Error::from)
     }
 }

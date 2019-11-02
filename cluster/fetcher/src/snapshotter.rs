@@ -40,9 +40,9 @@ impl Snapshotter {
             .store
             .agents(self.cluster.clone())
             .iter(span.context().clone())
-            .with_context(|_| ErrorKind::StoreRead("agents statuses"))?;
+            .with_context(|_| ErrorKind::PrimaryStoreRead("agents statuses"))?;
         for status in statuses {
-            let status = status.with_context(|_| ErrorKind::StoreRead("agent status"))?;
+            let status = status.with_context(|_| ErrorKind::PrimaryStoreRead("agent status"))?;
             let event = Event::builder().snapshot().agent(status);
             let code = event.code();
             let stream_key = event.stream_key();
@@ -57,9 +57,9 @@ impl Snapshotter {
             .store
             .agents(self.cluster.clone())
             .iter_info(span.context().clone())
-            .with_context(|_| ErrorKind::StoreRead("agents info"))?;
+            .with_context(|_| ErrorKind::PrimaryStoreRead("agents info"))?;
         for info in infos {
-            let info = info.with_context(|_| ErrorKind::StoreRead("agent info"))?;
+            let info = info.with_context(|_| ErrorKind::PrimaryStoreRead("agent info"))?;
             let event = Event::builder().snapshot().agent_info(info);
             let code = event.code();
             let stream_key = event.stream_key();
@@ -78,7 +78,7 @@ impl Snapshotter {
             .store
             .cluster(self.cluster.clone())
             .discovery(span.context().clone())
-            .with_context(|_| ErrorKind::StoreRead("discovery"))?;
+            .with_context(|_| ErrorKind::PrimaryStoreRead("discovery"))?;
         if let Some(discovery) = discovery {
             let event = Event::builder().snapshot().discovery(discovery);
             let code = event.code();
@@ -98,9 +98,9 @@ impl Snapshotter {
             .store
             .nodes(self.cluster.clone())
             .iter(span.context().clone())
-            .with_context(|_| ErrorKind::StoreRead("nodes"))?;
+            .with_context(|_| ErrorKind::PrimaryStoreRead("nodes"))?;
         for node in nodes {
-            let node = node.with_context(|_| ErrorKind::StoreRead("node"))?;
+            let node = node.with_context(|_| ErrorKind::PrimaryStoreRead("node"))?;
             let event = Event::builder().snapshot().node(node);
             let code = event.code();
             let stream_key = event.stream_key();
@@ -119,9 +119,9 @@ impl Snapshotter {
             .store
             .shards(self.cluster.clone())
             .iter(span.context().clone())
-            .with_context(|_| ErrorKind::StoreRead("shards"))?;
+            .with_context(|_| ErrorKind::PrimaryStoreRead("shards"))?;
         for shard in shards {
-            let shard = shard.with_context(|_| ErrorKind::StoreRead("shard"))?;
+            let shard = shard.with_context(|_| ErrorKind::PrimaryStoreRead("shard"))?;
             let event = Event::builder().snapshot().shard(shard);
             let code = event.code();
             let stream_key = event.stream_key();

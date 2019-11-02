@@ -58,6 +58,9 @@ pub enum ErrorKind {
     #[fail(display = "the request has no body but requires one")]
     APIRequestBodyNotFound,
 
+    #[fail(display = "invalid required request parameter '{}'", _0)]
+    APIRequestParameterInvalid(&'static str),
+
     #[fail(display = "missing required request parameter '{}'", _0)]
     APIRequestParameterNotFound(&'static str),
 
@@ -121,6 +124,7 @@ impl ErrorKind {
         let name = match self {
             ErrorKind::APIRequestBodyInvalid => "APIRequestBodyInvalid",
             ErrorKind::APIRequestBodyNotFound => "APIRequestBodyNotFound",
+            ErrorKind::APIRequestParameterInvalid(_) => "APIRequestParameterInvalid",
             ErrorKind::APIRequestParameterNotFound(_) => "APIRequestParameterNotFound",
             ErrorKind::ClientInit(_) => "ClientInit",
             ErrorKind::ClusterAggregation => "ClusterAggregation",

@@ -214,6 +214,41 @@ where
     Ok(cursor)
 }
 
+/// Perform an [`insertMany`] operation.
+///
+/// [`insertMany`]: https://docs.mongodb.com/manual/reference/method/db.collection.insertMany/
+pub fn insert_many(
+    collection: Collection,
+    records: Vec<OrderedDocument>,
+    span: Option<SpanContext>,
+    tracer: Option<&Tracer>,
+) -> Result<()> {
+    let mut span = match (tracer, span) {
+        (Some(tracer), Some(context)) => {
+            let opts = StartOptions::default().child_of(context);
+            let mut span = tracer.span_with_options("store.mongodb.insertMany", opts);
+            span.tag("namespace", collection.namespace.clone());
+            Some(span.auto_finish())
+        }
+        _ => None,
+    };
+    MONGODB_OPS_COUNT.with_label_values(&["insertMany"]).inc();
+    let _timer = MONGODB_OPS_DURATION
+        .with_label_values(&["insertMany"])
+        .start_timer();
+    collection
+        .insert_many(records, None)
+        .map_err(|error| {
+            MONGODB_OP_ERRORS_COUNT
+                .with_label_values(&["insertMany"])
+                .inc();
+            error
+        })
+        .with_context(|_| ErrorKind::InsertMany)
+        .map_err(|error| fail_span(error, span.as_mut().map(DerefMut::deref_mut)))?;
+    Ok(())
+}
+
 /// Perform an [`insertOne`] operation.
 ///
 /// [`insertOne`]: https://docs.mongodb.com/manual/reference/method/db.collection.insertOne/

@@ -7,6 +7,7 @@ use serde_derive::Serialize;
 use serde_json::Value as Json;
 use uuid::Uuid;
 
+use replicante_models_agent::actions::ActionHistoryItem;
 use replicante_models_agent::actions::ActionModel as ActionWire;
 use replicante_models_agent::actions::ActionState as ActionStateWire;
 
@@ -51,6 +52,39 @@ impl Action {
             requester: action.requester,
             state: action.state.into(),
             state_payload: action.state_payload,
+        }
+    }
+}
+
+/// Action history metadata and transitions.
+#[derive(Clone, PartialEq, Debug, Serialize, Deserialize)]
+pub struct ActionHistory {
+    // ID attributes.
+    pub cluster_id: String,
+    pub node_id: String,
+    pub action_id: Uuid,
+
+    // Action history attributes.
+    pub finished_ts: Option<DateTime<Utc>>,
+    pub timestamp: DateTime<Utc>,
+    pub state: ActionState,
+    pub state_payload: Option<Json>,
+}
+
+impl ActionHistory {
+    pub fn new<S1, S2>(cluster_id: S1, node_id: S2, history: ActionHistoryItem) -> ActionHistory
+    where
+        S1: Into<String>,
+        S2: Into<String>,
+    {
+        ActionHistory {
+            cluster_id: cluster_id.into(),
+            node_id: node_id.into(),
+            action_id: history.action_id,
+            finished_ts: None,
+            timestamp: history.timestamp,
+            state: history.state.into(),
+            state_payload: history.state_payload,
         }
     }
 }

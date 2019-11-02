@@ -111,11 +111,17 @@ pub enum ErrorKind {
     #[fail(display = "error emitting {} event", _0)]
     EventEmit(&'static str),
 
-    #[fail(display = "error fetching {} from the store", _0)]
-    StoreRead(&'static str),
+    #[fail(display = "error fetching {} from the primary store", _0)]
+    PrimaryStoreRead(&'static str),
 
-    #[fail(display = "error persisting {} to the store", _0)]
-    StoreWrite(&'static str),
+    #[fail(display = "error persisting {} to the primary store", _0)]
+    PrimaryStoreWrite(&'static str),
+
+    #[fail(display = "error fetching {} from the view store", _0)]
+    ViewStoreRead(&'static str),
+
+    #[fail(display = "error persisting {} to the view store", _0)]
+    ViewStoreWrite(&'static str),
 }
 
 impl ErrorKind {
@@ -127,8 +133,10 @@ impl ErrorKind {
             ErrorKind::ClusterDisplayNameDoesNotMatch(_, _, _) => "ClusterDisplayNameDoesNotMatch",
             ErrorKind::ClusterIdDoesNotMatch(_, _, _) => "ClusterIdDoesNotMatch",
             ErrorKind::EventEmit(_) => "EventEmit",
-            ErrorKind::StoreRead(_) => "StoreRead",
-            ErrorKind::StoreWrite(_) => "StoreWrite",
+            ErrorKind::PrimaryStoreRead(_) => "PrimaryStoreRead",
+            ErrorKind::PrimaryStoreWrite(_) => "PrimaryStoreWrite",
+            ErrorKind::ViewStoreRead(_) => "ViewStoreRead",
+            ErrorKind::ViewStoreWrite(_) => "ViewStoreWrite",
         };
         Some(name)
     }
