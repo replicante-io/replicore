@@ -366,6 +366,14 @@ logging:
     # *** None available at this time ***
     #options:
 
+  # Include replicante's version information in every log record.
+  #
+  # This feature can be helpful when many different versions are logging to
+  # the same central location as well as while performing upgrades.
+  #
+  # For general reporting on which versions are in use the `replicore_info` metric.
+  include_version: false
+
   # The minimum logging level.
   #
   # Available options:
