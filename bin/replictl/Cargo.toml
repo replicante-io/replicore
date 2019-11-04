@@ -1,16 +1,15 @@
 [package]
 name = "replictl"
-version = "0.4.0"
+version = "0.5.0"
 authors = ["Stefano Pogliani <stefano@spogliani.net>"]
 edition = "2018"
 build = "../../build.rs"
 
-description = "Replicante command line tool"
+description = "Replicante Core command line tool"
 documentation = "https://www.replicante.io/docs"
 homepage = "https://www.replicante.io/"
 repository = "https://github.com/replicante-io/replicante"
 readme = "../../README.md"
-keywords = ["automation", "datastore", "operations"]
 license = "MIT"
 
 
@@ -27,26 +26,25 @@ path = "src/lib.rs"
 [dependencies]
 clap = "^2.31.2"
 failure = "^0.1.3"
-failure_derive = "^0.1.3"
-lazy_static = "^1.0.0"
-prometheus = "^0.7.0"
-reqwest = "^0.9.1"
-serde_yaml = "^0.8.0"
-slog = "^2.1.1"
-slog-term = "^2.4.0"
+#failure_derive = "^0.1.3"
+#lazy_static = "^1.0.0"
+#prometheus = "^0.7.0"
+#reqwest = "^0.9.1"
+#serde_yaml = "^0.8.0"
+#slog = "^2.1.1"
+#slog-term = "^2.4.0"
 
-replicante = { path = "../replicante" }
-replicante_cluster_discovery = { path = "../../cluster/discovery" }
-replicante_externals_mongodb = { path = "../../externals/mongodb" }
-replicante_models_core = { path = "../../models/core" }
-replicante_service_coordinator = { path = "../../service/coordinator" }
-replicante_service_healthcheck = { path = "../../service/healthcheck" }
-replicante_service_tasks = { path = "../../service/tasks" }
-replicante_store_primary = { path = "../../store/primary" }
-replicante_store_view = { path = "../../store/view" }
-replicante_stream_events = { path = "../../stream/events" }
+#replicante_cluster_discovery = { path = "../../cluster/discovery" }
+#replicante_externals_mongodb = { path = "../../externals/mongodb" }
+#replicante_models_core = { path = "../../models/core" }
+#replicante_service_coordinator = { path = "../../service/coordinator" }
+#replicante_service_healthcheck = { path = "../../service/healthcheck" }
+#replicante_service_tasks = { path = "../../service/tasks" }
+#replicante_store_primary = { path = "../../store/primary" }
+#replicante_store_view = { path = "../../store/view" }
+#replicante_stream_events = { path = "../../stream/events" }
 replicante_util_failure = { path = "../../common/util/failure" }
-replicante_util_rndid = { path = "../../common/util/rndid" }
+#replicante_util_rndid = { path = "../../common/util/rndid" }
 
 
 [build-dependencies]

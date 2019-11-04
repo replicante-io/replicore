@@ -81,7 +81,6 @@ pub fn configure(level: LogLevel) -> Logger {
         drain,
         o!(
             "module" => FnValue(|rinfo : &Record| rinfo.module()),
-            "version" => env!("GIT_BUILD_HASH"),
         ),
     )
 }

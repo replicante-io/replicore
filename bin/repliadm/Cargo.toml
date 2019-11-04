@@ -1,0 +1,57 @@
+[package]
+name = "repliadm"
+version = "0.5.0"
+authors = ["Stefano Pogliani <stefano@spogliani.net>"]
+edition = "2018"
+build = "../../build.rs"
+
+description = "Replicante Core admin tool"
+documentation = "https://www.replicante.io/docs"
+homepage = "https://www.replicante.io/"
+repository = "https://github.com/replicante-io/replicante"
+readme = "../../README.md"
+license = "MIT"
+
+
+[[bin]]
+name = "repliadm"
+path = "src/main.rs"
+
+
+[lib]
+name = "repliadm"
+path = "src/lib.rs"
+
+
+[dependencies]
+clap = "^2.31.2"
+failure = "^0.1.3"
+failure_derive = "^0.1.3"
+lazy_static = "^1.0.0"
+prometheus = "^0.7.0"
+reqwest = "^0.9.1"
+serde = "^1.0.0"
+serde_yaml = "^0.8.0"
+slog = "^2.1.1"
+slog-term = "^2.4.0"
+
+# Having replicante is a bit of a pain but is needed for:
+#  * Access to config models (this was almost moved to models/config)
+#  * Replicante task queues enum (I guess this too could be moved out?)
+replicante = { path = "../replicante" }
+
+replicante_cluster_discovery = { path = "../../cluster/discovery" }
+replicante_externals_mongodb = { path = "../../externals/mongodb" }
+replicante_models_core = { path = "../../models/core" }
+replicante_service_coordinator = { path = "../../service/coordinator" }
+replicante_service_healthcheck = { path = "../../service/healthcheck" }
+replicante_service_tasks = { path = "../../service/tasks" }
+replicante_store_primary = { path = "../../store/primary" }
+replicante_store_view = { path = "../../store/view" }
+replicante_stream_events = { path = "../../stream/events" }
+replicante_util_failure = { path = "../../common/util/failure" }
+replicante_util_rndid = { path = "../../common/util/rndid" }
+
+
+[build-dependencies]
+git2 = "^0.10.0"

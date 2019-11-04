@@ -1,6 +1,7 @@
 [workspace]
 members = [
   "agent/client",
+  "bin/repliadm",
   "bin/replicante",
   "bin/replictl",
   "cluster/aggregator",

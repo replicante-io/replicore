@@ -5,8 +5,8 @@ use lazy_static::lazy_static;
 
 use replicante_externals_mongodb::admin::IndexInfo;
 
-pub const COLLECTION_AGENTS: &str = "agents";
 pub const COLLECTION_ACTIONS: &str = "actions";
+pub const COLLECTION_AGENTS: &str = "agents";
 pub const COLLECTION_AGENTS_INFO: &str = "agents_info";
 pub const COLLECTION_CLUSTER_META: &str = "clusters_meta";
 pub const COLLECTION_DISCOVERIES: &str = "discoveries";
@@ -30,6 +30,7 @@ lazy_static! {
     };
     pub static ref VALIDATE_EXPECTED_COLLECTIONS: HashSet<&'static str> = {
         let mut set = HashSet::new();
+        set.insert(COLLECTION_ACTIONS);
         set.insert(COLLECTION_AGENTS);
         set.insert(COLLECTION_AGENTS_INFO);
         set.insert(COLLECTION_CLUSTER_META);
@@ -40,6 +41,14 @@ lazy_static! {
     };
     pub static ref VALIDATE_INDEXES_NEEDED: HashMap<&'static str, Vec<IndexInfo>> = {
         let mut map = HashMap::new();
+        map.insert(
+            COLLECTION_ACTIONS,
+            vec![IndexInfo {
+                expires: false,
+                key: vec![("cluster_id".into(), 1), ("action_id".into(), 1)],
+                unique: true,
+            }],
+        );
         map.insert(
             COLLECTION_AGENTS,
             vec![IndexInfo {
@@ -96,6 +105,16 @@ lazy_static! {
     };
     pub static ref VALIDATE_INDEXES_SUGGESTED: HashMap<&'static str, Vec<IndexInfo>> = {
         let mut map = HashMap::new();
+        map.insert(
+            COLLECTION_ACTIONS,
+            vec![
+                IndexInfo {
+                    expires: true,
+                    key: vec![("finished_ts".into(), 1)],
+                    unique: false,
+                },
+            ],
+        );
         map.insert(COLLECTION_AGENTS, vec![]);
         map.insert(COLLECTION_AGENTS_INFO, vec![]);
         map.insert(

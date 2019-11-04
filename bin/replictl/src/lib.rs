@@ -1,29 +1,14 @@
-use clap::value_t;
 use clap::App;
 use clap::Arg;
-use clap::ArgMatches;
-use slog::debug;
-use slog::error;
 
-mod commands;
-mod core;
-mod error;
-mod interfaces;
-mod logging;
-mod outcome;
+//mod error;
 
-pub use self::error::Error;
-pub use self::error::ErrorKind;
-pub use self::error::Result;
-
-use self::commands::check;
-use self::commands::coordinator;
-use self::commands::versions;
-use self::interfaces::Interfaces;
-use self::logging::LogLevel;
+//pub use self::error::Error;
+//pub use self::error::ErrorKind;
+//pub use self::error::Result;
 
 /// Process command line arcuments and run the given command.
-pub fn run() -> Result<()> {
+pub fn run() -> Result<(), std::io::Error> {
     // Initialise clap.
     let version = format!(
         "{} [{}; {}]",
@@ -44,68 +29,8 @@ pub fn run() -> Result<()> {
                 .global(true)
                 .help("Specifies the configuration file to use"),
         )
-        .arg(
-            Arg::with_name("log-level")
-                .long("log-level")
-                .value_name("LEVEL")
-                .takes_value(true)
-                .possible_values(&LogLevel::variants())
-                .case_insensitive(true)
-                .global(true)
-                .help("Specifies the logging verbosity"),
-        )
-        .arg(
-            Arg::with_name("no-progress")
-                .long("no-progress")
-                .global(true)
-                .help("Do not show progress bars"),
-        )
-        .arg(
-            Arg::with_name("progress-chunk")
-                .long("progress-chunk")
-                .value_name("CHUNK")
-                .default_value("500")
-                .takes_value(true)
-                .global(true)
-                .help("Specifies how frequently to show progress messages"),
-        )
-        .arg(
-            Arg::with_name("url")
-                .long("url")
-                .value_name("URL")
-                .default_value("http://localhost:16016/")
-                .takes_value(true)
-                .global(true)
-                .help("Specifies the URL of the Replicante API to use"),
-        )
-        .subcommand(check::command())
-        .subcommand(coordinator::command())
-        .subcommand(versions::command())
         .get_matches();
 
-    // Initialise logging.
-    let log_level = value_t!(args, "log-level", LogLevel).unwrap_or_default();
-    let logger = logging::configure(log_level);
-    debug!(logger, "replictl starting"; "git-taint" => env!("GIT_BUILD_TAINT"));
-
-    // Run the replictl command.
-    let interfaces = Interfaces::new(&args, logger.clone())?;
-    let result = run_command(&args, &interfaces);
-    if result.is_err() {
-        error!(logger, "replictl exiting with error"; "error" => true);
-    } else {
-        debug!(logger, "replictl exiting with success"; "error" => false);
-    }
-    result
-}
-
-/// Switch the control flow to the requested command.
-fn run_command(args: &ArgMatches, interfaces: &Interfaces) -> Result<()> {
-    match args.subcommand_name() {
-        Some(check::COMMAND) => check::run(args, interfaces),
-        Some(coordinator::COMMAND) => coordinator::run(args, interfaces),
-        Some(versions::COMMAND) => versions::run(args, interfaces),
-        None => Err(ErrorKind::NoCommand("replictl").into()),
-        Some(name) => Err(ErrorKind::UnkownSubcommand("replictl", name.to_string()).into()),
-    }
+    // TODO
+    panic!("TODO: implement new replictl")
 }

@@ -1895,6 +1895,35 @@ dependencies = [
 ]
 
 [[package]]
+name = "repliadm"
+version = "0.5.0"
+dependencies = [
+ "clap 2.33.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "failure 0.1.6 (registry+https://github.com/rust-lang/crates.io-index)",
+ "failure_derive 0.1.6 (registry+https://github.com/rust-lang/crates.io-index)",
+ "git2 0.10.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "lazy_static 1.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "prometheus 0.7.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "replicante 0.5.0",
+ "replicante_cluster_discovery 0.2.0",
+ "replicante_externals_mongodb 0.1.0",
+ "replicante_models_core 0.3.0",
+ "replicante_service_coordinator 0.1.0",
+ "replicante_service_healthcheck 0.1.0",
+ "replicante_service_tasks 0.1.0",
+ "replicante_store_primary 0.4.0",
+ "replicante_store_view 0.1.0",
+ "replicante_stream_events 0.1.1",
+ "replicante_util_failure 0.1.2",
+ "replicante_util_rndid 0.1.0",
+ "reqwest 0.9.22 (registry+https://github.com/rust-lang/crates.io-index)",
+ "serde 1.0.102 (registry+https://github.com/rust-lang/crates.io-index)",
+ "serde_yaml 0.8.11 (registry+https://github.com/rust-lang/crates.io-index)",
+ "slog 2.5.2 (registry+https://github.com/rust-lang/crates.io-index)",
+ "slog-term 2.4.2 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
 name = "replicante"
 version = "0.5.0"
 dependencies = [
@@ -2304,30 +2333,12 @@ dependencies = [
 
 [[package]]
 name = "replictl"
-version = "0.4.0"
+version = "0.5.0"
 dependencies = [
  "clap 2.33.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "failure 0.1.6 (registry+https://github.com/rust-lang/crates.io-index)",
- "failure_derive 0.1.6 (registry+https://github.com/rust-lang/crates.io-index)",
  "git2 0.10.1 (registry+https://github.com/rust-lang/crates.io-index)",
- "lazy_static 1.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "prometheus 0.7.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "replicante 0.5.0",
- "replicante_cluster_discovery 0.2.0",
- "replicante_externals_mongodb 0.1.0",
- "replicante_models_core 0.3.0",
- "replicante_service_coordinator 0.1.0",
- "replicante_service_healthcheck 0.1.0",
- "replicante_service_tasks 0.1.0",
- "replicante_store_primary 0.4.0",
- "replicante_store_view 0.1.0",
- "replicante_stream_events 0.1.1",
  "replicante_util_failure 0.1.2",
- "replicante_util_rndid 0.1.0",
- "reqwest 0.9.22 (registry+https://github.com/rust-lang/crates.io-index)",
- "serde_yaml 0.8.11 (registry+https://github.com/rust-lang/crates.io-index)",
- "slog 2.5.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "slog-term 2.4.2 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]

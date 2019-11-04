@@ -1,6 +1,3 @@
-extern crate replicante;
-extern crate replicante_util_failure;
-
 use std::env;
 use std::process::exit;
 

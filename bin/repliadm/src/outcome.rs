@@ -10,9 +10,12 @@ const GROUP_PERF_ABUSE: &str = "perf/abuse";
 #[derive(Clone, Default, Eq, PartialEq, Hash, Debug)]
 pub struct Outcomes {
     errors: Vec<Error>,
-    errors_count: u64,
     warnings: Vec<Warning>,
-    warnings_count: u64,
+
+    // Track most sever outcome separatly.
+    // This is because Outcomes::report flushes the arrays for incremental reports.
+    seen_errors: bool,
+    seen_warnings: bool,
 }
 
 impl Outcomes {
@@ -20,20 +23,28 @@ impl Outcomes {
         Outcomes::default()
     }
 
+    /// Extend these outcomes by consuming another `Outcomes` set.
+    pub fn extend(&mut self, other: Outcomes) {
+        self.errors.extend(other.errors);
+        self.warnings.extend(other.warnings);
+        self.seen_errors |= other.seen_errors;
+        self.seen_warnings |= other.seen_warnings;
+    }
+
     /// Record an error.
     pub fn error(&mut self, error: Error) {
-        self.errors_count += 1;
-        self.errors.push(error)
+        self.errors.push(error);
+        self.seen_errors = true;
     }
 
     /// Return true if there are error outcomes.
     pub fn has_errors(&self) -> bool {
-        self.errors_count > 0
+        self.seen_errors
     }
 
     /// Return true if there are warning outcomes.
     pub fn has_warnings(&self) -> bool {
-        self.warnings_count > 0
+        self.seen_warnings
     }
 
     /// Logs all the collected warnings and errors.
@@ -50,8 +61,8 @@ impl Outcomes {
 
     /// Record a warning.
     pub fn warn(&mut self, warning: Warning) {
-        self.warnings_count += 1;
-        self.warnings.push(warning)
+        self.warnings.push(warning);
+        self.seen_warnings = true;
     }
 }
 

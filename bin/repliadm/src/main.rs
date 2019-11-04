@@ -1,7 +1,7 @@
 use std::process::exit;
 
 use replicante_util_failure::format_fail;
-use replictl::run;
+use repliadm::run;
 
 fn main() {
     if let Err(error) = run() {

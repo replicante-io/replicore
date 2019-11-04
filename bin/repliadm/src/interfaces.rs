@@ -1,6 +1,3 @@
-use std::io;
-use std::io::Write;
-
 use clap::value_t;
 use clap::ArgMatches;
 use failure::ResultExt;
@@ -13,7 +10,6 @@ use super::Result;
 /// A container sturcture to inject dependencies.
 pub struct Interfaces {
     logger: Logger,
-    prompt: Prompt,
 
     // Internal attributes.
     progress: bool,
@@ -23,9 +19,6 @@ pub struct Interfaces {
 impl Interfaces {
     /// Create a new `Interfaces` container.
     pub fn new<'a>(args: &ArgMatches<'a>, logger: Logger) -> Result<Interfaces> {
-        let prompt = Prompt {
-            _logger: logger.clone(),
-        };
         let progress_chunk = value_t!(args, "progress-chunk", u32)
             .with_context(|_| ErrorKind::Config("progress-chunk is not a positive integer"))?;
         if progress_chunk == 0 {
@@ -33,7 +26,6 @@ impl Interfaces {
         }
         Ok(Interfaces {
             logger,
-            prompt,
             progress: !args.is_present("no-progress"),
             progress_chunk,
         })
@@ -60,11 +52,6 @@ impl Interfaces {
             self.logger.clone(),
             message.into(),
         )
-    }
-
-    /// Access the user prompts interface.
-    pub fn prompt(&self) -> &Prompt {
-        &self.prompt
     }
 }
 
@@ -96,30 +83,6 @@ impl ProgressTracker {
         if self.state == 0 {
             self.state = self.chunk;
             info!(self.logger, "{}", self.message; "chunk" => self.chunk);
-        }
-    }
-}
-
-/// Interface to interact with users over stdout/stdin.
-pub struct Prompt {
-    _logger: Logger,
-}
-
-impl Prompt {
-    /// Ask the user for confirmation before something potentially harmful is done.
-    pub fn confirm_danger(&self, prompt: &str) -> Result<bool> {
-        print!("{} [y/N] ", prompt);
-        io::stdout()
-            .flush()
-            .with_context(|_| ErrorKind::Io("stdout".into()))?;
-        let mut reply = String::new();
-        io::stdin()
-            .read_line(&mut reply)
-            .with_context(|_| ErrorKind::Io("stdin".into()))?;
-        match reply.trim() {
-            "y" => Ok(true),
-            "yes" => Ok(true),
-            _ => Ok(false),
         }
     }
 }
