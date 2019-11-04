@@ -97,6 +97,7 @@ macro_rules! arc_interface {
         }
     }
 }
+
 macro_rules! box_interface {
     (
         $(#[$struct_meta:meta])*
@@ -130,6 +131,49 @@ macro_rules! box_interface {
             }
         }
     };
+}
+
+arc_interface! {
+    /// Dynamic dispatch all operations to a backend-specific implementation.
+    struct AdminImpl,
+
+    /// Definition of top level store administration operations.
+    ///
+    /// Mainly a way to return interfaces to grouped store operations.
+    ///
+    /// See `admin::Admin` for descriptions of methods.
+    trait AdminInterface,
+
+    interface {
+        fn data(&self) -> DataImpl;
+        fn validate(&self) -> ValidateImpl;
+        fn version(&self) -> Result<Version>;
+    }
+}
+
+arc_interface! {
+    /// Dynamic dispatch all operations to a backend-specific implementation.
+    struct StoreImpl,
+
+    /// Definition of top level store operations.
+    ///
+    /// Mainly a way to return interfaces to grouped store operations.
+    ///
+    /// See `store::Store` for descriptions of methods.
+    trait StoreInterface,
+
+    interface {
+        fn actions(&self) -> ActionsImpl;
+        fn agent(&self) -> AgentImpl;
+        fn agents(&self) -> AgentsImpl;
+        fn cluster(&self) -> ClusterImpl;
+        fn legacy(&self) -> LegacyImpl;
+        fn node(&self) -> NodeImpl;
+        fn nodes(&self) -> NodesImpl;
+        fn persist(&self) -> PersistImpl;
+        fn shard(&self) -> ShardImpl;
+        fn shards(&self) -> ShardsImpl;
+    }
 }
 
 box_interface! {
@@ -168,31 +212,23 @@ box_interface! {
     }
 }
 
-/// Definition of top level store administration operations.
-///
-/// Mainly a way to return interfaces to grouped store operations.
-///
-/// See `admin::Admin` for descriptions of methods.
-pub trait AdminInterface: Send + Sync {
-    fn data(&self) -> DataImpl;
-    fn validate(&self) -> ValidateImpl;
-    fn version(&self) -> Result<Version>;
-}
+box_interface! {
+    /// Dynamic dispatch all data admin operations to a backend-specific implementation.
+    struct DataImpl,
 
-/// Dynamic dispatch all operations to a backend-specific implementation.
-#[derive(Clone)]
-pub struct AdminImpl(Arc<dyn AdminInterface>);
+    /// Definition of supported data admin operations.
+    ///
+    /// See `admin::data::Data` for descriptions of methods.
+    trait DataInterface,
 
-impl AdminImpl {
-    pub fn new<A: AdminInterface + 'static>(admin: A) -> AdminImpl {
-        AdminImpl(Arc::new(admin))
-    }
-}
-
-impl Deref for AdminImpl {
-    type Target = dyn AdminInterface + 'static;
-    fn deref(&self) -> &(dyn AdminInterface + 'static) {
-        self.0.deref()
+    interface {
+        fn actions(&self) -> Result<Cursor<Action>>;
+        fn agents(&self) -> Result<Cursor<Agent>>;
+        fn agents_info(&self) -> Result<Cursor<AgentInfo>>;
+        fn cluster_discoveries(&self) -> Result<Cursor<ClusterDiscovery>>;
+        fn clusters_meta(&self) -> Result<Cursor<ClusterMeta>>;
+        fn nodes(&self) -> Result<Cursor<Node>>;
+        fn shards(&self) -> Result<Cursor<Shard>>;
     }
 }
 
@@ -277,35 +313,6 @@ impl ClusterImpl {
 impl Deref for ClusterImpl {
     type Target = dyn ClusterInterface + 'static;
     fn deref(&self) -> &(dyn ClusterInterface + 'static) {
-        self.0.deref()
-    }
-}
-
-/// Definition of supported data admin operations.
-///
-/// See `admin::data::Data` for descriptions of methods.
-pub trait DataInterface: Send + Sync {
-    fn agents(&self) -> Result<Cursor<Agent>>;
-    fn agents_info(&self) -> Result<Cursor<AgentInfo>>;
-    fn cluster_discoveries(&self) -> Result<Cursor<ClusterDiscovery>>;
-    fn clusters_meta(&self) -> Result<Cursor<ClusterMeta>>;
-    fn nodes(&self) -> Result<Cursor<Node>>;
-    fn shards(&self) -> Result<Cursor<Shard>>;
-}
-
-/// Dynamic dispatch all data admin operations to a backend-specific implementation.
-#[derive(Clone)]
-pub struct DataImpl(Arc<dyn DataInterface>);
-
-impl DataImpl {
-    pub fn new<D: DataInterface + 'static>(data: D) -> DataImpl {
-        DataImpl(Arc::new(data))
-    }
-}
-
-impl Deref for DataImpl {
-    type Target = dyn DataInterface + 'static;
-    fn deref(&self) -> &(dyn DataInterface + 'static) {
         self.0.deref()
     }
 }
@@ -415,31 +422,6 @@ box_interface! {
         ) -> Result<()>;
         fn node(&self, node: Node, span: Option<SpanContext>) -> Result<()>;
         fn shard(&self, shard: Shard, span: Option<SpanContext>) -> Result<()>;
-    }
-}
-
-arc_interface! {
-    /// Dynamic dispatch all operations to a backend-specific implementation.
-    struct StoreImpl,
-
-    /// Definition of top level store operations.
-    ///
-    /// Mainly a way to return interfaces to grouped store operations.
-    ///
-    /// See `store::Store` for descriptions of methods.
-    trait StoreInterface,
-
-    interface {
-        fn actions(&self) -> ActionsImpl;
-        fn agent(&self) -> AgentImpl;
-        fn agents(&self) -> AgentsImpl;
-        fn cluster(&self) -> ClusterImpl;
-        fn legacy(&self) -> LegacyImpl;
-        fn node(&self) -> NodeImpl;
-        fn nodes(&self) -> NodesImpl;
-        fn persist(&self) -> PersistImpl;
-        fn shard(&self) -> ShardImpl;
-        fn shards(&self) -> ShardsImpl;
     }
 }
 

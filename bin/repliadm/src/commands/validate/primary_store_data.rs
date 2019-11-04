@@ -9,6 +9,7 @@ use replicante_store_primary::ErrorKind as StoreErrorKind;
 use replicante_util_failure::format_fail;
 
 pub const COMMAND: &str = "primary-store-data";
+const MODEL_ACTION: &str = "Action";
 const MODEL_AGENT: &str = "Agent";
 const MODEL_AGENT_INFO: &str = "AgentInfo";
 const MODEL_CLUSTER_META: &str = "ClusterMeta";
@@ -47,6 +48,7 @@ pub fn run<'a>(args: &ArgMatches<'a>, interfaces: &Interfaces) -> Result<Outcome
     let mut outcomes = Outcomes::new();
 
     info!(logger, "Validating all primary store records");
+    scan_model!(logger, interfaces, outcomes, MODEL_ACTION, admin.data().actions());
     scan_model!(logger, interfaces, outcomes, MODEL_AGENT, admin.data().agents());
     scan_model!(logger, interfaces, outcomes, MODEL_AGENT_INFO, admin.data().agents_info());
     scan_model!(logger, interfaces, outcomes, MODEL_CLUSTER_META, admin.data().clusters_meta());

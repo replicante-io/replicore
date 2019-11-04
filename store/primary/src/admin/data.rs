@@ -1,3 +1,4 @@
+use replicante_models_core::actions::Action;
 use replicante_models_core::agent::Agent;
 use replicante_models_core::agent::AgentInfo;
 use replicante_models_core::agent::Node;
@@ -17,6 +18,11 @@ pub struct Data {
 impl Data {
     pub(crate) fn new(data: DataImpl) -> Data {
         Data { data }
+    }
+
+    /// Iterate over all actions in the store.
+    pub fn actions(&self) -> Result<Cursor<Action>> {
+        self.data.actions()
     }
 
     /// Iterate over all agents in the store.

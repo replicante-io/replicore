@@ -213,6 +213,8 @@ box_interface! {
     trait DataInterface,
 
     interface {
+        fn actions(&self) -> Result<Cursor<Action>>;
+        fn actions_history(&self) -> Result<Cursor<ActionHistory>>;
         fn events(&self) -> Result<Cursor<Event>>;
     }
 }

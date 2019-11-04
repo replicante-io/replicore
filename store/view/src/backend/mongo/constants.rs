@@ -23,11 +23,51 @@ lazy_static! {
     ]};
     pub static ref VALIDATE_EXPECTED_COLLECTIONS: HashSet<&'static str> = {
         let mut set = HashSet::new();
+        set.insert(COLLECTION_ACTIONS);
+        set.insert(COLLECTION_ACTIONS_HISTORY);
         set.insert(COLLECTION_EVENTS);
         set
     };
     pub static ref VALIDATE_INDEXES_NEEDED: HashMap<&'static str, Vec<IndexInfo>> = {
         let mut map = HashMap::new();
+        map.insert(
+            COLLECTION_ACTIONS,
+            vec![
+                IndexInfo {
+                    expires: false,
+                    key: vec![
+                        ("cluster_id".into(), 1),
+                        ("action_id".into(), 1),
+                    ],
+                    unique: true,
+                },
+                IndexInfo {
+                    expires: true,
+                    key: vec![("finished_ts".into(), 1)],
+                    unique: false,
+                },
+            ],
+        );
+        map.insert(
+            COLLECTION_ACTIONS_HISTORY,
+            vec![
+                IndexInfo {
+                    expires: false,
+                    key: vec![
+                        ("cluster_id".into(), 1),
+                        ("action_id".into(), 1),
+                        ("timestamp".into(), 1),
+                        ("state".into(), 1),
+                    ],
+                    unique: true,
+                },
+                IndexInfo {
+                    expires: true,
+                    key: vec![("finished_ts".into(), 1)],
+                    unique: false,
+                },
+            ],
+        );
         map.insert(
             COLLECTION_EVENTS,
             vec![IndexInfo {
@@ -40,6 +80,18 @@ lazy_static! {
     };
     pub static ref VALIDATE_INDEXES_SUGGESTED: HashMap<&'static str, Vec<IndexInfo>> = {
         let mut map = HashMap::new();
+        map.insert(
+            COLLECTION_ACTIONS,
+            vec![IndexInfo {
+                expires: false,
+                key: vec![
+                    ("cluster_id".into(), 1),
+                    ("created_ts".into(), -1),
+                ],
+                unique: false,
+            }],
+        );
+        map.insert(COLLECTION_ACTIONS_HISTORY, vec![]);
         map.insert(COLLECTION_EVENTS, vec![]);
         map
     };

@@ -7,6 +7,8 @@ use replicante_store_view::Cursor;
 use replicante_util_failure::format_fail;
 
 pub const COMMAND: &str = "view-store-data";
+const MODEL_ACTION: &str = "Action";
+const MODEL_ACTION_HISTORY: &str = "ActionHistory";
 const MODEL_EVENT: &str = "Event";
 
 use crate::outcome::Error;
@@ -40,6 +42,14 @@ pub fn run<'a>(args: &ArgMatches<'a>, interfaces: &Interfaces) -> Result<Outcome
     let mut outcomes = Outcomes::new();
 
     info!(logger, "Validating all view store records");
+    scan_model!(logger, interfaces, outcomes, MODEL_ACTION, admin.data().actions());
+    scan_model!(
+        logger,
+        interfaces,
+        outcomes,
+        MODEL_ACTION_HISTORY,
+        admin.data().actions_history(),
+    );
     scan_model!(logger, interfaces, outcomes, MODEL_EVENT, admin.data().events());
 
     Ok(outcomes)
