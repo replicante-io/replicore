@@ -73,7 +73,7 @@ pub fn run<'a>(args: &ArgMatches<'a>, interfaces: &Interfaces) -> Result<()> {
     outcomes.report(&logger);
     if outcomes.has_errors() {
         error!(logger, "System validation failed");
-        return Err(ErrorKind::ValidationFailed)?;
+        return Err(ErrorKind::ValidationFailed.into());
     }
     if outcomes.has_warnings() {
         warn!(logger, "System validation finished with warnings");

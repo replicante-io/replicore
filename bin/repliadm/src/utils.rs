@@ -21,7 +21,8 @@ pub fn coordinator_admin<'a>(args: &ArgMatches<'a>, logger: Logger) -> Result<Co
 
 /// Load Replicante Core configuration.
 pub fn load_config<'a>(args: &ArgMatches<'a>) -> Result<Config> {
-    let file = args.value_of("config")
+    let file = args
+        .value_of("config")
         .expect("CLI argument --config is required");
     let config = Config::from_file(file).with_context(|_| ErrorKind::ConfigLoad)?;
     Ok(config)

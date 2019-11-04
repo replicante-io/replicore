@@ -14,8 +14,7 @@ use crate::Interfaces;
 use crate::Result;
 
 pub fn command() -> App<'static, 'static> {
-    SubCommand::with_name(COMMAND)
-        .about("Validate coordinator elections")
+    SubCommand::with_name(COMMAND).about("Validate coordinator elections")
 }
 
 pub fn run<'a>(args: &ArgMatches<'a>, interfaces: &Interfaces) -> Result<Outcomes> {

@@ -34,12 +34,11 @@ macro_rules! scan_model {
         info!($logger, "Checking records for the '{}' model", $model);
         scan_collection($cursor, $model, &mut $outcomes, $interfaces);
         $outcomes.report(&$logger);
-    }
+    };
 }
 
 pub fn command() -> App<'static, 'static> {
-    SubCommand::with_name(COMMAND)
-        .about("Validate all records in the primary store")
+    SubCommand::with_name(COMMAND).about("Validate all records in the primary store")
 }
 
 pub fn run<'a>(args: &ArgMatches<'a>, interfaces: &Interfaces) -> Result<Outcomes> {
@@ -48,10 +47,34 @@ pub fn run<'a>(args: &ArgMatches<'a>, interfaces: &Interfaces) -> Result<Outcome
     let mut outcomes = Outcomes::new();
 
     info!(logger, "Validating all primary store records");
-    scan_model!(logger, interfaces, outcomes, MODEL_ACTION, admin.data().actions());
-    scan_model!(logger, interfaces, outcomes, MODEL_AGENT, admin.data().agents());
-    scan_model!(logger, interfaces, outcomes, MODEL_AGENT_INFO, admin.data().agents_info());
-    scan_model!(logger, interfaces, outcomes, MODEL_CLUSTER_META, admin.data().clusters_meta());
+    scan_model!(
+        logger,
+        interfaces,
+        outcomes,
+        MODEL_ACTION,
+        admin.data().actions(),
+    );
+    scan_model!(
+        logger,
+        interfaces,
+        outcomes,
+        MODEL_AGENT,
+        admin.data().agents(),
+    );
+    scan_model!(
+        logger,
+        interfaces,
+        outcomes,
+        MODEL_AGENT_INFO,
+        admin.data().agents_info(),
+    );
+    scan_model!(
+        logger,
+        interfaces,
+        outcomes,
+        MODEL_CLUSTER_META,
+        admin.data().clusters_meta(),
+    );
     scan_model!(
         logger,
         interfaces,
@@ -59,8 +82,20 @@ pub fn run<'a>(args: &ArgMatches<'a>, interfaces: &Interfaces) -> Result<Outcome
         MODEL_CLUSTER_DISCOVERY,
         admin.data().cluster_discoveries(),
     );
-    scan_model!(logger, interfaces, outcomes, MODEL_NODE, admin.data().nodes());
-    scan_model!(logger, interfaces, outcomes, MODEL_SHARD, admin.data().shards());
+    scan_model!(
+        logger,
+        interfaces,
+        outcomes,
+        MODEL_NODE,
+        admin.data().nodes(),
+    );
+    scan_model!(
+        logger,
+        interfaces,
+        outcomes,
+        MODEL_SHARD,
+        admin.data().shards(),
+    );
 
     Ok(outcomes)
 }

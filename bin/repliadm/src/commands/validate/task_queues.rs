@@ -56,8 +56,7 @@ macro_rules! scan_queue {
 }
 
 pub fn command() -> App<'static, 'static> {
-    SubCommand::with_name(COMMAND)
-        .about("Validate tasks waiting to be processed or re-tried")
+    SubCommand::with_name(COMMAND).about("Validate tasks waiting to be processed or re-tried")
 }
 
 pub fn run<'a>(args: &ArgMatches<'a>, interfaces: &Interfaces) -> Result<Outcomes> {

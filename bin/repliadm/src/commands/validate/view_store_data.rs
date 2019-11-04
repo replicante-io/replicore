@@ -28,12 +28,11 @@ macro_rules! scan_model {
         info!($logger, "Checking records for the '{}' model", $model);
         scan_collection($cursor, $model, &mut $outcomes, $interfaces);
         $outcomes.report(&$logger);
-    }
+    };
 }
 
 pub fn command() -> App<'static, 'static> {
-    SubCommand::with_name(COMMAND)
-        .about("Validate all records in the view store")
+    SubCommand::with_name(COMMAND).about("Validate all records in the view store")
 }
 
 pub fn run<'a>(args: &ArgMatches<'a>, interfaces: &Interfaces) -> Result<Outcomes> {
@@ -42,7 +41,13 @@ pub fn run<'a>(args: &ArgMatches<'a>, interfaces: &Interfaces) -> Result<Outcome
     let mut outcomes = Outcomes::new();
 
     info!(logger, "Validating all view store records");
-    scan_model!(logger, interfaces, outcomes, MODEL_ACTION, admin.data().actions());
+    scan_model!(
+        logger,
+        interfaces,
+        outcomes,
+        MODEL_ACTION,
+        admin.data().actions(),
+    );
     scan_model!(
         logger,
         interfaces,
@@ -50,7 +55,13 @@ pub fn run<'a>(args: &ArgMatches<'a>, interfaces: &Interfaces) -> Result<Outcome
         MODEL_ACTION_HISTORY,
         admin.data().actions_history(),
     );
-    scan_model!(logger, interfaces, outcomes, MODEL_EVENT, admin.data().events());
+    scan_model!(
+        logger,
+        interfaces,
+        outcomes,
+        MODEL_EVENT,
+        admin.data().events(),
+    );
 
     Ok(outcomes)
 }

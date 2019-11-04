@@ -10,8 +10,7 @@ use crate::Result;
 use crate::outcome::Outcomes;
 
 pub fn command() -> App<'static, 'static> {
-    SubCommand::with_name(COMMAND)
-        .about("Run all validate operations")
+    SubCommand::with_name(COMMAND).about("Run all validate operations")
 }
 
 pub fn run<'a>(args: &ArgMatches<'a>, interfaces: &Interfaces) -> Result<Outcomes> {

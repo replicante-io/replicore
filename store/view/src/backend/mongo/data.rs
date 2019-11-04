@@ -43,7 +43,10 @@ impl DataInterface for Data {
     }
 
     fn actions_history(&self) -> Result<Cursor<ActionHistory>> {
-        let collection = self.client.db(&self.db).collection(COLLECTION_ACTIONS_HISTORY);
+        let collection = self
+            .client
+            .db(&self.db)
+            .collection(COLLECTION_ACTIONS_HISTORY);
         let cursor = scan_collection(collection)
             .with_context(|_| ErrorKind::MongoDBOperation)?
             .map(|item| item.map_err(|error| error.context(ErrorKind::MongoDBCursor).into()))

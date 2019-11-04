@@ -18,13 +18,13 @@ use crate::Interfaces;
 use crate::Result;
 
 pub fn command() -> App<'static, 'static> {
-    SubCommand::with_name(COMMAND)
-        .about("Validate Replicante Core configuration")
+    SubCommand::with_name(COMMAND).about("Validate Replicante Core configuration")
 }
 
 pub fn run<'a>(args: &ArgMatches<'a>, interfaces: &Interfaces) -> Result<Outcomes> {
     let logger = interfaces.logger();
-    let file = args.value_of("config")
+    let file = args
+        .value_of("config")
         .expect("CLI argument --config is required");
     info!(logger, "Checking configuration"; "file" => file);
 

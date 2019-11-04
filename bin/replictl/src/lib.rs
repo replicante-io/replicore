@@ -16,7 +16,7 @@ pub fn run() -> Result<(), std::io::Error> {
         env!("GIT_BUILD_HASH"),
         env!("GIT_BUILD_TAINT"),
     );
-    let args = App::new("replictl")
+    let _args = App::new("replictl")
         .version(version.as_ref())
         .about(env!("CARGO_PKG_DESCRIPTION"))
         .arg(

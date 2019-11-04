@@ -19,8 +19,7 @@ use crate::Interfaces;
 use crate::Result;
 
 pub fn command() -> App<'static, 'static> {
-    SubCommand::with_name(COMMAND)
-        .about("Validate the view store schema")
+    SubCommand::with_name(COMMAND).about("Validate the view store schema")
 }
 
 /// Validate the view store schema compatibility with this version of replicante.
@@ -56,7 +55,10 @@ pub fn run<'a>(args: &ArgMatches<'a>, interfaces: &Interfaces) -> Result<Outcome
     };
     outcomes.report(&logger);
 
-    debug!(logger, "Checking view store for removed collections/tables or indexes");
+    debug!(
+        logger,
+        "Checking view store for removed collections/tables or indexes",
+    );
     match store.validate().removed_entities() {
         Ok(results) => consume_results(results, &mut outcomes),
         Err(error) => {

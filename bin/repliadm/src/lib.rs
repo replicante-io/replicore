@@ -99,6 +99,10 @@ fn run_command(args: &ArgMatches, interfaces: &Interfaces) -> Result<()> {
         Some(validate::COMMAND) => validate::run(args, interfaces),
         Some(versions::COMMAND) => versions::run(args, interfaces),
         None => Err(ErrorKind::NoCommand(env!("CARGO_PKG_NAME").to_string()).into()),
-        Some(name) => Err(ErrorKind::UnkownSubcommand(env!("CARGO_PKG_NAME").to_string(), name.to_string()).into()),
+        Some(name) => Err(ErrorKind::UnkownSubcommand(
+            env!("CARGO_PKG_NAME").to_string(),
+            name.to_string(),
+        )
+        .into()),
     }
 }

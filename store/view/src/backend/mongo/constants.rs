@@ -35,10 +35,7 @@ lazy_static! {
             vec![
                 IndexInfo {
                     expires: false,
-                    key: vec![
-                        ("cluster_id".into(), 1),
-                        ("action_id".into(), 1),
-                    ],
+                    key: vec![("cluster_id".into(), 1), ("action_id".into(), 1)],
                     unique: true,
                 },
                 IndexInfo {
@@ -84,10 +81,7 @@ lazy_static! {
             COLLECTION_ACTIONS,
             vec![IndexInfo {
                 expires: false,
-                key: vec![
-                    ("cluster_id".into(), 1),
-                    ("created_ts".into(), -1),
-                ],
+                key: vec![("cluster_id".into(), 1), ("created_ts".into(), -1)],
                 unique: false,
             }],
         );

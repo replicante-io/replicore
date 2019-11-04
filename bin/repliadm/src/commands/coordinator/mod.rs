@@ -33,7 +33,9 @@ pub fn run<'a>(args: &ArgMatches<'a>, interfaces: &Interfaces) -> Result<()> {
     match command {
         Some(election_info::COMMAND) => election_info::run(args, interfaces),
         Some(election_list::COMMAND) => election_list::run(args, interfaces),
-        Some(force_release_nonblocking_lock::COMMAND) => force_release_nonblocking_lock::run(args, interfaces),
+        Some(force_release_nonblocking_lock::COMMAND) => {
+            force_release_nonblocking_lock::run(args, interfaces)
+        }
         Some(nonblocking_lock_info::COMMAND) => nonblocking_lock_info::run(args, interfaces),
         Some(nonblocking_lock_list::COMMAND) => nonblocking_lock_list::run(args, interfaces),
         Some(step_down_election::COMMAND) => step_down_election::run(args, interfaces),

@@ -107,13 +107,11 @@ lazy_static! {
         let mut map = HashMap::new();
         map.insert(
             COLLECTION_ACTIONS,
-            vec![
-                IndexInfo {
-                    expires: true,
-                    key: vec![("finished_ts".into(), 1)],
-                    unique: false,
-                },
-            ],
+            vec![IndexInfo {
+                expires: true,
+                key: vec![("finished_ts".into(), 1)],
+                unique: false,
+            }],
         );
         map.insert(COLLECTION_AGENTS, vec![]);
         map.insert(COLLECTION_AGENTS_INFO, vec![]);

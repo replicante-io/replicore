@@ -28,10 +28,12 @@ pub fn versions<'a>(args: &ArgMatches<'a>, logger: &Logger) -> Result<()> {
 
     let command = args.subcommand_matches(super::COMMAND).unwrap();
     let cluster = command.value_of("cluster").unwrap();
-    let version = api_version(cluster).map(|version| format!(
-        "{} [{}; {}]",
-        version.version, version.commit, version.taint
-    ));
+    let version = api_version(cluster).map(|version| {
+        format!(
+            "{} [{}; {}]",
+            version.version, version.commit, version.taint,
+        )
+    });
     println!(
         "==> Replicante Core Cluster: {}",
         value_or_error(logger, "replicante dynamic", version)
