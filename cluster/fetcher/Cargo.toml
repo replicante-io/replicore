@@ -24,7 +24,7 @@ lazy_static = "^1.0.0"
 opentracingrust = "^0.3.3"
 prometheus = "^0.7.0"
 slog = "^2.1.1"
-uuid = { version = "^0.7", features = ["serde", "v4"] }
+uuid = { version = "^0.8.0", features = ["serde", "v4"] }
 
 replicante_agent_client = { path = "../../agent/client" }
 replicante_models_agent = { path = "../../common/models/agent" }

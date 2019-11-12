@@ -33,7 +33,7 @@ bodyparser = "^0.8.0"
 chrono = "^0.4.6"
 clap = "^2.31.2"
 failure = "^0.1.5"
-humthreads = "^0.1.1"
+humthreads = "^0.2.0"
 iron = "^0.6.0"
 iron-json-response = "^0.6.0"
 lazy_static = "^1.0.0"
@@ -50,7 +50,7 @@ serde_yaml = "^0.8.0"
 slog = "^2.1.1"
 slog-scope = "^4.0.1"
 slog-stdlog = "^4.0.0"
-uuid = { version = "^0.7", features = ["serde", "v4"] }
+uuid = { version = "^0.8.0", features = ["serde", "v4"] }
 
 replicante_agent_client = { path = "../../agent/client" }
 replicante_cluster_aggregator = { path = "../../cluster/aggregator" }
