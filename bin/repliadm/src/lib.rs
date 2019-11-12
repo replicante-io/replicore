@@ -23,18 +23,20 @@ use self::interfaces::Interfaces;
 use self::logging::LogLevel;
 
 const CLI_NAME: &str = "repliadm";
+const VERSION: &str = concat!(
+    env!("CARGO_PKG_VERSION"),
+    " [",
+    env!("GIT_BUILD_HASH"),
+    "; ",
+    env!("GIT_BUILD_TAINT"),
+    "]",
+);
 
 /// Process command line arcuments and run the given command.
 pub fn run() -> Result<()> {
-    // Initialise clap.
-    let version = format!(
-        "{} [{}; {}]",
-        env!("CARGO_PKG_VERSION"),
-        env!("GIT_BUILD_HASH"),
-        env!("GIT_BUILD_TAINT"),
-    );
+    // Initialise clap CLI interface.
     let args = App::new(CLI_NAME)
-        .version(version.as_ref())
+        .version(VERSION)
         .about(env!("CARGO_PKG_DESCRIPTION"))
         .arg(
             Arg::with_name("config")

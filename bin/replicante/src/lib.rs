@@ -1,7 +1,6 @@
 use clap::App;
 use clap::Arg;
 use failure::ResultExt;
-use lazy_static::lazy_static;
 use prometheus::Registry;
 use sentry::integrations::failure::capture_fail;
 use sentry::internals::ClientInitGuard;
@@ -31,15 +30,15 @@ use self::components::Components;
 use self::config::SentryConfig;
 use self::interfaces::Interfaces;
 
-lazy_static! {
-    static ref RELEASE: String = format!("replicore@{}", env!("GIT_BUILD_HASH"));
-    pub static ref VERSION: String = format!(
-        "{} [{}; {}]",
-        env!("CARGO_PKG_VERSION"),
-        env!("GIT_BUILD_HASH"),
-        env!("GIT_BUILD_TAINT"),
-    );
-}
+const RELEASE: &str = concat!("replicore@", env!("GIT_BUILD_HASH"));
+pub const VERSION: &str = concat!(
+    env!("CARGO_PKG_VERSION"),
+    " [",
+    env!("GIT_BUILD_HASH"),
+    "; ",
+    env!("GIT_BUILD_TAINT"),
+    "]",
+);
 
 /// Initialised interfaces and components and waits for the system to exit.
 ///
@@ -105,7 +104,7 @@ pub fn initialise_sentry(config: Option<SentryConfig>, logger: &Logger) -> Resul
         attach_stacktrace: true,
         dsn,
         in_app_include: vec!["replicante"],
-        release: Some(RELEASE.as_str().into()),
+        release: Some(RELEASE.into()),
         ..Default::default()
     });
     if client.is_enabled() {

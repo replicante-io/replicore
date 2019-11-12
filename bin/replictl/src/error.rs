@@ -45,77 +45,35 @@ impl From<ErrorKind> for Error {
 /// Exhaustive list of possible errors emitted by this crate.
 #[derive(Debug, Fail)]
 pub enum ErrorKind {
-    #[fail(display = "could not initialise admin interface for {}", _0)]
-    AdminInit(&'static str),
+    #[fail(display = "CLI option --{} is required", _0)]
+    CliOptMissing(&'static str),
 
-    #[fail(display = "could not check {}", _0)]
-    CheckFailed(&'static str),
+    #[fail(display = "unable to open file '{}'", _0)]
+    FsOpen(String),
 
-    #[fail(display = "{} check failed", _0)]
-    CheckWithErrors(&'static str),
+    #[fail(display = "unable to create directory '{}'", _0)]
+    FsMkDir(String),
 
-    #[fail(display = "could not initialise client interface for {}", _0)]
-    ClientInit(&'static str),
-
-    #[fail(display = "invalid configuration: {}", _0)]
-    Config(&'static str),
-
-    #[fail(display = "could not load configuration")]
-    ConfigLoad,
-
-    #[fail(display = "could not list elections from coordinator")]
-    CoordinatorElectionList,
-
-    #[fail(display = "could not lookup election '{}'", _0)]
-    CoordinatorElectionLookup(String),
-
-    #[fail(display = "could not lookup current primary for election '{}'", _0)]
-    CoordinatorElectionPrimaryLookup(String),
-
-    #[fail(display = "could not fetch secondaries count for election '{}'", _0)]
-    CoordinatorElectionSecondaryCount(String),
-
-    #[fail(display = "could not step down election '{}'", _0)]
-    CoordinatorElectionStepDown(String),
-
-    #[fail(display = "could not list non-blocking locks from coordinator")]
-    CoordinatorNBLockList,
-
-    #[fail(display = "could not lookup non-blocking lock '{}'", _0)]
-    CoordinatorNBLockLookup(String),
-
-    #[fail(
-        display = "could not lookup current owner of non-blocking lock '{}'",
-        _0
-    )]
-    CoordinatorNBLockOwnerLookup(String),
-
-    #[fail(display = "could not force-release non-blocking lock '{}'", _0)]
-    CoordinatorNBLockRelease(String),
-
-    #[fail(display = "could not fetch {} version", _0)]
-    FetchVersion(&'static str),
-
-    #[fail(display = "could not instantiate HTTP client")]
-    HttpClient,
-
-    #[fail(display = "I/O error on file {}", _0)]
-    Io(String),
+    #[fail(display = "unable to expand ~ to the user's home")]
+    HomeNotFound,
 
     #[fail(display = "need a command to run for '{}'", _0)]
-    NoCommand(&'static str),
+    NoCommand(String),
 
-    #[fail(display = "could not JSON decode API response from replicante")]
-    ReplicanteJsonDecode,
+    #[fail(display = "SSO session '{}' not available", _0)]
+    SessionNotFound(String),
 
-    #[fail(display = "replicante API request to '{}' failed", _0)]
-    ReplicanteRequest(&'static str),
+    #[fail(display = "unable to decode the sessions store")]
+    SessionsDecode,
+
+    #[fail(display = "unable to encode the sessions store")]
+    SessionsEncode,
 
     #[fail(display = "unkown '{}' command for '{}'", _1, _0)]
-    UnkownSubcommand(&'static str, String),
+    UnkownSubcommand(String, String),
 
-    #[fail(display = "operation aborted by the user")]
-    UserAbort,
+    #[fail(display = "user interaction failed")]
+    UserInteraction,
 }
 
 /// Short form alias for functions returning `Error`s.

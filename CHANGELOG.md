@@ -14,7 +14,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Support mutually authenticated HTTPS transport.
 
 ### Changed
-- **BREAKING**: Rebuilt `replictl` and added `repliadmin` CLI.
+- **BREAKING**: Moved existing `replictl` commands to new `repliadmin` CLI tool.
+- **BREAKING**: Rebuilt `replictl` CLI tool.
 - **BREAKING**: Refactor `Event`s model.
 
 ## [0.4.0] - 2019-07-15
