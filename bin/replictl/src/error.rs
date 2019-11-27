@@ -4,6 +4,8 @@ use failure::Backtrace;
 use failure::Context;
 use failure::Fail;
 
+use replicante_models_core::api::validate::ErrorsCollection;
+
 /// Error information returned by functions in case of errors.
 #[derive(Debug)]
 pub struct Error(Context<ErrorKind>);
@@ -45,6 +47,12 @@ impl From<ErrorKind> for Error {
 /// Exhaustive list of possible errors emitted by this crate.
 #[derive(Debug, Fail)]
 pub enum ErrorKind {
+    #[fail(display = "unable to decode YAML payload to apply")]
+    ApplyDecode(String),
+
+    #[fail(display = "validation of the object to apply failed")]
+    ApplyValidation(ErrorsCollection),
+
     #[fail(display = "CLI option --{} is required", _0)]
     CliOptMissing(&'static str),
 
@@ -59,6 +67,18 @@ pub enum ErrorKind {
 
     #[fail(display = "need a command to run for '{}'", _0)]
     NoCommand(String),
+
+    #[fail(display = "unable to decode Replicante API response")]
+    RepliClientDecode,
+
+    #[fail(display = "Replicante API client error")]
+    RepliClientError,
+
+    #[fail(display = "API method or resource not found")]
+    RepliClientNotFound,
+
+    #[fail(display = "unexpected remote error")]
+    RepliClientRemote,
 
     #[fail(display = "SSO session '{}' not available", _0)]
     SessionNotFound(String),

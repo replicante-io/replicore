@@ -6,6 +6,7 @@ use super::Component;
 use crate::interfaces::Interfaces;
 use crate::Result;
 
+mod apply;
 mod cluster;
 
 /// Component to mount replicante core API endpoints.
@@ -13,6 +14,7 @@ pub struct CoreAPI {}
 
 impl CoreAPI {
     pub fn new(logger: Logger, interfaces: &mut Interfaces) -> CoreAPI {
+        self::apply::attach(logger.clone(), interfaces);
         self::cluster::attach(logger, interfaces);
         CoreAPI {}
     }

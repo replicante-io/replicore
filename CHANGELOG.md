@@ -6,10 +6,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 ### Added
+- `replictl apply` command and requesting actions/changes.
+- API to `apply` change requests.
 - API to fetch action details.
 - API to search cluster actions.
 - Actions and Actions API to the specification.
-- Actions and actins history stored in the view store.
+- Actions and actions history stored in the view store.
 - Agent actions sync and events.
 - Support mutually authenticated HTTPS transport.
 

@@ -3,8 +3,11 @@ use std::fmt;
 use failure::Backtrace;
 use failure::Context;
 use failure::Fail;
+use iron::headers::ContentType;
 use iron::IronError;
+use iron::Response;
 
+use replicante_models_core::api::validate::ErrorsCollection;
 use replicante_util_iron::into_ironerror;
 
 /// Error information returned by functions in case of errors.
@@ -115,6 +118,9 @@ pub enum ErrorKind {
     #[fail(display = "could not spawn new thread for '{}'", _0)]
     ThreadSpawn(&'static str),
 
+    #[fail(display = "validation failed")]
+    ValidateFailed(ErrorsCollection),
+
     #[fail(display = "could not query {} from the view store", _0)]
     ViewStoreQuery(&'static str),
 }
@@ -143,6 +149,7 @@ impl ErrorKind {
             ErrorKind::TaskWorkerRegistration(_) => "TaskWorkerRegistration",
             ErrorKind::ThreadFailed => "ThreadFailed",
             ErrorKind::ThreadSpawn(_) => "ThreadSpawn",
+            ErrorKind::ValidateFailed(_) => "ValidateFailed",
             ErrorKind::ViewStoreQuery(_) => "ViewStoreQuery",
         };
         Some(name)
@@ -155,6 +162,20 @@ pub type Result<T> = ::std::result::Result<T, Error>;
 // IronError compatibility code.
 impl From<Error> for IronError {
     fn from(error: Error) -> Self {
-        into_ironerror(error)
+        match error.kind() {
+            ErrorKind::ValidateFailed(ref errors) => {
+                let mut response = Response::with((
+                    iron::status::BadRequest,
+                    serde_json::to_string(errors).unwrap(),
+                ));
+                response.headers.set(ContentType::json());
+                let error = failure::err_msg(error.to_string()).compat();
+                IronError {
+                    error: Box::new(error),
+                    response,
+                }
+            }
+            _ => into_ironerror(error),
+        }
     }
 }

@@ -2,6 +2,7 @@ use clap::App;
 use slog::debug;
 use slog::error;
 
+mod apiclient;
 mod commands;
 mod error;
 mod logging;

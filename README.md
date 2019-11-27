@@ -45,8 +45,8 @@ To start and initialise the services:
 # Create the .env file (the first time).
 $ cp .env.example .env
 
-# Start all the services.
-$ docker-compose up
+# Start all the services (-d to start in the background).
+$ docker-compose up #-d
 
 # Initialise dependences.
 $ devtools/initialise.sh

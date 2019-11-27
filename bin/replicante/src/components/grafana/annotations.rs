@@ -1,8 +1,6 @@
 //! Module to define cluster related WebUI endpoints.
-use bodyparser;
 use chrono::DateTime;
 use chrono::Utc;
-
 use failure::ResultExt;
 use iron::status;
 use iron::Handler;

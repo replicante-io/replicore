@@ -6,7 +6,7 @@ use replicante_util_failure::format_fail;
 fn main() {
     if let Err(error) = run() {
         let message = format_fail(&error);
-        println!("{}", message);
+        eprintln!("{}", message);
         exit(1);
     }
 }
