@@ -79,7 +79,7 @@ pub fn run<'a>(cli: &ArgMatches<'a>, logger: &Logger) -> Result<()> {
                 "scope" => scope,
                 "value" => value,
             );
-            object.metadata.insert(scope.to_string(), value.into());
+            object.metadata.insert(str::to_string(*scope), value.into());
         }
     }
 

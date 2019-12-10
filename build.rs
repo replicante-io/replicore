@@ -3,7 +3,7 @@ extern crate git2;
 use git2::Repository;
 use git2::Status;
 
-fn is_index_status(status: &Status) -> bool {
+fn is_index_status(status: Status) -> bool {
     status.intersects(
         Status::INDEX_DELETED
             | Status::INDEX_MODIFIED
@@ -13,7 +13,7 @@ fn is_index_status(status: &Status) -> bool {
     )
 }
 
-fn is_workdir_status(status: &Status) -> bool {
+fn is_workdir_status(status: Status) -> bool {
     status.intersects(
         Status::WT_DELETED
             | Status::WT_MODIFIED
@@ -41,10 +41,10 @@ fn git_taint() -> String {
 
     for entry in repo.statuses(None).unwrap().iter() {
         let status = entry.status();
-        if is_index_status(&status) {
+        if is_index_status(status) {
             index_changed = true;
         }
-        if is_workdir_status(&status) {
+        if is_workdir_status(status) {
             workdir_changed = true;
         }
     }
