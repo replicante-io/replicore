@@ -6,6 +6,7 @@ use serde_derive::Serialize;
 
 use replicante_models_core::actions::Action;
 use replicante_models_core::actions::ActionHistory;
+use replicante_models_core::actions::ActionHistoryOrigin;
 use replicante_models_core::actions::ActionRequester;
 use replicante_models_core::actions::ActionState;
 use replicante_models_core::events::Event;
@@ -26,6 +27,7 @@ pub struct ActionDocument {
     pub kind: String,
     pub refresh_id: i64,
     pub requester: ActionRequester,
+    pub scheduled_ts: Option<UtcDateTime>,
     pub state: ActionState,
 
     // The encoded JSON form uses unsigned integers which are not supported by BSON.
@@ -52,6 +54,7 @@ impl From<Action> for ActionDocument {
             node_id: action.node_id,
             refresh_id: action.refresh_id,
             requester: action.requester,
+            scheduled_ts: action.scheduled_ts.map(UtcDateTime),
             state: action.state,
             state_payload,
         }
@@ -80,6 +83,7 @@ impl From<ActionDocument> for Action {
             node_id: action.node_id,
             refresh_id: action.refresh_id,
             requester: action.requester,
+            scheduled_ts: action.scheduled_ts.map(|ts| ts.0),
             state: action.state,
             state_payload,
         }
@@ -96,6 +100,7 @@ pub struct ActionHistoryDocument {
 
     // Action history attributes.
     pub finished_ts: Option<UtcDateTime>,
+    pub origin: ActionHistoryOrigin,
     pub timestamp: UtcDateTime,
     pub state: ActionState,
 
@@ -113,6 +118,7 @@ impl From<ActionHistory> for ActionHistoryDocument {
             cluster_id: history.cluster_id,
             node_id: history.node_id,
             action_id: history.action_id.to_string(),
+            origin: history.origin,
             finished_ts: history.finished_ts.map(UtcDateTime),
             timestamp: UtcDateTime(history.timestamp),
             state: history.state,
@@ -135,6 +141,7 @@ impl From<ActionHistoryDocument> for ActionHistory {
             node_id: history.node_id,
             action_id,
             finished_ts: history.finished_ts.map(|ts| ts.0),
+            origin: history.origin,
             timestamp: history.timestamp.0,
             state: history.state,
             state_payload,

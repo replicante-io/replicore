@@ -26,6 +26,7 @@ pub struct ActionDocument {
     pub kind: String,
     pub refresh_id: i64,
     pub requester: ActionRequester,
+    pub scheduled_ts: Option<UtcDateTime>,
     pub state: ActionState,
 
     // The encoded JSON form uses unsigned integers which are not supported by BSON.
@@ -52,6 +53,7 @@ impl From<Action> for ActionDocument {
             node_id: action.node_id,
             refresh_id: action.refresh_id,
             requester: action.requester,
+            scheduled_ts: action.scheduled_ts.map(UtcDateTime),
             state: action.state,
             state_payload,
         }
@@ -80,6 +82,7 @@ impl From<ActionDocument> for Action {
             node_id: action.node_id,
             refresh_id: action.refresh_id,
             requester: action.requester,
+            scheduled_ts: action.scheduled_ts.map(|ts| ts.0),
             state: action.state,
             state_payload,
         }

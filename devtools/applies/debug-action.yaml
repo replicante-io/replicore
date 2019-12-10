@@ -8,3 +8,5 @@ metadata:
 
 action:
   kind: replicante.debug.progress
+  # TODO: convert kind format into the below
+  #kind: replicante.io/debug.progress

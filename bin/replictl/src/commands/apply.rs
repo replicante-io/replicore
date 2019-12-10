@@ -45,20 +45,20 @@ pub fn command<'a, 'b>() -> App<'a, 'b> {
             .help("Override or set the value of metadata.cluster"),
     )
     .arg(
-        Arg::with_name(SCOPE_NS)
-            .long("namespace")
-            .value_name("NAMESPACE")
-            .takes_value(true)
-            .env("REPLICTL_NS")
-            .help("Override or set the value of metadata.namespace"),
-    )
-    .arg(
         Arg::with_name(SCOPE_NODE)
             .long("node")
             .value_name("NODE")
             .takes_value(true)
             .env("REPLICTL_NODE")
             .help("Override or set the value of metadata.node"),
+    )
+    .arg(
+        Arg::with_name(SCOPE_NS)
+            .long("namespace")
+            .value_name("NAMESPACE")
+            .takes_value(true)
+            .env("REPLICTL_NS")
+            .help("Override or set the value of metadata.namespace"),
     )
 }
 

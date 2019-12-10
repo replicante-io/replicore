@@ -10,6 +10,7 @@ use replicante_agent_client::Client;
 use replicante_models_agent::actions::ActionHistoryItem;
 use replicante_models_core::actions::Action;
 use replicante_models_core::actions::ActionHistory;
+use replicante_models_core::actions::ActionHistoryOrigin;
 use replicante_models_core::actions::ActionState;
 use replicante_models_core::events::Event;
 use replicante_store_primary::store::actions::ActionSyncState;
@@ -267,6 +268,7 @@ impl ActionsFetcher {
             .history(action_id, span.context().clone())
             .with_context(|_| ErrorKind::ViewStoreRead("action history transitions"))?
             .into_iter()
+            .filter(|history| history.origin == ActionHistoryOrigin::Agent)
             .map(|history| (history.timestamp, history.state))
             .collect();
         let history: Vec<_> = history
@@ -274,7 +276,14 @@ impl ActionsFetcher {
             .filter(|history| {
                 !known_history.contains(&(history.timestamp, history.state.clone().into()))
             })
-            .map(|history| ActionHistory::new(cluster_id.to_string(), node_id.to_string(), history))
+            .map(|history| {
+                ActionHistory::new(
+                    cluster_id.to_string(),
+                    node_id.to_string(),
+                    history,
+                    ActionHistoryOrigin::Agent,
+                )
+            })
             .collect();
         self.view_store
             .persist()
@@ -326,6 +335,7 @@ mod tests {
     fn mock_agent_action(id: Uuid, finished: bool) -> AgentActionModel {
         let created_ts = Utc::now();
         let finished_ts = if finished { Some(Utc::now()) } else { None };
+        let scheduled_ts = Utc::now();
         AgentActionModel {
             args: json!({}),
             created_ts,
@@ -334,6 +344,7 @@ mod tests {
             id,
             kind: "action".into(),
             requester: ActionRequester::Api,
+            scheduled_ts,
             state: ActionStateAgent::New,
             state_payload: None,
         }
@@ -342,6 +353,7 @@ mod tests {
     fn mock_core_action(id: Uuid, finished: bool) -> CoreAction {
         let created_ts = Utc::now();
         let finished_ts = if finished { Some(Utc::now()) } else { None };
+        let scheduled_ts = finished_ts.clone();
         CoreAction {
             action_id: id,
             args: json!({}),
@@ -353,6 +365,7 @@ mod tests {
             node_id: "node".into(),
             refresh_id: 4321,
             requester: ActionRequester::Api,
+            scheduled_ts,
             state: ActionStateCore::New,
             state_payload: None,
         }
