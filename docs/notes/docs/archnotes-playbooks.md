@@ -12,6 +12,8 @@ higher-lever operations across an entire cluster.
 Writing about playbooks as if they were already here makes the entire system
 (agents and core) easier to think about and design.
 
+Aspects related to Playbooks and how they work are likely to change significantly.
+
 </blockquote>
 
 Playbooks are data structures defined in code and encoded in the primary store.
