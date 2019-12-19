@@ -1,5 +1,11 @@
+use chrono::Utc;
+use failure::ResultExt;
 use serde_json::Value;
+use uuid::Uuid;
 
+use replicante_models_core::actions::Action;
+use replicante_models_core::actions::ActionRequester;
+use replicante_models_core::actions::ActionState;
 use replicante_models_core::api::apply::SCOPE_CLUSTER;
 use replicante_models_core::api::apply::SCOPE_NODE;
 use replicante_models_core::api::apply::SCOPE_NS;
@@ -62,8 +68,8 @@ pub fn replicante_io_v0(args: ApplierArgs) -> Result<Value> {
     }
     errors.into_result(ErrorKind::ValidateFailed)?;
 
-    // Convert into usable models.
-    let ns = object
+    // Convert ApplierArgs into a usable Action model.
+    let _ns = object
         .metadata
         .get(SCOPE_NS)
         .expect("validation should have caught this")
@@ -81,18 +87,48 @@ pub fn replicante_io_v0(args: ApplierArgs) -> Result<Value> {
         .expect("validation should have caught this")
         .as_str()
         .expect("validation should have caught this");
-    let action = object
+    let spec = object
         .attributes
         .get("action")
         .expect("validation should have caught this");
-    let kind = action
+    let kind = spec
         .get("kind")
         .expect("validation should have caught this")
         .as_str()
         .expect("validation should have caught this");
+    let action_args = spec.get("args").cloned().unwrap_or_else(|| Value::Null);
 
-    // TODO: schedule the action
-    println!("~~~ ns={};cluster={};node={}", ns, cluster, node);
-    println!("~~~ kind={}", kind);
+    // TODO: decode headers from HTTP request.
+
+    let now = Utc::now();
+    let action = Action {
+        // IDs.
+        cluster_id: cluster.to_string(),
+        node_id: node.to_string(),
+        action_id: Uuid::new_v4(),
+
+        // Attributes.
+        args: action_args,
+        created_ts: now,
+        finished_ts: None,
+        headers: Default::default(),
+        kind: kind.to_string(),
+        refresh_id: 0,
+        requester: ActionRequester::CoreApi,
+        scheduled_ts: None,
+        state: ActionState::PendingSchedule,
+        state_payload: None,
+    };
+
+    // Store the pending action for later sheduling.
+    let span = args.span.map(|span| span.context().clone());
+    args.primary_store
+        .persist()
+        .action(action.clone(), span.clone())
+        .with_context(|_| ErrorKind::PrimaryStorePersist("action"))?;
+    args.view_store
+        .persist()
+        .action(action, span)
+        .with_context(|_| ErrorKind::ViewStorePersist("action"))?;
     Ok(Value::Null)
 }

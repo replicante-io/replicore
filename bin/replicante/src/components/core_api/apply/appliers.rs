@@ -1,6 +1,9 @@
+use opentracingrust::Span;
 use serde_json::Value;
 
 use replicante_models_core::api::apply::ApplyObject;
+use replicante_store_primary::store::Store as PrimaryStore;
+use replicante_store_view::store::Store as ViewStore;
 
 use super::agent_action;
 use crate::Result;
@@ -12,8 +15,11 @@ const KIND_AGENT_ACTION: &str = "AgentAction";
 pub type Applier = Box<dyn Fn(ApplierArgs) -> Result<Value>>;
 
 /// Data object that collects arguments passed to `Applier`s.
-pub struct ApplierArgs {
+pub struct ApplierArgs<'a> {
     pub object: ApplyObject,
+    pub primary_store: PrimaryStore,
+    pub span: Option<&'a mut Span>,
+    pub view_store: ViewStore,
 }
 
 /// Find an `Applier` for the given object, if one is implemented.

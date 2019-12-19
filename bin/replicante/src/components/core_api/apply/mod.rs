@@ -13,6 +13,10 @@ use serde_json::json;
 use slog::debug;
 use slog::Logger;
 
+use replicante_store_primary::store::Store as PrimaryStore;
+use replicante_store_view::store::Store as ViewStore;
+use replicante_util_iron::request_span;
+
 use crate::interfaces::api::APIRoot;
 use crate::interfaces::Interfaces;
 use crate::Error;
@@ -25,13 +29,19 @@ mod validate;
 /// Attach the endpoint to handle all `apply` requests.
 pub fn attach(logger: Logger, interfaces: &mut Interfaces) {
     let mut router = interfaces.api.router_for(&APIRoot::UnstableCoreApi);
-    let handler = Apply { logger };
+    let handler = Apply {
+        logger,
+        primary_store: interfaces.stores.primary.clone(),
+        view_store: interfaces.stores.view.clone(),
+    };
     router.post("/apply", handler, "/apply");
 }
 
 /// Endpoint handling all requests for system changes (apply requests).
 pub struct Apply {
     logger: Logger,
+    primary_store: PrimaryStore,
+    view_store: ViewStore,
 }
 
 impl Handler for Apply {
@@ -75,7 +85,12 @@ impl Handler for Apply {
 
         // Handle the apply request.
         // The applier is expected to do any version & kind validation.
-        let mut result = applier(appliers::ApplierArgs { object })?;
+        let mut result = applier(appliers::ApplierArgs {
+            object,
+            primary_store: self.primary_store.clone(),
+            span: Some(request_span(request)),
+            view_store: self.view_store.clone(),
+        })?;
         let response = match result {
             _ if result.is_null() => json!({"ok": 1}),
             _ if result.is_object() => {

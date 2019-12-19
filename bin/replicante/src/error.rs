@@ -106,7 +106,7 @@ pub enum ErrorKind {
     #[fail(display = "could not query {} from the primary store", _0)]
     PrimaryStoreQuery(&'static str),
 
-    #[fail(display = "could not persist {} model to primary store", _0)]
+    #[fail(display = "could not persist {} to the primary store", _0)]
     PrimaryStorePersist(&'static str),
 
     #[fail(display = "could not register task worker for queue '{}'", _0)]
@@ -123,6 +123,9 @@ pub enum ErrorKind {
 
     #[fail(display = "could not query {} from the view store", _0)]
     ViewStoreQuery(&'static str),
+
+    #[fail(display = "could not persist {} to the view store", _0)]
+    ViewStorePersist(&'static str),
 }
 
 impl ErrorKind {
@@ -151,6 +154,7 @@ impl ErrorKind {
             ErrorKind::ThreadSpawn(_) => "ThreadSpawn",
             ErrorKind::ValidateFailed(_) => "ValidateFailed",
             ErrorKind::ViewStoreQuery(_) => "ViewStoreQuery",
+            ErrorKind::ViewStorePersist(_) => "ViewStorePersist",
         };
         Some(name)
     }

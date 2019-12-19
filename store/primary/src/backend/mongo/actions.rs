@@ -45,7 +45,11 @@ fn lost_actions_filter(
         "cluster_id": &attrs.cluster_id,
         "finished_ts": null,
         "node_id": node_id,
-        "refresh_id": { "$ne": refresh_id }
+        "refresh_id": { "$ne": refresh_id },
+        "state": { "$nin": [
+            "PENDING_APPROVE",
+            "PENDING_SCHEDULE",
+        ] }
     }
 }
 
