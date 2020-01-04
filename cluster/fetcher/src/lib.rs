@@ -18,6 +18,7 @@ use replicante_service_coordinator::NonBlockingLockWatcher;
 use replicante_store_primary::store::Store as PrimaryStore;
 use replicante_store_view::store::Store as ViewStore;
 use replicante_stream_events::Stream as EventsStream;
+use replicante_util_failure::failure_info;
 
 mod actions;
 mod agent;
@@ -102,7 +103,12 @@ impl Fetcher {
         timeout: Duration,
         tracer: Arc<Tracer>,
     ) -> Fetcher {
-        let actions = ActionsFetcher::new(events.clone(), primary_store.clone(), view_store);
+        let actions = ActionsFetcher::new(
+            events.clone(),
+            primary_store.clone(),
+            view_store,
+            logger.clone(),
+        );
         let agent = AgentFetcher::new(events.clone(), primary_store.clone());
         let node = NodeFetcher::new(events.clone(), primary_store.clone());
         let shard = ShardFetcher::new(events, primary_store.clone());
@@ -165,7 +171,7 @@ impl Fetcher {
             .mark_stale(span.context().clone())
             .with_context(|_| ErrorKind::PrimaryStoreWrite("cluster staleness"))?;
 
-        for node in cluster.nodes {
+        for agent_id in cluster.nodes {
             // Exit early if lock was lost.
             if !lock.inspect() {
                 span.log(Log::new().log("abbandoned", "lock lost"));
@@ -173,6 +179,7 @@ impl Fetcher {
                     self.logger,
                     "Cluster fetcher lock lost, skipping futher nodes";
                     "cluster_id" => &cluster_id,
+                    "agent_id" => &agent_id
                 );
                 return Ok(());
             }
@@ -180,17 +187,36 @@ impl Fetcher {
             // Process the target node and inspect the result.
             // If an error within Replicante Core is reported pass it back to the caller
             // and abort the refresh operation, otherwise update the agent status.
-            let target =
-                self.process_target(&ns, &cluster_id, &node, refresh_id, &mut id_checker, span);
+            let target = self.process_target(
+                &ns,
+                &cluster_id,
+                &agent_id,
+                refresh_id,
+                &mut id_checker,
+                span,
+            );
             let agent_status = match target {
                 Err(error) => match error.agent_status() {
                     None => return Err(error),
-                    Some(status) => status,
+                    Some(status) => {
+                        // Log error at debug level and send to sentry as debug.
+                        let mut event = sentry::integrations::failure::event_from_fail(&error);
+                        event.level = sentry::Level::Debug;
+                        sentry::capture_event(event);
+                        debug!(
+                            self.logger,
+                            "Cluster sync operation not successful";
+                            "cluster_id" => &cluster_id,
+                            "agent_id" => &agent_id,
+                            failure_info(&error),
+                        );
+                        status
+                    }
                 },
                 Ok(()) => AgentStatus::Up,
             };
             self.agent.process_agent(
-                Agent::new(cluster_id.to_string(), node.to_string(), agent_status),
+                Agent::new(cluster_id.to_string(), agent_id.to_string(), agent_status),
                 span,
             )?;
         }

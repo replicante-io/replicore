@@ -2,11 +2,15 @@ use std::collections::HashSet;
 
 use chrono::DateTime;
 use chrono::Utc;
+use failure::Fail;
 use failure::ResultExt;
 use opentracingrust::Span;
+use slog::info;
+use slog::Logger;
 use uuid::Uuid;
 
 use replicante_agent_client::Client;
+use replicante_models_agent::actions::api::ActionScheduleRequest;
 use replicante_models_agent::actions::ActionHistoryItem;
 use replicante_models_core::actions::Action;
 use replicante_models_core::actions::ActionHistory;
@@ -19,15 +23,22 @@ use replicante_store_primary::store::Store as PrimaryStore;
 use replicante_store_view::store::Store as ViewStore;
 use replicante_stream_events::EmitMessage;
 use replicante_stream_events::Stream as EventsStream;
+use replicante_util_failure::SerializableFail;
 
 use crate::metrics::FETCHER_ACTIONS_CHUNKS;
 use crate::metrics::FETCHER_ACTIONS_SYNCED;
+use crate::metrics::FETCHER_ACTION_SCHEDULE_DUPLICATE;
+use crate::metrics::FETCHER_ACTION_SCHEDULE_ERROR;
+use crate::metrics::FETCHER_ACTION_SCHEDULE_TOTAL;
 use crate::ErrorKind;
 use crate::Result;
+
+const MAX_SCHEDULE_ATTEMPTS: i32 = 10;
 
 /// Actions fetch and sync processing.
 pub(crate) struct ActionsFetcher {
     events: EventsStream,
+    logger: Logger,
     primary_store: PrimaryStore,
     view_store: ViewStore,
 }
@@ -37,9 +48,11 @@ impl ActionsFetcher {
         events: EventsStream,
         primary_store: PrimaryStore,
         view_store: ViewStore,
+        logger: Logger,
     ) -> ActionsFetcher {
         ActionsFetcher {
             events,
+            logger,
             primary_store,
             view_store,
         }
@@ -50,19 +63,19 @@ impl ActionsFetcher {
         &self,
         client: &dyn Client,
         cluster_id: &str,
-        node_id: &str,
+        agent_id: &str,
         refresh_id: i64,
         span: &mut Span,
     ) -> Result<()> {
-        let remote_ids = self.remote_ids(client, node_id, span)?;
-        let sync_ids = self.check_ids_to_sync(cluster_id, node_id, remote_ids, span)?;
+        let remote_ids = self.remote_ids(client, agent_id, span)?;
+        let sync_ids = self.check_ids_to_sync(cluster_id, agent_id, remote_ids, span)?;
         let sync_size = sync_ids.len();
         for action_info in sync_ids {
-            self.sync_action(client, cluster_id, node_id, action_info, refresh_id, span)?;
+            self.sync_action(client, cluster_id, agent_id, action_info, refresh_id, span)?;
         }
-        self.mark_lost_actions(cluster_id, node_id, refresh_id, span)?;
         FETCHER_ACTIONS_SYNCED.observe(sync_size as f64);
-        Ok(())
+        self.mark_lost_actions(cluster_id, agent_id, refresh_id, span)?;
+        self.schedule_pending(client, cluster_id, agent_id, span)
     }
 
     /// Check the given remote IDs against the primary store and return a list of IDs to sync.
@@ -145,6 +158,7 @@ impl ActionsFetcher {
                 span.context().clone(),
             )
             .with_context(|_| ErrorKind::PrimaryStoreWrite("mark actions as lost"))?;
+        // TODO: count lost actions
         Ok(())
     }
 
@@ -167,6 +181,82 @@ impl ActionsFetcher {
             }
         }
         Ok(remote_ids)
+    }
+
+    pub fn schedule_pending(
+        &self,
+        client: &dyn Client,
+        cluster_id: &str,
+        agent_id: &str,
+        span: &mut Span,
+    ) -> Result<()> {
+        let actions = self
+            .primary_store
+            .actions(cluster_id.to_string())
+            .pending_schedule(agent_id.to_string(), span.context().clone())
+            .with_context(|_| ErrorKind::PrimaryStoreRead("pending actions"))?;
+        for action in actions {
+            let mut action = action.with_context(|_| ErrorKind::PrimaryStoreRead("action"))?;
+            let action_id = action.action_id.to_string();
+            let request = ActionScheduleRequest {
+                action_id: Some(action.action_id),
+                args: action.args.clone(),
+                created_ts: Some(action.created_ts),
+            };
+            let result = client.schedule_action(
+                &action.kind,
+                &action.headers,
+                request,
+                Some(span.context().clone()),
+            );
+            FETCHER_ACTION_SCHEDULE_TOTAL.inc();
+            match result {
+                Ok(()) => (),
+                Err(error) => match error.kind() {
+                    replicante_agent_client::ErrorKind::DuplicateAction => {
+                        info!(
+                            self.logger,
+                            "Ignored duplicate action scheduling attempt";
+                            "cluster_id" => cluster_id,
+                            "agent_id" => agent_id,
+                            "action_id" => action_id,
+                        );
+                        FETCHER_ACTION_SCHEDULE_DUPLICATE.inc();
+                    }
+                    _ => {
+                        // After a while give up on trying to schedule actions.
+                        let payload = SerializableFail::from(&error);
+                        let payload =
+                            serde_json::to_value(payload).expect("errors must always serialise");
+                        action.schedule_attempt += 1;
+                        action.state_payload = Some(payload);
+                        // TODO: make MAX_SCHEDULE_ATTEMPTS a namespace configuration once namesapces exist.
+                        if action.schedule_attempt > MAX_SCHEDULE_ATTEMPTS {
+                            action.finished_ts = Some(Utc::now());
+                            action.state = ActionState::Failed;
+                        }
+                        self.primary_store
+                            .persist()
+                            .action(action, span.context().clone())
+                            .with_context(|_| ErrorKind::PrimaryStoreWrite("action"))?;
+                        FETCHER_ACTION_SCHEDULE_ERROR.inc();
+                        let error = error
+                            .context(ErrorKind::AgentDown("action request", agent_id.to_string()));
+                        return Err(error.into());
+                    }
+                },
+            };
+            // Reset schedule attempt count if needed.
+            if action.schedule_attempt != 0 {
+                action.schedule_attempt = 0;
+                action.state_payload = None;
+                self.primary_store
+                    .persist()
+                    .action(action, span.context().clone())
+                    .with_context(|_| ErrorKind::PrimaryStoreWrite("action"))?;
+            }
+        }
+        Ok(())
     }
 
     /// Sync a single action's details.
@@ -285,10 +375,12 @@ impl ActionsFetcher {
                 )
             })
             .collect();
-        self.view_store
-            .persist()
-            .action_history(history, span.context().clone())
-            .with_context(|_| ErrorKind::ViewStoreWrite("action history transitions"))?;
+        if !history.is_empty() {
+            self.view_store
+                .persist()
+                .action_history(history, span.context().clone())
+                .with_context(|_| ErrorKind::ViewStoreWrite("action history transitions"))?;
+        }
 
         // If finished, set finished_ts on all history items so they can be cleaned up.
         if let Some(finished_ts) = finished_ts {
@@ -308,6 +400,9 @@ mod tests {
     use chrono::Utc;
     use opentracingrust::tracers::NoopTracer;
     use serde_json::json;
+    use slog::o;
+    use slog::Discard;
+    use slog::Logger;
     use uuid::Uuid;
 
     use replicante_agent_client::mock::MockClient;
@@ -365,6 +460,7 @@ mod tests {
             node_id: "node".into(),
             refresh_id: 4321,
             requester: ActionRequester::CoreApi,
+            schedule_attempt: 0,
             scheduled_ts,
             state: ActionStateCore::New,
             state_payload: None,
@@ -392,7 +488,12 @@ mod tests {
         // Use the fetcher to check which IDs need to be synced.
         let stream = EventsStream::mock();
         let view_store = ViewStoreMock::default().store();
-        let fetcher = ActionsFetcher::new(stream, store.clone().store(), view_store);
+        let fetcher = ActionsFetcher::new(
+            stream,
+            store.clone().store(),
+            view_store,
+            Logger::root(Discard, o!()),
+        );
         let remote_ids = vec![*UUID1, *UUID2, *UUID3, *UUID4];
         let (tracer, _) = NoopTracer::new();
         let mut span = tracer.span("test");
@@ -435,7 +536,7 @@ mod tests {
         let store = PrimaryStoreMock::default().store();
         let view_store = ViewStoreMock::default().store();
         let stream = EventsStream::mock();
-        let fetcher = ActionsFetcher::new(stream, store, view_store);
+        let fetcher = ActionsFetcher::new(stream, store, view_store, Logger::root(Discard, o!()));
         let (tracer, _) = NoopTracer::new();
         let mut span = tracer.span("test");
         let ids = fetcher
@@ -490,7 +591,7 @@ mod tests {
         let store = PrimaryStoreMock::default().store();
         let stream = EventsStream::mock();
         let view_store = ViewStoreMock::default().store();
-        let fetcher = ActionsFetcher::new(stream, store, view_store);
+        let fetcher = ActionsFetcher::new(stream, store, view_store, Logger::root(Discard, o!()));
         let (tracer, _) = NoopTracer::new();
         let mut span = tracer.span("test");
         let ids = fetcher
@@ -521,7 +622,12 @@ mod tests {
         // Set up fetcher and run mark function.
         let stream = EventsStream::mock();
         let view_store = ViewStoreMock::default().store();
-        let fetcher = ActionsFetcher::new(stream, store.clone().store(), view_store);
+        let fetcher = ActionsFetcher::new(
+            stream,
+            store.clone().store(),
+            view_store,
+            Logger::root(Discard, o!()),
+        );
         let (tracer, _) = NoopTracer::new();
         let refresh_id = 1234;
         let mut span = tracer.span("test");
@@ -572,7 +678,12 @@ mod tests {
         let store = PrimaryStoreMock::default();
         let stream = EventsStream::mock();
         let view_store = ViewStoreMock::default().store();
-        let fetcher = ActionsFetcher::new(stream, store.clone().store(), view_store);
+        let fetcher = ActionsFetcher::new(
+            stream,
+            store.clone().store(),
+            view_store,
+            Logger::root(Discard, o!()),
+        );
         let (tracer, _) = NoopTracer::new();
         let refresh_id = 1234;
         let action = CoreAction::new("cluster", "node", refresh_id, action);
@@ -616,7 +727,12 @@ mod tests {
         let store = PrimaryStoreMock::default();
         let view_store = ViewStoreMock::default().store();
         let stream = EventsStream::mock();
-        let fetcher = ActionsFetcher::new(stream, store.clone().store(), view_store);
+        let fetcher = ActionsFetcher::new(
+            stream,
+            store.clone().store(),
+            view_store,
+            Logger::root(Discard, o!()),
+        );
         let (tracer, _) = NoopTracer::new();
         let refresh_id = 1234;
         let mut span = tracer.span("test");

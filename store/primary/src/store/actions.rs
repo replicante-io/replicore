@@ -61,6 +61,15 @@ impl Actions {
             .mark_lost(&self.attrs, node_id, refresh_id, finished_ts, span.into())
     }
 
+    /// Iterate over all PENDING_SCHEDULE actions for the given agent/node.
+    pub fn pending_schedule<S>(&self, agent_id: String, span: S) -> Result<Cursor<Action>>
+    where
+        S: Into<Option<SpanContext>>,
+    {
+        self.actions
+            .pending_schedule(&self.attrs, agent_id, span.into())
+    }
+
     /// Return information about the given action IDs for use by the agent sync process.
     ///
     /// # Panics

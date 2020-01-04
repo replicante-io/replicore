@@ -127,6 +127,32 @@ impl ActionsInterface for Actions {
         Ok(())
     }
 
+    fn pending_schedule(
+        &self,
+        attrs: &ActionsAttributes,
+        agent_id: String,
+        span: Option<SpanContext>,
+    ) -> Result<Cursor<Action>> {
+        let filter = doc! {
+            "cluster_id" => &attrs.cluster_id,
+            "node_id" => &agent_id,
+            "state" => bson::to_bson(&ActionState::PendingSchedule).unwrap(),
+        };
+        let collection = self.client.db(&self.db).collection(COLLECTION_ACTIONS);
+        let cursor = find(
+            collection,
+            filter,
+            span,
+            self.tracer.as_ref().map(|tracer| tracer.deref()),
+        )
+        .with_context(|_| ErrorKind::MongoDBOperation)?
+        .map(|action| {
+            let action: ActionDocument = action.with_context(|_| ErrorKind::MongoDBCursor)?;
+            Ok(action.into())
+        });
+        Ok(Cursor::new(cursor))
+    }
+
     fn state_for_sync(
         &self,
         attrs: &ActionsAttributes,

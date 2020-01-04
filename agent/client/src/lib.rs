@@ -1,7 +1,10 @@
+use std::collections::HashMap;
+
 use opentracingrust::SpanContext;
 use uuid::Uuid;
 
 use replicante_models_agent::actions::api::ActionInfoResponse;
+use replicante_models_agent::actions::api::ActionScheduleRequest;
 use replicante_models_agent::actions::ActionListItem;
 use replicante_models_agent::info::AgentInfo;
 use replicante_models_agent::info::DatastoreInfo;
@@ -47,4 +50,13 @@ pub trait Client {
 
     /// Return status information for the node.
     fn shards(&self, span: Option<SpanContext>) -> Result<Shards>;
+
+    /// Schedule an action to be executed by the Agent.
+    fn schedule_action(
+        &self,
+        kind: &str,
+        headers: &HashMap<String, String>,
+        payload: ActionScheduleRequest,
+        span: Option<SpanContext>,
+    ) -> Result<()>;
 }

@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::fs::File;
 use std::io;
 use std::io::Read;
@@ -21,6 +22,7 @@ use slog::Logger;
 use uuid::Uuid;
 
 use replicante_models_agent::actions::api::ActionInfoResponse;
+use replicante_models_agent::actions::api::ActionScheduleRequest;
 use replicante_models_agent::actions::ActionListItem;
 use replicante_models_agent::info::AgentInfo;
 use replicante_models_agent::info::DatastoreInfo;
@@ -28,8 +30,11 @@ use replicante_models_agent::info::Shards;
 use replicante_models_core::scope::Namespace;
 use replicante_util_failure::capture_fail;
 use replicante_util_failure::failure_info;
+use replicante_util_failure::SerializableFail;
 use replicante_util_tracing::carriers::reqwest::HeadersCarrier;
 use replicante_util_tracing::fail_span;
+
+const DUPLICATE_ACTION_VARIANT: &str = "ActionAlreadyExists";
 
 use super::Client;
 use super::Error;
@@ -43,7 +48,7 @@ use super::metrics::CLIENT_OP_ERRORS_COUNT;
 use super::metrics::CLIENT_TIMEOUT;
 
 /// Decode useful portions of error messages from clients.
-#[derive(Deserialize)]
+#[derive(Debug, Deserialize)]
 struct ClientError {
     error: String,
 }
@@ -181,6 +186,40 @@ impl Client for HttpClient {
             Some(mut span) => fail_span(error, span.as_mut()),
         })
     }
+
+    fn schedule_action(
+        &self,
+        kind: &str,
+        _headers: &HashMap<String, String>,
+        payload: ActionScheduleRequest,
+        span: Option<SpanContext>,
+    ) -> Result<()> {
+        let endpoint = self.endpoint(format!("/api/unstable/actions/schedule/{}", kind));
+        let request = self.client.post(&endpoint).json(&payload);
+        let span = match (self.tracer.as_ref(), span) {
+            (Some(tracer), Some(parent)) => {
+                let options = StartOptions::default().child_of(parent);
+                let mut span = tracer
+                    .span_with_options("agent.client.http.actions.schedule", options)
+                    .auto_finish();
+                if let Some(id) = payload.action_id {
+                    span.tag("action.id", id.to_string());
+                }
+                span.tag("action.kind", kind.to_string());
+                Some(span)
+            }
+            _ => None,
+        };
+        let context = span.as_ref().map(|span| span.context().clone());
+        // To ignore the response from the agent we need to pass a catch all type
+        // or the operation will fail trying to JSON-decode the response into the unit type.
+        self.perform::<serde_json::Value>(request, context)
+            .map_err(|error| match span {
+                None => error,
+                Some(mut span) => fail_span(error, span.as_mut()),
+            })?;
+        Ok(())
+    }
 }
 
 impl HttpClient {
@@ -300,26 +339,31 @@ impl HttpClient {
         CLIENT_HTTP_STATUS
             .with_label_values(&[&endpoint, status.as_str()])
             .inc();
-        if status < StatusCode::BAD_REQUEST {
-            response
+        let result = match status {
+            StatusCode::CONFLICT => response
+                .json::<SerializableFail>()
+                .with_context(|_| ErrorKind::JsonDecode)
+                .map_err(Error::from)
+                .and_then(|response| match response.variant {
+                    Some(message) if message == DUPLICATE_ACTION_VARIANT => {
+                        Err(ErrorKind::DuplicateAction.into())
+                    }
+                    _ => Err(ErrorKind::Remote(response.error).into()),
+                }),
+            status if status < StatusCode::BAD_REQUEST => response
                 .json()
                 .with_context(|_| ErrorKind::JsonDecode)
-                .map_err(Error::from)
-                .map_err(|error| {
-                    CLIENT_OP_ERRORS_COUNT.with_label_values(&[&endpoint]).inc();
-                    error
-                })
-        } else {
-            response
-                .json::<ClientError>()
+                .map_err(Error::from),
+            _ => response
+                .json::<SerializableFail>()
                 .with_context(|_| ErrorKind::JsonDecode)
                 .map_err(Error::from)
-                .and_then(|response| Err(ErrorKind::Remote(response.error).into()))
-                .map_err(|error| {
-                    CLIENT_OP_ERRORS_COUNT.with_label_values(&[&endpoint]).inc();
-                    error
-                })
-        }
+                .and_then(|response| Err(ErrorKind::Remote(response.error).into())),
+        };
+        result.map_err(|error| {
+            CLIENT_OP_ERRORS_COUNT.with_label_values(&[&endpoint]).inc();
+            error
+        })
     }
 }
 

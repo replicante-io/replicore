@@ -57,6 +57,9 @@ impl fmt::Display for Error {
 /// Exhaustive list of possible errors emitted by this crate.
 #[derive(Debug, Fail)]
 pub enum ErrorKind {
+    #[fail(display = "attempted to schedule an action that was already scheduled")]
+    DuplicateAction,
+
     #[fail(display = "unable to decode JSON data")]
     JsonDecode,
 
@@ -73,6 +76,7 @@ pub enum ErrorKind {
 impl ErrorKind {
     fn kind_name(&self) -> Option<&str> {
         let name = match self {
+            ErrorKind::DuplicateAction => "DuplicateAction",
             ErrorKind::JsonDecode => "JsonDecode",
             ErrorKind::NotFound(_, _) => "NotFound",
             ErrorKind::Remote(_) => "Remote",

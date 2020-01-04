@@ -22,16 +22,30 @@ pub struct Action {
     pub action_id: Uuid,
 
     // Record attributes.
+    /// Action-dependent arguments attached to the action.
     pub args: Json,
+    /// Timestamp of action creation.
     pub created_ts: DateTime<Utc>,
+    /// Timestamp action entered a final state (success or failure).
     pub finished_ts: Option<DateTime<Utc>>,
+    /// Headers attached to the action.
     pub headers: HashMap<String, String>,
+    /// Identifier of the action logic to execute.
     pub kind: String,
-    pub refresh_id: i64,
+    /// Entity (user or system) that requested the action.
     pub requester: ActionRequester,
+    /// Count failed action scheduling attempts to prevent endless attempts.
+    pub schedule_attempt: i32,
+    /// Timestamp the action was scheduled on the agent.
     pub scheduled_ts: Option<DateTime<Utc>>,
+    /// State the action is currently in.
     pub state: ActionState,
+    /// Action-dependent state data, if the action needs to persist state.
     pub state_payload: Option<Json>,
+
+    // TODO: remove this in favour of simpler approximate-view.
+    /// Random number generated at the start of a sync cycle.
+    pub refresh_id: i64,
 }
 
 impl Action {
@@ -51,6 +65,7 @@ impl Action {
             node_id: node_id.into(),
             refresh_id,
             requester: action.requester,
+            schedule_attempt: 0,
             scheduled_ts: Some(action.scheduled_ts),
             state: action.state.into(),
             state_payload: action.state_payload,

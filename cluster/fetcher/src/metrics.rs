@@ -23,6 +23,21 @@ lazy_static! {
         .buckets(vec![1.0, 5.0, 15.0, 30.0, 60.0, 90.0, 120.0]),
     )
     .expect("Failed to create FETCHER_ACTIONS_SYNCED histogram");
+    pub static ref FETCHER_ACTION_SCHEDULE_DUPLICATE: Counter = Counter::new(
+        "replicore_fetcher_action_schedule_duplicate",
+        "Number of duplicate action scheduling attempts",
+    )
+    .expect("Failed to create FETCHER_ACTION_SCHEDULE_DUPLICATE counter");
+    pub static ref FETCHER_ACTION_SCHEDULE_ERROR: Counter = Counter::new(
+        "replicore_fetcher_action_schedule_error",
+        "Number of errors scheduling actions",
+    )
+    .expect("Failed to create FETCHER_ACTION_SCHEDULE_ERROR counter");
+    pub static ref FETCHER_ACTION_SCHEDULE_TOTAL: Counter = Counter::new(
+        "replicore_fetcher_action_schedule_total",
+        "Total number of action scheduling attempts",
+    )
+    .expect("Failed to create FETCHER_ACTION_SCHEDULE_TOTAL counter");
     pub static ref FETCHER_DURATION: Histogram = Histogram::with_opts(
         HistogramOpts::new(
             "replicore_fetcher_duration",
@@ -47,6 +62,15 @@ pub fn register_metrics(logger: &Logger, registry: &Registry) {
     }
     if let Err(error) = registry.register(Box::new(FETCHER_ACTIONS_SYNCED.clone())) {
         debug!(logger, "Failed to register FETCHER_ACTIONS_SYNCED"; "error" => ?error);
+    }
+    if let Err(error) = registry.register(Box::new(FETCHER_ACTION_SCHEDULE_DUPLICATE.clone())) {
+        debug!(logger, "Failed to register FETCHER_ACTION_SCHEDULE_DUPLICATE"; "error" => ?error);
+    }
+    if let Err(error) = registry.register(Box::new(FETCHER_ACTION_SCHEDULE_ERROR.clone())) {
+        debug!(logger, "Failed to register FETCHER_ACTION_SCHEDULE_ERROR"; "error" => ?error);
+    }
+    if let Err(error) = registry.register(Box::new(FETCHER_ACTION_SCHEDULE_TOTAL.clone())) {
+        debug!(logger, "Failed to register FETCHER_ACTION_SCHEDULE_TOTAL"; "error" => ?error);
     }
     if let Err(error) = registry.register(Box::new(FETCHER_DURATION.clone())) {
         debug!(logger, "Failed to register FETCHER_DURATION"; "error" => ?error);

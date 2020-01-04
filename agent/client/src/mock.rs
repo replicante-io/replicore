@@ -4,6 +4,7 @@ use opentracingrust::SpanContext;
 use uuid::Uuid;
 
 use replicante_models_agent::actions::api::ActionInfoResponse;
+use replicante_models_agent::actions::api::ActionScheduleRequest;
 use replicante_models_agent::actions::ActionListItem;
 use replicante_models_agent::info::AgentInfo;
 use replicante_models_agent::info::DatastoreInfo;
@@ -66,6 +67,17 @@ where
 
     fn shards(&self, _: Option<SpanContext>) -> Result<Shards> {
         (self.shards)()
+    }
+
+    fn schedule_action(
+        &self,
+        _: &str,
+        _: &HashMap<String, String>,
+        _: ActionScheduleRequest,
+        _: Option<SpanContext>,
+    ) -> Result<()> {
+        // To be implemented when needed.
+        Ok(())
     }
 }
 

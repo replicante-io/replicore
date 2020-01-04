@@ -202,6 +202,12 @@ box_interface! {
             finished_ts: DateTime<Utc>,
             span: Option<SpanContext>,
         ) -> Result<()>;
+        fn pending_schedule(
+            &self,
+            attrs: &ActionsAttributes,
+            agent_id: String,
+            span: Option<SpanContext>,
+        ) -> Result<Cursor<Action>>;
         fn state_for_sync(
             &self,
             attrs: &ActionsAttributes,
@@ -209,6 +215,22 @@ box_interface! {
             action_ids: &[Uuid],
             span: Option<SpanContext>,
         ) -> Result<HashMap<Uuid, ActionSyncState>>;
+    }
+}
+
+box_interface! {
+    /// Dynamic dispatch agent operations to a backend-specific implementation.
+    struct AgentImpl,
+
+    /// Definition of supported operations on `Agent`s and `AgentInfo`s.
+    ///
+    /// See `store::agent::Agent` for descriptions of methods.
+    trait AgentInterface,
+
+    interface {
+        fn get(&self, attrs: &AgentAttribures, span: Option<SpanContext>) -> Result<Option<Agent>>;
+        fn info(&self, attrs: &AgentAttribures, span: Option<SpanContext>)
+            -> Result<Option<AgentInfo>>;
     }
 }
 
@@ -229,32 +251,6 @@ box_interface! {
         fn clusters_meta(&self) -> Result<Cursor<ClusterMeta>>;
         fn nodes(&self) -> Result<Cursor<Node>>;
         fn shards(&self) -> Result<Cursor<Shard>>;
-    }
-}
-
-/// Definition of supported operations on `Agent`s and `AgentInfo`s.
-///
-/// See `store::agent::Agent` for descriptions of methods.
-pub trait AgentInterface: Send + Sync {
-    fn get(&self, attrs: &AgentAttribures, span: Option<SpanContext>) -> Result<Option<Agent>>;
-    fn info(&self, attrs: &AgentAttribures, span: Option<SpanContext>)
-        -> Result<Option<AgentInfo>>;
-}
-
-/// Dynamic dispatch agent operations to a backend-specific implementation.
-#[derive(Clone)]
-pub struct AgentImpl(Arc<dyn AgentInterface>);
-
-impl AgentImpl {
-    pub fn new<A: AgentInterface + 'static>(agent: A) -> AgentImpl {
-        AgentImpl(Arc::new(agent))
-    }
-}
-
-impl Deref for AgentImpl {
-    type Target = dyn AgentInterface + 'static;
-    fn deref(&self) -> &(dyn AgentInterface + 'static) {
-        self.0.deref()
     }
 }
 

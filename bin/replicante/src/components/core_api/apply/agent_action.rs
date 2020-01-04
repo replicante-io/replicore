@@ -102,19 +102,17 @@ pub fn replicante_io_v0(args: ApplierArgs) -> Result<Value> {
 
     let now = Utc::now();
     let action = Action {
-        // IDs.
-        cluster_id: cluster.to_string(),
-        node_id: node.to_string(),
         action_id: Uuid::new_v4(),
-
-        // Attributes.
         args: action_args,
+        cluster_id: cluster.to_string(),
         created_ts: now,
         finished_ts: None,
         headers: Default::default(),
         kind: kind.to_string(),
+        node_id: node.to_string(),
         refresh_id: 0,
         requester: ActionRequester::CoreApi,
+        schedule_attempt: 0,
         scheduled_ts: None,
         state: ActionState::PendingSchedule,
         state_payload: None,

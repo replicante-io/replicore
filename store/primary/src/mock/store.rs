@@ -154,6 +154,27 @@ impl ActionsInterface for Actions {
         Ok(())
     }
 
+    fn pending_schedule(
+        &self,
+        attrs: &ActionsAttributes,
+        node_id: String,
+        _: Option<SpanContext>,
+    ) -> Result<Cursor<Action>> {
+        let store = self.state.lock().expect("MockStore state lock is poisoned");
+        let cluster_id = &attrs.cluster_id;
+        let cursor: Vec<Action> = store
+            .actions
+            .iter()
+            .filter(|(key, action)| {
+                key.0 == *cluster_id
+                    && key.1 == *node_id
+                    && action.state == ActionState::PendingSchedule
+            })
+            .map(|(_, action)| action.clone())
+            .collect();
+        Ok(Cursor::new(cursor.into_iter().map(Ok)))
+    }
+
     fn state_for_sync(
         &self,
         attrs: &ActionsAttributes,

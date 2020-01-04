@@ -90,10 +90,10 @@ pub enum ErrorKind {
     #[fail(display = "error connecting to agent {}", _0)]
     AgentConnect(String),
 
-    #[fail(display = "error fetching {} from agent {}", _0, _1)]
+    #[fail(display = "error fetching/sending {} from/to agent {}", _0, _1)]
     AgentDown(&'static str, String),
 
-    #[fail(display = "error fetching {} from agent {}", _0, _1)]
+    #[fail(display = "error fetching/sending {} from/to agent {}", _0, _1)]
     DatastoreDown(&'static str, String),
 
     #[fail(
