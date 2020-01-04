@@ -345,7 +345,7 @@ impl HttpClient {
                 .with_context(|_| ErrorKind::JsonDecode)
                 .map_err(Error::from)
                 .and_then(|response| match response.variant {
-                    Some(message) if message == DUPLICATE_ACTION_VARIANT => {
+                    Some(ref message) if message == DUPLICATE_ACTION_VARIANT => {
                         Err(ErrorKind::DuplicateAction.into())
                     }
                     _ => Err(ErrorKind::Remote(response.error).into()),
