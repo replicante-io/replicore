@@ -399,3 +399,49 @@ pub fn update_many(
         .map_err(|error| fail_span(error, span.as_mut().map(DerefMut::deref_mut)))
         .map_err(Error::from)
 }
+
+/// Perform an [`updateOne`] operation.
+///
+/// [`updateOne`]: https://docs.mongodb.com/manual/reference/method/db.collection.updateOne/
+pub fn update_one(
+    collection: Collection,
+    filter: OrderedDocument,
+    update: OrderedDocument,
+    span: Option<SpanContext>,
+    tracer: Option<&Tracer>,
+) -> Result<UpdateResult> {
+    let mut span = match (tracer, span) {
+        (Some(tracer), Some(context)) => {
+            let options = StartOptions::default().child_of(context);
+            let mut span = tracer.span_with_options("store.mongodb.updateOne", options);
+            span.tag(
+                "filter",
+                serde_json::to_string(&filter)
+                    .unwrap_or_else(|_| "<unable to encode filter>".into()),
+            );
+            span.tag("namespace", collection.namespace.clone());
+            span.tag(
+                "update",
+                serde_json::to_string(&update)
+                    .unwrap_or_else(|_| "<unable to encode update document>".into()),
+            );
+            Some(span.auto_finish())
+        }
+        _ => None,
+    };
+    MONGODB_OPS_COUNT.with_label_values(&["updateOne"]).inc();
+    let _timer = MONGODB_OPS_DURATION
+        .with_label_values(&["updateOne"])
+        .start_timer();
+    collection
+        .update_one(filter, update, None)
+        .map_err(|error| {
+            MONGODB_OP_ERRORS_COUNT
+                .with_label_values(&["updateOne"])
+                .inc();
+            error
+        })
+        .with_context(|_| ErrorKind::UpdateOne)
+        .map_err(|error| fail_span(error, span.as_mut().map(DerefMut::deref_mut)))
+        .map_err(Error::from)
+}

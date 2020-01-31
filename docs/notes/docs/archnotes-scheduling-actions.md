@@ -34,11 +34,15 @@ where the actions are needed and manually scheduled actions are expected to be f
   * <span style='color: #000000'>Black</span>: intermediate Core state.
   * <span style='color: #6495ed'>Blue</span>: intermediate Agent state.
   * <span style='color: #a2cd5a'>Green</span>: successful outcome state.
+  * <span style='color: #c0c0c0'>Gray</span>: action not execute final state.
   * <span style='color: #b22222'>Red</span>: unsuccessful outcome state.
   * <span style='color: #9a32cd'>Violet</span>: starting state.
 
 
 ### States descriptions
+
+#### `CANCELLED`
+The action was interrupted or never executed.
 
 #### `DONE`
 The action finished successfully.

@@ -232,8 +232,7 @@ impl ActionsFetcher {
                         action.state_payload = Some(payload);
                         // TODO: make MAX_SCHEDULE_ATTEMPTS a namespace configuration once namesapces exist.
                         if action.schedule_attempt > MAX_SCHEDULE_ATTEMPTS {
-                            action.finished_ts = Some(Utc::now());
-                            action.state = ActionState::Failed;
+                            action.finish(ActionState::Failed);
                         }
                         self.primary_store
                             .persist()

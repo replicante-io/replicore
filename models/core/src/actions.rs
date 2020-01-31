@@ -71,6 +71,30 @@ impl Action {
             state_payload: action.state_payload,
         }
     }
+
+    /// Mark the action as finished and sets the finish timestamp to now.
+    pub fn finish(&mut self, state: ActionState) {
+        self.state = state;
+        self.finished_ts = Some(Utc::now());
+    }
+}
+
+/// Approval requirements for action scheduling.
+#[derive(Clone, Eq, PartialEq, Hash, Debug, Serialize, Deserialize)]
+pub enum ActionApproval {
+    /// Approval is granted and the action can be scheduled.
+    #[serde(rename = "granted", alias = "GRANTED", alias = "Granted")]
+    Granted,
+
+    /// Approval from a user is required and the action CANNOT be scheduled yet.
+    #[serde(rename = "required", alias = "REQUIRED", alias = "Required")]
+    Required,
+}
+
+impl Default for ActionApproval {
+    fn default() -> ActionApproval {
+        ActionApproval::Granted
+    }
 }
 
 /// Action history metadata and transitions.
@@ -128,6 +152,10 @@ pub enum ActionHistoryOrigin {
 /// Current state of an action execution.
 #[derive(Clone, Eq, PartialEq, Hash, Debug, Serialize, Deserialize)]
 pub enum ActionState {
+    /// The action was interrupted or never executed.
+    #[serde(rename = "CANCELLED")]
+    Cancelled,
+
     /// The action finished successfully.
     #[serde(rename = "DONE")]
     Done,
@@ -144,7 +172,11 @@ pub enum ActionState {
     #[serde(rename = "NEW")]
     New,
 
-    /// Replicante Core knows about the action and may or may not have sent it to the Agent.
+    /// Replicante is waiting for a user to approve the action before scheduling it.
+    #[serde(rename = "PENDING_APPROVE")]
+    PendingApprove,
+
+    /// Replicante knows about the action and may or may not have sent it to the Agent.
     #[serde(rename = "PENDING_SCHEDULE")]
     PendingSchedule,
 

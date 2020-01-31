@@ -107,6 +107,24 @@ struct Actions {
 }
 
 impl ActionsInterface for Actions {
+    fn approve(
+        &self,
+        _attrs: &ActionsAttributes,
+        _action_id: Uuid,
+        _: Option<SpanContext>,
+    ) -> Result<()> {
+        panic!("TODO: MockStore::Actions::approve")
+    }
+
+    fn disapprove(
+        &self,
+        _attrs: &ActionsAttributes,
+        _action_id: Uuid,
+        _: Option<SpanContext>,
+    ) -> Result<()> {
+        panic!("TODO: MockStore::Actions::disapprove")
+    }
+
     fn iter_lost(
         &self,
         attrs: &ActionsAttributes,

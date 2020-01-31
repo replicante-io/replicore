@@ -93,11 +93,10 @@ pub fn run<'a>(cli: &ArgMatches<'a>, logger: &Logger) -> Result<()> {
             return Err(error);
         }
     };
-    let message = match response.get("message") {
-        Some(msg) if msg.is_string() => format!("{}", msg),
-        _ => "no additional message returned by the API".to_string(),
-    };
-    println!("Object applied successfully: {}", message);
+    if let Some(message) = response.get("message") {
+        println!("[remote] {}", message);
+    }
+    println!("Object applied successfully");
     Ok(())
 }
 

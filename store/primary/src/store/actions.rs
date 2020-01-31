@@ -24,6 +24,22 @@ impl Actions {
         Actions { actions, attrs }
     }
 
+    /// Approve a PENDING_APPROVE action for scheduling.
+    pub fn approve<S>(&self, action_id: Uuid, span: S) -> Result<()>
+    where
+        S: Into<Option<SpanContext>>,
+    {
+        self.actions.approve(&self.attrs, action_id, span.into())
+    }
+
+    /// Disapprove a PENDING_APPROVE action so it won't be scheduled.
+    pub fn disapprove<S>(&self, action_id: Uuid, span: S) -> Result<()>
+    where
+        S: Into<Option<SpanContext>>,
+    {
+        self.actions.disapprove(&self.attrs, action_id, span.into())
+    }
+
     /// Iterate over all unfinished actions on the node which were NOT updated during `refresh_id`.
     ///
     /// This method MUST return the same actions that `Actions::mark_lost` would modify.

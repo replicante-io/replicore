@@ -4,6 +4,7 @@ use serde_json::Value;
 use uuid::Uuid;
 
 use replicante_models_core::actions::Action;
+use replicante_models_core::actions::ActionApproval;
 use replicante_models_core::actions::ActionRequester;
 use replicante_models_core::actions::ActionState;
 use replicante_models_core::api::apply::SCOPE_CLUSTER;
@@ -41,28 +42,47 @@ pub fn replicante_io_v0(args: ApplierArgs) -> Result<Value> {
             "A namespace id must be attached to the request",
         );
     }
-    match object.attributes.get("action") {
-        Some(action) if action.is_object() => match action.get("kind") {
+    match object.metadata.get("approval") {
+        None => (),
+        Some(approval) if approval.is_string() => {
+            let approval: std::result::Result<ActionApproval, _> =
+                serde_json::from_value(approval.clone());
+            if let Err(error) = approval {
+                errors.collect(
+                    "InvalidAttribute",
+                    "metadata.approval",
+                    format!("Invalid approval: {}", error),
+                );
+            }
+        }
+        _ => errors.collect(
+            "TypeError",
+            "metadata.approval",
+            "Action approval attribute must be a string",
+        ),
+    }
+    match object.attributes.get("spec") {
+        Some(spec) if spec.is_object() => match spec.get("action") {
             Some(kind) if kind.is_string() => (),
             Some(_) => errors.collect(
                 "TypeError",
-                "action.kind",
+                "spec.action",
                 "The action kind identifier must be a string",
             ),
             None => errors.collect(
                 "MissingAttribute",
-                "action.kind",
+                "spec.action",
                 "An action kind identifier is required",
             ),
         },
         None => errors.collect(
             "MissingAttribute",
-            "action",
+            "spec",
             "An action descriptor is required",
         ),
         Some(_) => errors.collect(
             "TypeError",
-            "action",
+            "spec",
             "The action descriptor must be an object",
         ),
     }
@@ -89,15 +109,25 @@ pub fn replicante_io_v0(args: ApplierArgs) -> Result<Value> {
         .expect("validation should have caught this");
     let spec = object
         .attributes
-        .get("action")
+        .get("spec")
         .expect("validation should have caught this");
     let kind = spec
-        .get("kind")
+        .get("action")
         .expect("validation should have caught this")
         .as_str()
         .expect("validation should have caught this");
-    let action_args = spec.get("args").cloned().unwrap_or_else(|| Value::Null);
 
+    let action_args = spec.get("args").cloned().unwrap_or_else(|| Value::Null);
+    let approval = match object.metadata.get("approval") {
+        None => ActionApproval::default(),
+        Some(approval) => {
+            serde_json::from_value(approval.clone()).expect("validation should have caught this")
+        }
+    };
+    let state = match approval {
+        ActionApproval::Granted => ActionState::PendingSchedule,
+        ActionApproval::Required => ActionState::PendingApprove,
+    };
     // TODO: decode headers from HTTP request.
 
     let now = Utc::now();
@@ -114,7 +144,7 @@ pub fn replicante_io_v0(args: ApplierArgs) -> Result<Value> {
         requester: ActionRequester::CoreApi,
         schedule_attempt: 0,
         scheduled_ts: None,
-        state: ActionState::PendingSchedule,
+        state,
         state_payload: None,
     };
 

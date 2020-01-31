@@ -5,8 +5,10 @@ metadata:
   namespace: default
   cluster: dev-agent-zookeeper
   node: https://localhost:3181
+  #approval: granted
+  approval: required
 
-action:
-  kind: replicante.debug.progress
+spec:
+  action: replicante.debug.progress
   # TODO: convert kind format into the below
-  #kind: replicante.io/debug.progress
+  #action: replicante.io/debug.progress

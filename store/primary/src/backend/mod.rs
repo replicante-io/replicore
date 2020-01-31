@@ -186,6 +186,18 @@ box_interface! {
     trait ActionsInterface,
 
     interface {
+        fn approve(
+            &self,
+            attrs: &ActionsAttributes,
+            action_id: Uuid,
+            span: Option<SpanContext>,
+        ) -> Result<()>;
+        fn disapprove(
+            &self,
+            attrs: &ActionsAttributes,
+            action_id: Uuid,
+            span: Option<SpanContext>,
+        ) -> Result<()>;
         fn iter_lost(
             &self,
             attrs: &ActionsAttributes,

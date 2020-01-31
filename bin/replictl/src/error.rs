@@ -53,6 +53,9 @@ pub enum ErrorKind {
     #[fail(display = "validation of the object to apply failed")]
     ApplyValidation(ErrorsCollection),
 
+    #[fail(display = "Invalid value for --{} CLI option", _0)]
+    CliOptInvalid(&'static str),
+
     #[fail(display = "CLI option --{} is required", _0)]
     CliOptMissing(&'static str),
 

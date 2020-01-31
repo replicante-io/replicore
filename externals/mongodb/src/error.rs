@@ -91,6 +91,9 @@ pub enum ErrorKind {
     #[fail(display = "MongoDB updateMany failed")]
     UpdateMany,
 
+    #[fail(display = "MongoDB updateOne failed")]
+    UpdateOne,
+
     #[fail(display = "unable to detect MongoDb version")]
     Version,
 }
@@ -112,6 +115,7 @@ impl ErrorKind {
             ErrorKind::ListIndexesOp => "ListIndexesOp",
             ErrorKind::ReplaceOne => "ReplaceOne",
             ErrorKind::UpdateMany => "UpdateMany",
+            ErrorKind::UpdateOne => "UpdateOne",
             ErrorKind::Version => "Version",
         };
         Some(name)

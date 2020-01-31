@@ -7,6 +7,7 @@ use serde_json::Value;
 use slog::debug;
 use slog::info;
 use slog::Logger;
+use uuid::Uuid;
 
 use replicante_models_core::api::apply::ApplyObject;
 use replicante_models_core::api::validate::ErrorsCollection;
@@ -19,6 +20,9 @@ use crate::Result;
 
 const ENDPOINT_APPLY: &str = "/api/unstable/core/apply";
 const ENDPOINT_CLUSTER: &str = "/api/unstable/core/cluster";
+const ENDPOINT_CLUSTER_ACTION: &str = "/action";
+const ENDPOINT_CLUSTER_ACTION_APPROVE: &str = "/approve";
+const ENDPOINT_CLUSTER_ACTION_DISAPPROVE: &str = "/disapprove";
 const ENDPOINT_CLUSTER_REFRESH: &str = "/refresh";
 
 /// Replicante Core API client.
@@ -28,6 +32,54 @@ pub struct RepliClient<'a> {
 }
 
 impl<'a> RepliClient<'a> {
+    /// Approve a PENDING_APPROVE action so it can be scheduled.
+    pub fn action_approve(&self, cluster: &str, action: Uuid) -> Result<()> {
+        let client = ReqwestClient::builder()
+            .build()
+            .with_context(|_| ErrorKind::RepliClientError)?;
+        let url = self.session.url.trim_end_matches('/');
+        let url = format!(
+            "{}{}/{}{}/{}{}",
+            url,
+            ENDPOINT_CLUSTER,
+            cluster,
+            ENDPOINT_CLUSTER_ACTION,
+            action,
+            ENDPOINT_CLUSTER_ACTION_APPROVE,
+        );
+        debug!(self.logger, "About to POST action approve request"; "url" => &url);
+        let mut response = client
+            .post(&url)
+            .send()
+            .with_context(|_| ErrorKind::RepliClientError)?;
+        self.check_response_status(&mut response)?;
+        Ok(())
+    }
+
+    /// Dispprove a PENDING_APPROVE action so it will not be scheduled.
+    pub fn action_disapprove(&self, cluster: &str, action: Uuid) -> Result<()> {
+        let client = ReqwestClient::builder()
+            .build()
+            .with_context(|_| ErrorKind::RepliClientError)?;
+        let url = self.session.url.trim_end_matches('/');
+        let url = format!(
+            "{}{}/{}{}/{}{}",
+            url,
+            ENDPOINT_CLUSTER,
+            cluster,
+            ENDPOINT_CLUSTER_ACTION,
+            action,
+            ENDPOINT_CLUSTER_ACTION_DISAPPROVE,
+        );
+        debug!(self.logger, "About to POST action disapprove request"; "url" => &url);
+        let mut response = client
+            .post(&url)
+            .send()
+            .with_context(|_| ErrorKind::RepliClientError)?;
+        self.check_response_status(&mut response)?;
+        Ok(())
+    }
+
     /// Send an `ApplyObject` to Replicate Core to request changes.
     pub fn apply(&self, object: ApplyObject) -> Result<Value> {
         let client = ReqwestClient::builder()

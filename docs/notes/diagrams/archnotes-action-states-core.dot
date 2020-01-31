@@ -1,4 +1,5 @@
 digraph "archnotes-action-states-core" {
+  cancelled [label="CANCELLED", color="gray"];
   done [label="DONE", color="darkolivegreen3"];
   failed [label="FAILED", color="firebrick"];
   lost [label="LOST", color="firebrick"];
@@ -9,6 +10,9 @@ digraph "archnotes-action-states-core" {
 
   // Action is approved.
   pending_approve -> pending_schedule;
+
+  // Action is not approved.
+  pending_approve -> cancelled;
 
   // Action is scheduled on the agent.
   pending_schedule -> new;

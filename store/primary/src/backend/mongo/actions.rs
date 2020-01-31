@@ -20,6 +20,7 @@ use uuid::Uuid;
 
 use replicante_externals_mongodb::operations::find;
 use replicante_externals_mongodb::operations::update_many;
+use replicante_externals_mongodb::operations::update_one;
 use replicante_models_core::actions::Action;
 use replicante_models_core::actions::ActionState;
 
@@ -71,6 +72,64 @@ impl Actions {
 }
 
 impl ActionsInterface for Actions {
+    fn approve(
+        &self,
+        attrs: &ActionsAttributes,
+        action_id: Uuid,
+        span: Option<SpanContext>,
+    ) -> Result<()> {
+        let filter = doc! {
+            "cluster_id": &attrs.cluster_id,
+            "action_id": action_id.to_string(),
+            "state": "PENDING_APPROVE",
+        };
+        let update = doc! {
+            "$set": {
+                "state": "PENDING_SCHEDULE",
+            }
+        };
+        let collection = self.client.db(&self.db).collection(COLLECTION_ACTIONS);
+        update_one(
+            collection,
+            filter,
+            update,
+            span,
+            self.tracer.as_ref().map(|tracer| tracer.deref()),
+        )
+        .with_context(|_| ErrorKind::MongoDBOperation)?;
+        Ok(())
+    }
+
+    fn disapprove(
+        &self,
+        attrs: &ActionsAttributes,
+        action_id: Uuid,
+        span: Option<SpanContext>,
+    ) -> Result<()> {
+        let filter = doc! {
+            "cluster_id": &attrs.cluster_id,
+            "action_id": action_id.to_string(),
+            "state": "PENDING_APPROVE",
+        };
+        let finished_ts = UtcDateTime(Utc::now());
+        let update = doc! {
+            "$set": {
+                "finished_ts": bson::to_bson(&finished_ts).unwrap(),
+                "state": bson::to_bson(&ActionState::Cancelled).unwrap(),
+            }
+        };
+        let collection = self.client.db(&self.db).collection(COLLECTION_ACTIONS);
+        update_one(
+            collection,
+            filter,
+            update,
+            span,
+            self.tracer.as_ref().map(|tracer| tracer.deref()),
+        )
+        .with_context(|_| ErrorKind::MongoDBOperation)?;
+        Ok(())
+    }
+
     fn iter_lost(
         &self,
         attrs: &ActionsAttributes,

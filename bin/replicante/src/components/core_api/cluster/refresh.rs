@@ -27,7 +27,6 @@ use crate::tasks::Tasks;
 use crate::Error;
 use crate::ErrorKind;
 
-/// Attach cluster-related core API handlers.
 pub fn attach(logger: Logger, interfaces: &mut Interfaces) {
     let store = interfaces.stores.primary.clone();
     let tasks = interfaces.tasks.clone();
@@ -47,7 +46,7 @@ pub fn attach(logger: Logger, interfaces: &mut Interfaces) {
 }
 
 /// Schedule a ClusterRefresh task.
-pub struct Refresh {
+struct Refresh {
     logger: Logger,
     store: Store,
     tasks: Tasks,

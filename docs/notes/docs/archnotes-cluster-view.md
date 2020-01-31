@@ -21,8 +21,6 @@ This means:
 On the upside:
 
   * The approximate views can be generated even though exact ones can't.
-  * The generation process can lazily load data about each node, avoiding unreasonable
-    resource requirements in the face of large clusters.
   * The illusion of (certain) transactions is dropped before it begins (we could not rely
-    on them across monitor, process, action scheduling, action execution as the cluster
+    on them across observation, processing, action scheduling, action execution as the cluster
     changes even when our view on it is transactional).

@@ -6,7 +6,7 @@ metadata:
   cluster: dev-agent-zookeeper
   node: https://localhost:3181
 
-action:
-  kind: replicante.debug.fail-schedule
+spec:
+  action: replicante.debug.fail-schedule
   # TODO: convert kind format into the below
-  #kind: replicante.io/debug.fail
+  #action: replicante.io/debug.fail
