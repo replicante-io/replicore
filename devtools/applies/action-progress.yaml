@@ -5,8 +5,8 @@ metadata:
   namespace: default
   cluster: dev-agent-zookeeper
   node: https://localhost:3181
-  #approval: granted
-  approval: required
+  approval: granted
+  #approval: required
 
 spec:
   action: replicante.debug.progress
