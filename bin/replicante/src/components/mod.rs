@@ -171,6 +171,7 @@ impl Components {
     ///
     /// Metrics that fail to register are logged and ignored.
     pub fn register_metrics(logger: &Logger, registry: &Registry) {
+        self::core_api::register_metrics(logger, registry);
         self::discovery::register_metrics(logger, registry);
         self::workers::register_metrics(logger, registry);
     }

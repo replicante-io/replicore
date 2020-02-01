@@ -24,7 +24,14 @@ use crate::ErrorKind;
 
 mod agent_action;
 mod appliers;
+mod metrics;
 mod validate;
+
+pub use metrics::register_metrics;
+use metrics::APPLY_COUNT;
+use metrics::APPLY_DURATION;
+use metrics::APPLY_ERROR;
+use metrics::APPLY_UNKNOWN;
 
 /// Attach the endpoint to handle all `apply` requests.
 pub fn attach(logger: Logger, interfaces: &mut Interfaces) {
@@ -57,9 +64,15 @@ impl Handler for Apply {
 
         // Validate basic attributes and find an "applier" for it.
         let object = validate::required_attributes(object)?;
+        let api_version = object.api_version.clone();
+        let kind = object.kind.clone();
+        APPLY_COUNT.with_label_values(&[&api_version, &kind]).inc();
         let applier = match appliers::find(&object) {
             Some(applier) => applier,
             None => {
+                APPLY_UNKNOWN
+                    .with_label_values(&[&api_version, &kind])
+                    .inc();
                 let msg = format!(
                     "{} objects are not supported by {}",
                     object.kind, object.api_version
@@ -85,12 +98,23 @@ impl Handler for Apply {
 
         // Handle the apply request.
         // The applier is expected to do any version & kind validation.
-        let mut result = applier(appliers::ApplierArgs {
+        let timer = APPLY_DURATION
+            .with_label_values(&[&api_version, &kind])
+            .start_timer();
+        let result = applier(appliers::ApplierArgs {
             object,
             primary_store: self.primary_store.clone(),
             span: Some(request_span(request)),
             view_store: self.view_store.clone(),
-        })?;
+        });
+        timer.observe_duration();
+        let mut result = match result {
+            Ok(result) => result,
+            Err(error) => {
+                APPLY_ERROR.with_label_values(&[&api_version, &kind]).inc();
+                return Err(error.into());
+            }
+        };
         let response = match result {
             _ if result.is_null() => json!({"ok": 1}),
             _ if result.is_object() => {

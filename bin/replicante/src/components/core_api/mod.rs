@@ -9,6 +9,8 @@ use crate::Result;
 mod apply;
 mod cluster;
 
+pub use apply::register_metrics;
+
 /// Component to mount replicante core API endpoints.
 pub struct CoreAPI {}
 
