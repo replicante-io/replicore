@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use opentracingrust::Span;
 use serde_json::Value;
 
@@ -16,6 +18,7 @@ pub type Applier = Box<dyn Fn(ApplierArgs) -> Result<Value>>;
 
 /// Data object that collects arguments passed to `Applier`s.
 pub struct ApplierArgs<'a> {
+    pub headers: HashMap<String, String>,
     pub object: ApplyObject,
     pub primary_store: PrimaryStore,
     pub span: Option<&'a mut Span>,

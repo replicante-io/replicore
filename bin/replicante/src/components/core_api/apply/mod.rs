@@ -1,3 +1,5 @@
+use std::collections::HashSet;
+
 use failure::ResultExt;
 use iron::headers::ContentType;
 use iron::status;
@@ -32,6 +34,20 @@ use metrics::APPLY_COUNT;
 use metrics::APPLY_DURATION;
 use metrics::APPLY_ERROR;
 use metrics::APPLY_UNKNOWN;
+
+lazy_static::lazy_static! {
+    /// Set of HTTP headers to exclude when collecting action headers.
+    static ref HTTP_HEADERS_IGNORE: HashSet<String> = {
+        let mut headers = HashSet::new();
+        headers.insert("accept".into());
+        headers.insert("accept-encoding".into());
+        headers.insert("content-length".into());
+        headers.insert("content-type".into());
+        headers.insert("host".into());
+        headers.insert("user-agent".into());
+        headers
+    };
+}
 
 /// Attach the endpoint to handle all `apply` requests.
 pub fn attach(logger: Logger, interfaces: &mut Interfaces) {
@@ -98,10 +114,21 @@ impl Handler for Apply {
 
         // Handle the apply request.
         // The applier is expected to do any version & kind validation.
+        let headers = request
+            .headers
+            .iter()
+            .map(|header| {
+                let name = header.name().to_lowercase();
+                let value = header.value_string();
+                (name, value)
+            })
+            .filter(|(name, _)| !HTTP_HEADERS_IGNORE.contains(name))
+            .collect();
         let timer = APPLY_DURATION
             .with_label_values(&[&api_version, &kind])
             .start_timer();
         let result = applier(appliers::ApplierArgs {
+            headers,
             object,
             primary_store: self.primary_store.clone(),
             span: Some(request_span(request)),

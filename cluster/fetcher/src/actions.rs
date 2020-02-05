@@ -202,6 +202,7 @@ impl ActionsFetcher {
                 action_id: Some(action.action_id),
                 args: action.args.clone(),
                 created_ts: Some(action.created_ts),
+                requester: Some(action.requester.clone()),
             };
             let result = client.schedule_action(
                 &action.kind,

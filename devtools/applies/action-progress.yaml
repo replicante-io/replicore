@@ -12,3 +12,6 @@ spec:
   action: replicante.debug.progress
   # TODO: convert kind format into the below
   #action: replicante.io/debug.progress
+  args:
+    test: true
+    parameter: 12

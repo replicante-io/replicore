@@ -11,6 +11,8 @@ use opentracingrust::SpanContext;
 use opentracingrust::StartOptions;
 use opentracingrust::Tracer;
 use reqwest::header::HeaderMap;
+use reqwest::header::HeaderName;
+use reqwest::header::HeaderValue;
 use reqwest::Certificate;
 use reqwest::Client as ReqwestClient;
 use reqwest::Identity;
@@ -190,12 +192,26 @@ impl Client for HttpClient {
     fn schedule_action(
         &self,
         kind: &str,
-        _headers: &HashMap<String, String>,
+        headers: &HashMap<String, String>,
         payload: ActionScheduleRequest,
         span: Option<SpanContext>,
     ) -> Result<()> {
         let endpoint = self.endpoint(format!("/api/unstable/actions/schedule/{}", kind));
-        let request = self.client.post(&endpoint).json(&payload);
+        let headers = headers
+            .iter()
+            .map(|(name, value)| {
+                let name = HeaderName::from_lowercase(name.to_lowercase().as_bytes());
+                let value = HeaderValue::from_str(value);
+                (name, value)
+            })
+            .filter(|(name, value)| name.is_ok() && value.is_ok())
+            .map(|(name, value)| {
+                let name = name.unwrap();
+                let value = value.unwrap();
+                (name, value)
+            })
+            .collect();
+        let request = self.client.post(&endpoint).json(&payload).headers(headers);
         let span = match (self.tracer.as_ref(), span) {
             (Some(tracer), Some(parent)) => {
                 let options = StartOptions::default().child_of(parent);

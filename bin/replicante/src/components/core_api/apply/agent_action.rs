@@ -128,7 +128,6 @@ pub fn replicante_io_v0(args: ApplierArgs) -> Result<Value> {
         ActionApproval::Granted => ActionState::PendingSchedule,
         ActionApproval::Required => ActionState::PendingApprove,
     };
-    // TODO: decode headers from HTTP request.
 
     let now = Utc::now();
     let action = Action {
@@ -137,7 +136,7 @@ pub fn replicante_io_v0(args: ApplierArgs) -> Result<Value> {
         cluster_id: cluster.to_string(),
         created_ts: now,
         finished_ts: None,
-        headers: Default::default(),
+        headers: args.headers,
         kind: kind.to_string(),
         node_id: node.to_string(),
         refresh_id: 0,

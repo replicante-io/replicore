@@ -16,7 +16,9 @@ with_test_support = []
 
 
 [dependencies]
-bson = "^0.14.0" # bound by mongodb crate
+# u2i is needed to encode serde_json::Value types.
+# It will probably lead to bugs and BSON endocing/decoding should instead support it.
+bson = { version = "^0.14.0", features = ["u2i"] } # bound by mongodb crate
 chrono = "^0.4.6"
 failure = "^0.1.5"
 lazy_static = "^1.0.0"
