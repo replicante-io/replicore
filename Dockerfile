@@ -40,6 +40,7 @@ ENTRYPOINT ["/tini", "--"]
 
 # Copy binaries from builder to smaller image.
 COPY --from=builder /code/target/release/replicante /opt/replicante/bin/replicante
+COPY --from=builder /code/target/release/repliadm /opt/replicante/bin/repliadm
 COPY --from=builder /code/target/release/replictl /opt/replicante/bin/replictl
 
 # Set up runtime environment as needed.
@@ -49,4 +50,5 @@ CMD ["/opt/replicante/bin/replicante"]
 
 # Validate binaries.
 RUN /opt/replicante/bin/replicante --version \
+    && /opt/replicante/bin/repliadm --version \
     && /opt/replicante/bin/replictl --version

@@ -105,6 +105,7 @@ case "${docker_repo}" in
 
   replicante)
     extract_file 'replicante'
+    extract_file 'repliadm'
     extract_file 'replictl'
     ;;
 
