@@ -26,6 +26,7 @@ opentracingrust = "^0.3.3"
 prometheus = "^0.7.0"
 rand = "^0.7.0"
 rdkafka = "^0.21.0"
+rdkafka-sys = "=1.2.2" # Pin it to work around rdkafka picking up the latest version.
 sentry = "^0.17.0"
 serde = "^1.0.34"
 serde_derive = "^1.0.34"

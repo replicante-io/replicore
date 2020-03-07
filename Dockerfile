@@ -1,7 +1,7 @@
 #########################
 # Build replicante core #
 #########################
-ARG RUST_VERSION=1.37.0
+ARG RUST_VERSION=1.39.0
 FROM rust:$RUST_VERSION as builder
 
 # Add packages needed to build core.
@@ -17,7 +17,7 @@ RUN cd /code && cargo build --release --locked
 #####################################
 # Package core into a smaller image #
 #####################################
-FROM debian:stretch-slim
+FROM debian:buster-slim
 
 # Create a replicante user to avoid using root.
 ARG REPLI_GID=1616

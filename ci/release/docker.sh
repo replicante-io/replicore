@@ -6,6 +6,7 @@ DOCKER_ORG="replicanteio"
 
 # Confguration variables.
 cmd=""
+docker="podman"
 docker_repo="replicante"
 sudo=""
 version=""
@@ -98,7 +99,7 @@ if [[ ${cmd} == "release" ]]; then
     echo '---> Skipping docker cache for release build'
   fi
 fi
-${sudo} docker build ${docker_cache} --force-rm \
+${sudo} ${docker} build ${docker_cache} --force-rm --format docker \
   --tag "${full_tag}" \
   --tag "${minor_tag}" \
   --tag "${major_tag}" \
@@ -108,8 +109,8 @@ ${sudo} docker build ${docker_cache} --force-rm \
 # Push images in release mode
 if [[ ${cmd} == "release" ]]; then
   echo '==> Pushing docker images'
-  ${sudo} docker push "${full_tag}"
-  ${sudo} docker push "${minor_tag}"
-  ${sudo} docker push "${major_tag}"
-  ${sudo} docker push "${latest_tag}"
+  ${sudo} ${docker} push "${full_tag}"
+  ${sudo} ${docker} push "${minor_tag}"
+  ${sudo} ${docker} push "${major_tag}"
+  ${sudo} ${docker} push "${latest_tag}"
 fi

@@ -22,6 +22,7 @@ DOCKER_ORG="replicanteio"
 
 # Config variables.
 clean="false"
+docker="podman"
 docker_repo="replicante"
 sudo=""
 target="target/gh-releases"
@@ -69,8 +70,8 @@ mkdir -p "${target}"
 # Create a container with the binaries we need to extract.
 echo "--> Preparing docker environment"
 docker_image="${DOCKER_ORG}/${docker_repo}:${version}"
-${sudo} docker pull "${docker_image}"
-${sudo} docker run --rm -id --name "${DOCKER_CONTAINER_NAME}" "${docker_image}" cat
+${sudo} ${docker} pull "${docker_image}"
+${sudo} ${docker} run --rm -id --name "${DOCKER_CONTAINER_NAME}" "${docker_image}" cat
 trap "echo '--> Cleaning up docker environment'; docker rm -f ${DOCKER_CONTAINER_NAME}" EXIT INT TERM
 
 
@@ -79,7 +80,7 @@ extract_file() {
   local from_file="${DOCKER_CONTAINER_NAME}:/opt/replicante/bin/$1"
   local to_file="${target}/$1-linux-64bits"
   echo "Extracting '$1': ${from_file} --> ${to_file}"
-  ${sudo} docker cp "${from_file}" "${to_file}"
+  ${sudo} ${docker} cp "${from_file}" "${to_file}"
   ${sudo} chown "$(id -un):$(id -gn)" "${to_file}"
 }
 
@@ -87,11 +88,11 @@ echo "--> Collecting binaries for version ${version}"
 case "${docker_repo}" in
   agent-kafka)
     echo '--> Bundling kafka agent dependencies'
-    ${sudo} docker exec -it "${DOCKER_CONTAINER_NAME}" tar \
+    ${sudo} ${docker} exec -it "${DOCKER_CONTAINER_NAME}" tar \
       --create --gzip \
       --file /home/replicante/replicante-agent-kafka.tar.gz \
       -C /opt/replicante/bin .
-    ${sudo} docker exec -it --user root "${DOCKER_CONTAINER_NAME}" cp \
+    ${sudo} ${docker} exec -it --user root "${DOCKER_CONTAINER_NAME}" cp \
       /home/replicante/replicante-agent-kafka.tar.gz \
       /opt/replicante/bin/replicante-agent-kafka.tar.gz
     extract_file 'replicante-agent-kafka.tar.gz'

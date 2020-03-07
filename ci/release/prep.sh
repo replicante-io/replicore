@@ -46,9 +46,5 @@ cargo clean
 cargo update
 ci/travis/build-script.sh
 
-# Version docs and check docker images
-echo '==> Versioning docs ...'
-ci/release/version-docs.sh "${version}"
-
 echo '==> Checking docker images build successfully ...'
 ci/release/docker.sh check "${version}" ${sudo}
