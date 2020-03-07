@@ -72,7 +72,7 @@ echo "--> Preparing docker environment"
 docker_image="${DOCKER_ORG}/${docker_repo}:${version}"
 ${sudo} ${docker} pull "${docker_image}"
 ${sudo} ${docker} run --rm -id --name "${DOCKER_CONTAINER_NAME}" "${docker_image}" cat
-trap "echo '--> Cleaning up docker environment'; docker rm -f ${DOCKER_CONTAINER_NAME}" EXIT INT TERM
+trap "echo '--> Cleaning up docker environment'; ${docker} rm -f ${DOCKER_CONTAINER_NAME}" EXIT INT TERM
 
 
 # Fetch binaries from available images.
