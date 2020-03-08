@@ -1,17 +1,17 @@
 #########################
 # Build replicante core #
 #########################
-ARG RUST_VERSION=1.39.0
+ARG RUST_VERSION=1.40.0
 FROM rust:$RUST_VERSION as builder
 
 # Add packages needed to build core.
 # There is no need to cleanup as this is a builder image.
-RUN apt-get update \
-    && apt-get install -y clang
+RUN apt-get update
+RUN apt-get install -y clang
 
 # Add the code and compile core.
 COPY . /code
-RUN cd /code && cargo build --release --locked
+RUN cargo build --manifest-path /code/Cargo.toml --release --locked
 
 
 #####################################
@@ -32,12 +32,6 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get update \
     && apt-get install -y libssl1.1 \
     && apt-get clean all
 
-# Install tini supervisor
-ARG TINI_VERSION=v0.18.0
-ADD https://github.com/krallin/tini/releases/download/${TINI_VERSION}/tini /tini
-RUN chmod +x /tini
-ENTRYPOINT ["/tini", "--"]
-
 # Copy binaries from builder to smaller image.
 COPY --from=builder /code/target/release/replicante /opt/replicante/bin/replicante
 COPY --from=builder /code/target/release/repliadm /opt/replicante/bin/repliadm
@@ -46,6 +40,7 @@ COPY --from=builder /code/target/release/replictl /opt/replicante/bin/replictl
 # Set up runtime environment as needed.
 ENV PATH=/opt/replicante/bin:$PATH
 USER $REPLI_UNAME
+WORKDIR /home/replicante
 CMD ["/opt/replicante/bin/replicante"]
 
 # Validate binaries.

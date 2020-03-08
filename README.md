@@ -1,5 +1,5 @@
 # Replicante
-A datastore automation system.
+A datastore orchestration system.
 
 
 ## Code of Conduct

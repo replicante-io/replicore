@@ -16,7 +16,6 @@
 - Manual steps 3:
   - [ ] Create GitHub release
   - [ ] Release pre-built binaries
-  - [ ] Release documentation
 
 
 ## Pre-built binaries

@@ -6,7 +6,6 @@ use std::time::Instant;
 
 use humthreads::ThreadScope;
 use rand::Rng;
-use sentry;
 use sentry::protocol::Breadcrumb;
 use sentry::protocol::Map;
 use serde::de::DeserializeOwned;
