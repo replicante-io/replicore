@@ -7,6 +7,4 @@ metadata:
   node: https://localhost:3181
 
 spec:
-  action: replicante.debug.fail-schedule
-  # TODO: convert kind format into the below
-  #action: replicante.io/debug.fail
+  action: agent.replicante.io/debug.fail

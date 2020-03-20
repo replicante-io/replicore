@@ -19,6 +19,16 @@ In addition to the Code Of Conduct below the following documents are relevant:
 
 
 ## Development environment
+NOTE: the development environment is in the process of a rewrite from docker & docker-compose to podman.
+
+Replicante Core requires a few dependencies in order to run.  
+To make development easier and faster these dependencies are run locally using containers.
+
+Replicante Core uses [podman](https://podman.io/) to manage these containers.  
+This is mainly due to podman's support for cgroups v2 and rootless containers.
+
+
+--- DELETE BELOW ---
 At the root of this repo is a docker-compose file that will start
 all dependences needed to develop Replicante core components.
 
@@ -51,12 +61,7 @@ $ docker-compose up #-d
 # Initialise dependences.
 $ devtools/initialise.sh
 ```
-
-### FAQ
-
-  * **adminMongo wants me to create a connection**
-    Ensure the mongo server is up and running and the replicante DB exists, then restart the UI:
-    `docker-compose restart mongoui`.
+--- DELETE ABOVE ---
 
 
 ### Build dependences

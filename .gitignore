@@ -2,20 +2,20 @@
 *.swp
 **/*.rs.bk
 
-/target/
 ci/tmp/
 node_modules/
+target/
 
 # Ingore nested cargo locks but keep the root one.
 **/Cargo.lock
 !Cargo.lock
 
-# Ignore documentation's package-lock.json to avoig GitHub unfixed security issues.
-docs/**/package-lock.json
 
 # Local testing and development tools.
+devtools/data
+devtools/replicante.conf.d/
+
 .env
 deps.dot
 deps.svg
 replicante.yaml
-devtools/replicante.conf.d/

@@ -1,0 +1,36 @@
+[package]
+name = "replidev"
+version = "0.1.0"
+authors = ["Stefano Pogliani <stefano@spogliani.net>"]
+edition = "2018"
+build = "../../build.rs"
+
+description = "Replicante Development Tool"
+documentation = "https://www.replicante.io/docs"
+homepage = "https://www.replicante.io/"
+repository = "https://github.com/replicante-io/replicante"
+readme = "./README.md"
+license = "MIT"
+
+
+[[bin]]
+name = "replidev"
+path = "src/main.rs"
+
+
+[lib]
+name = "replidev"
+path = "src/lib.rs"
+
+
+[dependencies]
+failure = "^0.1.5"
+
+replicante_util_failure = { path = "../../common/util/failure" }
+
+
+[build-dependencies]
+git2 = "^0.10.0"
+
+
+[workspace]
