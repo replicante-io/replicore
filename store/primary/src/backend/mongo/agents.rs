@@ -71,13 +71,8 @@ impl AgentsInterface for Agents {
 
         // Run aggrgation and grab the one and only (expected) result.
         let collection = self.client.db(&self.db).collection(COLLECTION_AGENTS);
-        let mut cursor = aggregate(
-            collection,
-            pipeline,
-            span,
-            self.tracer.as_deref(),
-        )
-        .with_context(|_| ErrorKind::MongoDBOperation)?;
+        let mut cursor = aggregate(collection, pipeline, span, self.tracer.as_deref())
+            .with_context(|_| ErrorKind::MongoDBOperation)?;
         let counts: AgentsCounts = match cursor.next() {
             Some(counts) => counts.with_context(|_| ErrorKind::MongoDBCursor)?,
             None => {
@@ -103,14 +98,9 @@ impl AgentsInterface for Agents {
     ) -> Result<Cursor<AgentModel>> {
         let filter = doc! {"cluster_id" => &attrs.cluster_id};
         let collection = self.client.db(&self.db).collection(COLLECTION_AGENTS);
-        let cursor = find(
-            collection,
-            filter,
-            span,
-            self.tracer.as_deref(),
-        )
-        .with_context(|_| ErrorKind::MongoDBOperation)?
-        .map(|item| item.map_err(|error| error.context(ErrorKind::MongoDBCursor).into()));
+        let cursor = find(collection, filter, span, self.tracer.as_deref())
+            .with_context(|_| ErrorKind::MongoDBOperation)?
+            .map(|item| item.map_err(|error| error.context(ErrorKind::MongoDBCursor).into()));
         Ok(Cursor::new(cursor))
     }
 
@@ -121,15 +111,10 @@ impl AgentsInterface for Agents {
     ) -> Result<Cursor<AgentInfoModel>> {
         let filter = doc! {"cluster_id" => &attrs.cluster_id};
         let collection = self.client.db(&self.db).collection(COLLECTION_AGENTS_INFO);
-        let cursor = find(
-            collection,
-            filter,
-            span,
-            self.tracer.as_deref(),
-        )
-        .with_context(|_| ErrorKind::MongoDBOperation)?
-        .map(|item| item.map_err(|error| error.context(ErrorKind::MongoDBCursor).into()))
-        .map(|result: Result<AgentInfoDocument>| result.map(AgentInfoModel::from));
+        let cursor = find(collection, filter, span, self.tracer.as_deref())
+            .with_context(|_| ErrorKind::MongoDBOperation)?
+            .map(|item| item.map_err(|error| error.context(ErrorKind::MongoDBCursor).into()))
+            .map(|result: Result<AgentInfoDocument>| result.map(AgentInfoModel::from));
         Ok(Cursor::new(cursor))
     }
 }

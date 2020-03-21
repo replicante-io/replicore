@@ -45,15 +45,10 @@ impl NodesInterface for Nodes {
     fn iter(&self, attrs: &NodesAttribures, span: Option<SpanContext>) -> Result<Cursor<Node>> {
         let filter = doc! {"cluster_id" => &attrs.cluster_id};
         let collection = self.client.db(&self.db).collection(COLLECTION_NODES);
-        let cursor = find(
-            collection,
-            filter,
-            span,
-            self.tracer.as_deref(),
-        )
-        .with_context(|_| ErrorKind::MongoDBOperation)?
-        .map(|item| item.map_err(|error| error.context(ErrorKind::MongoDBCursor).into()))
-        .map(|result: Result<NodeDocument>| result.map(Node::from));
+        let cursor = find(collection, filter, span, self.tracer.as_deref())
+            .with_context(|_| ErrorKind::MongoDBOperation)?
+            .map(|item| item.map_err(|error| error.context(ErrorKind::MongoDBCursor).into()))
+            .map(|result: Result<NodeDocument>| result.map(Node::from));
         Ok(Cursor::new(cursor))
     }
 
@@ -71,13 +66,8 @@ impl NodesInterface for Nodes {
 
         // Run aggrgation and grab the one and only (expected) result.
         let collection = self.client.db(&self.db).collection(COLLECTION_NODES);
-        let mut cursor = aggregate(
-            collection,
-            pipeline,
-            span,
-            self.tracer.as_deref(),
-        )
-        .with_context(|_| ErrorKind::MongoDBOperation)?;
+        let mut cursor = aggregate(collection, pipeline, span, self.tracer.as_deref())
+            .with_context(|_| ErrorKind::MongoDBOperation)?;
         let kinds: Bson = match cursor.next() {
             None => return Ok(HashSet::new()),
             Some(kinds) => kinds.with_context(|_| ErrorKind::MongoDBCursor)?,

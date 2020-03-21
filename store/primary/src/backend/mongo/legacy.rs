@@ -50,13 +50,8 @@ impl LegacyInterface for Legacy {
     ) -> Result<Option<ClusterMeta>> {
         let filter = doc! {"cluster_id" => &cluster_id};
         let collection = self.client.db(&self.db).collection(COLLECTION_CLUSTER_META);
-        let meta = find_one(
-            collection,
-            filter,
-            span,
-            self.tracer.as_deref(),
-        )
-        .with_context(|_| ErrorKind::MongoDBOperation)?;
+        let meta = find_one(collection, filter, span, self.tracer.as_deref())
+            .with_context(|_| ErrorKind::MongoDBOperation)?;
         Ok(meta)
     }
 
@@ -74,15 +69,9 @@ impl LegacyInterface for Legacy {
         let collection = self.client.db(&self.db).collection(COLLECTION_CLUSTER_META);
         let mut options = FindOptions::new();
         options.limit = Some(i64::from(limit));
-        let cursor = find_with_options(
-            collection,
-            filter,
-            options,
-            span,
-            self.tracer.as_deref(),
-        )
-        .with_context(|_| ErrorKind::MongoDBOperation)?
-        .map(|item| item.map_err(|error| error.context(ErrorKind::MongoDBCursor).into()));
+        let cursor = find_with_options(collection, filter, options, span, self.tracer.as_deref())
+            .with_context(|_| ErrorKind::MongoDBOperation)?
+            .map(|item| item.map_err(|error| error.context(ErrorKind::MongoDBCursor).into()));
         Ok(Cursor::new(cursor))
     }
 
@@ -94,14 +83,8 @@ impl LegacyInterface for Legacy {
             Bson::Document(document) => document,
             _ => panic!("ClusterMeta failed to encode as BSON document"),
         };
-        replace_one(
-            collection,
-            filter,
-            document,
-            span,
-            self.tracer.as_deref(),
-        )
-        .with_context(|_| ErrorKind::MongoDBOperation)?;
+        replace_one(collection, filter, document, span, self.tracer.as_deref())
+            .with_context(|_| ErrorKind::MongoDBOperation)?;
         Ok(())
     }
 
@@ -116,15 +99,9 @@ impl LegacyInterface for Legacy {
         options.limit = Some(i64::from(TOP_CLUSTERS_LIMIT));
         options.sort = Some(sort);
         let collection = self.client.db(&self.db).collection(COLLECTION_CLUSTER_META);
-        let cursor = find_with_options(
-            collection,
-            filter,
-            options,
-            span,
-            self.tracer.as_deref(),
-        )
-        .with_context(|_| ErrorKind::MongoDBOperation)?
-        .map(|item| item.map_err(|error| error.context(ErrorKind::MongoDBCursor).into()));
+        let cursor = find_with_options(collection, filter, options, span, self.tracer.as_deref())
+            .with_context(|_| ErrorKind::MongoDBOperation)?
+            .map(|item| item.map_err(|error| error.context(ErrorKind::MongoDBCursor).into()));
         Ok(Cursor::new(cursor))
     }
 }

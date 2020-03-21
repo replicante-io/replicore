@@ -88,14 +88,8 @@ impl ActionsInterface for Actions {
             }
         };
         let collection = self.client.db(&self.db).collection(COLLECTION_ACTIONS);
-        update_one(
-            collection,
-            filter,
-            update,
-            span,
-            self.tracer.as_deref(),
-        )
-        .with_context(|_| ErrorKind::MongoDBOperation)?;
+        update_one(collection, filter, update, span, self.tracer.as_deref())
+            .with_context(|_| ErrorKind::MongoDBOperation)?;
         Ok(())
     }
 
@@ -118,14 +112,8 @@ impl ActionsInterface for Actions {
             }
         };
         let collection = self.client.db(&self.db).collection(COLLECTION_ACTIONS);
-        update_one(
-            collection,
-            filter,
-            update,
-            span,
-            self.tracer.as_deref(),
-        )
-        .with_context(|_| ErrorKind::MongoDBOperation)?;
+        update_one(collection, filter, update, span, self.tracer.as_deref())
+            .with_context(|_| ErrorKind::MongoDBOperation)?;
         Ok(())
     }
 
@@ -139,13 +127,8 @@ impl ActionsInterface for Actions {
     ) -> Result<Cursor<Action>> {
         let filter = lost_actions_filter(attrs, &node_id, refresh_id);
         let collection = self.client.db(&self.db).collection(COLLECTION_ACTIONS);
-        let cursor = find(
-            collection,
-            filter,
-            span,
-            self.tracer.as_deref(),
-        )
-        .with_context(|_| ErrorKind::MongoDBOperation)?;
+        let cursor = find(collection, filter, span, self.tracer.as_deref())
+            .with_context(|_| ErrorKind::MongoDBOperation)?;
         // Simulate the changes that will be performed by `mark_lost` for clients.
         let cursor = cursor.map(move |action| {
             let action: ActionDocument = action.with_context(|_| ErrorKind::MongoDBCursor)?;
@@ -174,14 +157,8 @@ impl ActionsInterface for Actions {
             }
         };
         let collection = self.client.db(&self.db).collection(COLLECTION_ACTIONS);
-        update_many(
-            collection,
-            filter,
-            update,
-            span,
-            self.tracer.as_deref(),
-        )
-        .with_context(|_| ErrorKind::MongoDBOperation)?;
+        update_many(collection, filter, update, span, self.tracer.as_deref())
+            .with_context(|_| ErrorKind::MongoDBOperation)?;
         Ok(())
     }
 
@@ -197,17 +174,12 @@ impl ActionsInterface for Actions {
             "state" => bson::to_bson(&ActionState::PendingSchedule).unwrap(),
         };
         let collection = self.client.db(&self.db).collection(COLLECTION_ACTIONS);
-        let cursor = find(
-            collection,
-            filter,
-            span,
-            self.tracer.as_deref(),
-        )
-        .with_context(|_| ErrorKind::MongoDBOperation)?
-        .map(|action| {
-            let action: ActionDocument = action.with_context(|_| ErrorKind::MongoDBCursor)?;
-            Ok(action.into())
-        });
+        let cursor = find(collection, filter, span, self.tracer.as_deref())
+            .with_context(|_| ErrorKind::MongoDBOperation)?
+            .map(|action| {
+                let action: ActionDocument = action.with_context(|_| ErrorKind::MongoDBCursor)?;
+                Ok(action.into())
+            });
         Ok(Cursor::new(cursor))
     }
 
@@ -234,13 +206,8 @@ impl ActionsInterface for Actions {
             },
         };
         let collection = self.client.db(&self.db).collection(COLLECTION_ACTIONS);
-        let cursor = find(
-            collection,
-            filter,
-            span,
-            self.tracer.as_deref(),
-        )
-        .with_context(|_| ErrorKind::MongoDBOperation)?;
+        let cursor = find(collection, filter, span, self.tracer.as_deref())
+            .with_context(|_| ErrorKind::MongoDBOperation)?;
         for document in cursor {
             let document: Document = document.with_context(|_| ErrorKind::MongoDBCursor)?;
             let id = document

@@ -63,13 +63,9 @@ impl ActionsInterface for Actions {
             "cluster_id" => &self.cluster_id,
             "action_id" => action_id.to_string(),
         };
-        let action: Option<ActionDocument> = find_one(
-            collection,
-            filter,
-            span,
-            self.tracer.as_deref(),
-        )
-        .with_context(|_| ErrorKind::MongoDBOperation)?;
+        let action: Option<ActionDocument> =
+            find_one(collection, filter, span, self.tracer.as_deref())
+                .with_context(|_| ErrorKind::MongoDBOperation)?;
         Ok(action.map(Action::from))
     }
 
@@ -93,14 +89,8 @@ impl ActionsInterface for Actions {
             .client
             .db(&self.db)
             .collection(COLLECTION_ACTIONS_HISTORY);
-        update_many(
-            collection,
-            filter,
-            update,
-            span,
-            self.tracer.as_deref(),
-        )
-        .with_context(|_| ErrorKind::MongoDBOperation)?;
+        update_many(collection, filter, update, span, self.tracer.as_deref())
+            .with_context(|_| ErrorKind::MongoDBOperation)?;
         Ok(())
     }
 
@@ -120,16 +110,10 @@ impl ActionsInterface for Actions {
             .client
             .db(&self.db)
             .collection(COLLECTION_ACTIONS_HISTORY);
-        let cursor = find_with_options(
-            collection,
-            filters,
-            options,
-            span,
-            self.tracer.as_deref(),
-        )
-        .with_context(|_| ErrorKind::MongoDBOperation)?
-        .map(|item| item.map_err(|error| error.context(ErrorKind::MongoDBCursor).into()))
-        .map(|item: Result<ActionHistoryDocument>| item.map(ActionHistory::from));
+        let cursor = find_with_options(collection, filters, options, span, self.tracer.as_deref())
+            .with_context(|_| ErrorKind::MongoDBOperation)?
+            .map(|item| item.map_err(|error| error.context(ErrorKind::MongoDBCursor).into()))
+            .map(|item: Result<ActionHistoryDocument>| item.map(ActionHistory::from));
         let mut history = Vec::new();
         for item in cursor {
             history.push(item?);
@@ -167,16 +151,10 @@ impl ActionsInterface for Actions {
 
         // Execute the query.
         let collection = self.client.db(&self.db).collection(COLLECTION_ACTIONS);
-        let cursor = find_with_options(
-            collection,
-            filters,
-            options,
-            span,
-            self.tracer.as_deref(),
-        )
-        .with_context(|_| ErrorKind::MongoDBOperation)?
-        .map(|item| item.map_err(|error| error.context(ErrorKind::MongoDBCursor).into()))
-        .map(|item: Result<ActionDocument>| item.map(Action::from));
+        let cursor = find_with_options(collection, filters, options, span, self.tracer.as_deref())
+            .with_context(|_| ErrorKind::MongoDBOperation)?
+            .map(|item| item.map_err(|error| error.context(ErrorKind::MongoDBCursor).into()))
+            .map(|item: Result<ActionDocument>| item.map(Action::from));
         Ok(Cursor::new(cursor))
     }
 }

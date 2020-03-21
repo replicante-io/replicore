@@ -53,13 +53,8 @@ impl ClusterInterface for Cluster {
     ) -> Result<Option<ClusterDiscovery>> {
         let filter = doc! {"cluster_id" => &attrs.cluster_id};
         let collection = self.client.db(&self.db).collection(COLLECTION_DISCOVERIES);
-        let discovery = find_one(
-            collection,
-            filter,
-            span,
-            self.tracer.as_deref(),
-        )
-        .with_context(|_| ErrorKind::MongoDBOperation)?;
+        let discovery = find_one(collection, filter, span, self.tracer.as_deref())
+            .with_context(|_| ErrorKind::MongoDBOperation)?;
         Ok(discovery)
     }
 

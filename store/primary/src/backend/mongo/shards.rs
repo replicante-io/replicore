@@ -81,13 +81,8 @@ impl ShardsInterface for Shards {
 
         // Run aggrgation and grab the one and only (expected) result.
         let collection = self.client.db(&self.db).collection(COLLECTION_SHARDS);
-        let mut cursor = aggregate(
-            collection,
-            pipeline,
-            span,
-            self.tracer.as_deref(),
-        )
-        .with_context(|_| ErrorKind::MongoDBOperation)?;
+        let mut cursor = aggregate(collection, pipeline, span, self.tracer.as_deref())
+            .with_context(|_| ErrorKind::MongoDBOperation)?;
         let counts: ShardsCounts = match cursor.next() {
             Some(counts) => counts.with_context(|_| ErrorKind::MongoDBCursor)?,
             None => {
@@ -108,15 +103,10 @@ impl ShardsInterface for Shards {
     fn iter(&self, attrs: &ShardsAttribures, span: Option<SpanContext>) -> Result<Cursor<Shard>> {
         let filter = doc! {"cluster_id" => &attrs.cluster_id};
         let collection = self.client.db(&self.db).collection(COLLECTION_SHARDS);
-        let cursor = find(
-            collection,
-            filter,
-            span,
-            self.tracer.as_deref(),
-        )
-        .with_context(|_| ErrorKind::MongoDBOperation)?
-        .map(|item| item.map_err(|error| error.context(ErrorKind::MongoDBCursor).into()))
-        .map(|result: Result<ShardDocument>| result.map(Shard::from));
+        let cursor = find(collection, filter, span, self.tracer.as_deref())
+            .with_context(|_| ErrorKind::MongoDBOperation)?
+            .map(|item| item.map_err(|error| error.context(ErrorKind::MongoDBCursor).into()))
+            .map(|result: Result<ShardDocument>| result.map(Shard::from));
         Ok(Cursor::new(cursor))
     }
 }

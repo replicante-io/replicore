@@ -49,13 +49,8 @@ impl AgentInterface for Agent {
             "host" => &attrs.host,
         };
         let collection = self.client.db(&self.db).collection(COLLECTION_AGENTS);
-        let agent = find_one(
-            collection,
-            filter,
-            span,
-            self.tracer.as_deref(),
-        )
-        .with_context(|_| ErrorKind::MongoDBOperation)?;
+        let agent = find_one(collection, filter, span, self.tracer.as_deref())
+            .with_context(|_| ErrorKind::MongoDBOperation)?;
         Ok(agent)
     }
 
@@ -69,13 +64,9 @@ impl AgentInterface for Agent {
             "host" => &attrs.host,
         };
         let collection = self.client.db(&self.db).collection(COLLECTION_AGENTS_INFO);
-        let document: Option<AgentInfoDocument> = find_one(
-            collection,
-            filter,
-            span,
-            self.tracer.as_deref(),
-        )
-        .with_context(|_| ErrorKind::MongoDBOperation)?;
+        let document: Option<AgentInfoDocument> =
+            find_one(collection, filter, span, self.tracer.as_deref())
+                .with_context(|_| ErrorKind::MongoDBOperation)?;
         Ok(document.map(AgentInfoModel::from))
     }
 }

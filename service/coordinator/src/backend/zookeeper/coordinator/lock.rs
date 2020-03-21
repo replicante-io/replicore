@@ -200,14 +200,8 @@ impl ZookeeperNBLock {
 
     /// Read the content of a znode.
     fn read(&self, keeper: &ZooKeeper, path: &str, span: Option<SpanContext>) -> Result<Vec<u8>> {
-        let (data, _) = Client::get_data(
-            keeper,
-            path,
-            false,
-            span,
-            self.tracer.as_deref(),
-        )
-        .with_context(|_| ErrorKind::Backend("lock read"))?;
+        let (data, _) = Client::get_data(keeper, path, false, span, self.tracer.as_deref())
+            .with_context(|_| ErrorKind::Backend("lock read"))?;
         Ok(data)
     }
 
@@ -246,12 +240,7 @@ impl NonBlockingLockBehaviour for ZookeeperNBLock {
 
         // Create ephimeral node for the lock.
         let dir = Client::container_path(&self.context.path);
-        Client::mkcontaner(
-            &keeper,
-            &dir,
-            span.clone(),
-            self.tracer.as_deref(),
-        )?;
+        Client::mkcontaner(&keeper, &dir, span.clone(), self.tracer.as_deref())?;
         self.create(&keeper, &self.context.path, span.clone())?;
 
         // Check node and install delete + disconnect watcher.

@@ -63,14 +63,8 @@ impl PersistInterface for Persist {
             Bson::Document(document) => document,
             _ => panic!("Action failed to encode as BSON document"),
         };
-        replace_one(
-            collection,
-            filter,
-            document,
-            span,
-            self.tracer.as_deref(),
-        )
-        .with_context(|_| ErrorKind::MongoDBOperation)?;
+        replace_one(collection, filter, document, span, self.tracer.as_deref())
+            .with_context(|_| ErrorKind::MongoDBOperation)?;
         Ok(())
     }
 
@@ -85,14 +79,8 @@ impl PersistInterface for Persist {
             Bson::Document(document) => document,
             _ => panic!("Agent failed to encode as BSON document"),
         };
-        replace_one(
-            collection,
-            filter,
-            document,
-            span,
-            self.tracer.as_deref(),
-        )
-        .with_context(|_| ErrorKind::MongoDBOperation)?;
+        replace_one(collection, filter, document, span, self.tracer.as_deref())
+            .with_context(|_| ErrorKind::MongoDBOperation)?;
         Ok(())
     }
 
@@ -108,14 +96,8 @@ impl PersistInterface for Persist {
             Bson::Document(document) => document,
             _ => panic!("AgentInfo failed to encode as BSON document"),
         };
-        replace_one(
-            collection,
-            filter,
-            document,
-            span,
-            self.tracer.as_deref(),
-        )
-        .with_context(|_| ErrorKind::MongoDBOperation)?;
+        replace_one(collection, filter, document, span, self.tracer.as_deref())
+            .with_context(|_| ErrorKind::MongoDBOperation)?;
         Ok(())
     }
 
@@ -131,14 +113,8 @@ impl PersistInterface for Persist {
             Bson::Document(document) => document,
             _ => panic!("ClusterDiscovery failed to encode as BSON document"),
         };
-        replace_one(
-            collection,
-            filter,
-            document,
-            span,
-            self.tracer.as_deref(),
-        )
-        .with_context(|_| ErrorKind::MongoDBOperation)?;
+        replace_one(collection, filter, document, span, self.tracer.as_deref())
+            .with_context(|_| ErrorKind::MongoDBOperation)?;
         Ok(())
     }
 
@@ -154,14 +130,8 @@ impl PersistInterface for Persist {
             Bson::Document(document) => document,
             _ => panic!("Node failed to encode as BSON document"),
         };
-        replace_one(
-            collection,
-            filter,
-            document,
-            span,
-            self.tracer.as_deref(),
-        )
-        .with_context(|_| ErrorKind::MongoDBOperation)?;
+        replace_one(collection, filter, document, span, self.tracer.as_deref())
+            .with_context(|_| ErrorKind::MongoDBOperation)?;
         Ok(())
     }
 
@@ -178,14 +148,8 @@ impl PersistInterface for Persist {
             Bson::Document(document) => document,
             _ => panic!("Shard failed to encode as BSON document"),
         };
-        replace_one(
-            collection,
-            filter,
-            document,
-            span,
-            self.tracer.as_deref(),
-        )
-        .with_context(|_| ErrorKind::MongoDBOperation)?;
+        replace_one(collection, filter, document, span, self.tracer.as_deref())
+            .with_context(|_| ErrorKind::MongoDBOperation)?;
         Ok(())
     }
 }

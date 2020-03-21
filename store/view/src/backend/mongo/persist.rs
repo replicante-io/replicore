@@ -59,15 +59,9 @@ impl PersistInterface for Persist {
             Bson::Document(action) => action,
             _ => panic!("Action failed to encode as BSON document"),
         };
-        replace_one(
-            collection,
-            filter,
-            action,
-            span,
-            self.tracer.as_deref(),
-        )
-        .with_context(|_| ErrorKind::MongoDBOperation)
-        .map_err(Error::from)?;
+        replace_one(collection, filter, action, span, self.tracer.as_deref())
+            .with_context(|_| ErrorKind::MongoDBOperation)
+            .map_err(Error::from)?;
         Ok(())
     }
 
@@ -86,14 +80,9 @@ impl PersistInterface for Persist {
             };
             records.push(document);
         }
-        insert_many(
-            collection,
-            records,
-            span,
-            self.tracer.as_deref(),
-        )
-        .with_context(|_| ErrorKind::MongoDBOperation)
-        .map_err(Error::from)
+        insert_many(collection, records, span, self.tracer.as_deref())
+            .with_context(|_| ErrorKind::MongoDBOperation)
+            .map_err(Error::from)
     }
 
     fn event(&self, event: Event, span: Option<SpanContext>) -> Result<()> {
@@ -104,13 +93,8 @@ impl PersistInterface for Persist {
             Bson::Document(document) => document,
             _ => panic!("Event failed to encode as BSON document"),
         };
-        insert_one(
-            collection,
-            document,
-            span,
-            self.tracer.as_deref(),
-        )
-        .with_context(|_| ErrorKind::MongoDBOperation)
-        .map_err(Error::from)
+        insert_one(collection, document, span, self.tracer.as_deref())
+            .with_context(|_| ErrorKind::MongoDBOperation)
+            .map_err(Error::from)
     }
 }

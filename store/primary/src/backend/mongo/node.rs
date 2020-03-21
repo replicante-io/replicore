@@ -43,13 +43,9 @@ impl NodeInterface for Node {
             "node_id" => &attrs.node_id,
         };
         let collection = self.client.db(&self.db).collection(COLLECTION_NODES);
-        let document: Option<NodeDocument> = find_one(
-            collection,
-            filter,
-            span,
-            self.tracer.as_deref(),
-        )
-        .with_context(|_| ErrorKind::MongoDBOperation)?;
+        let document: Option<NodeDocument> =
+            find_one(collection, filter, span, self.tracer.as_deref())
+                .with_context(|_| ErrorKind::MongoDBOperation)?;
         Ok(document.map(NodeModel::from))
     }
 }

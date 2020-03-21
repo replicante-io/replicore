@@ -48,13 +48,9 @@ impl ShardInterface for Shard {
             "shard_id" => &attrs.shard_id,
         };
         let collection = self.client.db(&self.db).collection(COLLECTION_SHARDS);
-        let document: Option<ShardDocument> = find_one(
-            collection,
-            filter,
-            span,
-            self.tracer.as_deref(),
-        )
-        .with_context(|_| ErrorKind::MongoDBOperation)?;
+        let document: Option<ShardDocument> =
+            find_one(collection, filter, span, self.tracer.as_deref())
+                .with_context(|_| ErrorKind::MongoDBOperation)?;
         Ok(document.map(ShardModel::from))
     }
 }

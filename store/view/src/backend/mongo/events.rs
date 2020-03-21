@@ -86,16 +86,10 @@ impl EventsInterface for Events {
             doc! {}
         };
         let collection = self.client.db(&self.db).collection(COLLECTION_EVENTS);
-        let cursor = find_with_options(
-            collection,
-            filter,
-            options,
-            span,
-            self.tracer.as_deref(),
-        )
-        .with_context(|_| ErrorKind::MongoDBOperation)?
-        .map(|item| item.map_err(|error| error.context(ErrorKind::MongoDBCursor).into()))
-        .map(|result: Result<EventDocument>| result.map(Event::from));
+        let cursor = find_with_options(collection, filter, options, span, self.tracer.as_deref())
+            .with_context(|_| ErrorKind::MongoDBOperation)?
+            .map(|item| item.map_err(|error| error.context(ErrorKind::MongoDBCursor).into()))
+            .map(|result: Result<EventDocument>| result.map(Event::from));
         Ok(Cursor::new(cursor))
     }
 }
