@@ -1,4 +1,3 @@
-use std::ops::Deref;
 use std::sync::Arc;
 
 use bson::bson;
@@ -65,7 +64,7 @@ impl PersistInterface for Persist {
             filter,
             action,
             span,
-            self.tracer.as_ref().map(|tracer| tracer.deref()),
+            self.tracer.as_deref(),
         )
         .with_context(|_| ErrorKind::MongoDBOperation)
         .map_err(Error::from)?;
@@ -91,7 +90,7 @@ impl PersistInterface for Persist {
             collection,
             records,
             span,
-            self.tracer.as_ref().map(|tracer| tracer.deref()),
+            self.tracer.as_deref(),
         )
         .with_context(|_| ErrorKind::MongoDBOperation)
         .map_err(Error::from)
@@ -109,7 +108,7 @@ impl PersistInterface for Persist {
             collection,
             document,
             span,
-            self.tracer.as_ref().map(|tracer| tracer.deref()),
+            self.tracer.as_deref(),
         )
         .with_context(|_| ErrorKind::MongoDBOperation)
         .map_err(Error::from)

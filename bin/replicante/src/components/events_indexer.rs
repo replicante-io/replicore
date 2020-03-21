@@ -1,4 +1,3 @@
-use std::ops::DerefMut;
 use std::sync::Arc;
 
 use failure::ResultExt;
@@ -190,7 +189,7 @@ impl<'a> WorkerThread<'a> {
                 );
             },
         );
-        if let Some(span) = span.as_mut().map(DerefMut::deref_mut) {
+        if let Some(span) = span.as_deref_mut() {
             span.tag("message.id", message_id.as_str());
             if let Some(code) = code.as_ref() {
                 span.tag("event.category", code.category.as_str());
@@ -215,7 +214,7 @@ impl<'a> WorkerThread<'a> {
                 "message_id" => message_id,
                 failure_info(&error),
             );
-            fail_span(error, span.as_mut().map(DerefMut::deref_mut));
+            fail_span(error, span.as_deref_mut());
             message.retry();
             return;
         }
@@ -227,7 +226,7 @@ impl<'a> WorkerThread<'a> {
                 "message_id" => message_id,
                 failure_info(&error),
             );
-            fail_span(error, span.as_mut().map(DerefMut::deref_mut));
+            fail_span(error, span.as_deref_mut());
         }
     }
 }

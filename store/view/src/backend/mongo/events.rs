@@ -1,4 +1,3 @@
-use std::ops::Deref;
 use std::sync::Arc;
 
 use bson::bson;
@@ -92,7 +91,7 @@ impl EventsInterface for Events {
             filter,
             options,
             span,
-            self.tracer.as_ref().map(|tracer| tracer.deref()),
+            self.tracer.as_deref(),
         )
         .with_context(|_| ErrorKind::MongoDBOperation)?
         .map(|item| item.map_err(|error| error.context(ErrorKind::MongoDBCursor).into()))

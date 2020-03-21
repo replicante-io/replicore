@@ -1,4 +1,3 @@
-use std::ops::Deref;
 use std::sync::Arc;
 
 use bson::bson;
@@ -68,7 +67,7 @@ impl ActionsInterface for Actions {
             collection,
             filter,
             span,
-            self.tracer.as_ref().map(|tracer| tracer.deref()),
+            self.tracer.as_deref(),
         )
         .with_context(|_| ErrorKind::MongoDBOperation)?;
         Ok(action.map(Action::from))
@@ -99,7 +98,7 @@ impl ActionsInterface for Actions {
             filter,
             update,
             span,
-            self.tracer.as_ref().map(|tracer| tracer.deref()),
+            self.tracer.as_deref(),
         )
         .with_context(|_| ErrorKind::MongoDBOperation)?;
         Ok(())
@@ -126,7 +125,7 @@ impl ActionsInterface for Actions {
             filters,
             options,
             span,
-            self.tracer.as_ref().map(|tracer| tracer.deref()),
+            self.tracer.as_deref(),
         )
         .with_context(|_| ErrorKind::MongoDBOperation)?
         .map(|item| item.map_err(|error| error.context(ErrorKind::MongoDBCursor).into()))
@@ -173,7 +172,7 @@ impl ActionsInterface for Actions {
             filters,
             options,
             span,
-            self.tracer.as_ref().map(|tracer| tracer.deref()),
+            self.tracer.as_deref(),
         )
         .with_context(|_| ErrorKind::MongoDBOperation)?
         .map(|item| item.map_err(|error| error.context(ErrorKind::MongoDBCursor).into()))

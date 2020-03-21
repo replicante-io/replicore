@@ -1,4 +1,3 @@
-use std::ops::Deref;
 use std::sync::Arc;
 
 use bson::bson;
@@ -86,7 +85,7 @@ impl ShardsInterface for Shards {
             collection,
             pipeline,
             span,
-            self.tracer.as_ref().map(|tracer| tracer.deref()),
+            self.tracer.as_deref(),
         )
         .with_context(|_| ErrorKind::MongoDBOperation)?;
         let counts: ShardsCounts = match cursor.next() {
@@ -113,7 +112,7 @@ impl ShardsInterface for Shards {
             collection,
             filter,
             span,
-            self.tracer.as_ref().map(|tracer| tracer.deref()),
+            self.tracer.as_deref(),
         )
         .with_context(|_| ErrorKind::MongoDBOperation)?
         .map(|item| item.map_err(|error| error.context(ErrorKind::MongoDBCursor).into()))

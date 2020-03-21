@@ -1,5 +1,3 @@
-use std::ops::DerefMut;
-
 use bson::bson;
 use bson::doc;
 use bson::ordered::OrderedDocument;
@@ -63,7 +61,7 @@ where
             error
         })
         .with_context(|_| ErrorKind::AggregateOp)
-        .map_err(|error| fail_span(error, span.as_mut().map(DerefMut::deref_mut)))?;
+        .map_err(|error| fail_span(error, span.as_deref_mut()))?;
     timer.observe_duration();
     drop(span);
     let cursor = cursor.map(|document| {
@@ -140,7 +138,7 @@ where
             error
         })
         .with_context(|_| ErrorKind::FindOne)
-        .map_err(|error| fail_span(error, span.as_mut().map(DerefMut::deref_mut)))?;
+        .map_err(|error| fail_span(error, span.as_deref_mut()))?;
     timer.observe_duration();
     drop(span);
     if document.is_none() {
@@ -199,7 +197,7 @@ where
             error
         })
         .with_context(|_| ErrorKind::FindOp)
-        .map_err(|error| fail_span(error, span.as_mut().map(DerefMut::deref_mut)))?;
+        .map_err(|error| fail_span(error, span.as_deref_mut()))?;
     timer.observe_duration();
     drop(span);
     let cursor = cursor.map(|document| {
@@ -245,7 +243,7 @@ pub fn insert_many(
             error
         })
         .with_context(|_| ErrorKind::InsertMany)
-        .map_err(|error| fail_span(error, span.as_mut().map(DerefMut::deref_mut)))?;
+        .map_err(|error| fail_span(error, span.as_deref_mut()))?;
     Ok(())
 }
 
@@ -285,7 +283,7 @@ pub fn insert_one(
             error
         })
         .with_context(|_| ErrorKind::InsertOne)
-        .map_err(|error| fail_span(error, span.as_mut().map(DerefMut::deref_mut)))?;
+        .map_err(|error| fail_span(error, span.as_deref_mut()))?;
     Ok(())
 }
 
@@ -333,7 +331,7 @@ pub fn replace_one(
             error
         })
         .with_context(|_| ErrorKind::ReplaceOne)
-        .map_err(|error| fail_span(error, span.as_mut().map(DerefMut::deref_mut)))?;
+        .map_err(|error| fail_span(error, span.as_deref_mut()))?;
     Ok(())
 }
 
@@ -396,7 +394,7 @@ pub fn update_many(
             error
         })
         .with_context(|_| ErrorKind::UpdateMany)
-        .map_err(|error| fail_span(error, span.as_mut().map(DerefMut::deref_mut)))
+        .map_err(|error| fail_span(error, span.as_deref_mut()))
         .map_err(Error::from)
 }
 
@@ -442,6 +440,6 @@ pub fn update_one(
             error
         })
         .with_context(|_| ErrorKind::UpdateOne)
-        .map_err(|error| fail_span(error, span.as_mut().map(DerefMut::deref_mut)))
+        .map_err(|error| fail_span(error, span.as_deref_mut()))
         .map_err(Error::from)
 }

@@ -1,5 +1,4 @@
 use std::collections::HashSet;
-use std::ops::Deref;
 use std::sync::Arc;
 
 use bson::bson;
@@ -50,7 +49,7 @@ impl NodesInterface for Nodes {
             collection,
             filter,
             span,
-            self.tracer.as_ref().map(|tracer| tracer.deref()),
+            self.tracer.as_deref(),
         )
         .with_context(|_| ErrorKind::MongoDBOperation)?
         .map(|item| item.map_err(|error| error.context(ErrorKind::MongoDBCursor).into()))
@@ -76,7 +75,7 @@ impl NodesInterface for Nodes {
             collection,
             pipeline,
             span,
-            self.tracer.as_ref().map(|tracer| tracer.deref()),
+            self.tracer.as_deref(),
         )
         .with_context(|_| ErrorKind::MongoDBOperation)?;
         let kinds: Bson = match cursor.next() {

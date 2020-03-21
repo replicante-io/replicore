@@ -1,4 +1,3 @@
-use std::ops::Deref;
 use std::sync::Arc;
 
 use bson::bson;
@@ -76,7 +75,7 @@ impl AgentsInterface for Agents {
             collection,
             pipeline,
             span,
-            self.tracer.as_ref().map(|tracer| tracer.deref()),
+            self.tracer.as_deref(),
         )
         .with_context(|_| ErrorKind::MongoDBOperation)?;
         let counts: AgentsCounts = match cursor.next() {
@@ -108,7 +107,7 @@ impl AgentsInterface for Agents {
             collection,
             filter,
             span,
-            self.tracer.as_ref().map(|tracer| tracer.deref()),
+            self.tracer.as_deref(),
         )
         .with_context(|_| ErrorKind::MongoDBOperation)?
         .map(|item| item.map_err(|error| error.context(ErrorKind::MongoDBCursor).into()));
@@ -126,7 +125,7 @@ impl AgentsInterface for Agents {
             collection,
             filter,
             span,
-            self.tracer.as_ref().map(|tracer| tracer.deref()),
+            self.tracer.as_deref(),
         )
         .with_context(|_| ErrorKind::MongoDBOperation)?
         .map(|item| item.map_err(|error| error.context(ErrorKind::MongoDBCursor).into()))

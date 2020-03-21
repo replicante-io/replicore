@@ -1,4 +1,3 @@
-use std::ops::Deref;
 use std::sync::Arc;
 
 use bson::bson;
@@ -58,7 +57,7 @@ impl ClusterInterface for Cluster {
             collection,
             filter,
             span,
-            self.tracer.as_ref().map(|tracer| tracer.deref()),
+            self.tracer.as_deref(),
         )
         .with_context(|_| ErrorKind::MongoDBOperation)?;
         Ok(discovery)
@@ -74,7 +73,7 @@ impl ClusterInterface for Cluster {
                 filter,
                 mark,
                 span.clone(),
-                self.tracer.as_ref().map(|tracer| tracer.deref()),
+                self.tracer.as_deref(),
             )
             .with_context(|_| ErrorKind::MongoDBOperation)?;
             debug!(

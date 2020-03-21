@@ -1,5 +1,4 @@
 use std::collections::HashMap;
-use std::ops::Deref;
 use std::str::FromStr;
 use std::sync::Arc;
 
@@ -94,7 +93,7 @@ impl ActionsInterface for Actions {
             filter,
             update,
             span,
-            self.tracer.as_ref().map(|tracer| tracer.deref()),
+            self.tracer.as_deref(),
         )
         .with_context(|_| ErrorKind::MongoDBOperation)?;
         Ok(())
@@ -124,7 +123,7 @@ impl ActionsInterface for Actions {
             filter,
             update,
             span,
-            self.tracer.as_ref().map(|tracer| tracer.deref()),
+            self.tracer.as_deref(),
         )
         .with_context(|_| ErrorKind::MongoDBOperation)?;
         Ok(())
@@ -144,7 +143,7 @@ impl ActionsInterface for Actions {
             collection,
             filter,
             span,
-            self.tracer.as_ref().map(|tracer| tracer.deref()),
+            self.tracer.as_deref(),
         )
         .with_context(|_| ErrorKind::MongoDBOperation)?;
         // Simulate the changes that will be performed by `mark_lost` for clients.
@@ -180,7 +179,7 @@ impl ActionsInterface for Actions {
             filter,
             update,
             span,
-            self.tracer.as_ref().map(|tracer| tracer.deref()),
+            self.tracer.as_deref(),
         )
         .with_context(|_| ErrorKind::MongoDBOperation)?;
         Ok(())
@@ -202,7 +201,7 @@ impl ActionsInterface for Actions {
             collection,
             filter,
             span,
-            self.tracer.as_ref().map(|tracer| tracer.deref()),
+            self.tracer.as_deref(),
         )
         .with_context(|_| ErrorKind::MongoDBOperation)?
         .map(|action| {
@@ -239,7 +238,7 @@ impl ActionsInterface for Actions {
             collection,
             filter,
             span,
-            self.tracer.as_ref().map(|tracer| tracer.deref()),
+            self.tracer.as_deref(),
         )
         .with_context(|_| ErrorKind::MongoDBOperation)?;
         for document in cursor {

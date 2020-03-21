@@ -1,4 +1,3 @@
-use std::ops::Deref;
 use std::sync::atomic::AtomicBool;
 use std::sync::atomic::Ordering;
 use std::sync::Arc;
@@ -180,7 +179,7 @@ impl ZookeeperNBLock {
             Acl::read_unsafe().clone(),
             CreateMode::Ephemeral,
             span.clone(),
-            self.tracer.as_ref().map(|tracer| tracer.deref()),
+            self.tracer.as_deref(),
         );
         match result {
             Ok(_) => (),
@@ -206,7 +205,7 @@ impl ZookeeperNBLock {
             path,
             false,
             span,
-            self.tracer.as_ref().map(|tracer| tracer.deref()),
+            self.tracer.as_deref(),
         )
         .with_context(|_| ErrorKind::Backend("lock read"))?;
         Ok(data)
@@ -251,7 +250,7 @@ impl NonBlockingLockBehaviour for ZookeeperNBLock {
             &keeper,
             &dir,
             span.clone(),
-            self.tracer.as_ref().map(|tracer| tracer.deref()),
+            self.tracer.as_deref(),
         )?;
         self.create(&keeper, &self.context.path, span.clone())?;
 
@@ -262,7 +261,7 @@ impl NonBlockingLockBehaviour for ZookeeperNBLock {
             &self.context.path,
             move |event| ZookeeperNBLock::callback_event(&context, &event),
             span,
-            self.tracer.as_ref().map(|tracer| tracer.deref()),
+            self.tracer.as_deref(),
         )
         .with_context(|_| ErrorKind::Backend("lock watching"))?;
         let stats = match stats {
@@ -293,7 +292,7 @@ impl NonBlockingLockBehaviour for ZookeeperNBLock {
             &self.context.path,
             false,
             span.clone(),
-            self.tracer.as_ref().map(|tracer| tracer.deref()),
+            self.tracer.as_deref(),
         )
         .with_context(|_| ErrorKind::Backend("lock stats fetching"))?;
         self.context.state.release();
@@ -306,7 +305,7 @@ impl NonBlockingLockBehaviour for ZookeeperNBLock {
                     &self.context.path,
                     None,
                     span,
-                    self.tracer.as_ref().map(|tracer| tracer.deref()),
+                    self.tracer.as_deref(),
                 );
                 match result {
                     Ok(()) => (),
