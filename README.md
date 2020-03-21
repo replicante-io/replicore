@@ -12,7 +12,7 @@ by emailing [conduct@replicante.io](mailto:conduct@replicante.io).
 Unfortunately, as the community lucks members, we are unable to provide a second contact to report incidents to.  
 We would still encourage people to report issues, even anonymously.
 
-In addition to the Code Of Conduct below the following documents are relevant:
+In addition to the Code Of Conduct the following documents are relevant:
 
   * The [Reporting Guideline](https://www.replicante.io/conduct/reporting), especially if you wish to report an incident.
   * The [Enforcement Guideline](https://www.replicante.io/conduct/enforcing)
@@ -27,41 +27,67 @@ To make development easier and faster these dependencies are run locally using c
 Replicante Core uses [podman](https://podman.io/) to manage these containers.  
 This is mainly due to podman's support for cgroups v2 and rootless containers.
 
+An opinionated development tool built on top of many generic projects is also available.
+This is `replidev`, located in `devtools/replidev`, and is written in rust.
+As mentioned, it will require some additional tools to work:
 
---- DELETE BELOW ---
-At the root of this repo is a docker-compose file that will start
-all dependences needed to develop Replicante core components.
+  * [Podman](https://podman.io/)
 
-The compose project uses docker volumes to persist data so that containers can be
-stopped/recreated without loosing all development data.
-These services are:
+It can be complied and installed in `$HOME/bin/replidev` with:
 
-  * [Kafka](https://kafka.apache.org/) 1.0+ for events streaming and task queues.
-  * [MongoDB](https://www.mongodb.com/) 4.0 for the storage layer.
-  * [Zookeeper](https://zookeeper.apache.org/) 3.4 for cluster coordination (and for use by kafka).
-
-Additional services to support develoment and debugging are provided as additional
-docker-compose configuration files located under `devtools/`.
-Check them out to see what additional services are available.
-
-To avoid typing the configuration files you need every times, docker-compose
-provides a `.env` file where the `COMPOSE_FILE` can be set to a list of files.
-This list indicates which services are "active".
-In `.env.example` and in the snippet below the required dependences and monitoring
-tools are active, everything else is optional.
-
-To start and initialise the services:
 ```bash
-# Create the .env file (the first time).
-$ cp .env.example .env
-
-# Start all the services (-d to start in the background).
-$ docker-compose up #-d
-
-# Initialise dependences.
-$ devtools/initialise.sh
+$ make -C devtools/replidev install
 ```
---- DELETE ABOVE ---
+
+This is convenient if you have `$HOME/bin` in `$PATH` since `replidev`
+can then just be used from any of the replicante projects.
+
+Once installed, the Replicante Core development environment can be set up with:
+
+```bash
+# Start the essential dependences (kafka, mongo, zookeeper)
+# as well as an NGINX server for static content (inclues an "useful links" page).
+$ replidev deps start essential
+--> Create pod replideps-essential
+3062d4295cbec38890f271b283f5d7aeae1e9987d865fc249685e48884608bf4
+--> Start container replideps-essential-zookeeper
+59cf21245a515905a52ccc545ae0b8efc16fb1a84f58a8e6bbe03685f9d1bffc
+--> Start container replideps-essential-nginx
+9c9be7b7368836fb7f2116a1d61d04dfbba0cc2ce9d0e4adb4ec5475162fb702
+--> Start container replideps-essential-mongo
+759980c6606aa46aefbf63f9f61dde7a471a10dded308ca1a79ef5cce6c2dbe2
+--> Start container replideps-essential-kafka
+e174144db830918a78805fbb729cfbd23b51568fedc5432d867abfa15f6186c1
+
+# Once the command completes you can get the above mentioned links at
+# http://localhost:8080/
+
+#  When dependences start without any data, some initialisation may be required.
+$ replidev deps initialise essential
+--> Initialise essential/mongo from replideps-essential-mongo
+==> Checking (and initialising) mongo replica set ...
+MongoDB shell version v4.2.3
+connecting to: mongodb://127.0.0.1:27017/?compressors=disabled&gssapiServiceName=mongodb
+Implicit session: session { "id" : UUID("9d957838-7984-4d98-b667-e3b9937fb0d5") }
+MongoDB server version: 4.2.3
+---> Replica Set initialised, nothing to do
+==> Ensuring all mongo indexes exist ...
+MongoDB shell version v4.2.3
+connecting to: mongodb://127.0.0.1:27017/?compressors=disabled&gssapiServiceName=mongodb
+Implicit session: session { "id" : UUID("f72c6214-59c1-4066-baf6-78c19d61606d") }
+MongoDB server version: 4.2.3
+
+# Dependencies can be stopped, and containers removed with
+$ replidev deps stop essential
+--> Stop pod replideps-essential
+3062d4295cbec38890f271b283f5d7aeae1e9987d865fc249685e48884608bf4
+--> Remove pod replideps-essential
+3062d4295cbec38890f271b283f5d7aeae1e9987d865fc249685e48884608bf4
+
+# Once the pods have been stopped, persisted data can be PERMANENTLY deleted with
+$ replidev deps clean essential --confirm
+--> Clean data for essential pod (from ./devtools/data/essential)
+```
 
 
 ### Build dependences

@@ -6,4 +6,5 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## Unreleased
 ### Added
-- Initial interface
+- Initialise and clean up replicante core dependencies.
+- Start and stop replicante core dependencies pods.

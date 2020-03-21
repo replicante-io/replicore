@@ -4,6 +4,8 @@ use failure::Backtrace;
 use failure::Context;
 use failure::Fail;
 
+use crate::conf::Project;
+
 /// Error information returned by functions in case of errors.
 #[derive(Debug)]
 pub struct Error(Context<ErrorKind>);
@@ -22,10 +24,6 @@ impl Fail for Error {
     fn cause(&self) -> Option<&dyn Fail> {
         self.0.cause()
     }
-
-    //fn name(&self) -> Option<&str> {
-    //    self.kind().kind_name()
-    //}
 }
 
 impl fmt::Display for Error {
@@ -49,17 +47,55 @@ impl From<ErrorKind> for Error {
 /// Exhaustive list of possible errors emitted by this crate.
 #[derive(Debug, Fail)]
 pub enum ErrorKind {
-    #[fail(display = "TODO")]
-    TODO,
+    #[fail(display = "failed to start {} command", _0)]
+    CommandExec(String),
+
+    #[fail(display = "{} command was not successful", _0)]
+    CommandFailed(String),
+
+    #[fail(
+        display = "could not load configuration, are you in the root of a Replicante repository?"
+    )]
+    ConfigLoad,
+
+    #[fail(display = "{} command does not support the {} project", _0, _1)]
+    InvalidProject(&'static str, Project),
+
+    #[fail(display = "not allowed to {}", _0)]
+    NotAllowed(String),
+
+    #[fail(display = "invalid definition for the {} pod", _0)]
+    PodNotValid(String),
+
+    #[fail(display = "unable to find a defintion for the {} pod", _0)]
+    PodNotFound(String),
 }
 
-//impl ErrorKind {
-//    fn kind_name(&self) -> Option<&str> {
-//        let name = match self {
-//        };
-//        Some(name)
-//    }
-//}
+impl ErrorKind {
+    pub fn fs_not_allowed<S: std::fmt::Display>(path: S) -> Self {
+        Self::NotAllowed(format!("access {}", path))
+    }
+
+    pub fn invalid_pod<S: Into<String>>(pod: S) -> Self {
+        Self::PodNotValid(pod.into())
+    }
+
+    pub fn invalid_project(project: Project, command: &'static str) -> Self {
+        Self::InvalidProject(command, project)
+    }
+
+    pub fn pod_not_found<S: Into<String>>(pod: S) -> Self {
+        Self::PodNotFound(pod.into())
+    }
+
+    pub fn podman_exec<S: std::fmt::Display>(cmd: S) -> Self {
+        Self::CommandExec(format!("podman {}", cmd))
+    }
+
+    pub fn podman_failed<S: std::fmt::Display>(cmd: S) -> Self {
+        Self::CommandFailed(format!("podman {}", cmd))
+    }
+}
 
 /// Short form alias for functions returning `Error`s.
 pub type Result<T> = ::std::result::Result<T, Error>;

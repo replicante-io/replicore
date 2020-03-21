@@ -25,12 +25,15 @@ path = "src/lib.rs"
 
 [dependencies]
 failure = "^0.1.5"
+serde = "^1.0.105"
+serde_yaml = "^0.8.11"
+structopt = "^0.3.0"
 
 replicante_util_failure = { path = "../../common/util/failure" }
 
 
 [build-dependencies]
-git2 = "^0.10.0"
+git2 = "^0.13.0"
 
 
 [workspace]

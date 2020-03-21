@@ -1,0 +1,81 @@
+containers:
+  # Zookeeper - for both kafka and replicante
+  - name: zookeeper
+    image: zookeeper:3.5
+    env:
+      ZOO_MY_ID: 1
+    mount:
+      - type: bind
+        src: '{{ CONF_ROOT }}/zookeeper.conf'
+        target: '/conf/zoo.cfg'
+        relabel: private
+      - type: bind
+        src: '{{ DATA_ROOT }}/zoo-data'
+        target: '/data'
+        relabel: private
+      - type: bind
+        src: '{{ DATA_ROOT }}/zoo-log'
+        target: '/datalog'
+        relabel: private
+
+  # Nginx - to serve static pages (links index, static discovery, etc ...)
+  - name: nginx
+    image: nginx:1.17
+    mount:
+      - type: bind
+        src: '{{ CONF_ROOT }}/static'
+        target: /usr/share/nginx/html
+        relabel: private
+        ro: 'true'
+
+  # MongoDB - for persisted state.
+  - name: mongo
+    image: mongo:4.2
+    initialise:
+      - /replicore/init.sh
+    command:
+      - mongod
+      - --replSet
+      - replistore
+      - --bind_ip
+      - 0.0.0.0
+    mount:
+      - type: bind
+        src: '{{ DATA_ROOT }}/mongo'
+        target: /data/db
+        relabel: private
+      - type: bind
+        src: '{{ CONF_ROOT }}/mongo'
+        target: /replicore
+        relabel: private
+        ro: 'true'
+
+  # Kafka - for tasks and streams.
+  - name: kafka
+    image: wurstmeister/kafka:2.12-2.4.1
+    env:
+      JMX_PORT: 9999
+      KAFKA_BROKER_ID: 1
+      KAFKA_LISTENERS: 'PLAINTEXT://127.0.0.1:9092'
+      KAFKA_LOG_FLUSH_SCHEDULER_INTERVAL_MS: 60000
+      KAFKA_NUM_PARTITIONS: 4
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_ZOOKEEPER_CONNECT: '{{ PODMAN_HOSTNAME }}:2181/kafka'
+      KAFKA_ADVERTISED_HOST_NAME: '{{ PODMAN_HOSTNAME }}'
+    mount:
+      - type: bind
+        src: '{{ DATA_ROOT }}/kafka'
+        target: /kafka
+        relabel: private
+
+
+ports:
+  # Static NGINX.
+  - host: 8080
+    pod: 80
+  # Zookeeper.
+  - host: 2181
+  # Kafka
+  - host: 9092
+  # MongoDB
+  - host: 27017
