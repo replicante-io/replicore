@@ -2,17 +2,18 @@ use std::process::Command;
 
 use failure::ResultExt;
 
+use crate::Conf;
 use crate::ErrorKind;
 use crate::Result;
 
 /// Stop AND REMOVE a pod matching the given name.
-pub fn pod_stop<S>(name: S) -> Result<()>
+pub fn pod_stop<S>(conf: &Conf, name: S) -> Result<()>
 where
     S: std::fmt::Display,
 {
     // Stop the pod first.
     println!("--> Stop pod {}", name);
-    let status = Command::new("podman")
+    let status = Command::new(&conf.podman)
         .arg("pod")
         .arg("stop")
         .arg(name.to_string())

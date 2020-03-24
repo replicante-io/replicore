@@ -14,6 +14,7 @@ target/
 # Local testing and development tools.
 devtools/data
 devtools/replicante.conf.d/
+replidev.local.yaml
 
 .env
 deps.dot

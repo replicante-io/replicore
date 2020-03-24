@@ -58,11 +58,11 @@ pub enum ErrorKind {
     )]
     ConfigLoad,
 
+    #[fail(display = "filesystem error: {}", _0)]
+    FsError(String),
+
     #[fail(display = "{} command does not support the {} project", _0, _1)]
     InvalidProject(&'static str, Project),
-
-    #[fail(display = "not allowed to {}", _0)]
-    NotAllowed(String),
 
     #[fail(display = "invalid definition for the {} pod", _0)]
     PodNotValid(String),
@@ -72,8 +72,12 @@ pub enum ErrorKind {
 }
 
 impl ErrorKind {
+    pub fn fs_error(error: &str) -> Self {
+        Self::FsError(error.to_string())
+    }
+
     pub fn fs_not_allowed<S: std::fmt::Display>(path: S) -> Self {
-        Self::NotAllowed(format!("access {}", path))
+        Self::FsError(format!("access {}", path))
     }
 
     pub fn invalid_pod<S: Into<String>>(pod: S) -> Self {

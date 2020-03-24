@@ -3,12 +3,14 @@ use std::collections::BTreeMap;
 use serde::Deserialize;
 
 mod exec_cmd;
+mod pod_ps_cmd;
 mod pod_start_cmd;
 mod pod_stop_cmd;
 mod unshare_cmd;
 mod variables;
 
 pub use self::exec_cmd::exec;
+pub use self::pod_ps_cmd::pod_ps;
 pub use self::pod_start_cmd::pod_start;
 pub use self::pod_stop_cmd::pod_stop;
 pub use self::unshare_cmd::unshare;

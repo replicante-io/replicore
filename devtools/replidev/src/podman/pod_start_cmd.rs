@@ -4,24 +4,33 @@ use failure::ResultExt;
 
 use super::Pod;
 use super::Variables;
+use crate::Conf;
 use crate::ErrorKind;
 use crate::Result;
 
 /// Start a pod matching the given definition.
-pub fn pod_start<S1, S2>(pod: Pod, name: S1, project: S2, variables: Variables) -> Result<()>
+pub fn pod_start<S1, S2>(
+    conf: &Conf,
+    pod: Pod,
+    name: S1,
+    project: S2,
+    variables: Variables,
+) -> Result<()>
 where
     S1: std::fmt::Display,
     S2: std::fmt::Display,
 {
     // Create (but to not start) the pod object.
     println!("--> Create pod {}", name);
-    let mut podman = Command::new("podman");
+    let mut podman = Command::new(&conf.podman);
     podman
         .arg("pod")
         .arg("create")
         .arg(format!("--name={}", name))
         .arg("--label")
-        .arg(format!("io.replicante.dev.project={}", project));
+        .arg(format!("io.replicante.dev.project={}", project))
+        .arg("--label")
+        .arg("io.replicante.dev.role=deps");
     for port in pod.ports {
         let host_port = port.host;
         let pod_port = port.pod.unwrap_or(port.host);
