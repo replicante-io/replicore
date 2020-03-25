@@ -64,6 +64,9 @@ pub enum ErrorKind {
     #[fail(display = "{} command does not support the {} project", _0, _1)]
     InvalidProject(&'static str, Project),
 
+    #[fail(display = "could not find a non-loopback IP address")]
+    IpNotDetected,
+
     #[fail(display = "invalid definition for the {} pod", _0)]
     PodNotValid(String),
 
@@ -86,6 +89,10 @@ impl ErrorKind {
 
     pub fn invalid_project(project: Project, command: &'static str) -> Self {
         Self::InvalidProject(command, project)
+    }
+
+    pub fn ip_not_detected() -> Self {
+        Self::IpNotDetected
     }
 
     pub fn pod_not_found<S: Into<String>>(pod: S) -> Self {

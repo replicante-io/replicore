@@ -27,6 +27,8 @@ where
         .arg("pod")
         .arg("create")
         .arg(format!("--name={}", name))
+        .arg("--add-host")
+        .arg(format!("podman-host:{}", conf.podman_host_ip()?))
         .arg("--label")
         .arg(format!("io.replicante.dev.project={}", project))
         .arg("--label")

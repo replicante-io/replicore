@@ -1,4 +1,5 @@
 use std::fs::File;
+use std::sync::Mutex;
 
 use failure::ResultExt;
 use serde::Deserialize;
@@ -11,6 +12,11 @@ use crate::Result;
 const CONF_FILE: &str = "replidev.yaml";
 const CONF_FILE_LOCAL: &str = "replidev.local.yaml";
 
+// The first time an IP is detected cache it for consistency and performance.
+lazy_static::lazy_static! {
+    static ref DETECTED_IP_CACHE: Mutex<Option<String>> = Mutex::new(None);
+}
+
 /// Project specific configuration.
 #[derive(Debug, Deserialize)]
 pub struct Conf {
@@ -20,6 +26,10 @@ pub struct Conf {
     /// Command to execute podman.
     #[serde(default = "Conf::default_podman")]
     pub podman: String,
+
+    /// IP address the `podman-host` alias attached to all pods points to.
+    #[serde(default)]
+    pub podman_host_ip: Option<String>,
 }
 
 impl Conf {
@@ -37,6 +47,47 @@ impl Conf {
         let conf = Conf::merge(base, local);
         let conf = serde_yaml::from_value(conf).with_context(|_| ErrorKind::ConfigLoad)?;
         Ok(conf)
+    }
+
+    /// IP address the `podman-host` alias attached to all pods points to.
+    ///
+    /// If an IP address is not provided in the configuration an attempt to
+    /// auto-detect a non-local IP address is made.
+    pub fn podman_host_ip(&self) -> Result<String> {
+        // Use configure IP if possible.
+        if let Some(ip) = &self.podman_host_ip {
+            return Ok(ip.clone());
+        }
+
+        // Consult IP cache for consistency and performance.
+        {
+            let cache = DETECTED_IP_CACHE
+                .lock()
+                .expect("detected IP cache lock is poisoned");
+            if let Some(ip) = cache.as_ref() {
+                return Ok(ip.clone());
+            }
+        }
+
+        // Attempt to auto detect a non-local IP.
+        for iface in pnet_datalink::interfaces() {
+            for ip in iface.ips {
+                let ip = ip.ip();
+                if ip.is_loopback() || !ip.is_ipv4() {
+                    continue;
+                }
+                let ip = ip.to_string();
+                let mut cache = DETECTED_IP_CACHE
+                    .lock()
+                    .expect("detected IP cache lock is poisoned");
+                *cache = Some(ip.clone());
+                return Ok(ip);
+            }
+        }
+
+        // Could not find a non-loopback IP address.
+        let error = ErrorKind::ip_not_detected();
+        Err(error.into())
     }
 }
 

@@ -25,6 +25,8 @@ path = "src/lib.rs"
 
 [dependencies]
 failure = "^0.1.5"
+lazy_static = "^1.4.0"
+pnet_datalink = "^0.25"
 prettytable-rs = "^0.8"
 serde = "^1.0.105"
 serde_yaml = "^0.8.11"

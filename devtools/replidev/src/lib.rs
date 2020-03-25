@@ -21,6 +21,10 @@ struct CliOpt {
 
 #[derive(Debug, StructOpt)]
 enum Command {
+    /// Configuration related commands.
+    #[structopt(name = "conf")]
+    Configuration(self::command::conf::CliOpt),
+
     /// Manage Replicante Core dependencies.
     #[structopt(name = "deps")]
     Dependencies(self::command::deps::CliOpt),
@@ -34,6 +38,7 @@ pub fn run() -> Result<bool> {
     let args = CliOpt::from_args();
     let conf = self::conf::Conf::from_file()?;
     match args.command {
+        Command::Configuration(cfg) => self::command::conf::run(cfg, conf),
         Command::Dependencies(deps) => self::command::deps::run(deps, conf),
         Command::Play => panic!("TODO"),
     }

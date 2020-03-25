@@ -130,11 +130,13 @@ fn list(conf: &Conf) -> Result<bool> {
     )?;
     let pods: BTreeMap<String, PodPsStatus> =
         serde_yaml::from_slice(&pods).expect("formatted podman pod ps output to parse");
-    let pods: BTreeMap<String, PodPsStatus> = pods.into_iter().map(|(key, value)| {
-        let key = key.trim_start_matches("replideps-").to_string();
-        (key, value)
-    })
-    .collect();
+    let pods: BTreeMap<String, PodPsStatus> = pods
+        .into_iter()
+        .map(|(key, value)| {
+            let key = key.trim_start_matches("replideps-").to_string();
+            (key, value)
+        })
+        .collect();
 
     // Find available replideps definitions.
     let mut available = Vec::new();
@@ -165,16 +167,12 @@ fn list(conf: &Conf) -> Result<bool> {
         let info = pod.1;
         let path = format!("{}/{}.yaml", PODMAN_DEF_PATH, name);
         let def = std::path::Path::new(&path);
-        let def = if def.exists() {
-            path
-        } else {
-            "-".to_string()
-        };
+        let def = if def.exists() { path } else { "-".to_string() };
         table.add_row(row![name, info.status, info.id, def]);
     }
     for name in available {
-        let name = format!("{}/{}.yaml", PODMAN_DEF_PATH, name);
-        table.add_row(row!["-", "-", "-", name]);
+        let path = format!("{}/{}.yaml", PODMAN_DEF_PATH, name);
+        table.add_row(row![name, "-", "-", path]);
     }
 
     let format = prettytable::format::FormatBuilder::new()
