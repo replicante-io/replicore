@@ -1,0 +1,224 @@
+# Adaptation of sentry 10 docker-compose:
+#   https://github.com/getsentry/onpremise/blob/master/docker-compose.yml
+containers:
+  # Stateless servicies
+  - name: memcached
+    image: memcached:1.6-alpine
+  - name: smtp
+    image: tianon/exim4
+
+  # Persistent data
+  - name: clickhouse
+    image: yandex/clickhouse-server:19.11
+    mount:
+      - type: bind
+        src: '{{ DATA_ROOT }}/clickhouse'
+        target: /var/lib/clickhouse
+        relabel: private
+  - name: postgres
+    image: postgres:9.6
+    env:
+      POSTGRES_HOST_AUTH_METHOD: trust
+    mount:
+      - type: bind
+        src: '{{ DATA_ROOT }}/postgres'
+        target: /var/lib/postgresql/data
+        relabel: private
+  - name: redis
+    image: redis:5.0-alpine
+    mount:
+      - type: bind
+        src: '{{ DATA_ROOT }}/redis'
+        target: /data
+        relabel: private
+  - name: zookeeper
+    image: confluentinc/cp-zookeeper:5.1.2
+    env:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      CONFLUENT_SUPPORT_METRICS_ENABLE: false
+      ZOOKEEPER_LOG4J_ROOT_LOGLEVEL: WARN
+      ZOOKEEPER_TOOLS_LOG4J_LOGLEVEL: WARN
+    mount:
+      - type: bind
+        src: '{{ DATA_ROOT }}/zoo-data'
+        target: /var/lib/zookeeper/data
+        relabel: private
+      - type: bind
+        src: '{{ DATA_ROOT }}/zoo-log'
+        target: /var/lib/zookeeper/log
+        relabel: private
+      - type: bind
+        src: '{{ DATA_ROOT }}/secrets'
+        target: /etc/zookeeper/secrets
+        relabel: private
+  - name: kafka
+    image: confluentinc/cp-kafka:5.1.2
+    env:
+      KAFKA_ZOOKEEPER_CONNECT: 'localhost:2181'
+      KAFKA_ADVERTISED_LISTENERS: 'PLAINTEXT://localhost:9092'
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      CONFLUENT_SUPPORT_METRICS_ENABLE: 'false'
+      KAFKA_LOG4J_LOGGERS: 'kafka.cluster=WARN,kafka.controller=WARN,kafka.coordinator=WARN,kafka.log=WARN,kafka.server=WARN,kafka.zookeeper=WARN,state.change.logger=WARN'
+      KAFKA_LOG4J_ROOT_LOGLEVEL: WARN
+      KAFKA_TOOLS_LOG4J_LOGLEVEL: WARN
+    mount:
+      - type: bind
+        src: '{{ DATA_ROOT }}/kafka-data'
+        target: /var/lib/kafka/data
+        relabel: private
+      - type: bind
+        src: '{{ DATA_ROOT }}/kafka-log'
+        target: /var/lib/kafka/log
+        relabel: private
+      - type: bind
+        src: '{{ DATA_ROOT }}/secrets'
+        target: /etc/kafka/secrets
+        relabel: private
+
+  # Snuba services
+  - name: snuba-api
+    image: getsentry/snuba:latest
+    initialise:
+      - /init.sh
+    env:
+      SNUBA_SETTINGS: docker
+      CLICKHOUSE_HOST: localhost
+      DEFAULT_BROKERS: 'localhost:9092'
+      REDIS_HOST: localhost
+      UWSGI_MAX_REQUESTS: '10000'
+      UWSGI_DISABLE_LOGGING: 'true'
+    mount:
+      - type: bind
+        src: '{{ CONF_ROOT }}/snuba-init.sh'
+        target: /init.sh
+        relabel: private
+        ro: 'true'
+  - name: snuba-consumer
+    image: getsentry/snuba:latest
+    command:
+      - 'consumer'
+      - '--auto-offset-reset=latest'
+      - '--max-batch-time-ms'
+      - '750'
+    env:
+      SNUBA_SETTINGS: docker
+      CLICKHOUSE_HOST: localhost
+      DEFAULT_BROKERS: 'localhost:9092'
+      REDIS_HOST: localhost
+      UWSGI_MAX_REQUESTS: '10000'
+      UWSGI_DISABLE_LOGGING: 'true'
+  - name: snuba-replacer
+    image: getsentry/snuba:latest
+    command:
+      - 'replacer'
+      - '--auto-offset-reset=latest'
+      - '--max-batch-size'
+      - '3'
+    env:
+      SNUBA_SETTINGS: docker
+      CLICKHOUSE_HOST: localhost
+      DEFAULT_BROKERS: 'localhost:9092'
+      REDIS_HOST: localhost
+      UWSGI_MAX_REQUESTS: '10000'
+      UWSGI_DISABLE_LOGGING: 'true'
+  - name: snuba-cleanup
+    image: getsentry/snuba:latest
+    command:
+      - 'bash'
+      - '-c'
+      # Run every 5 minutes
+      - 'while true; do sentry cleanup --dry-run False; sleep 300; done'
+    env:
+      SNUBA_SETTINGS: docker
+      CLICKHOUSE_HOST: localhost
+      DEFAULT_BROKERS: 'localhost:9092'
+      REDIS_HOST: localhost
+      UWSGI_MAX_REQUESTS: '10000'
+      UWSGI_DISABLE_LOGGING: 'true'
+  - name: symbolicator
+    image: getsentry/symbolicator:latest
+    command:
+      - run
+    mount:
+      - type: bind
+        src: '{{ DATA_ROOT }}/symbolicator'
+        target: /data
+        relabel: private
+
+  # Sentry
+  - name: sentry-web
+    image: getsentry/sentry:latest
+    initialise:
+      - /init.sh
+    env:
+      SENTRY_EMAIL_HOST: localhost
+      SENTRY_MEMCACHED_HOST: localhost
+      SENTRY_POSTGRES_HOST: localhost
+      SENTRY_REDIS_HOST: localhost
+      SENTRY_SECRET_KEY: ')0pab^fle4=v8jgzb^scbl5doezg+7*d=&3tl%s*g8r%*oepis'
+      SENTRY_CONF: '/etc/sentry'
+      SNUBA: 'http://localhost:1218'
+    mount:
+      - type: bind
+        src: '{{ DATA_ROOT }}/senrty-data'
+        target: /data
+        relabel: private
+      - type: bind
+        src: '{{ CONF_ROOT }}/sentry-conf'
+        target: '/etc/sentry'
+        relabel: private
+        ro: 'true'
+      - type: bind
+        src: '{{ CONF_ROOT }}/sentry-init.sh'
+        target: /init.sh
+        relabel: private
+        ro: 'true'
+  - name: sentry-cron
+    image: getsentry/sentry:latest
+    command:
+      - run
+      - cron
+    env:
+      SENTRY_EMAIL_HOST: localhost
+      SENTRY_MEMCACHED_HOST: localhost
+      SENTRY_POSTGRES_HOST: localhost
+      SENTRY_REDIS_HOST: localhost
+      SENTRY_SECRET_KEY: ')0pab^fle4=v8jgzb^scbl5doezg+7*d=&3tl%s*g8r%*oepis'
+      SENTRY_CONF: '/etc/sentry'
+      SNUBA: 'http://localhost:1218'
+    mount:
+      - type: bind
+        src: '{{ DATA_ROOT }}/senrty-data'
+        target: /data
+        relabel: private
+      - type: bind
+        src: '{{ CONF_ROOT }}/sentry-conf'
+        target: '/etc/sentry'
+        relabel: private
+        ro: 'true'
+  - name: sentry-worker
+    image: getsentry/sentry:latest
+    command:
+      - run
+      - worker
+    env:
+      SENTRY_EMAIL_HOST: localhost
+      SENTRY_MEMCACHED_HOST: localhost
+      SENTRY_POSTGRES_HOST: localhost
+      SENTRY_REDIS_HOST: localhost
+      SENTRY_SECRET_KEY: ')0pab^fle4=v8jgzb^scbl5doezg+7*d=&3tl%s*g8r%*oepis'
+      SENTRY_CONF: '/etc/sentry'
+      SNUBA: 'http://localhost:1218'
+    mount:
+      - type: bind
+        src: '{{ DATA_ROOT }}/senrty-data'
+        target: /data
+        relabel: private
+      - type: bind
+        src: '{{ CONF_ROOT }}/sentry-conf'
+        target: '/etc/sentry'
+        relabel: private
+        ro: 'true'
+
+ports:
+  - host: 9900
