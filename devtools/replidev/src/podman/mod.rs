@@ -23,6 +23,7 @@ pub struct Pod {
     pub containers: Vec<PodContainer>,
 
     /// Port mappings exposed by the pod.
+    #[serde(default)]
     pub ports: Vec<PodPort>,
 }
 

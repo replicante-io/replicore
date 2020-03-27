@@ -12,7 +12,7 @@ use crate::podman::Pod;
 use crate::ErrorKind;
 use crate::Result;
 
-const PODMAN_DEF_PATH: &str = "devtools/podman";
+const PODMAN_DEF_PATH: &str = "devtools/deps/podman";
 
 /// Manage Replicante Core dependencies.
 #[derive(Debug, StructOpt)]
@@ -128,8 +128,11 @@ fn list(conf: &Conf) -> Result<bool> {
             &format!("label=io.replicante.dev.project={}", conf.project),
         ],
     )?;
-    let pods: BTreeMap<String, PodPsStatus> =
-        serde_yaml::from_slice(&pods).expect("formatted podman pod ps output to parse");
+    let pods: BTreeMap<String, PodPsStatus> = if pods.is_empty() {
+        BTreeMap::new()
+    } else {
+        serde_yaml::from_slice(&pods).expect("failed to parse formatted podman pod ps output")
+    };
     let pods: BTreeMap<String, PodPsStatus> = pods
         .into_iter()
         .map(|(key, value)| {

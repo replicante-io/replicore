@@ -12,11 +12,7 @@ target/
 
 
 # Local testing and development tools.
-devtools/data
+devtools/deps/data
 devtools/replicante.conf.d/
-replidev.local.yaml
-
-.env
-deps.dot
-deps.svg
 replicante.yaml
+replidev.local.yaml

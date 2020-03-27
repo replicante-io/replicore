@@ -1,3 +1,5 @@
+const BASE_PATHS: &str = "./devtools/deps";
+
 /// Variables available for substitution in pod definitions.
 ///
 /// Supported variables:
@@ -16,8 +18,8 @@ impl Variables {
         S: std::fmt::Display,
     {
         Variables {
-            conf_root: format!("./devtools/configs/{}", pod),
-            data_root: format!("./devtools/data/{}", pod),
+            conf_root: format!("{}/configs/{}", BASE_PATHS, pod),
+            data_root: format!("{}/data/{}", BASE_PATHS, pod),
         }
     }
 

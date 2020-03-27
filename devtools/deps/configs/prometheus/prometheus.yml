@@ -7,5 +7,4 @@ scrape_configs:
     metrics_path: '/api/unstable/introspect/metrics'
     static_configs:
       - targets:
-        # Because we fixed the docker network subnet, the gateway IP of the host is fixed too.
-        - '172.128.0.1:16016'
+        - 'podman-host:16016'

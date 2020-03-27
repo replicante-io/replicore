@@ -1,0 +1,18 @@
+containers:
+  - name: prometheus
+    image: prom/prometheus:v2.17.1
+    mount:
+      - type: bind
+        src: '{{ CONF_ROOT }}/prometheus.yml'
+        target: /etc/prometheus/prometheus.yml
+        relabel: private
+        ro: 'true'
+      # Prometheus needs to mmap files from the DB and bind mount fails to handle it.
+      # For now just ignore persistent data and have a stateless instance.
+      #- type: bind
+      #  src: '{{ DATA_ROOT }}/tsdb'
+      #  target: /prometheus
+      #  relabel: private
+
+ports:
+  - host: 9090

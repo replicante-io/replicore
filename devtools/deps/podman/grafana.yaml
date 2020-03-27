@@ -1,0 +1,14 @@
+containers:
+  - name: grafana
+    image: grafana/grafana:6.7.1
+    env:
+      GF_INSTALL_PLUGINS: 'grafana-simple-json-datasource'
+    mount:
+      - type: bind
+        src: '{{ CONF_ROOT }}/provision'
+        target: /etc/grafana/provisioning
+        relabel: private
+        ro: 'true'
+
+ports:
+  - host: 3000
