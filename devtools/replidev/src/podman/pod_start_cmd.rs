@@ -3,20 +3,22 @@ use std::process::Command;
 use failure::ResultExt;
 
 use super::Pod;
-use super::Variables;
+use crate::settings::Paths;
+use crate::settings::Variables;
 use crate::Conf;
 use crate::ErrorKind;
 use crate::Result;
 
 /// Start a pod matching the given definition.
-pub fn pod_start<S1, S2>(
+pub fn pod_start<P, S1, S2>(
     conf: &Conf,
     pod: Pod,
     name: S1,
     project: S2,
-    variables: Variables,
+    variables: Variables<P>,
 ) -> Result<()>
 where
+    P: Paths,
     S1: std::fmt::Display,
     S2: std::fmt::Display,
 {

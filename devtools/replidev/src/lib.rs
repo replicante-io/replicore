@@ -4,6 +4,7 @@ mod command;
 mod conf;
 mod error;
 mod podman;
+mod settings;
 
 use self::conf::Conf;
 

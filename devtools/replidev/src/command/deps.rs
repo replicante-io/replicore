@@ -203,7 +203,8 @@ fn restart(args: &PodOpt, conf: &Conf) -> Result<bool> {
 fn start(args: &PodOpt, conf: &Conf) -> Result<bool> {
     for pod_name in &args.pods {
         let pod = pod_definition(pod_name)?;
-        let variables = crate::podman::Variables::new(pod_name);
+        let paths = crate::settings::paths::DepsPod::new(&pod_name);
+        let variables = crate::settings::Variables::new(paths);
         crate::podman::pod_start(
             conf,
             pod,
