@@ -19,8 +19,6 @@ In addition to the Code Of Conduct the following documents are relevant:
 
 
 ## Development environment
-NOTE: the development environment is in the process of a rewrite from docker & docker-compose to podman.
-
 Replicante Core requires a few dependencies in order to run.  
 To make development easier and faster these dependencies are run locally using containers.
 
@@ -87,6 +85,16 @@ $ replidev deps stop essential
 # Once the pods have been stopped, persisted data can be PERMANENTLY deleted with
 $ replidev deps clean essential --confirm
 --> Clean data for essential pod (from ./devtools/data/essential)
+
+# Additional development dependences and tools:
+$ replidev deps list
+NAME          STATUS    POD ID    DEFINITION   
+essential     -         -         devtools/deps/podman/essential.yaml   
+grafana       -         -         devtools/deps/podman/grafana.yaml   
+jaeger        -         -         devtools/deps/podman/jaeger.yaml   
+prometheus    -         -         devtools/deps/podman/prometheus.yaml   
+sentry        -         -         devtools/deps/podman/sentry.yaml   
+uis           -         -         devtools/deps/podman/uis.yaml
 ```
 
 

@@ -26,11 +26,9 @@ export PATH=$PATH:$PWD/target/bin
 # Look into https://docs.rs/structopt/0.3.9/structopt/ for CLI parser
 replidev deps start essential  # mongo, kafka, zookeeper, ...
 replidev deps start uis sentry ... # start additional dependencies
-replidev deps stop ... # podman stop
-replidev deps rm ... # podman rm -f
-replidev deps purge ... # rm + delete data paths
-replidev deps recreate ... # rm + start
-replidev deps sefix # Fix selinux context on podman data volumes
+replidev deps stop ... # podman stop + podman rm
+replidev deps clean ... # delete data paths
+replidev deps restart ... # stop + start
 replidev images check vX.Y.Z # build container images (probably with buildah)
 replidev images build vX.Y.Z # clean build (no cache) images
 ```
