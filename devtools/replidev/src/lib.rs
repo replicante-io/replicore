@@ -36,7 +36,7 @@ enum Command {
 
     /// Manage Replicante Playgrounds nodes.
     #[structopt(name = "play")]
-    Play,
+    Play(self::command::play::CliOpt),
 }
 
 pub fn run() -> Result<bool> {
@@ -46,6 +46,6 @@ pub fn run() -> Result<bool> {
         Command::Configuration(cfg) => self::command::conf::run(cfg, conf),
         Command::Dependencies(deps) => self::command::deps::run(deps, conf),
         Command::GenCerts(certs) => self::command::certs::run(certs, conf),
-        Command::Play => panic!("TODO"),
+        Command::Play(play) => self::command::play::run(play, conf),
     }
 }

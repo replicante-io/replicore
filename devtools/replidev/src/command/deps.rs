@@ -124,8 +124,8 @@ fn list(conf: &Conf) -> Result<bool> {
         conf,
         r#"{{ .Name }}: {id: "{{ .ID }}", status: "{{ .Status }}"}"#,
         vec![
-            "label=io.replicante.dev.role=deps",
-            &format!("label=io.replicante.dev.project={}", conf.project),
+            "label=io.replicante.dev/role=deps",
+            &format!("label=io.replicante.dev/project={}", conf.project),
         ],
     )?;
     let pods: BTreeMap<String, PodPsStatus> = if pods.is_empty() {
@@ -205,11 +205,20 @@ fn start(args: &PodOpt, conf: &Conf) -> Result<bool> {
         let pod = pod_definition(pod_name)?;
         let paths = crate::settings::paths::DepsPod::new(&pod_name);
         let variables = crate::settings::Variables::new(paths);
+        let labels = {
+            let mut labels = BTreeMap::new();
+            labels.insert(
+                "io.replicante.dev/project".to_string(),
+                conf.project.to_string(),
+            );
+            labels.insert("io.replicante.dev/role".to_string(), "deps".to_string());
+            labels
+        };
         crate::podman::pod_start(
             conf,
             pod,
             format!("replideps-{}", pod_name),
-            &conf.project,
+            labels,
             variables,
         )?;
     }

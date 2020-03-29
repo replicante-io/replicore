@@ -67,6 +67,9 @@ pub struct PodPort {
     /// Port to open on the host.
     pub host: usize,
 
+    /// Optional port name to inject the host port as a pod annotation.
+    pub name: Option<String>,
+
     /// Port the pod will be listening on.
     #[serde(default)]
     pub pod: Option<usize>,

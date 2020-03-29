@@ -12,3 +12,4 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - List available `replidev deps` pods.
 - Optional per-machine configuration override.
 - Start and stop replicante core dependencies pods.
+- Start playground nodes as pods.

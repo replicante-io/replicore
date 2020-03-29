@@ -148,6 +148,11 @@ impl Project {
             Self::Playground => true,
         }
     }
+
+    /// Check if a project is allowed to execute the `play` family of commands.
+    pub fn allow_play(&self) -> bool {
+        *self == Self::Playground
+    }
 }
 
 impl std::fmt::Display for Project {

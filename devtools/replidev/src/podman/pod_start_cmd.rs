@@ -1,3 +1,4 @@
+use std::collections::BTreeMap;
 use std::process::Command;
 
 use failure::ResultExt;
@@ -10,17 +11,16 @@ use crate::ErrorKind;
 use crate::Result;
 
 /// Start a pod matching the given definition.
-pub fn pod_start<P, S1, S2>(
+pub fn pod_start<P, S>(
     conf: &Conf,
     pod: Pod,
-    name: S1,
-    project: S2,
+    name: S,
+    labels: BTreeMap<String, String>,
     variables: Variables<P>,
 ) -> Result<()>
 where
     P: Paths,
-    S1: std::fmt::Display,
-    S2: std::fmt::Display,
+    S: std::fmt::Display,
 {
     // Create (but to not start) the pod object.
     println!("--> Create pod {}", name);
@@ -30,17 +30,21 @@ where
         .arg("create")
         .arg(format!("--name={}", name))
         .arg("--add-host")
-        .arg(format!("podman-host:{}", conf.podman_host_ip()?))
-        .arg("--label")
-        .arg(format!("io.replicante.dev.project={}", project))
-        .arg("--label")
-        .arg("io.replicante.dev.role=deps");
+        .arg(format!("podman-host:{}", conf.podman_host_ip()?));
+    let mut labels = labels;
     for port in pod.ports {
         let host_port = port.host;
         let pod_port = port.pod.unwrap_or(port.host);
+        if let Some(name) = port.name {
+            let label = format!("io.replicante.dev/port/{}", name);
+            labels.insert(label, host_port.to_string());
+        }
         podman
             .arg("--publish")
             .arg(format!("{}:{}", host_port, pod_port));
+    }
+    for (key, value) in labels {
+        podman.arg("--label").arg(format!("{}={}", key, value));
     }
     let status = podman
         .status()

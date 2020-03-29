@@ -1,7 +1,5 @@
 use crate::conf::Project;
 
-const DEPS_BASE: &str = "./devtools/deps";
-
 /// Pod related paths factory.
 ///
 /// Allows paths to be injected into pod definitions and tool invokations
@@ -33,13 +31,36 @@ pub struct DepsPod {
 
 impl DepsPod {
     pub fn new(pod_name: &str) -> Self {
-        let configs = format!("{}/configs/{}", DEPS_BASE, pod_name);
-        let data = format!("{}/data/{}", DEPS_BASE, pod_name);
+        let configs = format!("./devtools/deps/configs/{}", pod_name);
+        let data = format!("./devtools/deps/data/{}", pod_name);
         DepsPod { configs, data }
     }
 }
 
 impl Paths for DepsPod {
+    fn configs(&self) -> &str {
+        &self.configs
+    }
+
+    fn data(&self) -> &str {
+        &self.data
+    }
+}
+
+pub struct PlayPod {
+    configs: String,
+    data: String,
+}
+
+impl PlayPod {
+    pub fn new(store: &str, node: &str) -> Self {
+        let configs = format!("./stores/{}", store);
+        let data = format!("./data/nodes/{}/{}", store, node);
+        PlayPod { configs, data }
+    }
+}
+
+impl Paths for PlayPod {
     fn configs(&self) -> &str {
         &self.configs
     }
