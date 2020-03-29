@@ -20,6 +20,10 @@ lazy_static::lazy_static! {
 /// Project specific configuration.
 #[derive(Debug, Deserialize)]
 pub struct Conf {
+    /// Command to execute easypki.
+    #[serde(default = "Conf::default_easypki")]
+    pub easypki: String,
+
     /// Current project to operate on.
     pub project: Project,
 
@@ -92,6 +96,10 @@ impl Conf {
 }
 
 impl Conf {
+    fn default_easypki() -> String {
+        "easypki".into()
+    }
+
     fn default_podman() -> String {
         "podman".into()
     }
@@ -113,6 +121,10 @@ impl Conf {
 /// Supported replidev projects.
 #[derive(PartialEq, Eq, Debug, Deserialize)]
 pub enum Project {
+    /// Replicante Agents Repository
+    #[serde(rename = "agents")]
+    Agents,
+
     /// Replicante Core
     #[serde(rename = "core")]
     Core,
@@ -127,11 +139,21 @@ impl Project {
     pub fn allow_deps(&self) -> bool {
         *self == Self::Core
     }
+
+    /// Check if a project is allowed to execute the `gen-certs` family of commands.
+    pub fn allow_gen_certs(&self) -> bool {
+        match self {
+            Self::Agents => true,
+            Self::Core => true,
+            Self::Playground => true,
+        }
+    }
 }
 
 impl std::fmt::Display for Project {
     fn fmt(&self, fmt: &mut std::fmt::Formatter) -> std::fmt::Result {
         match self {
+            Self::Agents => write!(fmt, "agents"),
             Self::Core => write!(fmt, "core"),
             Self::Playground => write!(fmt, "playground"),
         }

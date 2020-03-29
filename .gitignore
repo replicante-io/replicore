@@ -1,18 +1,17 @@
+target/
 *.log
 *.swp
 **/*.rs.bk
 
-ci/tmp/
-node_modules/
-target/
-
-# Ingore nested cargo locks but keep the root one.
+# Ingore nested cargo locks but keep the root & replidev ones.
 **/Cargo.lock
 !Cargo.lock
+!devtools/replidev/Cargo.lock
 
 
 # Local testing and development tools.
 devtools/deps/data
+devtools/deps/pki
 devtools/replicante.conf.d/
 replicante.yaml
 replidev.local.yaml

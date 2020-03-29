@@ -75,12 +75,20 @@ pub enum ErrorKind {
 }
 
 impl ErrorKind {
+    pub fn command_exec<S: std::fmt::Display>(cmd: S) -> Self {
+        Self::CommandExec(cmd.to_string())
+    }
+
+    pub fn command_failed<S: std::fmt::Display>(cmd: S) -> Self {
+        Self::CommandFailed(cmd.to_string())
+    }
+
     pub fn fs_error(error: &str) -> Self {
         Self::FsError(error.to_string())
     }
 
     pub fn fs_not_allowed<S: std::fmt::Display>(path: S) -> Self {
-        Self::FsError(format!("access {}", path))
+        Self::FsError(format!("unable to access {}", path))
     }
 
     pub fn invalid_pod<S: Into<String>>(pod: S) -> Self {

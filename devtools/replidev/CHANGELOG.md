@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## Unreleased
 ### Added
 - Configurable podman command to use.
+- HTTPS certificate (re)generation command.
 - Initialise and clean up replicante core dependencies.
 - List available `replidev deps` pods.
 - Optional per-machine configuration override.

@@ -30,6 +30,10 @@ enum Command {
     #[structopt(name = "deps")]
     Dependencies(self::command::deps::CliOpt),
 
+    /// Generate an HTTPS CA with client and server certificates.
+    #[structopt(name = "gen-certs")]
+    GenCerts(self::command::certs::CliOpt),
+
     /// Manage Replicante Playgrounds nodes.
     #[structopt(name = "play")]
     Play,
@@ -41,6 +45,7 @@ pub fn run() -> Result<bool> {
     match args.command {
         Command::Configuration(cfg) => self::command::conf::run(cfg, conf),
         Command::Dependencies(deps) => self::command::deps::run(deps, conf),
+        Command::GenCerts(certs) => self::command::certs::run(certs, conf),
         Command::Play => panic!("TODO"),
     }
 }

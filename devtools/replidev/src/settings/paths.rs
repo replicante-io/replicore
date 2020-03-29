@@ -1,3 +1,5 @@
+use crate::conf::Project;
+
 const DEPS_BASE: &str = "./devtools/deps";
 
 /// Pod related paths factory.
@@ -10,24 +12,30 @@ pub trait Paths {
 
     /// Path to a pod's persistent, git ignored, data files.
     fn data(&self) -> &str;
+}
 
-    /// Path to the PKI store.
-    fn pki(&self) -> &str;
+impl dyn Paths {
+    /// Path to the PKI store for the given project.
+    pub fn pki(project: &Project) -> &'static str {
+        match project {
+            Project::Agents => "./devtools/pki",
+            Project::Core => "./devtools/deps/pki",
+            Project::Playground => "./data/pki",
+        }
+    }
 }
 
 /// Paths for pods in the `replidev deps` commands.
 pub struct DepsPod {
     configs: String,
     data: String,
-    pki: String,
 }
 
 impl DepsPod {
     pub fn new(pod_name: &str) -> Self {
         let configs = format!("{}/configs/{}", DEPS_BASE, pod_name);
         let data = format!("{}/data/{}", DEPS_BASE, pod_name);
-        let pki = format!("{}/pki", DEPS_BASE);
-        DepsPod { configs, data, pki }
+        DepsPod { configs, data }
     }
 }
 
@@ -38,9 +46,5 @@ impl Paths for DepsPod {
 
     fn data(&self) -> &str {
         &self.data
-    }
-
-    fn pki(&self) -> &str {
-        &self.pki
     }
 }
