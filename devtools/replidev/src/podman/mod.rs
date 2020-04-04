@@ -3,12 +3,14 @@ use std::collections::BTreeMap;
 use serde::Deserialize;
 
 mod exec_cmd;
+mod pod_inspect_cmd;
 mod pod_ps_cmd;
 mod pod_start_cmd;
 mod pod_stop_cmd;
 mod unshare_cmd;
 
 pub use self::exec_cmd::exec;
+pub use self::pod_inspect_cmd::pod_inspect;
 pub use self::pod_ps_cmd::pod_ps;
 pub use self::pod_start_cmd::pod_start;
 pub use self::pod_stop_cmd::pod_stop;
@@ -49,16 +51,26 @@ pub struct PodContainer {
 
     /// Name of this container.
     pub name: String,
+
+    /// Optional working directory to set for the container.
+    #[serde(default)]
+    pub workdir: Option<String>,
 }
 
 /// Definition of a pod's container
-#[derive(Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize)]
 pub struct PodContainerMount {
+    /// The type of mount operation to perform.
     #[serde(rename = "type")]
     pub mount_type: String,
 
+    /// Addtional options passed to podman `--mount` command.
     #[serde(default, flatten)]
     pub options: BTreeMap<String, String>,
+
+    /// Uiser ID to own the bind mounted sources.
+    #[serde(default)]
+    pub uid: Option<String>,
 }
 
 /// Port mapping exposed by a pod.

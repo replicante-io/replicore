@@ -26,7 +26,7 @@ where
 
     // Now remove the pod.
     println!("--> Remove pod {}", name);
-    let status = Command::new("podman")
+    let status = Command::new(&conf.podman)
         .arg("pod")
         .arg("rm")
         .arg(name.to_string())

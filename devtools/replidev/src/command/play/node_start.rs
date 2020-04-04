@@ -16,6 +16,11 @@ use super::NodeOpt;
 pub fn run(args: &NodeOpt, conf: &Conf) -> Result<bool> {
     let name = random_name(8);
     let store = &args.store;
+    let cluster_id = args
+        .cluster_id
+        .as_deref()
+        .unwrap_or(store)
+        .replace('/', "-");
 
     // Load node definition.
     let def = format!("stores/{}/node.yaml", store);
@@ -43,7 +48,7 @@ pub fn run(args: &NodeOpt, conf: &Conf) -> Result<bool> {
         let mut labels = BTreeMap::new();
         labels.insert(
             "io.replicante.dev/play/cluster".to_string(),
-            store.to_string(),
+            cluster_id.clone(),
         );
         labels.insert(
             "io.replicante.dev/project".to_string(),
@@ -52,10 +57,16 @@ pub fn run(args: &NodeOpt, conf: &Conf) -> Result<bool> {
         labels
     };
 
+    // Prepare the node template environment.
+    let paths = crate::settings::paths::PlayPod::new(store, &cluster_id, &name);
+    let mut variables = crate::settings::Variables::new(conf, paths);
+    variables.set("CLUSTER_ID", &cluster_id);
+
     // Start the node pod.
-    println!("--> Starting {} node {}", store, name);
-    let paths = crate::settings::paths::PlayPod::new(store, &name);
-    let variables = crate::settings::Variables::new(paths);
+    println!(
+        "--> Starting {} node {} for cluster {}",
+        store, name, cluster_id
+    );
     crate::podman::pod_start(conf, pod, name, labels, variables)?;
     Ok(true)
 }

@@ -53,9 +53,9 @@ pub struct PlayPod {
 }
 
 impl PlayPod {
-    pub fn new(store: &str, node: &str) -> Self {
+    pub fn new(store: &str, cluster_id: &str, node: &str) -> Self {
         let configs = format!("./stores/{}", store);
-        let data = format!("./data/nodes/{}/{}", store, node);
+        let data = format!("./data/nodes/{}/{}", cluster_id, node);
         PlayPod { configs, data }
     }
 }

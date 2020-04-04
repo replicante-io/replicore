@@ -4,22 +4,20 @@ use std::process::Command;
 use failure::ResultExt;
 
 use super::Pod;
-use crate::settings::Paths;
 use crate::settings::Variables;
 use crate::Conf;
 use crate::ErrorKind;
 use crate::Result;
 
 /// Start a pod matching the given definition.
-pub fn pod_start<P, S>(
+pub fn pod_start<S>(
     conf: &Conf,
     pod: Pod,
     name: S,
     labels: BTreeMap<String, String>,
-    variables: Variables<P>,
+    variables: Variables,
 ) -> Result<()>
 where
-    P: Paths,
     S: std::fmt::Display,
 {
     // Create (but to not start) the pod object.
@@ -58,7 +56,7 @@ where
     for container in pod.containers {
         let con_name = format!("{}-{}", name, container.name);
         println!("--> Start container {}", con_name);
-        let mut podman = Command::new("podman");
+        let mut podman = Command::new(&conf.podman);
         podman
             .arg("run")
             .arg(format!("--pod={}", name))
@@ -66,8 +64,12 @@ where
             .arg("--detach")
             .arg("--init")
             .arg("--tty");
+        if let Some(workdir) = container.workdir {
+            podman.arg("--workdir").arg(workdir);
+        }
+
         for (key, value) in container.env {
-            let value = variables.inject(&value);
+            let value = variables.inject(&value)?;
             podman.arg("--env").arg(format!("{}={}", key, value));
         }
 
@@ -75,27 +77,33 @@ where
         let mut bind_sources = Vec::new();
         for mount in container.mount {
             let mut spec = vec![format!("type={}", mount.mount_type)];
-            spec.extend(mount.options.iter().map(|(key, value)| {
-                let value = variables.inject(value);
+            for (key, value) in mount.options.iter() {
+                let value = variables.inject(value)?;
                 if mount.mount_type == "bind" && (key == "src" || key == "source") {
-                    bind_sources.push(value.clone());
+                    let value = value.clone();
+                    bind_sources.push((mount.clone(), value));
                 }
-                format!("{}={}", key, value)
-            }));
+                spec.push(format!("{}={}", key, value));
+            }
             let spec = spec.join(",");
             podman.arg("--mount").arg(spec);
         }
-        for source in bind_sources {
+        for (mount, source) in bind_sources {
             if !std::path::Path::new(&source).exists() {
                 std::fs::create_dir_all(&source)
-                    .with_context(|_| ErrorKind::fs_not_allowed(source))?;
+                    .with_context(|_| ErrorKind::fs_not_allowed(&source))?;
+            }
+            if let Some(uid) = mount.uid {
+                crate::podman::unshare(conf, vec!["chown", &uid.to_string(), &source])?;
             }
         }
 
         // Append image and command.
         podman.arg(container.image);
         if let Some(command) = container.command {
-            podman.args(command);
+            for arg in command {
+                podman.arg(variables.inject(&arg)?);
+            }
         }
 
         // Run the container.

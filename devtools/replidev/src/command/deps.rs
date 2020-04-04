@@ -113,7 +113,7 @@ fn initialise(args: &PodOpt, conf: &Conf) -> Result<bool> {
 
 /// List running and available dependencies pod.
 ///
-/// Example output?
+/// Example output:
 ///   NAME      STATUS  POD ID  DEFINITION
 ///   essential Running abc-123 $PODMAN_DEF_PATH/essential.yaml
 ///   uis       -       -       $PODMAN_DEF_PATH/uis.yaml
@@ -180,7 +180,7 @@ fn list(conf: &Conf) -> Result<bool> {
 
     let format = prettytable::format::FormatBuilder::new()
         .column_separator(' ')
-        .padding(0, 3)
+        .padding(0, 2)
         .build();
     table.set_format(format);
     table.printstd();
@@ -204,7 +204,7 @@ fn start(args: &PodOpt, conf: &Conf) -> Result<bool> {
     for pod_name in &args.pods {
         let pod = pod_definition(pod_name)?;
         let paths = crate::settings::paths::DepsPod::new(&pod_name);
-        let variables = crate::settings::Variables::new(paths);
+        let variables = crate::settings::Variables::new(conf, paths);
         let labels = {
             let mut labels = BTreeMap::new();
             labels.insert(

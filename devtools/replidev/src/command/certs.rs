@@ -1,7 +1,9 @@
 use std::collections::HashMap;
 use std::fs::File;
+use std::fs::Permissions;
 use std::io::Read;
 use std::io::Write;
+use std::os::unix::fs::PermissionsExt;
 use std::process::Command;
 
 use failure::ResultExt;
@@ -111,6 +113,12 @@ pub fn run(args: CliOpt, conf: Conf) -> Result<bool> {
     bundle_certs(pki_path, "client")?;
     bundle_certs(pki_path, "server")?;
 
+    // Update keys path permissions to allow non-root pods to access them.
+    let perms = Permissions::from_mode(0o755);
+    std::fs::set_permissions(format!("{}/replidev/keys/", pki_path), perms)
+        .with_context(|_| ErrorKind::fs_error("unable to change permissions"))?;
+
+    // Print all certificate paths for user to know.
     println!(
         "CA Certificate:     {}/replidev/certs/replidev.crt",
         pki_path
@@ -120,13 +128,13 @@ pub fn run(args: CliOpt, conf: Conf) -> Result<bool> {
         pki_path
     );
     println!(
-        "Client Bundle:      {}/replidev/bundles/client.key",
+        "Client Bundle:      {}/replidev/bundles/client.pem",
         pki_path
     );
     println!("Client Certificate: {}/replidev/certs/client.crt", pki_path);
     println!("Client Private Key: {}/replidev/keys/client.key", pki_path);
     println!(
-        "Server Bundle:      {}/replidev/bundles/server.crt",
+        "Server Bundle:      {}/replidev/bundles/server.pem",
         pki_path
     );
     println!("Server Certificate: {}/replidev/certs/server.crt", pki_path);

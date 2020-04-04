@@ -72,6 +72,12 @@ pub enum ErrorKind {
 
     #[fail(display = "unable to find a defintion for the {} pod", _0)]
     PodNotFound(String),
+
+    #[fail(display = "unable to decode response from {}", _0)]
+    ResponseDecode(String),
+
+    #[fail(display = "template rendering error")]
+    TemplateRender,
 }
 
 impl ErrorKind {
@@ -113,6 +119,14 @@ impl ErrorKind {
 
     pub fn podman_failed<S: std::fmt::Display>(cmd: S) -> Self {
         Self::CommandFailed(format!("podman {}", cmd))
+    }
+
+    pub fn response_decode<S: Into<String>>(cmd: S) -> Self {
+        Self::ResponseDecode(cmd.into())
+    }
+
+    pub fn template_render() -> Self {
+        Self::TemplateRender
     }
 }
 
