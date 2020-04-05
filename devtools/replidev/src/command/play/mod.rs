@@ -16,11 +16,11 @@ pub enum CliOpt {
 
     /// Start a new playground node.
     #[structopt(name = "node-start")]
-    NodeStart(NodeOpt),
+    NodeStart(StartNodeOpt),
 }
 
 #[derive(Debug, StructOpt)]
-pub struct NodeOpt {
+pub struct StartNodeOpt {
     /// ID of the cluster to place the node into.
     #[structopt(name = "cluster-id", long)]
     cluster_id: Option<String>,
@@ -28,6 +28,14 @@ pub struct NodeOpt {
     /// Store node to start.
     #[structopt(name = "STORE", required = true)]
     store: String,
+
+    /// Add JSON files as extra variables passed to the command line.
+    #[structopt(name = "var-file", long)]
+    var_files: Vec<String>,
+
+    /// Add extra variables passed to the command line.
+    #[structopt(name = "var", long)]
+    vars: Vec<String>,
 }
 
 /// Manage Replicante Playground nodes.

@@ -11,9 +11,9 @@ use crate::podman::Pod;
 use crate::ErrorKind;
 use crate::Result;
 
-use super::NodeOpt;
+use super::StartNodeOpt;
 
-pub fn run(args: &NodeOpt, conf: &Conf) -> Result<bool> {
+pub fn run(args: &StartNodeOpt, conf: &Conf) -> Result<bool> {
     let name = random_name(8);
     let store = &args.store;
     let cluster_id = args
@@ -60,7 +60,11 @@ pub fn run(args: &NodeOpt, conf: &Conf) -> Result<bool> {
     // Prepare the node template environment.
     let paths = crate::settings::paths::PlayPod::new(store, &cluster_id, &name);
     let mut variables = crate::settings::Variables::new(conf, paths);
-    variables.set("CLUSTER_ID", &cluster_id);
+    variables
+        .set("CLUSTER_ID", cluster_id.as_str())
+        .set_ports(&pod.ports)
+        .set_cli_vars(&args.vars)?
+        .set_cli_var_files(&args.var_files)?;
 
     // Start the node pod.
     println!(

@@ -9,8 +9,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Configurable podman command to use.
 - HTTPS certificate (re)generation command.
 - Initialise and clean up replicante core dependencies.
+- Inject named ports allocated port into templating variables.
 - List available `replidev deps` pods.
 - List running playground nodes.
 - Optional per-machine configuration override.
 - Start and stop replicante core dependencies pods.
 - Start playground nodes as pods.
+- Support custom variables and JSON objects in pod definitions.

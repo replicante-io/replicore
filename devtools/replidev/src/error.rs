@@ -64,6 +64,12 @@ pub enum ErrorKind {
     #[fail(display = "{} command does not support the {} project", _0, _1)]
     InvalidProject(&'static str, Project),
 
+    #[fail(display = "received invalid variable '{}': {}", _0, _1)]
+    InvalidCliVar(String, String),
+
+    #[fail(display = "received invalid variable JSON file '{}'", _0)]
+    InvalidCliVarFile(String),
+
     #[fail(display = "could not find a non-loopback IP address")]
     IpNotDetected,
 
@@ -95,6 +101,18 @@ impl ErrorKind {
 
     pub fn fs_not_allowed<S: std::fmt::Display>(path: S) -> Self {
         Self::FsError(format!("unable to access {}", path))
+    }
+
+    pub fn invalid_cli_var<N, R>(name: N, reason: R) -> Self
+    where
+        N: Into<String>,
+        R: Into<String>,
+    {
+        Self::InvalidCliVar(name.into(), reason.into())
+    }
+
+    pub fn invalid_cli_var_file<N: Into<String>>(name: N) -> Self {
+        Self::InvalidCliVarFile(name.into())
     }
 
     pub fn invalid_pod<S: Into<String>>(pod: S) -> Self {
