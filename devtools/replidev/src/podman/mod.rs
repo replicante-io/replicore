@@ -52,6 +52,10 @@ pub struct PodContainer {
     /// Name of this container.
     pub name: String,
 
+    /// Optional user override.
+    #[serde(default)]
+    pub user: Option<String>,
+
     /// Optional working directory to set for the container.
     #[serde(default)]
     pub workdir: Option<String>,

@@ -64,6 +64,9 @@ where
             .arg("--detach")
             .arg("--init")
             .arg("--tty");
+        if let Some(user) = container.user {
+            podman.arg("--user").arg(user);
+        }
         if let Some(workdir) = container.workdir {
             podman.arg("--workdir").arg(workdir);
         }
