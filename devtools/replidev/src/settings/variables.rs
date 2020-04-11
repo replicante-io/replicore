@@ -16,9 +16,10 @@ use crate::Result;
 ///
 /// Supported variables:
 ///
-///   * `{{ CONF_ROOT }}` for a pod-scoped root to git-commited configs (path to dir).
-///   * `{{ DATA_ROOT }}` for a pod-scoped root to git-ignored data (path to dir).
-///   * `{{ PODMAN_HOSTNAME }}` takes the value of $HOSTNAME where replidev is running.
+///   * `CONF_ROOT`: pod-scoped root to git-commited configs (path to dir).
+///   * `DATA_ROOT`: pod-scoped root to git-ignored data (path to dir).
+///   * `PODMAN_HOSTNAME`: takes the value of $HOSTNAME where replidev is running.
+///   * `PODMAN_IP`: IP address ussable to reach the podman host.
 ///
 /// Additional custom variables can be added with `Variables::set`.
 pub struct Variables {
@@ -27,17 +28,19 @@ pub struct Variables {
 }
 
 impl Variables {
-    pub fn new<P: Paths>(conf: &Conf, paths: P) -> Variables {
+    pub fn new<P: Paths>(conf: &Conf, paths: P) -> Result<Variables> {
         let mut vars = Map::new();
         vars.insert("CONF_ROOT".to_string(), paths.configs().into());
         vars.insert("DATA_ROOT".to_string(), paths.data().into());
         vars.insert("PKI_ROOT".to_string(), Paths::pki(&conf.project).into());
+        vars.insert("PODMAN_IP".to_string(), conf.podman_host_ip()?.into());
         if let Ok(hostname) = std::env::var("HOSTNAME") {
             vars.insert("PODMAN_HOSTNAME".to_string(), hostname.into());
         }
         vars.insert("extra".to_string(), Map::new().into());
         let engine = Handlebars::new();
-        Variables { engine, vars }
+        let vars = Variables { engine, vars };
+        Ok(vars)
     }
 
     /// Inject supported variables in the value.
@@ -117,6 +120,12 @@ impl Variables {
                 .insert(name.to_string(), value.into());
         }
         Ok(self)
+    }
+
+    /// Add a variable for the POD/NODE name.
+    pub fn set_node_name(&mut self, name: String) -> &mut Self {
+        self.set("NODE_NAME", name);
+        self
     }
 
     /// Add a variable for each named port.

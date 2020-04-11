@@ -52,6 +52,10 @@ pub struct PodContainer {
     /// Name of this container.
     pub name: String,
 
+    /// Container ulimits to set.
+    #[serde(default)]
+    pub ulimit: BTreeMap<String, String>,
+
     /// Optional user override.
     #[serde(default)]
     pub user: Option<String>,
@@ -89,4 +93,8 @@ pub struct PodPort {
     /// Port the pod will be listening on.
     #[serde(default)]
     pub pod: Option<usize>,
+
+    /// List of protocols to bind the port to.
+    #[serde(default)]
+    pub protocols: Option<Vec<String>>,
 }

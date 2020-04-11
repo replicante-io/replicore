@@ -1,4 +1,6 @@
 use std::collections::BTreeMap;
+use std::collections::HashSet;
+use std::net::TcpListener;
 use std::process::Command;
 
 use failure::ResultExt;
@@ -20,6 +22,25 @@ pub fn pod_start<S>(
 where
     S: std::fmt::Display,
 {
+    // Allocate random ports for any host == 0 definitions.
+    let mut pod = pod;
+    let mut variables = variables;
+    let mut taken: HashSet<usize> = pod
+        .ports
+        .iter()
+        .filter(|port| port.host != 0)
+        .map(|port| port.host)
+        .collect();
+    for mut port in &mut pod.ports {
+        if port.host != 0 {
+            continue;
+        }
+        port.host = find_host_port(&taken);
+        taken.insert(port.host);
+    }
+    variables.set_node_name(name.to_string());
+    variables.set_ports(&pod.ports);
+
     // Create (but to not start) the pod object.
     println!("--> Create pod {}", name);
     let mut podman = Command::new(&conf.podman);
@@ -33,13 +54,16 @@ where
     for port in pod.ports {
         let host_port = port.host;
         let pod_port = port.pod.unwrap_or(port.host);
+        let protocols = port.protocols.unwrap_or_else(|| vec!["tcp".to_string()]);
+        for proto in protocols {
+            podman
+                .arg("--publish")
+                .arg(format!("{}:{}/{}", host_port, pod_port, proto));
+        }
         if let Some(name) = port.name {
             let label = format!("io.replicante.dev/port/{}", name);
             labels.insert(label, host_port.to_string());
         }
-        podman
-            .arg("--publish")
-            .arg(format!("{}:{}", host_port, pod_port));
     }
     for (key, value) in labels {
         podman.arg("--label").arg(format!("{}={}", key, value));
@@ -64,6 +88,9 @@ where
             .arg("--detach")
             .arg("--init")
             .arg("--tty");
+        for (limit, value) in container.ulimit {
+            podman.arg("--ulimit").arg(format!("{}={}", limit, value));
+        }
         if let Some(user) = container.user {
             podman.arg("--user").arg(user);
         }
@@ -119,4 +146,14 @@ where
         }
     }
     Ok(())
+}
+
+fn find_host_port(taken: &HashSet<usize>) -> usize {
+    let port = (10000..60000).find(|port| {
+        if taken.contains(port) {
+            return false;
+        }
+        TcpListener::bind(format!("127.0.0.1:{}", port)).is_ok()
+    });
+    port.expect("unable to find a usable host port")
 }

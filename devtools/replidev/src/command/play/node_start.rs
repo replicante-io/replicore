@@ -1,7 +1,5 @@
 use std::collections::BTreeMap;
-use std::collections::HashSet;
 use std::fs::File;
-use std::net::TcpListener;
 
 use failure::ResultExt;
 use rand::Rng;
@@ -25,23 +23,7 @@ pub fn run(args: &StartNodeOpt, conf: &Conf) -> Result<bool> {
     // Load node definition.
     let def = format!("stores/{}/node.yaml", store);
     let def = File::open(def).with_context(|_| ErrorKind::pod_not_found(store))?;
-    let mut pod: Pod =
-        serde_yaml::from_reader(def).with_context(|_| ErrorKind::invalid_pod(store))?;
-
-    // Allocate random ports for any host == 0 definitions.
-    let mut taken: HashSet<usize> = pod
-        .ports
-        .iter()
-        .filter(|port| port.host != 0)
-        .map(|port| port.host)
-        .collect();
-    for mut port in &mut pod.ports {
-        if port.host != 0 {
-            continue;
-        }
-        port.host = find_host_port(&taken);
-        taken.insert(port.host);
-    }
+    let pod: Pod = serde_yaml::from_reader(def).with_context(|_| ErrorKind::invalid_pod(store))?;
 
     // Inject cluster & pod name annotations.
     let labels = {
@@ -59,10 +41,9 @@ pub fn run(args: &StartNodeOpt, conf: &Conf) -> Result<bool> {
 
     // Prepare the node template environment.
     let paths = crate::settings::paths::PlayPod::new(store, &cluster_id, &name);
-    let mut variables = crate::settings::Variables::new(conf, paths);
+    let mut variables = crate::settings::Variables::new(conf, paths)?;
     variables
         .set("CLUSTER_ID", cluster_id.as_str())
-        .set_ports(&pod.ports)
         .set_cli_vars(&args.vars)?
         .set_cli_var_files(&args.var_files)?;
 
@@ -73,16 +54,6 @@ pub fn run(args: &StartNodeOpt, conf: &Conf) -> Result<bool> {
     );
     crate::podman::pod_start(conf, pod, name, labels, variables)?;
     Ok(true)
-}
-
-fn find_host_port(taken: &HashSet<usize>) -> usize {
-    let port = (10000..60000).find(|port| {
-        if taken.contains(port) {
-            return false;
-        }
-        TcpListener::bind(format!("127.0.0.1:{}", port)).is_ok()
-    });
-    port.expect("unable to find a usable host port")
 }
 
 fn random_name(len: usize) -> String {

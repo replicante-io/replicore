@@ -204,7 +204,7 @@ fn start(args: &PodOpt, conf: &Conf) -> Result<bool> {
     for pod_name in &args.pods {
         let pod = pod_definition(pod_name)?;
         let paths = crate::settings::paths::DepsPod::new(&pod_name);
-        let variables = crate::settings::Variables::new(conf, paths);
+        let variables = crate::settings::Variables::new(conf, paths)?;
         let labels = {
             let mut labels = BTreeMap::new();
             labels.insert(
