@@ -9,6 +9,7 @@ use structopt::StructOpt;
 
 use crate::conf::Conf;
 use crate::podman::Pod;
+use crate::settings::paths::Paths;
 use crate::ErrorKind;
 use crate::Result;
 
@@ -83,7 +84,8 @@ pub fn run(args: CliOpt, conf: Conf) -> Result<bool> {
 
 fn clean(args: &CleanOpt, conf: &Conf) -> Result<bool> {
     for pod_name in &args.pod_opt.pods {
-        let data = format!("./devtools/data/{}", pod_name);
+        let paths = crate::settings::paths::DepsPod::new(&pod_name);
+        let data = paths.data();
         println!("--> Clean data for {} pod (from {})", pod_name, data);
         if args.confirm {
             crate::podman::unshare(conf, vec!["rm", "-r", &data])?;

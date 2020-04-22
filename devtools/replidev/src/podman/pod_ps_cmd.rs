@@ -19,8 +19,9 @@ where
     if let Some(format) = format.into() {
         podman.arg("--format").arg(format);
     }
-    for filter in filters {
-        podman.arg("--filter").arg(filter);
+    if !filters.is_empty() {
+        let filters = filters.join(",");
+        podman.arg("--filter").arg(filters);
     }
     let output = podman
         .output()

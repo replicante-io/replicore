@@ -69,3 +69,21 @@ impl Paths for PlayPod {
         &self.data
     }
 }
+
+pub struct PlayReplicore {}
+
+impl PlayReplicore {
+    pub fn new() -> Self {
+        PlayReplicore {}
+    }
+}
+
+impl Paths for PlayReplicore {
+    fn configs(&self) -> &str {
+        "./replicore/"
+    }
+
+    fn data(&self) -> &str {
+        "./data/replicore"
+    }
+}

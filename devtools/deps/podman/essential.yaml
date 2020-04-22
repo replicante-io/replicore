@@ -17,6 +17,8 @@ containers:
         src: '{{ DATA_ROOT }}/zoo-log'
         target: '/datalog'
         relabel: private
+    # Wait for zookeeper to start and expire any stale sessions.
+    start_delay: 10
 
   # Nginx - to serve static pages (links index, static discovery, etc ...)
   - name: nginx

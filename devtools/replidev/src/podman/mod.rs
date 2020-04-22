@@ -17,7 +17,7 @@ pub use self::pod_stop_cmd::pod_stop;
 pub use self::unshare_cmd::unshare;
 
 /// Definition of a pod to start with podman.
-#[derive(Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize)]
 pub struct Pod {
     /// Containers to run in the pod.
     pub containers: Vec<PodContainer>,
@@ -28,7 +28,7 @@ pub struct Pod {
 }
 
 /// Definition of a pod's container
-#[derive(Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize)]
 pub struct PodContainer {
     /// Override container command.
     #[serde(default)]
@@ -51,6 +51,10 @@ pub struct PodContainer {
 
     /// Name of this container.
     pub name: String,
+
+    /// Wait some seconds for the container to fully start.
+    #[serde(default)]
+    pub start_delay: Option<u64>,
 
     /// Container ulimits to set.
     #[serde(default)]
@@ -82,7 +86,7 @@ pub struct PodContainerMount {
 }
 
 /// Port mapping exposed by a pod.
-#[derive(Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize)]
 pub struct PodPort {
     /// Port to open on the host.
     pub host: usize,

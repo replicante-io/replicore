@@ -14,5 +14,6 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - List running playground nodes.
 - Optional per-machine configuration override.
 - Start and stop replicante core dependencies pods.
+- Start playground Replicante Core stack.
 - Start playground nodes as pods.
 - Support custom variables and JSON objects in pod definitions.

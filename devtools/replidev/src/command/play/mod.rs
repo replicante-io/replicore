@@ -6,6 +6,7 @@ use crate::Result;
 
 mod node_list;
 mod node_start;
+mod replicore;
 
 /// Manage Replicante Playground nodes.
 #[derive(Debug, StructOpt)]
@@ -17,6 +18,25 @@ pub enum CliOpt {
     /// Start a new playground node.
     #[structopt(name = "node-start")]
     NodeStart(StartNodeOpt),
+
+    /// Clean the playground Replicante Core stack persistent data.
+    #[structopt(name = "replicore-clean")]
+    ReplicoreClean(CleanOpt),
+
+    /// Start the playground Replicante Core stack.
+    #[structopt(name = "replicore-start")]
+    ReplicoreStart,
+
+    /// Stop the playground Replicante Core stack.
+    #[structopt(name = "replicore-stop")]
+    ReplicoreStop,
+}
+
+#[derive(Debug, StructOpt)]
+pub struct CleanOpt {
+    /// Confirm deleting the data.
+    #[structopt(long)]
+    pub confirm: bool,
 }
 
 #[derive(Debug, StructOpt)]
@@ -47,5 +67,8 @@ pub fn run(args: CliOpt, conf: Conf) -> Result<bool> {
     match args {
         CliOpt::NodeList => node_list::run(&conf),
         CliOpt::NodeStart(start) => node_start::run(&start, &conf),
+        CliOpt::ReplicoreClean(clean) => replicore::clean(&clean, &conf),
+        CliOpt::ReplicoreStart => replicore::start(&conf),
+        CliOpt::ReplicoreStop => replicore::stop(&conf),
     }
 }
