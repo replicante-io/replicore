@@ -12,7 +12,6 @@ use iron::Set;
 use iron_json_response::JsonResponse;
 use serde_derive::Deserialize;
 use serde_derive::Serialize;
-use serde_json;
 
 use replicante_models_core::events::agent::AgentEvent;
 use replicante_models_core::events::cluster::ClusterEvent;

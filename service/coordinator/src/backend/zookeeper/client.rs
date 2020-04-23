@@ -9,7 +9,6 @@ use failure::ResultExt;
 use opentracingrust::SpanContext;
 use opentracingrust::StartOptions;
 use opentracingrust::Tracer;
-use serde_json;
 use sha2::Digest;
 use sha2::Sha256;
 use slog::debug;

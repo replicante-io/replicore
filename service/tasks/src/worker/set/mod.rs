@@ -106,8 +106,7 @@ impl<'a, Q: TaskQueue> Worker<'a, Q> {
         let queue = task.queue.name();
         let _activity = self.thread.scoped_activity(format!(
             "processing task ID '{}' from queue '{}'",
-            task.id,
-            queue.to_string(),
+            task.id, queue,
         ));
         trace!(self.logger, "Received task"; "queue" => &queue);
         match self.handlers.get(&task.queue) {

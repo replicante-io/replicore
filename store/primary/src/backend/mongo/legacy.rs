@@ -11,7 +11,6 @@ use mongodb::Client;
 use mongodb::ThreadedClient;
 use opentracingrust::SpanContext;
 use opentracingrust::Tracer;
-use regex;
 
 use replicante_externals_mongodb::operations::find_one;
 use replicante_externals_mongodb::operations::find_with_options;

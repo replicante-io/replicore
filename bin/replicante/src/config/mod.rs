@@ -5,7 +5,6 @@ use std::path::Path;
 use failure::ResultExt;
 use serde_derive::Deserialize;
 use serde_derive::Serialize;
-use serde_yaml;
 
 use replicante_logging::Config as LoggingConfig;
 use replicante_logging::LoggingLevel;

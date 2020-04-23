@@ -101,7 +101,7 @@ pub trait NonBlockingLockBehaviour {
     fn release(&mut self, span: Option<SpanContext>) -> Result<()>;
 
     /// Attempt to release a non-blocking lock when it is dropped.
-    fn release_on_drop(&mut self) -> ();
+    fn release_on_drop(&mut self);
 
     /// Return a shared `AtomicBool` that is kept in sync with the state of the lock.
     ///
