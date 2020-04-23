@@ -12,7 +12,7 @@ use crate::Result;
 use super::StartNodeOpt;
 
 pub fn run(args: &StartNodeOpt, conf: &Conf) -> Result<bool> {
-    let name = random_name(8);
+    let name: String = args.node_name.clone().unwrap_or_else(|| random_name(8));
     let store = &args.store;
     let cluster_id = args
         .cluster_id

@@ -2,7 +2,6 @@ use std::sync::Arc;
 use std::sync::Mutex;
 
 use failure::ResultExt;
-use serde_json;
 use serde_json::Value;
 
 use super::super::super::ErrorKind;

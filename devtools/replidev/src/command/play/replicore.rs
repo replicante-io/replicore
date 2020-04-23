@@ -3,17 +3,18 @@ use std::fs::File;
 
 use failure::ResultExt;
 
-use super::CleanOpt;
 use crate::conf::Conf;
 use crate::podman::Pod;
 use crate::settings::paths::Paths;
 use crate::ErrorKind;
 use crate::Result;
 
+use super::CleanCommonOpt;
+
 static REPLICORE_STACK_NAME: &str = "play-replicore";
 static REPLICORE_STACK_FILE: &str = "replicore/stack.yaml";
 
-pub fn clean(args: &CleanOpt, conf: &Conf) -> Result<bool> {
+pub fn clean(args: &CleanCommonOpt, conf: &Conf) -> Result<bool> {
     let paths = crate::settings::paths::PlayReplicore::new();
     let data = paths.data();
     println!(
