@@ -3,11 +3,11 @@ use crate::Result;
 
 use super::CleanCommonOpt;
 
-pub fn run(args: &CleanCommonOpt, conf: &Conf) -> Result<bool> {
+pub async fn run(args: &CleanCommonOpt, conf: &Conf) -> Result<bool> {
     let data = "./data/nodes/";
     println!("--> Clean data for all nodes (from {})", data);
     if args.confirm {
-        crate::podman::unshare(conf, vec!["rm", "-r", &data])?;
+        crate::podman::unshare(conf, vec!["rm", "-r", &data]).await?;
     } else {
         println!("Skipping: you must --confirm deleting data");
     }

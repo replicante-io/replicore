@@ -12,7 +12,7 @@ pub enum CliOpt {
 }
 
 /// Configuration related commands.
-pub fn run(args: CliOpt, conf: Conf) -> Result<bool> {
+pub async fn run(args: CliOpt, conf: Conf) -> Result<bool> {
     match args {
         CliOpt::ShowIp => show_ip(&conf),
     }

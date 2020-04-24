@@ -1,4 +1,5 @@
 use std::io::BufRead;
+//use tokio::io::BufRead;
 
 use crate::conf::Conf;
 use crate::Result;
@@ -6,22 +7,22 @@ use crate::Result;
 use super::StopClusterOpt;
 use super::StopNodeOpt;
 
-pub fn run(args: &StopClusterOpt, conf: &Conf) -> Result<bool> {
+pub async fn run(args: &StopClusterOpt, conf: &Conf) -> Result<bool> {
     for cluster in &args.clusters {
         println!("--> Stopping cluster {}", cluster);
-        let nodes = nodes_in_cluster(cluster, conf)?;
+        let nodes = nodes_in_cluster(cluster, conf).await?;
         if nodes.is_empty() {
             println!("--> Skipping cluster {} without running nodes", cluster);
             continue;
         }
         let node_stop_opts = StopNodeOpt { nodes };
-        super::node_stop::run(&node_stop_opts, conf)?;
+        super::node_stop::run(&node_stop_opts, conf).await?;
     }
     Ok(true)
 }
 
 /// Return a list of nodes in the given cluster.
-fn nodes_in_cluster(cluster: &str, conf: &Conf) -> Result<Vec<String>> {
+async fn nodes_in_cluster(cluster: &str, conf: &Conf) -> Result<Vec<String>> {
     let pod_names = crate::podman::pod_ps(
         conf,
         "{{ .Name }}",
@@ -29,7 +30,8 @@ fn nodes_in_cluster(cluster: &str, conf: &Conf) -> Result<Vec<String>> {
             &format!("label=io.replicante.dev/play/cluster={}", cluster),
             &format!("label=io.replicante.dev/project={}", conf.project),
         ],
-    )?;
+    )
+    .await?;
     let mut nodes = Vec::new();
     for name in pod_names.lines() {
         let name = name.expect("unable to read podman ps output");

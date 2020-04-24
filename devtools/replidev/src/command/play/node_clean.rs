@@ -4,7 +4,7 @@ use crate::Result;
 
 use super::CleanNodeOpt;
 
-pub fn run(args: &CleanNodeOpt, conf: &Conf) -> Result<bool> {
+pub async fn run(args: &CleanNodeOpt, conf: &Conf) -> Result<bool> {
     for node in &args.nodes {
         let paths = crate::settings::paths::PlayPod::new("<unkown>", &args.cluster, node);
         let data = paths.data();
@@ -13,7 +13,7 @@ pub fn run(args: &CleanNodeOpt, conf: &Conf) -> Result<bool> {
             args.cluster, node, data
         );
         if args.common.confirm {
-            crate::podman::unshare(conf, vec!["rm", "-r", &data])?;
+            crate::podman::unshare(conf, vec!["rm", "-r", &data]).await?;
         } else {
             println!("Skipping: you must --confirm deleting data");
         }

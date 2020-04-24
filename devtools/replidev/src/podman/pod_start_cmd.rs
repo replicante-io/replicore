@@ -1,9 +1,9 @@
 use std::collections::BTreeMap;
 use std::collections::HashSet;
 use std::net::TcpListener;
-use std::process::Command;
 
 use failure::ResultExt;
+use tokio::process::Command;
 
 use super::Pod;
 use crate::settings::Variables;
@@ -12,7 +12,7 @@ use crate::ErrorKind;
 use crate::Result;
 
 /// Start a pod matching the given definition.
-pub fn pod_start<S>(
+pub async fn pod_start<S>(
     conf: &Conf,
     pod: Pod,
     name: S,
@@ -70,6 +70,7 @@ where
     }
     let status = podman
         .status()
+        .await
         .with_context(|_| ErrorKind::podman_exec("pod create"))?;
     if !status.success() {
         let error = ErrorKind::podman_failed("pod create");
@@ -124,7 +125,7 @@ where
                     .with_context(|_| ErrorKind::fs_not_allowed(&source))?;
             }
             if let Some(uid) = mount.uid {
-                crate::podman::unshare(conf, vec!["chown", &uid.to_string(), &source])?;
+                crate::podman::unshare(conf, vec!["chown", &uid.to_string(), &source]).await?;
             }
         }
 
@@ -139,6 +140,7 @@ where
         // Run the container.
         let status = podman
             .status()
+            .await
             .with_context(|_| ErrorKind::podman_exec("run"))?;
         if !status.success() {
             let error = ErrorKind::podman_failed("run");
@@ -149,7 +151,7 @@ where
         if let Some(delay) = container.start_delay {
             println!("--> Wating {}s for {} to start", delay, con_name);
             let delay = std::time::Duration::from_secs(delay);
-            std::thread::sleep(delay);
+            tokio::time::delay_for(delay).await;
         }
     }
     Ok(())

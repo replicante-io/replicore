@@ -61,6 +61,9 @@ pub enum ErrorKind {
     #[fail(display = "filesystem error: {}", _0)]
     FsError(String),
 
+    #[fail(display = "io error: {}", _0)]
+    IoError(String),
+
     #[fail(display = "{} command does not support the {} project", _0, _1)]
     InvalidProject(&'static str, Project),
 
@@ -101,6 +104,10 @@ impl ErrorKind {
 
     pub fn fs_not_allowed<S: std::fmt::Display>(path: S) -> Self {
         Self::FsError(format!("unable to access {}", path))
+    }
+
+    pub fn io(error: &str) -> Self {
+        Self::IoError(error.to_string())
     }
 
     pub fn invalid_cli_var<N, R>(name: N, reason: R) -> Self

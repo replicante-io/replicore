@@ -4,10 +4,10 @@ use std::fs::Permissions;
 use std::io::Read;
 use std::io::Write;
 use std::os::unix::fs::PermissionsExt;
-use std::process::Command;
 
 use failure::ResultExt;
 use structopt::StructOpt;
+use tokio::process::Command;
 
 use crate::conf::Conf;
 use crate::ErrorKind;
@@ -22,7 +22,7 @@ pub struct CliOpt {
 }
 
 /// Configuration related commands.
-pub fn run(args: CliOpt, conf: Conf) -> Result<bool> {
+pub async fn run(args: CliOpt, conf: Conf) -> Result<bool> {
     if !conf.project.allow_gen_certs() {
         let error = ErrorKind::invalid_project(conf.project, "replidev gen-certs");
         return Err(error.into());
@@ -66,6 +66,7 @@ pub fn run(args: CliOpt, conf: Conf) -> Result<bool> {
         .arg("--ca")
         .arg("replidev")
         .status()
+        .await
         .with_context(|_| ErrorKind::command_exec("easypki create ca"))?;
     if !status.success() {
         let error = ErrorKind::command_failed("easypki create ca");
@@ -81,6 +82,7 @@ pub fn run(args: CliOpt, conf: Conf) -> Result<bool> {
         .arg("--dns=localhost")
         .arg("server")
         .status()
+        .await
         .with_context(|_| ErrorKind::command_exec("easypki create server"))?;
     if !status.success() {
         let error = ErrorKind::command_failed("easypki create server");
@@ -96,6 +98,7 @@ pub fn run(args: CliOpt, conf: Conf) -> Result<bool> {
         .arg("--client")
         .arg("client")
         .status()
+        .await
         .with_context(|_| ErrorKind::command_exec("easypki create client"))?;
     if !status.success() {
         let error = ErrorKind::command_failed("easypki create client");

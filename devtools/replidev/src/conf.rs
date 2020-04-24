@@ -18,11 +18,15 @@ lazy_static::lazy_static! {
 }
 
 /// Project specific configuration.
-#[derive(Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize)]
 pub struct Conf {
     /// Command to execute easypki.
     #[serde(default = "Conf::default_easypki")]
     pub easypki: String,
+
+    /// Bind address and port for the playground API server.
+    #[serde(default = "Conf::default_play_server_bind")]
+    pub play_server_bind: String,
 
     /// Current project to operate on.
     pub project: Project,
@@ -100,6 +104,10 @@ impl Conf {
         "easypki".into()
     }
 
+    fn default_play_server_bind() -> String {
+        "127.0.0.1:9876".into()
+    }
+
     fn default_podman() -> String {
         "podman".into()
     }
@@ -119,7 +127,7 @@ impl Conf {
 }
 
 /// Supported replidev projects.
-#[derive(PartialEq, Eq, Debug, Deserialize)]
+#[derive(Clone, Debug, Eq, PartialEq, Deserialize)]
 pub enum Project {
     /// Replicante Agents Repository
     #[serde(rename = "agents")]

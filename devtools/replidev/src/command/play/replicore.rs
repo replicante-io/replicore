@@ -14,7 +14,7 @@ use super::CleanCommonOpt;
 static REPLICORE_STACK_NAME: &str = "play-replicore";
 static REPLICORE_STACK_FILE: &str = "replicore/stack.yaml";
 
-pub fn clean(args: &CleanCommonOpt, conf: &Conf) -> Result<bool> {
+pub async fn clean(args: &CleanCommonOpt, conf: &Conf) -> Result<bool> {
     let paths = crate::settings::paths::PlayReplicore::new();
     let data = paths.data();
     println!(
@@ -22,14 +22,14 @@ pub fn clean(args: &CleanCommonOpt, conf: &Conf) -> Result<bool> {
         REPLICORE_STACK_NAME, data
     );
     if args.confirm {
-        crate::podman::unshare(conf, vec!["rm", "-r", &data])?;
+        crate::podman::unshare(conf, vec!["rm", "-r", &data]).await?;
     } else {
         println!("Skipping: you must --confirm deleting data");
     }
     Ok(true)
 }
 
-pub fn start(conf: &Conf) -> Result<bool> {
+pub async fn start(conf: &Conf) -> Result<bool> {
     // Load node definition.
     let def =
         File::open(REPLICORE_STACK_FILE).with_context(|_| ErrorKind::pod_not_found("replicore"))?;
@@ -51,7 +51,7 @@ pub fn start(conf: &Conf) -> Result<bool> {
     let variables = crate::settings::Variables::new(conf, paths)?;
 
     // Start the stack pod and run optional initialisation commands.
-    crate::podman::pod_start(conf, pod.clone(), REPLICORE_STACK_NAME, labels, variables)?;
+    crate::podman::pod_start(conf, pod.clone(), REPLICORE_STACK_NAME, labels, variables).await?;
     for container in pod.containers {
         if let Some(command) = container.initialise {
             let name = format!("{}-{}", REPLICORE_STACK_NAME, container.name);
@@ -59,13 +59,13 @@ pub fn start(conf: &Conf) -> Result<bool> {
                 "--> Initialise {}/{} from {}",
                 REPLICORE_STACK_NAME, container.name, name
             );
-            crate::podman::exec(conf, &name, command)?;
+            crate::podman::exec(conf, &name, command).await?;
         }
     }
     Ok(true)
 }
 
-pub fn stop(conf: &Conf) -> Result<bool> {
-    crate::podman::pod_stop(conf, REPLICORE_STACK_NAME)?;
+pub async fn stop(conf: &Conf) -> Result<bool> {
+    crate::podman::pod_stop(conf, REPLICORE_STACK_NAME).await?;
     Ok(true)
 }

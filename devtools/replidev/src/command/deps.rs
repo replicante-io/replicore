@@ -67,28 +67,28 @@ struct PodPsStatus {
 }
 
 /// Manage Replicante Core dependencies.
-pub fn run(args: CliOpt, conf: Conf) -> Result<bool> {
+pub async fn run(args: CliOpt, conf: Conf) -> Result<bool> {
     if !conf.project.allow_deps() {
         let error = ErrorKind::invalid_project(conf.project, "replidev deps");
         return Err(error.into());
     }
     match args {
-        CliOpt::Clean(args) => clean(&args, &conf),
-        CliOpt::Initialise(args) => initialise(&args, &conf),
-        CliOpt::List => list(&conf),
-        CliOpt::Restart(args) => restart(&args, &conf),
-        CliOpt::Start(args) => start(&args, &conf),
-        CliOpt::Stop(args) => stop(&args, &conf),
+        CliOpt::Clean(args) => clean(&args, &conf).await,
+        CliOpt::Initialise(args) => initialise(&args, &conf).await,
+        CliOpt::List => list(&conf).await,
+        CliOpt::Restart(args) => restart(&args, &conf).await,
+        CliOpt::Start(args) => start(&args, &conf).await,
+        CliOpt::Stop(args) => stop(&args, &conf).await,
     }
 }
 
-fn clean(args: &CleanOpt, conf: &Conf) -> Result<bool> {
+async fn clean(args: &CleanOpt, conf: &Conf) -> Result<bool> {
     for pod_name in &args.pod_opt.pods {
         let paths = crate::settings::paths::DepsPod::new(&pod_name);
         let data = paths.data();
         println!("--> Clean data for {} pod (from {})", pod_name, data);
         if args.confirm {
-            crate::podman::unshare(conf, vec!["rm", "-r", &data])?;
+            crate::podman::unshare(conf, vec!["rm", "-r", &data]).await?;
         } else {
             println!("Skipping: you must --confirm deleting data");
         }
@@ -96,7 +96,7 @@ fn clean(args: &CleanOpt, conf: &Conf) -> Result<bool> {
     Ok(true)
 }
 
-fn initialise(args: &PodOpt, conf: &Conf) -> Result<bool> {
+async fn initialise(args: &PodOpt, conf: &Conf) -> Result<bool> {
     for pod_name in &args.pods {
         let pod = pod_definition(pod_name)?;
         for container in pod.containers {
@@ -106,7 +106,7 @@ fn initialise(args: &PodOpt, conf: &Conf) -> Result<bool> {
                     "--> Initialise {}/{} from {}",
                     pod_name, container.name, name
                 );
-                crate::podman::exec(conf, &name, command)?;
+                crate::podman::exec(conf, &name, command).await?;
             }
         }
     }
@@ -120,7 +120,7 @@ fn initialise(args: &PodOpt, conf: &Conf) -> Result<bool> {
 ///   essential Running abc-123 $PODMAN_DEF_PATH/essential.yaml
 ///   uis       -       -       $PODMAN_DEF_PATH/uis.yaml
 ///   legacy    Running def-456 -
-fn list(conf: &Conf) -> Result<bool> {
+async fn list(conf: &Conf) -> Result<bool> {
     // Find running dependencies pods.
     let pods = crate::podman::pod_ps(
         conf,
@@ -129,7 +129,8 @@ fn list(conf: &Conf) -> Result<bool> {
             "label=io.replicante.dev/role=deps",
             &format!("label=io.replicante.dev/project={}", conf.project),
         ],
-    )?;
+    )
+    .await?;
     let pods: BTreeMap<String, PodPsStatus> = if pods.is_empty() {
         BTreeMap::new()
     } else {
@@ -197,12 +198,12 @@ fn pod_definition(name: &str) -> Result<Pod> {
     Ok(pod)
 }
 
-fn restart(args: &PodOpt, conf: &Conf) -> Result<bool> {
-    stop(args, conf)?;
-    start(args, conf)
+async fn restart(args: &PodOpt, conf: &Conf) -> Result<bool> {
+    stop(args, conf).await?;
+    start(args, conf).await
 }
 
-fn start(args: &PodOpt, conf: &Conf) -> Result<bool> {
+async fn start(args: &PodOpt, conf: &Conf) -> Result<bool> {
     for pod_name in &args.pods {
         let pod = pod_definition(pod_name)?;
         let paths = crate::settings::paths::DepsPod::new(&pod_name);
@@ -222,14 +223,18 @@ fn start(args: &PodOpt, conf: &Conf) -> Result<bool> {
             format!("replideps-{}", pod_name),
             labels,
             variables,
-        )?;
+        )
+        .await?;
     }
     Ok(true)
 }
 
-fn stop(args: &PodOpt, conf: &Conf) -> Result<bool> {
+async fn stop(args: &PodOpt, conf: &Conf) -> Result<bool> {
     for pod_name in args.pods.iter().rev() {
-        if crate::podman::pod_stop(conf, format!("replideps-{}", pod_name)).is_err() {
+        let stopped = crate::podman::pod_stop(conf, format!("replideps-{}", pod_name))
+            .await
+            .is_err();
+        if stopped {
             println!(
                 "--> Failed to stop {} pod, assuming it was not running",
                 pod_name

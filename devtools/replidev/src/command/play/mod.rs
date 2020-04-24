@@ -12,6 +12,7 @@ mod node_list;
 mod node_start;
 mod node_stop;
 mod replicore;
+mod server;
 
 /// Manage Replicante Playground nodes.
 #[derive(Debug, StructOpt)]
@@ -55,6 +56,19 @@ pub enum CliOpt {
     /// Stop the playground Replicante Core stack.
     #[structopt(name = "replicore-stop")]
     ReplicoreStop,
+
+    /// Run the playground HTTP server (to simulate integrations for Replicante Core).
+    #[structopt(name = "server")]
+    Server,
+}
+
+impl CliOpt {
+    pub fn need_actix_rt(&self) -> bool {
+        match self {
+            Self::Server => true,
+            _ => false,
+        }
+    }
 }
 
 #[derive(Debug, StructOpt)]
@@ -126,21 +140,22 @@ pub struct StopNodeOpt {
 }
 
 /// Manage Replicante Playground nodes.
-pub fn run(args: CliOpt, conf: Conf) -> Result<bool> {
+pub async fn run(args: CliOpt, conf: Conf) -> Result<bool> {
     if !conf.project.allow_play() {
         let error = ErrorKind::invalid_project(conf.project, "replidev play");
         return Err(error.into());
     }
     match args {
-        CliOpt::ClusterClean(clean) => cluster_clean::run(&clean, &conf),
-        CliOpt::ClusterStop(stop) => cluster_stop::run(&stop, &conf),
-        CliOpt::NodeClean(clean) => node_clean::run(&clean, &conf),
-        CliOpt::NodeCleanAll(clean) => node_clean_all::run(&clean, &conf),
-        CliOpt::NodeList => node_list::run(&conf),
-        CliOpt::NodeStart(start) => node_start::run(&start, &conf),
-        CliOpt::NodeStop(stop) => node_stop::run(&stop, &conf),
-        CliOpt::ReplicoreClean(clean) => replicore::clean(&clean, &conf),
-        CliOpt::ReplicoreStart => replicore::start(&conf),
-        CliOpt::ReplicoreStop => replicore::stop(&conf),
+        CliOpt::ClusterClean(clean) => cluster_clean::run(&clean, &conf).await,
+        CliOpt::ClusterStop(stop) => cluster_stop::run(&stop, &conf).await,
+        CliOpt::NodeClean(clean) => node_clean::run(&clean, &conf).await,
+        CliOpt::NodeCleanAll(clean) => node_clean_all::run(&clean, &conf).await,
+        CliOpt::NodeList => node_list::run(&conf).await,
+        CliOpt::NodeStart(start) => node_start::run(&start, &conf).await,
+        CliOpt::NodeStop(stop) => node_stop::run(&stop, &conf).await,
+        CliOpt::ReplicoreClean(clean) => replicore::clean(&clean, &conf).await,
+        CliOpt::ReplicoreStart => replicore::start(&conf).await,
+        CliOpt::ReplicoreStop => replicore::stop(&conf).await,
+        CliOpt::Server => server::run(conf).await,
     }
 }

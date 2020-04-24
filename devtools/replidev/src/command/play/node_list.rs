@@ -17,8 +17,8 @@ use crate::Result;
 ///   play-node-rS3KQZOw  mongo-rs   10000       10000        10001       Running  206f19a3692f
 ///   play-node-Niu57N4O  zookeeper  10100       10101        10102       Stopped  817215a1fb8f
 ///   play-node-B6ZM7FWZ  postgres   10200       10200        -           Running  e72f080534c8
-pub fn run(conf: &Conf) -> Result<bool> {
-    let nodes = list_nodes(conf)?;
+pub async fn run(conf: &Conf) -> Result<bool> {
+    let nodes = list_nodes(conf).await?;
     let mut table = prettytable::Table::new();
     table.add_row(row![
         "NODE",
@@ -54,7 +54,7 @@ pub fn run(conf: &Conf) -> Result<bool> {
 }
 
 /// Fetch all node pods and their information.
-pub fn list_nodes(conf: &Conf) -> Result<Vec<PodInfo>> {
+pub async fn list_nodes(conf: &Conf) -> Result<Vec<PodInfo>> {
     // Find running node pod IDs.
     let pod_ids = crate::podman::pod_ps(
         conf,
@@ -64,13 +64,14 @@ pub fn list_nodes(conf: &Conf) -> Result<Vec<PodInfo>> {
             "label=io.replicante.dev/port/store",
             &format!("label=io.replicante.dev/project={}", conf.project),
         ],
-    )?;
+    )
+    .await?;
 
     // Inspect pods to get all needed attributes.
     let mut pods: Vec<PodInfo> = Vec::new();
     for pod_id in pod_ids.lines() {
         let pod_id = pod_id.expect("unable to read podman ps output");
-        let pod = crate::podman::pod_inspect(conf, &pod_id)?;
+        let pod = crate::podman::pod_inspect(conf, &pod_id).await?;
         let pod: PodRawInfo = serde_json::from_slice(&pod)
             .with_context(|_| ErrorKind::response_decode("podman inspect"))?;
         let cluster = pod

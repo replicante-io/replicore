@@ -1,13 +1,12 @@
-use std::process::Command;
-
 use failure::ResultExt;
+use tokio::process::Command;
 
 use crate::Conf;
 use crate::ErrorKind;
 use crate::Result;
 
 /// Start a pod matching the given definition.
-pub fn pod_ps<'a, F>(conf: &Conf, format: F, filters: Vec<&str>) -> Result<Vec<u8>>
+pub async fn pod_ps<'a, F>(conf: &Conf, format: F, filters: Vec<&str>) -> Result<Vec<u8>>
 where
     F: Into<Option<&'a str>>,
 {
@@ -25,6 +24,7 @@ where
     }
     let output = podman
         .output()
+        .await
         .with_context(|_| ErrorKind::podman_exec("pod ps"))?;
     if !output.status.success() {
         let error = ErrorKind::podman_failed("pod ps");
