@@ -105,7 +105,7 @@ impl Conf {
     }
 
     fn default_play_server_bind() -> String {
-        "127.0.0.1:9876".into()
+        "0.0.0.0:9876".into()
     }
 
     fn default_podman() -> String {
