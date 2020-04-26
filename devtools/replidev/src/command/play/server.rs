@@ -15,17 +15,11 @@ use crate::Conf;
 use crate::ErrorKind;
 use crate::Result;
 
-// Wrap the IP of the podman host to pass as actix web data.
-#[derive(Clone)]
-struct PodmanHostIp(String);
-
 pub async fn run(conf: Conf) -> Result<bool> {
     let bind = conf.play_server_bind.clone();
-    let ip = PodmanHostIp(conf.podman_host_ip()?);
     let server = HttpServer::new(move || {
         App::new()
             .data(conf.clone())
-            .data(ip.clone())
             .service(index)
             .service(discover)
     })
@@ -45,7 +39,7 @@ async fn index() -> impl Responder {
 }
 
 #[get("/discover")]
-async fn discover(conf: Data<Conf>, ip: Data<PodmanHostIp>) -> impl Responder {
+async fn discover(conf: Data<Conf>) -> impl Responder {
     // List all running nodes.
     let nodes = super::node_list::list_nodes(&conf).await;
     let nodes = match nodes {
@@ -63,7 +57,7 @@ async fn discover(conf: Data<Conf>, ip: Data<PodmanHostIp>) -> impl Responder {
     for node in nodes {
         let cluster = node.cluster;
         let address = match node.port_agent {
-            Some(port) => format!("http://{}:{}", ip.0, port),
+            Some(port) => format!("https://podman-host:{}", port),
             None => continue,
         };
         clusters

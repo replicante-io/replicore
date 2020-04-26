@@ -74,12 +74,15 @@ pub async fn run(args: CliOpt, conf: Conf) -> Result<bool> {
     }
 
     println!("--> Generating Server certificates");
+    let ip = conf.podman_host_ip()?;
     let status = Command::new(easypki)
         .envs(env.iter())
         .arg("create")
         .arg("--private-key-size=4096")
         .arg("--ca-name=replidev")
         .arg("--dns=localhost")
+        .arg("--dns=podman-host")
+        .arg(format!("--ip={}", ip))
         .arg("server")
         .status()
         .await
