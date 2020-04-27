@@ -1,39 +1,36 @@
 # Replicante Development helper
 A tool to speed up development of Replicante Core.
 
-  * Podman play kube based dependencies.
-    * With start/stop/rm/recreate commands.
-    * Add a static nginx page with links to all other tools.
-    * One of the pods is an initialiser process for all deps.
-  * Podman play kube based WebUIs for the dependencies.
-  * Command to delete and fix selinux context data path.
-  * Command to build docker images locally.
-  * Command to start a mongo RS with agents for tests?
+By having strong opinions about various development tasks, `replidev` can leverage existing
+general purpose tools to automate the repetitive tasks that occur during development of
+Replicante Core, its agents and any other common task.
+
+Its main goal is to give you the tools you need to focus on development.
 
 
-## Envisioned use
-```bash
-# One-off "install" step
-cd devtools/replidev
-cargo build
-mkdir -p target/bin
-cp target/debug/replidev target/bin
+## Certificates
+Various projects need client or server TLS certificates for HTTPS.
 
-# Check out https://direnv.net/ to see if this can be useful?
-export PATH=$PATH:$PWD/target/bin
+These can be generated with `replidev gen-certs` and will be valid for a year.
+You can run with `--regen` to delete and re-create all certificates for the repo you are in.
 
-# Once in path (or by passing the path every time)
-# Look into https://docs.rs/structopt/0.3.9/structopt/ for CLI parser
-replidev deps start essential  # mongo, kafka, zookeeper, ...
-replidev deps start uis sentry ... # start additional dependencies
-replidev deps stop ... # podman stop + podman rm
-replidev deps clean ... # delete data paths
-replidev deps restart ... # stop + start
-replidev images check vX.Y.Z # build container images (probably with buildah)
-replidev images build vX.Y.Z # clean build (no cache) images
-```
+> Requires https://github.com/google/easypki in $PATH.
 
-If/when needed add optional config file to store flexible options (paths to things).
 
-Future expansion could look at cross-component support (core, images, webui, website).
-Additional features around release automation would be a good expansion too.
+## Core Development Environment
+The `replidev deps` family of commands is there to manage Replicante Core dependencies
+as well as optional development tools that may be useful at times.
+
+All commands operate on one or more dependency `POD`.
+The list of running pods and known pods that can be started is available from the
+`replidev deps list` command.
+
+> Requires https://podman.io/ version 1.9 or later in $PATH.
+
+
+## Playgrounds
+All things related to local demo/test/development clusters, agents and core.
+
+Check out the [quick start](https://www.replicante.io/quick-start/) for all the details.
+
+> Requires https://podman.io/ version 1.9 or later in $PATH.
