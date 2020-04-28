@@ -5,27 +5,44 @@ branches:
     - /^v\d+\.\d+\.\d+$/
 
 
-# Use latest available ubuntu (16.04).
-dist: xenial
+# Use latest available ubuntu (18.04).
+os: linux
+dist: bionic
 
 
 # Configure the build jobs.
 language: rust
-# Try to disable cache as it grows fast and takes ages unpack and generate.
-#cache: cargo
+
+# Cargo cache grows really fast for a few reason.
+# Using the default configuration quickly leads to cache management times 
+# to exceed un-cached build times and makes things worse.
+# We use some tricks to cache some of the stuff but not everything in CI.
+#
+# See https://github.com/rust-lang/cargo/issues/5885
+before_cache:
+  - ci/travis/prep-cargo-cache.sh
+cache:
+  directories:
+    - $HOME/.cargo
+    - target/
+
 rust:
   - stable   # Target rust version.
   - 1.40.0   # Earliest supported rust version.
   - nightly  # "The Rust team appreciates" according to Travis.
 
 env:
-  - TASK=build
-  - TASK=audit
+  global:
+    # Avoid re-compiling commmon crates by sharing the target directory.
+    - CARGO_TARGET_DIR=target
+  jobs:
+    - TASK=build
+    - TASK=audit
 
 install: ci/travis.sh install "${TASK}"
 script: ci/travis.sh script "${TASK}"
 
-matrix:
+jobs:
   allow_failures:
     - rust: nightly
     - env: TASK=audit
