@@ -4,7 +4,7 @@
 set -e
 
 # Support cleaning multiple projects
-function cargo_clean() {
+function cargo_clean {
   cargo clean
   cargo clean --manifest-path devtools/replidev/Cargo.toml
 }
