@@ -40,7 +40,9 @@ env:
     - TASK=audit
 
 install: ci/travis.sh install "${TASK}"
-script: ci/travis.sh script "${TASK}"
+script:
+  - ci/travis/cargo-clean-on-new-rustc.sh
+  - ci/travis.sh script "${TASK}"
 
 jobs:
   allow_failures:

@@ -1,7 +1,7 @@
 #!/bin/bash
 # From crates.io:
 # https://github.com/rust-lang/crates.io/blob/master/script/ci/cargo-clean-on-new-rustc-version.sh
-set -e
+set -ex
 
 # Support cleaning multiple projects
 function cargo_clean {
