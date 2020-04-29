@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 # From crates.io:
 # https://github.com/rust-lang/crates.io/blob/master/script/ci/cargo-clean-on-new-rustc-version.sh
 set -e
