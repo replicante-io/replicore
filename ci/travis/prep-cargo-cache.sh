@@ -15,10 +15,19 @@
 set -ex
 
 file_prefix=repli
-target_path=target
+target_path=${CARGO_TARGET_DIR-target}
 
-find "${target_path}/debug" -maxdepth 1 -type f -delete
-find "${target_path}/debug/deps" -name "${file_prefix}*" -exec rm -rf '{}' +
-find "${target_path}/debug/.fingerprint" -name "${file_prefix}*" -exec rm -rf '{}' +
-rm -rf "${target_path}/.rustc_info.json"
+# Prune the target directory to only keep dependencies.
+if [ -e "${target_path}/debug" ]; then
+  find "${target_path}/debug" -maxdepth 1 -type f -delete
+  find "${target_path}/debug/deps" -name "${file_prefix}*" -exec rm -rf '{}' +
+  find "${target_path}/debug/.fingerprint" -name "${file_prefix}*" -exec rm -rf '{}' +
+fi
 rm -rf "${target_path}/debug/incremental"
+rm -rf "${target_path}/.rustc_info.json"
+
+# Prune the registries indexes since they change often.
+rm -rf $HOME/.cargo/registry/index
+
+# Prune the security advisory database since it changes often and we want it to.
+rm -rf $HOME/.cargo/advisory-db
