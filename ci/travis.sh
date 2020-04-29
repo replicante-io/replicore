@@ -16,6 +16,10 @@ case "$1" in
     ;;
 
   script)
+    # On CI make sure we purge the cache on rustc change.
+    ci/travis/cargo-clean-on-new-rustc.sh
+
+    # Then call the correct build script.
     case "$2" in
       audit) ci/travis/audit-script.sh;;
       build) ci/travis/build-script.sh;;
