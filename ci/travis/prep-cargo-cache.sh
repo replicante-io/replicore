@@ -23,6 +23,7 @@ if [ -e "${target_path}/debug" ]; then
   find "${target_path}/debug/.fingerprint" -name "${file_prefix}*" -exec rm -rf '{}' +
   find "${target_path}/debug/build" -name "${file_prefix}*" -exec rm -rf '{}' +
   find "${target_path}/debug/deps" -name "${file_prefix}*" -exec rm -rf '{}' +
+  find "${target_path}/debug/deps" -name "lib${file_prefix}*" -exec rm -rf '{}' +
 fi
 rm -rf "${target_path}/debug/incremental"
 rm -rf "${target_path}/.rustc_info.json"

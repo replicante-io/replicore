@@ -1,14 +1,11 @@
 use std::collections::HashSet;
 use std::sync::Arc;
 
-use bson::bson;
 use bson::doc;
 use bson::Bson;
 use failure::Fail;
 use failure::ResultExt;
-use mongodb::db::ThreadedDatabase;
 use mongodb::Client;
-use mongodb::ThreadedClient;
 use opentracingrust::SpanContext;
 use opentracingrust::Tracer;
 
@@ -44,7 +41,7 @@ impl Nodes {
 impl NodesInterface for Nodes {
     fn iter(&self, attrs: &NodesAttribures, span: Option<SpanContext>) -> Result<Cursor<Node>> {
         let filter = doc! {"cluster_id" => &attrs.cluster_id};
-        let collection = self.client.db(&self.db).collection(COLLECTION_NODES);
+        let collection = self.client.database(&self.db).collection(COLLECTION_NODES);
         let cursor = find(collection, filter, span, self.tracer.as_deref())
             .with_context(|_| ErrorKind::MongoDBOperation)?
             .map(|item| item.map_err(|error| error.context(ErrorKind::MongoDBCursor).into()))
@@ -65,7 +62,7 @@ impl NodesInterface for Nodes {
         let pipeline = vec![filter, group];
 
         // Run aggrgation and grab the one and only (expected) result.
-        let collection = self.client.db(&self.db).collection(COLLECTION_NODES);
+        let collection = self.client.database(&self.db).collection(COLLECTION_NODES);
         let mut cursor = aggregate(collection, pipeline, span, self.tracer.as_deref())
             .with_context(|_| ErrorKind::MongoDBOperation)?;
         let kinds: Bson = match cursor.next() {

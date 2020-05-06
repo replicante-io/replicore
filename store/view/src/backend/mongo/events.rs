@@ -1,14 +1,11 @@
 use std::sync::Arc;
 
-use bson::bson;
 use bson::doc;
 use bson::Bson;
 use failure::Fail;
 use failure::ResultExt;
-use mongodb::coll::options::FindOptions;
-use mongodb::db::ThreadedDatabase;
+use mongodb::options::FindOptions;
 use mongodb::Client;
-use mongodb::ThreadedClient;
 use opentracingrust::SpanContext;
 use opentracingrust::Tracer;
 
@@ -49,7 +46,7 @@ impl EventsInterface for Events {
         opts: EventsOptions,
         span: Option<SpanContext>,
     ) -> Result<Cursor<Event>> {
-        let mut options = FindOptions::new();
+        let mut options = FindOptions::default();
         options.limit = opts.limit;
         options.sort = Some(doc! {"$natural" => if opts.reverse { -1 } else { 1 }});
 
@@ -85,7 +82,7 @@ impl EventsInterface for Events {
         } else {
             doc! {}
         };
-        let collection = self.client.db(&self.db).collection(COLLECTION_EVENTS);
+        let collection = self.client.database(&self.db).collection(COLLECTION_EVENTS);
         let cursor = find_with_options(collection, filter, options, span, self.tracer.as_deref())
             .with_context(|_| ErrorKind::MongoDBOperation)?
             .map(|item| item.map_err(|error| error.context(ErrorKind::MongoDBCursor).into()))

@@ -1,13 +1,11 @@
-use bson::bson;
 use bson::doc;
 use bson::ordered::OrderedDocument;
 use failure::Fail;
 use failure::ResultExt;
-use mongodb::coll::options::FindOptions;
-use mongodb::coll::options::UpdateOptions;
-use mongodb::coll::results::UpdateResult;
-use mongodb::coll::Collection;
-use mongodb::Document;
+use mongodb::options::FindOptions;
+use mongodb::options::ReplaceOptions;
+use mongodb::results::UpdateResult;
+use mongodb::Collection;
 use opentracingrust::SpanContext;
 use opentracingrust::StartOptions;
 use opentracingrust::Tracer;
@@ -38,7 +36,9 @@ where
         (Some(tracer), Some(context)) => {
             let opts = StartOptions::default().child_of(context);
             let mut span = tracer.span_with_options("store.mongodb.aggregate", opts);
-            span.tag("namespace", collection.namespace.clone());
+            let namespace = collection.namespace();
+            let namespace = format!("{}.{}", namespace.db, namespace.coll);
+            span.tag("namespace", namespace);
             span.tag(
                 "pipeline",
                 serde_json::to_string(&pipeline)
@@ -115,12 +115,14 @@ where
         (Some(tracer), Some(context)) => {
             let options = StartOptions::default().child_of(context);
             let mut span = tracer.span_with_options("store.mongodb.findOne", options);
+            let namespace = collection.namespace();
+            let namespace = format!("{}.{}", namespace.db, namespace.coll);
+            span.tag("namespace", namespace);
             span.tag(
                 "filter",
                 serde_json::to_string(&filter)
                     .unwrap_or_else(|_| "<unable to encode filter>".into()),
             );
-            span.tag("namespace", collection.namespace.clone());
             Some(span.auto_finish())
         }
         _ => None,
@@ -171,15 +173,17 @@ where
         (Some(tracer), Some(context)) => {
             let opts = StartOptions::default().child_of(context);
             let mut span = tracer.span_with_options("store.mongodb.find", opts);
+            let namespace = collection.namespace();
+            let namespace = format!("{}.{}", namespace.db, namespace.coll);
+            span.tag("namespace", namespace);
             span.tag(
                 "filter",
                 serde_json::to_string(&filter)
                     .unwrap_or_else(|_| "<unable to encode filter>".into()),
             );
-            span.tag("namespace", collection.namespace.clone());
             span.tag(
                 "options",
-                serde_json::to_string(&Document::from(options.clone()))
+                serde_json::to_string(&options)
                     .unwrap_or_else(|_| "<unable to encode options>".into()),
             );
             Some(span.auto_finish())
@@ -225,7 +229,9 @@ pub fn insert_many(
         (Some(tracer), Some(context)) => {
             let opts = StartOptions::default().child_of(context);
             let mut span = tracer.span_with_options("store.mongodb.insertMany", opts);
-            span.tag("namespace", collection.namespace.clone());
+            let namespace = collection.namespace();
+            let namespace = format!("{}.{}", namespace.db, namespace.coll);
+            span.tag("namespace", namespace);
             Some(span.auto_finish())
         }
         _ => None,
@@ -260,12 +266,14 @@ pub fn insert_one(
         (Some(tracer), Some(context)) => {
             let opts = StartOptions::default().child_of(context);
             let mut span = tracer.span_with_options("store.mongodb.insertOne", opts);
+            let namespace = collection.namespace();
+            let namespace = format!("{}.{}", namespace.db, namespace.coll);
+            span.tag("namespace", namespace);
             span.tag(
                 "document",
                 serde_json::to_string(&document)
                     .unwrap_or_else(|_| "<unable to encode document>".into()),
             );
-            span.tag("namespace", collection.namespace.clone());
             Some(span.auto_finish())
         }
         _ => None,
@@ -297,18 +305,20 @@ pub fn replace_one(
     span: Option<SpanContext>,
     tracer: Option<&Tracer>,
 ) -> Result<()> {
-    let mut options = UpdateOptions::new();
+    let mut options = ReplaceOptions::default();
     options.upsert = Some(true);
     let mut span = match (tracer, span) {
         (Some(tracer), Some(context)) => {
             let options = StartOptions::default().child_of(context);
             let mut span = tracer.span_with_options("store.mongodb.replaceOne", options);
+            let namespace = collection.namespace();
+            let namespace = format!("{}.{}", namespace.db, namespace.coll);
+            span.tag("namespace", namespace);
             span.tag(
                 "filter",
                 serde_json::to_string(&filter)
                     .unwrap_or_else(|_| "<unable to encode filter>".into()),
             );
-            span.tag("namespace", collection.namespace.clone());
             span.tag(
                 "update",
                 serde_json::to_string(&document)
@@ -344,7 +354,7 @@ where
 {
     let filter = doc! {};
     let sort = doc! {"_id" => 1};
-    let mut options = FindOptions::new();
+    let mut options = FindOptions::default();
     options.sort = Some(sort);
     let cursor = find_with_options(collection, filter, options, None, None)
         .with_context(|_| ErrorKind::FindOp)?
@@ -366,12 +376,14 @@ pub fn update_many(
         (Some(tracer), Some(context)) => {
             let options = StartOptions::default().child_of(context);
             let mut span = tracer.span_with_options("store.mongodb.updateMany", options);
+            let namespace = collection.namespace();
+            let namespace = format!("{}.{}", namespace.db, namespace.coll);
+            span.tag("namespace", namespace);
             span.tag(
                 "filter",
                 serde_json::to_string(&filter)
                     .unwrap_or_else(|_| "<unable to encode filter>".into()),
             );
-            span.tag("namespace", collection.namespace.clone());
             span.tag(
                 "update",
                 serde_json::to_string(&update)
@@ -412,12 +424,14 @@ pub fn update_one(
         (Some(tracer), Some(context)) => {
             let options = StartOptions::default().child_of(context);
             let mut span = tracer.span_with_options("store.mongodb.updateOne", options);
+            let namespace = collection.namespace();
+            let namespace = format!("{}.{}", namespace.db, namespace.coll);
+            span.tag("namespace", namespace);
             span.tag(
                 "filter",
                 serde_json::to_string(&filter)
                     .unwrap_or_else(|_| "<unable to encode filter>".into()),
             );
-            span.tag("namespace", collection.namespace.clone());
             span.tag(
                 "update",
                 serde_json::to_string(&update)

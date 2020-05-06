@@ -1,12 +1,9 @@
 use std::sync::Arc;
 
-use bson::bson;
 use bson::doc;
 use bson::Bson;
 use failure::ResultExt;
-use mongodb::db::ThreadedDatabase;
 use mongodb::Client;
-use mongodb::ThreadedClient;
 use opentracingrust::SpanContext;
 use opentracingrust::Tracer;
 
@@ -47,7 +44,10 @@ impl Persist {
 
 impl PersistInterface for Persist {
     fn action(&self, action: Action, span: Option<SpanContext>) -> Result<()> {
-        let collection = self.client.db(&self.db).collection(COLLECTION_ACTIONS);
+        let collection = self
+            .client
+            .database(&self.db)
+            .collection(COLLECTION_ACTIONS);
         let action = ActionDocument::from(action);
         let filter = doc! {
             "cluster_id" => &action.cluster_id,
@@ -68,7 +68,7 @@ impl PersistInterface for Persist {
     fn action_history(&self, history: Vec<ActionHistory>, span: Option<SpanContext>) -> Result<()> {
         let collection = self
             .client
-            .db(&self.db)
+            .database(&self.db)
             .collection(COLLECTION_ACTIONS_HISTORY);
         let mut records = Vec::new();
         for item in history.into_iter() {
@@ -86,7 +86,7 @@ impl PersistInterface for Persist {
     }
 
     fn event(&self, event: Event, span: Option<SpanContext>) -> Result<()> {
-        let collection = self.client.db(&self.db).collection(COLLECTION_EVENTS);
+        let collection = self.client.database(&self.db).collection(COLLECTION_EVENTS);
         let event = EventDocument::from(event);
         let document = bson::to_bson(&event).with_context(|_| ErrorKind::MongoDBBsonEncode)?;
         let document = match document {

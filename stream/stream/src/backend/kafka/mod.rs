@@ -1,5 +1,4 @@
 use failure::ResultExt;
-use futures::Future;
 use humthreads::ThreadScope;
 use rdkafka::config::ClientConfig;
 use rdkafka::consumer::Consumer;
@@ -73,9 +72,8 @@ where
             .headers(headers)
             .key(&message.id)
             .payload(&message.payload);
-        self.producer
-            .send(record, self.producer_timeout)
-            .wait()
+        let send = self.producer.send(record, self.producer_timeout);
+        futures::executor::block_on(send)
             .with_context(|_| ErrorKind::EmitFailed)?
             .map_err(|(error, _)| error)
             .with_context(|_| ErrorKind::EmitFailed)?;

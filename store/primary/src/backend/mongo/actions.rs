@@ -2,7 +2,6 @@ use std::collections::HashMap;
 use std::str::FromStr;
 use std::sync::Arc;
 
-use bson::bson;
 use bson::doc;
 use bson::Bson;
 use bson::Document;
@@ -10,9 +9,7 @@ use bson::UtcDateTime;
 use chrono::DateTime;
 use chrono::Utc;
 use failure::ResultExt;
-use mongodb::db::ThreadedDatabase;
 use mongodb::Client;
-use mongodb::ThreadedClient;
 use opentracingrust::SpanContext;
 use opentracingrust::Tracer;
 use uuid::Uuid;
@@ -87,7 +84,10 @@ impl ActionsInterface for Actions {
                 "state": "PENDING_SCHEDULE",
             }
         };
-        let collection = self.client.db(&self.db).collection(COLLECTION_ACTIONS);
+        let collection = self
+            .client
+            .database(&self.db)
+            .collection(COLLECTION_ACTIONS);
         update_one(collection, filter, update, span, self.tracer.as_deref())
             .with_context(|_| ErrorKind::MongoDBOperation)?;
         Ok(())
@@ -111,7 +111,10 @@ impl ActionsInterface for Actions {
                 "state": bson::to_bson(&ActionState::Cancelled).unwrap(),
             }
         };
-        let collection = self.client.db(&self.db).collection(COLLECTION_ACTIONS);
+        let collection = self
+            .client
+            .database(&self.db)
+            .collection(COLLECTION_ACTIONS);
         update_one(collection, filter, update, span, self.tracer.as_deref())
             .with_context(|_| ErrorKind::MongoDBOperation)?;
         Ok(())
@@ -126,7 +129,10 @@ impl ActionsInterface for Actions {
         span: Option<SpanContext>,
     ) -> Result<Cursor<Action>> {
         let filter = lost_actions_filter(attrs, &node_id, refresh_id);
-        let collection = self.client.db(&self.db).collection(COLLECTION_ACTIONS);
+        let collection = self
+            .client
+            .database(&self.db)
+            .collection(COLLECTION_ACTIONS);
         let cursor = find(collection, filter, span, self.tracer.as_deref())
             .with_context(|_| ErrorKind::MongoDBOperation)?;
         // Simulate the changes that will be performed by `mark_lost` for clients.
@@ -156,7 +162,10 @@ impl ActionsInterface for Actions {
                 "state": bson::to_bson(&ActionState::Lost).unwrap(),
             }
         };
-        let collection = self.client.db(&self.db).collection(COLLECTION_ACTIONS);
+        let collection = self
+            .client
+            .database(&self.db)
+            .collection(COLLECTION_ACTIONS);
         update_many(collection, filter, update, span, self.tracer.as_deref())
             .with_context(|_| ErrorKind::MongoDBOperation)?;
         Ok(())
@@ -173,7 +182,10 @@ impl ActionsInterface for Actions {
             "node_id" => &agent_id,
             "state" => bson::to_bson(&ActionState::PendingSchedule).unwrap(),
         };
-        let collection = self.client.db(&self.db).collection(COLLECTION_ACTIONS);
+        let collection = self
+            .client
+            .database(&self.db)
+            .collection(COLLECTION_ACTIONS);
         let cursor = find(collection, filter, span, self.tracer.as_deref())
             .with_context(|_| ErrorKind::MongoDBOperation)?
             .map(|action| {
@@ -205,7 +217,10 @@ impl ActionsInterface for Actions {
                 "$in" => action_ids_bson,
             },
         };
-        let collection = self.client.db(&self.db).collection(COLLECTION_ACTIONS);
+        let collection = self
+            .client
+            .database(&self.db)
+            .collection(COLLECTION_ACTIONS);
         let cursor = find(collection, filter, span, self.tracer.as_deref())
             .with_context(|_| ErrorKind::MongoDBOperation)?;
         for document in cursor {

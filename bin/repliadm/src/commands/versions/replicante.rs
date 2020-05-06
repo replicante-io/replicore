@@ -1,7 +1,7 @@
 use clap::ArgMatches;
 use failure::ResultExt;
 use lazy_static::lazy_static;
-use reqwest::Client as ReqwestClient;
+use reqwest::blocking::Client as ReqwestClient;
 use slog::Logger;
 
 use replicante_models_core::api::Version;
@@ -50,11 +50,10 @@ fn api_version(cluster: &str) -> Result<Version> {
     let client = ReqwestClient::builder()
         .build()
         .with_context(|_| ErrorKind::HttpClient)?;
-    let request = client.get(&url);
-    let mut response = request
+    let version = client
+        .get(&url)
         .send()
-        .with_context(|_| ErrorKind::ReplicanteRequest(ENDPOINT_VERSION))?;
-    let version = response
+        .with_context(|_| ErrorKind::ReplicanteRequest(ENDPOINT_VERSION))?
         .json()
         .with_context(|_| ErrorKind::ReplicanteJsonDecode)?;
     Ok(version)

@@ -1,6 +1,5 @@
 use std::sync::Arc;
 
-use bson::bson;
 use bson::doc;
 use bson::Bson;
 use bson::UtcDateTime;
@@ -8,10 +7,8 @@ use chrono::DateTime;
 use chrono::Utc;
 use failure::Fail;
 use failure::ResultExt;
-use mongodb::coll::options::FindOptions;
-use mongodb::db::ThreadedDatabase;
+use mongodb::options::FindOptions;
 use mongodb::Client;
-use mongodb::ThreadedClient;
 use opentracingrust::SpanContext;
 use opentracingrust::Tracer;
 use uuid::Uuid;
@@ -58,7 +55,10 @@ impl Actions {
 
 impl ActionsInterface for Actions {
     fn action(&self, action_id: Uuid, span: Option<SpanContext>) -> Result<Option<Action>> {
-        let collection = self.client.db(&self.db).collection(COLLECTION_ACTIONS);
+        let collection = self
+            .client
+            .database(&self.db)
+            .collection(COLLECTION_ACTIONS);
         let filter = doc! {
             "cluster_id" => &self.cluster_id,
             "action_id" => action_id.to_string(),
@@ -87,7 +87,7 @@ impl ActionsInterface for Actions {
         };
         let collection = self
             .client
-            .db(&self.db)
+            .database(&self.db)
             .collection(COLLECTION_ACTIONS_HISTORY);
         update_many(collection, filter, update, span, self.tracer.as_deref())
             .with_context(|_| ErrorKind::MongoDBOperation)?;
@@ -96,7 +96,7 @@ impl ActionsInterface for Actions {
 
     fn history(&self, action_id: Uuid, span: Option<SpanContext>) -> Result<Vec<ActionHistory>> {
         // Prepare options and filters.
-        let mut options = FindOptions::new();
+        let mut options = FindOptions::default();
         options.sort = Some(doc! {"timestamp" => -1});
         let filters = doc! {
             "$and": [
@@ -108,7 +108,7 @@ impl ActionsInterface for Actions {
         // Execute the query.
         let collection = self
             .client
-            .db(&self.db)
+            .database(&self.db)
             .collection(COLLECTION_ACTIONS_HISTORY);
         let cursor = find_with_options(collection, filters, options, span, self.tracer.as_deref())
             .with_context(|_| ErrorKind::MongoDBOperation)?
@@ -123,7 +123,7 @@ impl ActionsInterface for Actions {
 
     fn search(&self, search: SearchFilters, span: Option<SpanContext>) -> Result<Cursor<Action>> {
         // Prepare options.
-        let mut options = FindOptions::new();
+        let mut options = FindOptions::default();
         options.limit = Some(MAX_ACTIONS_SEARCH);
         options.sort = Some(doc! {"created_ts" => -1});
 
@@ -150,7 +150,10 @@ impl ActionsInterface for Actions {
         let filters = doc! {"$and" => filters};
 
         // Execute the query.
-        let collection = self.client.db(&self.db).collection(COLLECTION_ACTIONS);
+        let collection = self
+            .client
+            .database(&self.db)
+            .collection(COLLECTION_ACTIONS);
         let cursor = find_with_options(collection, filters, options, span, self.tracer.as_deref())
             .with_context(|_| ErrorKind::MongoDBOperation)?
             .map(|item| item.map_err(|error| error.context(ErrorKind::MongoDBCursor).into()))

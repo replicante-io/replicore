@@ -1,11 +1,8 @@
 use std::sync::Arc;
 
-use bson::bson;
 use bson::doc;
 use failure::ResultExt;
-use mongodb::db::ThreadedDatabase;
 use mongodb::Client;
-use mongodb::ThreadedClient;
 use opentracingrust::SpanContext;
 use opentracingrust::Tracer;
 use slog::debug;
@@ -52,7 +49,10 @@ impl ClusterInterface for Cluster {
         span: Option<SpanContext>,
     ) -> Result<Option<ClusterDiscovery>> {
         let filter = doc! {"cluster_id" => &attrs.cluster_id};
-        let collection = self.client.db(&self.db).collection(COLLECTION_DISCOVERIES);
+        let collection = self
+            .client
+            .database(&self.db)
+            .collection(COLLECTION_DISCOVERIES);
         let discovery = find_one(collection, filter, span, self.tracer.as_deref())
             .with_context(|_| ErrorKind::MongoDBOperation)?;
         Ok(discovery)
@@ -60,7 +60,7 @@ impl ClusterInterface for Cluster {
 
     fn mark_stale(&self, attrs: &ClusterAttribures, span: Option<SpanContext>) -> Result<()> {
         for name in STALE_COLLECTIONS.iter() {
-            let collection = self.client.db(&self.db).collection(name);
+            let collection = self.client.database(&self.db).collection(name);
             let filter = doc! {"cluster_id" => &attrs.cluster_id};
             let mark = doc! {"$set" => {"stale" => true}};
             let stats = update_many(

@@ -3,7 +3,7 @@ mod config;
 mod error;
 
 pub mod admin;
-#[cfg(feature = "with_test_support")]
+#[cfg(any(test, feature = "with_test_support"))]
 pub mod mock;
 pub mod store;
 

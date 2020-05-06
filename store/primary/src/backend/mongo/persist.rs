@@ -1,12 +1,9 @@
 use std::sync::Arc;
 
-use bson::bson;
 use bson::doc;
 use bson::Bson;
 use failure::ResultExt;
-use mongodb::db::ThreadedDatabase;
 use mongodb::Client;
-use mongodb::ThreadedClient;
 use opentracingrust::SpanContext;
 use opentracingrust::Tracer;
 
@@ -57,7 +54,10 @@ impl PersistInterface for Persist {
             "node_id" => &action.node_id,
             "action_id" => &action.action_id,
         };
-        let collection = self.client.db(&self.db).collection(COLLECTION_ACTIONS);
+        let collection = self
+            .client
+            .database(&self.db)
+            .collection(COLLECTION_ACTIONS);
         let document = bson::to_bson(&action).with_context(|_| ErrorKind::MongoDBBsonEncode)?;
         let document = match document {
             Bson::Document(document) => document,
@@ -73,7 +73,7 @@ impl PersistInterface for Persist {
             "cluster_id" => &agent.cluster_id,
             "host" => &agent.host,
         };
-        let collection = self.client.db(&self.db).collection(COLLECTION_AGENTS);
+        let collection = self.client.database(&self.db).collection(COLLECTION_AGENTS);
         let document = bson::to_bson(&agent).with_context(|_| ErrorKind::MongoDBBsonEncode)?;
         let document = match document {
             Bson::Document(document) => document,
@@ -90,7 +90,10 @@ impl PersistInterface for Persist {
             "host" => &agent.host,
         };
         let agent = AgentInfoDocument::from(agent);
-        let collection = self.client.db(&self.db).collection(COLLECTION_AGENTS_INFO);
+        let collection = self
+            .client
+            .database(&self.db)
+            .collection(COLLECTION_AGENTS_INFO);
         let document = bson::to_bson(&agent).with_context(|_| ErrorKind::MongoDBBsonEncode)?;
         let document = match document {
             Bson::Document(document) => document,
@@ -107,7 +110,10 @@ impl PersistInterface for Persist {
         span: Option<SpanContext>,
     ) -> Result<()> {
         let filter = doc! {"cluster_id" => &discovery.cluster_id};
-        let collection = self.client.db(&self.db).collection(COLLECTION_DISCOVERIES);
+        let collection = self
+            .client
+            .database(&self.db)
+            .collection(COLLECTION_DISCOVERIES);
         let document = bson::to_bson(&discovery).with_context(|_| ErrorKind::MongoDBBsonEncode)?;
         let document = match document {
             Bson::Document(document) => document,
@@ -124,7 +130,7 @@ impl PersistInterface for Persist {
             "node_id" => &node.node_id,
         };
         let node = NodeDocument::from(node);
-        let collection = self.client.db(&self.db).collection(COLLECTION_NODES);
+        let collection = self.client.database(&self.db).collection(COLLECTION_NODES);
         let document = bson::to_bson(&node).with_context(|_| ErrorKind::MongoDBBsonEncode)?;
         let document = match document {
             Bson::Document(document) => document,
@@ -142,7 +148,7 @@ impl PersistInterface for Persist {
             "shard_id" => &shard.shard_id,
         };
         let shard = ShardDocument::from(shard);
-        let collection = self.client.db(&self.db).collection(COLLECTION_SHARDS);
+        let collection = self.client.database(&self.db).collection(COLLECTION_SHARDS);
         let document = bson::to_bson(&shard).with_context(|_| ErrorKind::MongoDBBsonEncode)?;
         let document = match document {
             Bson::Document(document) => document,

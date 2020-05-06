@@ -1,9 +1,6 @@
-use std::collections::HashMap;
 use std::collections::HashSet;
 
 use lazy_static::lazy_static;
-
-use replicante_externals_mongodb::admin::IndexInfo;
 
 pub const COLLECTION_ACTIONS: &str = "actions";
 pub const COLLECTION_AGENTS: &str = "agents";
@@ -38,105 +35,5 @@ lazy_static! {
         set.insert(COLLECTION_NODES);
         set.insert(COLLECTION_SHARDS);
         set
-    };
-    pub static ref VALIDATE_INDEXES_NEEDED: HashMap<&'static str, Vec<IndexInfo>> = {
-        let mut map = HashMap::new();
-        map.insert(
-            COLLECTION_ACTIONS,
-            vec![IndexInfo {
-                expires: false,
-                key: vec![("cluster_id".into(), 1), ("action_id".into(), 1)],
-                unique: true,
-            }],
-        );
-        map.insert(
-            COLLECTION_AGENTS,
-            vec![IndexInfo {
-                expires: false,
-                key: vec![("cluster_id".into(), 1), ("host".into(), 1)],
-                unique: true,
-            }],
-        );
-        map.insert(
-            COLLECTION_AGENTS_INFO,
-            vec![IndexInfo {
-                expires: false,
-                key: vec![("cluster_id".into(), 1), ("host".into(), 1)],
-                unique: true,
-            }],
-        );
-        map.insert(
-            COLLECTION_CLUSTER_META,
-            vec![IndexInfo {
-                expires: false,
-                key: vec![("cluster_id".into(), 1)],
-                unique: true,
-            }],
-        );
-        map.insert(
-            COLLECTION_DISCOVERIES,
-            vec![IndexInfo {
-                expires: false,
-                key: vec![("cluster_id".into(), 1)],
-                unique: true,
-            }],
-        );
-        map.insert(
-            COLLECTION_NODES,
-            vec![IndexInfo {
-                expires: false,
-                key: vec![("cluster_id".into(), 1), ("node_id".into(), 1)],
-                unique: true,
-            }],
-        );
-        map.insert(
-            COLLECTION_SHARDS,
-            vec![IndexInfo {
-                expires: false,
-                key: vec![
-                    ("cluster_id".into(), 1),
-                    ("shard_id".into(), 1),
-                    ("node_id".into(), 1),
-                ],
-                unique: true,
-            }],
-        );
-        map
-    };
-    pub static ref VALIDATE_INDEXES_SUGGESTED: HashMap<&'static str, Vec<IndexInfo>> = {
-        let mut map = HashMap::new();
-        map.insert(
-            COLLECTION_ACTIONS,
-            vec![IndexInfo {
-                expires: true,
-                key: vec![("finished_ts".into(), 1)],
-                unique: false,
-            }],
-        );
-        map.insert(COLLECTION_AGENTS, vec![]);
-        map.insert(COLLECTION_AGENTS_INFO, vec![]);
-        map.insert(
-            COLLECTION_CLUSTER_META,
-            vec![
-                IndexInfo {
-                    expires: false,
-                    key: vec![
-                        ("shards".into(), -1),
-                        ("nodes".into(), -1),
-                        ("cluster_id".into(), 1),
-                    ],
-                    unique: false,
-                },
-                IndexInfo {
-                    expires: false,
-                    key: vec![("cluster_display_name".into(), 1)],
-                    unique: false,
-                },
-            ],
-        );
-        map.insert(COLLECTION_DISCOVERIES, vec![]);
-        map.insert(COLLECTION_NODES, vec![]);
-        map.insert(COLLECTION_SHARDS, vec![]);
-        map
     };
 }

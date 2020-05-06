@@ -1,7 +1,6 @@
 use clap::ArgMatches;
 use failure::ResultExt;
-use reqwest::Client as ReqwestClient;
-use reqwest::Response;
+use reqwest::blocking::Client as ReqwestClient;
 use reqwest::StatusCode;
 use serde_json::Value;
 use slog::debug;
@@ -48,11 +47,8 @@ impl<'a> RepliClient<'a> {
             ENDPOINT_CLUSTER_ACTION_APPROVE,
         );
         debug!(self.logger, "About to POST action approve request"; "url" => &url);
-        let mut response = client
-            .post(&url)
-            .send()
-            .with_context(|_| ErrorKind::RepliClientError)?;
-        self.check_response_status(&mut response)?;
+        let response = Response::perform(client.post(&url))?;
+        response.check_status()?;
         Ok(())
     }
 
@@ -72,11 +68,8 @@ impl<'a> RepliClient<'a> {
             ENDPOINT_CLUSTER_ACTION_DISAPPROVE,
         );
         debug!(self.logger, "About to POST action disapprove request"; "url" => &url);
-        let mut response = client
-            .post(&url)
-            .send()
-            .with_context(|_| ErrorKind::RepliClientError)?;
-        self.check_response_status(&mut response)?;
+        let response = Response::perform(client.post(&url))?;
+        response.check_status()?;
         Ok(())
     }
 
@@ -88,25 +81,17 @@ impl<'a> RepliClient<'a> {
         let url = self.session.url.trim_end_matches('/');
         let url = format!("{}{}", url, ENDPOINT_APPLY);
         debug!(self.logger, "About to POST apply request"; "url" => &url);
-        let mut response = client
-            .post(&url)
-            .json(&object)
-            .send()
-            .with_context(|_| ErrorKind::RepliClientError)?;
+        let response = Response::perform(client.post(&url).json(&object))?;
 
         // Check apply-specific errors.
-        if response.status().as_u16() == 400 {
-            let remote: ErrorsCollection = response
-                .json()
-                .with_context(|_| ErrorKind::RepliClientDecode)?;
+        if response.status.as_u16() == 400 {
+            let remote: ErrorsCollection = response.body_as()?;
             return Err(ErrorKind::ApplyValidation(remote).into());
         }
-        self.check_response_status(&mut response)?;
+        response.check_status()?;
 
         // Decode and return response payload on success.
-        let remote: Value = response
-            .json()
-            .with_context(|_| ErrorKind::RepliClientDecode)?;
+        let remote = response.body;
         debug!(
             self.logger,
             "Recevied success response from apply API";
@@ -126,11 +111,8 @@ impl<'a> RepliClient<'a> {
             url, ENDPOINT_CLUSTER, cluster, ENDPOINT_CLUSTER_REFRESH
         );
         debug!(self.logger, "About to POST cluster refresh request"; "url" => &url);
-        let mut response = client
-            .post(&url)
-            .send()
-            .with_context(|_| ErrorKind::RepliClientError)?;
-        self.check_response_status(&mut response)?;
+        let response = Response::perform(client.post(&url))?;
+        response.check_status()?;
         Ok(())
     }
 
@@ -150,10 +132,37 @@ impl<'a> RepliClient<'a> {
     pub fn new(session: Session, logger: &'a Logger) -> RepliClient<'a> {
         RepliClient { logger, session }
     }
+}
+
+/// Response instance to store status code and JSON body.
+struct Response {
+    body: serde_json::Value,
+    status: StatusCode,
+}
+
+impl Response {
+    /// Perform the request and store needed response attributes.
+    pub fn perform(request: reqwest::blocking::RequestBuilder) -> Result<Self> {
+        let response = request
+            .send()
+            .with_context(|_| ErrorKind::RepliClientError)?;
+        let status = response.status();
+        let body = response
+            .json()
+            .with_context(|_| ErrorKind::RepliClientDecode)?;
+        Ok(Response { body, status })
+    }
+
+    /// Decode the body of the response to the given type.
+    pub fn body_as<T: serde::de::DeserializeOwned>(&self) -> Result<T> {
+        let body = self.body.clone();
+        let body = serde_json::from_value(body).with_context(|_| ErrorKind::RepliClientDecode)?;
+        Ok(body)
+    }
 
     /// Check the HTTP response status code for common errors.
-    fn check_response_status(&self, response: &mut Response) -> Result<()> {
-        match response.status() {
+    pub fn check_status(&self) -> Result<()> {
+        match self.status {
             // Missing resources or authentication errors.
             StatusCode::NOT_FOUND => Err(ErrorKind::RepliClientNotFound.into()),
 
@@ -162,9 +171,9 @@ impl<'a> RepliClient<'a> {
 
             // Other remote errors.
             _ => {
-                let remote: SerializableFail = response
-                    .json()
-                    .with_context(|_| ErrorKind::RepliClientDecode)?;
+                let body = self.body.clone();
+                let remote: SerializableFail =
+                    serde_json::from_value(body).with_context(|_| ErrorKind::RepliClientDecode)?;
                 let mut error: Option<failure::Error> = None;
                 for layer in remote.layers.into_iter() {
                     let layer = format!("(remote) {}", layer);

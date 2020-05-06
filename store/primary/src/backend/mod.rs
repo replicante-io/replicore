@@ -485,7 +485,6 @@ impl Deref for ShardsImpl {
 ///
 /// See `admin::validate::Validate` for descriptions of methods.
 pub trait ValidateInterface: Send + Sync {
-    fn indexes(&self) -> Result<Vec<ValidationResult>>;
     fn removed_entities(&self) -> Result<Vec<ValidationResult>>;
     fn schema(&self) -> Result<Vec<ValidationResult>>;
 }

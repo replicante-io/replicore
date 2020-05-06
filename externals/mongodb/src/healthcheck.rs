@@ -1,5 +1,5 @@
+use bson::doc;
 use mongodb::Client;
-use mongodb::ThreadedClient;
 
 use replicante_models_api::HealthStatus;
 use replicante_service_healthcheck::HealthCheck;
@@ -16,8 +16,17 @@ impl MongoDBHealthCheck {
 
 impl HealthCheck for MongoDBHealthCheck {
     fn check(&self) -> HealthStatus {
-        match self.client.is_master() {
-            Ok(_) => HealthStatus::Healthy,
+        let info = self
+            .client
+            .database("test")
+            .run_command(doc! {"isMaster": 1}, None);
+        let info = match info {
+            Ok(info) => info,
+            Err(error) => return HealthStatus::Failed(error.to_string()),
+        };
+        match info.get_bool("ismaster") {
+            Ok(true) => HealthStatus::Healthy,
+            Ok(false) => HealthStatus::Failed("master not found".to_string()),
             Err(error) => HealthStatus::Failed(error.to_string()),
         }
     }

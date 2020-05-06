@@ -25,10 +25,11 @@ path = "src/lib.rs"
 
 [dependencies]
 clap = "^2.31.2"
-dialoguer = "^0.5.0"
+dialoguer = "^0.6.0"
 dirs = "^2.0.2"
 failure = "^0.1.3"
-reqwest = "^0.9.1"
+futures = "^0.3.4"
+reqwest = { version = "^0.10.4", features = ["blocking"] }
 serde = { version = "^1.0.34", features = ["derive"] }
 serde_json = "^1.0.0"
 serde_yaml = "^0.8.0"
@@ -41,4 +42,4 @@ replicante_util_failure = { path = "../../common/util/failure" }
 
 
 [build-dependencies]
-git2 = "^0.10.0"
+git2 = "^0.13.0"

@@ -1,14 +1,11 @@
 use std::sync::Arc;
 
-use bson::bson;
 use bson::doc;
 use bson::Bson;
 use failure::Fail;
 use failure::ResultExt;
-use mongodb::coll::options::FindOptions;
-use mongodb::db::ThreadedDatabase;
+use mongodb::options::FindOptions;
 use mongodb::Client;
-use mongodb::ThreadedClient;
 use opentracingrust::SpanContext;
 use opentracingrust::Tracer;
 
@@ -48,7 +45,10 @@ impl LegacyInterface for Legacy {
         span: Option<SpanContext>,
     ) -> Result<Option<ClusterMeta>> {
         let filter = doc! {"cluster_id" => &cluster_id};
-        let collection = self.client.db(&self.db).collection(COLLECTION_CLUSTER_META);
+        let collection = self
+            .client
+            .database(&self.db)
+            .collection(COLLECTION_CLUSTER_META);
         let meta = find_one(collection, filter, span, self.tracer.as_deref())
             .with_context(|_| ErrorKind::MongoDBOperation)?;
         Ok(meta)
@@ -65,8 +65,11 @@ impl LegacyInterface for Legacy {
             {"cluster_display_name" => {"$regex" => &search, "$options" => "i"}},
             {"cluster_id" => {"$regex" => &search, "$options" => "i"}},
         ]};
-        let collection = self.client.db(&self.db).collection(COLLECTION_CLUSTER_META);
-        let mut options = FindOptions::new();
+        let collection = self
+            .client
+            .database(&self.db)
+            .collection(COLLECTION_CLUSTER_META);
+        let mut options = FindOptions::default();
         options.limit = Some(i64::from(limit));
         let cursor = find_with_options(collection, filter, options, span, self.tracer.as_deref())
             .with_context(|_| ErrorKind::MongoDBOperation)?
@@ -76,7 +79,10 @@ impl LegacyInterface for Legacy {
 
     fn persist_cluster_meta(&self, meta: ClusterMeta, span: Option<SpanContext>) -> Result<()> {
         let filter = doc! {"cluster_id" => &meta.cluster_id};
-        let collection = self.client.db(&self.db).collection(COLLECTION_CLUSTER_META);
+        let collection = self
+            .client
+            .database(&self.db)
+            .collection(COLLECTION_CLUSTER_META);
         let document = bson::to_bson(&meta).with_context(|_| ErrorKind::MongoDBBsonEncode)?;
         let document = match document {
             Bson::Document(document) => document,
@@ -94,10 +100,13 @@ impl LegacyInterface for Legacy {
             "nodes" => -1,
             "cluster_id" => 1,
         };
-        let mut options = FindOptions::new();
+        let mut options = FindOptions::default();
         options.limit = Some(i64::from(TOP_CLUSTERS_LIMIT));
         options.sort = Some(sort);
-        let collection = self.client.db(&self.db).collection(COLLECTION_CLUSTER_META);
+        let collection = self
+            .client
+            .database(&self.db)
+            .collection(COLLECTION_CLUSTER_META);
         let cursor = find_with_options(collection, filter, options, span, self.tracer.as_deref())
             .with_context(|_| ErrorKind::MongoDBOperation)?
             .map(|item| item.map_err(|error| error.context(ErrorKind::MongoDBCursor).into()));

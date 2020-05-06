@@ -1,5 +1,4 @@
 use failure::ResultExt;
-use futures::Future;
 use rdkafka::producer::FutureProducer;
 use rdkafka::producer::FutureRecord;
 
@@ -50,9 +49,8 @@ impl<Q: TaskQueue> Backend<Q> for Kafka {
         let topic = topic_for_queue(&self.prefix, &task.queue.name(), TopicRole::Queue);
         let record: FutureRecord<(), [u8]> =
             FutureRecord::to(&topic).headers(headers).payload(message);
-        self.producer
-            .send(record, self.timeout)
-            .wait()
+        let ack = self.producer.send(record, self.timeout);
+        futures::executor::block_on(ack)
             .with_context(|_| ErrorKind::TaskRequest)?
             .map_err(|(error, _)| error)
             .with_context(|_| ErrorKind::TaskRequest)?;

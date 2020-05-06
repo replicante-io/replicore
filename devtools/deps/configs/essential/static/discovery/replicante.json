@@ -3,7 +3,11 @@
   "clusters": [{
     "cluster_id": "replistore",
     "display_name": "Replicante Store",
-    "nodes": ["http://localhost:37017"]
+    "nodes": ["https://localhost:37017"]
+  }, {
+    "cluster_id": "dev-kafka",
+    "display_name": "Kafka agent development",
+    "nodes": ["https://localhost:10092"]
   }, {
     "cluster_id": "dev-agent-zookeeper",
     "display_name": "Zookeeper agent development",

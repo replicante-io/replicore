@@ -6,7 +6,6 @@ use std::time::Duration;
 use std::time::Instant;
 
 use failure::ResultExt;
-use futures::future::Future;
 use rdkafka::config::ClientConfig;
 use rdkafka::consumer::base_consumer::BaseConsumer;
 use rdkafka::consumer::CommitMode;
@@ -370,9 +369,10 @@ impl Kafka {
                 if let Some(payload) = message.payload() {
                     record = record.payload(payload);
                 }
-                self.retry_producer
-                    .send(record, i64::from(self.retry_timeout))
-                    .wait()
+                let ack = self
+                    .retry_producer
+                    .send(record, i64::from(self.retry_timeout));
+                futures::executor::block_on(ack)
                     .with_context(|_| ErrorKind::RetryEnqueue)?
                     .map_err(|(error, _)| error)
                     .with_context(|_| ErrorKind::RetryEnqueue)?;
@@ -565,9 +565,10 @@ impl KafkaAck {
         let record: FutureRecord<(), [u8]> = FutureRecord::to(topic)
             .headers(headers)
             .payload(&task.message);
-        self.retry_producer
-            .send(record, i64::from(self.retry_timeout))
-            .wait()
+        let ack = self
+            .retry_producer
+            .send(record, i64::from(self.retry_timeout));
+        futures::executor::block_on(ack)
             .with_context(|_| ErrorKind::RetryEnqueueID(task.id().to_string()))?
             .map_err(|(error, _)| error)
             .with_context(|_| ErrorKind::RetryEnqueueID(task.id().to_string()))?;

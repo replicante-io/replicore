@@ -42,8 +42,8 @@ impl Component for UpdateChecker {
             .full_name("replicante:component:update_checker")
             .spawn(move |scope| {
                 let _activity = scope.scoped_activity("checking for updates");
-                let response = reqwest::get(UPDATE_META)
-                    .and_then(|mut response| response.json::<VersionMeta>());
+                let response = reqwest::blocking::get(UPDATE_META);
+                let response = response.and_then(|response| response.json::<VersionMeta>());
                 let response = match response {
                     Ok(response) => response,
                     Err(error) => {

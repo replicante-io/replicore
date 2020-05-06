@@ -19,9 +19,10 @@ maintenance = { status = "actively-developed" }
 [dependencies]
 failure = "^0.1.5"
 failure_derive = "^0.1.5"
+futures = "^0.3.4"
 lazy_static = "^1.0.0"
-prometheus = "^0.7.0"
-reqwest = { version = "^0.9.18", features = ["rustls-tls"] }
+prometheus = "^0.8.0"
+reqwest = { version = "^0.10.4", features = ["rustls-tls", "json", "blocking"] }
 serde = "^1.0.34"
 serde_derive = "^1.0.34"
 serde_json = "^1.0.13"

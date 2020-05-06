@@ -2,7 +2,6 @@ use std::sync::Arc;
 
 use failure::ResultExt;
 use mongodb::Client;
-use mongodb::ThreadedClient;
 use opentracingrust::Tracer;
 use slog::info;
 use slog::Logger;
@@ -36,16 +35,15 @@ mod validate;
 pub struct Admin {
     client: Client,
     db: String,
-    logger: Logger,
 }
 
 impl Admin {
     pub fn make(config: MongoDBConfig, logger: Logger) -> Result<Admin> {
         info!(logger, "Initialising view store admin for MongoDB");
         let db = config.db.clone();
-        let client = Client::with_uri(&config.common.uri)
+        let client = Client::with_uri_str(&config.common.uri)
             .with_context(|_| ErrorKind::MongoDBConnect(config.common.uri.clone()))?;
-        Ok(Admin { client, db, logger })
+        Ok(Admin { client, db })
     }
 }
 
@@ -61,8 +59,8 @@ impl AdminInterface for Admin {
     }
 
     fn version(&self) -> Result<Version> {
-        let version = detect_version(&self.client, &self.db, &self.logger)
-            .with_context(|_| ErrorKind::MongoDBOperation)?;
+        let version =
+            detect_version(&self.client, &self.db).with_context(|_| ErrorKind::MongoDBOperation)?;
         Ok(version)
     }
 }
@@ -91,7 +89,7 @@ impl Store {
     {
         info!(logger, "Initialising view store backed by MongoDB");
         let db = config.db.clone();
-        let client = Client::with_uri(&config.common.uri)
+        let client = Client::with_uri_str(&config.common.uri)
             .with_context(|_| ErrorKind::MongoDBConnect(config.common.uri.clone()))?;
         let tracer = tracer.into();
         let healthcheck = MongoDBHealthCheck::new(client.clone());

@@ -1,13 +1,10 @@
 use std::sync::Arc;
 
-use bson::bson;
 use bson::doc;
 use bson::ordered::OrderedDocument;
 use failure::Fail;
 use failure::ResultExt;
-use mongodb::db::ThreadedDatabase;
 use mongodb::Client;
-use mongodb::ThreadedClient;
 use opentracingrust::SpanContext;
 use opentracingrust::Tracer;
 
@@ -80,7 +77,7 @@ impl ShardsInterface for Shards {
         let pipeline = vec![filter, group_map, group_reduce];
 
         // Run aggrgation and grab the one and only (expected) result.
-        let collection = self.client.db(&self.db).collection(COLLECTION_SHARDS);
+        let collection = self.client.database(&self.db).collection(COLLECTION_SHARDS);
         let mut cursor = aggregate(collection, pipeline, span, self.tracer.as_deref())
             .with_context(|_| ErrorKind::MongoDBOperation)?;
         let counts: ShardsCounts = match cursor.next() {
@@ -102,7 +99,7 @@ impl ShardsInterface for Shards {
 
     fn iter(&self, attrs: &ShardsAttribures, span: Option<SpanContext>) -> Result<Cursor<Shard>> {
         let filter = doc! {"cluster_id" => &attrs.cluster_id};
-        let collection = self.client.db(&self.db).collection(COLLECTION_SHARDS);
+        let collection = self.client.database(&self.db).collection(COLLECTION_SHARDS);
         let cursor = find(collection, filter, span, self.tracer.as_deref())
             .with_context(|_| ErrorKind::MongoDBOperation)?
             .map(|item| item.map_err(|error| error.context(ErrorKind::MongoDBCursor).into()))

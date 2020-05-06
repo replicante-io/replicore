@@ -56,7 +56,7 @@ impl Store {
     }
 
     /// Instantiate a store with the given implementation.
-    #[cfg(feature = "with_test_support")]
+    #[cfg(any(test, feature = "with_test_support"))]
     pub(crate) fn with_impl(store: StoreImpl) -> Store {
         Store { store }
     }

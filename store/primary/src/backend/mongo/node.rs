@@ -1,11 +1,8 @@
 use std::sync::Arc;
 
-use bson::bson;
 use bson::doc;
 use failure::ResultExt;
-use mongodb::db::ThreadedDatabase;
 use mongodb::Client;
-use mongodb::ThreadedClient;
 use opentracingrust::SpanContext;
 use opentracingrust::Tracer;
 
@@ -42,7 +39,7 @@ impl NodeInterface for Node {
             "cluster_id" => &attrs.cluster_id,
             "node_id" => &attrs.node_id,
         };
-        let collection = self.client.db(&self.db).collection(COLLECTION_NODES);
+        let collection = self.client.database(&self.db).collection(COLLECTION_NODES);
         let document: Option<NodeDocument> =
             find_one(collection, filter, span, self.tracer.as_deref())
                 .with_context(|_| ErrorKind::MongoDBOperation)?;

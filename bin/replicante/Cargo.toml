@@ -33,16 +33,17 @@ bodyparser = "^0.8.0"
 chrono = "^0.4.6"
 clap = "^2.31.2"
 failure = "^0.1.5"
+futures = "^0.3.4"
 humthreads = "^0.2.0"
 iron = "^0.6.0"
 iron-json-response = "^0.6.0"
 lazy_static = "^1.0.0"
-opentracingrust = "^0.3.4"
-prometheus = { version = "^0.7.0", features = ["process"] }
-reqwest = "^0.9.1"
+opentracingrust = "^0.4.0"
+prometheus = { version = "^0.8.0", features = ["process"] }
+reqwest = { version = "^0.10.4", features = ["blocking"] }
 router = "^0.6.0"
 semver = "^0.9.0"
-sentry = "^0.17.0"
+sentry = "^0.18.0"
 serde = "^1.0.34"
 serde_derive = "^1.0.34"
 serde_json = "^1.0.13"
@@ -75,7 +76,7 @@ replicante_util_upkeep = { path = "../../common/util/upkeep" }
 
 
 [build-dependencies]
-git2 = "^0.10.0"
+git2 = "^0.13.0"
 
 
 [dev-dependencies]

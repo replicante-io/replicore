@@ -253,7 +253,6 @@ box_interface! {
     trait ValidateInterface,
 
     interface {
-        fn indexes(&self) -> Result<Vec<ValidationResult>>;
         fn removed_entities(&self) -> Result<Vec<ValidationResult>>;
         fn schema(&self) -> Result<Vec<ValidationResult>>;
     }

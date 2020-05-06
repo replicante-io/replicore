@@ -13,11 +13,6 @@ impl Validate {
         Validate { validate }
     }
 
-    /// Validate the current indexes to ensure they matches the code.
-    pub fn indexes(&self) -> Result<Vec<ValidationResult>> {
-        self.validate.indexes()
-    }
-
     /// Checks the store for collections/tables or indexes that are no longer used.
     pub fn removed_entities(&self) -> Result<Vec<ValidationResult>> {
         self.validate.removed_entities()

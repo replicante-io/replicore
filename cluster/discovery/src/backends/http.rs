@@ -3,10 +3,10 @@ use std::io::Read;
 use std::time::Duration;
 
 use failure::ResultExt;
+use reqwest::blocking::Client;
 use reqwest::header::HeaderMap;
 use reqwest::header::HeaderName;
 use reqwest::header::HeaderValue;
-use reqwest::Client;
 use serde_derive::Deserialize;
 use serde_derive::Serialize;
 use serde_json::Map;
@@ -194,7 +194,7 @@ impl Iter {
                 return Some(Err(error));
             }
         };
-        let mut response = match response.error_for_status() {
+        let response = match response.error_for_status() {
             Ok(response) => response,
             Err(error) => {
                 DISCOVERY_ERRORS.with_label_values(&["http"]).inc();

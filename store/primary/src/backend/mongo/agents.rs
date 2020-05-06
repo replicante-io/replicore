@@ -1,13 +1,10 @@
 use std::sync::Arc;
 
-use bson::bson;
 use bson::doc;
 use bson::ordered::OrderedDocument;
 use failure::Fail;
 use failure::ResultExt;
-use mongodb::db::ThreadedDatabase;
 use mongodb::Client;
-use mongodb::ThreadedClient;
 use opentracingrust::SpanContext;
 use opentracingrust::Tracer;
 
@@ -70,7 +67,7 @@ impl AgentsInterface for Agents {
         let pipeline = vec![filter, group];
 
         // Run aggrgation and grab the one and only (expected) result.
-        let collection = self.client.db(&self.db).collection(COLLECTION_AGENTS);
+        let collection = self.client.database(&self.db).collection(COLLECTION_AGENTS);
         let mut cursor = aggregate(collection, pipeline, span, self.tracer.as_deref())
             .with_context(|_| ErrorKind::MongoDBOperation)?;
         let counts: AgentsCounts = match cursor.next() {
@@ -97,7 +94,7 @@ impl AgentsInterface for Agents {
         span: Option<SpanContext>,
     ) -> Result<Cursor<AgentModel>> {
         let filter = doc! {"cluster_id" => &attrs.cluster_id};
-        let collection = self.client.db(&self.db).collection(COLLECTION_AGENTS);
+        let collection = self.client.database(&self.db).collection(COLLECTION_AGENTS);
         let cursor = find(collection, filter, span, self.tracer.as_deref())
             .with_context(|_| ErrorKind::MongoDBOperation)?
             .map(|item| item.map_err(|error| error.context(ErrorKind::MongoDBCursor).into()));
@@ -110,7 +107,10 @@ impl AgentsInterface for Agents {
         span: Option<SpanContext>,
     ) -> Result<Cursor<AgentInfoModel>> {
         let filter = doc! {"cluster_id" => &attrs.cluster_id};
-        let collection = self.client.db(&self.db).collection(COLLECTION_AGENTS_INFO);
+        let collection = self
+            .client
+            .database(&self.db)
+            .collection(COLLECTION_AGENTS_INFO);
         let cursor = find(collection, filter, span, self.tracer.as_deref())
             .with_context(|_| ErrorKind::MongoDBOperation)?
             .map(|item| item.map_err(|error| error.context(ErrorKind::MongoDBCursor).into()))

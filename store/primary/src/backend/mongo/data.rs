@@ -1,8 +1,6 @@
 use failure::Fail;
 use failure::ResultExt;
-use mongodb::db::ThreadedDatabase;
 use mongodb::Client;
-use mongodb::ThreadedClient;
 
 use replicante_externals_mongodb::operations::scan_collection;
 use replicante_models_core::actions::Action;
@@ -43,7 +41,10 @@ impl Data {
 
 impl DataInterface for Data {
     fn actions(&self) -> Result<Cursor<Action>> {
-        let collection = self.client.db(&self.db).collection(COLLECTION_ACTIONS);
+        let collection = self
+            .client
+            .database(&self.db)
+            .collection(COLLECTION_ACTIONS);
         let cursor = scan_collection(collection)
             .with_context(|_| ErrorKind::MongoDBOperation)?
             .map(|item| item.map_err(|error| error.context(ErrorKind::MongoDBCursor).into()))
@@ -52,7 +53,7 @@ impl DataInterface for Data {
     }
 
     fn agents(&self) -> Result<Cursor<Agent>> {
-        let collection = self.client.db(&self.db).collection(COLLECTION_AGENTS);
+        let collection = self.client.database(&self.db).collection(COLLECTION_AGENTS);
         let cursor = scan_collection(collection)
             .with_context(|_| ErrorKind::MongoDBOperation)?
             .map(|item| item.map_err(|error| error.context(ErrorKind::MongoDBCursor).into()));
@@ -60,7 +61,10 @@ impl DataInterface for Data {
     }
 
     fn agents_info(&self) -> Result<Cursor<AgentInfo>> {
-        let collection = self.client.db(&self.db).collection(COLLECTION_AGENTS_INFO);
+        let collection = self
+            .client
+            .database(&self.db)
+            .collection(COLLECTION_AGENTS_INFO);
         let cursor = scan_collection(collection)
             .with_context(|_| ErrorKind::MongoDBOperation)?
             .map(|item| item.map_err(|error| error.context(ErrorKind::MongoDBCursor).into()))
@@ -69,7 +73,10 @@ impl DataInterface for Data {
     }
 
     fn cluster_discoveries(&self) -> Result<Cursor<ClusterDiscovery>> {
-        let collection = self.client.db(&self.db).collection(COLLECTION_DISCOVERIES);
+        let collection = self
+            .client
+            .database(&self.db)
+            .collection(COLLECTION_DISCOVERIES);
         let cursor = scan_collection(collection)
             .with_context(|_| ErrorKind::MongoDBOperation)?
             .map(|item| item.map_err(|error| error.context(ErrorKind::MongoDBCursor).into()));
@@ -77,7 +84,10 @@ impl DataInterface for Data {
     }
 
     fn clusters_meta(&self) -> Result<Cursor<ClusterMeta>> {
-        let collection = self.client.db(&self.db).collection(COLLECTION_CLUSTER_META);
+        let collection = self
+            .client
+            .database(&self.db)
+            .collection(COLLECTION_CLUSTER_META);
         let cursor = scan_collection(collection)
             .with_context(|_| ErrorKind::MongoDBOperation)?
             .map(|item| item.map_err(|error| error.context(ErrorKind::MongoDBCursor).into()));
@@ -85,7 +95,7 @@ impl DataInterface for Data {
     }
 
     fn nodes(&self) -> Result<Cursor<Node>> {
-        let collection = self.client.db(&self.db).collection(COLLECTION_NODES);
+        let collection = self.client.database(&self.db).collection(COLLECTION_NODES);
         let cursor = scan_collection(collection)
             .with_context(|_| ErrorKind::MongoDBOperation)?
             .map(|item| item.map_err(|error| error.context(ErrorKind::MongoDBCursor).into()))
@@ -94,7 +104,7 @@ impl DataInterface for Data {
     }
 
     fn shards(&self) -> Result<Cursor<Shard>> {
-        let collection = self.client.db(&self.db).collection(COLLECTION_SHARDS);
+        let collection = self.client.database(&self.db).collection(COLLECTION_SHARDS);
         let cursor = scan_collection(collection)
             .with_context(|_| ErrorKind::MongoDBOperation)?
             .map(|item| item.map_err(|error| error.context(ErrorKind::MongoDBCursor).into()))

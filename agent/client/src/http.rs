@@ -1,6 +1,5 @@
 use std::collections::HashMap;
 use std::fs::File;
-use std::io;
 use std::io::Read;
 use std::sync::Arc;
 use std::time::Duration;
@@ -10,13 +9,13 @@ use failure::SyncFailure;
 use opentracingrust::SpanContext;
 use opentracingrust::StartOptions;
 use opentracingrust::Tracer;
+use reqwest::blocking::Client as ReqwestClient;
+use reqwest::blocking::RequestBuilder;
 use reqwest::header::HeaderMap;
 use reqwest::header::HeaderName;
 use reqwest::header::HeaderValue;
 use reqwest::Certificate;
-use reqwest::Client as ReqwestClient;
 use reqwest::Identity;
-use reqwest::RequestBuilder;
 use reqwest::StatusCode;
 use serde::de::DeserializeOwned;
 use serde_derive::Deserialize;
@@ -331,22 +330,14 @@ impl HttpClient {
         let timer = CLIENT_OPS_DURATION
             .with_label_values(&[&endpoint])
             .start_timer();
-        let mut response = self
+        let response = self
             .client
             .execute(request)
             .map_err(|error| {
                 CLIENT_OP_ERRORS_COUNT.with_label_values(&[&endpoint]).inc();
-                // Look at the inner error, if any, to check if it is a timout.
-                let inner_kind = error
-                    .get_ref()
-                    .and_then(|error| error.downcast_ref::<io::Error>())
-                    .map(io::Error::kind);
-                match inner_kind {
-                    Some(io::ErrorKind::TimedOut) | Some(io::ErrorKind::WouldBlock) => {
-                        CLIENT_TIMEOUT.with_label_values(&[&endpoint]).inc();
-                    }
-                    _ => (),
-                };
+                if error.is_timeout() {
+                    CLIENT_TIMEOUT.with_label_values(&[&endpoint]).inc();
+                }
                 error
             })
             .with_context(|_| ErrorKind::Transport("HTTP"))?;

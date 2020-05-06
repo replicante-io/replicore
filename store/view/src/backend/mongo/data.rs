@@ -1,8 +1,6 @@
 use failure::Fail;
 use failure::ResultExt;
-use mongodb::db::ThreadedDatabase;
 use mongodb::Client;
-use mongodb::ThreadedClient;
 
 use replicante_externals_mongodb::operations::scan_collection;
 use replicante_models_core::actions::Action;
@@ -34,7 +32,10 @@ impl Data {
 
 impl DataInterface for Data {
     fn actions(&self) -> Result<Cursor<Action>> {
-        let collection = self.client.db(&self.db).collection(COLLECTION_ACTIONS);
+        let collection = self
+            .client
+            .database(&self.db)
+            .collection(COLLECTION_ACTIONS);
         let cursor = scan_collection(collection)
             .with_context(|_| ErrorKind::MongoDBOperation)?
             .map(|item| item.map_err(|error| error.context(ErrorKind::MongoDBCursor).into()))
@@ -45,7 +46,7 @@ impl DataInterface for Data {
     fn actions_history(&self) -> Result<Cursor<ActionHistory>> {
         let collection = self
             .client
-            .db(&self.db)
+            .database(&self.db)
             .collection(COLLECTION_ACTIONS_HISTORY);
         let cursor = scan_collection(collection)
             .with_context(|_| ErrorKind::MongoDBOperation)?
@@ -55,7 +56,7 @@ impl DataInterface for Data {
     }
 
     fn events(&self) -> Result<Cursor<Event>> {
-        let collection = self.client.db(&self.db).collection(COLLECTION_EVENTS);
+        let collection = self.client.database(&self.db).collection(COLLECTION_EVENTS);
         let cursor = scan_collection(collection)
             .with_context(|_| ErrorKind::MongoDBOperation)?
             .map(|item| item.map_err(|error| error.context(ErrorKind::MongoDBCursor).into()))

@@ -45,16 +45,6 @@ pub fn run<'a>(args: &ArgMatches<'a>, interfaces: &Interfaces) -> Result<Outcome
     };
     outcomes.report(&logger);
 
-    debug!(logger, "Checking view store indexes");
-    match store.validate().indexes() {
-        Ok(results) => consume_results(results, &mut outcomes),
-        Err(error) => {
-            let error = error.context(ErrorKind::ValidationError("existing indexes"));
-            outcomes.error(Error::GenericError(format_fail(&error)));
-        }
-    };
-    outcomes.report(&logger);
-
     debug!(
         logger,
         "Checking view store for removed collections/tables or indexes",
