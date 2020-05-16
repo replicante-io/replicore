@@ -1,6 +1,11 @@
+use std::fs::File;
+use std::io::Read;
+
 use clap::ArgMatches;
 use failure::ResultExt;
 use reqwest::blocking::Client as ReqwestClient;
+use reqwest::Certificate;
+use reqwest::Identity;
 use reqwest::StatusCode;
 use serde_json::Value;
 use slog::debug;
@@ -26,6 +31,7 @@ const ENDPOINT_CLUSTER_REFRESH: &str = "/refresh";
 
 /// Replicante Core API client.
 pub struct RepliClient<'a> {
+    client: ReqwestClient,
     logger: &'a Logger,
     session: Session,
 }
@@ -33,9 +39,6 @@ pub struct RepliClient<'a> {
 impl<'a> RepliClient<'a> {
     /// Approve a PENDING_APPROVE action so it can be scheduled.
     pub fn action_approve(&self, cluster: &str, action: Uuid) -> Result<()> {
-        let client = ReqwestClient::builder()
-            .build()
-            .with_context(|_| ErrorKind::RepliClientError)?;
         let url = self.session.url.trim_end_matches('/');
         let url = format!(
             "{}{}/{}{}/{}{}",
@@ -47,16 +50,13 @@ impl<'a> RepliClient<'a> {
             ENDPOINT_CLUSTER_ACTION_APPROVE,
         );
         debug!(self.logger, "About to POST action approve request"; "url" => &url);
-        let response = Response::perform(client.post(&url))?;
+        let response = Response::perform(self.client.post(&url))?;
         response.check_status()?;
         Ok(())
     }
 
     /// Dispprove a PENDING_APPROVE action so it will not be scheduled.
     pub fn action_disapprove(&self, cluster: &str, action: Uuid) -> Result<()> {
-        let client = ReqwestClient::builder()
-            .build()
-            .with_context(|_| ErrorKind::RepliClientError)?;
         let url = self.session.url.trim_end_matches('/');
         let url = format!(
             "{}{}/{}{}/{}{}",
@@ -68,20 +68,17 @@ impl<'a> RepliClient<'a> {
             ENDPOINT_CLUSTER_ACTION_DISAPPROVE,
         );
         debug!(self.logger, "About to POST action disapprove request"; "url" => &url);
-        let response = Response::perform(client.post(&url))?;
+        let response = Response::perform(self.client.post(&url))?;
         response.check_status()?;
         Ok(())
     }
 
     /// Send an `ApplyObject` to Replicate Core to request changes.
     pub fn apply(&self, object: ApplyObject) -> Result<Value> {
-        let client = ReqwestClient::builder()
-            .build()
-            .with_context(|_| ErrorKind::RepliClientError)?;
         let url = self.session.url.trim_end_matches('/');
         let url = format!("{}{}", url, ENDPOINT_APPLY);
         debug!(self.logger, "About to POST apply request"; "url" => &url);
-        let response = Response::perform(client.post(&url).json(&object))?;
+        let response = Response::perform(self.client.post(&url).json(&object))?;
 
         // Check apply-specific errors.
         if response.status.as_u16() == 400 {
@@ -102,16 +99,13 @@ impl<'a> RepliClient<'a> {
 
     /// Schedule a refresh task for the given cluster.
     pub fn cluster_refresh(&self, cluster: &str) -> Result<()> {
-        let client = ReqwestClient::builder()
-            .build()
-            .with_context(|_| ErrorKind::RepliClientError)?;
         let url = self.session.url.trim_end_matches('/');
         let url = format!(
             "{}{}/{}{}",
             url, ENDPOINT_CLUSTER, cluster, ENDPOINT_CLUSTER_REFRESH
         );
         debug!(self.logger, "About to POST cluster refresh request"; "url" => &url);
-        let response = Response::perform(client.post(&url))?;
+        let response = Response::perform(self.client.post(&url))?;
         response.check_status()?;
         Ok(())
     }
@@ -125,12 +119,40 @@ impl<'a> RepliClient<'a> {
             None => return Err(ErrorKind::SessionNotFound(name).into()),
         };
         info!(logger, "SSO session from CLI"; "session" => name, "instance" => &session.url);
-        Ok(RepliClient::new(session, logger))
+        RepliClient::new(session, logger)
     }
 
     /// Instantiate a new Replicante API client with the given session.
-    pub fn new(session: Session, logger: &'a Logger) -> RepliClient<'a> {
-        RepliClient { logger, session }
+    pub fn new(session: Session, logger: &'a Logger) -> Result<RepliClient<'a>> {
+        let mut client = ReqwestClient::builder().use_rustls_tls();
+        if let Some(ca_path) = &session.ca_bundle {
+            let mut ca_bundle = Vec::new();
+            File::open(ca_path)
+                .with_context(|_| ErrorKind::FsOpen(ca_path.to_string()))?
+                .read_to_end(&mut ca_bundle)
+                .with_context(|_| ErrorKind::FsOpen(ca_path.to_string()))?;
+            let ca_bundle = Certificate::from_pem(&ca_bundle)
+                .with_context(|_| ErrorKind::FsOpen(ca_path.to_string()))?;
+            client = client.add_root_certificate(ca_bundle);
+        }
+        if let Some(key_path) = &session.client_key {
+            let mut client_key = Vec::new();
+            File::open(key_path)
+                .with_context(|_| ErrorKind::FsOpen(key_path.to_string()))?
+                .read_to_end(&mut client_key)
+                .with_context(|_| ErrorKind::FsOpen(key_path.to_string()))?;
+            let client_key = Identity::from_pem(&client_key)
+                .with_context(|_| ErrorKind::FsOpen(key_path.to_string()))?;
+            client = client.identity(client_key);
+        }
+        let client = client
+            .build()
+            .with_context(|_| ErrorKind::RepliClientError)?;
+        Ok(RepliClient {
+            client,
+            logger,
+            session,
+        })
     }
 }
 

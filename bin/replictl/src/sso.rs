@@ -21,6 +21,15 @@ const DEFAULT_SESSION_STORE: &str = "~/.replictl/credentials";
 /// Information needed to access the Replicante API.
 #[derive(Clone, Eq, PartialEq, Hash, Debug, Serialize, Deserialize)]
 pub struct Session {
+    /// Bundle of CA certificated to validate the API server with.
+    #[serde(default)]
+    pub ca_bundle: Option<String>,
+
+    /// Client key and certificate PEM bundle for mutual TLS.
+    #[serde(default)]
+    pub client_key: Option<String>,
+
+    /// URL to connect to the Replicante Core API servers.
     pub url: String,
 }
 
