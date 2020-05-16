@@ -156,7 +156,13 @@ pub fn run() -> Result<bool> {
     // Log initialisation start message.
     let logger_opts = replicante_logging::Opts::new(env!("GIT_BUILD_HASH").into());
     let logger = replicante_logging::starter(&logger_opts);
-    info!(logger, "Starting replicante core"; "git-taint" => env!("GIT_BUILD_TAINT"));
+    info!(
+        logger,
+        "Starting replicante core";
+        "git-hash" => env!("GIT_BUILD_HASH"),
+        "git-taint" => env!("GIT_BUILD_TAINT"),
+        "version" => env!("CARGO_PKG_VERSION"),
+    );
 
     // Load configuration.
     let config_location = cli_args.value_of("config").unwrap();

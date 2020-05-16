@@ -28,7 +28,7 @@ cache:
 
 rust:
   - stable   # Target rust version.
-  - 1.40.0   # Earliest supported rust version.
+  - 1.43.0   # Earliest supported rust version.
   - nightly  # "The Rust team appreciates" according to Travis.
 
 env:
