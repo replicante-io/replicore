@@ -1,5 +1,5 @@
 use failure::ResultExt;
-use mongodb::Client;
+use mongodb::sync::Client;
 
 use replicante_externals_mongodb::admin::validate_removed_collections;
 use replicante_externals_mongodb::admin::validate_schema;

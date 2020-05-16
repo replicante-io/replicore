@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use failure::ResultExt;
-use mongodb::Client;
+use mongodb::sync::Client;
 use opentracingrust::Tracer;
 use slog::info;
 use slog::Logger;

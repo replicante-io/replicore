@@ -5,7 +5,7 @@ use failure::ResultExt;
 use mongodb::options::FindOptions;
 use mongodb::options::ReplaceOptions;
 use mongodb::results::UpdateResult;
-use mongodb::Collection;
+use mongodb::sync::Collection;
 use opentracingrust::SpanContext;
 use opentracingrust::StartOptions;
 use opentracingrust::Tracer;

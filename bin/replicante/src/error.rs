@@ -1,14 +1,14 @@
 use std::fmt;
 
+use actix_web::http::StatusCode;
+use actix_web::HttpResponse;
+use actix_web::ResponseError;
 use failure::Backtrace;
 use failure::Context;
 use failure::Fail;
-use iron::headers::ContentType;
-use iron::IronError;
-use iron::Response;
 
 use replicante_models_core::api::validate::ErrorsCollection;
-use replicante_util_iron::into_ironerror;
+use replicante_util_failure::SerializableFail;
 
 /// Error information returned by functions in case of errors.
 #[derive(Debug)]
@@ -49,6 +49,21 @@ impl From<Context<ErrorKind>> for Error {
 impl From<ErrorKind> for Error {
     fn from(kind: ErrorKind) -> Error {
         Error(Context::new(kind))
+    }
+}
+
+impl ResponseError for Error {
+    fn status_code(&self) -> StatusCode {
+        self.kind().http_status()
+    }
+
+    fn error_response(&self) -> HttpResponse {
+        let status = self.status_code();
+        let mut response = HttpResponse::build(status);
+        match self.kind() {
+            ErrorKind::ValidateFailed(ref errors) => response.json(errors),
+            _ => response.json(SerializableFail::from(self)),
+        }
     }
 }
 
@@ -129,6 +144,18 @@ pub enum ErrorKind {
 }
 
 impl ErrorKind {
+    fn http_status(&self) -> StatusCode {
+        match self {
+            Self::APIRequestBodyInvalid => StatusCode::BAD_REQUEST,
+            Self::APIRequestBodyNotFound => StatusCode::BAD_REQUEST,
+            Self::APIRequestParameterInvalid(_) => StatusCode::BAD_REQUEST,
+            Self::APIRequestParameterNotFound(_) => StatusCode::BAD_REQUEST,
+            Self::ModelNotFound(_, _) => StatusCode::NOT_FOUND,
+            Self::ValidateFailed(_) => StatusCode::BAD_REQUEST,
+            _ => StatusCode::INTERNAL_SERVER_ERROR,
+        }
+    }
+
     fn kind_name(&self) -> Option<&str> {
         let name = match self {
             ErrorKind::APIRequestBodyInvalid => "APIRequestBodyInvalid",
@@ -162,24 +189,3 @@ impl ErrorKind {
 
 /// Short form alias for functions returning `Error`s.
 pub type Result<T> = ::std::result::Result<T, Error>;
-
-// IronError compatibility code.
-impl From<Error> for IronError {
-    fn from(error: Error) -> Self {
-        match error.kind() {
-            ErrorKind::ValidateFailed(ref errors) => {
-                let mut response = Response::with((
-                    iron::status::BadRequest,
-                    serde_json::to_string(errors).unwrap(),
-                ));
-                response.headers.set(ContentType::json());
-                let error = failure::err_msg(error.to_string()).compat();
-                IronError {
-                    error: Box::new(error),
-                    response,
-                }
-            }
-            _ => into_ironerror(error),
-        }
-    }
-}

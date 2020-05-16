@@ -3,8 +3,8 @@ use std::collections::HashSet;
 use std::hash::BuildHasher;
 
 use failure::ResultExt;
-use mongodb::Client;
-use mongodb::Database;
+use mongodb::sync::Client;
+use mongodb::sync::Database;
 
 use crate::metrics::MONGODB_OPS_COUNT;
 use crate::metrics::MONGODB_OPS_DURATION;

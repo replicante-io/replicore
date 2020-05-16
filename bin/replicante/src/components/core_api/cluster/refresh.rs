@@ -1,106 +1,113 @@
 use std::sync::Arc;
 
+use actix_web::dev::HttpServiceFactory;
+use actix_web::web;
+use actix_web::HttpRequest;
+use actix_web::HttpResponse;
+use actix_web::Responder;
 use failure::ResultExt;
-use iron::status;
-use iron::Handler;
-use iron::IronResult;
-use iron::Request;
-use iron::Response;
-use iron::Set;
-use iron_json_response::JsonResponse;
-use opentracingrust::Tracer;
-use router::Router;
 use serde_derive::Serialize;
 use slog::Logger;
 
 use replicante_service_tasks::TaskRequest;
 use replicante_store_primary::store::Store;
+use replicante_util_actixweb::with_request_span;
+use replicante_util_actixweb::TracingMiddleware;
 use replicante_util_failure::capture_fail;
 use replicante_util_failure::failure_info;
-use replicante_util_iron::request_span;
 
-use crate::interfaces::api::APIRoot;
 use crate::interfaces::Interfaces;
 use crate::task_payload::ClusterRefreshPayload;
 use crate::tasks::ReplicanteQueues;
 use crate::tasks::Tasks;
-use crate::Error;
 use crate::ErrorKind;
+use crate::Result;
 
-pub fn attach(logger: Logger, interfaces: &mut Interfaces) {
-    let store = interfaces.stores.primary.clone();
-    let tasks = interfaces.tasks.clone();
-    let tracer = interfaces.tracing.tracer();
-    let mut router = interfaces.api.router_for(&APIRoot::UnstableCoreApi);
-    let handler = Refresh {
-        logger,
-        store,
-        tasks,
-        tracer,
-    };
-    router.post(
-        "/cluster/:cluster_id/refresh",
-        handler,
-        "/cluster/:cluster_id/refresh",
-    );
+pub struct Refresh {
+    data: RefreshData,
 }
 
-/// Schedule a ClusterRefresh task.
-struct Refresh {
+impl Refresh {
+    pub fn new(logger: &Logger, interfaces: &mut Interfaces) -> Refresh {
+        let data = RefreshData {
+            logger: logger.clone(),
+            store: interfaces.stores.primary.clone(),
+            tasks: interfaces.tasks.clone(),
+            tracer: interfaces.tracing.tracer(),
+        };
+        Refresh { data }
+    }
+
+    pub fn resource(&self) -> impl HttpServiceFactory {
+        let logger = self.data.logger.clone();
+        let tracer = Arc::clone(&self.data.tracer);
+        let tracer = TracingMiddleware::with_name(logger, tracer, "/cluster/{cluster_id}/refresh");
+        web::resource("/refresh")
+            .data(self.data.clone())
+            .wrap(tracer)
+            .route(web::post().to(responder))
+    }
+}
+
+async fn responder(data: web::Data<RefreshData>, request: HttpRequest) -> Result<impl Responder> {
+    let path = request.match_info();
+    let cluster_id = path
+        .get("cluster_id")
+        .ok_or_else(|| ErrorKind::APIRequestParameterNotFound("cluster_id"))?
+        .to_string();
+
+    let mut request = request;
+    let cluster = with_request_span(&mut request, |span| -> Result<_> {
+        let span = span.map(|span| span.context().clone());
+        let cluster = data
+            .store
+            .cluster(cluster_id.clone())
+            .discovery(span)
+            .with_context(|_| ErrorKind::PrimaryStoreQuery("cluster_discovery"))?
+            .ok_or_else(|| ErrorKind::ModelNotFound("cluster_discovery", cluster_id.clone()))?;
+        Ok(cluster)
+    })?;
+
+    let payload = ClusterRefreshPayload::new(cluster, false);
+    let mut task = TaskRequest::new(ReplicanteQueues::ClusterRefresh);
+    with_request_span(&mut request, |span| {
+        let span = span.map(|span| span.context());
+        if let Some(span) = span {
+            if let Err(error) = task.trace(span, &data.tracer) {
+                let error = failure::SyncFailure::new(error);
+                capture_fail!(
+                    &error,
+                    data.logger,
+                    "Unable to inject trace context in task request";
+                    "cluster_id" => &cluster_id,
+                    failure_info(&error),
+                );
+            }
+        }
+    });
+
+    let task_id = task.id().to_string();
+    if let Err(error) = data.tasks.request(task, payload) {
+        capture_fail!(
+            &error,
+            data.logger,
+            "Failed to request cluster refresh";
+            "cluster_id" => &cluster_id,
+            failure_info(&error),
+        );
+    };
+
+    let response = RefreshResponse { task_id };
+    let response = HttpResponse::Ok().json(response);
+    Ok(response)
+}
+
+#[derive(Clone)]
+struct RefreshData {
     logger: Logger,
     store: Store,
     tasks: Tasks,
-    tracer: Arc<Tracer>,
-}
-
-impl Handler for Refresh {
-    fn handle(&self, request: &mut Request) -> IronResult<Response> {
-        let cluster_id = request
-            .extensions
-            .get::<Router>()
-            .expect("Iron Router extension not found")
-            .find("cluster_id")
-            .map(String::from)
-            .ok_or_else(|| ErrorKind::APIRequestParameterNotFound("cluster_id"))
-            .map_err(Error::from)?;
-        let span = request_span(request);
-        let cluster = self
-            .store
-            .cluster(cluster_id.clone())
-            .discovery(span.context().clone())
-            .with_context(|_| ErrorKind::PrimaryStoreQuery("cluster_discovery"))
-            .map_err(Error::from)?
-            .ok_or_else(|| ErrorKind::ModelNotFound("cluster_discovery", cluster_id.clone()))
-            .map_err(Error::from)?;
-
-        let payload = ClusterRefreshPayload::new(cluster, false);
-        let mut task = TaskRequest::new(ReplicanteQueues::ClusterRefresh);
-        if let Err(error) = task.trace(span.context(), &self.tracer) {
-            let error = failure::SyncFailure::new(error);
-            capture_fail!(
-                &error,
-                self.logger,
-                "Unable to inject trace context in task request";
-                "cluster_id" => &cluster_id,
-                failure_info(&error),
-            );
-        }
-        let task_id = task.id().to_string();
-        if let Err(error) = self.tasks.request(task, payload) {
-            capture_fail!(
-                &error,
-                self.logger,
-                "Failed to request cluster refresh";
-                "cluster_id" => &cluster_id,
-                failure_info(&error),
-            );
-        };
-
-        let mut resp = Response::new();
-        resp.set_mut(JsonResponse::json(RefreshResponse { task_id }))
-            .set_mut(status::Ok);
-        Ok(resp)
-    }
+    tracer: Arc<opentracingrust::Tracer>,
 }
 
 /// Cluster refresh response.

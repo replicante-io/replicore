@@ -5,7 +5,7 @@ use bson::Bson;
 use failure::Fail;
 use failure::ResultExt;
 use mongodb::options::FindOptions;
-use mongodb::Client;
+use mongodb::sync::Client;
 use opentracingrust::SpanContext;
 use opentracingrust::Tracer;
 

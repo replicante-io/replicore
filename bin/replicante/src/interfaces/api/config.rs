@@ -22,6 +22,10 @@ pub struct Config {
     #[serde(default)]
     pub timeouts: Timeouts,
 
+    /// Configure TLS (for HTTPS) certificates.
+    #[serde(default)]
+    pub tls: Option<TlsConfig>,
+
     /// Enable/disable entire API trees.
     #[serde(default)]
     pub trees: APITrees,
@@ -34,6 +38,7 @@ impl Default for Config {
             healthcheck_refresh: 10,
             threads_count: None,
             timeouts: Timeouts::default(),
+            tls: None,
             trees: APITrees::default(),
         }
     }
@@ -93,7 +98,7 @@ impl From<APITrees> for HashMap<&'static str, bool> {
 pub struct Timeouts {
     /// Control the timeout, in seconds, for keep alive connections.
     #[serde(default = "Timeouts::default_keep_alive")]
-    pub keep_alive: Option<u64>,
+    pub keep_alive: Option<usize>,
 
     /// Control the timeout, in seconds, for reads on existing connections.
     #[serde(default = "Timeouts::default_read")]
@@ -115,7 +120,7 @@ impl Default for Timeouts {
 }
 
 impl Timeouts {
-    fn default_keep_alive() -> Option<u64> {
+    fn default_keep_alive() -> Option<usize> {
         Some(5)
     }
 
@@ -126,4 +131,18 @@ impl Timeouts {
     fn default_write() -> Option<u64> {
         Some(1)
     }
+}
+
+/// TLS (for HTTPS) certificates configuration.
+#[derive(Clone, Eq, PartialEq, Hash, Debug, Serialize, Deserialize)]
+pub struct TlsConfig {
+    /// Path to a PEM bundle of trusted CAs for client authentication.
+    #[serde(default)]
+    pub clients_ca_bundle: Option<String>,
+
+    /// Path to a PEM file with the server's public certificate.
+    pub server_cert: String,
+
+    /// Path to a PEM file with the server's PRIVATE certificate.
+    pub server_key: String,
 }

@@ -44,6 +44,7 @@ pub struct Interfaces {
     pub api: API,
     pub coordinator: Coordinator,
     pub healthchecks: HealthChecks,
+    pub logger: Logger,
     pub metrics: Metrics,
     pub stores: Stores,
     pub streams: Streams,
@@ -67,17 +68,11 @@ impl Interfaces {
         )
         .with_context(|_| ErrorKind::InterfaceInit("coordinator"))?;
         let api = API::new(
-            config.api.clone(),
-            config
-                .sentry
-                .as_ref()
-                .map(|sentry| sentry.capture_api_errors.clone())
-                .unwrap_or_default(),
+            config.clone(),
             coordinator.clone(),
             logger.clone(),
             &metrics,
             healthchecks.results_proxy(),
-            tracing.tracer(),
         );
         let stores = Stores::new(
             &config,
@@ -97,6 +92,7 @@ impl Interfaces {
             api,
             coordinator,
             healthchecks,
+            logger,
             metrics,
             stores,
             streams,

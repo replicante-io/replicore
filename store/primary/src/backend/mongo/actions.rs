@@ -9,7 +9,7 @@ use bson::UtcDateTime;
 use chrono::DateTime;
 use chrono::Utc;
 use failure::ResultExt;
-use mongodb::Client;
+use mongodb::sync::Client;
 use opentracingrust::SpanContext;
 use opentracingrust::Tracer;
 use uuid::Uuid;

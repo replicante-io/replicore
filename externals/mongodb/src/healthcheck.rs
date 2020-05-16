@@ -1,5 +1,5 @@
 use bson::doc;
-use mongodb::Client;
+use mongodb::sync::Client;
 
 use replicante_models_api::HealthStatus;
 use replicante_service_healthcheck::HealthCheck;

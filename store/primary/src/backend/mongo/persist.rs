@@ -3,7 +3,7 @@ use std::sync::Arc;
 use bson::doc;
 use bson::Bson;
 use failure::ResultExt;
-use mongodb::Client;
+use mongodb::sync::Client;
 use opentracingrust::SpanContext;
 use opentracingrust::Tracer;
 

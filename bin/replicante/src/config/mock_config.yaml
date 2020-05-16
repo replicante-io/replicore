@@ -1,0 +1,18 @@
+events:
+  stream:
+    backend: kafka
+    options:
+      brokers: 'localhost:9092'
+storage:
+  primary:
+    backend: mongodb
+    options:
+      uri: 'mongodb://localhost:27017/'
+  view:
+    backend: mongodb
+    options:
+      uri: 'mongodb://localhost:27017/'
+tasks:
+  backend: 'kafka'
+  options:
+    brokers: 'localhost:9092'

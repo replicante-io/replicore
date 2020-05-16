@@ -1,51 +1,72 @@
+use std::sync::Arc;
+
+use actix_web::dev::HttpServiceFactory;
+use actix_web::web;
+use actix_web::HttpRequest;
+use actix_web::HttpResponse;
+use actix_web::Responder;
 use failure::ResultExt;
-use iron::status;
-use iron::Handler;
-use iron::IronResult;
-use iron::Request;
-use iron::Response;
-use iron::Set;
-use iron_json_response::JsonResponse;
-use router::Router;
+use slog::Logger;
 
-use replicante_store_primary::store::Store as PrimaryStore;
-use replicante_util_iron::request_span;
+use replicante_store_primary::store::Store;
+use replicante_util_actixweb::with_request_span;
+use replicante_util_actixweb::TracingMiddleware;
 
-use crate::Error;
 use crate::ErrorKind;
+use crate::Interfaces;
+use crate::Result;
 
-/// Cluster meta (`/webui/cluster/:cluster/meta`) handler.
 pub struct Meta {
-    store: PrimaryStore,
-}
-
-impl Handler for Meta {
-    fn handle(&self, req: &mut Request) -> IronResult<Response> {
-        let cluster = req
-            .extensions
-            .get::<Router>()
-            .expect("Iron Router extension not found")
-            .find("cluster")
-            .map(String::from)
-            .ok_or_else(|| ErrorKind::APIRequestParameterNotFound("cluster"))
-            .map_err(Error::from)?;
-        let span = request_span(req);
-        let meta = self
-            .store
-            .legacy()
-            .cluster_meta(cluster.clone(), span.context().clone())
-            .with_context(|_| ErrorKind::PrimaryStoreQuery("cluster_meta"))
-            .map_err(Error::from)?
-            .ok_or_else(|| ErrorKind::ModelNotFound("cluster_meta", cluster))
-            .map_err(Error::from)?;
-        let mut resp = Response::new();
-        resp.set_mut(JsonResponse::json(meta)).set_mut(status::Ok);
-        Ok(resp)
-    }
+    data: MetaData,
+    logger: Logger,
+    tracer: Arc<opentracingrust::Tracer>,
 }
 
 impl Meta {
-    pub fn new(store: PrimaryStore) -> Self {
-        Meta { store }
+    pub fn new(interfaces: &mut Interfaces) -> Self {
+        let data = MetaData {
+            store: interfaces.stores.primary.clone(),
+        };
+        Meta {
+            data,
+            logger: interfaces.logger.clone(),
+            tracer: interfaces.tracing.tracer(),
+        }
     }
+
+    pub fn resource(&self) -> impl HttpServiceFactory {
+        let logger = self.logger.clone();
+        let tracer = Arc::clone(&self.tracer);
+        let tracer = TracingMiddleware::with_name(logger, tracer, "/cluster/{cluster_id}/meta");
+        web::resource("/meta")
+            .data(self.data.clone())
+            .wrap(tracer)
+            .route(web::get().to(responder))
+    }
+}
+
+#[derive(Clone)]
+struct MetaData {
+    store: Store,
+}
+
+async fn responder(data: web::Data<MetaData>, request: HttpRequest) -> Result<impl Responder> {
+    let path = request.match_info();
+    let cluster_id = path
+        .get("cluster_id")
+        .ok_or_else(|| ErrorKind::APIRequestParameterNotFound("cluster_id"))?
+        .to_string();
+    let mut request = request;
+    let meta = with_request_span(&mut request, |span| -> Result<_> {
+        let span = span.map(|span| span.context().clone());
+        let meta = data
+            .store
+            .legacy()
+            .cluster_meta(cluster_id.clone(), span)
+            .with_context(|_| ErrorKind::PrimaryStoreQuery("cluster_meta"))?
+            .ok_or_else(|| ErrorKind::ModelNotFound("cluster_meta", cluster_id))?;
+        Ok(meta)
+    })?;
+    let response = HttpResponse::Ok().json(meta);
+    Ok(response)
 }

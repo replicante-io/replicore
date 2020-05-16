@@ -29,19 +29,18 @@ journald = ["replicante_logging/journald"]
 
 
 [dependencies]
-bodyparser = "^0.8.0"
+actix-rt = "^1.0.0"
+actix-web = { version = "^2.0.0", features = ["openssl"] }
 chrono = "^0.4.6"
 clap = "^2.31.2"
 failure = "^0.1.5"
 futures = "^0.3.4"
 humthreads = "^0.2.0"
-iron = "^0.6.0"
-iron-json-response = "^0.6.0"
 lazy_static = "^1.0.0"
+openssl = "^0.10"
 opentracingrust = "^0.4.0"
 prometheus = { version = "^0.8.0", features = ["process"] }
 reqwest = { version = "^0.10.4", features = ["blocking"] }
-router = "^0.6.0"
 semver = "^0.9.0"
 sentry = "^0.18.0"
 serde = "^1.0.34"
@@ -69,8 +68,8 @@ replicante_store_primary = { path = "../../store/primary" }
 replicante_store_view = { path = "../../store/view" }
 replicante_stream = { path = "../../stream/stream" }
 replicante_stream_events = { path = "../../stream/events" }
+replicante_util_actixweb = { path = "../../common/util/actixweb" }
 replicante_util_failure = { path = "../../common/util/failure" }
-replicante_util_iron = { path = "../../common/util/iron" }
 replicante_util_tracing = { path = "../../common/util/tracing" }
 replicante_util_upkeep = { path = "../../common/util/upkeep" }
 
@@ -80,8 +79,6 @@ git2 = "^0.13.0"
 
 
 [dev-dependencies]
-iron-test = "^0.6.0"
 replicante_store_primary = { path = "../../store/primary", features = ["with_test_support"] }
 replicante_store_view = { path = "../../store/view", features = ["with_test_support"] }
 replicante_stream_events = { path = "../../stream/events", features = ["with_test_support"] }
-replicante_util_iron = { path = "../../common/util/iron", features = ["with_test_support"] }

@@ -1,17 +1,14 @@
-//! Module to define cluster related WebUI endpoints.
+use actix_web::dev::HttpServiceFactory;
+use actix_web::web;
+use actix_web::HttpRequest;
+use actix_web::HttpResponse;
+use actix_web::Responder;
 use chrono::DateTime;
 use chrono::Utc;
 use failure::ResultExt;
-use iron::status;
-use iron::Handler;
-use iron::IronResult;
-use iron::Plugin;
-use iron::Request;
-use iron::Response;
-use iron::Set;
-use iron_json_response::JsonResponse;
 use serde_derive::Deserialize;
 use serde_derive::Serialize;
+use serde_json::json;
 
 use replicante_models_core::events::agent::AgentEvent;
 use replicante_models_core::events::cluster::ClusterEvent;
@@ -22,172 +19,28 @@ use replicante_models_core::events::Payload;
 use replicante_store_view::store::events::EventsFilters;
 use replicante_store_view::store::events::EventsOptions;
 use replicante_store_view::store::Store;
-use replicante_util_iron::request_span;
+use replicante_util_actixweb::with_request_span;
 
-use crate::interfaces::api::APIRoot;
-use crate::Error;
 use crate::ErrorKind;
 use crate::Interfaces;
+use crate::Result;
 
-/// Advanced query parameters passed as JSON blob in the annotation.query field.
-#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
-struct AdvancedQuery {
-    #[serde(default)]
-    cluster_id: Option<String>,
-
-    #[serde(default)]
-    event: Option<String>,
-
-    #[serde(default = "AdvancedQuery::default_exclude_snapshots")]
-    exclude_snapshots: bool,
-
-    #[serde(default = "AdvancedQuery::default_exclude_system_events")]
-    exclude_system_events: bool,
-
-    #[serde(default = "AdvancedQuery::default_limit")]
-    limit: i64,
-}
-
-impl Default for AdvancedQuery {
-    fn default() -> Self {
-        Self {
-            cluster_id: None,
-            event: None,
-            exclude_snapshots: Self::default_exclude_snapshots(),
-            exclude_system_events: Self::default_exclude_system_events(),
-            limit: Self::default_limit(),
-        }
-    }
-}
-
-impl AdvancedQuery {
-    fn default_exclude_snapshots() -> bool {
-        true
-    }
-    fn default_exclude_system_events() -> bool {
-        false
-    }
-    fn default_limit() -> i64 {
-        1000
-    }
-}
-
-/// Response annotation, a list of which is our response to SimpleJson.
-#[derive(Clone, Eq, PartialEq, Hash, Debug, Serialize, Deserialize)]
-struct Annotation {
-    tags: Vec<String>,
-    text: String,
-    time: i64,
-    title: String,
-}
-
-/// Request data sent to us by SimpleJson.
-#[derive(Clone, Eq, PartialEq, Hash, Debug, Serialize, Deserialize)]
-struct AnnotationRequest {
-    annotation: AnnotationQuery,
-    range: AnnotationRequestRange,
-}
-
-/// Annotation query sent by SimpleJson.
-#[derive(Clone, Eq, PartialEq, Hash, Debug, Serialize, Deserialize)]
-struct AnnotationQuery {
-    datasource: String,
-    enable: bool,
-    #[serde(rename = "iconColor")]
-    icon_color: String,
-    name: String,
-    query: Option<String>,
-}
-
-/// Time-range for the annotation query.
-#[derive(Clone, Eq, PartialEq, Hash, Debug, Serialize, Deserialize)]
-struct AnnotationRequestRange {
-    from: DateTime<Utc>,
-    to: DateTime<Utc>,
-}
-
-/// Grafana annotations endpoint handler.
 pub struct Annotations {
-    store: Store,
-}
-
-impl Handler for Annotations {
-    fn handle(&self, req: &mut Request) -> IronResult<Response> {
-        // Get the annotation query.
-        let request = req
-            .get::<bodyparser::Struct<AnnotationRequest>>()
-            .with_context(|_| ErrorKind::APIRequestBodyInvalid)
-            .map_err(Error::from)?
-            .ok_or_else(|| ErrorKind::APIRequestBodyNotFound)
-            .map_err(Error::from)?;
-
-        // We should not get queries for disabled annotations but just in case skip them.
-        if !request.annotation.enable {
-            let mut resp = Response::new();
-            let nothing: Vec<Annotation> = Vec::new();
-            resp.set_mut(JsonResponse::json(nothing))
-                .set_mut(status::Ok);
-            return Ok(resp);
-        }
-
-        // Build request filters.
-        let query = match request.annotation.query.as_ref() {
-            None => AdvancedQuery::default(),
-            Some(query) if query == "" => AdvancedQuery::default(),
-            Some(query) => serde_json::from_str(query)
-                .with_context(|_| ErrorKind::APIRequestBodyInvalid)
-                .map_err(Error::from)?,
-        };
-        let mut filters = EventsFilters::most();
-        filters.cluster_id = query.cluster_id;
-        filters.event = query.event;
-        filters.exclude_snapshots = query.exclude_snapshots;
-        filters.exclude_system_events = query.exclude_system_events;
-        filters.start_from = Some(request.range.from);
-        filters.stop_at = Some(request.range.to);
-        let mut options = EventsOptions::default();
-        options.limit = Some(query.limit);
-
-        // Fetch and format annotations.
-        let span = request_span(req);
-        let events = self
-            .store
-            .events()
-            .range(filters, options, span.context().clone())
-            .with_context(|_| ErrorKind::ViewStoreQuery("events"))
-            .map_err(Error::from)?;
-        let mut annotations: Vec<Annotation> = Vec::new();
-        for event in events {
-            let event = event
-                .with_context(|_| ErrorKind::Deserialize("event record", "Event"))
-                .map_err(Error::from)?;
-            let tags = Annotations::tags(&event);
-            let text = Annotations::text(&event);
-            let time = event.timestamp.timestamp_millis();
-            let title = Annotations::title(&event);
-            annotations.push(Annotation {
-                tags,
-                text,
-                time,
-                title,
-            });
-        }
-
-        // Send the response to clients.
-        let mut resp = Response::new();
-        resp.set_mut(JsonResponse::json(annotations))
-            .set_mut(status::Ok);
-        Ok(resp)
-    }
+    data: AnnotationData,
 }
 
 impl Annotations {
-    pub fn attach(interfaces: &mut Interfaces) {
-        let mut router = interfaces.api.router_for(&APIRoot::UnstableAPI);
-        let handler = Annotations {
+    pub fn new(interfaces: &mut Interfaces) -> Annotations {
+        let data = AnnotationData {
             store: interfaces.stores.view.clone(),
         };
-        router.post("/grafana/annotations", handler, "/grafana/annotations");
+        Annotations { data }
+    }
+
+    pub fn resource(&self) -> impl HttpServiceFactory {
+        web::resource("/annotations")
+            .data(self.data.clone())
+            .route(web::post().to(responder))
     }
 
     fn tags(event: &Event) -> Vec<String> {
@@ -288,4 +141,144 @@ impl Annotations {
             _ => event.code().to_string(),
         }
     }
+}
+
+#[derive(Clone)]
+struct AnnotationData {
+    store: Store,
+}
+
+/// Advanced query parameters passed as JSON blob in the annotation.query field.
+#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
+struct AdvancedQuery {
+    #[serde(default)]
+    cluster_id: Option<String>,
+
+    #[serde(default)]
+    event: Option<String>,
+
+    #[serde(default = "AdvancedQuery::default_exclude_snapshots")]
+    exclude_snapshots: bool,
+
+    #[serde(default = "AdvancedQuery::default_exclude_system_events")]
+    exclude_system_events: bool,
+
+    #[serde(default = "AdvancedQuery::default_limit")]
+    limit: i64,
+}
+
+impl Default for AdvancedQuery {
+    fn default() -> Self {
+        Self {
+            cluster_id: None,
+            event: None,
+            exclude_snapshots: Self::default_exclude_snapshots(),
+            exclude_system_events: Self::default_exclude_system_events(),
+            limit: Self::default_limit(),
+        }
+    }
+}
+
+impl AdvancedQuery {
+    fn default_exclude_snapshots() -> bool {
+        true
+    }
+    fn default_exclude_system_events() -> bool {
+        false
+    }
+    fn default_limit() -> i64 {
+        1000
+    }
+}
+
+/// Response annotation, a list of which is our response to SimpleJson.
+#[derive(Clone, Eq, PartialEq, Hash, Debug, Serialize, Deserialize)]
+struct Annotation {
+    tags: Vec<String>,
+    text: String,
+    time: i64,
+    title: String,
+}
+
+/// Request data sent to us by SimpleJson.
+#[derive(Clone, Eq, PartialEq, Hash, Debug, Serialize, Deserialize)]
+struct AnnotationRequest {
+    annotation: AnnotationQuery,
+    range: AnnotationRequestRange,
+}
+
+/// Annotation query sent by SimpleJson.
+#[derive(Clone, Eq, PartialEq, Hash, Debug, Serialize, Deserialize)]
+struct AnnotationQuery {
+    datasource: String,
+    enable: bool,
+    #[serde(rename = "iconColor")]
+    icon_color: String,
+    name: String,
+    query: Option<String>,
+}
+
+/// Time-range for the annotation query.
+#[derive(Clone, Eq, PartialEq, Hash, Debug, Serialize, Deserialize)]
+struct AnnotationRequestRange {
+    from: DateTime<Utc>,
+    to: DateTime<Utc>,
+}
+
+async fn responder(
+    body: web::Json<AnnotationRequest>,
+    data: web::Data<AnnotationData>,
+    request: HttpRequest,
+) -> Result<impl Responder> {
+    // We should not get queries for disabled annotations but just in case skip them.
+    if !body.annotation.enable {
+        let response = HttpResponse::Ok().json(json!([]));
+        return Ok(response);
+    }
+
+    // Build request filters.
+    let query = match body.annotation.query.as_ref() {
+        None => AdvancedQuery::default(),
+        Some(query) if query == "" => AdvancedQuery::default(),
+        Some(query) => {
+            serde_json::from_str(query).with_context(|_| ErrorKind::APIRequestBodyInvalid)?
+        }
+    };
+    let mut filters = EventsFilters::most();
+    filters.cluster_id = query.cluster_id;
+    filters.event = query.event;
+    filters.exclude_snapshots = query.exclude_snapshots;
+    filters.exclude_system_events = query.exclude_system_events;
+    filters.start_from = Some(body.range.from);
+    filters.stop_at = Some(body.range.to);
+    let mut options = EventsOptions::default();
+    options.limit = Some(query.limit);
+
+    // Fetch and format annotations.
+    let mut request = request;
+    let events = with_request_span(&mut request, |span| {
+        let span = span.map(|span| span.context().clone());
+        data.store
+            .events()
+            .range(filters, options, span)
+            .with_context(|_| ErrorKind::ViewStoreQuery("events"))
+    })?;
+    let mut annotations: Vec<Annotation> = Vec::new();
+    for event in events {
+        let event = event.with_context(|_| ErrorKind::Deserialize("event record", "Event"))?;
+        let tags = Annotations::tags(&event);
+        let text = Annotations::text(&event);
+        let time = event.timestamp.timestamp_millis();
+        let title = Annotations::title(&event);
+        annotations.push(Annotation {
+            tags,
+            text,
+            time,
+            title,
+        });
+    }
+
+    // Send the response to clients.
+    let response = HttpResponse::Ok().json(annotations);
+    Ok(response)
 }

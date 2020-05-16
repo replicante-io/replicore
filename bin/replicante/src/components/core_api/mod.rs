@@ -16,8 +16,10 @@ pub struct CoreAPI {}
 
 impl CoreAPI {
     pub fn new(logger: Logger, interfaces: &mut Interfaces) -> CoreAPI {
-        self::apply::attach(logger.clone(), interfaces);
-        self::cluster::attach(logger, interfaces);
+        let apply = self::apply::configure(&logger, interfaces);
+        let cluster = self::cluster::configure(&logger, interfaces);
+        interfaces.api.configure(apply);
+        interfaces.api.configure(cluster);
         CoreAPI {}
     }
 }

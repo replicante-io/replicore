@@ -1,6 +1,6 @@
 use failure::Fail;
 use failure::ResultExt;
-use mongodb::Client;
+use mongodb::sync::Client;
 
 use replicante_externals_mongodb::operations::scan_collection;
 use replicante_models_core::actions::Action;

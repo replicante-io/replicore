@@ -1,80 +1,89 @@
+use std::sync::Arc;
+
+use actix_web::dev::HttpServiceFactory;
+use actix_web::web;
+use actix_web::HttpRequest;
+use actix_web::HttpResponse;
+use actix_web::Responder;
 use failure::ResultExt;
-use iron::status;
-use iron::Handler;
-use iron::IronResult;
-use iron::Request;
-use iron::Response;
-use iron::Set;
-use iron_json_response::JsonResponse;
-use router::Router;
 use serde_json::json;
 use slog::debug;
 use slog::Logger;
 use uuid::Uuid;
 
 use replicante_store_primary::store::Store;
-use replicante_util_iron::request_span;
+use replicante_util_actixweb::with_request_span;
+use replicante_util_actixweb::TracingMiddleware;
 
-use crate::interfaces::api::APIRoot;
 use crate::interfaces::Interfaces;
-use crate::Error;
 use crate::ErrorKind;
+use crate::Result;
 
-pub fn attach(logger: Logger, interfaces: &mut Interfaces) {
-    let store = interfaces.stores.primary.clone();
-    let mut router = interfaces.api.router_for(&APIRoot::UnstableCoreApi);
-    let handler = Approve { logger, store };
-    router.post(
-        "/cluster/:cluster_id/action/:action_id/approve",
-        handler,
-        "/cluster/:cluster_id/action/:action_id/approve",
-    );
+pub struct Approve {
+    data: ApproveData,
+    tracer: Arc<opentracingrust::Tracer>,
 }
 
-struct Approve {
+impl Approve {
+    pub fn new(logger: &Logger, interfaces: &mut Interfaces) -> Approve {
+        let data = ApproveData {
+            logger: logger.clone(),
+            store: interfaces.stores.primary.clone(),
+        };
+        Approve {
+            data,
+            tracer: interfaces.tracing.tracer(),
+        }
+    }
+
+    pub fn resource(&self) -> impl HttpServiceFactory {
+        let logger = self.data.logger.clone();
+        let tracer = Arc::clone(&self.tracer);
+        let tracer = TracingMiddleware::with_name(
+            logger,
+            tracer,
+            "/cluster/{cluster_id}/action/{action_id}/approve",
+        );
+        web::resource("/action/{action_id}/approve")
+            .data(self.data.clone())
+            .wrap(tracer)
+            .route(web::post().to(responder))
+    }
+}
+
+async fn responder(data: web::Data<ApproveData>, request: HttpRequest) -> Result<impl Responder> {
+    let path = request.match_info();
+    let cluster_id = path
+        .get("cluster_id")
+        .ok_or_else(|| ErrorKind::APIRequestParameterNotFound("cluster_id"))?
+        .to_string();
+    let action_id = path
+        .get("action_id")
+        .ok_or_else(|| ErrorKind::APIRequestParameterNotFound("action_id"))?;
+    let action_id = Uuid::parse_str(action_id)
+        .with_context(|_| ErrorKind::APIRequestParameterInvalid("action_id"))?;
+
+    let mut request = request;
+    with_request_span(&mut request, |span| {
+        let span = span.map(|span| span.context().clone());
+        data.store
+            .actions(cluster_id.clone())
+            .approve(action_id, span)
+            .with_context(|_| ErrorKind::PrimaryStorePersist("action approval"))
+    })?;
+
+    debug!(
+        data.logger,
+        "Approved action for scheduling";
+        "cluster" => cluster_id,
+        "action" => %action_id,
+    );
+    let response = HttpResponse::Ok().json(json!({}));
+    Ok(response)
+}
+
+#[derive(Clone)]
+struct ApproveData {
     logger: Logger,
     store: Store,
-}
-
-impl Handler for Approve {
-    fn handle(&self, request: &mut Request) -> IronResult<Response> {
-        let cluster_id = request
-            .extensions
-            .get::<Router>()
-            .expect("Iron Router extension not found")
-            .find("cluster_id")
-            .map(String::from)
-            .ok_or_else(|| ErrorKind::APIRequestParameterNotFound("cluster_id"))
-            .map_err(Error::from)?;
-        let action_id = request
-            .extensions
-            .get::<Router>()
-            .expect("Iron Router extension not found")
-            .find("action_id")
-            .ok_or_else(|| ErrorKind::APIRequestParameterNotFound("action_id"))
-            .map_err(Error::from)
-            .and_then(|action| {
-                Uuid::parse_str(action)
-                    .with_context(|_| ErrorKind::APIRequestParameterInvalid("action_id"))
-                    .map_err(Error::from)
-            })?;
-
-        let span = request_span(request);
-        self.store
-            .actions(cluster_id.clone())
-            .approve(action_id, span.context().clone())
-            .with_context(|_| ErrorKind::PrimaryStorePersist("action approval"))
-            .map_err(Error::from)?;
-        debug!(
-            self.logger,
-            "Approved action for scheduling";
-            "cluster" => cluster_id,
-            "action" => %action_id,
-        );
-
-        let mut resp = Response::new();
-        resp.set_mut(JsonResponse::json(json!({})))
-            .set_mut(status::Ok);
-        Ok(resp)
-    }
 }

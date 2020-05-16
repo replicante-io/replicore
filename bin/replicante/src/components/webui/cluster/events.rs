@@ -1,67 +1,85 @@
+use std::sync::Arc;
+
+use actix_web::dev::HttpServiceFactory;
+use actix_web::web;
+use actix_web::HttpRequest;
+use actix_web::HttpResponse;
+use actix_web::Responder;
 use failure::ResultExt;
-use iron::status;
-use iron::Handler;
-use iron::IronResult;
-use iron::Request;
-use iron::Response;
-use iron::Set;
-use iron_json_response::JsonResponse;
-use router::Router;
+use slog::Logger;
 
 use replicante_store_view::store::events::EventsFilters;
 use replicante_store_view::store::events::EventsOptions;
-use replicante_store_view::store::Store as ViewStore;
-use replicante_util_iron::request_span;
+use replicante_store_view::store::Store;
+use replicante_util_actixweb::with_request_span;
+use replicante_util_actixweb::TracingMiddleware;
 
 use super::super::constants::RECENT_EVENTS_LIMIT;
-use crate::Error;
 use crate::ErrorKind;
+use crate::Interfaces;
+use crate::Result;
 
-/// Cluster events (`/webui/cluster/:cluster/events`) handler.
 pub struct Events {
-    store: ViewStore,
-}
-
-impl Handler for Events {
-    fn handle(&self, req: &mut Request) -> IronResult<Response> {
-        let cluster = req
-            .extensions
-            .get::<Router>()
-            .expect("Iron Router extension not found")
-            .find("cluster")
-            .map(String::from)
-            .ok_or_else(|| ErrorKind::APIRequestParameterNotFound("cluster"))
-            .map_err(Error::from)?;
-
-        let mut filters = EventsFilters::all();
-        filters.cluster_id = Some(cluster);
-        let mut options = EventsOptions::default();
-        options.limit = Some(RECENT_EVENTS_LIMIT);
-        options.reverse = true;
-
-        let span = request_span(req);
-        let iter = self
-            .store
-            .events()
-            .range(filters, options, span.context().clone())
-            .with_context(|_| ErrorKind::PrimaryStoreQuery("events.range"))
-            .map_err(Error::from)?;
-        let mut events = Vec::new();
-        for event in iter {
-            let event = event
-                .with_context(|_| ErrorKind::Deserialize("event record", "Event"))
-                .map_err(Error::from)?;
-            events.push(event);
-        }
-
-        let mut resp = Response::new();
-        resp.set_mut(JsonResponse::json(events)).set_mut(status::Ok);
-        Ok(resp)
-    }
+    data: EventsData,
+    logger: Logger,
+    tracer: Arc<opentracingrust::Tracer>,
 }
 
 impl Events {
-    pub fn new(store: ViewStore) -> Self {
-        Events { store }
+    pub fn new(interfaces: &mut Interfaces) -> Events {
+        let data = EventsData {
+            store: interfaces.stores.view.clone(),
+        };
+        Events {
+            data,
+            logger: interfaces.logger.clone(),
+            tracer: interfaces.tracing.tracer(),
+        }
     }
+
+    pub fn resource(&self) -> impl HttpServiceFactory {
+        let logger = self.logger.clone();
+        let tracer = Arc::clone(&self.tracer);
+        let tracer = TracingMiddleware::with_name(logger, tracer, "/cluster/{cluster_id}/events");
+        web::resource("/events")
+            .data(self.data.clone())
+            .wrap(tracer)
+            .route(web::get().to(responder))
+    }
+}
+
+#[derive(Clone)]
+struct EventsData {
+    store: Store,
+}
+
+async fn responder(data: web::Data<EventsData>, request: HttpRequest) -> Result<impl Responder> {
+    let path = request.match_info();
+    let cluster_id = path
+        .get("cluster_id")
+        .ok_or_else(|| ErrorKind::APIRequestParameterNotFound("cluster_id"))?
+        .to_string();
+
+    let mut filters = EventsFilters::all();
+    filters.cluster_id = Some(cluster_id);
+    let mut options = EventsOptions::default();
+    options.limit = Some(RECENT_EVENTS_LIMIT);
+    options.reverse = true;
+
+    let mut request = request;
+    let iter = with_request_span(&mut request, |span| {
+        let span = span.map(|span| span.context().clone());
+        data.store
+            .events()
+            .range(filters, options, span)
+            .with_context(|_| ErrorKind::PrimaryStoreQuery("events.range"))
+    })?;
+    let mut events = Vec::new();
+    for event in iter {
+        let event = event.with_context(|_| ErrorKind::Deserialize("event record", "Event"))?;
+        events.push(event);
+    }
+
+    let response = HttpResponse::Ok().json(events);
+    Ok(response)
 }

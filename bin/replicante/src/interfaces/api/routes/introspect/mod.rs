@@ -1,29 +1,44 @@
+use actix_web::web;
+use actix_web::Resource;
 use prometheus::Registry;
 
 use replicante_service_coordinator::Coordinator;
-use replicante_util_iron::MetricsHandler;
-use replicante_util_iron::Router;
-
-use super::super::super::healthchecks::HealthResultsCache;
-use super::APIRoot;
+use replicante_util_actixweb::MetricsExporter;
+use replicante_util_actixweb::RootDescriptor;
 
 mod healthchecks;
-mod self_endpoint;
+mod my_self;
 mod threads;
 mod version;
 
-pub fn mount(
-    router: &mut Router,
+use super::APIRoot;
+use super::HealthResultsCache;
+use crate::interfaces::api::AppConfigContext;
+
+use self::healthchecks::HealthChecks;
+use self::my_self::MySelf;
+
+pub fn configure(
+    cache: HealthResultsCache,
     coordinator: Coordinator,
     registry: Registry,
-    healthchecks: HealthResultsCache,
-) {
-    let healthchecks = healthchecks::Handler::new(healthchecks);
-    let metrics = MetricsHandler::new(registry);
-    let mut root = router.for_root(&APIRoot::UnstableIntrospect);
-    root.get("/health", healthchecks, "/health");
-    root.get("/metrics", metrics, "/metrics");
-    root.get("/self", self_endpoint::Handler::new(coordinator), "/self");
-    root.get("/threads", threads::handler, "/threads");
-    root.get("/version", version::handler, "/version");
+) -> impl Fn(&mut AppConfigContext) {
+    let health = HealthChecks::new(cache);
+    let my_self = MySelf::new(coordinator);
+
+    move |conf| {
+        APIRoot::UnstableIntrospect.and_then(&conf.context.flags, |root| {
+            let prefix = root.prefix();
+            conf.scoped_service(prefix, health.resource());
+            conf.scoped_service(prefix, metrics(registry.clone()));
+            conf.scoped_service(prefix, my_self.resource());
+            conf.scoped_service(prefix, self::threads::threads);
+            conf.scoped_service(prefix, self::version::version);
+        });
+    }
+}
+
+fn metrics(registry: Registry) -> Resource {
+    let metrics = MetricsExporter::factory(registry);
+    web::resource("/metrics").route(web::get().to(metrics))
 }

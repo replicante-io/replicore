@@ -125,6 +125,12 @@ impl Config {
         }
         self
     }
+
+    #[cfg(test)]
+    pub fn mock() -> Config {
+        Config::from_reader(include_str!("mock_config.yaml").as_bytes())
+            .expect("mock config to load")
+    }
 }
 
 /// Settings that will move to the DB once namespaces are fully introduced.

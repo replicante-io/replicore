@@ -38,6 +38,12 @@ impl MockInterfaces {
         MockInterfaces::mock_with_logger(logger)
     }
 
+    /// Mock interfaces discarding logs.
+    pub fn mock_quietly() -> MockInterfaces {
+        let logger = Logger::root(slog::Discard, slog::o!());
+        MockInterfaces::mock_with_logger(logger)
+    }
+
     /// Mock interfaces using the given logger and wrap them in an `Interfaces` instance.
     pub fn mock_with_logger(logger: Logger) -> MockInterfaces {
         let coordinator = MockCoordinator::new(logger.clone());
@@ -55,12 +61,7 @@ impl MockInterfaces {
         let metrics = Metrics::mock();
         let healthchecks = HealthChecks::new(Duration::from_secs(10));
         let tracing = Tracing::mock();
-        let (api, _) = API::mock(
-            self.logger.clone(),
-            &metrics,
-            healthchecks.results_proxy(),
-            tracing.tracer(),
-        );
+        let (api, _) = API::mock(self.logger.clone(), &metrics, healthchecks.results_proxy());
         let coordinator = self.coordinator.mock();
         let events = EventsStream::mock();
         let stores = self.stores.mock();
@@ -68,6 +69,7 @@ impl MockInterfaces {
             api,
             coordinator,
             healthchecks,
+            logger: self.logger.clone(),
             metrics,
             stores,
             streams: Streams { events },

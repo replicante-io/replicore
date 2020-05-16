@@ -1,58 +1,76 @@
+use std::sync::Arc;
+
+use actix_web::dev::HttpServiceFactory;
+use actix_web::web;
+use actix_web::HttpRequest;
+use actix_web::HttpResponse;
+use actix_web::Responder;
 use failure::ResultExt;
-use iron::status;
-use iron::Handler;
-use iron::IronResult;
-use iron::Request;
-use iron::Response;
-use iron::Set;
-use iron_json_response::JsonResponse;
-use router::Router;
+use slog::Logger;
 
-use replicante_store_primary::store::Store as PrimaryStore;
-use replicante_util_iron::request_span;
+use replicante_store_primary::store::Store;
+use replicante_util_actixweb::with_request_span;
+use replicante_util_actixweb::TracingMiddleware;
 
-use crate::Error;
 use crate::ErrorKind;
+use crate::Interfaces;
+use crate::Result;
 
-/// Cluster discovery (`/webui/cluster/:cluster/nodes`) handler.
 pub struct Nodes {
-    store: PrimaryStore,
-}
-
-impl Handler for Nodes {
-    fn handle(&self, req: &mut Request) -> IronResult<Response> {
-        let cluster = req
-            .extensions
-            .get::<Router>()
-            .expect("Iron Router extension not found")
-            .find("cluster")
-            .map(String::from)
-            .ok_or_else(|| ErrorKind::APIRequestParameterNotFound("cluster"))
-            .map_err(Error::from)?;
-        let span = request_span(req);
-
-        let mut nodes = Vec::new();
-        let iter = self
-            .store
-            .nodes(cluster)
-            .iter(span.context().clone())
-            .with_context(|_| ErrorKind::PrimaryStoreQuery("nodes.iter"))
-            .map_err(Error::from)?;
-        for node in iter {
-            let node = node
-                .with_context(|_| ErrorKind::Deserialize("node record", "Node"))
-                .map_err(Error::from)?;
-            nodes.push(node);
-        }
-
-        let mut resp = Response::new();
-        resp.set_mut(JsonResponse::json(nodes)).set_mut(status::Ok);
-        Ok(resp)
-    }
+    data: NodesData,
+    logger: Logger,
+    tracer: Arc<opentracingrust::Tracer>,
 }
 
 impl Nodes {
-    pub fn new(store: PrimaryStore) -> Self {
-        Nodes { store }
+    pub fn new(interfaces: &mut Interfaces) -> Self {
+        let data = NodesData {
+            store: interfaces.stores.primary.clone(),
+        };
+        Nodes {
+            data,
+            logger: interfaces.logger.clone(),
+            tracer: interfaces.tracing.tracer(),
+        }
     }
+
+    pub fn resource(&self) -> impl HttpServiceFactory {
+        let logger = self.logger.clone();
+        let tracer = Arc::clone(&self.tracer);
+        let tracer = TracingMiddleware::with_name(logger, tracer, "/cluster/{cluster_id}/nodes");
+        web::resource("/nodes")
+            .data(self.data.clone())
+            .wrap(tracer)
+            .route(web::get().to(responder))
+    }
+}
+
+#[derive(Clone)]
+struct NodesData {
+    store: Store,
+}
+
+async fn responder(data: web::Data<NodesData>, request: HttpRequest) -> Result<impl Responder> {
+    let path = request.match_info();
+    let cluster_id = path
+        .get("cluster_id")
+        .ok_or_else(|| ErrorKind::APIRequestParameterNotFound("cluster_id"))?
+        .to_string();
+
+    let mut nodes = Vec::new();
+    let mut request = request;
+    let iter = with_request_span(&mut request, |span| {
+        let span = span.map(|span| span.context().clone());
+        data.store
+            .nodes(cluster_id)
+            .iter(span)
+            .with_context(|_| ErrorKind::PrimaryStoreQuery("nodes.iter"))
+    })?;
+    for node in iter {
+        let node = node.with_context(|_| ErrorKind::Deserialize("node record", "Node"))?;
+        nodes.push(node);
+    }
+
+    let response = HttpResponse::Ok().json(nodes);
+    Ok(response)
 }
