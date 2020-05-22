@@ -11,7 +11,7 @@ use crate::Result;
 
 use super::StartNodeOpt;
 
-pub async fn run(args: &StartNodeOpt, conf: &Conf) -> Result<bool> {
+pub async fn run(args: &StartNodeOpt, conf: &Conf) -> Result<i32> {
     let name: String = args.node_name.clone().unwrap_or_else(|| random_name(8));
     let store = &args.store;
     let cluster_id = args
@@ -53,7 +53,7 @@ pub async fn run(args: &StartNodeOpt, conf: &Conf) -> Result<bool> {
         store, name, cluster_id
     );
     crate::podman::pod_start(conf, pod, name, labels, variables).await?;
-    Ok(true)
+    Ok(0)
 }
 
 fn random_name(len: usize) -> String {

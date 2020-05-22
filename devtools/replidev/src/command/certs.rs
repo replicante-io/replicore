@@ -22,7 +22,7 @@ pub struct CliOpt {
 }
 
 /// Configuration related commands.
-pub async fn run(args: CliOpt, conf: Conf) -> Result<bool> {
+pub async fn run(args: CliOpt, conf: Conf) -> Result<i32> {
     if !conf.project.allow_gen_certs() {
         let error = ErrorKind::invalid_project(conf.project, "replidev gen-certs");
         return Err(error.into());
@@ -35,7 +35,7 @@ pub async fn run(args: CliOpt, conf: Conf) -> Result<bool> {
     if !args.regenerate && pki_found {
         println!("Certificates already available at {}", pki_path);
         println!("To regenerate the certificates invoke the command with --regen");
-        return Ok(true);
+        return Ok(0);
     }
     if args.regenerate && pki_found {
         std::fs::remove_dir_all(format!("{}/replidev", pki_path))
@@ -145,7 +145,7 @@ pub async fn run(args: CliOpt, conf: Conf) -> Result<bool> {
     );
     println!("Server Certificate: {}/replidev/certs/server.crt", pki_path);
     println!("Server Private Key: {}/replidev/keys/server.key", pki_path);
-    Ok(true)
+    Ok(0)
 }
 
 fn bundle_certs(pki_path: &str, what: &str) -> Result<()> {

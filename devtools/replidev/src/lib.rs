@@ -48,7 +48,7 @@ impl Command {
     }
 }
 
-pub fn run() -> Result<bool> {
+pub fn run() -> Result<i32> {
     // Parse CLI & conf.
     let args = CliOpt::from_args();
     let conf = self::conf::Conf::from_file()?;

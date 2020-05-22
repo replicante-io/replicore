@@ -3,7 +3,7 @@ use crate::Result;
 
 use super::CleanCommonOpt;
 
-pub async fn run(args: &CleanCommonOpt, conf: &Conf) -> Result<bool> {
+pub async fn run(args: &CleanCommonOpt, conf: &Conf) -> Result<i32> {
     let data = "./data/nodes/";
     println!("--> Clean data for all nodes (from {})", data);
     if args.confirm {
@@ -11,5 +11,5 @@ pub async fn run(args: &CleanCommonOpt, conf: &Conf) -> Result<bool> {
     } else {
         println!("Skipping: you must --confirm deleting data");
     }
-    Ok(true)
+    Ok(0)
 }

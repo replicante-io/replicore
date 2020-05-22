@@ -4,7 +4,7 @@ use crate::Result;
 
 use super::CleanNodeOpt;
 
-pub async fn run(args: &CleanNodeOpt, conf: &Conf) -> Result<bool> {
+pub async fn run(args: &CleanNodeOpt, conf: &Conf) -> Result<i32> {
     for node in &args.nodes {
         let paths = crate::settings::paths::PlayPod::new("<unkown>", &args.cluster, node);
         let data = paths.data();
@@ -18,5 +18,5 @@ pub async fn run(args: &CleanNodeOpt, conf: &Conf) -> Result<bool> {
             println!("Skipping: you must --confirm deleting data");
         }
     }
-    Ok(true)
+    Ok(0)
 }

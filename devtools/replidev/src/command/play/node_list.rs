@@ -17,7 +17,7 @@ use crate::Result;
 ///   play-node-rS3KQZOw  mongo-rs   10000       10000        10001       Running  206f19a3692f
 ///   play-node-Niu57N4O  zookeeper  10100       10101        10102       Stopped  817215a1fb8f
 ///   play-node-B6ZM7FWZ  postgres   10200       10200        -           Running  e72f080534c8
-pub async fn run(conf: &Conf) -> Result<bool> {
+pub async fn run(conf: &Conf) -> Result<i32> {
     let nodes = list_nodes(conf).await?;
     let mut table = prettytable::Table::new();
     table.add_row(row![
@@ -50,7 +50,7 @@ pub async fn run(conf: &Conf) -> Result<bool> {
         .build();
     table.set_format(format);
     table.printstd();
-    Ok(true)
+    Ok(0)
 }
 
 /// Fetch all node pods and their information.

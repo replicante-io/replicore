@@ -7,7 +7,7 @@ use crate::Result;
 use super::StopClusterOpt;
 use super::StopNodeOpt;
 
-pub async fn run(args: &StopClusterOpt, conf: &Conf) -> Result<bool> {
+pub async fn run(args: &StopClusterOpt, conf: &Conf) -> Result<i32> {
     for cluster in &args.clusters {
         println!("--> Stopping cluster {}", cluster);
         let nodes = nodes_in_cluster(cluster, conf).await?;
@@ -18,7 +18,7 @@ pub async fn run(args: &StopClusterOpt, conf: &Conf) -> Result<bool> {
         let node_stop_opts = StopNodeOpt { nodes };
         super::node_stop::run(&node_stop_opts, conf).await?;
     }
-    Ok(true)
+    Ok(0)
 }
 
 /// Return a list of nodes in the given cluster.

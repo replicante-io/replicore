@@ -3,7 +3,7 @@ use crate::Result;
 
 use super::CleanClusterOpt;
 
-pub async fn run(args: &CleanClusterOpt, conf: &Conf) -> Result<bool> {
+pub async fn run(args: &CleanClusterOpt, conf: &Conf) -> Result<i32> {
     for cluster in &args.clusters {
         let data = format!("./data/nodes/{}", cluster);
         println!("--> Clean data for {} (from {})", cluster, data);
@@ -13,5 +13,5 @@ pub async fn run(args: &CleanClusterOpt, conf: &Conf) -> Result<bool> {
             println!("Skipping: you must --confirm deleting data");
         }
     }
-    Ok(true)
+    Ok(0)
 }

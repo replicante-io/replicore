@@ -140,7 +140,7 @@ pub struct StopNodeOpt {
 }
 
 /// Manage Replicante Playground nodes.
-pub async fn run(args: CliOpt, conf: Conf) -> Result<bool> {
+pub async fn run(args: CliOpt, conf: Conf) -> Result<i32> {
     if !conf.project.allow_play() {
         let error = ErrorKind::invalid_project(conf.project, "replidev play");
         return Err(error.into());

@@ -14,7 +14,7 @@ use super::CleanCommonOpt;
 static REPLICORE_STACK_NAME: &str = "play-replicore";
 static REPLICORE_STACK_FILE: &str = "replicore/stack.yaml";
 
-pub async fn clean(args: &CleanCommonOpt, conf: &Conf) -> Result<bool> {
+pub async fn clean(args: &CleanCommonOpt, conf: &Conf) -> Result<i32> {
     let paths = crate::settings::paths::PlayReplicore::new();
     let data = paths.data();
     println!(
@@ -26,10 +26,10 @@ pub async fn clean(args: &CleanCommonOpt, conf: &Conf) -> Result<bool> {
     } else {
         println!("Skipping: you must --confirm deleting data");
     }
-    Ok(true)
+    Ok(0)
 }
 
-pub async fn start(conf: &Conf) -> Result<bool> {
+pub async fn start(conf: &Conf) -> Result<i32> {
     // Load node definition.
     let def =
         File::open(REPLICORE_STACK_FILE).with_context(|_| ErrorKind::pod_not_found("replicore"))?;
@@ -62,10 +62,10 @@ pub async fn start(conf: &Conf) -> Result<bool> {
             crate::podman::exec(conf, &name, command).await?;
         }
     }
-    Ok(true)
+    Ok(0)
 }
 
-pub async fn stop(conf: &Conf) -> Result<bool> {
+pub async fn stop(conf: &Conf) -> Result<i32> {
     crate::podman::pod_stop(conf, REPLICORE_STACK_NAME).await?;
-    Ok(true)
+    Ok(0)
 }

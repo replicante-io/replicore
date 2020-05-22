@@ -3,7 +3,7 @@ use crate::Result;
 
 use super::StopNodeOpt;
 
-pub async fn run(args: &StopNodeOpt, conf: &Conf) -> Result<bool> {
+pub async fn run(args: &StopNodeOpt, conf: &Conf) -> Result<i32> {
     for node in &args.nodes {
         if crate::podman::pod_stop(conf, node).await.is_err() {
             println!(
@@ -12,5 +12,5 @@ pub async fn run(args: &StopNodeOpt, conf: &Conf) -> Result<bool> {
             );
         }
     }
-    Ok(true)
+    Ok(0)
 }

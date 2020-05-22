@@ -15,7 +15,7 @@ use crate::Conf;
 use crate::ErrorKind;
 use crate::Result;
 
-pub async fn run(conf: Conf) -> Result<bool> {
+pub async fn run(conf: Conf) -> Result<i32> {
     let bind = conf.play_server_bind.clone();
     let server = HttpServer::new(move || {
         App::new()
@@ -30,7 +30,7 @@ pub async fn run(conf: Conf) -> Result<bool> {
     server
         .await
         .with_context(|_| ErrorKind::io("http server failed to run"))?;
-    Ok(true)
+    Ok(0)
 }
 
 #[get("/")]

@@ -67,7 +67,7 @@ struct PodPsStatus {
 }
 
 /// Manage Replicante Core dependencies.
-pub async fn run(args: CliOpt, conf: Conf) -> Result<bool> {
+pub async fn run(args: CliOpt, conf: Conf) -> Result<i32> {
     if !conf.project.allow_deps() {
         let error = ErrorKind::invalid_project(conf.project, "replidev deps");
         return Err(error.into());
@@ -82,7 +82,7 @@ pub async fn run(args: CliOpt, conf: Conf) -> Result<bool> {
     }
 }
 
-async fn clean(args: &CleanOpt, conf: &Conf) -> Result<bool> {
+async fn clean(args: &CleanOpt, conf: &Conf) -> Result<i32> {
     for pod_name in &args.pod_opt.pods {
         let paths = crate::settings::paths::DepsPod::new(&pod_name);
         let data = paths.data();
@@ -93,10 +93,10 @@ async fn clean(args: &CleanOpt, conf: &Conf) -> Result<bool> {
             println!("Skipping: you must --confirm deleting data");
         }
     }
-    Ok(true)
+    Ok(0)
 }
 
-async fn initialise(args: &PodOpt, conf: &Conf) -> Result<bool> {
+async fn initialise(args: &PodOpt, conf: &Conf) -> Result<i32> {
     for pod_name in &args.pods {
         let pod = pod_definition(pod_name)?;
         for container in pod.containers {
@@ -110,7 +110,7 @@ async fn initialise(args: &PodOpt, conf: &Conf) -> Result<bool> {
             }
         }
     }
-    Ok(true)
+    Ok(0)
 }
 
 /// List running and available dependencies pod.
@@ -120,7 +120,7 @@ async fn initialise(args: &PodOpt, conf: &Conf) -> Result<bool> {
 ///   essential Running abc-123 $PODMAN_DEF_PATH/essential.yaml
 ///   uis       -       -       $PODMAN_DEF_PATH/uis.yaml
 ///   legacy    Running def-456 -
-async fn list(conf: &Conf) -> Result<bool> {
+async fn list(conf: &Conf) -> Result<i32> {
     // Find running dependencies pods.
     let pods = crate::podman::pod_ps(
         conf,
@@ -187,7 +187,7 @@ async fn list(conf: &Conf) -> Result<bool> {
         .build();
     table.set_format(format);
     table.printstd();
-    Ok(true)
+    Ok(0)
 }
 
 /// Helper function to load and decode a pod definition file.
@@ -198,12 +198,12 @@ fn pod_definition(name: &str) -> Result<Pod> {
     Ok(pod)
 }
 
-async fn restart(args: &PodOpt, conf: &Conf) -> Result<bool> {
+async fn restart(args: &PodOpt, conf: &Conf) -> Result<i32> {
     stop(args, conf).await?;
     start(args, conf).await
 }
 
-async fn start(args: &PodOpt, conf: &Conf) -> Result<bool> {
+async fn start(args: &PodOpt, conf: &Conf) -> Result<i32> {
     for pod_name in &args.pods {
         let pod = pod_definition(pod_name)?;
         let paths = crate::settings::paths::DepsPod::new(&pod_name);
@@ -226,10 +226,10 @@ async fn start(args: &PodOpt, conf: &Conf) -> Result<bool> {
         )
         .await?;
     }
-    Ok(true)
+    Ok(0)
 }
 
-async fn stop(args: &PodOpt, conf: &Conf) -> Result<bool> {
+async fn stop(args: &PodOpt, conf: &Conf) -> Result<i32> {
     for pod_name in args.pods.iter().rev() {
         let stopped = crate::podman::pod_stop(conf, format!("replideps-{}", pod_name))
             .await
@@ -241,5 +241,5 @@ async fn stop(args: &PodOpt, conf: &Conf) -> Result<bool> {
             );
         }
     }
-    Ok(true)
+    Ok(0)
 }
