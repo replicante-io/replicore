@@ -1,8 +1,3 @@
-//! HTTP API interface to interact with replicante.
-//!
-//! This interface is a wrapper around the [`iron`] framework.
-//! This module does not implement all of the APIs but rather provides
-//! tools for other interfaces and components to add their own endpoints.
 use actix_web::middleware;
 use actix_web::App;
 use actix_web::HttpServer;
@@ -137,6 +132,11 @@ impl API {
                         // to configure it or we can't return a consisten type from this match.
                         SentryCaptureApi::No => app.wrap(SentryMiddleware::new(600)),
                     };
+
+                    // If no route matches requests return a 404 with a JSON body
+                    // like all APIs should do.
+                    let app = app
+                        .default_service(actix_web::web::route().to(routes::not_found_empty_json));
 
                     // Configure and return the ActixWeb App
                     let mut app_config = app_config.clone();

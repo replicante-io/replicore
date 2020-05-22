@@ -63,7 +63,7 @@ pub fn run() -> Result<bool> {
     let local = tokio::task::LocalSet::new();
 
     // Create an actix runtime that uses the existing tokio runtime.
-    // This is required by some to run the web server.
+    // This is required by some commands to run the web server.
     if args.command.need_actix_rt() {
         local.spawn_local(actix_rt::System::run_in_tokio("replidev-actix", &local));
     }

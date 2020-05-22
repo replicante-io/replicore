@@ -1,68 +1,41 @@
-use clap::App;
-use clap::Arg;
-use clap::ArgMatches;
-use clap::SubCommand;
+use anyhow::Result;
 use slog::Logger;
-
-use replicante_models_core::api::apply::SCOPE_CLUSTER;
-use replicante_models_core::api::apply::SCOPE_NS;
-
-use crate::ErrorKind;
-use crate::Result;
-use crate::CLI_NAME;
+use structopt::StructOpt;
+use uuid::Uuid;
 
 mod approve;
 mod disapprove;
 
-pub const COMMAND: &str = "action";
-const CLI_ACTION_ID: &str = "action";
-
-pub fn command<'a, 'b>() -> App<'a, 'b> {
-    SubCommand::with_name(COMMAND)
-        .about("Manage and inspect actions")
-        .arg(
-            Arg::with_name(SCOPE_CLUSTER)
-                .long("cluster")
-                .value_name("CLUSTER")
-                .takes_value(true)
-                .env("REPLICTL_CLUSTER")
-                .required(true)
-                .help("ID of the cluster the action is for"),
-        )
-        .arg(
-            Arg::with_name(SCOPE_NS)
-                .long("namespace")
-                .value_name("NAMESPACE")
-                .takes_value(true)
-                .env("REPLICTL_NS")
-                .required(true)
-                .help("Namespace that contains the cluster and action"),
-        )
-        .arg(
-            Arg::with_name(CLI_ACTION_ID)
-                .long("action")
-                .value_name("ACTION")
-                .takes_value(true)
-                .env("REPLICTL_ACTION")
-                .required(true)
-                .help("ID of the action to operate on"),
-        )
-        .subcommand(approve::command())
-        .subcommand(disapprove::command())
+// Command line options common to all action commands.
+//
+// This is included, possibly flattened, as arguments to leaf commands instead of additional
+// options at the `action` level because we want to ensure the command is specified before
+// these options.
+//
+// In other words we want `replictl action {approve, ...} $ACTION_ID`
+// and not `replictl action $ACTION_ID {approve, ...}`.
+// NOTE: this is not a docstring because StructOpt then uses it as the actions help.
+#[derive(Debug, StructOpt)]
+pub struct CommonOpt {
+    /// ID of the action to operate on.
+    #[structopt(env = "RCTL_ACTION")]
+    pub action: Uuid,
 }
 
-pub fn run<'a>(cli: &ArgMatches<'a>, logger: &Logger) -> Result<()> {
-    let command = cli.subcommand_matches(COMMAND).unwrap();
-    let command = command.subcommand_name();
+/// Commands to operate on actions.
+#[derive(Debug, StructOpt)]
+pub enum Opt {
+    /// Approve an action that is pending approval.
+    Approve(CommonOpt),
 
-    match command {
-        Some(approve::COMMAND) => approve::run(cli, logger),
-        Some(disapprove::COMMAND) => disapprove::run(cli, logger),
-        None => Err(ErrorKind::NoCommand(format!("{} {}", CLI_NAME, COMMAND)).into()),
-        Some(name) => Err(ErrorKind::UnkownSubcommand(
-            format!("{} {}", CLI_NAME, COMMAND),
-            name.to_string(),
-        )
-        .into()),
+    /// Disapprove (reject) an action that is pending approval.
+    Disapprove(CommonOpt),
+}
+
+/// Execute the selected command.
+pub async fn execute(logger: &Logger, opt: &crate::Opt, action_cmd: &Opt) -> Result<i32> {
+    match &action_cmd {
+        Opt::Approve(approve_opt) => approve::execute(logger, opt, approve_opt).await,
+        Opt::Disapprove(disapprove_opt) => disapprove::execute(logger, opt, disapprove_opt).await,
     }
 }

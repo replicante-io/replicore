@@ -1,4 +1,5 @@
 use actix_web::web;
+use actix_web::HttpResponse;
 use actix_web::Responder;
 use prometheus::Registry;
 
@@ -37,4 +38,9 @@ pub fn configure(
 /// Render a simple message at the `/` of an API root (`/api/unstable`, `/api/v1`, ...).
 async fn api_root() -> impl Responder {
     "Replicante API server".to_string()
+}
+
+/// Render a static 404 with an empty JSON object as the body.
+pub async fn not_found_empty_json() -> impl Responder {
+    HttpResponse::NotFound().json(serde_json::json!({}))
 }

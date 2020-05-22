@@ -24,25 +24,36 @@ path = "src/lib.rs"
 
 
 [dependencies]
-clap = "^2.31.2"
+anyhow = "^1.0.31"
 dialoguer = "^0.6.0"
 dirs = "^2.0.2"
-failure = "^0.1.3"
-futures = "^0.3.4"
-serde = { version = "^1.0.34", features = ["derive"] }
+prettytable-rs = "^0.8.0"
 serde_json = "^1.0.0"
 serde_yaml = "^0.8.0"
 slog = "^2.1.1"
 slog-json = "^2.3.0"
-uuid = { version = "^0.8.0", features = ["serde", "v4"] }
+structopt = "^0.3.14"
+thiserror = "^1.0.0"
 
 replicante_models_core = { path = "../../models/core" }
 replicante_util_failure = { path = "../../common/util/failure" }
 
 [dependencies.reqwest]
 # Use rustls-tls to access PEM files as Identity objects.
-features = ["rustls-tls", "blocking"]
+features = ["json", "rustls-tls"]
 version = "^0.10.4"
+
+[dependencies.serde]
+features = ["derive"]
+version = "^1.0.34"
+
+[dependencies.tokio]
+features = ["full"]
+version = "^0.2.0"
+
+[dependencies.uuid]
+features = ["serde", "v4"]
+version = "^0.8.0"
 
 
 [build-dependencies]

@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Changed
 - **BREAKING**: Remove MongoDB index validation (alpha driver does not support fetching indexes).
+- **BREAKING**: Rework `replictl sso` into `replictl context`.
 - Replaced deprecated iron with actix-web.
 - Update all dependencies to latest available versions.
 

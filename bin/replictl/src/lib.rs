@@ -1,19 +1,25 @@
-use clap::App;
+use anyhow::Result;
 use slog::debug;
 use slog::error;
+use structopt::StructOpt;
+
+use replicante_models_core::api::validate::ErrorsCollection;
 
 mod apiclient;
 mod commands;
-mod error;
+mod context;
 mod logging;
-mod sso;
 mod utils;
 
-pub use self::error::Error;
-pub use self::error::ErrorKind;
-pub use self::error::Result;
+// Re-export errors so main can provide more accurate messages.
+pub use apiclient::ApiNotFound;
+pub use context::ContextNotFound;
+pub use context::ScopeError;
 
-pub const CLI_NAME: &str = "replictl";
+use commands::Command;
+use context::ContextOpt;
+use logging::LogOpt;
+
 const VERSION: &str = concat!(
     env!("CARGO_PKG_VERSION"),
     " [",
@@ -23,19 +29,44 @@ const VERSION: &str = concat!(
     "]",
 );
 
-/// Process command line arcuments and run the given command.
-pub fn run() -> Result<()> {
-    // Initialise clap CLI interface.
-    let cli = App::new(CLI_NAME)
-        .version(VERSION)
-        .about(env!("CARGO_PKG_DESCRIPTION"));
-    let cli = logging::configure_cli(cli);
-    let cli = sso::configure_cli(cli);
-    let cli = commands::configure_cli(cli);
-    let cli = cli.get_matches();
+/// Apply attempted on an invalid object.
+#[derive(thiserror::Error, Debug)]
+#[error("Apply attempted on an invalid object")]
+pub struct InvalidApply {
+    errors: replicante_models_core::api::validate::ErrorsCollection,
+}
 
-    // Initialise global sub-systems.
-    let logger = logging::configure(&cli)?;
+impl InvalidApply {
+    pub fn new(errors: ErrorsCollection) -> InvalidApply {
+        InvalidApply { errors }
+    }
+}
+
+impl std::ops::Deref for InvalidApply {
+    type Target = [replicante_models_core::api::validate::Error];
+    fn deref(&self) -> &Self::Target {
+        self.errors.deref()
+    }
+}
+
+/// Replicante Core command line client.
+#[derive(Debug, StructOpt)]
+#[structopt(version = VERSION)]
+pub struct Opt {
+    #[structopt(subcommand)]
+    pub command: Command,
+
+    #[structopt(flatten)]
+    pub context: ContextOpt,
+
+    #[structopt(flatten)]
+    pub log: LogOpt,
+}
+
+pub fn run() -> Result<i32> {
+    // Parse args and initialise logging.
+    let opt = Opt::from_args();
+    let logger = logging::configure(&opt.log)?;
     debug!(
         logger,
         "replictl starting";
@@ -44,12 +75,23 @@ pub fn run() -> Result<()> {
         "version" => env!("CARGO_PKG_VERSION"),
     );
 
-    // Execute the command requested by the user.
-    let result = commands::execute(&cli, &logger);
+    // Set up a tokio runtime.
+    let mut runtime = tokio::runtime::Builder::new()
+        .enable_all()
+        .thread_name("replictl-tokio-worker")
+        .threaded_scheduler()
+        .build()
+        .expect("tokio runtime initialisation failed");
+    let result = runtime.block_on(commands::execute(&logger, &opt));
+    // Once done, ensure the runtime shuts down in a timely manner.
+    // Note: this only effects blocking tasks and not futures.
+    runtime.shutdown_timeout(std::time::Duration::from_millis(100));
+
+    // Can finally exit.
     if result.is_err() {
-        error!(logger, "replicli exiting with error"; "error" => true);
+        error!(logger, "replicli exiting with error");
     } else {
-        debug!(logger, "replicli exiting with success"; "error" => false);
+        debug!(logger, "replicli exiting successfully");
     }
     result
 }

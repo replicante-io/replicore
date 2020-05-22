@@ -1,34 +1,36 @@
-use clap::App;
-use clap::ArgMatches;
+use anyhow::Result;
 use slog::Logger;
-
-use super::CLI_NAME;
-use crate::ErrorKind;
-use crate::Result;
+use structopt::StructOpt;
 
 mod action;
 mod apply;
 mod cluster;
-mod sso;
+mod context;
 
-/// Configure the given `clap::App` with top-level commands.
-pub fn configure_cli<'a, 'b>(cli: App<'a, 'b>) -> App<'a, 'b> {
-    cli.subcommand(action::command())
-        .subcommand(apply::command())
-        .subcommand(cluster::command())
-        .subcommand(sso::command())
+use crate::Opt;
+
+/// Command to execute.
+#[derive(Debug, StructOpt)]
+pub enum Command {
+    /// Manage actions.
+    Action(action::Opt),
+
+    /// Apply changes as decribed by the YAML input (heavily inspired by https://kubernetes.io/).
+    Apply(apply::Opt),
+
+    /// Manage clusters.
+    Cluster(cluster::Opt),
+
+    /// Show or update replictl contexts.
+    Context(context::Opt),
 }
 
-/// Execute the selected replictl command.
-pub fn execute<'a>(cli: &ArgMatches<'a>, logger: &Logger) -> Result<()> {
-    match cli.subcommand_name() {
-        Some(action::COMMAND) => action::run(cli, logger),
-        Some(apply::COMMAND) => apply::run(cli, logger),
-        Some(cluster::COMMAND) => cluster::run(cli, logger),
-        Some(sso::COMMAND) => sso::run(cli, logger),
-        None => Err(ErrorKind::NoCommand(CLI_NAME.to_string()).into()),
-        Some(name) => {
-            Err(ErrorKind::UnkownSubcommand(CLI_NAME.to_string(), name.to_string()).into())
-        }
+/// Execute the selected command.
+pub async fn execute(logger: &Logger, opt: &Opt) -> Result<i32> {
+    match &opt.command {
+        Command::Action(action_opt) => action::execute(logger, opt, action_opt).await,
+        Command::Apply(apply_opt) => apply::execute(logger, opt, apply_opt).await,
+        Command::Cluster(cluster_opt) => cluster::execute(logger, opt, cluster_opt).await,
+        Command::Context(context_opt) => context::execute(logger, opt, context_opt).await,
     }
 }
