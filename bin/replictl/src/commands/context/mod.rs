@@ -12,7 +12,7 @@ mod select;
 /// Commands to operate on `replictl` contexts.
 #[derive(Debug, StructOpt)]
 pub enum Opt {
-    /// Update the context's scope attributes.
+    /// Set or update an existing context's scope attributes.
     Change,
 
     /// Descibe the active context.

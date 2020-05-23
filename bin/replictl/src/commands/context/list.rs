@@ -18,6 +18,7 @@ pub async fn execute(logger: &Logger, opt: &Opt) -> Result<i32> {
         "CLIENT KEY",
         "NAMESPACE",
         "CLUSTER",
+        "NODE",
     ]);
 
     let store = ContextStore::load(logger, opt).await?;
@@ -33,6 +34,7 @@ pub async fn execute(logger: &Logger, opt: &Opt) -> Result<i32> {
             client_key,
             context.scope.namespace.as_deref().unwrap_or("Not set"),
             context.scope.cluster.as_deref().unwrap_or("Not set"),
+            context.scope.node.as_deref().unwrap_or("Not set"),
         ]);
     }
 
