@@ -12,6 +12,8 @@ const CONF_FILE_LOCAL: &str = "replidev.local.yaml";
 const CONF_LOAD_ERRPR: &str =
     "Could not load configuration, are you in the root of a Replicante repository?";
 
+use super::Project;
+
 // The first time an IP is detected cache it for consistency and performance.
 lazy_static::lazy_static! {
     static ref DETECTED_IP_CACHE: Mutex<Option<String>> = Mutex::new(None);
@@ -27,6 +29,10 @@ pub struct Conf {
     /// List of Cargo.toml files to ignore where looking for crates by replidev release.
     #[serde(default)]
     pub ignored_crates: Vec<String>,
+
+    /// TODO
+    #[serde(default)]
+    pub images: Vec<Image>,
 
     /// Bind address and port for the playground API server.
     #[serde(default = "Conf::default_play_server_bind")]
@@ -131,65 +137,8 @@ impl Conf {
     }
 }
 
-/// Supported replidev projects.
-#[derive(Clone, Debug, Eq, PartialEq, Deserialize)]
-pub enum Project {
-    /// Replicante Agents Repository
-    #[serde(rename = "agents")]
-    Agents,
-
-    /// Replicante Common crates for both core and agents.
-    #[serde(rename = "common")]
-    Common,
-
-    /// Replicante Core
-    #[serde(rename = "core")]
-    Core,
-
-    /// Replicante Playgrounds Projects
-    #[serde(rename = "playground")]
-    Playground,
-}
-
-impl Project {
-    /// Check if a project is allowed to execute the `deps` family of commands.
-    pub fn allow_deps(&self) -> bool {
-        *self == Self::Core
-    }
-
-    /// Check if a project is allowed to execute the `gen-certs` family of commands.
-    pub fn allow_gen_certs(&self) -> bool {
-        match self {
-            Self::Agents => true,
-            Self::Core => true,
-            Self::Playground => true,
-            _ => false,
-        }
-    }
-
-    /// Check if a project is allowed to execute the `play` family of commands.
-    pub fn allow_play(&self) -> bool {
-        *self == Self::Playground
-    }
-
-    /// Check if a project is allowed to execute the `release` family of commands.
-    pub fn allow_release(&self) -> bool {
-        match self {
-            Self::Agents => true,
-            Self::Common => true,
-            Self::Core => true,
-            _ => false,
-        }
-    }
-}
-
-impl std::fmt::Display for Project {
-    fn fmt(&self, fmt: &mut std::fmt::Formatter) -> std::fmt::Result {
-        match self {
-            Self::Agents => write!(fmt, "agents"),
-            Self::Common => write!(fmt, "common"),
-            Self::Core => write!(fmt, "core"),
-            Self::Playground => write!(fmt, "playground"),
-        }
-    }
+/// Definition of how to build an image for the project.
+#[derive(Clone, Debug, Deserialize)]
+pub struct Image {
+    // TODO
 }
