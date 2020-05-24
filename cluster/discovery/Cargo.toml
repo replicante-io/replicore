@@ -1,6 +1,6 @@
 [package]
 name = "replicante_cluster_discovery"
-version = "0.2.0"
+version = "0.2.1"
 authors = ["Stefano Pogliani <stefano@spogliani.net>"]
 edition = "2018"
 
@@ -19,7 +19,6 @@ maintenance = { status = "actively-developed" }
 [dependencies]
 failure = "^0.1.5"
 failure_derive = "^0.1.5"
-futures = "^0.3.4"
 lazy_static = "^1.0.0"
 prometheus = "^0.8.0"
 reqwest = { version = "^0.10.4", features = ["rustls-tls", "json", "blocking"] }

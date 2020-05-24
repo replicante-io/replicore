@@ -1,16 +1,16 @@
 use std::fs::File;
 use std::sync::Mutex;
 
-use failure::ResultExt;
+use anyhow::Context;
+use anyhow::Result;
 use serde::Deserialize;
 use serde_yaml::Mapping;
 use serde_yaml::Value;
 
-use crate::ErrorKind;
-use crate::Result;
-
 const CONF_FILE: &str = "replidev.yaml";
 const CONF_FILE_LOCAL: &str = "replidev.local.yaml";
+const CONF_LOAD_ERRPR: &str =
+    "Could not load configuration, are you in the root of a Replicante repository?";
 
 // The first time an IP is detected cache it for consistency and performance.
 lazy_static::lazy_static! {
@@ -23,6 +23,10 @@ pub struct Conf {
     /// Command to execute easypki.
     #[serde(default = "Conf::default_easypki")]
     pub easypki: String,
+
+    /// List of Cargo.toml files to ignore where looking for crates by replidev release.
+    #[serde(default)]
+    pub ignored_crates: Vec<String>,
 
     /// Bind address and port for the playground API server.
     #[serde(default = "Conf::default_play_server_bind")]
@@ -42,7 +46,7 @@ pub struct Conf {
 
 impl Conf {
     /// Load the local project's configuration file.
-    pub fn from_file() -> Result<Self> {
+    pub fn from_file() -> Result<Conf> {
         // Read config file and optional override file.
         let base = Conf::load_file(CONF_FILE)?;
         let local = if std::path::Path::new(CONF_FILE_LOCAL).exists() {
@@ -53,7 +57,7 @@ impl Conf {
 
         // Merge the config options and decode the result.
         let conf = Conf::merge(base, local);
-        let conf = serde_yaml::from_value(conf).with_context(|_| ErrorKind::ConfigLoad)?;
+        let conf = serde_yaml::from_value(conf).context(CONF_LOAD_ERRPR)?;
         Ok(conf)
     }
 
@@ -61,7 +65,7 @@ impl Conf {
     ///
     /// If an IP address is not provided in the configuration an attempt to
     /// auto-detect a non-local IP address is made.
-    pub fn podman_host_ip(&self) -> Result<String> {
+    pub fn podman_host_ip(&self) -> crate::error::Result<String> {
         // Use configure IP if possible.
         if let Some(ip) = &self.podman_host_ip {
             return Ok(ip.clone());
@@ -94,8 +98,9 @@ impl Conf {
         }
 
         // Could not find a non-loopback IP address.
-        let error = ErrorKind::ip_not_detected();
+        let error = crate::error::ErrorKind::ip_not_detected();
         Err(error.into())
+        //anyhow::bail!("Could not find a non-loopback IP address");
     }
 }
 
@@ -113,8 +118,8 @@ impl Conf {
     }
 
     fn load_file(file: &str) -> Result<Mapping> {
-        let conf = File::open(file).with_context(|_| ErrorKind::ConfigLoad)?;
-        let conf = serde_yaml::from_reader(conf).with_context(|_| ErrorKind::ConfigLoad)?;
+        let conf = File::open(file).context(CONF_LOAD_ERRPR)?;
+        let conf = serde_yaml::from_reader(conf).context(CONF_LOAD_ERRPR)?;
         Ok(conf)
     }
 
@@ -132,6 +137,10 @@ pub enum Project {
     /// Replicante Agents Repository
     #[serde(rename = "agents")]
     Agents,
+
+    /// Replicante Common crates for both core and agents.
+    #[serde(rename = "common")]
+    Common,
 
     /// Replicante Core
     #[serde(rename = "core")]
@@ -154,6 +163,7 @@ impl Project {
             Self::Agents => true,
             Self::Core => true,
             Self::Playground => true,
+            _ => false,
         }
     }
 
@@ -161,12 +171,23 @@ impl Project {
     pub fn allow_play(&self) -> bool {
         *self == Self::Playground
     }
+
+    /// Check if a project is allowed to execute the `release` family of commands.
+    pub fn allow_release(&self) -> bool {
+        match self {
+            Self::Agents => true,
+            Self::Common => true,
+            Self::Core => true,
+            _ => false,
+        }
+    }
 }
 
 impl std::fmt::Display for Project {
     fn fmt(&self, fmt: &mut std::fmt::Formatter) -> std::fmt::Result {
         match self {
             Self::Agents => write!(fmt, "agents"),
+            Self::Common => write!(fmt, "common"),
             Self::Core => write!(fmt, "core"),
             Self::Playground => write!(fmt, "playground"),
         }

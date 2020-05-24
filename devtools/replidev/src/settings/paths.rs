@@ -19,6 +19,7 @@ impl dyn Paths {
             Project::Agents => "./devtools/pki",
             Project::Core => "./devtools/deps/pki",
             Project::Playground => "./data/pki",
+            project => panic!("PKI path not available for {}", project),
         }
     }
 }

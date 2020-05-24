@@ -10,24 +10,28 @@ use structopt::StructOpt;
 use tokio::process::Command;
 
 use crate::conf::Conf;
+use crate::error::InvalidProject;
 use crate::ErrorKind;
 use crate::Result;
 
 /// Configuration related commands.
 #[derive(Debug, StructOpt)]
-pub struct CliOpt {
+pub struct Opt {
     /// Regenerate certificates even if they exist.
     #[structopt(name = "regen", long)]
     regenerate: bool,
 }
 
-/// Configuration related commands.
-pub async fn run(args: CliOpt, conf: Conf) -> Result<i32> {
+pub async fn run(args: Opt, conf: Conf) -> anyhow::Result<i32> {
     if !conf.project.allow_gen_certs() {
-        let error = ErrorKind::invalid_project(conf.project, "replidev gen-certs");
-        return Err(error.into());
+        anyhow::bail!(InvalidProject::new(conf.project, "gen-certs"));
     }
+    run_failure(args, conf)
+        .await
+        .map_err(crate::error::wrap_for_anyhow)
+}
 
+async fn run_failure(args: Opt, conf: Conf) -> Result<i32> {
     // Check if PKI certs exist.
     let pki_path = crate::settings::Paths::pki(&conf.project);
     let ca_cert = format!("{}/replidev/certs/replidev.crt", pki_path);

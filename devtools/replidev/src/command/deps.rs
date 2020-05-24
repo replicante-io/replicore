@@ -8,6 +8,7 @@ use serde::Deserialize;
 use structopt::StructOpt;
 
 use crate::conf::Conf;
+use crate::error::InvalidProject;
 use crate::podman::Pod;
 use crate::settings::paths::Paths;
 use crate::ErrorKind;
@@ -17,7 +18,7 @@ const PODMAN_DEF_PATH: &str = "devtools/deps/podman";
 
 /// Manage Replicante Core dependencies.
 #[derive(Debug, StructOpt)]
-pub enum CliOpt {
+pub enum Opt {
     /// Delete ALL data store by the given dependencies pods.
     #[structopt(name = "clean")]
     Clean(CleanOpt),
@@ -67,19 +68,19 @@ struct PodPsStatus {
 }
 
 /// Manage Replicante Core dependencies.
-pub async fn run(args: CliOpt, conf: Conf) -> Result<i32> {
+pub async fn run(args: Opt, conf: Conf) -> anyhow::Result<i32> {
     if !conf.project.allow_deps() {
-        let error = ErrorKind::invalid_project(conf.project, "replidev deps");
-        return Err(error.into());
+        anyhow::bail!(InvalidProject::new(conf.project, "deps"));
     }
-    match args {
-        CliOpt::Clean(args) => clean(&args, &conf).await,
-        CliOpt::Initialise(args) => initialise(&args, &conf).await,
-        CliOpt::List => list(&conf).await,
-        CliOpt::Restart(args) => restart(&args, &conf).await,
-        CliOpt::Start(args) => start(&args, &conf).await,
-        CliOpt::Stop(args) => stop(&args, &conf).await,
-    }
+    let result = match args {
+        Opt::Clean(args) => clean(&args, &conf).await,
+        Opt::Initialise(args) => initialise(&args, &conf).await,
+        Opt::List => list(&conf).await,
+        Opt::Restart(args) => restart(&args, &conf).await,
+        Opt::Start(args) => start(&args, &conf).await,
+        Opt::Stop(args) => stop(&args, &conf).await,
+    };
+    result.map_err(crate::error::wrap_for_anyhow)
 }
 
 async fn clean(args: &CleanOpt, conf: &Conf) -> Result<i32> {

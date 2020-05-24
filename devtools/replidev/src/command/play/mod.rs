@@ -1,8 +1,8 @@
+use anyhow::Result;
 use structopt::StructOpt;
 
 use crate::conf::Conf;
-use crate::ErrorKind;
-use crate::Result;
+use crate::error::InvalidProject;
 
 mod cluster_clean;
 mod cluster_stop;
@@ -16,7 +16,7 @@ mod server;
 
 /// Manage Replicante Playground nodes.
 #[derive(Debug, StructOpt)]
-pub enum CliOpt {
+pub enum Opt {
     /// Delete persistent data for all nodes in clusters.
     #[structopt(name = "cluster-clean")]
     ClusterClean(CleanClusterOpt),
@@ -62,7 +62,7 @@ pub enum CliOpt {
     Server,
 }
 
-impl CliOpt {
+impl Opt {
     pub fn need_actix_rt(&self) -> bool {
         match self {
             Self::Server => true,
@@ -140,22 +140,22 @@ pub struct StopNodeOpt {
 }
 
 /// Manage Replicante Playground nodes.
-pub async fn run(args: CliOpt, conf: Conf) -> Result<i32> {
+pub async fn run(args: Opt, conf: Conf) -> Result<i32> {
     if !conf.project.allow_play() {
-        let error = ErrorKind::invalid_project(conf.project, "replidev play");
-        return Err(error.into());
+        anyhow::bail!(InvalidProject::new(conf.project, "play"));
     }
-    match args {
-        CliOpt::ClusterClean(clean) => cluster_clean::run(&clean, &conf).await,
-        CliOpt::ClusterStop(stop) => cluster_stop::run(&stop, &conf).await,
-        CliOpt::NodeClean(clean) => node_clean::run(&clean, &conf).await,
-        CliOpt::NodeCleanAll(clean) => node_clean_all::run(&clean, &conf).await,
-        CliOpt::NodeList => node_list::run(&conf).await,
-        CliOpt::NodeStart(start) => node_start::run(&start, &conf).await,
-        CliOpt::NodeStop(stop) => node_stop::run(&stop, &conf).await,
-        CliOpt::ReplicoreClean(clean) => replicore::clean(&clean, &conf).await,
-        CliOpt::ReplicoreStart => replicore::start(&conf).await,
-        CliOpt::ReplicoreStop => replicore::stop(&conf).await,
-        CliOpt::Server => server::run(conf).await,
-    }
+    let result = match args {
+        Opt::ClusterClean(clean) => cluster_clean::run(&clean, &conf).await,
+        Opt::ClusterStop(stop) => cluster_stop::run(&stop, &conf).await,
+        Opt::NodeClean(clean) => node_clean::run(&clean, &conf).await,
+        Opt::NodeCleanAll(clean) => node_clean_all::run(&clean, &conf).await,
+        Opt::NodeList => node_list::run(&conf).await,
+        Opt::NodeStart(start) => node_start::run(&start, &conf).await,
+        Opt::NodeStop(stop) => node_stop::run(&stop, &conf).await,
+        Opt::ReplicoreClean(clean) => replicore::clean(&clean, &conf).await,
+        Opt::ReplicoreStart => replicore::start(&conf).await,
+        Opt::ReplicoreStop => replicore::stop(&conf).await,
+        Opt::Server => server::run(conf).await,
+    };
+    result.map_err(crate::error::wrap_for_anyhow)
 }

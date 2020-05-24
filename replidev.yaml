@@ -1,1 +1,11 @@
 project: core
+ignored_crates:
+  - 'Cargo.toml'
+  - 'common/logging/Cargo.toml'
+  - 'common/models/agent/Cargo.toml'
+  - 'common/models/api/Cargo.toml'
+  - 'common/util/actixweb/Cargo.toml'
+  - 'common/util/failure/Cargo.toml'
+  - 'common/util/rndid/Cargo.toml'
+  - 'common/util/tracing/Cargo.toml'
+  - 'common/util/upkeep/Cargo.toml'

@@ -1,6 +1,6 @@
 [package]
 name = "replicante_externals_mongodb"
-version = "0.1.0"
+version = "0.2.0"
 authors = ["Stefano Pogliani <stefano@spogliani.net>"]
 edition = "2018"
 

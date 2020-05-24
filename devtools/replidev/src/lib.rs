@@ -1,45 +1,43 @@
 use structopt::StructOpt;
 
+pub mod error;
+
 mod command;
 mod conf;
-mod error;
 mod podman;
 mod settings;
 
-use self::conf::Conf;
+use conf::Conf;
 
-pub use self::error::Error;
-pub use self::error::ErrorKind;
-pub use self::error::Result;
+pub use error::Error;
+pub use error::ErrorKind;
+pub use error::Result;
 
 #[derive(Debug, StructOpt)]
 #[structopt(name = "replidev", about = "Replicante Development Tool")]
-struct CliOpt {
-    /// The command to execute.
-    #[structopt(subcommand)]
-    command: Command,
-}
-
-#[derive(Debug, StructOpt)]
-enum Command {
+enum Opt {
     /// Configuration related commands.
     #[structopt(name = "conf")]
-    Configuration(self::command::conf::CliOpt),
+    Configuration(command::conf::Opt),
 
     /// Manage Replicante Core dependencies.
     #[structopt(name = "deps")]
-    Dependencies(self::command::deps::CliOpt),
+    Dependencies(command::deps::Opt),
 
     /// Generate an HTTPS CA with client and server certificates.
     #[structopt(name = "gen-certs")]
-    GenCerts(self::command::certs::CliOpt),
+    GenCerts(command::certs::Opt),
 
     /// Manage Replicante Playgrounds nodes.
     #[structopt(name = "play")]
-    Play(self::command::play::CliOpt),
+    Play(command::play::Opt),
+
+    /// Mange Replicante projects release tasks.
+    #[structopt(name = "release")]
+    Release(command::release::Opt),
 }
 
-impl Command {
+impl Opt {
     fn need_actix_rt(&self) -> bool {
         match self {
             Self::Play(play) => play.need_actix_rt(),
@@ -48,10 +46,10 @@ impl Command {
     }
 }
 
-pub fn run() -> Result<i32> {
+pub fn run() -> anyhow::Result<i32> {
     // Parse CLI & conf.
-    let args = CliOpt::from_args();
-    let conf = self::conf::Conf::from_file()?;
+    let args = Opt::from_args();
+    let conf = conf::Conf::from_file()?;
 
     // Set up tokio runtime for all futures and a LocalSet for actix-web.
     let mut runtime = tokio::runtime::Builder::new()
@@ -64,18 +62,18 @@ pub fn run() -> Result<i32> {
 
     // Create an actix runtime that uses the existing tokio runtime.
     // This is required by some commands to run the web server.
-    if args.command.need_actix_rt() {
+    if args.need_actix_rt() {
         local.spawn_local(actix_rt::System::run_in_tokio("replidev-actix", &local));
     }
 
     // Run all commands inside the tokio runtime.
     let result = local.block_on(&mut runtime, async {
-        // TODO: convert everything into async commands.
-        match args.command {
-            Command::Configuration(cfg) => self::command::conf::run(cfg, conf).await,
-            Command::Dependencies(deps) => self::command::deps::run(deps, conf).await,
-            Command::GenCerts(certs) => self::command::certs::run(certs, conf).await,
-            Command::Play(play) => self::command::play::run(play, conf).await,
+        match args {
+            Opt::Configuration(cfg) => command::conf::run(cfg, conf).await,
+            Opt::Dependencies(deps) => command::deps::run(deps, conf).await,
+            Opt::GenCerts(certs) => command::certs::run(certs, conf).await,
+            Opt::Play(play) => command::play::run(play, conf).await,
+            Opt::Release(release) => command::release::run(release, conf).await,
         }
     });
 

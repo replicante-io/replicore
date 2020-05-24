@@ -1,5 +1,3 @@
-extern crate git2;
-
 use git2::Repository;
 use git2::Status;
 

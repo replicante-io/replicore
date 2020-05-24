@@ -26,7 +26,11 @@ path = "src/lib.rs"
 [dependencies]
 actix-rt = "^1.0.0"
 actix-web = "^2.0.0"
+anyhow = "^1.0.0"
+dialoguer = "^0.6.0"
 failure = "^0.1.5"
+git2 = "^0.13.0"
+glob = "^0.3.0"
 handlebars = "^3.0.0"
 lazy_static = "^1.4.0"
 pnet_datalink = "^0.26.0"
@@ -36,6 +40,7 @@ serde = "^1.0.105"
 serde_json = "^1.0.0"
 serde_yaml = "^0.8.11"
 structopt = "^0.3.0"
+thiserror = "^1.0.0"
 
 replicante_models_core = { path = "../../models/core" }
 replicante_util_failure = { path = "../../common/util/failure" }
@@ -50,3 +55,4 @@ git2 = "^0.13.0"
 
 
 [workspace]
+# Make sure this crate is NOT part of the main workspace.

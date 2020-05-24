@@ -1,14 +1,36 @@
 use replicante_util_failure::format_fail;
-use replidev::run;
 
 fn main() {
-    match run() {
-        Err(error) => {
-            let message = format_fail(&error);
-            eprintln!("{}", message);
-            std::process::exit(1);
-        }
-        Ok(0) => (),
+    let result = replidev::run();
+    let error = match result {
+        Err(error) => error,
+        Ok(0) => return,
         Ok(num) => std::process::exit(num),
     };
+
+    // Provide better error messages for cases where we can provide suggestions.
+    if let Some(error) = error.downcast_ref::<replidev::error::ReleaseCheck>() {
+        match error.errors.len() {
+            0 => eprintln!("{}", error.to_string()),
+            1 => eprintln!("{}", error.errors[0].to_string()),
+            _ => {
+                eprintln!("{}:", error.to_string());
+                for error in &error.errors {
+                    eprintln!("  * {}", error.to_string());
+                }
+            }
+        }
+        std::process::exit(1);
+    }
+
+    // Fallback to failure errors while we migrate to anyhow.
+    if let Some(error) = error.downcast_ref::<replidev::Error>() {
+        let message = format_fail(error);
+        eprintln!("{}", message);
+        std::process::exit(1);
+    }
+
+    // Print the error in detailed format for all other cases.
+    eprintln!("{:?}", error);
+    std::process::exit(1);
 }
