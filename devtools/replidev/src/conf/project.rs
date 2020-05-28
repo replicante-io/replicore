@@ -7,7 +7,7 @@ pub enum Project {
     #[serde(rename = "agents")]
     Agents,
 
-    /// Replicante Common crates for both core and agents.
+    /// Replicante Common crates for both core and agents
     #[serde(rename = "common")]
     Common,
 
@@ -15,9 +15,13 @@ pub enum Project {
     #[serde(rename = "core")]
     Core,
 
-    /// Replicante Playgrounds Projects
+    /// Replicante Playgrounds Project
     #[serde(rename = "playground")]
     Playground,
+
+    /// Replicante WebUI Project
+    #[serde(rename = "webui")]
+    WebUI,
 }
 
 impl Project {
@@ -47,8 +51,24 @@ impl Project {
             Self::Agents => true,
             Self::Common => true,
             Self::Core => true,
+            Self::WebUI => true,
             _ => false,
         }
+    }
+
+    /// Search for rust crates during the release process of this project.
+    pub fn search_for_crates(&self) -> bool {
+        match self {
+            Self::Agents => true,
+            Self::Common => true,
+            Self::Core => true,
+            _ => false,
+        }
+    }
+
+    /// Search for npm packages during the release process of this project.
+    pub fn search_for_npm(&self) -> bool {
+        *self == Self::WebUI
     }
 }
 
@@ -59,6 +79,7 @@ impl std::fmt::Display for Project {
             Self::Common => write!(fmt, "common"),
             Self::Core => write!(fmt, "core"),
             Self::Playground => write!(fmt, "playground"),
+            Self::WebUI => write!(fmt, "webui"),
         }
     }
 }

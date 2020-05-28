@@ -2,19 +2,31 @@ use std::collections::BTreeMap;
 
 use serde::Deserialize;
 
+mod build_cmd;
+mod copy_cmd;
 mod exec_cmd;
 mod pod_inspect_cmd;
 mod pod_ps_cmd;
 mod pod_start_cmd;
 mod pod_stop_cmd;
+mod pull_cmd;
+mod push_cmd;
+mod run_cmd;
+mod stop_cmd;
 mod unshare_cmd;
 
-pub use self::exec_cmd::exec;
-pub use self::pod_inspect_cmd::pod_inspect;
-pub use self::pod_ps_cmd::pod_ps;
-pub use self::pod_start_cmd::pod_start;
-pub use self::pod_stop_cmd::pod_stop;
-pub use self::unshare_cmd::unshare;
+pub use build_cmd::build;
+pub use copy_cmd::copy;
+pub use exec_cmd::exec;
+pub use pod_inspect_cmd::pod_inspect;
+pub use pod_ps_cmd::pod_ps;
+pub use pod_start_cmd::pod_start;
+pub use pod_stop_cmd::pod_stop;
+pub use pull_cmd::pull;
+pub use push_cmd::push;
+pub use run_cmd::run;
+pub use stop_cmd::stop;
+pub use unshare_cmd::unshare;
 
 /// Definition of a pod to start with podman.
 #[derive(Clone, Debug, Deserialize)]

@@ -16,6 +16,10 @@ pub use error::Result;
 #[derive(Debug, StructOpt)]
 #[structopt(name = "replidev", about = "Replicante Development Tool")]
 enum Opt {
+    /// Run the given cargo command in all workspaces.
+    #[structopt(name = "cargo")]
+    Cargo(command::cargo::Opt),
+
     /// Configuration related commands.
     #[structopt(name = "conf")]
     Configuration(command::conf::Opt),
@@ -69,6 +73,7 @@ pub fn run() -> anyhow::Result<i32> {
     // Run all commands inside the tokio runtime.
     let result = local.block_on(&mut runtime, async {
         match args {
+            Opt::Cargo(cargo) => command::cargo::run(cargo, &conf).await,
             Opt::Configuration(cfg) => command::conf::run(cfg, conf).await,
             Opt::Dependencies(deps) => command::deps::run(deps, conf).await,
             Opt::GenCerts(certs) => command::certs::run(certs, conf).await,

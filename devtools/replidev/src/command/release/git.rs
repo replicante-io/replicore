@@ -1,20 +1,26 @@
-use std::path::PathBuf;
+use std::path::Path;
 
 use anyhow::Context;
 use anyhow::Result;
+use chrono::Utc;
 use git2::DiffOptions;
 use git2::Repository;
 use git2::StatusOptions;
 use git2::Tree;
+use tokio::process::Command;
 
-use super::CheckOpt;
+use super::version;
+use crate::conf::Conf;
+use crate::conf::ReleaseTag;
 use crate::error::ReleaseCheck;
+
+const GIT_TAG_ERROR: &str = "Failed to tag the current git commit";
 
 /// Detect any changes in the given path since the given tree.
 pub fn changes_in_path<'repo>(
     repo: &'repo Repository,
     tree: &Tree<'repo>,
-    path: &PathBuf,
+    path: &Path,
 ) -> Result<bool> {
     let mut options = DiffOptions::new();
     options.max_size(-1).pathspec(path.as_os_str());
@@ -27,7 +33,7 @@ pub fn changes_in_path<'repo>(
 }
 
 /// Check if the git working directory is clean.
-pub async fn check_clean(args: &CheckOpt) -> Result<()> {
+pub async fn check_clean(allow_dirty: bool) -> Result<()> {
     // Figure out state of the repo.
     let repo = Repository::discover(".").expect("unable to find repository");
     let mut options = StatusOptions::new();
@@ -48,12 +54,11 @@ pub async fn check_clean(args: &CheckOpt) -> Result<()> {
     }
 
     // Warn if the user --allow-dirty or fail if not.
-    if args.allow_dirty {
-        eprintln!("Not all git changes are committed but --allow-dirty was set.");
-        eprintln!("Results may not be accurrate.");
+    if allow_dirty {
+        eprintln!("Not all changes are committed to git but --allow-dirty was set.");
         return Ok(());
     }
-    let error = anyhow::anyhow!("Not all git changes are committed");
+    let error = anyhow::anyhow!("Not all changes are committed to git");
     ReleaseCheck::failed(error)
 }
 
@@ -81,4 +86,31 @@ pub async fn find_most_recent_tag() -> Result<String> {
     .await
     .context("Failed to find most recent tag")??;
     Ok(tag)
+}
+
+/// Tag the current commit with the release version determined based on the configuration.
+pub async fn tag(conf: &Conf) -> Result<()> {
+    // We check this is set at the beginning of replidev release publish.
+    let source = conf.release_tag.as_ref().unwrap();
+    let version = match source {
+        ReleaseTag::Cargo { path } => {
+            let version = version::cargo(&path).await?;
+            format!("v{}", version)
+        }
+        ReleaseTag::Date => Utc::now().format("%Y-%m-%d").to_string(),
+        ReleaseTag::Npm { path } => {
+            let version = version::npm(&path).await?;
+            format!("v{}", version)
+        }
+    };
+
+    // Call git to create the tag.
+    println!("--> Tagging the current commit as {}", version);
+    let mut git = Command::new("git");
+    git.arg("tag").arg(version);
+    let status = git.status().await.context(GIT_TAG_ERROR)?;
+    if !status.success() {
+        anyhow::bail!(GIT_TAG_ERROR);
+    }
+    Ok(())
 }

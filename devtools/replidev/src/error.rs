@@ -73,6 +73,13 @@ impl ReleaseCheck {
     }
 }
 
+impl From<anyhow::Error> for ReleaseCheck {
+    fn from(error: anyhow::Error) -> ReleaseCheck {
+        let errors = vec![error];
+        ReleaseCheck { errors }
+    }
+}
+
 // TODO: remove failure errors and code once replacement is complete.
 /// Error information returned by functions in case of errors.
 #[derive(Debug)]

@@ -1,17 +1,20 @@
+*.log
 *.swp
 **/*.rs.bk
 
-/target/
-ci/tmp/
-**/node_modules/
-
-# Ingore nested cargo locks but keep the root one.
+# Ingore nested cargo locks but keep the root & replidev ones.
 **/Cargo.lock
 !Cargo.lock
+!devtools/replidev/Cargo.lock
+
+# buildah requires targets path to be explicitly listed.
+devtools/replidev/target/
+target/
+
 
 # Local testing and development tools.
-deps.dot
-deps.svg
+devtools/deps/data
+devtools/deps/pki
+devtools/replicante.conf.d/
 replicante.yaml
-conf.d
-devtools/data/
+replidev.local.yaml
