@@ -1,6 +1,6 @@
 [package]
 name = "replicante_store_view"
-version = "0.1.0"
+version = "0.2.0"
 authors = ["Stefano Pogliani <stefano@spogliani.net>"]
 edition = "2018"
 

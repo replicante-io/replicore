@@ -1,28 +1,26 @@
-# Replicante Core Release Steps
+# Releasing Replicante Core
+All replicante projects must be released using the `replidev release` commands.
+These commands will guide the you through release tasks,
+automating the repetitive parts and performing checks along the way.
 
-- Manual steps 1:
-  - [ ] Bump the version number of all crates that need it
-  - [ ] Update changelog with version and date
-- [ ] Scripted steps 1: `ci/release/prep.sh vX.Y.Z`
-  - Ensure dependences are up to date
-  - Ensure tests and CI checks pass
-  - Update cargo lock file
-  - Ensure docker image builds correctly
-- Manual steps 2:
-  - [ ] Git commit and tag release
-- [ ] Scripted steps 2: `ci/release/artefacts.sh vX.Y.Z`
-  - Build and push docker image
-  - Build pre-built binaries
-- Manual steps 3:
-  - [ ] Create GitHub release
-  - [ ] Release pre-built binaries
+```bash
+# Prepare the repository for release.
+# This command will guide you to update changelogs and versions.
+$ replidev release prep
 
+# Commit any changes done during the prep phase.
+$ git commit .
 
-## Pre-built binaries
-Pre-built binaries can help speed up installations and reduce barrier to entry.
-They **DO NOT** aim to be fully portable across major linux distributions.
-In particular they use a relatively recent version of `glibc` that is unlikely
-to be available on older or "slower" distributions (ubuntu 14.04, CentOS, ...).
+# Run checks to ensure the release is ready.
+$ replidev release check
 
-The `ci/release/artefacts.sh` script will produce the pre-built binaries
-to upload to GitHub in the `target/gh-releases` directory.
+# Once all changes are committed and the checks pass publish the release.
+# This will also publish any crate/docker image in the project and tag the current commit.
+$ replidev release publish
+
+# Push the release commit (if needed) and the release tag.
+$ git push
+$ git push --tags
+
+# Create the new release in GitHub and attach the collected binaries to it.
+```
