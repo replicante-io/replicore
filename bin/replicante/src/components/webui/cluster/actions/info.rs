@@ -43,12 +43,15 @@ impl ActionInfo {
     pub fn resource(&self) -> impl HttpServiceFactory {
         let logger = self.logger.clone();
         let tracer = Arc::clone(&self.tracer);
-        let tracer =
-            TracingMiddleware::with_name(logger, tracer, "/cluster/{cluster}/action/{action}");
-        web::resource("/action/{action}")
+        let tracer = TracingMiddleware::with_name(
+            logger,
+            tracer,
+            "/cluster/{cluster_id}/action/{action_id}",
+        );
+        web::resource("/action/{action_id}")
             .data(self.data.clone())
             .wrap(tracer)
-            .route(web::post().to(responder))
+            .route(web::get().to(responder))
     }
 }
 

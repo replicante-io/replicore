@@ -117,7 +117,10 @@ impl ContextStore {
             .with_context(|| format!("unable to open contexts store at {}", &path))?;
         file.write_all(&buffer)
             .await
-            .with_context(|| format!("unable to write contexts store to {}", path))
+            .with_context(|| format!("unable to write contexts store to {}", &path))?;
+        file.flush()
+            .await
+            .with_context(|| format!("unable to flush contexts store to {}", path))
     }
 
     /// Set the active context name persisted by the store.

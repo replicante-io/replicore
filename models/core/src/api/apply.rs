@@ -21,10 +21,17 @@ pub const SCOPE_ATTRS: &[&str] = &[SCOPE_NS, SCOPE_CLUSTER, SCOPE_NODE];
 /// Essential attributes on an `apply` object, decoded.
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct ApplyObject {
+    /// Identify object group and schema version.
     #[serde(rename = "apiVersion")]
     pub api_version: String,
+
+    /// Identify the kind of object being applied.
     pub kind: String,
+
+    /// Structured metadata object.
     pub metadata: HashMap<String, Value>,
+
+    /// Additional attributes based on apiVersion and kind.
     #[serde(flatten)]
     pub attributes: HashMap<String, Value>,
 }
