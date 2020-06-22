@@ -13,19 +13,11 @@ dist: bionic
 # Configure the build jobs.
 language: rust
 
-# Cargo cache grows really fast for a few reason.
-# Using the default configuration quickly leads to cache management times 
-# to exceed un-cached build times and makes things worse.
-# We use some tricks to cache some of the stuff but not everything in CI.
+# Cargo cache grows really fast for a few reasons and
+# cache management times end up exceeding un-cached build times.
 #
-# See https://github.com/rust-lang/cargo/issues/5885
-before_cache:
-  - ci/travis/prep-cargo-cache.sh
-cache:
-  directories:
-    - $HOME/.cargo
-    - target/
-
+# A couple of attempts were made to optimise caching
+# and the complexity of scripts was not worth it.
 rust:
   - stable   # Target rust version.
   - 1.43.0   # Earliest supported rust version.
@@ -40,9 +32,7 @@ env:
     - TASK=audit
 
 install: ci/travis.sh install "${TASK}"
-script:
-  - ci/travis/cargo-clean-on-new-rustc.sh
-  - ci/travis.sh script "${TASK}"
+script: ci/travis.sh script "${TASK}"
 
 jobs:
   allow_failures:
