@@ -1,7 +1,7 @@
 # Rewrite codebase to be async
 Status: BLOCKED (see timeline below)
 Reason: Async code is awesome and would likey simplify some concepts in the codebase.
-Blocking something: NO
+Blocking something: YES (rewrite-tasks)
 
 
 ## Task

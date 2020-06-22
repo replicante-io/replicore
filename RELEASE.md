@@ -14,6 +14,9 @@ $ git commit .
 # Run checks to ensure the release is ready.
 $ replidev release check
 
+# Make sure you are logged into docker hub so the push can suceed:
+$ podman login registry-1.docker.io
+
 # Once all changes are committed and the checks pass publish the release.
 # This will also publish any crate/docker image in the project and tag the current commit.
 $ replidev release publish

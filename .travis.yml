@@ -20,7 +20,7 @@ language: rust
 # and the complexity of scripts was not worth it.
 rust:
   - stable   # Target rust version.
-  - 1.43.0   # Earliest supported rust version.
+  - 1.44.0   # Earliest supported rust version.
   - nightly  # "The Rust team appreciates" according to Travis.
 
 env:

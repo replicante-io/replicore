@@ -38,6 +38,32 @@ api:
     # NOTE: Setting this to null (~) will turn off write timeouts.
     write: 1
 
+  # TLS (for HTTPS) certificates configuration.
+  #
+  # By default, the agent starts without TLS enabled and serves requests over HTTP.
+  # Because this is an insecure channel and anyone could be making requests
+  # **actions are disabled** unless **mutual client** certificate validation is performed.
+  #
+  # HTTPS without mutual authentication can also be enabled by providing the server
+  # with a TLS certificate and a TLS private key but **actions will still be disabled**.
+  tls: ~
+    # Optional path to a PEM bundle of trusted CAs for client authentication.
+    #
+    # This is **required** for actions to be enabled.
+    # If actions are explicitly enabled but no clients bundles are provided the agent
+    # will error on startup to notify about the incorrect configuration.
+    #clients_ca_bundle: ~
+  
+    # Path to a PEM file with the server's public certificate.
+    #
+    # Required if the `tls` option is set (not ~).
+    #server_cert: '/path/to/certs/server-cert.pem'
+  
+    # Path to a PEM file with the server's PRIVATE certificate.
+    #
+    # Required if the `tls` option is set (not ~).
+    #server_key: '/path/to/certs/server-key.pem'
+
   # Enable/disable entire API trees.
   #
   # Useful for advanced operators that which to control access to experimental or legacy
