@@ -24,6 +24,10 @@ enum Opt {
     #[structopt(name = "conf")]
     Configuration(command::conf::Opt),
 
+    /// Run curl, adding client certificates when projects have them.
+    #[structopt(name = "curl")]
+    Curl(command::curl::Opt),
+
     /// Manage Replicante Core dependencies.
     #[structopt(name = "deps")]
     Dependencies(command::deps::Opt),
@@ -75,6 +79,7 @@ pub fn run() -> anyhow::Result<i32> {
         match args {
             Opt::Cargo(cargo) => command::cargo::run(cargo, &conf).await,
             Opt::Configuration(cfg) => command::conf::run(cfg, conf).await,
+            Opt::Curl(cfg) => command::curl::run(cfg, conf).await,
             Opt::Dependencies(deps) => command::deps::run(deps, conf).await,
             Opt::GenCerts(certs) => command::certs::run(certs, conf).await,
             Opt::Play(play) => command::play::run(play, conf).await,
