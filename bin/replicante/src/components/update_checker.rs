@@ -5,6 +5,7 @@ use humthreads::Builder;
 use lazy_static::lazy_static;
 use semver::Version;
 use serde_derive::Deserialize;
+use slog::debug;
 use slog::warn;
 use slog::Logger;
 
@@ -38,6 +39,7 @@ impl UpdateChecker {
 impl Component for UpdateChecker {
     fn run(&mut self, _: &mut Upkeep) -> Result<()> {
         let logger = self.logger.clone();
+        debug!(logger, "Spawning update checker thread");
         Builder::new("r:c:update_checker")
             .full_name("replicante:component:update_checker")
             .spawn(move |scope| {

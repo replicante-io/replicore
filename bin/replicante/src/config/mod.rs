@@ -35,6 +35,14 @@ pub use self::storage::StorageConfig;
 pub use self::task_workers::TaskWorkers;
 pub use self::timeouts::TimeoutsConfig;
 
+const PROJECT_PREFIXES: [&str; 5] = [
+    "repliagent",
+    "replicante",
+    "replicommon",
+    "replicore",
+    "replictl",
+];
+
 /// Replicante configuration options.
 #[derive(Clone, Eq, PartialEq, Hash, Debug, Serialize, Deserialize)]
 pub struct Config {
@@ -114,14 +122,12 @@ impl Config {
         // With !verbose logging debug level applies only to replicante crates.
         if self.logging.level == LoggingLevel::Debug && !self.logging.verbose {
             self.logging.level = LoggingLevel::Info;
-            self.logging
-                .modules
-                .entry("replicante".into())
-                .or_insert(LoggingLevel::Debug);
-            self.logging
-                .modules
-                .entry("replictl".into())
-                .or_insert(LoggingLevel::Debug);
+            for prefix in &PROJECT_PREFIXES {
+                self.logging
+                    .modules
+                    .entry(prefix.to_string())
+                    .or_insert(LoggingLevel::Debug);
+            }
         }
         self
     }

@@ -16,7 +16,6 @@ use replicante_models_core::cluster::ClusterDiscovery;
 use replicante_models_core::scope::Namespace;
 use replicante_service_coordinator::NonBlockingLockWatcher;
 use replicante_store_primary::store::Store as PrimaryStore;
-use replicante_store_view::store::Store as ViewStore;
 use replicante_stream_events::Stream as EventsStream;
 use replicante_util_failure::failure_info;
 
@@ -99,16 +98,10 @@ impl Fetcher {
         logger: Logger,
         events: EventsStream,
         primary_store: PrimaryStore,
-        view_store: ViewStore,
         timeout: Duration,
         tracer: Arc<Tracer>,
     ) -> Fetcher {
-        let actions = ActionsFetcher::new(
-            events.clone(),
-            primary_store.clone(),
-            view_store,
-            logger.clone(),
-        );
+        let actions = ActionsFetcher::new(events.clone(), primary_store.clone(), logger.clone());
         let agent = AgentFetcher::new(events.clone(), primary_store.clone());
         let node = NodeFetcher::new(events.clone(), primary_store.clone());
         let shard = ShardFetcher::new(events, primary_store.clone());

@@ -16,10 +16,6 @@ pub struct ComponentsConfig {
     #[serde(default)]
     discovery: Option<bool>,
 
-    /// Enable events stream indexing.
-    #[serde(default)]
-    events_indexer: Option<bool>,
-
     /// Enable Grafana Annotations API endpoints (optional).
     #[serde(default)]
     grafana: Option<bool>,
@@ -27,6 +23,9 @@ pub struct ComponentsConfig {
     /// Enable the update checker (optional).
     #[serde(default = "ComponentsConfig::default_false")]
     update_checker: bool,
+
+    /// Enable the view DB updater.
+    viewupdater: Option<bool>,
 
     /// Enable the WebUI API endpoints (optional).
     #[serde(default)]
@@ -43,9 +42,9 @@ impl Default for ComponentsConfig {
             default: Self::default_default(),
             core_api: None,
             discovery: None,
-            events_indexer: None,
             grafana: None,
             update_checker: Self::default_false(),
+            viewupdater: None,
             webui: None,
             workers: None,
         }
@@ -73,11 +72,6 @@ impl ComponentsConfig {
         self.discovery.unwrap_or(self.default)
     }
 
-    /// Check if the events indexer component is enabled.
-    pub fn events_indexer(&self) -> bool {
-        self.events_indexer.unwrap_or(self.default)
-    }
-
     /// Check if the Grafana Annotations endpoints component is enabled.
     pub fn grafana(&self) -> bool {
         self.grafana.unwrap_or(self.default)
@@ -86,6 +80,11 @@ impl ComponentsConfig {
     /// Check if the update checker component is enabled.
     pub fn update_checker(&self) -> bool {
         self.update_checker
+    }
+
+    /// Check if the view DB updater component is enabled.
+    pub fn viewupdater(&self) -> bool {
+        self.viewupdater.unwrap_or(self.default)
     }
 
     /// Check if the WebUI endpoints component is enabled.

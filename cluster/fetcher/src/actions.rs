@@ -1,6 +1,5 @@
 use std::collections::HashSet;
 
-use chrono::DateTime;
 use chrono::Utc;
 use failure::Fail;
 use failure::ResultExt;
@@ -11,16 +10,12 @@ use uuid::Uuid;
 
 use replicante_agent_client::Client;
 use replicante_models_agent::actions::api::ActionScheduleRequest;
-use replicante_models_agent::actions::ActionHistoryItem;
 use replicante_models_core::actions::Action;
-use replicante_models_core::actions::ActionHistory;
-use replicante_models_core::actions::ActionHistoryOrigin;
 use replicante_models_core::actions::ActionState;
 use replicante_models_core::events::Event;
 use replicante_store_primary::store::actions::ActionSyncState;
 use replicante_store_primary::store::actions::MAX_ACTIONS_STATE_FOR_SYNC;
 use replicante_store_primary::store::Store as PrimaryStore;
-use replicante_store_view::store::Store as ViewStore;
 use replicante_stream_events::EmitMessage;
 use replicante_stream_events::Stream as EventsStream;
 use replicante_util_failure::SerializableFail;
@@ -40,21 +35,18 @@ pub(crate) struct ActionsFetcher {
     events: EventsStream,
     logger: Logger,
     primary_store: PrimaryStore,
-    view_store: ViewStore,
 }
 
 impl ActionsFetcher {
     pub fn new(
         events: EventsStream,
         primary_store: PrimaryStore,
-        view_store: ViewStore,
         logger: Logger,
     ) -> ActionsFetcher {
         ActionsFetcher {
             events,
             logger,
             primary_store,
-            view_store,
         }
     }
 
@@ -133,8 +125,10 @@ impl ActionsFetcher {
             )
             .with_context(|_| ErrorKind::PrimaryStoreRead("iter lost actions"))?;
         for action in lost {
-            let action =
+            let mut action =
                 action.with_context(|_| ErrorKind::PrimaryStoreRead("iter lost actions"))?;
+            action.finished_ts = Some(finished_ts);
+            action.state = ActionState::Lost;
             let event = Event::builder().action().lost(action);
             let code = event.code();
             let stream_key = event.stream_key();
@@ -147,8 +141,6 @@ impl ActionsFetcher {
         }
 
         // Update these actions to be lost once events have been sent.
-        // NOTE: this will cause the view store to get out of sync.
-        // NOTE: re-architect the view database for actions based on the events stream.
         self.primary_store
             .actions(cluster_id.to_string())
             .mark_lost(
@@ -326,69 +318,25 @@ impl ActionsFetcher {
         }
 
         // Persist the new action information.
+        let event = Event::builder().action().history(
+            action.cluster_id.clone(),
+            action.node_id.clone(),
+            action.action_id,
+            action.finished_ts,
+            info.history,
+        );
+        let code = event.code();
+        let stream_key = event.stream_key();
+        let event = EmitMessage::with(stream_key, event)
+            .with_context(|_| ErrorKind::EventEmit(code))?
+            .trace(span.context().clone());
+        self.events
+            .emit(event)
+            .with_context(|_| ErrorKind::EventEmit(code))?;
         self.primary_store
             .persist()
-            .action(action.clone(), span.context().clone())
-            .with_context(|_| ErrorKind::PrimaryStoreWrite("action"))?;
-        self.sync_view_store(cluster_id, node_id, action, info.history, span)
-    }
-
-    fn sync_view_store(
-        &self,
-        cluster_id: &str,
-        node_id: &str,
-        action: Action,
-        history: Vec<ActionHistoryItem>,
-        span: &mut Span,
-    ) -> Result<()> {
-        // Update the current action record.
-        let action_id = action.action_id;
-        let finished_ts = action.finished_ts;
-        self.view_store
-            .persist()
             .action(action, span.context().clone())
-            .with_context(|_| ErrorKind::ViewStoreWrite("action"))?;
-
-        // Insert any new action history records.
-        // History records are append only (with the exception of the finished_ts field)
-        // so we either have them and ignore them or insert them.
-        let known_history: HashSet<(DateTime<Utc>, ActionState)> = self
-            .view_store
-            .actions(cluster_id.to_string())
-            .history(action_id, span.context().clone())
-            .with_context(|_| ErrorKind::ViewStoreRead("action history transitions"))?
-            .into_iter()
-            .filter(|history| history.origin == ActionHistoryOrigin::Agent)
-            .map(|history| (history.timestamp, history.state))
-            .collect();
-        let history: Vec<_> = history
-            .into_iter()
-            .filter(|history| {
-                !known_history.contains(&(history.timestamp, history.state.clone().into()))
-            })
-            .map(|history| {
-                ActionHistory::new(
-                    cluster_id.to_string(),
-                    node_id.to_string(),
-                    history,
-                    ActionHistoryOrigin::Agent,
-                )
-            })
-            .collect();
-        if !history.is_empty() {
-            self.view_store
-                .persist()
-                .action_history(history, span.context().clone())
-                .with_context(|_| ErrorKind::ViewStoreWrite("action history transitions"))?;
-        }
-
-        // If finished, set finished_ts on all history items so they can be cleaned up.
-        if let Some(finished_ts) = finished_ts {
-            self.view_store
-                .actions(cluster_id.to_string())
-                .finish_history(action_id, finished_ts, span.context().clone())
-                .with_context(|_| ErrorKind::ViewStoreWrite("history finish timestamp"))?;
-        }
+            .with_context(|_| ErrorKind::PrimaryStoreWrite("action"))?;
         Ok(())
     }
 }
@@ -415,7 +363,6 @@ mod tests {
     use replicante_models_core::actions::ActionState as ActionStateCore;
     use replicante_store_primary::mock::Mock as PrimaryStoreMock;
     use replicante_store_primary::store::actions::ActionSyncState;
-    use replicante_store_view::mock::Mock as ViewStoreMock;
     use replicante_stream_events::Stream as EventsStream;
 
     use super::ActionsFetcher;
@@ -487,13 +434,8 @@ mod tests {
 
         // Use the fetcher to check which IDs need to be synced.
         let stream = EventsStream::mock();
-        let view_store = ViewStoreMock::default().store();
-        let fetcher = ActionsFetcher::new(
-            stream,
-            store.clone().store(),
-            view_store,
-            Logger::root(Discard, o!()),
-        );
+        let fetcher =
+            ActionsFetcher::new(stream, store.clone().store(), Logger::root(Discard, o!()));
         let remote_ids = vec![*UUID1, *UUID2, *UUID3, *UUID4];
         let (tracer, _) = NoopTracer::new();
         let mut span = tracer.span("test");
@@ -534,9 +476,8 @@ mod tests {
             },
         ];
         let store = PrimaryStoreMock::default().store();
-        let view_store = ViewStoreMock::default().store();
         let stream = EventsStream::mock();
-        let fetcher = ActionsFetcher::new(stream, store, view_store, Logger::root(Discard, o!()));
+        let fetcher = ActionsFetcher::new(stream, store, Logger::root(Discard, o!()));
         let (tracer, _) = NoopTracer::new();
         let mut span = tracer.span("test");
         let ids = fetcher
@@ -590,8 +531,7 @@ mod tests {
         ];
         let store = PrimaryStoreMock::default().store();
         let stream = EventsStream::mock();
-        let view_store = ViewStoreMock::default().store();
-        let fetcher = ActionsFetcher::new(stream, store, view_store, Logger::root(Discard, o!()));
+        let fetcher = ActionsFetcher::new(stream, store, Logger::root(Discard, o!()));
         let (tracer, _) = NoopTracer::new();
         let mut span = tracer.span("test");
         let ids = fetcher
@@ -621,13 +561,8 @@ mod tests {
 
         // Set up fetcher and run mark function.
         let stream = EventsStream::mock();
-        let view_store = ViewStoreMock::default().store();
-        let fetcher = ActionsFetcher::new(
-            stream,
-            store.clone().store(),
-            view_store,
-            Logger::root(Discard, o!()),
-        );
+        let fetcher =
+            ActionsFetcher::new(stream, store.clone().store(), Logger::root(Discard, o!()));
         let (tracer, _) = NoopTracer::new();
         let refresh_id = 1234;
         let mut span = tracer.span("test");
@@ -677,13 +612,8 @@ mod tests {
         // Set up fetcher and sync an action.
         let store = PrimaryStoreMock::default();
         let stream = EventsStream::mock();
-        let view_store = ViewStoreMock::default().store();
-        let fetcher = ActionsFetcher::new(
-            stream,
-            store.clone().store(),
-            view_store,
-            Logger::root(Discard, o!()),
-        );
+        let fetcher =
+            ActionsFetcher::new(stream, store.clone().store(), Logger::root(Discard, o!()));
         let (tracer, _) = NoopTracer::new();
         let refresh_id = 1234;
         let action = CoreAction::new("cluster", "node", refresh_id, action);
@@ -725,14 +655,9 @@ mod tests {
 
         // Set up fetcher and sync an action.
         let store = PrimaryStoreMock::default();
-        let view_store = ViewStoreMock::default().store();
         let stream = EventsStream::mock();
-        let fetcher = ActionsFetcher::new(
-            stream,
-            store.clone().store(),
-            view_store,
-            Logger::root(Discard, o!()),
-        );
+        let fetcher =
+            ActionsFetcher::new(stream, store.clone().store(), Logger::root(Discard, o!()));
         let (tracer, _) = NoopTracer::new();
         let refresh_id = 1234;
         let mut span = tracer.span("test");

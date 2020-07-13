@@ -100,6 +100,9 @@ pub enum ErrorKind {
     #[fail(display = "could not run already running component '{}'", _0)]
     ComponentAlreadyRunning(&'static str),
 
+    #[fail(display = "error while running the '{}' component", _0)]
+    ComponentFailed(&'static str),
+
     #[fail(display = "could not deserialize {} into {}", _0, _1)]
     Deserialize(&'static str, &'static str),
 
@@ -168,6 +171,7 @@ impl ErrorKind {
             ErrorKind::ConfigLoad => "ConfigLoad",
             ErrorKind::Coordination => "Coordination",
             ErrorKind::ComponentAlreadyRunning(_) => "ComponentAlreadyRunning",
+            ErrorKind::ComponentFailed(_) => "ComponentFailed",
             ErrorKind::Deserialize(_, _) => "Deserialize",
             ErrorKind::EventsStreamEmit(_) => "EventsStreamEmit",
             ErrorKind::EventsStreamFollow(_) => "EventsStreamFollow",

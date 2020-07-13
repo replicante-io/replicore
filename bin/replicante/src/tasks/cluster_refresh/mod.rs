@@ -107,7 +107,6 @@ impl Handler {
         agents_timeout: Duration,
     ) -> Handler {
         let primary_store = interfaces.stores.primary.clone();
-        let view_store = interfaces.stores.view.clone();
         let aggregator = Aggregator::new(logger.clone(), primary_store.clone());
         let coordinator = interfaces.coordinator.clone();
         let events = interfaces.streams.events.clone();
@@ -115,7 +114,6 @@ impl Handler {
             logger.clone(),
             interfaces.streams.events.clone(),
             primary_store.clone(),
-            view_store,
             agents_timeout,
             interfaces.tracing.tracer(),
         );

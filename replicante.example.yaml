@@ -144,9 +144,6 @@ components:
   # Enable/disable agent discovery.
   discovery: null
 
-  # Enable events stream indexing.
-  events_indexer: null
-
   # Enable Grafana Annotations API endpoints (optional).
   grafana: null
 
@@ -159,6 +156,9 @@ components:
   # to ensure the user privacy is respected (HTTP requests can be tracked).
   # If this option is not enabled, you will have to make sure you keep replicante up to date.
   update_checker: false
+
+  # Enable the view DB updater.
+  viewupdater: null
 
   # Enable the WebUI API endpoints (optional).
   #

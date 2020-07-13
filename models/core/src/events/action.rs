@@ -1,5 +1,10 @@
+use chrono::DateTime;
+use chrono::Utc;
 use serde_derive::Deserialize;
 use serde_derive::Serialize;
+use uuid::Uuid;
+
+use replicante_models_agent::actions::ActionHistoryItem;
 
 use super::Event;
 use super::EventBuilder;
@@ -9,9 +14,19 @@ use crate::actions::Action;
 /// Hold data about an action change with before and after state.
 #[derive(Clone, PartialEq, Debug, Serialize, Deserialize)]
 pub struct ActionChanged {
-    cluster_id: String,
-    current: Action,
-    previous: Action,
+    pub cluster_id: String,
+    pub current: Action,
+    pub previous: Action,
+}
+
+/// Hold data about an action history from the agent.
+#[derive(Clone, PartialEq, Debug, Serialize, Deserialize)]
+pub struct ActionHistory {
+    pub action_id: Uuid,
+    pub cluster_id: String,
+    pub finished_ts: Option<DateTime<Utc>>,
+    pub history: Vec<ActionHistoryItem>,
+    pub node_id: String,
 }
 
 /// Enumerates all possible action events emitted by the system.
@@ -28,6 +43,10 @@ pub enum ActionEvent {
     #[serde(rename = "ACTION_FINISHED")]
     Finished(Action),
 
+    /// Snapshot of an action's history.
+    #[serde(rename = "ACTION_HISTORY")]
+    History(ActionHistory),
+
     /// An unfinished action was no longer reported by the originating agent.
     #[serde(rename = "ACTION_LOST")]
     Lost(Action),
@@ -43,6 +62,7 @@ impl ActionEvent {
         let cluster_id = match self {
             ActionEvent::Changed(change) => &change.cluster_id,
             ActionEvent::Finished(action) => &action.cluster_id,
+            ActionEvent::History(info) => &info.cluster_id,
             ActionEvent::Lost(action) => &action.cluster_id,
             ActionEvent::New(action) => &action.cluster_id,
         };
@@ -54,6 +74,7 @@ impl ActionEvent {
         match self {
             ActionEvent::Changed(_) => "ACTION_CHANGED",
             ActionEvent::Finished(_) => "ACTION_FINISHED",
+            ActionEvent::History(_) => "ACTION_HISTORY",
             ActionEvent::Lost(_) => "ACTION_LOST",
             ActionEvent::New(_) => "ACTION_NEW",
         }
@@ -85,6 +106,27 @@ impl ActionEventBuilder {
     /// Build an `ActionEvent::Finished` event.
     pub fn finished(self, action: Action) -> Event {
         let event = ActionEvent::Finished(action);
+        let payload = Payload::Action(event);
+        self.builder.finish(payload)
+    }
+
+    /// Build an `ActionEvent::History` event.
+    pub fn history(
+        self,
+        cluster_id: String,
+        node_id: String,
+        action_id: Uuid,
+        finished_ts: Option<DateTime<Utc>>,
+        history: Vec<ActionHistoryItem>,
+    ) -> Event {
+        let info = ActionHistory {
+            action_id,
+            cluster_id,
+            finished_ts,
+            history,
+            node_id,
+        };
+        let event = ActionEvent::History(info);
         let payload = Payload::Action(event);
         self.builder.finish(payload)
     }

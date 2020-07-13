@@ -1,0 +1,29 @@
+[package]
+name = "replicore_component_viewupdater"
+version = "0.1.0"
+authors = ["Stefano Pogliani <stefano@spogliani.net>"]
+edition = "2018"
+
+description = "Component to update the view DB based on the events stream"
+documentation = "https://www.replicante.io/docs"
+homepage = "https://www.replicante.io/"
+repository = "https://github.com/replicante-io/replicante"
+license = "MIT"
+
+
+[dependencies]
+chrono = { version = "^0.4.0", features = ["serde"] }
+failure = "^0.1.5"
+failure_derive = "^0.1.5"
+humthreads = "^0.2.0"
+opentracingrust = "^0.4.0"
+sentry = "^0.18.0"
+slog = "^2.2.0"
+
+replicante_models_core = { path = "../../../models/core" }
+replicante_store_view = { path = "../../../store/view" }
+replicante_stream = { path = "../../../stream/stream" }
+replicante_stream_events = { path = "../../../stream/events" }
+replicante_util_failure = { path = "../../../common/util/failure" }
+replicante_util_tracing = { path = "../../../common/util/tracing" }
+replicante_util_upkeep = { path = "../../../common/util/upkeep" }
