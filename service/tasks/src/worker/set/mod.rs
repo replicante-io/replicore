@@ -46,7 +46,7 @@ pub trait TaskHandler<Q: TaskQueue>: Send + Sync + 'static {
 
 impl<F, Q> TaskHandler<Q> for F
 where
-    F: Fn(Task<Q>) -> () + Send + Sync + 'static,
+    F: Fn(Task<Q>) + Send + Sync + 'static,
     Q: TaskQueue,
 {
     fn handle(&self, task: Task<Q>) {

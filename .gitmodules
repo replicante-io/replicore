@@ -1,3 +1,4 @@
 [submodule "common"]
+  branch = main
 	path = common
 	url = https://github.com/replicante-io/common.git
