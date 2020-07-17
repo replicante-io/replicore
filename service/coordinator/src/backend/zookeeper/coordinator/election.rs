@@ -315,7 +315,7 @@ struct ElectionContext {
 /// If this is a problem, rework the implementation to use more specific watcher as
 /// suggested by the official recipe.
 /// If priorities are needed they can still be added with an additional delete of the
-/// current master if a node is added with lower priority.
+/// current primary if a node is added with lower priority.
 pub struct ZookeeperElection {
     state: AtomicState,
 }

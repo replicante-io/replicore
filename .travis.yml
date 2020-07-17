@@ -1,7 +1,7 @@
-# Build master branch and versions tags (on top of PRs).
+# Build main branch and versions tags (on top of PRs).
 branches:
   only:
-    - master
+    - main
     - /^v\d+\.\d+\.\d+$/
 
 

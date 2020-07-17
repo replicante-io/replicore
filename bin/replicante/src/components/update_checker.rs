@@ -19,7 +19,7 @@ use crate::ErrorKind;
 use crate::Result;
 
 const UPDATE_META: &str =
-    "https://raw.githubusercontent.com/replicante-io/metadata/master/replicante/core/latest.json";
+    "https://raw.githubusercontent.com/replicante-io/metadata/main/replicante/core/latest.json";
 
 lazy_static! {
     static ref CURRENT_VERSION: Version = Version::parse(env!("CARGO_PKG_VERSION")).unwrap();

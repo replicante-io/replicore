@@ -26,7 +26,7 @@ impl HealthCheck for MongoDBHealthCheck {
         };
         match info.get_bool("ismaster") {
             Ok(true) => HealthStatus::Healthy,
-            Ok(false) => HealthStatus::Failed("master not found".to_string()),
+            Ok(false) => HealthStatus::Failed("primary node not found".to_string()),
             Err(error) => HealthStatus::Failed(error.to_string()),
         }
     }
