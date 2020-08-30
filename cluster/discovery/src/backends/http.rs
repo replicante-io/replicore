@@ -12,10 +12,10 @@ use serde_derive::Serialize;
 use serde_json::Map;
 use serde_json::Value;
 
-use replicante_models_core::cluster::ClusterDiscovery;
+use replicante_models_core::cluster::discovery::ClusterDiscovery;
+use replicante_models_core::cluster::discovery::HttpDiscovery;
+use replicante_models_core::cluster::discovery::HttpRequestMethod;
 
-use crate::config::HttpConfig;
-use crate::config::HttpRequestMethod;
 use crate::metrics::DISCOVERY_ERRORS;
 use crate::metrics::DISCOVERY_TOTAL;
 use crate::Error;
@@ -84,7 +84,7 @@ pub struct Iter {
     body: Map<String, Value>,
     buffer: Vec<ClusterDiscovery>,
     client: Option<Client>,
-    config: Option<HttpConfig>,
+    config: Option<HttpDiscovery>,
     cursor: Option<String>,
     failed_or_done: bool,
     method: HttpRequestMethod,
@@ -92,7 +92,7 @@ pub struct Iter {
 }
 
 impl Iter {
-    pub fn new(config: HttpConfig) -> Iter {
+    pub fn new(config: HttpDiscovery) -> Iter {
         let body = config.body.clone().unwrap_or_default();
         let method = config.method.clone();
         let url = config.url.clone();
@@ -128,7 +128,7 @@ impl Iter {
     }
 
     /// Initialise the HTTP client to make requests with.
-    fn init_client(config: HttpConfig) -> Result<Client> {
+    fn init_client(config: HttpDiscovery) -> Result<Client> {
         let mut headers = HeaderMap::with_capacity(config.headers.len());
         for (key, value) in config.headers {
             let key = HeaderName::from_bytes(key.as_bytes())

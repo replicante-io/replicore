@@ -10,6 +10,7 @@ use replicante_models_core::actions::ActionState;
 use replicante_models_core::agent::AgentInfo;
 use replicante_models_core::agent::Node;
 use replicante_models_core::agent::Shard;
+use replicante_models_core::cluster::discovery::DiscoverySettings;
 
 /// Wrap an `Action` with store only fields and MongoDB specific types.
 #[derive(Clone, PartialEq, Debug, Serialize, Deserialize)]
@@ -114,6 +115,31 @@ impl From<AgentInfo> for AgentInfoDocument {
 impl From<AgentInfoDocument> for AgentInfo {
     fn from(wrapper: AgentInfoDocument) -> AgentInfo {
         wrapper.agent
+    }
+}
+
+/// Wraps a `DiscoverySettings` with store only fields.
+#[derive(Clone, Eq, PartialEq, Hash, Debug, Serialize, Deserialize)]
+pub struct DiscoverySettingsDocument {
+    #[serde(flatten)]
+    pub settings: DiscoverySettings,
+
+    /// Timestamp for the next expected discovery run.
+    pub next_run: Option<UtcDateTime>,
+}
+
+impl From<DiscoverySettings> for DiscoverySettingsDocument {
+    fn from(settings: DiscoverySettings) -> DiscoverySettingsDocument {
+        DiscoverySettingsDocument {
+            settings,
+            next_run: None,
+        }
+    }
+}
+
+impl From<DiscoverySettingsDocument> for DiscoverySettings {
+    fn from(document: DiscoverySettingsDocument) -> DiscoverySettings {
+        document.settings
     }
 }
 

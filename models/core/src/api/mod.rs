@@ -2,6 +2,7 @@ use serde_derive::Deserialize;
 use serde_derive::Serialize;
 
 pub mod apply;
+pub mod objects;
 pub mod validate;
 
 /// Replicante version information.

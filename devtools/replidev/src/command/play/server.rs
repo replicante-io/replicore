@@ -8,7 +8,7 @@ use actix_web::HttpServer;
 use actix_web::Responder;
 use failure::ResultExt;
 
-use replicante_models_core::cluster::ClusterDiscovery;
+use replicante_models_core::cluster::discovery::ClusterDiscovery;
 use replicante_util_failure::format_fail;
 
 use crate::Conf;

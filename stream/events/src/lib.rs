@@ -95,7 +95,7 @@ mod tests {
 
     use serde_json::json;
 
-    use replicante_models_core::cluster::ClusterDiscovery;
+    use replicante_models_core::cluster::discovery::ClusterDiscovery;
     use replicante_models_core::events::DeserializeResult;
     use replicante_models_core::events::Event;
     use replicante_stream::test_support::mock_message;

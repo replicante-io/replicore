@@ -66,7 +66,7 @@ impl StreamInterface<String> for VecStream {
         let iter = messages.into_iter().map(move |message| {
             let id = message.id;
             let headers = message.headers;
-            let payload = message.payload.into();
+            let payload = message.payload;
             let backend = Rc::new(VecMessage { id });
             Ok(Message::with_backend(
                 stream_id,
@@ -78,7 +78,7 @@ impl StreamInterface<String> for VecStream {
         });
         Ok(Iter::with_iter(
             self.stream_id,
-            group.clone(),
+            group,
             Backoff::fast(),
             thread,
             Box::new(iter),

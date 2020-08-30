@@ -13,17 +13,20 @@ use replicante_models_core::agent::Agent as AgentModel;
 use replicante_models_core::agent::AgentInfo as AgentInfoModel;
 use replicante_models_core::agent::Node as NodeModel;
 use replicante_models_core::agent::Shard as ShardModel;
-use replicante_models_core::cluster::ClusterDiscovery as ClusterDiscoveryModel;
+use replicante_models_core::cluster::discovery::ClusterDiscovery as ClusterDiscoveryModel;
+use replicante_models_core::cluster::discovery::DiscoverySettings as DiscoverySettingsModel;
 
 use super::super::PersistInterface;
 use super::constants::COLLECTION_ACTIONS;
 use super::constants::COLLECTION_AGENTS;
 use super::constants::COLLECTION_AGENTS_INFO;
 use super::constants::COLLECTION_DISCOVERIES;
+use super::constants::COLLECTION_DISCOVERY_SETTINGS;
 use super::constants::COLLECTION_NODES;
 use super::constants::COLLECTION_SHARDS;
 use super::document::ActionDocument;
 use super::document::AgentInfoDocument;
+use super::document::DiscoverySettingsDocument;
 use super::document::NodeDocument;
 use super::document::ShardDocument;
 use crate::ErrorKind;
@@ -118,6 +121,30 @@ impl PersistInterface for Persist {
         let document = match document {
             Bson::Document(document) => document,
             _ => panic!("ClusterDiscovery failed to encode as BSON document"),
+        };
+        replace_one(collection, filter, document, span, self.tracer.as_deref())
+            .with_context(|_| ErrorKind::MongoDBOperation)?;
+        Ok(())
+    }
+
+    fn discovery_settings(
+        &self,
+        settings: DiscoverySettingsModel,
+        span: Option<SpanContext>,
+    ) -> Result<()> {
+        let filter = doc! {
+            "namespace" => &settings.namespace,
+            "name" => &settings.name,
+        };
+        let collection = self
+            .client
+            .database(&self.db)
+            .collection(COLLECTION_DISCOVERY_SETTINGS);
+        let settings = DiscoverySettingsDocument::from(settings);
+        let document = bson::to_bson(&settings).with_context(|_| ErrorKind::MongoDBBsonEncode)?;
+        let document = match document {
+            Bson::Document(document) => document,
+            _ => panic!("DiscoverySettings failed to encode as BSON document"),
         };
         replace_one(collection, filter, document, span, self.tracer.as_deref())
             .with_context(|_| ErrorKind::MongoDBOperation)?;

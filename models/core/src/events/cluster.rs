@@ -4,7 +4,7 @@ use serde_derive::Serialize;
 use super::Event;
 use super::EventBuilder;
 use super::Payload;
-use crate::cluster::ClusterDiscovery;
+use crate::cluster::discovery::ClusterDiscovery;
 
 /// Metadata attached to cluster status change events.
 #[derive(Clone, Eq, PartialEq, Hash, Debug, Serialize, Deserialize)]
@@ -83,7 +83,7 @@ mod tests {
     use super::ClusterEvent;
     use super::Event;
     use super::Payload;
-    use crate::cluster::ClusterDiscovery;
+    use crate::cluster::discovery::ClusterDiscovery;
 
     #[test]
     fn changed() {

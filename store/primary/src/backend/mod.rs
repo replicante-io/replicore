@@ -18,7 +18,8 @@ use replicante_models_core::agent::Agent;
 use replicante_models_core::agent::AgentInfo;
 use replicante_models_core::agent::Node;
 use replicante_models_core::agent::Shard;
-use replicante_models_core::cluster::ClusterDiscovery;
+use replicante_models_core::cluster::discovery::ClusterDiscovery;
+use replicante_models_core::cluster::discovery::DiscoverySettings;
 use replicante_models_core::cluster::ClusterMeta;
 use replicante_service_healthcheck::HealthChecks;
 
@@ -426,6 +427,11 @@ box_interface! {
         fn cluster_discovery(
             &self,
             discovery: ClusterDiscovery,
+            span: Option<SpanContext>,
+        ) -> Result<()>;
+        fn discovery_settings(
+            &self,
+            settings: DiscoverySettings,
             span: Option<SpanContext>,
         ) -> Result<()>;
         fn node(&self, node: Node, span: Option<SpanContext>) -> Result<()>;

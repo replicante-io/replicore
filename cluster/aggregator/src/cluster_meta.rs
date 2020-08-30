@@ -3,7 +3,7 @@ use std::collections::HashSet;
 use failure::ResultExt;
 use opentracingrust::Span;
 
-use replicante_models_core::cluster::ClusterDiscovery;
+use replicante_models_core::cluster::discovery::ClusterDiscovery;
 use replicante_models_core::cluster::ClusterMeta;
 use replicante_store_primary::store::Store;
 

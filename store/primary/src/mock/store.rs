@@ -13,7 +13,8 @@ use replicante_models_core::agent::Agent;
 use replicante_models_core::agent::AgentInfo;
 use replicante_models_core::agent::Node;
 use replicante_models_core::agent::Shard;
-use replicante_models_core::cluster::ClusterDiscovery;
+use replicante_models_core::cluster::discovery::ClusterDiscovery;
+use replicante_models_core::cluster::discovery::DiscoverySettings;
 use replicante_models_core::cluster::ClusterMeta;
 
 use super::MockState;
@@ -298,6 +299,14 @@ impl PersistInterface for Persist {
         _: Option<SpanContext>,
     ) -> Result<()> {
         panic!("TODO: MockStore::Persist::cluster_discovery")
+    }
+
+    fn discovery_settings(
+        &self,
+        _settings: DiscoverySettings,
+        _: Option<SpanContext>,
+    ) -> Result<()> {
+        panic!("TODO: MockStore::Persist::discovery_settings")
     }
 
     fn node(&self, _node: Node, _: Option<SpanContext>) -> Result<()> {

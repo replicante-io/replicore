@@ -1,4 +1,4 @@
-use replicante_models_core::cluster::ClusterDiscovery;
+use replicante_models_core::cluster::discovery::ClusterDiscovery;
 
 use crate::config::Config;
 use crate::Result;
@@ -110,7 +110,7 @@ pub fn discover(config: Config) -> Iter {
 
 #[cfg(test)]
 mod tests {
-    use replicante_models_core::cluster::ClusterDiscovery;
+    use replicante_models_core::cluster::discovery::ClusterDiscovery;
 
     use super::Backend;
     use super::Iter;

@@ -1,38 +1,7 @@
 use serde_derive::Deserialize;
 use serde_derive::Serialize;
 
-/// Cluster description returned by the descovery system.
-///
-/// # Cluster membership
-///
-/// This model descibes the expected cluster members fully.
-/// The list of nodes is used to determine if nodes are down and
-/// when they are added and removed from the cluster.
-///
-///
-/// # Cluster configuration (future plan)
-///
-/// Any configuration option that replicante should apply to the cluster is defined in this model.
-#[derive(Clone, Eq, PartialEq, Hash, Debug, Serialize, Deserialize)]
-pub struct ClusterDiscovery {
-    pub cluster_id: String,
-    #[serde(default)]
-    pub display_name: Option<String>,
-    pub nodes: Vec<String>,
-}
-
-impl ClusterDiscovery {
-    pub fn new<S>(cluster_id: S, nodes: Vec<String>) -> ClusterDiscovery
-    where
-        S: Into<String>,
-    {
-        ClusterDiscovery {
-            cluster_id: cluster_id.into(),
-            display_name: None,
-            nodes,
-        }
-    }
-}
+pub mod discovery;
 
 /// Cluster metadata generated while fetching cluster state.
 #[derive(Clone, Eq, PartialEq, Hash, Debug, Serialize, Deserialize)]
@@ -71,28 +40,6 @@ impl ClusterMeta {
 
 #[cfg(test)]
 mod tests {
-    mod cluster_discovery {
-        use serde_json;
-
-        use super::super::ClusterDiscovery;
-
-        #[test]
-        fn from_json() {
-            let payload = r#"{"cluster_id":"test","nodes":["a","b"]}"#;
-            let cluster: ClusterDiscovery = serde_json::from_str(&payload).unwrap();
-            let expected = ClusterDiscovery::new("test", vec!["a".into(), "b".into()]);
-            assert_eq!(cluster, expected);
-        }
-
-        #[test]
-        fn to_json() {
-            let cluster = ClusterDiscovery::new("test", vec!["a".into(), "b".into()]);
-            let payload = serde_json::to_string(&cluster).unwrap();
-            let expected = r#"{"cluster_id":"test","display_name":null,"nodes":["a","b"]}"#;
-            assert_eq!(payload, expected);
-        }
-    }
-
     mod cluster_meta {
         use serde_json;
 

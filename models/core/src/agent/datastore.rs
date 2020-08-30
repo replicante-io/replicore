@@ -63,8 +63,6 @@ impl Shard {
 #[cfg(test)]
 mod tests {
     mod node {
-        use serde_json;
-
         use replicante_models_agent::info::DatastoreInfo as WireNode;
 
         use super::super::Node;

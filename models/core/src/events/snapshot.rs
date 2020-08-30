@@ -8,7 +8,7 @@ use crate::agent::Agent;
 use crate::agent::AgentInfo;
 use crate::agent::Node;
 use crate::agent::Shard;
-use crate::cluster::ClusterDiscovery;
+use crate::cluster::discovery::ClusterDiscovery;
 
 /// Enumerates all possible snapshot events emitted by the system.
 #[derive(Clone, Eq, PartialEq, Hash, Debug, Serialize, Deserialize)]

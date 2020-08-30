@@ -8,7 +8,7 @@ use slog::Logger;
 
 use replicante_cluster_discovery::discover;
 use replicante_cluster_discovery::Config as DiscoveryConfig;
-use replicante_models_core::cluster::ClusterDiscovery;
+use replicante_models_core::cluster::discovery::ClusterDiscovery;
 use replicante_service_coordinator::Election;
 use replicante_service_coordinator::Error as CoordinatorError;
 use replicante_service_coordinator::LoopingElectionControl;

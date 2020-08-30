@@ -12,7 +12,7 @@ use slog::debug;
 use slog::Logger;
 
 use replicante_store_primary::store::Store as PrimaryStore;
-use replicante_store_view::store::Store as ViewStore;
+use replicante_stream_events::Stream;
 use replicante_util_actixweb::with_request_span;
 use replicante_util_actixweb::RootDescriptor;
 use replicante_util_actixweb::TracingMiddleware;
@@ -24,6 +24,7 @@ use crate::Result;
 
 mod agent_action;
 mod appliers;
+mod discovery_settings;
 mod metrics;
 mod validate;
 
@@ -50,9 +51,9 @@ lazy_static::lazy_static! {
 /// Return an `AppConfig` callback to configure the apply endpoint.
 pub fn configure(logger: &Logger, interfaces: &mut Interfaces) -> impl Fn(&mut AppConfigContext) {
     let apply = ApplyData {
+        events: interfaces.streams.events.clone(),
         logger: logger.clone(),
-        primary_store: interfaces.stores.primary.clone(),
-        view_store: interfaces.stores.view.clone(),
+        store: interfaces.stores.primary.clone(),
     };
     let apply = Apply {
         data: apply,
@@ -84,9 +85,9 @@ impl Apply {
 
 #[derive(Clone)]
 struct ApplyData {
+    events: Stream,
     logger: Logger,
-    primary_store: PrimaryStore,
-    view_store: ViewStore,
+    store: PrimaryStore,
 }
 
 async fn responder(
@@ -144,11 +145,11 @@ async fn responder(
         .start_timer();
     let result = with_request_span(&mut request, |span| {
         applier(appliers::ApplierArgs {
+            events: data.events.clone(),
             headers,
             object,
-            primary_store: data.primary_store.clone(),
             span,
-            view_store: data.view_store.clone(),
+            store: data.store.clone(),
         })
     });
     timer.observe_duration();

@@ -6,7 +6,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 ### Changed
+- Cluster discovery dynamically configured with `apply`.
 - Populate view DB from the events stream.
+- Refactor cluster discovery.
+- Refactor cluster refesh.
 
 ### Fixed
 - Ensure `replictl` contexts store is flushed to disk before exiting.

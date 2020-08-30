@@ -6,6 +6,7 @@ use serde_derive::Serialize;
 pub mod action;
 pub mod agent;
 pub mod cluster;
+pub mod namespace;
 pub mod node;
 pub mod shard;
 pub mod snapshot;
@@ -60,6 +61,7 @@ impl Event {
             Payload::Action(event) => event.cluster_id(),
             Payload::Agent(event) => event.cluster_id(),
             Payload::Cluster(event) => event.cluster_id(),
+            Payload::Namespace(_) => None,
             Payload::Node(event) => event.cluster_id(),
             Payload::Shard(event) => event.cluster_id(),
             Payload::Snapshot(event) => event.cluster_id(),
@@ -74,6 +76,7 @@ impl Event {
             Payload::Action(event) => event.code(),
             Payload::Agent(event) => event.code(),
             Payload::Cluster(event) => event.code(),
+            Payload::Namespace(event) => event.code(),
             Payload::Node(event) => event.code(),
             Payload::Shard(event) => event.code(),
             Payload::Snapshot(event) => event.code(),
@@ -93,6 +96,7 @@ impl Event {
             Payload::Action(event) => event.stream_key(),
             Payload::Agent(event) => event.stream_key(),
             Payload::Cluster(event) => event.stream_key(),
+            Payload::Namespace(event) => event.stream_key(),
             Payload::Node(event) => event.stream_key(),
             Payload::Shard(event) => event.stream_key(),
             Payload::Snapshot(event) => event.stream_key(),
@@ -127,6 +131,11 @@ impl EventBuilder {
     /// Build cluster events.
     pub fn cluster(self) -> self::cluster::ClusterEventBuilder {
         self::cluster::ClusterEventBuilder { builder: self }
+    }
+
+    /// Build namespace events.
+    pub fn namespace(self) -> self::namespace::NamespaceEventBuilder {
+        self::namespace::NamespaceEventBuilder { builder: self }
     }
 
     /// Build node events.
@@ -199,6 +208,10 @@ pub enum Payload {
     #[serde(rename = "CLUSTER")]
     Cluster(self::cluster::ClusterEvent),
 
+    /// Namespace related events.
+    #[serde(rename = "NAMESPACE")]
+    Namespace(self::namespace::NamespaceEvent),
+
     /// Node related events.
     #[serde(rename = "NODE")]
     Node(self::node::NodeEvent),
@@ -247,7 +260,6 @@ impl TestEvent {
 mod tests {
     use chrono::TimeZone;
     use chrono::Utc;
-    use serde_json;
 
     use super::DeserializeResult;
     use super::Event;

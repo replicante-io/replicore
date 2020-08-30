@@ -11,6 +11,8 @@ use replicante_models_core::api::apply::SCOPE_CLUSTER;
 use replicante_models_core::api::apply::SCOPE_NODE;
 use replicante_models_core::api::apply::SCOPE_NS;
 use replicante_models_core::api::validate::ErrorsCollection;
+use replicante_models_core::events::Event;
+use replicante_stream_events::EmitMessage;
 
 use super::appliers::ApplierArgs;
 use crate::ErrorKind;
@@ -149,13 +151,17 @@ pub fn replicante_io_v0(args: ApplierArgs) -> Result<Value> {
 
     // Store the pending action for later sheduling.
     let span = args.span.map(|span| span.context().clone());
-    args.primary_store
-        .persist()
-        .action(action.clone(), span.clone())
-        .with_context(|_| ErrorKind::PrimaryStorePersist("action"))?;
-    args.view_store
+    let event = Event::builder().action().new_action(action.clone());
+    let stream_key = event.stream_key();
+    let event = EmitMessage::with(stream_key, event)
+        .with_context(|_| ErrorKind::EventsStreamEmit("ACTION_NEW"))?
+        .trace(span.clone());
+    args.events
+        .emit(event)
+        .with_context(|_| ErrorKind::EventsStreamEmit("ACTION_NEW"))?;
+    args.store
         .persist()
         .action(action, span)
-        .with_context(|_| ErrorKind::ViewStorePersist("action"))?;
+        .with_context(|_| ErrorKind::PrimaryStorePersist("action"))?;
     Ok(Value::Null)
 }
