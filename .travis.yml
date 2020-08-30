@@ -2,12 +2,11 @@
 branches:
   only:
     - main
-    - /^v\d+\.\d+\.\d+$/
 
 
 # Use latest available ubuntu (18.04).
 os: linux
-dist: bionic
+dist: focal
 
 
 # Configure the build jobs.
