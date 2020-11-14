@@ -15,7 +15,7 @@ pub struct DiscoverySettings {
     pub enabled: bool,
 
     /// Interval, in seconds, between discovery runs.
-    pub interval: u64,
+    pub interval: i64,
 }
 
 impl DiscoverySettings {

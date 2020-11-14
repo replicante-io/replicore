@@ -168,6 +168,7 @@ arc_interface! {
         fn agent(&self) -> AgentImpl;
         fn agents(&self) -> AgentsImpl;
         fn cluster(&self) -> ClusterImpl;
+        fn global_search(&self) -> GlobalSearchImpl;
         fn legacy(&self) -> LegacyImpl;
         fn node(&self) -> NodeImpl;
         fn nodes(&self) -> NodesImpl;
@@ -248,6 +249,53 @@ box_interface! {
 }
 
 box_interface! {
+    /// Dynamic dispatch agents operations to a backend-specific implementation.
+    struct AgentsImpl,
+
+    /// Definition of supported operations on all agents in a cluster.
+    ///
+    /// See `store::agents::Agents` for descriptions of methods.
+    trait AgentsInterface,
+
+    interface {
+        fn counts(
+            &self,
+            attrs: &AgentsAttribures,
+            span: Option<SpanContext>,
+        ) -> Result<AgentsCounts>;
+        fn iter(
+            &self,
+            attrs: &AgentsAttribures,
+            span: Option<SpanContext>,
+        ) -> Result<Cursor<Agent>>;
+        fn iter_info(
+            &self,
+            attrs: &AgentsAttribures,
+            span: Option<SpanContext>,
+        ) -> Result<Cursor<AgentInfo>>;
+    }
+}
+
+box_interface! {
+    /// Dynamic dispatch all cluster operations to a backend-specific implementation.
+    struct ClusterImpl,
+
+    /// Definition of supported operations on clusters.
+    ///
+    /// See `store::cluster::Cluster` for descriptions of methods.
+    trait ClusterInterface,
+
+    interface {
+        fn discovery(
+            &self,
+            attrs: &ClusterAttribures,
+            span: Option<SpanContext>,
+        ) -> Result<Option<ClusterDiscovery>>;
+        fn mark_stale(&self, attrs: &ClusterAttribures, span: Option<SpanContext>) -> Result<()>;
+    }
+}
+
+box_interface! {
     /// Dynamic dispatch all data admin operations to a backend-specific implementation.
     struct DataImpl,
 
@@ -267,147 +315,76 @@ box_interface! {
     }
 }
 
-/// Definition of supported operations on all agents in a cluster.
-///
-/// See `store::agents::Agents` for descriptions of methods.
-pub trait AgentsInterface: Send + Sync {
-    fn counts(&self, attrs: &AgentsAttribures, span: Option<SpanContext>) -> Result<AgentsCounts>;
-    fn iter(&self, attrs: &AgentsAttribures, span: Option<SpanContext>) -> Result<Cursor<Agent>>;
-    fn iter_info(
-        &self,
-        attrs: &AgentsAttribures,
-        span: Option<SpanContext>,
-    ) -> Result<Cursor<AgentInfo>>;
-}
+box_interface! {
+    /// Dynamic dispatch global search operations to a backend-specific implementation.
+    struct GlobalSearchImpl,
 
-/// Dynamic dispatch agents operations to a backend-specific implementation.
-#[derive(Clone)]
-pub struct AgentsImpl(Arc<dyn AgentsInterface>);
+    /// Definition of supported global searches.
+    ///
+    /// See `store::global_search::GlobalSearch` for descriptions of methods.
+    trait GlobalSearchInterface,
 
-impl AgentsImpl {
-    pub fn new<A: AgentsInterface + 'static>(agents: A) -> AgentsImpl {
-        AgentsImpl(Arc::new(agents))
+    interface {
+        fn discoveries_to_run(&self, span: Option<SpanContext>) -> Result<Cursor<DiscoverySettings>>;
     }
 }
 
-impl Deref for AgentsImpl {
-    type Target = dyn AgentsInterface + 'static;
-    fn deref(&self) -> &(dyn AgentsInterface + 'static) {
-        self.0.deref()
+box_interface! {
+    /// Dynamic dispatch legacy operations to a backend-specific implementation.
+    struct LegacyImpl,
+
+    /// Definition of legacy operations.
+    ///
+    /// See `store::legacy::Legacy` for descriptions of methods.
+    trait LegacyInterface,
+
+    interface {
+        fn cluster_meta(
+            &self,
+            cluster_id: String,
+            span: Option<SpanContext>,
+        ) -> Result<Option<ClusterMeta>>;
+        fn find_clusters(
+            &self,
+            search: String,
+            limit: u8,
+            span: Option<SpanContext>,
+        ) -> Result<Cursor<ClusterMeta>>;
+        fn persist_cluster_meta(&self, meta: ClusterMeta, span: Option<SpanContext>) -> Result<()>;
+        fn top_clusters(&self, span: Option<SpanContext>) -> Result<Cursor<ClusterMeta>>;
     }
 }
 
-/// Definition of supported operations on clusters.
-///
-/// See `store::cluster::Cluster` for descriptions of methods.
-pub trait ClusterInterface: Send + Sync {
-    fn discovery(
-        &self,
-        attrs: &ClusterAttribures,
-        span: Option<SpanContext>,
-    ) -> Result<Option<ClusterDiscovery>>;
-    fn mark_stale(&self, attrs: &ClusterAttribures, span: Option<SpanContext>) -> Result<()>;
-}
+box_interface! {
+    /// Dynamic dispatch node operations to a backend-specific implementation.
+    struct NodeImpl,
 
-/// Dynamic dispatch all cluster operations to a backend-specific implementation.
-#[derive(Clone)]
-pub struct ClusterImpl(Arc<dyn ClusterInterface>);
+    /// Definition of supported operations on nodes.
+    ///
+    /// See `store::node::Node` for descriptions of methods.
+    trait NodeInterface,
 
-impl ClusterImpl {
-    pub fn new<C: ClusterInterface + 'static>(cluster: C) -> ClusterImpl {
-        ClusterImpl(Arc::new(cluster))
+    interface {
+        fn get(&self, attrs: &NodeAttribures, span: Option<SpanContext>) -> Result<Option<Node>>;
     }
 }
 
-impl Deref for ClusterImpl {
-    type Target = dyn ClusterInterface + 'static;
-    fn deref(&self) -> &(dyn ClusterInterface + 'static) {
-        self.0.deref()
-    }
-}
+box_interface! {
+    /// Dynamic dispatch nodes operations to a backend-specific implementation.
+    struct NodesImpl,
 
-/// Definition of legacy operations.
-///
-/// See `store::legacy::Legacy` for descriptions of methods.
-pub trait LegacyInterface: Send + Sync {
-    fn cluster_meta(
-        &self,
-        cluster_id: String,
-        span: Option<SpanContext>,
-    ) -> Result<Option<ClusterMeta>>;
-    fn find_clusters(
-        &self,
-        search: String,
-        limit: u8,
-        span: Option<SpanContext>,
-    ) -> Result<Cursor<ClusterMeta>>;
-    fn persist_cluster_meta(&self, meta: ClusterMeta, span: Option<SpanContext>) -> Result<()>;
-    fn top_clusters(&self, span: Option<SpanContext>) -> Result<Cursor<ClusterMeta>>;
-}
+    /// Definition of supported operations on all nodes in a cluster.
+    ///
+    /// See `store::nodes::Nodes` for descriptions of methods.
+    trait NodesInterface,
 
-/// Dynamic dispatch legacy operations to a backend-specific implementation.
-#[derive(Clone)]
-pub struct LegacyImpl(Arc<dyn LegacyInterface>);
-
-impl LegacyImpl {
-    pub fn new<L: LegacyInterface + 'static>(legacy: L) -> LegacyImpl {
-        LegacyImpl(Arc::new(legacy))
-    }
-}
-
-impl Deref for LegacyImpl {
-    type Target = dyn LegacyInterface + 'static;
-    fn deref(&self) -> &(dyn LegacyInterface + 'static) {
-        self.0.deref()
-    }
-}
-
-/// Definition of supported operations on nodes.
-///
-/// See `store::node::Node` for descriptions of methods.
-pub trait NodeInterface: Send + Sync {
-    fn get(&self, attrs: &NodeAttribures, span: Option<SpanContext>) -> Result<Option<Node>>;
-}
-
-/// Dynamic dispatch node operations to a backend-specific implementation.
-#[derive(Clone)]
-pub struct NodeImpl(Arc<dyn NodeInterface>);
-
-impl NodeImpl {
-    pub fn new<N: NodeInterface + 'static>(node: N) -> NodeImpl {
-        NodeImpl(Arc::new(node))
-    }
-}
-
-impl Deref for NodeImpl {
-    type Target = dyn NodeInterface + 'static;
-    fn deref(&self) -> &(dyn NodeInterface + 'static) {
-        self.0.deref()
-    }
-}
-
-/// Definition of supported operations on all nodes in a cluster.
-///
-/// See `store::nodes::Nodes` for descriptions of methods.
-pub trait NodesInterface: Send + Sync {
-    fn iter(&self, attrs: &NodesAttribures, span: Option<SpanContext>) -> Result<Cursor<Node>>;
-    fn kinds(&self, attrs: &NodesAttribures, span: Option<SpanContext>) -> Result<HashSet<String>>;
-}
-
-/// Dynamic dispatch nodes operations to a backend-specific implementation.
-#[derive(Clone)]
-pub struct NodesImpl(Arc<dyn NodesInterface>);
-
-impl NodesImpl {
-    pub fn new<N: NodesInterface + 'static>(nodes: N) -> NodesImpl {
-        NodesImpl(Arc::new(nodes))
-    }
-}
-
-impl Deref for NodesImpl {
-    type Target = dyn NodesInterface + 'static;
-    fn deref(&self) -> &(dyn NodesInterface + 'static) {
-        self.0.deref()
+    interface {
+        fn iter(&self, attrs: &NodesAttribures, span: Option<SpanContext>) -> Result<Cursor<Node>>;
+        fn kinds(
+            &self,
+            attrs: &NodesAttribures,
+            span: Option<SpanContext>,
+        ) -> Result<HashSet<String>>;
     }
 }
 
@@ -434,80 +411,64 @@ box_interface! {
             settings: DiscoverySettings,
             span: Option<SpanContext>,
         ) -> Result<()>;
+        fn next_discovery_run(
+            &self,
+            settings: DiscoverySettings,
+            span: Option<SpanContext>,
+        ) -> Result<()>;
         fn node(&self, node: Node, span: Option<SpanContext>) -> Result<()>;
         fn shard(&self, shard: Shard, span: Option<SpanContext>) -> Result<()>;
     }
 }
 
-/// Definition of supported operations on a shard.
-///
-/// See `store::shard::Shard` for descriptions of methods.
-pub trait ShardInterface: Send + Sync {
-    fn get(&self, attrs: &ShardAttribures, span: Option<SpanContext>) -> Result<Option<Shard>>;
-}
+box_interface! {
+    /// Dynamic dispatch shard operations to a backend-specific implementation.
+    struct ShardImpl,
 
-/// Dynamic dispatch shard operations to a backend-specific implementation.
-#[derive(Clone)]
-pub struct ShardImpl(Arc<dyn ShardInterface>);
+    /// Definition of supported operations on a shard.
+    ///
+    /// See `store::shard::Shard` for descriptions of methods.
+    trait ShardInterface,
 
-impl ShardImpl {
-    pub fn new<S: ShardInterface + 'static>(shard: S) -> ShardImpl {
-        ShardImpl(Arc::new(shard))
+    interface {
+        fn get(&self, attrs: &ShardAttribures, span: Option<SpanContext>) -> Result<Option<Shard>>;
     }
 }
 
-impl Deref for ShardImpl {
-    type Target = dyn ShardInterface + 'static;
-    fn deref(&self) -> &(dyn ShardInterface + 'static) {
-        self.0.deref()
+box_interface! {
+    /// Dynamic dispatch shards operations to a backend-specific implementation.
+    struct ShardsImpl,
+
+    /// Definition of supported operations on all shards in a cluster.
+    ///
+    /// See `store::shards::Shards` for descriptions of methods.
+    trait ShardsInterface,
+
+    interface {
+        fn counts(
+            &self,
+            attrs: &ShardsAttribures,
+            span: Option<SpanContext>,
+        ) -> Result<ShardsCounts>;
+        fn iter(
+            &self,
+            attrs: &ShardsAttribures,
+            span: Option<SpanContext>,
+        ) -> Result<Cursor<Shard>>;
     }
 }
 
-/// Definition of supported operations on all shards in a cluster.
-///
-/// See `store::shards::Shards` for descriptions of methods.
-pub trait ShardsInterface: Send + Sync {
-    fn counts(&self, attrs: &ShardsAttribures, span: Option<SpanContext>) -> Result<ShardsCounts>;
-    fn iter(&self, attrs: &ShardsAttribures, span: Option<SpanContext>) -> Result<Cursor<Shard>>;
-}
+box_interface! {
+    /// Dynamic dispatch validate operations to a backend-specific implementation.
+    struct ValidateImpl,
 
-#[derive(Clone)]
-pub struct ShardsImpl(Arc<dyn ShardsInterface>);
+    /// Definition of supported validation operations.
+    ///
+    /// See `admin::validate::Validate` for descriptions of methods.
+    trait ValidateInterface,
 
-impl ShardsImpl {
-    pub fn new<S: ShardsInterface + 'static>(shards: S) -> ShardsImpl {
-        ShardsImpl(Arc::new(shards))
-    }
-}
-
-impl Deref for ShardsImpl {
-    type Target = dyn ShardsInterface + 'static;
-    fn deref(&self) -> &(dyn ShardsInterface + 'static) {
-        self.0.deref()
-    }
-}
-
-/// Definition of supported validation operations.
-///
-/// See `admin::validate::Validate` for descriptions of methods.
-pub trait ValidateInterface: Send + Sync {
-    fn removed_entities(&self) -> Result<Vec<ValidationResult>>;
-    fn schema(&self) -> Result<Vec<ValidationResult>>;
-}
-
-/// Dynamic dispatch validate operations to a backend-specific implementation.
-#[derive(Clone)]
-pub struct ValidateImpl(Arc<dyn ValidateInterface>);
-
-impl ValidateImpl {
-    pub fn new<V: ValidateInterface + 'static>(validate: V) -> ValidateImpl {
-        ValidateImpl(Arc::new(validate))
-    }
-}
-
-impl Deref for ValidateImpl {
-    type Target = dyn ValidateInterface + 'static;
-    fn deref(&self) -> &(dyn ValidateInterface + 'static) {
-        self.0.deref()
+    interface {
+        fn removed_entities(&self) -> Result<Vec<ValidationResult>>;
+        fn schema(&self) -> Result<Vec<ValidationResult>>;
     }
 }

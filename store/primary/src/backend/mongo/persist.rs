@@ -2,12 +2,14 @@ use std::sync::Arc;
 
 use bson::doc;
 use bson::Bson;
+use chrono::Utc;
 use failure::ResultExt;
 use mongodb::sync::Client;
 use opentracingrust::SpanContext;
 use opentracingrust::Tracer;
 
 use replicante_externals_mongodb::operations::replace_one;
+use replicante_externals_mongodb::operations::update_one;
 use replicante_models_core::actions::Action as ActionModel;
 use replicante_models_core::agent::Agent as AgentModel;
 use replicante_models_core::agent::AgentInfo as AgentInfoModel;
@@ -147,6 +149,26 @@ impl PersistInterface for Persist {
             _ => panic!("DiscoverySettings failed to encode as BSON document"),
         };
         replace_one(collection, filter, document, span, self.tracer.as_deref())
+            .with_context(|_| ErrorKind::MongoDBOperation)?;
+        Ok(())
+    }
+
+    fn next_discovery_run(
+        &self,
+        settings: DiscoverySettingsModel,
+        span: Option<SpanContext>,
+    ) -> Result<()> {
+        let filter = doc! {
+            "namespace" => &settings.namespace,
+            "name" => &settings.name,
+        };
+        let next_run = Utc::now() + chrono::Duration::seconds(settings.interval);
+        let update = doc! {"$set" => {"next_run" => next_run}};
+        let collection = self
+            .client
+            .database(&self.db)
+            .collection(COLLECTION_DISCOVERY_SETTINGS);
+        update_one(collection, filter, update, span, self.tracer.as_deref())
             .with_context(|_| ErrorKind::MongoDBOperation)?;
         Ok(())
     }

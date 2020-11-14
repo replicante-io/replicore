@@ -90,10 +90,7 @@ impl ElectionStatus {
 
     /// Check if the election is primary.
     pub fn is_primary(&self) -> bool {
-        match self {
-            ElectionStatus::Primary => true,
-            _ => false,
-        }
+        matches!(self, ElectionStatus::Primary)
     }
 }
 

@@ -1,15 +1,9 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
-
-use replicante_cluster_discovery::Config as BackendsConfig;
+use serde::Deserialize;
+use serde::Serialize;
 
 /// Agent discovery configuration options.
 #[derive(Clone, Eq, PartialEq, Hash, Debug, Serialize, Deserialize)]
 pub struct Config {
-    /// Discovery backends configuration.
-    #[serde(default)]
-    pub backends: BackendsConfig,
-
     /// Seconds to wait between discovery runs.
     #[serde(default = "Config::default_interval")]
     pub interval: u64,
@@ -27,7 +21,6 @@ pub struct Config {
 impl Default for Config {
     fn default() -> Config {
         Config {
-            backends: BackendsConfig::default(),
             interval: Config::default_interval(),
             term: Config::default_term(),
         }

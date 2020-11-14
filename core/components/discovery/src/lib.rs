@@ -1,0 +1,93 @@
+use std::sync::Arc;
+use std::time::Duration;
+
+use failure::ResultExt;
+use humthreads::Builder as ThreadBuilder;
+use opentracingrust::Tracer;
+use slog::debug;
+use slog::Logger;
+
+use replicante_service_coordinator::Coordinator;
+use replicante_service_coordinator::LoopingElection;
+use replicante_service_coordinator::LoopingElectionOpts;
+use replicante_store_primary::store::Store;
+use replicante_util_upkeep::Upkeep;
+
+mod config;
+mod election;
+mod error;
+mod logic;
+mod metrics;
+
+pub use self::config::Config;
+pub use self::error::Error;
+pub use self::error::ErrorKind;
+pub use self::error::Result;
+pub use self::metrics::register_metrics;
+
+const DISCOVERY_RUN_ALREADY_CALLED: &str = "called Discovery::run more then once";
+
+/// Discover clusters querying the configured DiscoverySettings.
+pub struct Discovery {
+    coordinator: Option<Coordinator>,
+    interval: Duration,
+    logger: Logger,
+    logic: Option<self::logic::DiscoveryLogic>,
+    term: u64,
+}
+
+impl Discovery {
+    pub fn new(
+        coordinator: Coordinator,
+        config: Config,
+        logger: Logger,
+        store: Store,
+        tracer: Arc<Tracer>,
+    ) -> Discovery {
+        let coordinator = Some(coordinator);
+        let interval = Duration::from_secs(config.interval);
+        let term = config.term;
+        //let tasks = self.tasks.clone();
+        let logic = self::logic::DiscoveryLogic::new(logger.clone(), store, tracer);
+        let logic = Some(logic);
+        Discovery {
+            coordinator,
+            interval,
+            logger,
+            logic,
+            term,
+        }
+    }
+
+    /// Start the component in a background thread and return.
+    pub fn run(&mut self, upkeep: &mut Upkeep) -> Result<()> {
+        let coordinator = self.coordinator.take().expect(DISCOVERY_RUN_ALREADY_CALLED);
+        let interval = self.interval;
+        let logger = self.logger.clone();
+        let logic = self.logic.take().expect(DISCOVERY_RUN_ALREADY_CALLED);
+        let term = self.term;
+        let (shutdown_sender, shutdown_receiver) = LoopingElectionOpts::shutdown_channel();
+
+        debug!(self.logger, "Starting Agent Discovery thread");
+        let thread = ThreadBuilder::new("r:c:discovery")
+            .full_name("replicore:component:discovery")
+            .spawn(move |scope| {
+                scope.activity("initialising agent discovery election");
+                let election = coordinator.election("discovery");
+                let looper = self::election::DiscoveryElection::new(logic, logger.clone(), scope);
+                let opts = LoopingElectionOpts::new(election, looper)
+                    .loop_delay(interval)
+                    .shutdown_receiver(shutdown_receiver);
+                let opts = match term {
+                    0 => opts,
+                    term => opts.election_term(term),
+                };
+                let mut election = LoopingElection::new(opts, logger);
+                election.loop_forever();
+            })
+            .with_context(|_| ErrorKind::ThreadSpawn)?;
+        upkeep.on_shutdown(move || shutdown_sender.request());
+        upkeep.register_thread(thread);
+        Ok(())
+    }
+}

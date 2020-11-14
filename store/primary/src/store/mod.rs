@@ -14,6 +14,7 @@ pub mod actions;
 pub mod agent;
 pub mod agents;
 pub mod cluster;
+pub mod global_search;
 pub mod legacy;
 pub mod node;
 pub mod nodes;
@@ -25,6 +26,7 @@ use self::actions::Actions;
 use self::agent::Agent;
 use self::agents::Agents;
 use self::cluster::Cluster;
+use self::global_search::GlobalSearch;
 use self::legacy::Legacy;
 use self::node::Node;
 use self::nodes::Nodes;
@@ -103,6 +105,12 @@ impl Store {
         let cluster = self.store.cluster();
         let attrs = self::cluster::ClusterAttribures { cluster_id };
         Cluster::new(cluster, attrs)
+    }
+
+    /// Search for specific records across the entrie system (no namespaces, clusters, ...).
+    pub fn global_search(&self) -> GlobalSearch {
+        let search = self.store.global_search();
+        GlobalSearch::new(search)
     }
 
     /// Legacy operations that need to be moved to other crates.

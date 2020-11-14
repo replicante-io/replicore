@@ -13,8 +13,8 @@ use replicante_models_core::scope::NsHttpsTransport;
 use replicante_service_coordinator::Config as CoordinatorConfig;
 use replicante_service_tasks::Config as TasksConfig;
 use replicante_util_tracing::Config as TracingConfig;
+use replicore_component_discovery::Config as DiscoveryConfig;
 
-use crate::components::DiscoveryConfig;
 use crate::interfaces::api::Config as APIConfig;
 use crate::ErrorKind;
 use crate::Result;

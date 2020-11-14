@@ -61,7 +61,7 @@ pub struct DiscoverySettings {
     pub enabled: bool,
 
     /// Interval, in seconds, between discovery runs.
-    pub interval: u64,
+    pub interval: i64,
 
     /// Namespace unique name for this discovery settings.
     pub name: String,

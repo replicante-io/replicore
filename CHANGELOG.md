@@ -6,6 +6,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 ### Changed
+- **BREAKING**: Backends defined in the config file are ignored.
+- **BREAKING**: Dropped snapshot events.
 - Cluster discovery dynamically configured with `apply`.
 - Populate view DB from the events stream.
 - Refactor cluster discovery.

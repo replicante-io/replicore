@@ -5,6 +5,8 @@ use slog::Logger;
 
 use replicante_util_upkeep::Upkeep;
 
+use replicore_component_discovery::Config as DiscoveryConfig;
+
 use super::metrics::COMPONENTS_ENABLED;
 use super::Config;
 use super::Error;
@@ -13,16 +15,12 @@ use super::Interfaces;
 use super::Result;
 
 mod core_api;
-mod discovery;
 mod grafana;
 mod update_checker;
 mod webui;
 mod workers;
 
-pub use self::discovery::Config as DiscoveryConfig;
-
 use self::core_api::CoreAPI;
-use self::discovery::DiscoveryComponent as Discovery;
 use self::grafana::Grafana;
 use self::update_checker::UpdateChecker;
 use self::webui::WebUI;
@@ -46,6 +44,24 @@ macro_rules! impl_component {
             }
         }
     };
+}
+
+impl_component!(Discovery, replicore_component_discovery::Discovery);
+impl Discovery {
+    fn new(config: DiscoveryConfig, interfaces: &Interfaces) -> Discovery {
+        let coordinator = interfaces.coordinator.clone();
+        let logger = interfaces.logger.clone();
+        let store = interfaces.stores.primary.clone();
+        let tracer = interfaces.tracing.tracer();
+        let component = replicore_component_discovery::Discovery::new(
+            coordinator,
+            config,
+            logger,
+            store,
+            tracer,
+        );
+        Discovery(component)
+    }
 }
 
 impl_component!(ViewUpdater, replicore_component_viewupdater::ViewUpdater);
@@ -137,8 +153,6 @@ impl Components {
                 let enabled = config.components.discovery();
                 Discovery::new(
                     config.discovery.clone(),
-                    config.events.snapshots.clone(),
-                    logger.clone(),
                     interfaces,
                 )
             }
@@ -171,7 +185,7 @@ impl Components {
     /// Metrics that fail to register are logged and ignored.
     pub fn register_metrics(logger: &Logger, registry: &Registry) {
         self::core_api::register_metrics(logger, registry);
-        self::discovery::register_metrics(logger, registry);
+        replicore_component_discovery::register_metrics(logger, registry);
         self::workers::register_metrics(logger, registry);
     }
 

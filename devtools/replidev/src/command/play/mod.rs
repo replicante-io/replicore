@@ -64,10 +64,7 @@ pub enum Opt {
 
 impl Opt {
     pub fn need_actix_rt(&self) -> bool {
-        match self {
-            Self::Server => true,
-            _ => false,
-        }
+        matches!(self, Self::Server)
     }
 }
 

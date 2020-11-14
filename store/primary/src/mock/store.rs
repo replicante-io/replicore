@@ -23,6 +23,7 @@ use crate::backend::ActionsInterface;
 use crate::backend::AgentImpl;
 use crate::backend::AgentsImpl;
 use crate::backend::ClusterImpl;
+use crate::backend::GlobalSearchImpl;
 use crate::backend::LegacyImpl;
 use crate::backend::LegacyInterface;
 use crate::backend::NodeImpl;
@@ -62,6 +63,10 @@ impl StoreInterface for StoreMock {
 
     fn cluster(&self) -> ClusterImpl {
         panic!("TODO: StoreMock::cluster");
+    }
+
+    fn global_search(&self) -> GlobalSearchImpl {
+        panic!("TODO: StoreMock::global_search");
     }
 
     fn legacy(&self) -> LegacyImpl {
@@ -307,6 +312,14 @@ impl PersistInterface for Persist {
         _: Option<SpanContext>,
     ) -> Result<()> {
         panic!("TODO: MockStore::Persist::discovery_settings")
+    }
+
+    fn next_discovery_run(
+        &self,
+        _settings: DiscoverySettings,
+        _: Option<SpanContext>,
+    ) -> Result<()> {
+        panic!("TODO: MockStore::Persist::next_discovery_run")
     }
 
     fn node(&self, _node: Node, _: Option<SpanContext>) -> Result<()> {

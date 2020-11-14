@@ -15,10 +15,7 @@ impl Error {
 
     /// True if the error was caused by missing information on the agent.
     pub fn not_found(&self) -> bool {
-        match self.kind() {
-            ErrorKind::NotFound(_, _) => true,
-            _ => false,
-        }
+        matches!(self.kind(), ErrorKind::NotFound(_, _))
     }
 }
 
