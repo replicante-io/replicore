@@ -8,6 +8,8 @@ use replicante_store_primary::mock::Mock as MockPrimaryStore;
 use replicante_store_view::mock::Mock as MockViewStore;
 use replicante_stream_events::Stream as EventsStream;
 
+use replicore_models_tasks::MockTasks;
+
 use super::HealthChecks;
 use super::Interfaces;
 use super::Metrics;
@@ -15,7 +17,6 @@ use super::Stores;
 use super::Streams;
 use super::Tracing;
 use super::API;
-use crate::tasks::MockTasks;
 
 /// A container for mocks used by interfaces.
 #[cfg(test)]

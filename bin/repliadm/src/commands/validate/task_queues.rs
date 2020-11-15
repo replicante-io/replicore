@@ -4,11 +4,12 @@ use clap::SubCommand;
 use failure::ResultExt;
 use slog::info;
 
-use replicante::task_payload::ClusterRefreshPayload;
-use replicante::ReplicanteQueues;
 use replicante_service_tasks::admin::TasksAdmin;
 use replicante_service_tasks::TaskQueue;
 use replicante_util_failure::format_fail;
+
+use replicore_models_tasks::payload::ClusterRefreshPayload;
+use replicore_models_tasks::ReplicanteQueues;
 
 pub const COMMAND: &str = "task-queues";
 

@@ -2,8 +2,9 @@ use failure::ResultExt;
 use slog::Logger;
 
 use replicante::Config;
-use replicante::ReplicanteQueues;
 use replicante_service_tasks::Admin as TasksAdmin;
+
+use replicore_models_tasks::ReplicanteQueues;
 
 use super::value_or_error;
 use crate::Error;

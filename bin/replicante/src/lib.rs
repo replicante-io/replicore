@@ -23,8 +23,6 @@ pub use self::config::Config;
 pub use self::error::Error;
 pub use self::error::ErrorKind;
 pub use self::error::Result;
-pub use self::tasks::payload as task_payload;
-pub use self::tasks::ReplicanteQueues;
 
 use self::components::Components;
 use self::config::SentryConfig;

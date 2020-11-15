@@ -22,6 +22,7 @@ serde = "^1.0.34"
 slog = "^2.2.0"
 
 replicante_cluster_discovery = { path = "../../../cluster/discovery" }
+replicante_models_core = { path = "../../../models/core" }
 replicante_service_coordinator = { path = "../../../service/coordinator" }
 replicante_store_primary = { path = "../../../store/primary" }
 replicante_util_failure = { path = "../../../common/util/failure" }

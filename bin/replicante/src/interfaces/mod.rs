@@ -13,8 +13,9 @@ use replicante_store_view::store::Store as ViewStore;
 use replicante_stream_events::Stream as EventsStream;
 use replicante_util_upkeep::Upkeep;
 
+use replicore_models_tasks::Tasks;
+
 use super::config::Config;
-use super::tasks::Tasks;
 use super::ErrorKind;
 use super::Result;
 

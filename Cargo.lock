@@ -2540,6 +2540,7 @@ dependencies = [
  "replicante_stream_events",
  "replicante_util_failure",
  "replicante_util_rndid",
+ "replicore_models_tasks",
  "reqwest",
  "serde",
  "serde_yaml",
@@ -2585,6 +2586,7 @@ dependencies = [
  "replicante_util_upkeep",
  "replicore_component_discovery",
  "replicore_component_viewupdater",
+ "replicore_models_tasks",
  "reqwest",
  "semver 0.10.0",
  "sentry",
@@ -2966,6 +2968,7 @@ dependencies = [
  "opentracingrust",
  "prometheus",
  "replicante_cluster_discovery",
+ "replicante_models_core",
  "replicante_service_coordinator",
  "replicante_store_primary",
  "replicante_util_failure",
@@ -2993,6 +2996,21 @@ dependencies = [
  "replicante_util_upkeep",
  "sentry",
  "slog",
+]
+
+[[package]]
+name = "replicore_models_tasks"
+version = "0.1.0"
+dependencies = [
+ "chrono",
+ "failure",
+ "replicante_models_core",
+ "replicante_service_tasks",
+ "semver 0.10.0",
+ "serde",
+ "serde_derive",
+ "serde_json",
+ "uuid",
 ]
 
 [[package]]

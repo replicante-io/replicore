@@ -1,10 +1,12 @@
 use std::sync::Arc;
 
 use failure::ResultExt;
+use opentracingrust::SpanContext;
 use opentracingrust::Tracer;
 use slog::debug;
 use slog::Logger;
 
+use replicante_models_core::cluster::discovery::DiscoverySettings;
 use replicante_store_primary::store::Store;
 use replicante_util_tracing::fail_span;
 
@@ -46,23 +48,31 @@ impl DiscoveryLogic {
             .map_err(|error| fail_span(error, &mut *span))?;
 
         for discovery in discoveries {
-            let discovery = discovery
-                .context(ErrorKind::DiscoveriesPartialSearch)
-                .map_err(|error| fail_span(error, &mut *span))?;
-            debug!(
-                self.logger,
-                "Scheduling pending discovery";
-                "name" => &discovery.name,
-                "namespace" => &discovery.namespace,
-            );
-            // TODO: schedule discovery task.
-            self.store
-                .persist()
-                .next_discovery_run(discovery, span_context.clone())
-                .context(ErrorKind::DiscoveriesPartialSearch)
+            self.schedule_discovery(discovery, span_context.clone())
                 .map_err(|error| fail_span(error, &mut *span))?;
             DISCOVERY_SCHEDULE_COUNT.inc();
         }
+        Ok(())
+    }
+
+    /// Process an individual DiscoverySettings record and schedule a discovery task for it.
+    fn schedule_discovery(
+        &self,
+        discovery: replicante_store_primary::Result<DiscoverySettings>,
+        span_context: SpanContext,
+    ) -> Result<()> {
+        let discovery = discovery.context(ErrorKind::DiscoveriesPartialSearch)?;
+        debug!(
+            self.logger,
+            "Scheduling pending discovery";
+            "name" => &discovery.name,
+            "namespace" => &discovery.namespace,
+        );
+        // TODO: schedule discovery task.
+        self.store
+            .persist()
+            .next_discovery_run(discovery, span_context)
+            .context(ErrorKind::DiscoveriesPartialSearch)?;
         Ok(())
     }
 }

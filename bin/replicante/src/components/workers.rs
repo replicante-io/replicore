@@ -10,12 +10,13 @@ use replicante_service_tasks::WorkerSet;
 use replicante_service_tasks::WorkerSetPool;
 use replicante_util_upkeep::Upkeep;
 
+use replicore_models_tasks::ReplicanteQueues;
+
 use super::Component;
 use crate::config::Config;
 use crate::interfaces::Interfaces;
 use crate::metrics::WORKERS_ENABLED;
 use crate::tasks::cluster_refresh;
-use crate::tasks::ReplicanteQueues;
 use crate::Error;
 use crate::ErrorKind;
 use crate::Result;

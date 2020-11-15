@@ -12,6 +12,7 @@ members = [
   "externals/kafka",
   "externals/mongodb",
   "models/core",
+  "models/tasks",
   "service/coordinator",
   "service/healthcheck",
   "service/tasks",

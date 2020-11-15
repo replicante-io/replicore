@@ -16,10 +16,11 @@ use replicante_util_actixweb::TracingMiddleware;
 use replicante_util_failure::capture_fail;
 use replicante_util_failure::failure_info;
 
+use replicore_models_tasks::payload::ClusterRefreshPayload;
+use replicore_models_tasks::ReplicanteQueues;
+use replicore_models_tasks::Tasks;
+
 use crate::interfaces::Interfaces;
-use crate::task_payload::ClusterRefreshPayload;
-use crate::tasks::ReplicanteQueues;
-use crate::tasks::Tasks;
 use crate::ErrorKind;
 use crate::Result;
 

@@ -29,9 +29,10 @@ use replicante_util_failure::capture_fail;
 use replicante_util_failure::failure_info;
 use replicante_util_tracing::fail_span;
 
-use super::payload::ClusterRefreshPayload;
-use super::ReplicanteQueues;
-use super::Task;
+use replicore_models_tasks::payload::ClusterRefreshPayload;
+use replicore_models_tasks::ReplicanteQueues;
+use replicore_models_tasks::Task;
+
 use crate::interfaces::tracing::Tracing;
 use crate::Config;
 use crate::ErrorKind;
