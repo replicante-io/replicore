@@ -52,12 +52,14 @@ impl Discovery {
         let coordinator = interfaces.coordinator.clone();
         let logger = interfaces.logger.clone();
         let store = interfaces.stores.primary.clone();
+        let tasks = interfaces.tasks.clone();
         let tracer = interfaces.tracing.tracer();
         let component = replicore_component_discovery::Discovery::new(
             coordinator,
             config,
             logger,
             store,
+            tasks,
             tracer,
         );
         Discovery(component)

@@ -183,7 +183,6 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Validate contents of the store.
 - WebUI endpoints for initial UI.
 
-
 [Unreleased]: https://github.com/replicante-io/replicante/compare/v0.6.0...HEAD
 [0.6.0]: https://github.com/replicante-io/replicante/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/replicante-io/replicante/compare/v0.4.0...v0.5.0

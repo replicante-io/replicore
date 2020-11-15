@@ -10,6 +10,9 @@ pub mod payload;
 pub enum ReplicanteQueues {
     /// Cluster state refresh and aggregation tasks.
     ClusterRefresh,
+
+    /// Fetch cluster Discovery records from a discovery backend.
+    DiscoverClusters,
 }
 
 impl FromStr for ReplicanteQueues {
@@ -17,6 +20,7 @@ impl FromStr for ReplicanteQueues {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
             "cluster_refresh" => Ok(ReplicanteQueues::ClusterRefresh),
+            "discover_clusters" => Ok(ReplicanteQueues::DiscoverClusters),
             s => Err(::failure::err_msg(format!("unknown queue '{}'", s))),
         }
     }
@@ -26,18 +30,21 @@ impl TaskQueue for ReplicanteQueues {
     fn max_retry_count(&self) -> u8 {
         match self {
             ReplicanteQueues::ClusterRefresh => 1,
+            ReplicanteQueues::DiscoverClusters => 1,
         }
     }
 
     fn name(&self) -> String {
         match self {
             ReplicanteQueues::ClusterRefresh => "cluster_refresh".into(),
+            ReplicanteQueues::DiscoverClusters => "discover_clusters".into(),
         }
     }
 
     fn retry_delay(&self) -> Duration {
         match self {
-            ReplicanteQueues::ClusterRefresh => Duration::from_secs(10),
+            ReplicanteQueues::ClusterRefresh => Duration::from_secs(5),
+            ReplicanteQueues::DiscoverClusters => Duration::from_secs(5),
         }
     }
 }

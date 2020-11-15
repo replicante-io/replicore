@@ -2970,10 +2970,12 @@ dependencies = [
  "replicante_cluster_discovery",
  "replicante_models_core",
  "replicante_service_coordinator",
+ "replicante_service_tasks",
  "replicante_store_primary",
  "replicante_util_failure",
  "replicante_util_tracing",
  "replicante_util_upkeep",
+ "replicore_models_tasks",
  "serde",
  "slog",
 ]

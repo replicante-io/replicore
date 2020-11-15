@@ -13,6 +13,8 @@ use replicante_service_coordinator::LoopingElectionOpts;
 use replicante_store_primary::store::Store;
 use replicante_util_upkeep::Upkeep;
 
+use replicore_models_tasks::Tasks;
+
 mod config;
 mod election;
 mod error;
@@ -42,13 +44,13 @@ impl Discovery {
         config: Config,
         logger: Logger,
         store: Store,
+        tasks: Tasks,
         tracer: Arc<Tracer>,
     ) -> Discovery {
         let coordinator = Some(coordinator);
         let interval = Duration::from_secs(config.interval);
         let term = config.term;
-        //let tasks = self.tasks.clone();
-        let logic = self::logic::DiscoveryLogic::new(logger.clone(), store, tracer);
+        let logic = self::logic::DiscoveryLogic::new(logger.clone(), store, tasks, tracer);
         let logic = Some(logic);
         Discovery {
             coordinator,

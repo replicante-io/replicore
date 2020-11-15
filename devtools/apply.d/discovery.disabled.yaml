@@ -2,10 +2,10 @@ apiVersion: replicante.io/v0
 kind: DiscoverySettings
 metadata:
   namespace: default
-  name: dev-clusters
+  name: disabled-test
 spec:
   backend: http
-  enabled: true
-  interval: 300
+  enabled: false
+  interval: 30
   method: GET
-  url: 'http://localhost:8080/discovery/replicante.json'
+  url: 'https://localhost:9876/not/a/real/backend'
