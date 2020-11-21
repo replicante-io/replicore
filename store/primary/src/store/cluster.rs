@@ -1,9 +1,10 @@
 use opentracingrust::SpanContext;
 
 use replicante_models_core::cluster::discovery::ClusterDiscovery;
+use replicante_models_core::cluster::ClusterSettings;
 
-use super::super::backend::ClusterImpl;
-use super::super::Result;
+use crate::backend::ClusterImpl;
+use crate::Result;
 
 /// Operate on cluster-level models.
 pub struct Cluster {
@@ -49,9 +50,18 @@ impl Cluster {
     {
         self.cluster.mark_stale(&self.attrs, span.into())
     }
+
+    /// Query a `ClusterSettings` record, if any is stored.
+    pub fn settings<S>(&self, span: S) -> Result<Option<ClusterSettings>>
+    where
+        S: Into<Option<SpanContext>>,
+    {
+        self.cluster.settings(&self.attrs, span.into())
+    }
 }
 
 /// Attributes attached to all cluster-level operations.
 pub struct ClusterAttribures {
     pub cluster_id: String,
+    pub namespace: String,
 }

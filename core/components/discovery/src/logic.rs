@@ -47,7 +47,10 @@ impl DiscoveryLogic {
     ///  * Incorrect configuration (short discovery loop intervals).
     ///  * One of many many possible bugs ...
     pub fn run(&self) -> Result<()> {
-        let mut span = self.tracer.span("discovery.schedule_pending").auto_finish();
+        let mut span = self
+            .tracer
+            .span("component.discover_clusters")
+            .auto_finish();
         let span_context = span.context().clone();
         let discoveries = self
             .store

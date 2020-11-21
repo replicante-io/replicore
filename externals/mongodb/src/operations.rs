@@ -4,6 +4,7 @@ use failure::Fail;
 use failure::ResultExt;
 use mongodb::options::FindOptions;
 use mongodb::options::ReplaceOptions;
+use mongodb::options::UpdateOptions;
 use mongodb::results::UpdateResult;
 use mongodb::sync::Collection;
 use opentracingrust::SpanContext;
@@ -420,10 +421,25 @@ pub fn update_one(
     span: Option<SpanContext>,
     tracer: Option<&Tracer>,
 ) -> Result<UpdateResult> {
+    let options = UpdateOptions::default();
+    update_one_with_options(collection, filter, update, options, span, tracer)
+}
+
+/// Perform an [`updateOne`] operation with additional options.
+///
+/// [`updateOne`]: https://docs.mongodb.com/manual/reference/method/db.collection.updateOne/
+pub fn update_one_with_options(
+    collection: Collection,
+    filter: OrderedDocument,
+    update: OrderedDocument,
+    options: UpdateOptions,
+    span: Option<SpanContext>,
+    tracer: Option<&Tracer>,
+) -> Result<UpdateResult> {
     let mut span = match (tracer, span) {
         (Some(tracer), Some(context)) => {
-            let options = StartOptions::default().child_of(context);
-            let mut span = tracer.span_with_options("store.mongodb.updateOne", options);
+            let opts = StartOptions::default().child_of(context);
+            let mut span = tracer.span_with_options("store.mongodb.updateOne", opts);
             let namespace = collection.namespace();
             let namespace = format!("{}.{}", namespace.db, namespace.coll);
             span.tag("namespace", namespace);
@@ -446,7 +462,7 @@ pub fn update_one(
         .with_label_values(&["updateOne"])
         .start_timer();
     collection
-        .update_one(filter, update, None)
+        .update_one(filter, update, options)
         .map_err(|error| {
             MONGODB_OP_ERRORS_COUNT
                 .with_label_values(&["updateOne"])

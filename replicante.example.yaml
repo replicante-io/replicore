@@ -141,7 +141,7 @@ components:
   # Default status for all components that are not explicitly enabled/disabled.
   _default: true
 
-  # Enable/disable agent discovery.
+  # Enable clusters discovery.
   discovery: null
 
   # Enable Grafana Annotations API endpoints (optional).
@@ -229,50 +229,6 @@ coordinator:
 # Discovery is the way the agents that should be managed are found.
 # Replicante Core then interacts with agents by initiating connections out to them.
 discovery:
-  # Discovery backends configuration.
-  #
-  # Backends are a way to support an extensible set of discovery systems.
-  # Each backend has its own options as described below.
-  #
-  # Available backends are:
-  #
-  #   * `http`: discover clusters by querying remote HTTP servers.
-  backends:
-    # HTTP cluster discovery configurations.
-    #
-    # A POST request is performed to fetch cluster discoveries.
-    # Requests are issued against the configured list of targets.
-    # Each target has the following options:
-    #
-    #   # URL of the remote target to request clusters to.
-    #   url: 'https://inventory.corp:1234/replicante/some/path'
-    #
-    #   # HTTP method to send the request as.
-    #   # Valid options are GET and POST.
-    #   # If the method is changed to GET, pagination support is disabled and as a result
-    #   # responses with a non-null cursor may cause endless loops.
-    #   method: POST
-    #
-    #   # Optional JSON object to send along every POST request.
-    #   body: ~
-    #
-    #   # Headers to send along every request.
-    #   headers: {}
-    #
-    #   # HTTP Requests timeout (in milliseconds).
-    #   timeout: 30000
-    #
-    #   # TLS confifuration options.
-    #   tls:
-    #     # Optional path to a PEM CA certificate file to validate servers with.
-    #     ca_cert: ~
-    #     # Optional path to a PEM HTTP client certificate file.
-    #     client_cert: ~
-    #
-    # Static discovery can be achieved by serving a fixed JSON response file with
-    # any one of the many HTTP servers that support static serving (Apache, NGINX, ...).
-    http: []
-
   # Interval (in seconds) to wait between agent discovery runs.
   interval: 60
 
@@ -539,8 +495,11 @@ task_workers:
   # Default status for all task workers that are not explicitly enabled/disabled.
   _default: true
 
-  # Enable cluster state refresh and aggregation task processing.
+  # Enable handling of cluster state refresh and aggregation tasks.
   cluster_refresh: null
+
+  # Enable handling of clusters discovery tasks.
+  discover_clusters: null
 
 
 # The section below is for the tasks system configuration.

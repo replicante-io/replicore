@@ -160,7 +160,7 @@ impl Fetcher {
         debug!(self.logger, "Refreshing cluster state"; "cluster_id" => &cluster_id);
         let mut id_checker = ClusterIdentityChecker::new(cluster_id.clone(), cluster.display_name);
         self.primary_store
-            .cluster(cluster_id.clone())
+            .cluster(ns.ns_id.clone(), cluster_id.clone())
             .mark_stale(span.context().clone())
             .with_context(|_| ErrorKind::PrimaryStoreWrite("cluster staleness"))?;
 

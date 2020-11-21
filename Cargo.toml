@@ -9,6 +9,7 @@ members = [
   "cluster/fetcher",
   "core/components/discovery",
   "core/components/viewupdater",
+  "core/tasks/discovery",
   "externals/kafka",
   "externals/mongodb",
   "models/core",

@@ -62,7 +62,7 @@ async fn responder(data: web::Data<RefreshData>, request: HttpRequest) -> Result
         let span = span.map(|span| span.context().clone());
         let cluster = data
             .store
-            .cluster(cluster_id.clone())
+            .cluster("TODO_NS".to_string(), cluster_id.clone())
             .discovery(span)
             .with_context(|_| ErrorKind::PrimaryStoreQuery("cluster_discovery"))?
             .ok_or_else(|| ErrorKind::ModelNotFound("cluster_discovery", cluster_id.clone()))?;

@@ -45,7 +45,7 @@ pub use self::metrics::register_metrics;
 use self::metrics::REFRESH_DURATION;
 use self::metrics::REFRESH_LOCKED;
 
-/// Task handler for `ReplicanteQueues::Discovery` tasks.
+/// Task handler for `ReplicanteQueues::ClusterRefresh` tasks.
 pub struct Handler {
     aggregator: Aggregator,
     coordinator: Coordinator,
@@ -173,7 +173,7 @@ impl Handler {
     fn refresh_discovery(&self, discovery: ClusterDiscovery, span: &mut Span) -> Result<()> {
         let current_state = self
             .store
-            .cluster(discovery.cluster_id.clone())
+            .cluster("TODO_NS".to_string(), discovery.cluster_id.clone())
             .discovery(span.context().clone())
             .with_context(|_| ErrorKind::PrimaryStorePersist("cluster_discovery"))?;
         if let Some(current_state) = current_state {

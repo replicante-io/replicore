@@ -11,8 +11,10 @@ use slog::Logger;
 use replicante_externals_mongodb::operations::find_one;
 use replicante_externals_mongodb::operations::update_many;
 use replicante_models_core::cluster::discovery::ClusterDiscovery;
+use replicante_models_core::cluster::ClusterSettings;
 
 use super::super::ClusterInterface;
+use super::constants::COLLECTION_CLUSTER_SETTINGS;
 use super::constants::COLLECTION_DISCOVERIES;
 use super::constants::STALE_COLLECTIONS;
 use crate::store::cluster::ClusterAttribures;
@@ -80,5 +82,23 @@ impl ClusterInterface for Cluster {
             );
         }
         Ok(())
+    }
+
+    fn settings(
+        &self,
+        attrs: &ClusterAttribures,
+        span: Option<SpanContext>,
+    ) -> Result<Option<ClusterSettings>> {
+        let filter = doc! {
+            "namespace" => &attrs.namespace,
+            "cluster_id" => &attrs.cluster_id,
+        };
+        let collection = self
+            .client
+            .database(&self.db)
+            .collection(COLLECTION_CLUSTER_SETTINGS);
+        let settings = find_one(collection, filter, span, self.tracer.as_deref())
+            .with_context(|_| ErrorKind::MongoDBOperation)?;
+        Ok(settings)
     }
 }

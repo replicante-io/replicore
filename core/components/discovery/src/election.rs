@@ -1,6 +1,6 @@
 use humthreads::ThreadScope;
 use slog::debug;
-use slog::info;
+use slog::trace;
 use slog::Logger;
 
 use replicante_service_coordinator::Election;
@@ -57,7 +57,7 @@ impl LoopingElectionLogic for DiscoveryElection {
             .scoped_activity("scheduling pending discovery runs");
         DISCOVERY_LOOP_COUNT.inc();
         let timer = DISCOVERY_DURATION.start_timer();
-        debug!(self.logger, "Started pending discovery runs cycle");
+        trace!(self.logger, "Started pending discovery runs cycle");
         if let Err(error) = self.logic.run() {
             DISCOVERY_LOOP_ERRORS.inc();
             capture_fail!(
@@ -69,7 +69,7 @@ impl LoopingElectionLogic for DiscoveryElection {
             return Ok(LoopingElectionControl::Proceed);
         }
         timer.observe_duration();
-        info!(self.logger, "Pending discovery runs cycle finished");
+        trace!(self.logger, "Pending discovery runs cycle finished");
         Ok(LoopingElectionControl::Proceed)
     }
 

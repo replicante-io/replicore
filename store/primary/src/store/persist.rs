@@ -7,6 +7,7 @@ use replicante_models_core::agent::Node as NodeModel;
 use replicante_models_core::agent::Shard as ShardModel;
 use replicante_models_core::cluster::discovery::ClusterDiscovery as ClusterDiscoveryModel;
 use replicante_models_core::cluster::discovery::DiscoverySettings;
+use replicante_models_core::cluster::ClusterSettings;
 
 use crate::backend::PersistImpl;
 use crate::Result;
@@ -51,6 +52,14 @@ impl Persist {
         S: Into<Option<SpanContext>>,
     {
         self.persist.cluster_discovery(discovery, span.into())
+    }
+
+    /// Create or update a ClusterSettings record.
+    pub fn cluster_settings<S>(&self, settings: ClusterSettings, span: S) -> Result<()>
+    where
+        S: Into<Option<SpanContext>>,
+    {
+        self.persist.cluster_settings(settings, span.into())
     }
 
     /// Create or update a cluster DiscoverySettings record.

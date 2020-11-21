@@ -76,7 +76,7 @@ impl Snapshotter {
     fn discovery(&self, span: &mut Span) -> Result<()> {
         let discovery = self
             .store
-            .cluster(self.cluster.clone())
+            .cluster("TODO_NS_NAME".to_string(), self.cluster.clone())
             .discovery(span.context().clone())
             .with_context(|_| ErrorKind::PrimaryStoreRead("discovery"))?;
         if let Some(discovery) = discovery {

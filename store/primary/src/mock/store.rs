@@ -16,6 +16,7 @@ use replicante_models_core::agent::Shard;
 use replicante_models_core::cluster::discovery::ClusterDiscovery;
 use replicante_models_core::cluster::discovery::DiscoverySettings;
 use replicante_models_core::cluster::ClusterMeta;
+use replicante_models_core::cluster::ClusterSettings;
 
 use super::MockState;
 use crate::backend::ActionsImpl;
@@ -304,6 +305,10 @@ impl PersistInterface for Persist {
         _: Option<SpanContext>,
     ) -> Result<()> {
         panic!("TODO: MockStore::Persist::cluster_discovery")
+    }
+
+    fn cluster_settings(&self, _settings: ClusterSettings, _: Option<SpanContext>) -> Result<()> {
+        panic!("TODO: MockStore::Persist::cluster_settings")
     }
 
     fn discovery_settings(

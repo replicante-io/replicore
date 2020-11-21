@@ -26,6 +26,7 @@ use crate::Result;
 /// Metrics that fail to register are logged and ignored.
 pub fn register_metrics(logger: &Logger, registry: &Registry) {
     self::cluster_refresh::register_metrics(logger, registry);
+    replicore_task_discovery::register_metrics(logger, registry);
 }
 
 /// Store the state of the WorkerSet.
@@ -94,6 +95,18 @@ impl Workers {
                     interfaces,
                     logger.clone(),
                     agents_timeout,
+                )
+            },
+        )?;
+        let worker_set = configure_worker(
+            worker_set,
+            ReplicanteQueues::DiscoverClusters,
+            config.task_workers.discover_clusters(),
+            || {
+                replicore_task_discovery::DiscoverClusters::new(
+                    logger.clone(),
+                    interfaces.stores.primary.clone(),
+                    interfaces.tracing.tracer(),
                 )
             },
         )?;

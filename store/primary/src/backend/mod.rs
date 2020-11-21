@@ -21,6 +21,7 @@ use replicante_models_core::agent::Shard;
 use replicante_models_core::cluster::discovery::ClusterDiscovery;
 use replicante_models_core::cluster::discovery::DiscoverySettings;
 use replicante_models_core::cluster::ClusterMeta;
+use replicante_models_core::cluster::ClusterSettings;
 use replicante_service_healthcheck::HealthChecks;
 
 use crate::store::actions::ActionSyncState;
@@ -292,6 +293,11 @@ box_interface! {
             span: Option<SpanContext>,
         ) -> Result<Option<ClusterDiscovery>>;
         fn mark_stale(&self, attrs: &ClusterAttribures, span: Option<SpanContext>) -> Result<()>;
+        fn settings(
+            &self,
+            attrs: &ClusterAttribures,
+            span: Option<SpanContext>,
+        ) -> Result<Option<ClusterSettings>>;
     }
 }
 
@@ -404,6 +410,11 @@ box_interface! {
         fn cluster_discovery(
             &self,
             discovery: ClusterDiscovery,
+            span: Option<SpanContext>,
+        ) -> Result<()>;
+        fn cluster_settings(
+            &self,
+            settings: ClusterSettings,
             span: Option<SpanContext>,
         ) -> Result<()>;
         fn discovery_settings(
