@@ -3028,6 +3028,7 @@ dependencies = [
  "replicante_models_core",
  "replicante_service_tasks",
  "replicante_store_primary",
+ "replicante_stream_events",
  "replicante_util_failure",
  "replicante_util_tracing",
  "replicore_models_tasks",

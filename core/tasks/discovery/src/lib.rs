@@ -10,8 +10,11 @@ use slog::Logger;
 
 use replicante_models_core::cluster::discovery::ClusterDiscovery;
 use replicante_models_core::cluster::ClusterSettings;
+use replicante_models_core::events::Event;
 use replicante_service_tasks::TaskHandler;
 use replicante_store_primary::store::Store;
+use replicante_stream_events::EmitMessage;
+use replicante_stream_events::Stream;
 use replicante_util_failure::capture_fail;
 use replicante_util_failure::failure_info;
 use replicante_util_tracing::fail_span;
@@ -33,14 +36,21 @@ use self::metrics::DISCOVER_DISABLED_COUNT;
 
 /// Task handler for `ReplicanteQueues::DiscoverClusters` tasks.
 pub struct DiscoverClusters {
+    events: Stream,
     logger: Logger,
     store: Store,
     tracer: Arc<Tracer>,
 }
 
 impl DiscoverClusters {
-    pub fn new(logger: Logger, store: Store, tracer: Arc<Tracer>) -> DiscoverClusters {
+    pub fn new(
+        events: Stream,
+        logger: Logger,
+        store: Store,
+        tracer: Arc<Tracer>,
+    ) -> DiscoverClusters {
         DiscoverClusters {
+            events,
             logger,
             store,
             tracer,
@@ -66,10 +76,11 @@ impl DiscoverClusters {
             return Ok(());
         }
 
+        let name = payload.settings.name.clone();
         let namespace = payload.settings.namespace.clone();
         let discoveries = replicante_cluster_discovery::discover(payload.settings);
         for record in discoveries {
-            let record = record.context(ErrorKind::FetchCluster)?;
+            let record = record.with_context(|_| ErrorKind::fetch_cluster(&namespace, &name))?;
             debug!(
                 self.logger,
                 "Processing discovery record";
@@ -91,27 +102,51 @@ impl DiscoverClusters {
         let namespace = namespace.to_string();
         let span_context = span.context().clone();
 
-        // TODO: Fetch current record (if any).
-        // TODO: "Diff" records and emit events.
+        // Fetch current record (if any).
+        let current_record = self
+            .store
+            .cluster(namespace.clone(), cluster_id.clone())
+            .discovery(span_context.clone())
+            .with_context(|_| ErrorKind::fetch_discovery(&namespace, &cluster_id))?;
+
+        // "Diff" records and emit events.
+        let event = match (current_record, &record) {
+            (None, record) => Some(Event::builder().cluster().new_cluster(record.clone())),
+            (Some(current), record) if current != *record => {
+                Some(Event::builder().cluster().changed(current, record.clone()))
+            }
+            _ => None,
+        };
+        if let Some(event) = event {
+            let code = event.code();
+            let stream_key = event.stream_key();
+            let event = EmitMessage::with(stream_key, event)
+                .with_context(|_| ErrorKind::emit_event(code))?
+                .trace(span.context().clone());
+            self.events
+                .emit(event)
+                .with_context(|_| ErrorKind::emit_event(code))?;
+        }
 
         // Persist the discovery record if it changed.
         self.store
             .persist()
             .cluster_discovery(record, span_context.clone())
-            .context(ErrorKind::PersistRecord)?;
+            .with_context(|_| ErrorKind::persist_record(&namespace, &cluster_id))?;
+
         // Ensure a ClusterSettings record for the cluster exists.
         let settings = self
             .store
             .cluster(namespace.clone(), cluster_id.clone())
             .settings(span_context.clone())
-            .context(ErrorKind::FetchSettings)?;
+            .with_context(|_| ErrorKind::fetch_settings(&namespace, &cluster_id))?;
         if settings.is_none() {
             DISCOVER_CLUSTER_SETTINGS_COUNT.inc();
-            let settings = ClusterSettings::new(namespace, cluster_id, true);
+            let settings = ClusterSettings::new(namespace.clone(), cluster_id.clone(), true);
             self.store
                 .persist()
                 .cluster_settings(settings, span_context)
-                .context(ErrorKind::PersistSettings)?;
+                .with_context(|_| ErrorKind::persist_settings(&namespace, &cluster_id))?;
         }
         Ok(())
     }

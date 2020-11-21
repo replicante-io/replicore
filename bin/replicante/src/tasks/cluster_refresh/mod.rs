@@ -16,14 +16,11 @@ use slog::Logger;
 use replicante_cluster_aggregator::Aggregator;
 use replicante_cluster_fetcher::Fetcher;
 use replicante_cluster_fetcher::Snapshotter;
-use replicante_models_core::cluster::discovery::ClusterDiscovery;
-use replicante_models_core::events::Event;
 use replicante_models_core::scope::Namespace;
 use replicante_service_coordinator::Coordinator;
 use replicante_service_coordinator::ErrorKind as CoordinatorErrorKind;
 use replicante_service_tasks::TaskHandler;
 use replicante_store_primary::store::Store;
-use replicante_stream_events::EmitMessage;
 use replicante_stream_events::Stream as EventsStream;
 use replicante_util_failure::capture_fail;
 use replicante_util_failure::failure_info;
@@ -131,7 +128,6 @@ impl Handler {
         let refresh_id = Utc::now().timestamp();
         let timer = REFRESH_DURATION.start_timer();
         self.emit_snapshots(&cluster_id, snapshot, span);
-        self.refresh_discovery(discovery.clone(), span)?;
         self.fetcher
             .fetch(ns, discovery.clone(), refresh_id, lock.watch(), span)
             .with_context(|_| ErrorKind::ClusterRefresh)?;
@@ -164,49 +160,6 @@ impl Handler {
                 failure_info(&error),
             );
         }
-    }
-
-    /// Refresh the state of the cluster discovery.
-    ///
-    /// Refresh is performed based on the current state or luck of state.
-    /// This method emits events as needed (and before the state is updated).
-    fn refresh_discovery(&self, discovery: ClusterDiscovery, span: &mut Span) -> Result<()> {
-        let current_state = self
-            .store
-            .cluster("TODO_NS".to_string(), discovery.cluster_id.clone())
-            .discovery(span.context().clone())
-            .with_context(|_| ErrorKind::PrimaryStorePersist("cluster_discovery"))?;
-        if let Some(current_state) = current_state {
-            if discovery == current_state {
-                return Ok(());
-            }
-            let event = Event::builder()
-                .cluster()
-                .changed(current_state, discovery.clone());
-            let code = event.code();
-            let stream_key = event.stream_key();
-            let event = EmitMessage::with(stream_key, event)
-                .with_context(|_| ErrorKind::EventsStreamEmit(code))?
-                .trace(span.context().clone());
-            self.events
-                .emit(event)
-                .with_context(|_| ErrorKind::EventsStreamEmit(code))?;
-        } else {
-            let event = Event::builder().cluster().new_cluster(discovery.clone());
-            let code = event.code();
-            let stream_key = event.stream_key();
-            let event = EmitMessage::with(stream_key, event)
-                .with_context(|_| ErrorKind::EventsStreamEmit(code))?
-                .trace(span.context().clone());
-            self.events
-                .emit(event)
-                .with_context(|_| ErrorKind::EventsStreamEmit(code))?;
-        }
-        self.store
-            .persist()
-            .cluster_discovery(discovery, span.context().clone())
-            .with_context(|_| ErrorKind::PrimaryStorePersist("cluster_discovery"))?;
-        Ok(())
     }
 }
 

@@ -104,6 +104,7 @@ impl Workers {
             config.task_workers.discover_clusters(),
             || {
                 replicore_task_discovery::DiscoverClusters::new(
+                    interfaces.streams.events.clone(),
                     logger.clone(),
                     interfaces.stores.primary.clone(),
                     interfaces.tracing.tracer(),

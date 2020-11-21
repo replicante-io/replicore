@@ -52,27 +52,68 @@ pub enum ErrorKind {
     #[fail(display = "unable to deserialize task payload")]
     DeserializePayload,
 
-    #[fail(display = "unable to fetch discovery record from backend")]
-    FetchCluster,
+    #[fail(display = "unable to emit {} event", _0)]
+    EmitEvent(String),
 
-    #[fail(display = "unable to fetch cluster settings record from primary store")]
-    FetchSettings,
+    #[fail(
+        display = "unable to fetch discovery record from backend {}.{}",
+        _0, _1
+    )]
+    FetchCluster(String, String),
 
-    #[fail(display = "unable to persist discovery record")]
-    PersistRecord,
+    #[fail(
+        display = "unable to fetch {}.{} discovery record from primary store",
+        _0, _1
+    )]
+    FetchDiscovery(String, String),
 
-    #[fail(display = "unable to persist cluster settings")]
-    PersistSettings,
+    #[fail(
+        display = "unable to fetch {}.{} cluster settings record from primary store",
+        _0, _1
+    )]
+    FetchSettings(String, String),
+
+    #[fail(display = "unable to persist {}.{} discovery record", _0, _1)]
+    PersistRecord(String, String),
+
+    #[fail(display = "unable to persist {}.{} cluster settings", _0, _1)]
+    PersistSettings(String, String),
 }
 
 impl ErrorKind {
+    pub fn emit_event(code: &str) -> ErrorKind {
+        ErrorKind::EmitEvent(code.to_string())
+    }
+
+    pub fn fetch_cluster(namespace: &str, name: &str) -> ErrorKind {
+        ErrorKind::FetchCluster(namespace.to_string(), name.to_string())
+    }
+
+    pub fn fetch_discovery(namespace: &str, cluster_id: &str) -> ErrorKind {
+        ErrorKind::FetchDiscovery(namespace.to_string(), cluster_id.to_string())
+    }
+
+    pub fn fetch_settings(namespace: &str, cluster_id: &str) -> ErrorKind {
+        ErrorKind::FetchSettings(namespace.to_string(), cluster_id.to_string())
+    }
+
+    pub fn persist_record(namespace: &str, cluster_id: &str) -> ErrorKind {
+        ErrorKind::PersistRecord(namespace.to_string(), cluster_id.to_string())
+    }
+
+    pub fn persist_settings(namespace: &str, cluster_id: &str) -> ErrorKind {
+        ErrorKind::PersistSettings(namespace.to_string(), cluster_id.to_string())
+    }
+
     fn kind_name(&self) -> Option<&str> {
         let name = match self {
+            ErrorKind::EmitEvent(_) => "EmitEvent",
             ErrorKind::DeserializePayload => "DeserializePayload",
-            ErrorKind::FetchCluster => "FetchCluster",
-            ErrorKind::FetchSettings => "FetchSettings",
-            ErrorKind::PersistRecord => "PersistRecord",
-            ErrorKind::PersistSettings => "PersistSettings",
+            ErrorKind::FetchCluster(_, _) => "FetchCluster",
+            ErrorKind::FetchDiscovery(_, _) => "FetchDiscovery",
+            ErrorKind::FetchSettings(_, _) => "FetchSettings",
+            ErrorKind::PersistRecord(_, _) => "PersistRecord",
+            ErrorKind::PersistSettings(_, _) => "PersistSettings",
         };
         Some(name)
     }
