@@ -12,6 +12,7 @@ use replicante_models_core::scope::Namespace;
 use replicante_models_core::scope::NsHttpsTransport;
 use replicante_service_coordinator::Config as CoordinatorConfig;
 use replicante_service_tasks::Config as TasksConfig;
+use replicante_stream::StreamConfig;
 use replicante_util_tracing::Config as TracingConfig;
 use replicore_component_discovery::Config as DiscoveryConfig;
 
@@ -20,15 +21,12 @@ use crate::ErrorKind;
 use crate::Result;
 
 mod components;
-mod events;
 mod sentry;
 mod storage;
 mod task_workers;
 mod timeouts;
 
 pub use self::components::ComponentsConfig;
-pub use self::events::EventsConfig;
-pub use self::events::SnapshotsConfig as EventsSnapshotsConfig;
 pub use self::sentry::SentryCaptureApi;
 pub use self::sentry::SentryConfig;
 pub use self::storage::StorageConfig;
@@ -63,7 +61,7 @@ pub struct Config {
     pub discovery: DiscoveryConfig,
 
     /// Events configuration.
-    pub events: EventsConfig,
+    pub events: StreamConfig,
 
     /// Logging configuration.
     #[serde(default)]

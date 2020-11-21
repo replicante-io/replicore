@@ -25,7 +25,6 @@ mod error;
 mod metrics;
 mod node;
 mod shard;
-mod snapshotter;
 
 use self::actions::ActionsFetcher;
 use self::agent::AgentFetcher;
@@ -38,7 +37,6 @@ pub use self::error::Error;
 pub use self::error::ErrorKind;
 pub use self::error::Result;
 pub use self::metrics::register_metrics;
-pub use self::snapshotter::Snapshotter;
 
 struct ClusterIdentityChecker {
     display_name: Option<String>,

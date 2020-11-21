@@ -1,8 +1,7 @@
 events:
-  stream:
-    backend: kafka
-    options:
-      brokers: 'localhost:9092'
+  backend: kafka
+  options:
+    brokers: 'localhost:9092'
 storage:
   primary:
     backend: mongodb

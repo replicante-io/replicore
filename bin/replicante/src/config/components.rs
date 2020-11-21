@@ -4,15 +4,15 @@ use serde_derive::Serialize;
 /// Components enabling configuration.
 #[derive(Clone, Eq, PartialEq, Hash, Debug, Serialize, Deserialize)]
 pub struct ComponentsConfig {
-    /// Default status for all components that are not explicitly enabled/disabled.
+    /// Default status for all components that are not explicitly configured.
     #[serde(default = "ComponentsConfig::default_default", rename = "_default")]
     default: bool,
 
-    /// Enable replicante core API endpoints.
+    /// Enable Replicante Core API endpoints.
     #[serde(default)]
     core_api: Option<bool>,
 
-    /// Enable agent discovery.
+    /// Enable DiscoverySettings periodic scheduler.
     #[serde(default)]
     discovery: Option<bool>,
 

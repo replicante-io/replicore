@@ -160,7 +160,7 @@ impl Streams {
         healthchecks: &mut HealthChecksRegister,
         tracer: Arc<Tracer>,
     ) -> Result<Streams> {
-        let events = EventsStream::new(config.events.stream.clone(), logger, healthchecks, tracer)
+        let events = EventsStream::new(config.events.clone(), logger, healthchecks, tracer)
             .with_context(|_| ErrorKind::InterfaceInit("events stream"))?;
         Ok(Streams { events })
     }

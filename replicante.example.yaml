@@ -40,21 +40,16 @@ api:
 
   # TLS (for HTTPS) certificates configuration.
   #
-  # By default, the agent starts without TLS enabled and serves requests over HTTP.
-  # Because this is an insecure channel and anyone could be making requests
-  # **actions are disabled** unless **mutual client** certificate validation is performed.
+  # By default, the server starts without TLS enabled and serves requests over HTTP.
+  # This is an insecure channel and anyone could be making requests.
   #
   # HTTPS without mutual authentication can also be enabled by providing the server
-  # with a TLS certificate and a TLS private key but **actions will still be disabled**.
+  # with a TLS certificate and a TLS private key.
   tls: ~
     # Optional path to a PEM bundle of trusted CAs for client authentication.
-    #
-    # This is **required** for actions to be enabled.
-    # If actions are explicitly enabled but no clients bundles are provided the agent
-    # will error on startup to notify about the incorrect configuration.
     #clients_ca_bundle: ~
   
-    # Path to a PEM file with the server's public certificate.
+    # Path to a PEM file with the server's PUBLIC certificate.
     #
     # Required if the `tls` option is set (not ~).
     #server_cert: '/path/to/certs/server-cert.pem'
@@ -138,10 +133,13 @@ api:
 # general case (named "all other nodes" in the example above) and enabling on their own
 # in a new, specialised, role.
 components:
-  # Default status for all components that are not explicitly enabled/disabled.
+  # Default status for all components that are not explicitly configured.
   _default: true
 
-  # Enable clusters discovery.
+  # Enable Replicante Core API endpoints.
+  core_api: null
+
+  # Enable DiscoverySettings periodic scheduler.
   discovery: null
 
   # Enable Grafana Annotations API endpoints (optional).
@@ -243,73 +241,59 @@ discovery:
   term: 10800
 
 
-# The section below is for events related configuration.
+# Configuration of the streaming platform events are emitted to.
 events:
-  # Configuration of periodic snapshots of tracked clusters/agents state.
-  snapshots:
-    # Enables/disables the emission of snapshot events.
-    enabled: true
+  # The backend to emit events to.
+  # 
+  # !!! DO NOT CHANGE AFTER INITIAL CONFIGURATION !!!
+  # This option is to allow users to choose a supported software that best fits
+  # their use and environment.
+  #
+  # To change this option, follow the instructions to rebuild your system:
+  #   https://www.replicante.io/docs/manual/docs/upgrades-fresh/
+  #
+  # Available options are:
+  #
+  #   * 'kafka' (recommended)
+  backend: kafka
 
-    # Frequency (expressed as number of cluster state fetches) of snapshot emission.
+  # Any backend-specific option is set here.
+  # The available options vary from backend to backend and are documented below.
+  #
+  # Kafka options:
+  options:
+    # Acknowledgement level for published messages.
     #
-    # Snapshots may be emitted more often than requested.
-    # Precautions are taken to emit snapshots at least this frequently but there is no guarantee
-    # this will happen, especially in the presence of some prolonged (total or partial) failures.
-    frequency: 60
-
-  # (required) Configuration of the streaming platform events are emitted to.
-  stream:
-    # The backend to emit events to.
-    # 
-    # !!! DO NOT CHANGE AFTER INITIAL CONFIGURATION !!!
-    # This option is to allow users to choose a supported software that best fits
-    # their use and environment.
+    # Possible values are:
     #
-    # To change this option, follow the instructions to rebuild your system:
-    #   https://www.replicante.io/docs/manual/docs/upgrades-fresh/
-    #
-    # Available options are:
-    #
-    #   * 'kafka' (recommended)
-    backend: kafka
+    #   * 'all': all in-sync-replicas for the partition published to must ack messages
+    #            (default; required for consistency; see kafka documentation for details).
+    #   * 'leader_only': only the leader of the partition published to must ack messages.
+    #   * 'none': no acknowledgements are required for produced messages.
+    ack_level: 'all'
 
-    # Any backend-specific option is set here.
-    # The available options vary from backend to backend and are documented below.
-    #
-    # Kafka options:
-    options:
-      # Acknowledgement level for published messages.
-      #
-      # Possible values are:
-      #
-      #   * 'all': all in-sync-replicas for the partition published to must ack messages
-      #            (default; required for consistency; see kafka documentation for details).
-      #   * 'leader_only': only the leader of the partition published to must ack messages.
-      #   * 'none': no acknowledgements are required for produced messages.
-      ack_level: 'all'
+    # (required) Comma separated list of seed brokers.
+    brokers: 'localhost:9092'
 
-      # (required) Comma separated list of seed brokers.
-      brokers: 'localhost:9092'
+    # Client session keepalive heartbeat interval (in milliseconds).
+    heartbeat: 3000
 
-      # Client session keepalive heartbeat interval (in milliseconds).
-      heartbeat: 3000
+    # Kafka-specific timeout options.
+    timeouts:
+      # Timeout (in millisecond) for non-topic requests.
+      metadata: 60000
 
-      # Kafka-specific timeout options.
-      timeouts:
-        # Timeout (in millisecond) for non-topic requests.
-        metadata: 60000
+      # Timeout (in milliseconds) for tasks to be acknowledged.
+      request: 5000
 
-        # Timeout (in milliseconds) for tasks to be acknowledged.
-        request: 5000
+      # Timeout (in milliseconds) after which workers are presumed dead by the brokers.
+      session: 10000
 
-        # Timeout (in milliseconds) after which workers are presumed dead by the brokers.
-        session: 10000
+      # Default timeout (in milliseconds) for network requests.
+      socket: 60000
 
-        # Default timeout (in milliseconds) for network requests.
-        socket: 60000
-
-      # Prefix for the stream's topic name.
-      topic_prefix: 'stream'
+    # Prefix for the stream's topic name.
+    topic_prefix: 'stream'
 
 
 # The section below is for logging configuration.

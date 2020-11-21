@@ -29,13 +29,8 @@ pub fn run<'a>(args: &ArgMatches<'a>, interfaces: &Interfaces) -> Result<Outcome
 
     let config = load_config(args)?;
     let mut healthchecks = HealthChecks::new();
-    let stream = EventsStream::new(
-        config.events.stream,
-        logger.clone(),
-        &mut healthchecks,
-        None,
-    )
-    .with_context(|_| ErrorKind::ClientInit("events stream"))?;
+    let stream = EventsStream::new(config.events, logger.clone(), &mut healthchecks, None)
+        .with_context(|_| ErrorKind::ClientInit("events stream"))?;
 
     warn!(
         logger,

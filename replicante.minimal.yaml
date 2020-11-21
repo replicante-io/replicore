@@ -16,18 +16,10 @@ coordinator:
     timeout: 10
 
 
-discovery:
-  backends:
-    http:
-      - url: 'http://static.server:port/discovery.json'
-        method: GET
-
-
 events:
-  stream:
-    backend: kafka
-    options:
-      brokers: 'localhost:9092'
+  backend: kafka
+  options:
+    brokers: 'localhost:9092'
 
 
 storage:

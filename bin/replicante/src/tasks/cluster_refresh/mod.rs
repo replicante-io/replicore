@@ -7,21 +7,16 @@ use std::time::Duration;
 use chrono::Utc;
 use failure::Fail;
 use failure::ResultExt;
-use opentracingrust::Log;
 use opentracingrust::Span;
-use slog::debug;
 use slog::info;
 use slog::Logger;
 
 use replicante_cluster_aggregator::Aggregator;
 use replicante_cluster_fetcher::Fetcher;
-use replicante_cluster_fetcher::Snapshotter;
 use replicante_models_core::scope::Namespace;
 use replicante_service_coordinator::Coordinator;
 use replicante_service_coordinator::ErrorKind as CoordinatorErrorKind;
 use replicante_service_tasks::TaskHandler;
-use replicante_store_primary::store::Store;
-use replicante_stream_events::Stream as EventsStream;
 use replicante_util_failure::capture_fail;
 use replicante_util_failure::failure_info;
 use replicante_util_tracing::fail_span;
@@ -46,10 +41,8 @@ use self::metrics::REFRESH_LOCKED;
 pub struct Handler {
     aggregator: Aggregator,
     coordinator: Coordinator,
-    events: EventsStream,
     fetcher: Fetcher,
     logger: Logger,
-    store: Store,
     tracing: Tracing,
 
     // TODO: remove when namespaces are done properly from the primary store.
@@ -66,11 +59,10 @@ impl Handler {
         let primary_store = interfaces.stores.primary.clone();
         let aggregator = Aggregator::new(logger.clone(), primary_store.clone());
         let coordinator = interfaces.coordinator.clone();
-        let events = interfaces.streams.events.clone();
         let fetcher = Fetcher::new(
             logger.clone(),
             interfaces.streams.events.clone(),
-            primary_store.clone(),
+            primary_store,
             agents_timeout,
             interfaces.tracing.tracer(),
         );
@@ -79,10 +71,8 @@ impl Handler {
         Handler {
             aggregator,
             coordinator,
-            events,
             fetcher,
             logger,
-            store: primary_store,
             tracing,
             tmp_global_namespace,
         }
@@ -127,7 +117,6 @@ impl Handler {
         let cluster_id = discovery.cluster_id.clone();
         let refresh_id = Utc::now().timestamp();
         let timer = REFRESH_DURATION.start_timer();
-        self.emit_snapshots(&cluster_id, snapshot, span);
         self.fetcher
             .fetch(ns, discovery.clone(), refresh_id, lock.watch(), span)
             .with_context(|_| ErrorKind::ClusterRefresh)?;
@@ -141,25 +130,6 @@ impl Handler {
             .context(ErrorKind::Coordination)?;
         info!(self.logger, "Cluster state refresh completed"; "cluster_id" => cluster_id);
         Ok(())
-    }
-
-    /// Emit cluster state snapshots, if needed by this task.
-    fn emit_snapshots(&self, name: &str, snapshot: bool, span: &mut Span) {
-        if !snapshot {
-            return;
-        }
-        debug!(self.logger, "Emitting cluster snapshot"; "cluster" => name);
-        span.log(Log::new().log("stage", "snapshot"));
-        let snapshotter = Snapshotter::new(name.into(), self.events.clone(), self.store.clone());
-        if let Err(error) = snapshotter.run(span) {
-            capture_fail!(
-                &error,
-                self.logger,
-                "Failed to emit snapshots";
-                "cluster" => name,
-                failure_info(&error),
-            );
-        }
     }
 }
 

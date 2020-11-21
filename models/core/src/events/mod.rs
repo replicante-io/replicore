@@ -9,7 +9,6 @@ pub mod cluster;
 pub mod namespace;
 pub mod node;
 pub mod shard;
-pub mod snapshot;
 
 /// Attempt to deserialize an event or return its code if desertification fails.
 ///
@@ -64,7 +63,6 @@ impl Event {
             Payload::Namespace(_) => None,
             Payload::Node(event) => event.cluster_id(),
             Payload::Shard(event) => event.cluster_id(),
-            Payload::Snapshot(event) => event.cluster_id(),
             #[cfg(test)]
             Payload::Test(event) => event.cluster_id(),
         }
@@ -79,7 +77,6 @@ impl Event {
             Payload::Namespace(event) => event.code(),
             Payload::Node(event) => event.code(),
             Payload::Shard(event) => event.code(),
-            Payload::Snapshot(event) => event.code(),
             #[cfg(test)]
             Payload::Test(event) => event.code(),
         }
@@ -99,7 +96,6 @@ impl Event {
             Payload::Namespace(event) => event.stream_key(),
             Payload::Node(event) => event.stream_key(),
             Payload::Shard(event) => event.stream_key(),
-            Payload::Snapshot(event) => event.stream_key(),
             #[cfg(test)]
             Payload::Test(event) => event.stream_key(),
         }
@@ -146,11 +142,6 @@ impl EventBuilder {
     /// Build shard events.
     pub fn shard(self) -> self::shard::ShardEventBuilder {
         self::shard::ShardEventBuilder { builder: self }
-    }
-
-    /// Build snapshot events.
-    pub fn snapshot(self) -> self::snapshot::SnapshotEventBuilder {
-        self::snapshot::SnapshotEventBuilder { builder: self }
     }
 
     /// Set the event occurrence timestamp.
@@ -219,10 +210,6 @@ pub enum Payload {
     /// Shard related events.
     #[serde(rename = "SHARD")]
     Shard(self::shard::ShardEvent),
-
-    /// Snapshot related events.
-    #[serde(rename = "SHARD")]
-    Snapshot(self::snapshot::SnapshotEvent),
 
     /// Events variant used exclusively for crate tests.
     #[cfg(test)]
