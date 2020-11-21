@@ -24,6 +24,7 @@ use crate::backend::ActionsInterface;
 use crate::backend::AgentImpl;
 use crate::backend::AgentsImpl;
 use crate::backend::ClusterImpl;
+use crate::backend::DiscoverySettingsImpl;
 use crate::backend::GlobalSearchImpl;
 use crate::backend::LegacyImpl;
 use crate::backend::LegacyInterface;
@@ -64,6 +65,10 @@ impl StoreInterface for StoreMock {
 
     fn cluster(&self) -> ClusterImpl {
         panic!("TODO: StoreMock::cluster");
+    }
+
+    fn discovery_settings(&self) -> DiscoverySettingsImpl {
+        panic!("TODO: StoreMock::discovery_settings");
     }
 
     fn global_search(&self) -> GlobalSearchImpl {

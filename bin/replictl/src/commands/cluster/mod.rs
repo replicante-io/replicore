@@ -4,7 +4,7 @@ use structopt::StructOpt;
 
 mod refresh;
 
-/// Commands to operate on actions.
+/// Show and manage clusters.
 #[derive(Debug, StructOpt)]
 pub enum Opt {
     /// Schedule a cluster refresh.

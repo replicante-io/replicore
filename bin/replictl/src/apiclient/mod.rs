@@ -5,6 +5,7 @@ use slog::Logger;
 use uuid::Uuid;
 
 use replicante_models_core::api::apply::ApplyObject;
+use replicante_models_core::api::discovery_settings::DiscoverySettingsListResponse;
 
 use crate::context::Context;
 
@@ -16,6 +17,9 @@ const ENDPOINT_CLUSTER_ACTION: &str = "action";
 const ENDPOINT_CLUSTER_ACTION_APPROVE: &str = "approve";
 const ENDPOINT_CLUSTER_ACTION_DISAPPROVE: &str = "disapprove";
 const ENDPOINT_CLUSTER_REFRESH: &str = "refresh";
+const ENDPOINT_DISCOVERY_SETTINGS: &str = "/api/unstable/core/discoverysettings";
+const ENDPOINT_DISCOVERY_SETTINGS_DELETE: &str = "delete";
+const ENDPOINT_DISCOVERY_SETTINGS_LIST: &str = "list";
 
 /// Replicante Core API client.
 pub struct RepliClient {
@@ -118,6 +122,41 @@ impl RepliClient {
             .context("Failed to schedule the cluster refresh")?;
         response.check_status()?;
         Ok(())
+    }
+
+    /// Delete a DiscoverySettings object.
+    pub async fn discovery_settings_delete(&self, namespace: &str, name: &str) -> Result<()> {
+        let uri = format!(
+            "{}/{}/{}/{}",
+            ENDPOINT_DISCOVERY_SETTINGS, namespace, name, ENDPOINT_DISCOVERY_SETTINGS_DELETE,
+        );
+        let request = self.client.delete(&uri);
+        let response = self
+            .client
+            .send(request)
+            .await
+            .context("Failed to delete DiscoverySettings object")?;
+        response.check_status()?;
+        Ok(())
+    }
+
+    /// Fetch the list of names for DiscoverySettings objects in the namespace.
+    pub async fn discovery_settings_list(&self, namespace: &str) -> Result<Vec<String>> {
+        let uri = format!(
+            "{}/{}/{}",
+            ENDPOINT_DISCOVERY_SETTINGS, namespace, ENDPOINT_DISCOVERY_SETTINGS_LIST,
+        );
+        let request = self.client.get(&uri);
+        let response = self
+            .client
+            .send(request)
+            .await
+            .context("Failed to list DiscoverySettings objects")?;
+        response.check_status()?;
+        let response = response
+            .body_as::<DiscoverySettingsListResponse>()
+            .context("Failed to decode DiscoverySettings list response")?;
+        Ok(response.names)
     }
 
     /// Instantiate a new Replicante API client with the given session.

@@ -30,6 +30,7 @@ use crate::store::agent::AgentAttribures;
 use crate::store::agents::AgentsAttribures;
 use crate::store::agents::AgentsCounts;
 use crate::store::cluster::ClusterAttribures;
+use crate::store::discovery_settings::DiscoverySettingsAttributes;
 use crate::store::node::NodeAttribures;
 use crate::store::nodes::NodesAttribures;
 use crate::store::shard::ShardAttribures;
@@ -169,6 +170,7 @@ arc_interface! {
         fn agent(&self) -> AgentImpl;
         fn agents(&self) -> AgentsImpl;
         fn cluster(&self) -> ClusterImpl;
+        fn discovery_settings(&self) -> DiscoverySettingsImpl;
         fn global_search(&self) -> GlobalSearchImpl;
         fn legacy(&self) -> LegacyImpl;
         fn node(&self) -> NodeImpl;
@@ -318,6 +320,30 @@ box_interface! {
         fn clusters_meta(&self) -> Result<Cursor<ClusterMeta>>;
         fn nodes(&self) -> Result<Cursor<Node>>;
         fn shards(&self) -> Result<Cursor<Shard>>;
+    }
+}
+
+box_interface! {
+    /// Dynamic dispatch discovery settings operations to a backend-specific implementation.
+    struct DiscoverySettingsImpl,
+
+    /// Definition of supported discovery settings operations.
+    ///
+    /// See `store::discovery_settings::DiscoverySettings` for descriptions of methods.
+    trait DiscoverySettingsInterface,
+
+    interface {
+        fn delete(
+            &self,
+            attrs: &DiscoverySettingsAttributes,
+            name: &str,
+            span: Option<SpanContext>,
+        ) -> Result<()>;
+        fn iter_names(
+            &self,
+            attrs: &DiscoverySettingsAttributes,
+            span: Option<SpanContext>,
+        ) -> Result<Cursor<String>>;
     }
 }
 

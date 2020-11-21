@@ -17,6 +17,7 @@ use super::AgentImpl;
 use super::AgentsImpl;
 use super::ClusterImpl;
 use super::DataImpl;
+use super::DiscoverySettingsImpl;
 use super::GlobalSearchImpl;
 use super::LegacyImpl;
 use super::NodeImpl;
@@ -36,6 +37,7 @@ mod agents;
 mod cluster;
 mod constants;
 mod data;
+mod discovery_settings;
 mod document;
 mod global_search;
 mod legacy;
@@ -156,6 +158,15 @@ impl StoreInterface for Store {
             self.tracer.clone(),
         );
         ClusterImpl::new(cluster)
+    }
+
+    fn discovery_settings(&self) -> DiscoverySettingsImpl {
+        let discovery_settings = self::discovery_settings::DiscoverySettings::new(
+            self.client.clone(),
+            self.db.clone(),
+            self.tracer.clone(),
+        );
+        DiscoverySettingsImpl::new(discovery_settings)
     }
 
     fn global_search(&self) -> GlobalSearchImpl {

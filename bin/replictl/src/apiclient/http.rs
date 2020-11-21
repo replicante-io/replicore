@@ -58,7 +58,19 @@ impl HttpClient {
         Ok(HttpClient { client, url })
     }
 
-    /// Start a POST request against the API server.
+    /// Start a DELETE request to the API server.
+    pub fn delete(&self, uri: &str) -> RequestBuilder {
+        let url = format!("{}{}", self.url, uri);
+        self.client.delete(&url)
+    }
+
+    /// Start a GET request to the API server.
+    pub fn get(&self, uri: &str) -> RequestBuilder {
+        let url = format!("{}{}", self.url, uri);
+        self.client.get(&url)
+    }
+
+    /// Start a POST request to the API server.
     pub fn post(&self, uri: &str) -> RequestBuilder {
         let url = format!("{}{}", self.url, uri);
         self.client.post(&url)

@@ -14,7 +14,7 @@ use replicante_models_core::api::apply::SCOPE_ATTRS;
 use crate::apiclient::RepliClient;
 use crate::context::ContextStore;
 
-// Additionall apply CLI options.
+// Additional apply CLI options.
 // NOTE: this is not a docstring because StructOpt then uses it as the actions help.
 #[derive(Debug, StructOpt)]
 pub struct Opt {

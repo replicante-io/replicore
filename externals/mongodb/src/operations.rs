@@ -77,6 +77,48 @@ where
     Ok(cursor)
 }
 
+/// Perform an [`deleteOne`] operation.
+///
+/// [`deleteOne`]: https://docs.mongodb.com/manual/reference/method/db.collection.deleteOne/
+pub fn delete_one(
+    collection: Collection,
+    filter: OrderedDocument,
+    span: Option<SpanContext>,
+    tracer: Option<&Tracer>,
+) -> Result<()> {
+    let mut span = match (tracer, span) {
+        (Some(tracer), Some(context)) => {
+            let opts = StartOptions::default().child_of(context);
+            let mut span = tracer.span_with_options("store.mongodb.deleteOne", opts);
+            let namespace = collection.namespace();
+            let namespace = format!("{}.{}", namespace.db, namespace.coll);
+            span.tag("namespace", namespace);
+            span.tag(
+                "filter",
+                serde_json::to_string(&filter)
+                    .unwrap_or_else(|_| "<unable to encode filter>".into()),
+            );
+            Some(span.auto_finish())
+        }
+        _ => None,
+    };
+    MONGODB_OPS_COUNT.with_label_values(&["deleteOne"]).inc();
+    let _timer = MONGODB_OPS_DURATION
+        .with_label_values(&["deleteOne"])
+        .start_timer();
+    collection
+        .delete_one(filter, None)
+        .map_err(|error| {
+            MONGODB_OP_ERRORS_COUNT
+                .with_label_values(&["deleteOne"])
+                .inc();
+            error
+        })
+        .with_context(|_| ErrorKind::DeleteOne)
+        .map_err(|error| fail_span(error, span.as_deref_mut()))?;
+    Ok(())
+}
+
 /// Perform a [`find`] operation.
 ///
 /// [`find`]: https://docs.mongodb.com/manual/reference/method/db.collection.find/

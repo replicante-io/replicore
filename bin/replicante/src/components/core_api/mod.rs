@@ -8,6 +8,7 @@ use crate::Result;
 
 mod apply;
 mod cluster;
+mod discovery_settings;
 
 pub use apply::register_metrics;
 
@@ -18,8 +19,10 @@ impl CoreAPI {
     pub fn new(logger: Logger, interfaces: &mut Interfaces) -> CoreAPI {
         let apply = self::apply::configure(&logger, interfaces);
         let cluster = self::cluster::configure(&logger, interfaces);
+        let discovery_settings = self::discovery_settings::configure(&logger, interfaces);
         interfaces.api.configure(apply);
         interfaces.api.configure(cluster);
+        interfaces.api.configure(discovery_settings);
         CoreAPI {}
     }
 }

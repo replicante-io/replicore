@@ -55,6 +55,9 @@ pub enum ErrorKind {
     #[fail(display = "MongoDB aggregate failed")]
     AggregateOp,
 
+    #[fail(display = "MongoDB deleteOne failed")]
+    DeleteOne,
+
     #[fail(display = "unable to fetch from a MongoDB find cursor")]
     FindCursor,
 
@@ -103,6 +106,7 @@ impl ErrorKind {
         let name = match self {
             ErrorKind::AggregateCursor => "AggregateCursor",
             ErrorKind::AggregateOp => "AggregateOp",
+            ErrorKind::DeleteOne => "DeleteOne",
             ErrorKind::FindCursor => "FindCursor",
             ErrorKind::FindOne => "FindOne",
             ErrorKind::FindOp => "FindOp",

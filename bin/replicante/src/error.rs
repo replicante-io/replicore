@@ -121,6 +121,9 @@ pub enum ErrorKind {
     #[fail(display = "could not find model {} with ID {}", _0, _1)]
     ModelNotFound(&'static str, String),
 
+    #[fail(display = "could not delete {} from the primary store", _0)]
+    PrimaryStoreDelete(&'static str),
+
     #[fail(display = "could not query {} from the primary store", _0)]
     PrimaryStoreQuery(&'static str),
 
@@ -179,6 +182,7 @@ impl ErrorKind {
             ErrorKind::InterfaceInit(_) => "InterfaceInit",
             ErrorKind::ModelNotFound(_, _) => "ModelNotFound",
             ErrorKind::PrimaryStoreQuery(_) => "PrimaryStoreQuery",
+            ErrorKind::PrimaryStoreDelete(_) => "PrimaryStoreDelete",
             ErrorKind::PrimaryStorePersist(_) => "PrimaryStorePersist",
             ErrorKind::TaskWorkerRegistration(_) => "TaskWorkerRegistration",
             ErrorKind::ThreadFailed => "ThreadFailed",

@@ -22,7 +22,7 @@ pub struct CommonOpt {
     pub action: Uuid,
 }
 
-/// Commands to operate on actions.
+/// Show and manage actions.
 #[derive(Debug, StructOpt)]
 pub enum Opt {
     /// Approve an action that is pending approval.

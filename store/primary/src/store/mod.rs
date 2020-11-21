@@ -14,6 +14,7 @@ pub mod actions;
 pub mod agent;
 pub mod agents;
 pub mod cluster;
+pub mod discovery_settings;
 pub mod global_search;
 pub mod legacy;
 pub mod node;
@@ -26,6 +27,7 @@ use self::actions::Actions;
 use self::agent::Agent;
 use self::agents::Agents;
 use self::cluster::Cluster;
+use self::discovery_settings::DiscoverySettings;
 use self::global_search::GlobalSearch;
 use self::legacy::Legacy;
 use self::node::Node;
@@ -108,6 +110,13 @@ impl Store {
             namespace,
         };
         Cluster::new(cluster, attrs)
+    }
+
+    /// Operate on DiscoverySettings objects in a namespace.
+    pub fn discovery_settings(&self, namespace: String) -> DiscoverySettings {
+        let discovery_settings = self.store.discovery_settings();
+        let attrs = self::discovery_settings::DiscoverySettingsAttributes { namespace };
+        DiscoverySettings::new(discovery_settings, attrs)
     }
 
     /// Search for specific records across the entrie system (no namespaces, clusters, ...).

@@ -5,19 +5,22 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
-### Changed
-- **BREAKING**: Backends defined in the config file are ignored.
-- **BREAKING**: Dropped snapshot events.
+### Added
 - Cluster discovery dynamically configured with `apply`.
+- List and delete `DiscoverySettings` objects (API and `replictl`).
+
+### Changed
 - Populate view DB from the events stream.
 - Refactor cluster discovery.
-- Refactor cluster refesh.
+- Refactor cluster orchestration (also know as refresh).
 
 ### Fixed
 - Ensure `replictl` contexts store is flushed to disk before exiting.
 - WebUI `/cluster/{cluster_id}/action/{action_id}` handles `GET` requests instead of `POST`.
 
 ### Removed
+- **BREAKING**: Discovery backends defined in the config file are ignored.
+- **BREAKING**: Dropped snapshot events.
 - The `events_indexer` component was replaced by the `viewupdater` component.
 
 ## [0.6.0] - 2020-05-28
