@@ -5,7 +5,7 @@ use slog::Logger;
 
 use replicante_util_upkeep::Upkeep;
 
-use replicore_component_discovery::Config as DiscoveryConfig;
+use replicore_component_discovery_scheduler::Config as DiscoveryConfig;
 
 use super::metrics::COMPONENTS_ENABLED;
 use super::Config;
@@ -46,7 +46,10 @@ macro_rules! impl_component {
     };
 }
 
-impl_component!(Discovery, replicore_component_discovery::Discovery);
+impl_component!(
+    Discovery,
+    replicore_component_discovery_scheduler::Discovery
+);
 impl Discovery {
     fn new(config: DiscoveryConfig, interfaces: &Interfaces) -> Discovery {
         let coordinator = interfaces.coordinator.clone();
@@ -54,7 +57,7 @@ impl Discovery {
         let store = interfaces.stores.primary.clone();
         let tasks = interfaces.tasks.clone();
         let tracer = interfaces.tracing.tracer();
-        let component = replicore_component_discovery::Discovery::new(
+        let component = replicore_component_discovery_scheduler::Discovery::new(
             coordinator,
             config,
             logger,
@@ -187,7 +190,7 @@ impl Components {
     /// Metrics that fail to register are logged and ignored.
     pub fn register_metrics(logger: &Logger, registry: &Registry) {
         self::core_api::register_metrics(logger, registry);
-        replicore_component_discovery::register_metrics(logger, registry);
+        replicore_component_discovery_scheduler::register_metrics(logger, registry);
         self::workers::register_metrics(logger, registry);
     }
 

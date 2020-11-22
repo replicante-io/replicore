@@ -14,7 +14,7 @@ use replicante_service_coordinator::Config as CoordinatorConfig;
 use replicante_service_tasks::Config as TasksConfig;
 use replicante_stream::StreamConfig;
 use replicante_util_tracing::Config as TracingConfig;
-use replicore_component_discovery::Config as DiscoveryConfig;
+use replicore_component_discovery_scheduler::Config as DiscoveryConfig;
 
 use crate::interfaces::api::Config as APIConfig;
 use crate::ErrorKind;

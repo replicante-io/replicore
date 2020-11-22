@@ -1,10 +1,10 @@
 [package]
-name = "replicore_component_discovery"
+name = "replicore_component_discovery_scheduler"
 version = "0.1.0"
 authors = ["Stefano Pogliani <stefano@spogliani.net>"]
 edition = "2018"
 
-description = "Component to discover clusters"
+description = "Component to schedule disovery tasks"
 documentation = "https://www.replicante.io/docs"
 homepage = "https://www.replicante.io/"
 repository = "https://github.com/replicante-io/replicante"

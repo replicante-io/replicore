@@ -7,7 +7,7 @@ members = [
   "cluster/aggregator",
   "cluster/discovery",
   "cluster/fetcher",
-  "core/components/discovery",
+  "core/components/discovery_scheduler",
   "core/components/viewupdater",
   "core/tasks/discovery",
   "externals/kafka",
