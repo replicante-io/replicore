@@ -36,8 +36,8 @@ impl Node {
 impl NodeInterface for Node {
     fn get(&self, attrs: &NodeAttribures, span: Option<SpanContext>) -> Result<Option<NodeModel>> {
         let filter = doc! {
-            "cluster_id" => &attrs.cluster_id,
-            "node_id" => &attrs.node_id,
+            "cluster_id": &attrs.cluster_id,
+            "node_id": &attrs.node_id,
         };
         let collection = self.client.database(&self.db).collection(COLLECTION_NODES);
         let document: Option<NodeDocument> =

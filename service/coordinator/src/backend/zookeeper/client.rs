@@ -315,8 +315,8 @@ impl Client {
     /// Hash a key to return a unique, escaped, identifier.
     pub fn hash_from_key(key: &str) -> String {
         let mut hasher = Sha256::new();
-        hasher.input(key);
-        let hash = hasher.result();
+        hasher.update(key);
+        let hash = hasher.finalize();
         format!("{:x}", hash)
     }
 

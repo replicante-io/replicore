@@ -44,7 +44,7 @@ impl LegacyInterface for Legacy {
         cluster_id: String,
         span: Option<SpanContext>,
     ) -> Result<Option<ClusterMeta>> {
-        let filter = doc! {"cluster_id" => &cluster_id};
+        let filter = doc! {"cluster_id": &cluster_id};
         let collection = self
             .client
             .database(&self.db)
@@ -61,9 +61,9 @@ impl LegacyInterface for Legacy {
         span: Option<SpanContext>,
     ) -> Result<Cursor<ClusterMeta>> {
         let search = regex::escape(&search);
-        let filter = doc! { "$or" => [
-            {"cluster_display_name" => {"$regex" => &search, "$options" => "i"}},
-            {"cluster_id" => {"$regex" => &search, "$options" => "i"}},
+        let filter = doc! {"$or": [
+            {"cluster_display_name": {"$regex": &search, "$options": "i"}},
+            {"cluster_id": {"$regex": &search, "$options": "i"}},
         ]};
         let collection = self
             .client
@@ -78,7 +78,7 @@ impl LegacyInterface for Legacy {
     }
 
     fn persist_cluster_meta(&self, meta: ClusterMeta, span: Option<SpanContext>) -> Result<()> {
-        let filter = doc! {"cluster_id" => &meta.cluster_id};
+        let filter = doc! {"cluster_id": &meta.cluster_id};
         let collection = self
             .client
             .database(&self.db)
@@ -96,9 +96,9 @@ impl LegacyInterface for Legacy {
     fn top_clusters(&self, span: Option<SpanContext>) -> Result<Cursor<ClusterMeta>> {
         let filter = doc! {};
         let sort = doc! {
-            "shards" => -1,
-            "nodes" => -1,
-            "cluster_id" => 1,
+            "shards": -1,
+            "nodes": -1,
+            "cluster_id": 1,
         };
         let mut options = FindOptions::default();
         options.limit = Some(i64::from(TOP_CLUSTERS_LIMIT));

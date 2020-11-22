@@ -43,8 +43,8 @@ impl DiscoverySettingsInterface for DiscoverySettings {
         span: Option<SpanContext>,
     ) -> Result<()> {
         let filter = doc! {
-            "namespace" => &attrs.namespace,
-            "name" => name,
+            "namespace": &attrs.namespace,
+            "name": name,
         };
         let collection = self
             .client
@@ -60,9 +60,9 @@ impl DiscoverySettingsInterface for DiscoverySettings {
         attrs: &DiscoverySettingsAttributes,
         span: Option<SpanContext>,
     ) -> Result<Cursor<String>> {
-        let filter = doc! {"namespace" => &attrs.namespace};
+        let filter = doc! {"namespace": &attrs.namespace};
         let mut options = FindOptions::default();
-        options.sort = Some(doc! {"name" => 1});
+        options.sort = Some(doc! {"name": 1});
         let collection = self
             .client
             .database(&self.db)

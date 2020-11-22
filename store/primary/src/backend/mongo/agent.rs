@@ -42,8 +42,8 @@ impl AgentInterface for Agent {
         span: Option<SpanContext>,
     ) -> Result<Option<AgentModel>> {
         let filter = doc! {
-            "cluster_id" => &attrs.cluster_id,
-            "host" => &attrs.host,
+            "cluster_id": &attrs.cluster_id,
+            "host": &attrs.host,
         };
         let collection = self.client.database(&self.db).collection(COLLECTION_AGENTS);
         let agent = find_one(collection, filter, span, self.tracer.as_deref())
@@ -57,8 +57,8 @@ impl AgentInterface for Agent {
         span: Option<SpanContext>,
     ) -> Result<Option<AgentInfoModel>> {
         let filter = doc! {
-            "cluster_id" => &attrs.cluster_id,
-            "host" => &attrs.host,
+            "cluster_id": &attrs.cluster_id,
+            "host": &attrs.host,
         };
         let collection = self
             .client

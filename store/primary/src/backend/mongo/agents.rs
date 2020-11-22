@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use bson::doc;
-use bson::ordered::OrderedDocument;
+use bson::Document;
 use failure::Fail;
 use failure::ResultExt;
 use mongodb::sync::Client;
@@ -24,12 +24,12 @@ use super::constants::COLLECTION_AGENTS_INFO;
 use super::document::AgentInfoDocument;
 
 /// Return a document to count agents in given state as part of the $group stage.
-fn aggregate_count_status(status: &'static str) -> OrderedDocument {
-    doc! {"$sum" => {
-        "$cond" => {
-            "if" => {"$eq" => ["$status.code", status]},
-            "then" => 1,
-            "else" => 0,
+fn aggregate_count_status(status: &'static str) -> Document {
+    doc! {"$sum": {
+        "$cond": {
+            "if": {"$eq": ["$status.code", status]},
+            "then": 1,
+            "else": 0,
         }
     }}
 }
@@ -54,15 +54,15 @@ impl Agents {
 impl AgentsInterface for Agents {
     fn counts(&self, attrs: &AgentsAttribures, span: Option<SpanContext>) -> Result<AgentsCounts> {
         // Let mongo figure out the counts with an aggregation.
-        let filter = doc! {"$match" => {"cluster_id" => &attrs.cluster_id}};
+        let filter = doc! {"$match": {"cluster_id": &attrs.cluster_id}};
         let agents_down = aggregate_count_status("AGENT_DOWN");
-        let nodes = doc! {"$sum" => 1};
+        let nodes = doc! {"$sum": 1};
         let nodes_down = aggregate_count_status("NODE_DOWN");
-        let group = doc! {"$group" => {
-            "_id" => "$cluster_id",
-            "agents_down" => agents_down,
-            "nodes" => nodes,
-            "nodes_down" => nodes_down,
+        let group = doc! {"$group": {
+            "_id": "$cluster_id",
+            "agents_down": agents_down,
+            "nodes": nodes,
+            "nodes_down": nodes_down,
         }};
         let pipeline = vec![filter, group];
 
@@ -93,7 +93,7 @@ impl AgentsInterface for Agents {
         attrs: &AgentsAttribures,
         span: Option<SpanContext>,
     ) -> Result<Cursor<AgentModel>> {
-        let filter = doc! {"cluster_id" => &attrs.cluster_id};
+        let filter = doc! {"cluster_id": &attrs.cluster_id};
         let collection = self.client.database(&self.db).collection(COLLECTION_AGENTS);
         let cursor = find(collection, filter, span, self.tracer.as_deref())
             .with_context(|_| ErrorKind::MongoDBOperation)?
@@ -106,7 +106,7 @@ impl AgentsInterface for Agents {
         attrs: &AgentsAttribures,
         span: Option<SpanContext>,
     ) -> Result<Cursor<AgentInfoModel>> {
-        let filter = doc! {"cluster_id" => &attrs.cluster_id};
+        let filter = doc! {"cluster_id": &attrs.cluster_id};
         let collection = self
             .client
             .database(&self.db)

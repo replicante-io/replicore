@@ -35,12 +35,12 @@ replicante_service_healthcheck = { path = "../../service/healthcheck" }
 # It will probably lead to bugs and BSON endocing/decoding should instead support it.
 features = ["u2i"]
 # Bound by mongodb crate
-version = "^0.14.0"
+version = "^1.1.0"
 
 [dependencies.mongodb]
 default-features = false
 features = ["sync"]
-version = "^0.10.0"
+version = "^1.1.0"
 
 [dependencies.uuid]
 features = ["serde", "v4"]

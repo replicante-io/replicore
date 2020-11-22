@@ -1,3 +1,5 @@
+use std::time::Duration;
+
 use failure::ResultExt;
 use humthreads::ThreadScope;
 use rdkafka::config::ClientConfig;
@@ -30,7 +32,7 @@ pub struct KafkaStream {
     consumers_config: ClientConfig,
     consumers_health: KafkaHealthChecker,
     producer: FutureProducer<ClientStatsContext>,
-    producer_timeout: i64,
+    producer_timeout: Duration,
     topic: String,
     stream_id: &'static str,
 }
@@ -48,7 +50,7 @@ impl KafkaStream {
 
         // Producer instance used to emit messages.
         let producer = client::producer(&config, stream_id, healthchecks)?;
-        let producer_timeout = i64::from(config.common.timeouts.request);
+        let producer_timeout = Duration::from_secs(config.common.timeouts.request);
         let topic = format!("{}_{}", config.topic_prefix, stream_id);
 
         Ok(KafkaStream {
@@ -74,7 +76,6 @@ where
             .payload(&message.payload);
         let send = self.producer.send(record, self.producer_timeout);
         futures::executor::block_on(send)
-            .with_context(|_| ErrorKind::EmitFailed)?
             .map_err(|(error, _)| error)
             .with_context(|_| ErrorKind::EmitFailed)?;
         Ok(())

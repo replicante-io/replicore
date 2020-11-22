@@ -125,7 +125,7 @@ pub struct Kafka {
     prefix: String,
     retry_producer: Arc<FutureProducer<ClientStatsContext>>,
     retry_subscriptions: Vec<String>,
-    retry_timeout: u32,
+    retry_timeout: Duration,
     subscriptions: Vec<String>,
 }
 
@@ -151,7 +151,7 @@ impl Kafka {
             prefix: config.queue_prefix,
             retry_producer: Arc::new(retry_producer),
             retry_subscriptions: Vec::new(),
-            retry_timeout: config.common.timeouts.request,
+            retry_timeout: Duration::from_secs(config.common.timeouts.request),
             subscriptions: Vec::new(),
         })
     }
@@ -369,11 +369,8 @@ impl Kafka {
                 if let Some(payload) = message.payload() {
                     record = record.payload(payload);
                 }
-                let ack = self
-                    .retry_producer
-                    .send(record, i64::from(self.retry_timeout));
+                let ack = self.retry_producer.send(record, self.retry_timeout);
                 futures::executor::block_on(ack)
-                    .with_context(|_| ErrorKind::RetryEnqueue)?
                     .map_err(|(error, _)| error)
                     .with_context(|_| ErrorKind::RetryEnqueue)?;
                 retry_cache.published = true;
@@ -519,7 +516,7 @@ struct KafkaAck {
     prefix: String,
     retry_producer: Arc<FutureProducer<ClientStatsContext>>,
     retry_published: Rc<RefCell<bool>>,
-    retry_timeout: u32,
+    retry_timeout: Duration,
     skipped_published: Rc<RefCell<bool>>,
 }
 
@@ -565,11 +562,8 @@ impl KafkaAck {
         let record: FutureRecord<(), [u8]> = FutureRecord::to(topic)
             .headers(headers)
             .payload(&task.message);
-        let ack = self
-            .retry_producer
-            .send(record, i64::from(self.retry_timeout));
+        let ack = self.retry_producer.send(record, self.retry_timeout);
         futures::executor::block_on(ack)
-            .with_context(|_| ErrorKind::RetryEnqueueID(task.id().to_string()))?
             .map_err(|(error, _)| error)
             .with_context(|_| ErrorKind::RetryEnqueueID(task.id().to_string()))?;
         Ok(())
@@ -672,7 +666,7 @@ struct TaskCache {
     /// The task was already republished to the retry topic.
     retry_published: Rc<RefCell<bool>>,
     /// Timeout for kafka to ack retried tasks.
-    retry_timeout: u32,
+    retry_timeout: Duration,
     /// The task was already republished to the skipped topic.
     skipped_published: Rc<RefCell<bool>>,
 }

@@ -50,9 +50,9 @@ impl PersistInterface for Persist {
             .collection(COLLECTION_ACTIONS);
         let action = ActionDocument::from(action);
         let filter = doc! {
-            "cluster_id" => &action.cluster_id,
-            "node_id" => &action.node_id,
-            "action_id" => &action.action_id,
+            "cluster_id": &action.cluster_id,
+            "node_id": &action.node_id,
+            "action_id": &action.action_id,
         };
         let action = bson::to_bson(&action).with_context(|_| ErrorKind::MongoDBBsonEncode)?;
         let action = match action {

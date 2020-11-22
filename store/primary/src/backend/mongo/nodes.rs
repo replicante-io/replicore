@@ -40,7 +40,7 @@ impl Nodes {
 
 impl NodesInterface for Nodes {
     fn iter(&self, attrs: &NodesAttribures, span: Option<SpanContext>) -> Result<Cursor<Node>> {
-        let filter = doc! {"cluster_id" => &attrs.cluster_id};
+        let filter = doc! {"cluster_id": &attrs.cluster_id};
         let collection = self.client.database(&self.db).collection(COLLECTION_NODES);
         let cursor = find(collection, filter, span, self.tracer.as_deref())
             .with_context(|_| ErrorKind::MongoDBOperation)?
@@ -51,13 +51,13 @@ impl NodesInterface for Nodes {
 
     fn kinds(&self, attrs: &NodesAttribures, span: Option<SpanContext>) -> Result<HashSet<String>> {
         // Let mongo figure out the kinds with an aggregation.
-        let filter = doc! {"$match" => {
-            "cluster_id" => &attrs.cluster_id,
-            "stale" => false,
+        let filter = doc! {"$match": {
+            "cluster_id": &attrs.cluster_id,
+            "stale": false,
         }};
-        let group = doc! {"$group" => {
-            "_id" => "$cluster_id",
-            "kinds" => {"$addToSet": "$kind"},
+        let group = doc! {"$group": {
+            "_id": "$cluster_id",
+            "kinds": {"$addToSet": "$kind"},
         }};
         let pipeline = vec![filter, group];
 

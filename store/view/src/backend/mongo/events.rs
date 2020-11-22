@@ -48,37 +48,35 @@ impl EventsInterface for Events {
     ) -> Result<Cursor<Event>> {
         let mut options = FindOptions::default();
         options.limit = opts.limit;
-        options.sort = Some(doc! {"$natural" => if opts.reverse { -1 } else { 1 }});
+        options.sort = Some(doc! {"$natural": if opts.reverse { -1 } else { 1 }});
 
         let mut filter = Vec::new();
         if let Some(cluster_id) = filters.cluster_id {
             // Include events without a cluster ID to support cmobined system events.
             filter.push(Bson::from(doc! {"$or": [
-                {"payload.cluster_id" => {"$eq" => cluster_id}},
-                {"payload.cluster_id" => {"$exists" => false}},
+                {"payload.cluster_id": {"$eq": cluster_id}},
+                {"payload.cluster_id": {"$exists": false}},
             ]}));
         }
         if let Some(event) = filters.event {
-            filter.push(Bson::from(doc! {"event" => {"$eq" => event}}));
+            filter.push(Bson::from(doc! {"event": {"$eq": event}}));
         }
         if filters.exclude_snapshots {
             filter.push(Bson::from(doc! {
-                "event" => EVENTS_FILTER_NOT_SNAPSHOT.clone()
+                "event": EVENTS_FILTER_NOT_SNAPSHOT.clone()
             }));
         }
         if filters.exclude_system_events {
-            filter.push(Bson::from(
-                doc! {"payload.cluster_id" => {"$exists" => false}},
-            ));
+            filter.push(Bson::from(doc! {"payload.cluster_id": {"$exists": false}}));
         }
         if let Some(start_from) = filters.start_from {
-            filter.push(Bson::from(doc! {"timestamp" => {"$gte" => start_from}}));
+            filter.push(Bson::from(doc! {"timestamp": {"$gte": start_from}}));
         }
         if let Some(stop_at) = filters.stop_at {
-            filter.push(Bson::from(doc! {"timestamp" => {"$lte" => stop_at}}));
+            filter.push(Bson::from(doc! {"timestamp": {"$lte": stop_at}}));
         }
         let filter = if !filter.is_empty() {
-            doc! {"$and" => filter}
+            doc! {"$and": filter}
         } else {
             doc! {}
         };

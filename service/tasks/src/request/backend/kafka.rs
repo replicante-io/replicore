@@ -1,3 +1,5 @@
+use std::time::Duration;
+
 use failure::ResultExt;
 use rdkafka::producer::FutureProducer;
 use rdkafka::producer::FutureRecord;
@@ -23,7 +25,7 @@ use super::TaskRequest;
 pub struct Kafka {
     prefix: String,
     producer: FutureProducer<ClientStatsContext>,
-    timeout: i64,
+    timeout: Duration,
 }
 
 impl Kafka {
@@ -36,7 +38,7 @@ impl Kafka {
         let kafka = Kafka {
             prefix: config.queue_prefix,
             producer,
-            timeout: i64::from(config.common.timeouts.request),
+            timeout: Duration::from_secs(config.common.timeouts.request),
         };
         Ok(kafka)
     }
@@ -51,7 +53,6 @@ impl<Q: TaskQueue> Backend<Q> for Kafka {
             FutureRecord::to(&topic).headers(headers).payload(message);
         let ack = self.producer.send(record, self.timeout);
         futures::executor::block_on(ack)
-            .with_context(|_| ErrorKind::TaskRequest)?
             .map_err(|(error, _)| error)
             .with_context(|_| ErrorKind::TaskRequest)?;
         Ok(())

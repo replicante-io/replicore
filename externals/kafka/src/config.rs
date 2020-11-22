@@ -65,7 +65,7 @@ pub struct Timeouts {
 
     /// Timeout (in milliseconds) for published messages to be acknowledged.
     #[serde(default = "Timeouts::default_request")]
-    pub request: u32,
+    pub request: u64,
 
     /// Timeout (in milliseconds) after which clients are presumed dead by the brokers.
     #[serde(default = "Timeouts::default_session")]
@@ -91,7 +91,7 @@ impl Timeouts {
     fn default_metadata() -> u32 {
         60000
     }
-    fn default_request() -> u32 {
+    fn default_request() -> u64 {
         5000
     }
     fn default_session() -> u32 {

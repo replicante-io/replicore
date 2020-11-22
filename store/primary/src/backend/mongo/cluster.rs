@@ -50,7 +50,7 @@ impl ClusterInterface for Cluster {
         attrs: &ClusterAttribures,
         span: Option<SpanContext>,
     ) -> Result<Option<ClusterDiscovery>> {
-        let filter = doc! {"cluster_id" => &attrs.cluster_id};
+        let filter = doc! {"cluster_id": &attrs.cluster_id};
         let collection = self
             .client
             .database(&self.db)
@@ -63,8 +63,8 @@ impl ClusterInterface for Cluster {
     fn mark_stale(&self, attrs: &ClusterAttribures, span: Option<SpanContext>) -> Result<()> {
         for name in STALE_COLLECTIONS.iter() {
             let collection = self.client.database(&self.db).collection(name);
-            let filter = doc! {"cluster_id" => &attrs.cluster_id};
-            let mark = doc! {"$set" => {"stale" => true}};
+            let filter = doc! {"cluster_id": &attrs.cluster_id};
+            let mark = doc! {"$set": {"stale": true}};
             let stats = update_many(
                 collection,
                 filter,
@@ -90,8 +90,8 @@ impl ClusterInterface for Cluster {
         span: Option<SpanContext>,
     ) -> Result<Option<ClusterSettings>> {
         let filter = doc! {
-            "namespace" => &attrs.namespace,
-            "cluster_id" => &attrs.cluster_id,
+            "namespace": &attrs.namespace,
+            "cluster_id": &attrs.cluster_id,
         };
         let collection = self
             .client

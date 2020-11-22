@@ -16,7 +16,7 @@ with_test_support = []
 
 
 [dependencies]
-bson = "^0.14.0" # bound by mongodb crate
+bson = "^1.1.0" # bound by mongodb crate
 failure = "^0.1.5"
 lazy_static = "^1.0.0"
 opentracingrust = "^0.4.0"
@@ -39,7 +39,7 @@ version = "^0.4.0"
 [dependencies.mongodb]
 default-features = false
 features = ["sync"]
-version = "^0.10.0"
+version = "^1.1.0"
 
 [dependencies.uuid]
 features = ["serde", "v4"]

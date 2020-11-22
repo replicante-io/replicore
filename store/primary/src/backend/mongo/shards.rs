@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use bson::doc;
-use bson::ordered::OrderedDocument;
+use bson::Document;
 use failure::Fail;
 use failure::ResultExt;
 use mongodb::sync::Client;
@@ -22,12 +22,12 @@ use crate::ErrorKind;
 use crate::Result;
 
 /// Return a document to count shards in given state as part of the $group stage.
-fn aggregate_count_role(role: &'static str) -> OrderedDocument {
-    doc! {"$sum" => {
-        "$cond" => {
-            "if" => {"$eq" => ["$role", role]},
-            "then" => 1,
-            "else" => 0,
+fn aggregate_count_role(role: &'static str) -> Document {
+    doc! {"$sum": {
+        "$cond": {
+            "if": {"$eq": ["$role", role]},
+            "then": 1,
+            "else": 0,
         }
     }}
 }
@@ -53,26 +53,26 @@ impl ShardsInterface for Shards {
     fn counts(&self, attrs: &ShardsAttribures, span: Option<SpanContext>) -> Result<ShardsCounts> {
         // Let mongo figure out the counts with an aggregation.
         // Remember to count each shard only once across all nodes (and NOT once per node).
-        let filter = doc! {"$match" => {
-            "cluster_id" => &attrs.cluster_id,
-            "stale" => false,
+        let filter = doc! {"$match": {
+            "cluster_id": &attrs.cluster_id,
+            "stale": false,
         }};
-        let count_nodes = doc! {"$sum" => 1};
+        let count_nodes = doc! {"$sum": 1};
         let count_primaries = aggregate_count_role("primary");
         // First aggregate counts for each shard.
-        let group_map = doc! {"$group" => {
-            "_id" => {
-                "cluster_id" => "$cluster_id",
-                "shard_id" => "$shard_id",
+        let group_map = doc! {"$group": {
+            "_id": {
+                "cluster_id": "$cluster_id",
+                "shard_id": "$shard_id",
             },
-            "nodes" => count_nodes,
-            "primaries" => count_primaries,
+            "nodes": count_nodes,
+            "primaries": count_primaries,
         }};
         // Then aggregate all shards into one document.
-        let group_reduce = doc! {"$group" => {
-            "_id" => "$cluster_id",
-            "shards" => {"$sum" => 1},
-            "primaries" => {"$sum" => "$primaries"},
+        let group_reduce = doc! {"$group": {
+            "_id": "$cluster_id",
+            "shards": {"$sum": 1},
+            "primaries": {"$sum": "$primaries"},
         }};
         let pipeline = vec![filter, group_map, group_reduce];
 
@@ -98,7 +98,7 @@ impl ShardsInterface for Shards {
     }
 
     fn iter(&self, attrs: &ShardsAttribures, span: Option<SpanContext>) -> Result<Cursor<Shard>> {
-        let filter = doc! {"cluster_id" => &attrs.cluster_id};
+        let filter = doc! {"cluster_id": &attrs.cluster_id};
         let collection = self.client.database(&self.db).collection(COLLECTION_SHARDS);
         let cursor = find(collection, filter, span, self.tracer.as_deref())
             .with_context(|_| ErrorKind::MongoDBOperation)?

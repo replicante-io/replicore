@@ -37,11 +37,11 @@ impl GlobalSearch {
 
 impl GlobalSearchInterface for GlobalSearch {
     fn discoveries_to_run(&self, span: Option<SpanContext>) -> Result<Cursor<DiscoverySettings>> {
-        let filter = doc! {"$and" => [
+        let filter = doc! {"$and": [
             {"enabled": true},
-            {"$or" => [
-                {"next_run" => null},
-                {"next_run" => {"$lte" => Utc::now()}},
+            {"$or": [
+                {"next_run": null},
+                {"next_run": {"$lte": Utc::now()}},
             ]},
         ]};
         let collection = self

@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use bson::UtcDateTime;
+use bson::DateTime;
 use serde_derive::Deserialize;
 use serde_derive::Serialize;
 
@@ -22,14 +22,14 @@ pub struct ActionDocument {
     pub action_id: String,
 
     // Record attributes.
-    pub created_ts: UtcDateTime,
-    pub finished_ts: Option<UtcDateTime>,
+    pub created_ts: DateTime,
+    pub finished_ts: Option<DateTime>,
     pub headers: HashMap<String, String>,
     pub kind: String,
     pub refresh_id: i64,
     pub requester: ActionRequester,
     pub schedule_attempt: i32,
-    pub scheduled_ts: Option<UtcDateTime>,
+    pub scheduled_ts: Option<DateTime>,
     pub state: ActionState,
 
     // The encoded JSON form uses unsigned integers which are not supported by BSON.
@@ -49,15 +49,15 @@ impl From<Action> for ActionDocument {
             action_id: action.action_id.to_string(),
             args,
             cluster_id: action.cluster_id,
-            created_ts: UtcDateTime(action.created_ts),
-            finished_ts: action.finished_ts.map(UtcDateTime),
+            created_ts: DateTime::from(action.created_ts),
+            finished_ts: action.finished_ts.map(DateTime::from),
             headers: action.headers,
             kind: action.kind,
             node_id: action.node_id,
             refresh_id: action.refresh_id,
             requester: action.requester,
             schedule_attempt: action.schedule_attempt,
-            scheduled_ts: action.scheduled_ts.map(UtcDateTime),
+            scheduled_ts: action.scheduled_ts.map(DateTime::from),
             state: action.state,
             state_payload,
         }
@@ -126,7 +126,7 @@ pub struct ClusterSettingsDocument {
     pub settings: ClusterSettings,
 
     /// Timestamp for the next expected discovery run.
-    pub next_orchestrate: Option<UtcDateTime>,
+    pub next_orchestrate: Option<DateTime>,
 }
 
 impl From<ClusterSettings> for ClusterSettingsDocument {
@@ -151,7 +151,7 @@ pub struct DiscoverySettingsDocument {
     pub settings: DiscoverySettings,
 
     /// Timestamp for the next expected discovery run.
-    pub next_run: Option<UtcDateTime>,
+    pub next_run: Option<DateTime>,
 }
 
 impl From<DiscoverySettings> for DiscoverySettingsDocument {

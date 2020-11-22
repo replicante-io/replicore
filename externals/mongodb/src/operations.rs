@@ -1,5 +1,5 @@
 use bson::doc;
-use bson::ordered::OrderedDocument;
+use bson::Document;
 use failure::Fail;
 use failure::ResultExt;
 use mongodb::options::FindOptions;
@@ -10,7 +10,7 @@ use mongodb::sync::Collection;
 use opentracingrust::SpanContext;
 use opentracingrust::StartOptions;
 use opentracingrust::Tracer;
-use serde::Deserialize;
+use serde::de::DeserializeOwned;
 
 use replicante_util_tracing::fail_span;
 
@@ -24,14 +24,14 @@ use crate::Result;
 /// Perform an [`aggregate`] operation.
 ///
 /// [`aggregate`]: https://docs.mongodb.com/manual/reference/method/db.collection.aggregate/
-pub fn aggregate<'de, T>(
+pub fn aggregate<T>(
     collection: Collection,
-    pipeline: Vec<OrderedDocument>,
+    pipeline: Vec<Document>,
     span: Option<SpanContext>,
     tracer: Option<&Tracer>,
 ) -> Result<impl Iterator<Item = Result<T>>>
 where
-    T: Deserialize<'de>,
+    T: DeserializeOwned,
 {
     let mut span = match (tracer, span) {
         (Some(tracer), Some(context)) => {
@@ -82,7 +82,7 @@ where
 /// [`deleteOne`]: https://docs.mongodb.com/manual/reference/method/db.collection.deleteOne/
 pub fn delete_one(
     collection: Collection,
-    filter: OrderedDocument,
+    filter: Document,
     span: Option<SpanContext>,
     tracer: Option<&Tracer>,
 ) -> Result<()> {
@@ -122,14 +122,14 @@ pub fn delete_one(
 /// Perform a [`find`] operation.
 ///
 /// [`find`]: https://docs.mongodb.com/manual/reference/method/db.collection.find/
-pub fn find<'de, T>(
+pub fn find<T>(
     collection: Collection,
-    filter: OrderedDocument,
+    filter: Document,
     span: Option<SpanContext>,
     tracer: Option<&Tracer>,
 ) -> Result<impl Iterator<Item = Result<T>>>
 where
-    T: Deserialize<'de>,
+    T: DeserializeOwned,
 {
     let options = FindOptions::default();
     find_with_options(collection, filter, options, span, tracer)
@@ -145,14 +145,14 @@ where
 ///  * `Ok(Some(document))` if the operation succeeded and `document` was found.
 ///
 /// [`findOne`]: https://docs.mongodb.com/manual/reference/method/db.collection.findOne/
-pub fn find_one<'de, T>(
+pub fn find_one<T>(
     collection: Collection,
-    filter: OrderedDocument,
+    filter: Document,
     span: Option<SpanContext>,
     tracer: Option<&Tracer>,
 ) -> Result<Option<T>>
 where
-    T: Deserialize<'de>,
+    T: DeserializeOwned,
 {
     let mut span = match (tracer, span) {
         (Some(tracer), Some(context)) => {
@@ -202,15 +202,15 @@ where
 /// Perform a [`find`] operation with additional options.
 ///
 /// [`find`]: https://docs.mongodb.com/manual/reference/method/db.collection.find/
-pub fn find_with_options<'de, T>(
+pub fn find_with_options<T>(
     collection: Collection,
-    filter: OrderedDocument,
+    filter: Document,
     options: FindOptions,
     span: Option<SpanContext>,
     tracer: Option<&Tracer>,
 ) -> Result<impl Iterator<Item = Result<T>>>
 where
-    T: Deserialize<'de>,
+    T: DeserializeOwned,
 {
     let mut span = match (tracer, span) {
         (Some(tracer), Some(context)) => {
@@ -264,7 +264,7 @@ where
 /// [`insertMany`]: https://docs.mongodb.com/manual/reference/method/db.collection.insertMany/
 pub fn insert_many(
     collection: Collection,
-    records: Vec<OrderedDocument>,
+    records: Vec<Document>,
     span: Option<SpanContext>,
     tracer: Option<&Tracer>,
 ) -> Result<()> {
@@ -301,7 +301,7 @@ pub fn insert_many(
 /// [`insertOne`]: https://docs.mongodb.com/manual/reference/method/db.collection.insertOne/
 pub fn insert_one(
     collection: Collection,
-    document: OrderedDocument,
+    document: Document,
     span: Option<SpanContext>,
     tracer: Option<&Tracer>,
 ) -> Result<()> {
@@ -343,8 +343,8 @@ pub fn insert_one(
 /// [`replaceOne`]: https://docs.mongodb.com/manual/reference/method/db.collection.replaceOne/
 pub fn replace_one(
     collection: Collection,
-    filter: OrderedDocument,
-    document: OrderedDocument,
+    filter: Document,
+    document: Document,
     span: Option<SpanContext>,
     tracer: Option<&Tracer>,
 ) -> Result<()> {
@@ -391,12 +391,12 @@ pub fn replace_one(
 /// Scan all documents in a collection.
 ///
 /// Intended for data validation purposes.
-pub fn scan_collection<'de, T>(collection: Collection) -> Result<impl Iterator<Item = Result<T>>>
+pub fn scan_collection<T>(collection: Collection) -> Result<impl Iterator<Item = Result<T>>>
 where
-    T: Deserialize<'de> + 'static,
+    T: DeserializeOwned,
 {
     let filter = doc! {};
-    let sort = doc! {"_id" => 1};
+    let sort = doc! {"_id": 1};
     let mut options = FindOptions::default();
     options.sort = Some(sort);
     let cursor = find_with_options(collection, filter, options, None, None)
@@ -410,8 +410,8 @@ where
 /// [`updateMany`]: https://docs.mongodb.com/manual/reference/method/db.collection.updateMany/
 pub fn update_many(
     collection: Collection,
-    filter: OrderedDocument,
-    update: OrderedDocument,
+    filter: Document,
+    update: Document,
     span: Option<SpanContext>,
     tracer: Option<&Tracer>,
 ) -> Result<UpdateResult> {
@@ -458,8 +458,8 @@ pub fn update_many(
 /// [`updateOne`]: https://docs.mongodb.com/manual/reference/method/db.collection.updateOne/
 pub fn update_one(
     collection: Collection,
-    filter: OrderedDocument,
-    update: OrderedDocument,
+    filter: Document,
+    update: Document,
     span: Option<SpanContext>,
     tracer: Option<&Tracer>,
 ) -> Result<UpdateResult> {
@@ -472,8 +472,8 @@ pub fn update_one(
 /// [`updateOne`]: https://docs.mongodb.com/manual/reference/method/db.collection.updateOne/
 pub fn update_one_with_options(
     collection: Collection,
-    filter: OrderedDocument,
-    update: OrderedDocument,
+    filter: Document,
+    update: Document,
     options: UpdateOptions,
     span: Option<SpanContext>,
     tracer: Option<&Tracer>,

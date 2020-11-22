@@ -58,9 +58,9 @@ impl PersistInterface for Persist {
     fn action(&self, action: ActionModel, span: Option<SpanContext>) -> Result<()> {
         let action = ActionDocument::from(action);
         let filter = doc! {
-            "cluster_id" => &action.cluster_id,
-            "node_id" => &action.node_id,
-            "action_id" => &action.action_id,
+            "cluster_id": &action.cluster_id,
+            "node_id": &action.node_id,
+            "action_id": &action.action_id,
         };
         let collection = self
             .client
@@ -78,8 +78,8 @@ impl PersistInterface for Persist {
 
     fn agent(&self, agent: AgentModel, span: Option<SpanContext>) -> Result<()> {
         let filter = doc! {
-            "cluster_id" => &agent.cluster_id,
-            "host" => &agent.host,
+            "cluster_id": &agent.cluster_id,
+            "host": &agent.host,
         };
         let collection = self.client.database(&self.db).collection(COLLECTION_AGENTS);
         let document = bson::to_bson(&agent).with_context(|_| ErrorKind::MongoDBBsonEncode)?;
@@ -94,8 +94,8 @@ impl PersistInterface for Persist {
 
     fn agent_info(&self, agent: AgentInfoModel, span: Option<SpanContext>) -> Result<()> {
         let filter = doc! {
-            "cluster_id" => &agent.cluster_id,
-            "host" => &agent.host,
+            "cluster_id": &agent.cluster_id,
+            "host": &agent.host,
         };
         let agent = AgentInfoDocument::from(agent);
         let collection = self
@@ -117,7 +117,7 @@ impl PersistInterface for Persist {
         discovery: ClusterDiscoveryModel,
         span: Option<SpanContext>,
     ) -> Result<()> {
-        let filter = doc! {"cluster_id" => &discovery.cluster_id};
+        let filter = doc! {"cluster_id": &discovery.cluster_id};
         let collection = self
             .client
             .database(&self.db)
@@ -138,8 +138,8 @@ impl PersistInterface for Persist {
         span: Option<SpanContext>,
     ) -> Result<()> {
         let filter = doc! {
-            "namespace" => &settings.namespace,
-            "cluster_id" => &settings.cluster_id,
+            "namespace": &settings.namespace,
+            "cluster_id": &settings.cluster_id,
         };
         let collection = self
             .client
@@ -162,8 +162,8 @@ impl PersistInterface for Persist {
         span: Option<SpanContext>,
     ) -> Result<()> {
         let filter = doc! {
-            "namespace" => &settings.namespace,
-            "name" => &settings.name,
+            "namespace": &settings.namespace,
+            "name": &settings.name,
         };
         let collection = self
             .client
@@ -186,11 +186,11 @@ impl PersistInterface for Persist {
         span: Option<SpanContext>,
     ) -> Result<()> {
         let filter = doc! {
-            "namespace" => &settings.namespace,
-            "name" => &settings.name,
+            "namespace": &settings.namespace,
+            "name": &settings.name,
         };
         let next_run = Utc::now() + chrono::Duration::seconds(settings.interval);
-        let update = doc! {"$set" => {"next_run" => next_run}};
+        let update = doc! {"$set": {"next_run": next_run}};
         let collection = self
             .client
             .database(&self.db)
@@ -202,8 +202,8 @@ impl PersistInterface for Persist {
 
     fn node(&self, node: NodeModel, span: Option<SpanContext>) -> Result<()> {
         let filter = doc! {
-            "cluster_id" => &node.cluster_id,
-            "node_id" => &node.node_id,
+            "cluster_id": &node.cluster_id,
+            "node_id": &node.node_id,
         };
         let node = NodeDocument::from(node);
         let collection = self.client.database(&self.db).collection(COLLECTION_NODES);
@@ -219,9 +219,9 @@ impl PersistInterface for Persist {
 
     fn shard(&self, shard: ShardModel, span: Option<SpanContext>) -> Result<()> {
         let filter = doc! {
-            "cluster_id" => &shard.cluster_id,
-            "node_id" => &shard.node_id,
-            "shard_id" => &shard.shard_id,
+            "cluster_id": &shard.cluster_id,
+            "node_id": &shard.node_id,
+            "shard_id": &shard.shard_id,
         };
         let shard = ShardDocument::from(shard);
         let collection = self.client.database(&self.db).collection(COLLECTION_SHARDS);

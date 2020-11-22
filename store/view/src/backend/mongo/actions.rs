@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use bson::doc;
 use bson::Bson;
-use bson::UtcDateTime;
+use bson::DateTime as UtcDateTime;
 use chrono::DateTime;
 use chrono::Utc;
 use failure::Fail;
@@ -60,8 +60,8 @@ impl ActionsInterface for Actions {
             .database(&self.db)
             .collection(COLLECTION_ACTIONS);
         let filter = doc! {
-            "cluster_id" => &self.cluster_id,
-            "action_id" => action_id.to_string(),
+            "cluster_id": &self.cluster_id,
+            "action_id": action_id.to_string(),
         };
         let action: Option<ActionDocument> =
             find_one(collection, filter, span, self.tracer.as_deref())
@@ -79,7 +79,7 @@ impl ActionsInterface for Actions {
             "cluster_id": &self.cluster_id,
             "action_id": action_id.to_string(),
         };
-        let finished_ts = UtcDateTime(finished_ts);
+        let finished_ts = UtcDateTime::from(finished_ts);
         let update = doc! {
             "$set": {
                 "finished_ts": bson::to_bson(&finished_ts).unwrap(),
@@ -97,11 +97,11 @@ impl ActionsInterface for Actions {
     fn history(&self, action_id: Uuid, span: Option<SpanContext>) -> Result<Vec<ActionHistory>> {
         // Prepare options and filters.
         let mut options = FindOptions::default();
-        options.sort = Some(doc! {"timestamp" => -1});
+        options.sort = Some(doc! {"timestamp": -1});
         let filters = doc! {
             "$and": [
-                {"cluster_id" => {"$eq" => &self.cluster_id}},
-                {"action_id" => {"$eq" => action_id.to_string()}},
+                {"cluster_id": {"$eq": &self.cluster_id}},
+                {"action_id": {"$eq": action_id.to_string()}},
             ],
         };
 
@@ -125,29 +125,29 @@ impl ActionsInterface for Actions {
         // Prepare options.
         let mut options = FindOptions::default();
         options.limit = Some(MAX_ACTIONS_SEARCH);
-        options.sort = Some(doc! {"created_ts" => -1});
+        options.sort = Some(doc! {"created_ts": -1});
 
         // Apply filters.
         let from = search.from;
         let until = search.until;
         let mut filters = vec![
-            Bson::from(doc! {"cluster_id" => {"$eq" => &self.cluster_id}}),
-            Bson::from(doc! {"created_ts" => {"$gte" => from}}),
-            Bson::from(doc! {"created_ts" => {"$lte" => until}}),
+            Bson::from(doc! {"cluster_id": {"$eq": &self.cluster_id}}),
+            Bson::from(doc! {"created_ts": {"$gte": from}}),
+            Bson::from(doc! {"created_ts": {"$lte": until}}),
         ];
         if let Some(action_kind) = search.action_kind {
             let action_kind = regex::escape(&action_kind);
-            filters.push(Bson::from(doc! {"kind" => {"$regex" => action_kind}}));
+            filters.push(Bson::from(doc! {"kind": {"$regex": action_kind}}));
         }
         if let Some(action_state) = search.action_state {
             let action_state = regex::escape(&action_state);
-            filters.push(Bson::from(doc! {"state" => {"$regex" => action_state}}));
+            filters.push(Bson::from(doc! {"state": {"$regex": action_state}}));
         }
         if let Some(node_id) = search.node_id {
             let node_id = regex::escape(&node_id);
-            filters.push(Bson::from(doc! {"node_id" => {"$regex" => node_id}}));
+            filters.push(Bson::from(doc! {"node_id": {"$regex": node_id}}));
         }
-        let filters = doc! {"$and" => filters};
+        let filters = doc! {"$and": filters};
 
         // Execute the query.
         let collection = self

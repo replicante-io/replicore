@@ -4,8 +4,8 @@ use std::sync::Arc;
 
 use bson::doc;
 use bson::Bson;
+use bson::DateTime as UtcDateTime;
 use bson::Document;
-use bson::UtcDateTime;
 use chrono::DateTime;
 use chrono::Utc;
 use failure::ResultExt;
@@ -80,9 +80,7 @@ impl ActionsInterface for Actions {
             "state": "PENDING_APPROVE",
         };
         let update = doc! {
-            "$set": {
-                "state": "PENDING_SCHEDULE",
-            }
+            "$set": {"state": "PENDING_SCHEDULE"}
         };
         let collection = self
             .client
@@ -104,7 +102,7 @@ impl ActionsInterface for Actions {
             "action_id": action_id.to_string(),
             "state": "PENDING_APPROVE",
         };
-        let finished_ts = UtcDateTime(Utc::now());
+        let finished_ts = UtcDateTime::from(Utc::now());
         let update = doc! {
             "$set": {
                 "finished_ts": bson::to_bson(&finished_ts).unwrap(),
@@ -155,7 +153,7 @@ impl ActionsInterface for Actions {
         span: Option<SpanContext>,
     ) -> Result<()> {
         let filter = lost_actions_filter(attrs, &node_id, refresh_id);
-        let finished_ts = UtcDateTime(finished_ts);
+        let finished_ts = UtcDateTime::from(finished_ts);
         let update = doc! {
             "$set": {
                 "finished_ts": bson::to_bson(&finished_ts).unwrap(),
@@ -178,9 +176,9 @@ impl ActionsInterface for Actions {
         span: Option<SpanContext>,
     ) -> Result<Cursor<Action>> {
         let filter = doc! {
-            "cluster_id" => &attrs.cluster_id,
-            "node_id" => &agent_id,
-            "state" => bson::to_bson(&ActionState::PendingSchedule).unwrap(),
+            "cluster_id": &attrs.cluster_id,
+            "node_id": &agent_id,
+            "state": bson::to_bson(&ActionState::PendingSchedule).unwrap(),
         };
         let collection = self
             .client
@@ -211,11 +209,9 @@ impl ActionsInterface for Actions {
             .map(Bson::from)
             .collect();
         let filter = doc! {
-            "cluster_id" => &attrs.cluster_id,
-            "node_id" => &node_id,
-            "action_id" => {
-                "$in" => action_ids_bson,
-            },
+            "cluster_id": &attrs.cluster_id,
+            "node_id": &node_id,
+            "action_id": {"$in": action_ids_bson},
         };
         let collection = self
             .client

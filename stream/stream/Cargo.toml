@@ -24,7 +24,7 @@ lazy_static = "^1.0.0"
 opentracingrust = "^0.4.0"
 prometheus = "^0.9.0"
 rand = "^0.7.0"
-rdkafka = "^0.23.0"
+rdkafka = "^0.24.0"
 sentry = "^0.18.0"
 serde = "^1.0.34"
 serde_derive = "^1.0.34"
@@ -37,7 +37,7 @@ replicante_util_failure = { path = "../../common/util/failure" }
 
 [dependencies.crossbeam-channel]
 optional = true
-version = "^0.4.0"
+version = "^0.5.0"
 
 
 [dev-dependencies]

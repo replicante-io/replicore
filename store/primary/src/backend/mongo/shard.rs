@@ -40,9 +40,9 @@ impl ShardInterface for Shard {
         span: Option<SpanContext>,
     ) -> Result<Option<ShardModel>> {
         let filter = doc! {
-            "cluster_id" => &attrs.cluster_id,
-            "node_id" => &attrs.node_id,
-            "shard_id" => &attrs.shard_id,
+            "cluster_id": &attrs.cluster_id,
+            "node_id": &attrs.node_id,
+            "shard_id": &attrs.shard_id,
         };
         let collection = self.client.database(&self.db).collection(COLLECTION_SHARDS);
         let document: Option<ShardDocument> =

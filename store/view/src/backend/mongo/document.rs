@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use bson::UtcDateTime;
+use bson::DateTime;
 use serde_derive::Deserialize;
 use serde_derive::Serialize;
 
@@ -21,14 +21,14 @@ pub struct ActionDocument {
     pub action_id: String,
 
     // Record attributes.
-    pub created_ts: UtcDateTime,
-    pub finished_ts: Option<UtcDateTime>,
+    pub created_ts: DateTime,
+    pub finished_ts: Option<DateTime>,
     pub headers: HashMap<String, String>,
     pub kind: String,
     pub refresh_id: i64,
     pub requester: ActionRequester,
     pub schedule_attempt: i32,
-    pub scheduled_ts: Option<UtcDateTime>,
+    pub scheduled_ts: Option<DateTime>,
     pub state: ActionState,
 
     // The encoded JSON form uses unsigned integers which are not supported by BSON.
@@ -48,15 +48,15 @@ impl From<Action> for ActionDocument {
             action_id: action.action_id.to_string(),
             args,
             cluster_id: action.cluster_id,
-            created_ts: UtcDateTime(action.created_ts),
-            finished_ts: action.finished_ts.map(UtcDateTime),
+            created_ts: DateTime::from(action.created_ts),
+            finished_ts: action.finished_ts.map(DateTime::from),
             headers: action.headers,
             kind: action.kind,
             node_id: action.node_id,
             refresh_id: action.refresh_id,
             requester: action.requester,
             schedule_attempt: action.schedule_attempt,
-            scheduled_ts: action.scheduled_ts.map(UtcDateTime),
+            scheduled_ts: action.scheduled_ts.map(DateTime::from),
             state: action.state,
             state_payload,
         }
@@ -102,9 +102,9 @@ pub struct ActionHistoryDocument {
     pub action_id: String,
 
     // Action history attributes.
-    pub finished_ts: Option<UtcDateTime>,
+    pub finished_ts: Option<DateTime>,
     pub origin: ActionHistoryOrigin,
-    pub timestamp: UtcDateTime,
+    pub timestamp: DateTime,
     pub state: ActionState,
 
     // The encoded JSON form uses unsigned integers which are not supported by BSON.
@@ -122,8 +122,8 @@ impl From<ActionHistory> for ActionHistoryDocument {
             node_id: history.node_id,
             action_id: history.action_id.to_string(),
             origin: history.origin,
-            finished_ts: history.finished_ts.map(UtcDateTime),
-            timestamp: UtcDateTime(history.timestamp),
+            finished_ts: history.finished_ts.map(DateTime::from),
+            timestamp: DateTime::from(history.timestamp),
             state: history.state,
             state_payload,
         }
@@ -157,14 +157,14 @@ impl From<ActionHistoryDocument> for ActionHistory {
 pub struct EventDocument {
     #[serde(flatten)]
     pub payload: Payload,
-    pub timestamp: UtcDateTime,
+    pub timestamp: DateTime,
 }
 
 impl From<Event> for EventDocument {
     fn from(event: Event) -> EventDocument {
         EventDocument {
             payload: event.payload,
-            timestamp: UtcDateTime(event.timestamp),
+            timestamp: DateTime::from(event.timestamp),
         }
     }
 }
