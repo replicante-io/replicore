@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## [Unreleased]
 ### Added
 - Cluster discovery dynamically configured with `apply`.
+- Discovery settings apply and delete events.
 - List and delete `DiscoverySettings` objects (API and `replictl`).
 
 ### Changed
@@ -16,6 +17,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Refactor cluster orchestration (also know as refresh).
 
 ### Fixed
+- Added Grafana API friendly text for missing events.
 - Ensure `replictl` contexts store is flushed to disk before exiting.
 - WebUI `/cluster/{cluster_id}/action/{action_id}` handles `GET` requests instead of `POST`.
 

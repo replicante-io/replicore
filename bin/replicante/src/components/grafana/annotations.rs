@@ -10,8 +10,10 @@ use serde_derive::Deserialize;
 use serde_derive::Serialize;
 use serde_json::json;
 
+use replicante_models_core::events::action::ActionEvent;
 use replicante_models_core::events::agent::AgentEvent;
 use replicante_models_core::events::cluster::ClusterEvent;
+use replicante_models_core::events::discovery_settings::DiscoverySettingsEvent;
 use replicante_models_core::events::node::NodeEvent;
 use replicante_models_core::events::shard::ShardEvent;
 use replicante_models_core::events::Event;
@@ -52,6 +54,25 @@ impl Annotations {
 
     fn text(event: &Event) -> String {
         match &event.payload {
+            Payload::Action(action) => match action {
+                ActionEvent::Changed(change) => format!(
+                    "Details about action with ID {} on {} changed",
+                    &change.current.action_id, &change.cluster_id,
+                ),
+                ActionEvent::Finished(action) => format!(
+                    "Action with ID {} on {} was completed",
+                    &action.action_id, &action.cluster_id,
+                ),
+                ActionEvent::Lost(action) => format!(
+                    "Unfinished action with ID {} on {} was no longer reported by the agent",
+                    &action.action_id, &action.cluster_id,
+                ),
+                ActionEvent::New(action) => format!(
+                    "A new action with ID {} was created on {}",
+                    &action.action_id, &action.cluster_id,
+                ),
+                _ => event.code().to_string(),
+            },
             Payload::Agent(agent) => match agent {
                 AgentEvent::Down(state) => {
                     format!("Agent {} is down or non-responsive", &state.host)
@@ -67,7 +88,7 @@ impl Annotations {
                 }
                 AgentEvent::Up(change) => format!("Agent {} is now up", &change.host),
                 // TODO: for when #[non_exhaustive] is usable
-                //_ => agent.code().to_string(),
+                //_ => event.code().to_string(),
             },
             Payload::Cluster(cluster) => match cluster {
                 ClusterEvent::Changed(_) => String::from(concat!(
@@ -75,8 +96,24 @@ impl Annotations {
                     " indicates a membership change)",
                 )),
                 ClusterEvent::New(_) => "Cluster discovered for the first time".into(),
+                ClusterEvent::SettingsSynthetic(settings) => format!(
+                    "A synthetic ClusterSettings record was created for cluster {}.{}",
+                    settings.namespace, settings.cluster_id,
+                ),
                 // TODO: for when #[non_exhaustive] is usable
-                //_ => cluster.code().to_string(),
+                //_ => event.code().to_string(),
+            },
+            Payload::DiscoverySettings(settings) => match settings {
+                DiscoverySettingsEvent::Apply(settings) => format!(
+                    "A DiscoverySettings object named {} was applied in {}",
+                    &settings.name, &settings.namespace,
+                ),
+                DiscoverySettingsEvent::Delete(id) => format!(
+                    "A DiscoverySettings object named {} was delete from {}",
+                    &id.name, &id.namespace,
+                ),
+                // TODO: for when #[non_exhaustive] is usable
+                //_ => event.code().to_string(),
             },
             Payload::Node(node) => match node {
                 NodeEvent::Changed(change) => {
@@ -89,7 +126,7 @@ impl Annotations {
                 NodeEvent::New(_) => "A new datastore node was detected".into(),
                 NodeEvent::Up(change) => format!("Datastore node {} is now up", &change.host),
                 // TODO: for when #[non_exhaustive] is usable
-                //_ => node.code().to_string(),
+                //_ => event.code().to_string(),
             },
             Payload::Shard(shard) => match shard {
                 ShardEvent::AllocationChanged(change) => format!(
@@ -101,14 +138,22 @@ impl Annotations {
                     &shard.shard_id, &shard.node_id
                 ),
                 // TODO: for when #[non_exhaustive] is usable
-                //_ => shard.code().to_string(),
+                //_ => event.code().to_string(),
             },
-            _ => event.code().to_string(),
+            // TODO: for when #[non_exhaustive] is usable
+            //_ => event.code().to_string(),
         }
     }
 
     fn title(event: &Event) -> String {
         match &event.payload {
+            Payload::Action(action) => match action {
+                ActionEvent::Changed(_) => "Action details changed".into(),
+                ActionEvent::Finished(_) => "Action finished executing".into(),
+                ActionEvent::Lost(_) => "Unfinished action is no longer reported".into(),
+                ActionEvent::New(_) => "New action detected".into(),
+                _ => event.code().to_string(),
+            },
             Payload::Agent(agent) => match agent {
                 AgentEvent::Down(_) => "Agent is down".into(),
                 AgentEvent::InfoChanged(_) => "Agent details changed".into(),
@@ -116,13 +161,20 @@ impl Annotations {
                 AgentEvent::New(_) => "New agent detected".into(),
                 AgentEvent::Up(_) => "Agent is up".into(),
                 // TODO: for when #[non_exhaustive] is usable
-                //_ => agent.code().to_string(),
+                //_ => event.code().to_string(),
             },
             Payload::Cluster(cluster) => match cluster {
                 ClusterEvent::Changed(_) => "Cluster changed".into(),
                 ClusterEvent::New(_) => "New cluster detected".into(),
+                ClusterEvent::SettingsSynthetic(_) => "Synthetic ClusterSettings created".into(),
                 // TODO: for when #[non_exhaustive] is usable
-                //_ => cluster.code().to_string(),
+                //_ => event.code().to_string(),
+            },
+            Payload::DiscoverySettings(settings) => match settings {
+                DiscoverySettingsEvent::Apply(_) => "DiscoverySettings applyed".into(),
+                DiscoverySettingsEvent::Delete(_) => "DiscoverySettings deleted".into(),
+                // TODO: for when #[non_exhaustive] is usable
+                //_ => event.code().to_string(),
             },
             Payload::Node(node) => match node {
                 NodeEvent::Changed(_) => "Datastore node details changed".into(),
@@ -130,15 +182,16 @@ impl Annotations {
                 NodeEvent::New(_) => "New datastore node detected".into(),
                 NodeEvent::Up(_) => "Datastore node is up".into(),
                 // TODO: for when #[non_exhaustive] is usable
-                //_ => node.code().to_string(),
+                //_ => event.code().to_string(),
             },
             Payload::Shard(shard) => match shard {
                 ShardEvent::AllocationChanged(_) => "Shard status on node changed".into(),
                 ShardEvent::AllocationNew(_) => "Shard found on node".into(),
                 // TODO: for when #[non_exhaustive] is usable
-                //_ => shard.code().to_string(),
+                //_ => event.code().to_string(),
             },
-            _ => event.code().to_string(),
+            // TODO: for when #[non_exhaustive] is usable
+            //_ => event.code().to_string(),
         }
     }
 }

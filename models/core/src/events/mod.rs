@@ -6,7 +6,7 @@ use serde_derive::Serialize;
 pub mod action;
 pub mod agent;
 pub mod cluster;
-pub mod namespace;
+pub mod discovery_settings;
 pub mod node;
 pub mod shard;
 
@@ -60,7 +60,7 @@ impl Event {
             Payload::Action(event) => event.cluster_id(),
             Payload::Agent(event) => event.cluster_id(),
             Payload::Cluster(event) => event.cluster_id(),
-            Payload::Namespace(_) => None,
+            Payload::DiscoverySettings(_) => None,
             Payload::Node(event) => event.cluster_id(),
             Payload::Shard(event) => event.cluster_id(),
             #[cfg(test)]
@@ -74,7 +74,7 @@ impl Event {
             Payload::Action(event) => event.code(),
             Payload::Agent(event) => event.code(),
             Payload::Cluster(event) => event.code(),
-            Payload::Namespace(event) => event.code(),
+            Payload::DiscoverySettings(event) => event.code(),
             Payload::Node(event) => event.code(),
             Payload::Shard(event) => event.code(),
             #[cfg(test)]
@@ -93,7 +93,7 @@ impl Event {
             Payload::Action(event) => event.stream_key(),
             Payload::Agent(event) => event.stream_key(),
             Payload::Cluster(event) => event.stream_key(),
-            Payload::Namespace(event) => event.stream_key(),
+            Payload::DiscoverySettings(event) => event.stream_key(),
             Payload::Node(event) => event.stream_key(),
             Payload::Shard(event) => event.stream_key(),
             #[cfg(test)]
@@ -129,9 +129,9 @@ impl EventBuilder {
         self::cluster::ClusterEventBuilder { builder: self }
     }
 
-    /// Build namespace events.
-    pub fn namespace(self) -> self::namespace::NamespaceEventBuilder {
-        self::namespace::NamespaceEventBuilder { builder: self }
+    /// Build discovery settings events.
+    pub fn discovery_settings(self) -> self::discovery_settings::DiscoverySettingsEventBuilder {
+        self::discovery_settings::DiscoverySettingsEventBuilder { builder: self }
     }
 
     /// Build node events.
@@ -199,9 +199,8 @@ pub enum Payload {
     #[serde(rename = "CLUSTER")]
     Cluster(self::cluster::ClusterEvent),
 
-    /// Namespace related events.
-    #[serde(rename = "NAMESPACE")]
-    Namespace(self::namespace::NamespaceEvent),
+    #[serde(rename = "DISCOVERY_SETTINGS")]
+    DiscoverySettings(self::discovery_settings::DiscoverySettingsEvent),
 
     /// Node related events.
     #[serde(rename = "NODE")]

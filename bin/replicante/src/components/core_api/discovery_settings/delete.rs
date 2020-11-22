@@ -9,7 +9,10 @@ use failure::ResultExt;
 use serde_json::json;
 use slog::Logger;
 
+use replicante_models_core::events::Event;
 use replicante_store_primary::store::Store;
+use replicante_stream_events::EmitMessage;
+use replicante_stream_events::Stream;
 use replicante_util_actixweb::with_request_span;
 use replicante_util_actixweb::TracingMiddleware;
 
@@ -26,6 +29,7 @@ pub struct Delete {
 impl Delete {
     pub fn new(logger: &Logger, interfaces: &mut Interfaces) -> Delete {
         let data = DeleteData {
+            events: interfaces.streams.events.clone(),
             store: interfaces.stores.primary.clone(),
         };
         Delete {
@@ -64,6 +68,17 @@ async fn responder(data: web::Data<DeleteData>, request: HttpRequest) -> Result<
     let mut request = request;
     with_request_span(&mut request, |span| {
         let span = span.map(|span| span.context().clone());
+        let event = Event::builder()
+            .discovery_settings()
+            .delete(namespace.clone(), name.clone());
+        let code = event.code();
+        let stream_key = event.stream_key();
+        let event = EmitMessage::with(stream_key, event)
+            .with_context(|_| ErrorKind::EventsStreamEmit(code))?
+            .trace(span.clone());
+        data.events
+            .emit(event)
+            .with_context(|_| ErrorKind::EventsStreamEmit("DiscoverySettings"))?;
         data.store
             .discovery_settings(namespace)
             .delete(&name, span)
@@ -76,5 +91,6 @@ async fn responder(data: web::Data<DeleteData>, request: HttpRequest) -> Result<
 
 #[derive(Clone)]
 struct DeleteData {
+    events: Stream,
     store: Store,
 }

@@ -78,8 +78,8 @@ pub fn replicante_io_v0(args: ApplierArgs) -> Result<Value> {
     let settings = DiscoverySettings::from_object(ns, name, settings);
     let span = args.span.map(|span| span.context().clone());
     let event = Event::builder()
-        .namespace()
-        .discovery_settings(settings.clone());
+        .discovery_settings()
+        .apply(settings.clone());
     let code = event.code();
     let stream_key = event.stream_key();
     let event = EmitMessage::with(stream_key, event)

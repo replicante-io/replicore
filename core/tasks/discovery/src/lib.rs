@@ -102,14 +102,12 @@ impl DiscoverClusters {
         let namespace = namespace.to_string();
         let span_context = span.context().clone();
 
-        // Fetch current record (if any).
+        // Fetch current record (if any) and emit "diff" events.
         let current_record = self
             .store
             .cluster(namespace.clone(), cluster_id.clone())
             .discovery(span_context.clone())
             .with_context(|_| ErrorKind::fetch_discovery(&namespace, &cluster_id))?;
-
-        // "Diff" records and emit events.
         let event = match (current_record, &record) {
             (None, record) => Some(Event::builder().cluster().new_cluster(record.clone())),
             (Some(current), record) if current != *record => {
@@ -143,6 +141,17 @@ impl DiscoverClusters {
         if settings.is_none() {
             DISCOVER_CLUSTER_SETTINGS_COUNT.inc();
             let settings = ClusterSettings::new(namespace.clone(), cluster_id.clone(), true);
+            let event = Event::builder()
+                .cluster()
+                .synthetic_settings(settings.clone());
+            let code = event.code();
+            let stream_key = event.stream_key();
+            let event = EmitMessage::with(stream_key, event)
+                .with_context(|_| ErrorKind::emit_event(code))?
+                .trace(span_context.clone());
+            self.events
+                .emit(event)
+                .with_context(|_| ErrorKind::emit_event(code))?;
             self.store
                 .persist()
                 .cluster_settings(settings, span_context)

@@ -5,6 +5,7 @@ use super::Event;
 use super::EventBuilder;
 use super::Payload;
 use crate::cluster::discovery::ClusterDiscovery;
+use crate::cluster::ClusterSettings;
 
 /// Metadata attached to cluster status change events.
 #[derive(Clone, Eq, PartialEq, Hash, Debug, Serialize, Deserialize)]
@@ -26,6 +27,10 @@ pub enum ClusterEvent {
     /// Service discovery found a new cluster.
     #[serde(rename = "CLUSTER_NEW")]
     New(ClusterDiscovery),
+
+    /// A synthetic ClusterSettings record was created for a discovered cluster without it.
+    #[serde(rename = "CLUSTER_SETTINGS_SYNTHETIC")]
+    SettingsSynthetic(ClusterSettings),
 }
 
 impl ClusterEvent {
@@ -34,6 +39,7 @@ impl ClusterEvent {
         let cluster_id = match self {
             ClusterEvent::Changed(change) => &change.cluster_id,
             ClusterEvent::New(discovery) => &discovery.cluster_id,
+            ClusterEvent::SettingsSynthetic(settings) => &settings.cluster_id,
         };
         Some(cluster_id)
     }
@@ -43,6 +49,7 @@ impl ClusterEvent {
         match self {
             ClusterEvent::Changed(_) => "CLUSTER_CHANGED",
             ClusterEvent::New(_) => "CLUSTER_NEW",
+            ClusterEvent::SettingsSynthetic(_) => "CLUSTER_SETTINGS_SYNTHETIC",
         }
     }
 
@@ -72,6 +79,13 @@ impl ClusterEventBuilder {
     /// Build a `ClusterEvent::New` event.
     pub fn new_cluster(self, discovery: ClusterDiscovery) -> Event {
         let event = ClusterEvent::New(discovery);
+        let payload = Payload::Cluster(event);
+        self.builder.finish(payload)
+    }
+
+    /// Build a `ClusterEvent::SettingsSynthetic` event.
+    pub fn synthetic_settings(self, settings: ClusterSettings) -> Event {
+        let event = ClusterEvent::SettingsSynthetic(settings);
         let payload = Payload::Cluster(event);
         self.builder.finish(payload)
     }
