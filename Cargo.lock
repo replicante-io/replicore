@@ -2751,6 +2751,7 @@ dependencies = [
  "replicante_util_tracing",
  "replicante_util_upkeep",
  "replicore_component_discovery_scheduler",
+ "replicore_component_orchestrator_scheduler",
  "replicore_component_viewupdater",
  "replicore_models_tasks",
  "replicore_task_discovery",
@@ -3143,6 +3144,19 @@ dependencies = [
  "replicante_util_tracing",
  "replicante_util_upkeep",
  "replicore_models_tasks",
+ "serde",
+ "slog",
+]
+
+[[package]]
+name = "replicore_component_orchestrator_scheduler"
+version = "0.1.0"
+dependencies = [
+ "failure",
+ "humthreads",
+ "replicante_service_coordinator",
+ "replicante_util_failure",
+ "replicante_util_upkeep",
  "serde",
  "slog",
 ]

@@ -1,10 +1,10 @@
 use serde::Deserialize;
 use serde::Serialize;
 
-/// DiscoverySettings scheduling options.
+/// Cluster orchestration scheduling options.
 #[derive(Clone, Eq, PartialEq, Hash, Debug, Serialize, Deserialize)]
 pub struct Config {
-    /// Interval (in seconds) to wait between checks for pending DiscoverySettings to schedule.
+    /// Interval (in seconds) to wait between checks for pending ClusterSettings to schedule.
     #[serde(default = "Config::default_interval")]
     pub interval: u64,
 

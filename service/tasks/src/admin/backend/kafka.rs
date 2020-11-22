@@ -105,7 +105,7 @@ impl<Q: TaskQueue> KafkaIter<Q> {
         let message_id = format!("{}:{}:{}", topic, message.partition(), message.offset());
         let payload = message
             .payload()
-            .ok_or_else(|| ErrorKind::TaskNoPayload(message_id))?
+            .ok_or(ErrorKind::TaskNoPayload(message_id))?
             .to_vec();
         let mut headers = match message.headers() {
             None => HashMap::new(),

@@ -59,7 +59,7 @@ async fn responder(
     let path = request.match_info();
     let cluster_id = path
         .get("cluster_id")
-        .ok_or_else(|| ErrorKind::APIRequestParameterNotFound("cluster_id"))?
+        .ok_or(ErrorKind::APIRequestParameterNotFound("cluster_id"))?
         .to_string();
 
     // Search for actions and prepare results.

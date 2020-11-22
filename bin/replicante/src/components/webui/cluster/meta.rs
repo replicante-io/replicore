@@ -54,7 +54,7 @@ async fn responder(data: web::Data<MetaData>, request: HttpRequest) -> Result<im
     let path = request.match_info();
     let cluster_id = path
         .get("cluster_id")
-        .ok_or_else(|| ErrorKind::APIRequestParameterNotFound("cluster_id"))?
+        .ok_or(ErrorKind::APIRequestParameterNotFound("cluster_id"))?
         .to_string();
     let mut request = request;
     let meta = with_request_span(&mut request, |span| -> Result<_> {
@@ -64,7 +64,7 @@ async fn responder(data: web::Data<MetaData>, request: HttpRequest) -> Result<im
             .legacy()
             .cluster_meta(cluster_id.clone(), span)
             .with_context(|_| ErrorKind::PrimaryStoreQuery("cluster_meta"))?
-            .ok_or_else(|| ErrorKind::ModelNotFound("cluster_meta", cluster_id))?;
+            .ok_or(ErrorKind::ModelNotFound("cluster_meta", cluster_id))?;
         Ok(meta)
     })?;
     let response = HttpResponse::Ok().json(meta);

@@ -51,7 +51,7 @@ async fn responder(data: web::Data<ListData>, request: HttpRequest) -> Result<im
     let path = request.match_info();
     let namespace = path
         .get("namespace")
-        .ok_or_else(|| ErrorKind::APIRequestParameterNotFound("namespace"))?
+        .ok_or(ErrorKind::APIRequestParameterNotFound("namespace"))?
         .to_string();
 
     let mut request = request;

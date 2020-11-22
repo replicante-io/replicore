@@ -20,6 +20,10 @@ pub struct ComponentsConfig {
     #[serde(default)]
     grafana: Option<bool>,
 
+    /// Enable ClusterSettings orchestrator periodic scheduler.
+    #[serde(default)]
+    orchestrator: Option<bool>,
+
     /// Enable the update checker (optional).
     #[serde(default = "ComponentsConfig::default_false")]
     update_checker: bool,
@@ -43,6 +47,7 @@ impl Default for ComponentsConfig {
             core_api: None,
             discovery: None,
             grafana: None,
+            orchestrator: None,
             update_checker: Self::default_false(),
             viewupdater: None,
             webui: None,
@@ -67,7 +72,7 @@ impl ComponentsConfig {
         self.core_api.unwrap_or(self.default)
     }
 
-    /// Check if the discovery component is enabled.
+    /// Check if the discovery_scheduler component is enabled.
     pub fn discovery(&self) -> bool {
         self.discovery.unwrap_or(self.default)
     }
@@ -75,6 +80,11 @@ impl ComponentsConfig {
     /// Check if the Grafana Annotations endpoints component is enabled.
     pub fn grafana(&self) -> bool {
         self.grafana.unwrap_or(self.default)
+    }
+
+    /// Check if the orchestrator_scheduler component is enabled.
+    pub fn orchestrator(&self) -> bool {
+        self.orchestrator.unwrap_or(self.default)
     }
 
     /// Check if the update checker component is enabled.

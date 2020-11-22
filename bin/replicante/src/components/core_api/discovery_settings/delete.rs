@@ -58,11 +58,11 @@ async fn responder(data: web::Data<DeleteData>, request: HttpRequest) -> Result<
     let path = request.match_info();
     let namespace = path
         .get("namespace")
-        .ok_or_else(|| ErrorKind::APIRequestParameterNotFound("namespace"))?
+        .ok_or(ErrorKind::APIRequestParameterNotFound("namespace"))?
         .to_string();
     let name = path
         .get("name")
-        .ok_or_else(|| ErrorKind::APIRequestParameterNotFound("name"))?
+        .ok_or(ErrorKind::APIRequestParameterNotFound("name"))?
         .to_string();
 
     let mut request = request;

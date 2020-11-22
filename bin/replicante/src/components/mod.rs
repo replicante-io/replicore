@@ -6,6 +6,7 @@ use slog::Logger;
 use replicante_util_upkeep::Upkeep;
 
 use replicore_component_discovery_scheduler::Config as DiscoveryConfig;
+use replicore_component_orchestrator_scheduler::Config as OrchestratorConfig;
 
 use super::metrics::COMPONENTS_ENABLED;
 use super::Config;
@@ -52,13 +53,12 @@ impl_component!(
 );
 impl Discovery {
     fn new(config: DiscoveryConfig, interfaces: &Interfaces) -> Discovery {
-        let coordinator = interfaces.coordinator.clone();
         let logger = interfaces.logger.clone();
         let store = interfaces.stores.primary.clone();
         let tasks = interfaces.tasks.clone();
         let tracer = interfaces.tracing.tracer();
         let component = replicore_component_discovery_scheduler::Discovery::new(
-            coordinator,
+            interfaces.coordinator.clone(),
             config,
             logger,
             store,
@@ -66,6 +66,21 @@ impl Discovery {
             tracer,
         );
         Discovery(component)
+    }
+}
+
+impl_component!(
+    OrchestratorScheduler,
+    replicore_component_orchestrator_scheduler::OrchestratorScheduler
+);
+impl OrchestratorScheduler {
+    fn new(config: OrchestratorConfig, interfaces: &Interfaces) -> OrchestratorScheduler {
+        let component = replicore_component_orchestrator_scheduler::OrchestratorScheduler::new(
+            interfaces.coordinator.clone(),
+            config,
+            interfaces.logger.clone(),
+        );
+        OrchestratorScheduler(component)
     }
 }
 
@@ -164,6 +179,13 @@ impl Components {
             component("grafana", "optional") {
                 let enabled = config.components.grafana();
                 Grafana::new(interfaces)
+            }
+            component("orchestrator", "required") {
+                let enabled = config.components.orchestrator();
+                OrchestratorScheduler::new(
+                    config.orchestrator.clone(),
+                    interfaces,
+                )
             }
             component("update_checker", "optional") {
                 let enabled = config.components.update_checker();

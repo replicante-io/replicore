@@ -250,7 +250,7 @@ impl Kafka {
         let message_id = format!("{}:{}:{}", topic, message.partition(), message.offset());
         let payload = message
             .payload()
-            .ok_or_else(|| ErrorKind::TaskNoPayload(message_id))?
+            .ok_or(ErrorKind::TaskNoPayload(message_id))?
             .to_vec();
         let mut headers = headers_to_map(message.headers()).with_context(|e| {
             ErrorKind::TaskHeaderInvalid(e.header.clone(), "<not-utf8>".into())

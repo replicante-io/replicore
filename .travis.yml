@@ -35,6 +35,7 @@ script: ci/travis.sh script "${TASK}"
 
 jobs:
   allow_failures:
-    - rust: nightly
     - env: TASK=audit
+    - rust: 1.44.0
+    - rust: nightly
   fast_finish: true

@@ -58,11 +58,11 @@ async fn responder(
     let path = request.match_info();
     let cluster_id = path
         .get("cluster_id")
-        .ok_or_else(|| ErrorKind::APIRequestParameterNotFound("cluster_id"))?
+        .ok_or(ErrorKind::APIRequestParameterNotFound("cluster_id"))?
         .to_string();
     let action_id = path
         .get("action_id")
-        .ok_or_else(|| ErrorKind::APIRequestParameterNotFound("action_id"))?;
+        .ok_or(ErrorKind::APIRequestParameterNotFound("action_id"))?;
     let action_id = Uuid::parse_str(action_id)
         .with_context(|_| ErrorKind::APIRequestParameterInvalid("action_id"))?;
 

@@ -1,0 +1,33 @@
+[package]
+name = "replicore_component_orchestrator_scheduler"
+version = "0.1.0"
+authors = ["Stefano Pogliani <stefano@spogliani.net>"]
+edition = "2018"
+
+description = "Component to schedule cluster orchestration tasks"
+documentation = "https://www.replicante.io/docs"
+homepage = "https://www.replicante.io/"
+repository = "https://github.com/replicante-io/replicante"
+license = "MIT"
+
+
+[dependencies]
+failure = "^0.1.5"
+#failure_derive = "^0.1.5"
+humthreads = "^0.2.0"
+#lazy_static = "^1.0.0"
+#opentracingrust = "^0.4.0"
+#prometheus = "^0.9.0"
+serde = "^1.0.34"
+slog = "^2.2.0"
+
+#replicante_cluster_discovery = { path = "../../../cluster/discovery" }
+#replicante_models_core = { path = "../../../models/core" }
+replicante_service_coordinator = { path = "../../../service/coordinator" }
+#replicante_service_tasks = { path = "../../../service/tasks" }
+#replicante_store_primary = { path = "../../../store/primary" }
+replicante_util_failure = { path = "../../../common/util/failure" }
+#replicante_util_tracing = { path = "../../../common/util/tracing" }
+replicante_util_upkeep = { path = "../../../common/util/upkeep" }
+
+#replicore_models_tasks = { path = "../../../models/tasks" }

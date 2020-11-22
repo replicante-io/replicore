@@ -39,10 +39,10 @@ impl DiscoveryLogic {
         }
     }
 
-    /// Searche for pending discovery tasks and schedule them.
+    /// Search for pending discovery tasks and schedule them.
     ///
     /// Update the next_run attribute when the discovery is scheduled.
-    /// This prevents scheduling the same discovery ripetievly in many situations:
+    /// This prevents scheduling the same discovery repetitively in many situations:
     ///  * Slow or busy workers may fail to keep up (adding more work won't help).
     ///  * Incorrect configuration (short discovery loop intervals).
     ///  * One of many many possible bugs ...

@@ -119,7 +119,7 @@ pub fn replicante_io_v0(args: ApplierArgs) -> Result<Value> {
         .as_str()
         .expect("validation should have caught this");
 
-    let action_args = spec.get("args").cloned().unwrap_or_else(|| Value::Null);
+    let action_args = spec.get("args").cloned().unwrap_or(Value::Null);
     let approval = match object.metadata.get("approval") {
         None => ActionApproval::default(),
         Some(approval) => {

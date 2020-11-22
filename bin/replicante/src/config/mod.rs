@@ -15,6 +15,7 @@ use replicante_service_tasks::Config as TasksConfig;
 use replicante_stream::StreamConfig;
 use replicante_util_tracing::Config as TracingConfig;
 use replicore_component_discovery_scheduler::Config as DiscoveryConfig;
+use replicore_component_orchestrator_scheduler::Config as OrchestratorConfig;
 
 use crate::interfaces::api::Config as APIConfig;
 use crate::ErrorKind;
@@ -56,7 +57,7 @@ pub struct Config {
     #[serde(default)]
     pub coordinator: CoordinatorConfig,
 
-    /// Agent discovery configuration.
+    /// DiscoverySettings scheduling options.
     #[serde(default)]
     pub discovery: DiscoveryConfig,
 
@@ -66,6 +67,10 @@ pub struct Config {
     /// Logging configuration.
     #[serde(default)]
     pub logging: LoggingConfig,
+
+    /// Cluster orchestration scheduling options.
+    #[serde(default)]
+    pub orchestrator: OrchestratorConfig,
 
     /// Optional sentry integration configuration.
     #[serde(default)]

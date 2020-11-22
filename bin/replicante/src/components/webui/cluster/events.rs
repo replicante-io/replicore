@@ -57,7 +57,7 @@ async fn responder(data: web::Data<EventsData>, request: HttpRequest) -> Result<
     let path = request.match_info();
     let cluster_id = path
         .get("cluster_id")
-        .ok_or_else(|| ErrorKind::APIRequestParameterNotFound("cluster_id"))?
+        .ok_or(ErrorKind::APIRequestParameterNotFound("cluster_id"))?
         .to_string();
 
     let mut filters = EventsFilters::all();

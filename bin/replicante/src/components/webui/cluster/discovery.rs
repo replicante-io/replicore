@@ -55,7 +55,7 @@ async fn responder(data: web::Data<DiscoveryData>, request: HttpRequest) -> Resu
     let path = request.match_info();
     let cluster_id = path
         .get("cluster_id")
-        .ok_or_else(|| ErrorKind::APIRequestParameterNotFound("cluster_id"))?
+        .ok_or(ErrorKind::APIRequestParameterNotFound("cluster_id"))?
         .to_string();
 
     let mut request = request;
@@ -66,7 +66,7 @@ async fn responder(data: web::Data<DiscoveryData>, request: HttpRequest) -> Resu
             .cluster("TODO_NS".to_string(), cluster_id.clone())
             .discovery(span)
             .with_context(|_| ErrorKind::PrimaryStoreQuery("cluster.discovery"))?
-            .ok_or_else(|| ErrorKind::ModelNotFound("ClusterDiscovery", cluster_id))?;
+            .ok_or(ErrorKind::ModelNotFound("ClusterDiscovery", cluster_id))?;
         Ok(discovery)
     })?;
     let response = HttpResponse::Ok().json(discovery);

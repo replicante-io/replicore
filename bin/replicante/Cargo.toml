@@ -74,6 +74,7 @@ replicante_util_tracing = { path = "../../common/util/tracing" }
 replicante_util_upkeep = { path = "../../common/util/upkeep" }
 
 replicore_component_discovery_scheduler = { path = "../../core/components/discovery_scheduler" }
+replicore_component_orchestrator_scheduler = { path = "../../core/components/orchestrator_scheduler" }
 replicore_component_viewupdater = { path = "../../core/components/viewupdater" }
 replicore_models_tasks = { path = "../../models/tasks" }
 replicore_task_discovery = { path = "../../core/tasks/discovery" }
