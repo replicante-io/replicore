@@ -17,7 +17,7 @@ use replicore_models_tasks::payload::DiscoverClustersPayload;
 use replicore_models_tasks::ReplicanteQueues;
 use replicore_models_tasks::Tasks;
 
-use crate::metrics::DISCOVERY_SCHEDULE_COUNT;
+use crate::metrics::SCHEDULE_COUNT;
 use crate::ErrorKind;
 use crate::Result;
 
@@ -62,7 +62,7 @@ impl DiscoveryLogic {
         for discovery in discoveries {
             self.schedule_discovery(discovery, span_context.clone())
                 .map_err(|error| fail_span(error, &mut *span))?;
-            DISCOVERY_SCHEDULE_COUNT.inc();
+            SCHEDULE_COUNT.inc();
         }
         Ok(())
     }
@@ -107,10 +107,12 @@ impl DiscoveryLogic {
         };
 
         // Update next_run attribute so we don't spam ourselves with tasks.
+        let namespace = discovery.namespace.clone();
+        let name = discovery.name.clone();
         self.store
             .persist()
             .next_discovery_run(discovery, span_context)
-            .context(ErrorKind::DiscoveriesPartialSearch)?;
+            .with_context(|_| ErrorKind::persist_next_run(namespace, name))?;
         Ok(())
     }
 }

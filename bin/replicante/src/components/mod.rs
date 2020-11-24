@@ -53,17 +53,13 @@ impl_component!(
 );
 impl Discovery {
     fn new(config: DiscoveryConfig, interfaces: &Interfaces) -> Discovery {
-        let logger = interfaces.logger.clone();
-        let store = interfaces.stores.primary.clone();
-        let tasks = interfaces.tasks.clone();
-        let tracer = interfaces.tracing.tracer();
         let component = replicore_component_discovery_scheduler::Discovery::new(
             interfaces.coordinator.clone(),
             config,
-            logger,
-            store,
-            tasks,
-            tracer,
+            interfaces.logger.clone(),
+            interfaces.stores.primary.clone(),
+            interfaces.tasks.clone(),
+            interfaces.tracing.tracer(),
         );
         Discovery(component)
     }
@@ -79,6 +75,9 @@ impl OrchestratorScheduler {
             interfaces.coordinator.clone(),
             config,
             interfaces.logger.clone(),
+            interfaces.stores.primary.clone(),
+            interfaces.tasks.clone(),
+            interfaces.tracing.tracer(),
         );
         OrchestratorScheduler(component)
     }

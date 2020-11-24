@@ -11,8 +11,11 @@ pub enum ReplicanteQueues {
     /// Cluster state refresh and aggregation tasks.
     ClusterRefresh,
 
-    /// Fetch cluster Discovery records from a discovery backend.
+    /// Fetch cluster `DiscoveryRecord`s from a discovery backend.
     DiscoverClusters,
+
+    /// Orchestrate a cluster to converge to the configured desired state.
+    OrchestrateCluster,
 }
 
 impl FromStr for ReplicanteQueues {
@@ -21,6 +24,7 @@ impl FromStr for ReplicanteQueues {
         match s {
             "cluster_refresh" => Ok(ReplicanteQueues::ClusterRefresh),
             "discover_clusters" => Ok(ReplicanteQueues::DiscoverClusters),
+            "orchestrate_cluster" => Ok(ReplicanteQueues::OrchestrateCluster),
             s => Err(::failure::err_msg(format!("unknown queue '{}'", s))),
         }
     }
@@ -31,6 +35,7 @@ impl TaskQueue for ReplicanteQueues {
         match self {
             ReplicanteQueues::ClusterRefresh => 1,
             ReplicanteQueues::DiscoverClusters => 1,
+            ReplicanteQueues::OrchestrateCluster => 1,
         }
     }
 
@@ -38,13 +43,15 @@ impl TaskQueue for ReplicanteQueues {
         match self {
             ReplicanteQueues::ClusterRefresh => "cluster_refresh".into(),
             ReplicanteQueues::DiscoverClusters => "discover_clusters".into(),
+            ReplicanteQueues::OrchestrateCluster => "orchestrate_cluster".into(),
         }
     }
 
     fn retry_delay(&self) -> Duration {
         match self {
-            ReplicanteQueues::ClusterRefresh => Duration::from_secs(5),
-            ReplicanteQueues::DiscoverClusters => Duration::from_secs(5),
+            ReplicanteQueues::ClusterRefresh => Duration::from_secs(2),
+            ReplicanteQueues::DiscoverClusters => Duration::from_secs(2),
+            ReplicanteQueues::OrchestrateCluster => Duration::from_secs(5),
         }
     }
 }

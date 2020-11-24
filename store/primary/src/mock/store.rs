@@ -324,6 +324,14 @@ impl PersistInterface for Persist {
         panic!("TODO: MockStore::Persist::discovery_settings")
     }
 
+    fn next_cluster_orchestrate(
+        &self,
+        _settings: ClusterSettings,
+        _: Option<SpanContext>,
+    ) -> Result<()> {
+        panic!("TODO: MockStore::Persist::next_cluster_orchestrate")
+    }
+
     fn next_discovery_run(
         &self,
         _settings: DiscoverySettings,

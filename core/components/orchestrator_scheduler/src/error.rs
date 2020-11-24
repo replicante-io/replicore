@@ -49,13 +49,36 @@ impl From<ErrorKind> for Error {
 /// Exhaustive list of possible errors emitted by this crate.
 #[derive(Debug, Fail)]
 pub enum ErrorKind {
+    #[fail(display = "unable to iterate over clusters to orchestrate search")]
+    ClustersPartialSearch,
+
+    #[fail(display = "unable to search for clusters to orchestrate")]
+    ClustersSearch,
+
+    #[fail(
+        display = "unable to persist next_orchestrate update for {}.{}",
+        _0, _1
+    )]
+    PersistNextOrchestrate(String, String),
+
     #[fail(display = "failed to spawn descovery thread")]
     ThreadSpawn,
 }
 
 impl ErrorKind {
+    pub fn persist_next_orchestrate<S1, S2>(namespace: S1, cluster_id: S2) -> ErrorKind
+    where
+        S1: Into<String>,
+        S2: Into<String>,
+    {
+        ErrorKind::PersistNextOrchestrate(namespace.into(), cluster_id.into())
+    }
+
     fn kind_name(&self) -> Option<&str> {
         let name = match self {
+            ErrorKind::ClustersPartialSearch => "ClustersPartialSearch",
+            ErrorKind::ClustersSearch => "ClustersSearch",
+            ErrorKind::PersistNextOrchestrate(_, _) => "PersistNextOrchestrate",
             ErrorKind::ThreadSpawn => "ThreadSpawn",
         };
         Some(name)

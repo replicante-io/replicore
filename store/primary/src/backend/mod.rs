@@ -357,7 +357,14 @@ box_interface! {
     trait GlobalSearchInterface,
 
     interface {
-        fn discoveries_to_run(&self, span: Option<SpanContext>) -> Result<Cursor<DiscoverySettings>>;
+        fn clusters_to_orchestrate(
+            &self,
+            span: Option<SpanContext>,
+        ) -> Result<Cursor<ClusterSettings>>;
+        fn discoveries_to_run(
+            &self,
+            span: Option<SpanContext>,
+        ) -> Result<Cursor<DiscoverySettings>>;
     }
 }
 
@@ -446,6 +453,11 @@ box_interface! {
         fn discovery_settings(
             &self,
             settings: DiscoverySettings,
+            span: Option<SpanContext>,
+        ) -> Result<()>;
+        fn next_cluster_orchestrate(
+            &self,
+            settings: ClusterSettings,
             span: Option<SpanContext>,
         ) -> Result<()>;
         fn next_discovery_run(

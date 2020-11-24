@@ -49,21 +49,33 @@ impl From<ErrorKind> for Error {
 /// Exhaustive list of possible errors emitted by this crate.
 #[derive(Debug, Fail)]
 pub enum ErrorKind {
+    #[fail(display = "unable to iterate over discoveries search")]
+    DiscoveriesPartialSearch,
+
     #[fail(display = "unable to search for discoveries to run")]
     DiscoveriesSearch,
 
-    #[fail(display = "unable to iterate over discoveries search")]
-    DiscoveriesPartialSearch,
+    #[fail(display = "unable to persist next_run update for {}.{}", _0, _1)]
+    PersistNextRun(String, String),
 
     #[fail(display = "failed to spawn descovery thread")]
     ThreadSpawn,
 }
 
 impl ErrorKind {
+    pub fn persist_next_run<S1, S2>(namespace: S1, name: S2) -> ErrorKind
+    where
+        S1: Into<String>,
+        S2: Into<String>,
+    {
+        ErrorKind::PersistNextRun(namespace.into(), name.into())
+    }
+
     fn kind_name(&self) -> Option<&str> {
         let name = match self {
-            ErrorKind::DiscoveriesSearch => "DiscoveriesSearch",
             ErrorKind::DiscoveriesPartialSearch => "DiscoveriesPartialSearch",
+            ErrorKind::DiscoveriesSearch => "DiscoveriesSearch",
+            ErrorKind::PersistNextRun(_, _) => "PersistNextRun",
             ErrorKind::ThreadSpawn => "ThreadSpawn",
         };
         Some(name)

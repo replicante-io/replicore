@@ -180,6 +180,26 @@ impl PersistInterface for Persist {
         Ok(())
     }
 
+    fn next_cluster_orchestrate(
+        &self,
+        settings: ClusterSettingsModel,
+        span: Option<SpanContext>,
+    ) -> Result<()> {
+        let filter = doc! {
+            "namespace": &settings.namespace,
+            "cluster_id": &settings.cluster_id,
+        };
+        let next_orchestrate = Utc::now() + chrono::Duration::seconds(settings.interval);
+        let update = doc! {"$set": {"next_orchestrate": next_orchestrate}};
+        let collection = self
+            .client
+            .database(&self.db)
+            .collection(COLLECTION_CLUSTER_SETTINGS);
+        update_one(collection, filter, update, span, self.tracer.as_deref())
+            .with_context(|_| ErrorKind::MongoDBOperation)?;
+        Ok(())
+    }
+
     fn next_discovery_run(
         &self,
         settings: DiscoverySettingsModel,

@@ -1,26 +1,31 @@
+use std::sync::Arc;
 use std::time::Duration;
 
 use failure::ResultExt;
 use humthreads::Builder as ThreadBuilder;
+use opentracingrust::Tracer;
 use slog::debug;
 use slog::Logger;
 
 use replicante_service_coordinator::Coordinator;
 use replicante_service_coordinator::LoopingElection;
 use replicante_service_coordinator::LoopingElectionOpts;
+use replicante_store_primary::store::Store;
 use replicante_util_upkeep::Upkeep;
+
+use replicore_models_tasks::Tasks;
 
 mod config;
 mod election;
 mod error;
 mod logic;
-//mod metrics;
+mod metrics;
 
 pub use self::config::Config;
 pub use self::error::Error;
 pub use self::error::ErrorKind;
 pub use self::error::Result;
-//pub use self::metrics::register_metrics;
+pub use self::metrics::register_metrics;
 
 const RUN_ALREADY_CALLED: &str = "called OrchestratorScheduler::run more then once";
 
@@ -34,10 +39,17 @@ pub struct OrchestratorScheduler {
 }
 
 impl OrchestratorScheduler {
-    pub fn new(coordinator: Coordinator, config: Config, logger: Logger) -> OrchestratorScheduler {
+    pub fn new(
+        coordinator: Coordinator,
+        config: Config,
+        logger: Logger,
+        store: Store,
+        tasks: Tasks,
+        tracer: Arc<Tracer>,
+    ) -> OrchestratorScheduler {
         let coordinator = Some(coordinator);
         let interval = Duration::from_secs(config.interval);
-        let logic = self::logic::Logic::new();
+        let logic = self::logic::Logic::new(logger.clone(), store, tasks, tracer);
         let logic = Some(logic);
         OrchestratorScheduler {
             coordinator,

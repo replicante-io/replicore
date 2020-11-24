@@ -12,9 +12,9 @@ use replicante_util_failure::capture_fail;
 use replicante_util_failure::failure_info;
 
 use super::logic::Logic;
-//use super::metrics::DISCOVERY_DURATION;
-//use super::metrics::DISCOVERY_LOOP_COUNT;
-//use super::metrics::DISCOVERY_LOOP_ERRORS;
+use super::metrics::DURATION;
+use super::metrics::LOOP_COUNT;
+use super::metrics::LOOP_ERRORS;
 
 /// Looping election implementation to call into the `Logic`.
 pub struct Election {
@@ -55,14 +55,14 @@ impl LoopingElectionLogic for Election {
         let _activity = self
             .thread
             .scoped_activity("scheduling pending ClusterSettings orchestrations");
-        //DISCOVERY_LOOP_COUNT.inc();
-        //let timer = DISCOVERY_DURATION.start_timer();
+        LOOP_COUNT.inc();
+        let timer = DURATION.start_timer();
         trace!(
             self.logger,
             "Started pending ClusterSettings orchestrations cycle",
         );
         if let Err(error) = self.logic.run() {
-            //DISCOVERY_LOOP_ERRORS.inc();
+            LOOP_ERRORS.inc();
             capture_fail!(
                 &error,
                 self.logger,
@@ -71,7 +71,7 @@ impl LoopingElectionLogic for Election {
             );
             return Ok(LoopingElectionControl::Proceed);
         }
-        //timer.observe_duration();
+        timer.observe_duration();
         trace!(
             self.logger,
             "Pending ClusterSettings orchestrations cycle finished",

@@ -4,8 +4,8 @@ use bson::doc;
 use bson::Document;
 use lazy_static::lazy_static;
 
-pub const COLLECTION_ACTIONS: &str = "actions";
 pub const COLLECTION_ACTIONS_HISTORY: &str = "actions_history";
+pub const COLLECTION_ACTIONS: &str = "actions";
 pub const COLLECTION_EVENTS: &str = "events";
 pub const MAX_ACTIONS_SEARCH: i64 = 100;
 

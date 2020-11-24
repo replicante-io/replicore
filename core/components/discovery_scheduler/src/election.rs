@@ -12,9 +12,9 @@ use replicante_util_failure::capture_fail;
 use replicante_util_failure::failure_info;
 
 use super::logic::DiscoveryLogic;
-use super::metrics::DISCOVERY_DURATION;
-use super::metrics::DISCOVERY_LOOP_COUNT;
-use super::metrics::DISCOVERY_LOOP_ERRORS;
+use super::metrics::DURATION;
+use super::metrics::LOOP_COUNT;
+use super::metrics::LOOP_ERRORS;
 
 /// Looping election implementation to call into the `DiscoveryLogic`.
 pub struct DiscoveryElection {
@@ -55,11 +55,11 @@ impl LoopingElectionLogic for DiscoveryElection {
         let _activity = self
             .thread
             .scoped_activity("scheduling pending discovery runs");
-        DISCOVERY_LOOP_COUNT.inc();
-        let timer = DISCOVERY_DURATION.start_timer();
+        LOOP_COUNT.inc();
+        let timer = DURATION.start_timer();
         trace!(self.logger, "Started pending discovery runs cycle");
         if let Err(error) = self.logic.run() {
-            DISCOVERY_LOOP_ERRORS.inc();
+            LOOP_ERRORS.inc();
             capture_fail!(
                 &error,
                 self.logger,

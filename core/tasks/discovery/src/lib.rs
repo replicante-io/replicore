@@ -140,7 +140,7 @@ impl DiscoverClusters {
             .with_context(|_| ErrorKind::fetch_settings(&namespace, &cluster_id))?;
         if settings.is_none() {
             DISCOVER_CLUSTER_SETTINGS_COUNT.inc();
-            let settings = ClusterSettings::new(namespace.clone(), cluster_id.clone(), true);
+            let settings = ClusterSettings::synthetic(&namespace, &cluster_id);
             let event = Event::builder()
                 .cluster()
                 .synthetic_settings(settings.clone());

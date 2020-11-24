@@ -70,7 +70,17 @@ impl Persist {
         self.persist.discovery_settings(settings, span.into())
     }
 
-    /// Update the next_run of a cluster DiscoverySettings record.
+    /// Update the next_orchestrate of a ClusterSettings record.
+    ///
+    /// The new value is based on the current time + settings.interval.
+    pub fn next_cluster_orchestrate<S>(&self, settings: ClusterSettings, span: S) -> Result<()>
+    where
+        S: Into<Option<SpanContext>>,
+    {
+        self.persist.next_cluster_orchestrate(settings, span.into())
+    }
+
+    /// Update the next_run of a DiscoverySettings record.
     ///
     /// The new value is based on the current time + settings.interval.
     pub fn next_discovery_run<S>(&self, settings: DiscoverySettings, span: S) -> Result<()>

@@ -9,25 +9,25 @@ use slog::Logger;
 lazy_static::lazy_static! {
     pub static ref DURATION: Histogram = Histogram::with_opts(
         HistogramOpts::new(
-            "replicore_discovery_scheduler_duration",
-            "Duration (in seconds) of pending discovery search and schedule cycles",
+            "replicore_orchestrate_scheduler_duration",
+            "Duration (in seconds) of pending cluster orchestrations search and schedule cycles",
         )
         .buckets(vec![0.25, 0.5, 1.0, 2.5, 5.0, 10.0, 20.0, 40.0])
     )
     .expect("Failed to create DURATION");
     pub static ref LOOP_COUNT: Counter = Counter::with_opts(Opts::new(
-        "replicore_discovery_scheduler_loops",
-        "Number of pending discovery runs search and schedule cycles",
+        "replicore_orchestrate_scheduler_loops",
+        "Number of pending cluster orchestrations runs search and schedule cycles",
     ))
     .expect("Failed to create LOOP_COUNT");
     pub static ref LOOP_ERRORS: Counter = Counter::with_opts(Opts::new(
-        "replicore_discovery_scheduler_loop_errors",
-        "Number of errors during pending discovery runs search and schedule cycles",
+        "replicore_orchestrate_scheduler_loop_errors",
+        "Number of errors during pending cluster orchestrations runs search and schedule cycles",
     ))
     .expect("Failed to create ERRORS");
     pub static ref SCHEDULE_COUNT: Counter = Counter::with_opts(Opts::new(
-        "replicore_discovery_scheduler_scheduled",
-        "Number of pending discovery scheduled to run",
+        "replicore_orchestrate_scheduler_scheduled",
+        "Number of pending cluster orchestrations scheduled to run",
     ))
     .expect("Failed to create SCHEDULE_COUNT");
 }
