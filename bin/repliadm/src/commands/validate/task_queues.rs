@@ -8,7 +8,6 @@ use replicante_service_tasks::admin::TasksAdmin;
 use replicante_service_tasks::TaskQueue;
 use replicante_util_failure::format_fail;
 
-use replicore_models_tasks::payload::ClusterRefreshPayload;
 use replicore_models_tasks::ReplicanteQueues;
 
 pub const COMMAND: &str = "task-queues";
@@ -67,16 +66,23 @@ pub fn run<'a>(args: &ArgMatches<'a>, interfaces: &Interfaces) -> Result<Outcome
         .with_context(|_| ErrorKind::AdminInit("tasks"))?;
     let mut outcomes = Outcomes::new();
 
-    // Scan every queue here.
     scan_queue!(
         logger,
         interfaces,
         outcomes,
         tasks,
-        ReplicanteQueues::ClusterRefresh,
-        ClusterRefreshPayload,
+        ReplicanteQueues::DiscoverClusters,
+        replicore_models_tasks::payload::DiscoverClustersPayload,
     );
-    outcomes.report(&logger);
+    scan_queue!(
+        logger,
+        interfaces,
+        outcomes,
+        tasks,
+        ReplicanteQueues::OrchestrateCluster,
+        replicore_models_tasks::payload::OrchestrateClusterPayload,
+    );
 
+    outcomes.report(&logger);
     Ok(outcomes)
 }

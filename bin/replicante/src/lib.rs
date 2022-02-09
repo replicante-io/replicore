@@ -17,7 +17,6 @@ mod config;
 mod error;
 mod interfaces;
 mod metrics;
-mod tasks;
 
 pub use self::config::Config;
 pub use self::error::Error;

@@ -78,6 +78,7 @@ replicore_component_orchestrator_scheduler = { path = "../../core/components/orc
 replicore_component_viewupdater = { path = "../../core/components/viewupdater" }
 replicore_models_tasks = { path = "../../models/tasks" }
 replicore_task_discovery = { path = "../../core/tasks/discovery" }
+replicore_task_orchestrator = { path = "../../core/tasks/orchestrator" }
 
 
 [build-dependencies]

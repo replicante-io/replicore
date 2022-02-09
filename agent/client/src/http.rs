@@ -18,7 +18,6 @@ use reqwest::Certificate;
 use reqwest::Identity;
 use reqwest::StatusCode;
 use serde::de::DeserializeOwned;
-use serde_derive::Deserialize;
 use slog::Logger;
 use uuid::Uuid;
 
@@ -47,12 +46,6 @@ use super::metrics::CLIENT_OPS_COUNT;
 use super::metrics::CLIENT_OPS_DURATION;
 use super::metrics::CLIENT_OP_ERRORS_COUNT;
 use super::metrics::CLIENT_TIMEOUT;
-
-/// Decode useful portions of error messages from clients.
-#[derive(Debug, Deserialize)]
-struct ClientError {
-    error: String,
-}
 
 /// Interface to interact with (remote) agents over HTTP.
 pub struct HttpClient {

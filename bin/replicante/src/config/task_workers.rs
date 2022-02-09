@@ -13,6 +13,9 @@ pub struct TaskWorkers {
 
     /// Enable handling of clusters discovery tasks.
     discover_clusters: Option<bool>,
+
+    /// Enable handling of cluster orchestration tasks.
+    orchestrate_cluster: Option<bool>,
 }
 
 impl Default for TaskWorkers {
@@ -21,6 +24,7 @@ impl Default for TaskWorkers {
             default: Self::default_default(),
             cluster_refresh: None,
             discover_clusters: None,
+            orchestrate_cluster: None,
         }
     }
 }
@@ -38,8 +42,13 @@ impl TaskWorkers {
         self.cluster_refresh.unwrap_or(self.default)
     }
 
-    /// Check if the discover clusters worker is enabled.
+    /// Check if the clusters discovery worker is enabled.
     pub fn discover_clusters(&self) -> bool {
         self.discover_clusters.unwrap_or(self.default)
+    }
+
+    /// Check if the cluster orchestration worker is enabled.
+    pub fn orchestrate_cluster(&self) -> bool {
+        self.orchestrate_cluster.unwrap_or(self.default)
     }
 }

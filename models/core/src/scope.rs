@@ -24,6 +24,22 @@ pub struct Namespace {
     pub https_transport: NsHttpsTransport,
 }
 
+impl Namespace {
+    /// Return a Namespace object to hardcode in places during gradual implementation of namespaces.
+    ///
+    /// This allows new code to use namespaces without rewrite of old code or implementation
+    /// of the feature itself.
+    /// This function will also make it easy to find all the places were namespaces need to be
+    /// rolled out thanks to rust's `deprecated` annotation.
+    #[allow(non_snake_case)]
+    pub fn HARDCODED_FOR_ROLLOUT() -> Namespace {
+        Namespace {
+            ns_id: "default".to_string(),
+            https_transport: NsHttpsTransport::default(),
+        }
+    }
+}
+
 /// HTTPS Agent Transport settings for a namespace.
 #[derive(Clone, Default, Eq, PartialEq, Hash, Debug, Serialize, Deserialize)]
 pub struct NsHttpsTransport {

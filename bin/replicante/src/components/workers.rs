@@ -16,7 +16,6 @@ use super::Component;
 use crate::config::Config;
 use crate::interfaces::Interfaces;
 use crate::metrics::WORKERS_ENABLED;
-use crate::tasks::cluster_refresh;
 use crate::Error;
 use crate::ErrorKind;
 use crate::Result;
@@ -25,8 +24,8 @@ use crate::Result;
 ///
 /// Metrics that fail to register are logged and ignored.
 pub fn register_metrics(logger: &Logger, registry: &Registry) {
-    self::cluster_refresh::register_metrics(logger, registry);
     replicore_task_discovery::register_metrics(logger, registry);
+    replicore_task_orchestrator::register_metrics(logger, registry);
 }
 
 /// Store the state of the WorkerSet.
@@ -78,7 +77,6 @@ impl Workers {
     ///
     /// The tasks that are processed by this node are defined in the configuration file.
     pub fn new(interfaces: &mut Interfaces, logger: Logger, config: Config) -> Result<Workers> {
-        let agents_timeout = Duration::from_secs(config.timeouts.agents_api);
         let worker_set = WorkerSet::new(
             logger.clone(),
             config.tasks.clone(),
@@ -87,23 +85,25 @@ impl Workers {
         .with_context(|_| ErrorKind::ClientInit("tasks workers"))?;
         let worker_set = configure_worker(
             worker_set,
-            ReplicanteQueues::ClusterRefresh,
-            config.task_workers.cluster_refresh(),
+            ReplicanteQueues::DiscoverClusters,
+            config.task_workers.discover_clusters(),
             || {
-                self::cluster_refresh::Handler::new(
-                    &config,
-                    interfaces,
+                replicore_task_discovery::DiscoverClusters::new(
+                    interfaces.streams.events.clone(),
                     logger.clone(),
-                    agents_timeout,
+                    interfaces.stores.primary.clone(),
+                    interfaces.tracing.tracer(),
                 )
             },
         )?;
         let worker_set = configure_worker(
             worker_set,
-            ReplicanteQueues::DiscoverClusters,
-            config.task_workers.discover_clusters(),
+            ReplicanteQueues::OrchestrateCluster,
+            config.task_workers.orchestrate_cluster(),
             || {
-                replicore_task_discovery::DiscoverClusters::new(
+                replicore_task_orchestrator::OrchestrateCluster::new(
+                    Duration::from_secs(config.timeouts.agents_api),
+                    interfaces.coordinator.clone(),
                     interfaces.streams.events.clone(),
                     logger.clone(),
                     interfaces.stores.primary.clone(),

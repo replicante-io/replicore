@@ -11,6 +11,7 @@ members = [
   "core/components/orchestrator_scheduler",
   "core/components/viewupdater",
   "core/tasks/discovery",
+  "core/tasks/orchestrator",
   "externals/kafka",
   "externals/mongodb",
   "models/core",

@@ -9,6 +9,7 @@ use failure::ResultExt;
 use serde_derive::Serialize;
 use slog::Logger;
 
+use replicante_models_core::scope::Namespace;
 use replicante_service_tasks::TaskRequest;
 use replicante_store_primary::store::Store;
 use replicante_util_actixweb::with_request_span;
@@ -16,7 +17,7 @@ use replicante_util_actixweb::TracingMiddleware;
 use replicante_util_failure::capture_fail;
 use replicante_util_failure::failure_info;
 
-use replicore_models_tasks::payload::ClusterRefreshPayload;
+use replicore_models_tasks::payload::OrchestrateClusterPayload;
 use replicore_models_tasks::ReplicanteQueues;
 use replicore_models_tasks::Tasks;
 
@@ -24,33 +25,37 @@ use crate::interfaces::Interfaces;
 use crate::ErrorKind;
 use crate::Result;
 
-pub struct Refresh {
-    data: RefreshData,
+pub struct Orchestrate {
+    data: OrchestrateData,
 }
 
-impl Refresh {
-    pub fn new(logger: &Logger, interfaces: &mut Interfaces) -> Refresh {
-        let data = RefreshData {
+impl Orchestrate {
+    pub fn new(logger: &Logger, interfaces: &mut Interfaces) -> Orchestrate {
+        let data = OrchestrateData {
             logger: logger.clone(),
             store: interfaces.stores.primary.clone(),
             tasks: interfaces.tasks.clone(),
             tracer: interfaces.tracing.tracer(),
         };
-        Refresh { data }
+        Orchestrate { data }
     }
 
     pub fn resource(&self) -> impl HttpServiceFactory {
         let logger = self.data.logger.clone();
         let tracer = Arc::clone(&self.data.tracer);
-        let tracer = TracingMiddleware::with_name(logger, tracer, "/cluster/{cluster_id}/refresh");
-        web::resource("/refresh")
+        let tracer =
+            TracingMiddleware::with_name(logger, tracer, "/cluster/{cluster_id}/orchestrate");
+        web::resource("/orchestrate")
             .data(self.data.clone())
             .wrap(tracer)
             .route(web::post().to(responder))
     }
 }
 
-async fn responder(data: web::Data<RefreshData>, request: HttpRequest) -> Result<impl Responder> {
+async fn responder(
+    data: web::Data<OrchestrateData>,
+    request: HttpRequest,
+) -> Result<impl Responder> {
     let path = request.match_info();
     let cluster_id = path
         .get("cluster_id")
@@ -58,19 +63,22 @@ async fn responder(data: web::Data<RefreshData>, request: HttpRequest) -> Result
         .to_string();
 
     let mut request = request;
-    let cluster = with_request_span(&mut request, |span| -> Result<_> {
+    let namespace = Namespace::HARDCODED_FOR_ROLLOUT().ns_id;
+
+    // Check the cluster exists before scheduling a task for it.
+    with_request_span(&mut request, |span| -> Result<_> {
         let span = span.map(|span| span.context().clone());
         let cluster = data
             .store
-            .cluster("TODO_NS".to_string(), cluster_id.clone())
+            .cluster(namespace.clone(), cluster_id.clone())
             .discovery(span)
             .with_context(|_| ErrorKind::PrimaryStoreQuery("cluster_discovery"))?
             .ok_or_else(|| ErrorKind::ModelNotFound("cluster_discovery", cluster_id.clone()))?;
         Ok(cluster)
     })?;
 
-    let payload = ClusterRefreshPayload::new(cluster, false);
-    let mut task = TaskRequest::new(ReplicanteQueues::ClusterRefresh);
+    let payload = OrchestrateClusterPayload::new(namespace, &cluster_id);
+    let mut task = TaskRequest::new(ReplicanteQueues::OrchestrateCluster);
     with_request_span(&mut request, |span| {
         let span = span.map(|span| span.context());
         if let Some(span) = span {
@@ -98,21 +106,21 @@ async fn responder(data: web::Data<RefreshData>, request: HttpRequest) -> Result
         );
     };
 
-    let response = RefreshResponse { task_id };
+    let response = OrchestrateResponse { task_id };
     let response = HttpResponse::Ok().json(response);
     Ok(response)
 }
 
 #[derive(Clone)]
-struct RefreshData {
+struct OrchestrateData {
     logger: Logger,
     store: Store,
     tasks: Tasks,
     tracer: Arc<opentracingrust::Tracer>,
 }
 
-/// Cluster refresh response.
+/// Cluster orchestrate response.
 #[derive(Serialize)]
-struct RefreshResponse {
+struct OrchestrateResponse {
     task_id: String,
 }

@@ -87,6 +87,7 @@ impl MockCoordinator {
 /// Election mock behaviour.
 #[derive(Clone)]
 pub struct MockElection {
+    #[allow(dead_code)]
     name: String,
     pub primary: Arc<Mutex<Option<NodeId>>>,
     pub secondaries: Arc<AtomicUsize>,

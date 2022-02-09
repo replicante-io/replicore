@@ -16,7 +16,8 @@ const ENDPOINT_CLUSTER: &str = "/api/unstable/core/cluster";
 const ENDPOINT_CLUSTER_ACTION: &str = "action";
 const ENDPOINT_CLUSTER_ACTION_APPROVE: &str = "approve";
 const ENDPOINT_CLUSTER_ACTION_DISAPPROVE: &str = "disapprove";
-const ENDPOINT_CLUSTER_REFRESH: &str = "refresh";
+const ENDPOINT_CLUSTER_ORCHESTRATE: &str = "orchestrate";
+
 const ENDPOINT_DISCOVERY_SETTINGS: &str = "/api/unstable/core/discoverysettings";
 const ENDPOINT_DISCOVERY_SETTINGS_DELETE: &str = "delete";
 const ENDPOINT_DISCOVERY_SETTINGS_LIST: &str = "list";
@@ -107,23 +108,6 @@ impl RepliClient {
         Ok(remote)
     }
 
-    /// Schedule a refresh task for the given cluster.
-    pub async fn cluster_refresh(&self, cluster: &str) -> Result<()> {
-        debug!(self.logger, "About to POST cluster refresh request"; "cluster" => cluster);
-        let uri = format!(
-            "{}/{}/{}",
-            ENDPOINT_CLUSTER, cluster, ENDPOINT_CLUSTER_REFRESH,
-        );
-        let request = self.client.post(&uri);
-        let response = self
-            .client
-            .send(request)
-            .await
-            .context("Failed to schedule the cluster refresh")?;
-        response.check_status()?;
-        Ok(())
-    }
-
     /// Delete a DiscoverySettings object.
     pub async fn discovery_settings_delete(&self, namespace: &str, name: &str) -> Result<()> {
         let uri = format!(
@@ -157,6 +141,23 @@ impl RepliClient {
             .body_as::<DiscoverySettingsListResponse>()
             .context("Failed to decode DiscoverySettings list response")?;
         Ok(response.names)
+    }
+
+    /// Schedule an orchestration task for the given cluster.
+    pub async fn orchestrate_cluster(&self, cluster: &str) -> Result<()> {
+        debug!(self.logger, "About to POST cluster orchestrate request"; "cluster" => cluster);
+        let uri = format!(
+            "{}/{}/{}",
+            ENDPOINT_CLUSTER, cluster, ENDPOINT_CLUSTER_ORCHESTRATE,
+        );
+        let request = self.client.post(&uri);
+        let response = self
+            .client
+            .send(request)
+            .await
+            .context("Failed to schedule cluster orchestration")?;
+        response.check_status()?;
+        Ok(())
     }
 
     /// Instantiate a new Replicante API client with the given session.

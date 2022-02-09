@@ -10,7 +10,7 @@ pub async fn execute(logger: &Logger, opt: &crate::Opt) -> Result<i32> {
     let _ns = context.namespace(&opt.context)?;
     let cluster = context.cluster(&opt.context)?;
     let client = RepliClient::new(logger, context).await?;
-    client.cluster_refresh(&cluster).await?;
-    println!("Cluster refresh scheduled");
+    client.orchestrate_cluster(&cluster).await?;
+    println!("Cluster orchestration scheduled");
     Ok(0)
 }
