@@ -28,7 +28,7 @@ struct ExtractEnrty {
 pub async fn build_for_check(conf: &Conf) -> Result<()> {
     for image in &conf.images {
         println!("--> Building container image for {} ...", image.name);
-        let tags = generate_tags(&image).await?;
+        let tags = generate_tags(image).await?;
         crate::podman::build(conf, image, true, tags).await?;
     }
     Ok(())
@@ -38,7 +38,7 @@ pub async fn build_for_check(conf: &Conf) -> Result<()> {
 pub async fn build_for_publish(conf: &Conf) -> Result<()> {
     for image in &conf.images {
         println!("--> Building container image for {} ...", image.name);
-        let tags = generate_tags(&image).await?;
+        let tags = generate_tags(image).await?;
         crate::podman::build(conf, image, false, tags).await?;
     }
     Ok(())
@@ -139,7 +139,7 @@ pub async fn extract_binaries(conf: &Conf, skip_pull: bool) -> Result<()> {
 pub async fn push(conf: &Conf) -> Result<()> {
     for image in &conf.images {
         println!("--> Pushing container image for {} ...", image.name);
-        let tags = generate_tags(&image).await?;
+        let tags = generate_tags(image).await?;
         for tag in tags {
             crate::podman::push(conf, &tag).await?;
         }
@@ -221,8 +221,8 @@ async fn extract_file(conf: &Conf, path: &str, target_name: Option<String>) -> R
 /// Find the image version from a supported source.
 async fn find_version(from: &VersionFrom) -> Result<Version> {
     match from {
-        VersionFrom::Cargo { path } => version::cargo(&path).await,
-        VersionFrom::Npm { path } => version::npm(&path).await,
+        VersionFrom::Cargo { path } => version::cargo(path).await,
+        VersionFrom::Npm { path } => version::npm(path).await,
     }
 }
 

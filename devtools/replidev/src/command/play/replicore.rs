@@ -22,7 +22,7 @@ pub async fn clean(args: &CleanCommonOpt, conf: &Conf) -> Result<i32> {
         REPLICORE_STACK_NAME, data
     );
     if args.confirm {
-        crate::podman::unshare(conf, vec!["rm", "-r", &data]).await?;
+        crate::podman::unshare(conf, vec!["rm", "-r", data]).await?;
     } else {
         println!("Skipping: you must --confirm deleting data");
     }

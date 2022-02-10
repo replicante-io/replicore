@@ -32,7 +32,10 @@ impl Variables {
         let mut vars = Map::new();
         vars.insert("CONF_ROOT".to_string(), paths.configs().into());
         vars.insert("DATA_ROOT".to_string(), paths.data().into());
-        vars.insert("PKI_ROOT".to_string(), Paths::pki(&conf.project).into());
+        vars.insert(
+            "PKI_ROOT".to_string(),
+            <dyn Paths>::pki(&conf.project).into(),
+        );
         vars.insert("PODMAN_IP".to_string(), conf.podman_host_ip()?.into());
         if let Ok(hostname) = std::env::var("HOSTNAME") {
             vars.insert("PODMAN_HOSTNAME".to_string(), hostname.into());

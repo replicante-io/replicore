@@ -94,12 +94,12 @@ pub async fn tag(conf: &Conf) -> Result<()> {
     let source = conf.release_tag.as_ref().unwrap();
     let version = match source {
         ReleaseTag::Cargo { path } => {
-            let version = version::cargo(&path).await?;
+            let version = version::cargo(path).await?;
             format!("v{}", version)
         }
         ReleaseTag::Date => Utc::now().format("%Y-%m-%d").to_string(),
         ReleaseTag::Npm { path } => {
-            let version = version::npm(&path).await?;
+            let version = version::npm(path).await?;
             format!("v{}", version)
         }
     };

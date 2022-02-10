@@ -11,12 +11,12 @@ fn main() {
     // Provide better error messages for cases where we can provide suggestions.
     if let Some(error) = error.downcast_ref::<replidev::error::ReleaseCheck>() {
         match error.errors.len() {
-            0 => eprintln!("{}", error.to_string()),
-            1 => eprintln!("{}", error.errors[0].to_string()),
+            0 => eprintln!("{}", error),
+            1 => eprintln!("{}", error.errors[0]),
             _ => {
-                eprintln!("{}:", error.to_string());
+                eprintln!("{}:", error);
                 for error in &error.errors {
-                    eprintln!("  * {}", error.to_string());
+                    eprintln!("  * {}", error);
                 }
             }
         }

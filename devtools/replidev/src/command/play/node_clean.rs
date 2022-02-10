@@ -13,7 +13,7 @@ pub async fn run(args: &CleanNodeOpt, conf: &Conf) -> Result<i32> {
             args.cluster, node, data
         );
         if args.common.confirm {
-            crate::podman::unshare(conf, vec!["rm", "-r", &data]).await?;
+            crate::podman::unshare(conf, vec!["rm", "-r", data]).await?;
         } else {
             println!("Skipping: you must --confirm deleting data");
         }

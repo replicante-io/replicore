@@ -1,0 +1,50 @@
+name: Rust Tests and Lints
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+env:
+  CARGO_TERM_COLOR: always
+
+# TODO: I'd like to re-add the cargo audit task but I'm not sure yet where it should be.
+jobs:
+  tests-and-lints:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        rust:
+          - stable   # Version of rust we aim to use.
+          - nightly  # Preview errors early on.
+          - 1.52.0   # Earliest version of rust supported.
+    continue-on-error: ${{ matrix.rust == 'nightly' }}
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: ${{ matrix.rust }}
+          override: true
+          components: rustfmt, clippy
+
+      # Replicante Core
+      - name: Build Core Packages
+        run: cargo build
+      - name: Run Core Tests
+        run: cargo test
+      - name: Run Core Clippy
+        run: cargo clippy -- -D warnings
+      - name: Check Core Formatting
+        run: cargo fmt --verbose -- --check
+
+      # Replicante development tool CI.
+      - name: Build replidev Packages
+        run: cargo build --manifest-path devtools/replidev/Cargo.toml
+      - name: Run replidev Tests
+        run: cargo test --manifest-path devtools/replidev/Cargo.toml
+      - name: Run replidev Clippy
+        run: cargo clippy --manifest-path devtools/replidev/Cargo.toml -- -D warnings
+      - name: Check replidev Formatting
+        run: cargo fmt --manifest-path devtools/replidev/Cargo.toml --verbose -- --check

@@ -17,7 +17,7 @@ pub struct Opt {
 pub async fn run(args: Opt, conf: Conf) -> anyhow::Result<i32> {
     let mut curl = Command::new("curl");
     if conf.project.allow_gen_certs() {
-        let pki_path = crate::settings::Paths::pki(&conf.project);
+        let pki_path = <dyn crate::settings::Paths>::pki(&conf.project);
         let ca_cert = format!("{}/replidev/certs/replidev.crt", pki_path);
         let bundle_path = format!("{}/replidev/bundles/client.pem", pki_path);
         if Path::new(&ca_cert).exists() {

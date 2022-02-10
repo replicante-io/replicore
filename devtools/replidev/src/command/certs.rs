@@ -33,7 +33,7 @@ pub async fn run(args: Opt, conf: Conf) -> anyhow::Result<i32> {
 
 async fn run_failure(args: Opt, conf: Conf) -> Result<i32> {
     // Check if PKI certs exist.
-    let pki_path = crate::settings::Paths::pki(&conf.project);
+    let pki_path = <dyn crate::settings::Paths>::pki(&conf.project);
     let ca_cert = format!("{}/replidev/certs/replidev.crt", pki_path);
     let pki_found = std::path::Path::new(&ca_cert).exists();
     if !args.regenerate && pki_found {

@@ -85,11 +85,11 @@ pub async fn run(args: Opt, conf: Conf) -> anyhow::Result<i32> {
 
 async fn clean(args: &CleanOpt, conf: &Conf) -> Result<i32> {
     for pod_name in &args.pod_opt.pods {
-        let paths = crate::settings::paths::DepsPod::new(&pod_name);
+        let paths = crate::settings::paths::DepsPod::new(pod_name);
         let data = paths.data();
         println!("--> Clean data for {} pod (from {})", pod_name, data);
         if args.confirm {
-            crate::podman::unshare(conf, vec!["rm", "-r", &data]).await?;
+            crate::podman::unshare(conf, vec!["rm", "-r", data]).await?;
         } else {
             println!("Skipping: you must --confirm deleting data");
         }
@@ -207,7 +207,7 @@ async fn restart(args: &PodOpt, conf: &Conf) -> Result<i32> {
 async fn start(args: &PodOpt, conf: &Conf) -> Result<i32> {
     for pod_name in &args.pods {
         let pod = pod_definition(pod_name)?;
-        let paths = crate::settings::paths::DepsPod::new(&pod_name);
+        let paths = crate::settings::paths::DepsPod::new(pod_name);
         let variables = crate::settings::Variables::new(conf, paths)?;
         let labels = {
             let mut labels = BTreeMap::new();

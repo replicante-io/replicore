@@ -115,7 +115,7 @@ fn look_for_changes<'a>(paths: &'a [PathBuf], git_start: &str) -> Result<Vec<&'a
 
     let mut changes = Vec::new();
     for path in paths {
-        let changed = super::git::changes_in_path(&repo, &start, &path)?;
+        let changed = super::git::changes_in_path(&repo, &start, path)?;
         if changed {
             changes.push(path);
         }
@@ -135,7 +135,7 @@ async fn prompt_user(changes: Vec<&PathBuf>, name: &str, git_start: &str) -> Res
     );
     for path in changes {
         let path = match path.display().to_string() {
-            path if path == "" => String::from("(repository)"),
+            path if path.is_empty() => String::from("(repository)"),
             path => path,
         };
         println!("  * {}", path);

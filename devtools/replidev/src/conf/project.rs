@@ -32,12 +32,7 @@ impl Project {
 
     /// Check if a project is allowed to execute the `gen-certs` family of commands.
     pub fn allow_gen_certs(&self) -> bool {
-        match self {
-            Self::Agents => true,
-            Self::Core => true,
-            Self::Playground => true,
-            _ => false,
-        }
+        matches!(self, Self::Agents | Self::Core | Self::Playground)
     }
 
     /// Check if a project is allowed to execute the `play` family of commands.
@@ -47,23 +42,12 @@ impl Project {
 
     /// Check if a project is allowed to execute the `release` family of commands.
     pub fn allow_release(&self) -> bool {
-        match self {
-            Self::Agents => true,
-            Self::Common => true,
-            Self::Core => true,
-            Self::WebUI => true,
-            _ => false,
-        }
+        matches!(self, Self::Agents | Self::Common | Self::Core | Self::WebUI)
     }
 
     /// Search for rust crates during the release process of this project.
     pub fn search_for_crates(&self) -> bool {
-        match self {
-            Self::Agents => true,
-            Self::Common => true,
-            Self::Core => true,
-            _ => false,
-        }
+        matches!(self, Self::Agents | Self::Common | Self::Core)
     }
 
     /// Search for npm packages during the release process of this project.
