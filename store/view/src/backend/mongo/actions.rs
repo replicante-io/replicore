@@ -46,9 +46,9 @@ impl Actions {
         let tracer = tracer.into();
         Actions {
             client,
+            cluster_id,
             db,
             tracer,
-            cluster_id,
         }
     }
 }

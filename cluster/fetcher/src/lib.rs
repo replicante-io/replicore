@@ -85,8 +85,8 @@ pub struct Fetcher {
     agent: AgentFetcher,
     logger: Logger,
     node: NodeFetcher,
-    shard: ShardFetcher,
     primary_store: PrimaryStore,
+    shard: ShardFetcher,
     timeout: Duration,
     tracer: Arc<Tracer>,
 }

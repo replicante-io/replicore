@@ -26,8 +26,8 @@ pub struct Election {
 impl Election {
     pub fn new(logic: Logic, logger: Logger, thread: ThreadScope) -> Election {
         Election {
-            logic,
             logger,
+            logic,
             thread,
         }
     }

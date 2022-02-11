@@ -26,8 +26,8 @@ pub struct DiscoveryElection {
 impl DiscoveryElection {
     pub fn new(logic: DiscoveryLogic, logger: Logger, thread: ThreadScope) -> DiscoveryElection {
         DiscoveryElection {
-            logic,
             logger,
+            logic,
             thread,
         }
     }
