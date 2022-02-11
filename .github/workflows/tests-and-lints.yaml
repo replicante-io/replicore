@@ -17,7 +17,6 @@ jobs:
       matrix:
         rust:
           - stable   # Version of rust we aim to use.
-          - nightly  # Preview errors early on.
           - 1.52.0   # Earliest version of rust supported.
     continue-on-error: ${{ matrix.rust != 'stable' }}
     steps:
@@ -50,3 +49,37 @@ jobs:
         run: cargo clippy --manifest-path devtools/replidev/Cargo.toml -- -D warnings
       - name: Check replidev Formatting
         run: cargo fmt --manifest-path devtools/replidev/Cargo.toml --verbose -- --check
+
+  nightly-tests-and-lints:
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: recursive
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: nightly
+          override: true
+          components: rustfmt, clippy
+
+      # Replicante Core
+      - name: Build Core Packages
+        run: cargo build || true
+      - name: Run Core Tests
+        run: cargo test || true
+      - name: Run Core Clippy
+        run: cargo clippy -- -D warnings || true
+      - name: Check Core Formatting
+        run: cargo fmt --verbose -- --check || true
+
+      # Replicante development tool CI.
+      - name: Build replidev Packages
+        run: cargo build --manifest-path devtools/replidev/Cargo.toml || true
+      - name: Run replidev Tests
+        run: cargo test --manifest-path devtools/replidev/Cargo.toml || true
+      - name: Run replidev Clippy
+        run: cargo clippy --manifest-path devtools/replidev/Cargo.toml -- -D warnings || true
+      - name: Check replidev Formatting
+        run: cargo fmt --manifest-path devtools/replidev/Cargo.toml --verbose -- --check || true
