@@ -102,11 +102,11 @@ struct KafkaMessage {
 }
 
 impl KafkaMessage {
-    fn decode<'a, T>(
+    fn decode<T>(
         consumer: Rc<StatsConsumer>,
         stream_id: &'static str,
         follow_id: String,
-        record: BorrowedMessage<'a>,
+        record: BorrowedMessage<'_>,
     ) -> Result<Message<T>>
     where
         T: DeserializeOwned + 'static,

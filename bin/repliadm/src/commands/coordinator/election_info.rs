@@ -32,7 +32,7 @@ pub fn run<'a>(args: &ArgMatches<'a>, interfaces: &Interfaces) -> Result<()> {
     let logger = interfaces.logger();
     let admin = coordinator_admin(args, logger.clone())?;
     let election = admin
-        .election(&name)
+        .election(name)
         .with_context(|_| ErrorKind::CoordinatorElectionLookup(name.to_string()))?;
     println!("==> Election name: {}", election.name());
 

@@ -21,10 +21,10 @@ use crate::Result;
 pub fn process(follower: &Follower, event: &ActionEvent, span: Option<&mut Span>) -> Result<()> {
     match event {
         ActionEvent::Changed(info) => persist_action(follower, &info.current, span),
-        ActionEvent::Finished(action) => persist_action(follower, &action, span),
-        ActionEvent::History(info) => process_history(follower, &info, span),
-        ActionEvent::Lost(action) => persist_action(follower, &action, span),
-        ActionEvent::New(action) => persist_action(follower, &action, span),
+        ActionEvent::Finished(action) => persist_action(follower, action, span),
+        ActionEvent::History(info) => process_history(follower, info, span),
+        ActionEvent::Lost(action) => persist_action(follower, action, span),
+        ActionEvent::New(action) => persist_action(follower, action, span),
     }
 }
 

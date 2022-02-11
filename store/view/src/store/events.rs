@@ -64,21 +64,13 @@ impl Default for EventsFilters {
 }
 
 /// Options to apply when iterating over events.
+#[derive(Default)]
 pub struct EventsOptions {
     /// Max number of events to return.
     pub limit: Option<i64>,
 
     /// By default events are returned old to new, set to true to reverse the order.
     pub reverse: bool,
-}
-
-impl Default for EventsOptions {
-    fn default() -> EventsOptions {
-        EventsOptions {
-            limit: None,
-            reverse: false,
-        }
-    }
 }
 
 /// Operate on events.

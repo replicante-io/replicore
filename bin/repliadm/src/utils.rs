@@ -12,7 +12,7 @@ use crate::ErrorKind;
 use crate::Result;
 
 /// Initialise the coordinator admin interface.
-pub fn coordinator_admin<'a>(args: &ArgMatches<'a>, logger: Logger) -> Result<CoordinatorAdmin> {
+pub fn coordinator_admin(args: &ArgMatches<'_>, logger: Logger) -> Result<CoordinatorAdmin> {
     let config = load_config(args)?;
     let admin = CoordinatorAdmin::new(config.coordinator, logger)
         .with_context(|_| ErrorKind::AdminInit("coordinator"))?;
@@ -20,7 +20,7 @@ pub fn coordinator_admin<'a>(args: &ArgMatches<'a>, logger: Logger) -> Result<Co
 }
 
 /// Load Replicante Core configuration.
-pub fn load_config<'a>(args: &ArgMatches<'a>) -> Result<Config> {
+pub fn load_config(args: &ArgMatches<'_>) -> Result<Config> {
     let file = args
         .value_of("config")
         .expect("CLI argument --config is required");
@@ -29,7 +29,7 @@ pub fn load_config<'a>(args: &ArgMatches<'a>) -> Result<Config> {
 }
 
 /// Initialise the primary store admin interface.
-pub fn primary_store_admin<'a>(args: &ArgMatches<'a>, logger: Logger) -> Result<PrimaryStoreAdmin> {
+pub fn primary_store_admin(args: &ArgMatches<'_>, logger: Logger) -> Result<PrimaryStoreAdmin> {
     let config = load_config(args)?;
     let admin = PrimaryStoreAdmin::make(config.storage.primary, logger)
         .with_context(|_| ErrorKind::AdminInit("primary store"))?;
@@ -44,7 +44,7 @@ pub fn take_responsibility_arg<'a, 'b>() -> Arg<'a, 'b> {
 }
 
 /// Initialise the view store admin interface.
-pub fn view_store_admin<'a>(args: &ArgMatches<'a>, logger: Logger) -> Result<ViewStoreAdmin> {
+pub fn view_store_admin(args: &ArgMatches<'_>, logger: Logger) -> Result<ViewStoreAdmin> {
     let config = load_config(args)?;
     let admin = ViewStoreAdmin::make(config.storage.view, logger)
         .with_context(|_| ErrorKind::AdminInit("view store"))?;

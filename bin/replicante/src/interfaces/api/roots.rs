@@ -6,6 +6,7 @@ use replicante_util_actixweb::RootDescriptor;
 /// All endpoints must fall under one of these roots and are subject to all restrictions
 /// of that specific root.
 /// The main restriction is that versioned APIs are subject to semver guarantees.
+#[allow(clippy::enum_variant_names)]
 pub enum APIRoot {
     /// API root for all endpoints that are not yet stable.
     ///

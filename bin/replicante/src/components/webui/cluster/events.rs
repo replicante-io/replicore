@@ -62,9 +62,10 @@ async fn responder(data: web::Data<EventsData>, request: HttpRequest) -> Result<
 
     let mut filters = EventsFilters::all();
     filters.cluster_id = Some(cluster_id);
-    let mut options = EventsOptions::default();
-    options.limit = Some(RECENT_EVENTS_LIMIT);
-    options.reverse = true;
+    let options = EventsOptions {
+        limit: Some(RECENT_EVENTS_LIMIT),
+        reverse: true,
+    };
 
     let mut request = request;
     let iter = with_request_span(&mut request, |span| {

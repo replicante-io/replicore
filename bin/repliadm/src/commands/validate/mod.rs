@@ -70,7 +70,7 @@ pub fn run<'a>(args: &ArgMatches<'a>, interfaces: &Interfaces) -> Result<()> {
 
     // Report outcomes once for all validation commands.
     let logger = interfaces.logger();
-    outcomes.report(&logger);
+    outcomes.report(logger);
     if outcomes.has_errors() {
         error!(logger, "System validation failed");
         return Err(ErrorKind::ValidationFailed.into());

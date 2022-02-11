@@ -23,7 +23,7 @@ impl Default for Backend {
 }
 
 /// Distributed coordinator configuration options.
-#[derive(Clone, Eq, PartialEq, Hash, Debug, Serialize, Deserialize)]
+#[derive(Clone, Default, Eq, PartialEq, Hash, Debug, Serialize, Deserialize)]
 pub struct Config {
     #[serde(default, flatten)]
     pub backend: Backend,
@@ -34,13 +34,4 @@ pub struct Config {
     /// and otherwise label nodes for whatever needs they may have.
     #[serde(default)]
     pub node_attributes: BTreeMap<String, String>,
-}
-
-impl Default for Config {
-    fn default() -> Config {
-        Config {
-            backend: Backend::default(),
-            node_attributes: BTreeMap::new(),
-        }
-    }
 }

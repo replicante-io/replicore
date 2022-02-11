@@ -80,7 +80,7 @@ where
     /// they are emitted.
     /// Messages with different `id`s have no ordering guarantees relative to each other.
     pub fn emit(&self, mut message: EmitMessage<T>) -> Result<()> {
-        EMIT_TOTAL.with_label_values(&[&self.stream_id]).inc();
+        EMIT_TOTAL.with_label_values(&[self.stream_id]).inc();
         if let Err(error) = message.trace_inject(self.tracer.as_ref()) {
             let error = failure::SyncFailure::new(error);
             capture_fail!(
@@ -91,7 +91,7 @@ where
             );
         }
         self.inner.emit(message).map_err(|error| {
-            EMIT_ERROR.with_label_values(&[&self.stream_id]).inc();
+            EMIT_ERROR.with_label_values(&[self.stream_id]).inc();
             error
         })
     }

@@ -85,7 +85,7 @@ impl ActionsFetcher {
             let mut states = self
                 .primary_store
                 .actions(cluster_id.to_string())
-                .state_for_sync(node_id.to_string(), &ids, span.context().clone())
+                .state_for_sync(node_id.to_string(), ids, span.context().clone())
                 .with_context(|_| ErrorKind::PrimaryStoreRead("actions state for sync"))?;
             for id in ids {
                 let state = states

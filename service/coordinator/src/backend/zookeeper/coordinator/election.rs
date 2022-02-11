@@ -39,8 +39,8 @@ use super::super::ElectionInfo;
 /// Atomically manage the current election state.
 #[derive(Clone)]
 struct AtomicState {
-    state: Arc<Mutex<ElectionState>>,
     context: ElectionContext,
+    state: Arc<Mutex<ElectionState>>,
 }
 
 impl AtomicState {
@@ -268,20 +268,19 @@ enum ElectionStateMachine {
 
 impl ElectionStateMachine {
     fn can_run(&self) -> bool {
-        match self {
-            ElectionStateMachine::NotCandidate => true,
-            ElectionStateMachine::Terminated => true,
-            _ => false,
-        }
+        matches!(
+            self,
+            ElectionStateMachine::NotCandidate | ElectionStateMachine::Terminated
+        )
     }
 
     fn running(&self) -> bool {
-        match self {
-            ElectionStateMachine::Primary => true,
-            ElectionStateMachine::Registered => true,
-            ElectionStateMachine::Secondary => true,
-            _ => false,
-        }
+        matches!(
+            self,
+            ElectionStateMachine::Primary
+                | ElectionStateMachine::Registered
+                | ElectionStateMachine::Secondary
+        )
     }
 }
 
@@ -461,7 +460,7 @@ impl ZookeeperElection {
         let payload_candidate = serde_json::to_vec(&context.payload_candidate)
             .with_context(|_| ErrorKind::Encode("election candidate information"))?;
         let result = Client::create(
-            &keeper,
+            keeper,
             &context.path_candidate,
             payload_candidate.clone(),
             Acl::read_unsafe().clone(),
@@ -476,7 +475,7 @@ impl ZookeeperElection {
                 let payload_election = serde_json::to_vec(&context.payload_election)
                     .with_context(|_| ErrorKind::Encode("election information"))?;
                 let result = Client::create(
-                    &keeper,
+                    keeper,
                     &context.path_election,
                     payload_election,
                     Acl::open_unsafe().clone(),
@@ -494,7 +493,7 @@ impl ZookeeperElection {
                     }
                 };
                 let znode = Client::create(
-                    &keeper,
+                    keeper,
                     &context.path_candidate,
                     payload_candidate,
                     Acl::read_unsafe().clone(),

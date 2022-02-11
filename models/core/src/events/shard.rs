@@ -12,8 +12,8 @@ pub struct AllocationChanged {
     pub after: Shard,
     pub before: Shard,
     pub cluster_id: String,
-    pub shard_id: String,
     pub node_id: String,
+    pub shard_id: String,
 }
 
 /// Enumerates all possible shrd events emitted by the system.

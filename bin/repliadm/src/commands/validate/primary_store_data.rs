@@ -112,7 +112,7 @@ fn scan_collection<M>(
         Ok(cursor) => cursor,
         Err(error) => {
             let error = error.to_string();
-            outcomes.error(Error::GenericError(error));
+            outcomes.error(Error::Generic(error));
             return;
         }
     };
@@ -133,7 +133,7 @@ fn scan_collection<M>(
                 }
                 _ => {
                     let error = format_fail(&error);
-                    outcomes.error(Error::GenericError(error));
+                    outcomes.error(Error::Generic(error));
                 }
             }
         }

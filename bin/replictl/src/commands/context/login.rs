@@ -75,7 +75,7 @@ async fn input_optional_path(prompt: &str, initial: &Option<String>) -> Result<O
     .context(INTERACT_ERROR)?
     .context(INTERACT_ERROR)?;
     match value {
-        path if path == "" => Ok(None),
+        path if path.is_empty() => Ok(None),
         path if path.starts_with('/') => Ok(Some(path)),
         path => {
             let current_dir = std::env::current_dir().expect("the current directory to be set");

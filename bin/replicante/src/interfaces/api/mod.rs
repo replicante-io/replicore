@@ -42,13 +42,13 @@ use self::metrics::REQUESTS;
 pub type AppConfigContext<'a> = replicante_util_actixweb::AppConfigContext<'a, APIContext>;
 
 /// The replicante HTTP API interface.
-pub struct API {
+pub struct Api {
     config: FullConfig,
     later: Option<LateConfig>,
     logger: Logger,
 }
 
-impl API {
+impl Api {
     /// Creates a new API interface.
     pub fn new(
         config: FullConfig,
@@ -56,14 +56,14 @@ impl API {
         logger: Logger,
         metrics: &Metrics,
         healthchecks: HealthResultsCache,
-    ) -> API {
+    ) -> Api {
         let later = LateConfig {
             app_config: AppConfig::default(),
             coordinator,
             health: healthchecks,
             registry: metrics.registry().clone(),
         };
-        API {
+        Api {
             config,
             later: Some(later),
             logger,
@@ -206,10 +206,10 @@ impl API {
         logger: Logger,
         metrics: &Metrics,
         healthchecks: HealthResultsCache,
-    ) -> (API, MockCoordinator) {
+    ) -> (Api, MockCoordinator) {
         let config = FullConfig::mock();
         let coordinator = MockCoordinator::new(logger.clone());
-        let api = API::new(config, coordinator.mock(), logger, metrics, healthchecks);
+        let api = Api::new(config, coordinator.mock(), logger, metrics, healthchecks);
         (api, coordinator)
     }
 }

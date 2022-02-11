@@ -54,7 +54,7 @@ async fn input_optional(prompt: &str, initial: &Option<String>) -> Result<Option
     .context(INTERACT_ERROR)?
     .context(INTERACT_ERROR)?;
     match value {
-        path if path == "" => Ok(None),
+        path if path.is_empty() => Ok(None),
         path => Ok(Some(path)),
     }
 }

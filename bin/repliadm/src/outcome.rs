@@ -73,10 +73,10 @@ impl Outcomes {
 #[derive(Clone, Eq, PartialEq, Hash, Debug)]
 pub enum Error {
     /// An error was encountered while cheking the system.
-    GenericError(String),
+    Generic(String),
 
     /// The store validator reported an error with the current configuration.
-    StoreValidationError(ValidationResult),
+    StoreValidation(ValidationResult),
 
     /// A model failed to decode, likely because the format has changed.
     ///
@@ -89,10 +89,10 @@ impl Error {
     pub fn emit(&self, logger: &Logger) {
         let group = self.group();
         match *self {
-            Error::GenericError(ref msg) => error!(
+            Error::Generic(ref msg) => error!(
                 logger, "Check failed with error: {}", msg; "group" => group
             ),
-            Error::StoreValidationError(ref result) => error!(
+            Error::StoreValidation(ref result) => error!(
                 logger,
                 "The store validator reported an error with the current configuration: {}",
                 result.message; "group" => group, "collection" => &result.collection
@@ -107,8 +107,8 @@ impl Error {
     /// Issue group for the error.
     pub fn group(&self) -> &'static str {
         match *self {
-            Error::GenericError(_) => "generic/error",
-            Error::StoreValidationError(ref result) => result.group,
+            Error::Generic(_) => "generic/error",
+            Error::StoreValidation(ref result) => result.group,
             Error::UnableToParseModel(_, _, _) => "data/format",
         }
     }

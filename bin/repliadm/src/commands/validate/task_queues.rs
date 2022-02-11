@@ -38,7 +38,7 @@ macro_rules! scan_queue {
             match task {
                 Err(error) => {
                     let error = format_fail(&error);
-                    $outcomes.error(Error::GenericError(error));
+                    $outcomes.error(Error::Generic(error));
                 }
                 Ok(task) => {
                     if let Err(error) = task.deserialize::<$payload_model>() {
@@ -83,6 +83,6 @@ pub fn run<'a>(args: &ArgMatches<'a>, interfaces: &Interfaces) -> Result<Outcome
         replicore_models_tasks::payload::OrchestrateClusterPayload,
     );
 
-    outcomes.report(&logger);
+    outcomes.report(logger);
     Ok(outcomes)
 }

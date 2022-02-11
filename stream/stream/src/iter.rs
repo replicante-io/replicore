@@ -162,7 +162,7 @@ where
                 .expect("need message for re-delvery")
                 .id();
             self.backoff
-                .wait(self.thread, self.stream_id, &self.follow_id, &message_id);
+                .wait(self.thread, self.stream_id, &self.follow_id, message_id);
             DELIVERED_RETRY
                 .with_label_values(&[self.stream_id, &self.follow_id])
                 .inc();

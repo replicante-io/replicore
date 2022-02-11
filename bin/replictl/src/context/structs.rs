@@ -56,8 +56,8 @@ impl Context {
     }
 }
 
-/// Pre-selected scope for operations to target the correcte namespace, cluster, ...
-#[derive(Clone, Eq, PartialEq, Hash, Debug, Serialize, Deserialize)]
+/// Pre-selected scope for operations to target the correct namespace, cluster, ...
+#[derive(Clone, Default, Eq, PartialEq, Hash, Debug, Serialize, Deserialize)]
 pub struct Scope {
     /// The cluster to operate on, if none was explicitly set.
     #[serde(default)]
@@ -70,16 +70,6 @@ pub struct Scope {
     /// The node to operate on, if none was explicitly set.
     #[serde(default)]
     pub node: Option<String>,
-}
-
-impl Default for Scope {
-    fn default() -> Scope {
-        Scope {
-            cluster: None,
-            namespace: None,
-            node: None,
-        }
-    }
 }
 
 /// Errors attempting to access scopes.

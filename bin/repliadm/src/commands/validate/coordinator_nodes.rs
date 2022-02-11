@@ -28,7 +28,7 @@ pub fn run<'a>(args: &ArgMatches<'a>, interfaces: &Interfaces) -> Result<Outcome
     for node in admin.nodes() {
         if let Err(error) = node {
             let error = format_fail(&error);
-            outcomes.error(Error::GenericError(error));
+            outcomes.error(Error::Generic(error));
         }
         tracker.track();
     }

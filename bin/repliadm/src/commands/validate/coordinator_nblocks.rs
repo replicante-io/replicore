@@ -28,7 +28,7 @@ pub fn run<'a>(args: &ArgMatches<'a>, interfaces: &Interfaces) -> Result<Outcome
     for lock in admin.non_blocking_locks() {
         if let Err(error) = lock {
             let error = format_fail(&error);
-            outcomes.error(Error::GenericError(error));
+            outcomes.error(Error::Generic(error));
         }
         tracker.track();
     }

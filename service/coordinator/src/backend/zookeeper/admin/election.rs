@@ -90,7 +90,7 @@ impl ZooKeeperElectionAdmin {
     /// Model an election rooted at the given path.
     pub fn from_path(client: Arc<Client>, path: &str) -> Result<Option<Election>> {
         let keeper = client.get()?;
-        let info = match Client::get_data(&keeper, &path, false, None, None) {
+        let info = match Client::get_data(&keeper, path, false, None, None) {
             Ok((info, _)) => info,
             Err(ZkError::NoNode) => return Ok(None),
             Err(error) => {

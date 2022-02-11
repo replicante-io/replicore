@@ -46,12 +46,12 @@ pub fn run<'a>(args: &ArgMatches<'a>, interfaces: &Interfaces) -> Result<Outcome
         match message {
             Err(error) => {
                 let error = format_fail(&error);
-                outcomes.error(Error::GenericError(error));
+                outcomes.error(Error::Generic(error));
             }
             Ok(message) => {
                 if let Err(error) = message.payload() {
                     let error = format_fail(&error);
-                    outcomes.error(Error::GenericError(error));
+                    outcomes.error(Error::Generic(error));
                 }
                 // Ignore errors sending acks for the scan.
                 let _ = message.async_ack();

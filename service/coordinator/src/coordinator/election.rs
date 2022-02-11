@@ -81,11 +81,7 @@ pub enum ElectionStatus {
 impl ElectionStatus {
     /// Check if the election is a candidate (primary or secondary) or not.
     pub fn is_candidate(&self) -> bool {
-        match self {
-            ElectionStatus::Primary => true,
-            ElectionStatus::Secondary => true,
-            _ => false,
-        }
+        matches!(self, ElectionStatus::Primary | ElectionStatus::Secondary)
     }
 
     /// Check if the election is primary.

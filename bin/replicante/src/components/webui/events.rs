@@ -66,10 +66,10 @@ struct EventsData {
 }
 
 async fn responder(data: web::Data<EventsData>, request: HttpRequest) -> Result<impl Responder> {
-    let mut options = EventsOptions::default();
-    options.limit = Some(RECENT_EVENTS_LIMIT);
-    options.reverse = true;
-
+    let options = EventsOptions {
+        limit: Some(RECENT_EVENTS_LIMIT),
+        reverse: true,
+    };
     let mut request = request;
     let iter = with_request_span(&mut request, |span| {
         let span = span.map(|span| span.context().clone());

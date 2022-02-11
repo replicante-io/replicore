@@ -47,7 +47,7 @@ pub fn run<'a>(args: &ArgMatches<'a>, interfaces: &Interfaces) -> Result<()> {
     let logger = interfaces.logger();
     let admin = coordinator_admin(args, logger.clone())?;
     let mut lock = admin
-        .non_blocking_lock(&name)
+        .non_blocking_lock(name)
         .with_context(|_| ErrorKind::CoordinatorNBLockLookup(name.to_string()))?;
     lock.force_release()
         .with_context(|_| ErrorKind::CoordinatorNBLockRelease(name.to_string()))?;

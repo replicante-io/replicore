@@ -27,7 +27,7 @@ pub mod tracing;
 #[cfg(test)]
 pub mod test_support;
 
-use self::api::API;
+use self::api::Api;
 pub use self::healthchecks::HealthChecks;
 use self::metrics::Metrics;
 use self::tracing::Tracing;
@@ -42,7 +42,7 @@ use self::tracing::Tracing;
 /// [`Drop`]: std/ops/trait.Drop.html
 /// [`JoinHandle`]: std/thread/struct.JoinHandle.html
 pub struct Interfaces {
-    pub api: API,
+    pub api: Api,
     pub coordinator: Coordinator,
     pub healthchecks: HealthChecks,
     pub logger: Logger,
@@ -68,7 +68,7 @@ impl Interfaces {
             tracing.tracer(),
         )
         .with_context(|_| ErrorKind::InterfaceInit("coordinator"))?;
-        let api = API::new(
+        let api = Api::new(
             config.clone(),
             coordinator.clone(),
             logger.clone(),
@@ -76,7 +76,7 @@ impl Interfaces {
             healthchecks.results_proxy(),
         );
         let stores = Stores::new(
-            &config,
+            config,
             logger.clone(),
             healthchecks.register(),
             tracing.tracer(),

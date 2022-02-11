@@ -29,7 +29,7 @@ pub fn command() -> App<'static, 'static> {
 ///   * All needed collections/tables exist and have the correct schema.
 ///   * All needed and recommended indexes exist.
 ///   * No dropped collections/tables or indexes exist.
-pub fn run<'a>(args: &ArgMatches<'a>, interfaces: &Interfaces) -> Result<Outcomes> {
+pub fn run(args: &ArgMatches<'_>, interfaces: &Interfaces) -> Result<Outcomes> {
     let logger = interfaces.logger();
     let store = view_store_admin(args, logger.clone())?;
     let mut outcomes = Outcomes::new();
@@ -40,10 +40,10 @@ pub fn run<'a>(args: &ArgMatches<'a>, interfaces: &Interfaces) -> Result<Outcome
         Ok(results) => consume_results(results, &mut outcomes),
         Err(error) => {
             let error = error.context(ErrorKind::ValidationError("current schema"));
-            outcomes.error(Error::GenericError(format_fail(&error)));
+            outcomes.error(Error::Generic(format_fail(&error)));
         }
     };
-    outcomes.report(&logger);
+    outcomes.report(logger);
 
     debug!(
         logger,
@@ -53,10 +53,10 @@ pub fn run<'a>(args: &ArgMatches<'a>, interfaces: &Interfaces) -> Result<Outcome
         Ok(results) => consume_results(results, &mut outcomes),
         Err(error) => {
             let error = error.context(ErrorKind::ValidationError("removed collections or indexes"));
-            outcomes.error(Error::GenericError(format_fail(&error)));
+            outcomes.error(Error::Generic(format_fail(&error)));
         }
     };
-    outcomes.report(&logger);
+    outcomes.report(logger);
 
     Ok(outcomes)
 }
@@ -64,7 +64,7 @@ pub fn run<'a>(args: &ArgMatches<'a>, interfaces: &Interfaces) -> Result<Outcome
 fn consume_results(results: Vec<ValidationResult>, outcomes: &mut Outcomes) {
     for result in results {
         if result.error {
-            outcomes.error(Error::StoreValidationError(result));
+            outcomes.error(Error::StoreValidation(result));
         } else {
             outcomes.warn(Warning::StoreValidationWarning(result));
         }

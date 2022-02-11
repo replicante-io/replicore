@@ -137,6 +137,7 @@ impl ActionsInterface for Actions {
         panic!("TODO: MockStore::Actions::disapprove")
     }
 
+    #[allow(clippy::needless_collect)]
     fn iter_lost(
         &self,
         attrs: &ActionsAttributes,
@@ -184,6 +185,7 @@ impl ActionsInterface for Actions {
         Ok(())
     }
 
+    #[allow(clippy::needless_collect)]
     fn pending_schedule(
         &self,
         attrs: &ActionsAttributes,
@@ -265,6 +267,7 @@ impl LegacyInterface for Legacy {
         panic!("mocking primary store::legacy::persist_cluster_meta not yet supportd");
     }
 
+    #[allow(clippy::needless_collect)]
     fn top_clusters(&self, _: Option<SpanContext>) -> Result<Cursor<ClusterMeta>> {
         let clusters = &self.state.lock().unwrap().clusters_meta;
         let mut results: Vec<ClusterMeta> = clusters.iter().map(|(_, meta)| meta.clone()).collect();

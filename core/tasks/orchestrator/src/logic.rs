@@ -78,7 +78,7 @@ impl Logic {
         let settings = self
             .store
             .cluster(namespace.clone(), cluster_id.clone())
-            .settings(span_context.clone())
+            .settings(span_context)
             .with_context(|_| ErrorKind::fetch_settings(&namespace, &cluster_id))?
             .ok_or_else(|| ErrorKind::settings_not_found(&namespace, &cluster_id))?;
         if !settings.enabled {

@@ -46,10 +46,10 @@ impl Annotations {
     }
 
     fn tags(event: &Event) -> Vec<String> {
-        let mut tags = Vec::new();
-        tags.push(event.code().into());
-        tags.push(String::from(event.cluster_id().unwrap_or("System")));
-        tags
+        vec![
+            event.code().into(),
+            String::from(event.cluster_id().unwrap_or("System")),
+        ]
     }
 
     fn text(event: &Event) -> String {
@@ -292,7 +292,7 @@ async fn responder(
     // Build request filters.
     let query = match body.annotation.query.as_ref() {
         None => AdvancedQuery::default(),
-        Some(query) if query == "" => AdvancedQuery::default(),
+        Some(query) if query.is_empty() => AdvancedQuery::default(),
         Some(query) => {
             serde_json::from_str(query).with_context(|_| ErrorKind::APIRequestBodyInvalid)?
         }
@@ -304,8 +304,10 @@ async fn responder(
     filters.exclude_system_events = query.exclude_system_events;
     filters.start_from = Some(body.range.from);
     filters.stop_at = Some(body.range.to);
-    let mut options = EventsOptions::default();
-    options.limit = Some(query.limit);
+    let options = EventsOptions {
+        limit: Some(query.limit),
+        ..EventsOptions::default()
+    };
 
     // Fetch and format annotations.
     let mut request = request;

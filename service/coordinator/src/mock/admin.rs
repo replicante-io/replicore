@@ -45,6 +45,7 @@ impl BackendAdmin for MockAdmin {
         }
     }
 
+    #[allow(clippy::needless_collect)]
     fn non_blocking_locks(&self) -> NonBlockingLocks {
         let nblocks: Vec<_> = self
             .nblocks

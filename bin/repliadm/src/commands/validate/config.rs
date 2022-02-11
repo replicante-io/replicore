@@ -34,7 +34,7 @@ pub fn run<'a>(args: &ArgMatches<'a>, interfaces: &Interfaces) -> Result<Outcome
         Ok(config) => config,
         Err(error) => {
             let error = format_fail(&error);
-            outcomes.error(Error::GenericError(error));
+            outcomes.error(Error::Generic(error));
             return Ok(outcomes);
         }
     };

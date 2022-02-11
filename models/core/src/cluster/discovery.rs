@@ -159,7 +159,7 @@ impl Default for HttpRequestMethod {
 }
 
 /// TLS configuration used to connect to the remote server.
-#[derive(Clone, Eq, PartialEq, Hash, Debug, Serialize, Deserialize)]
+#[derive(Clone, Default, Eq, PartialEq, Hash, Debug, Serialize, Deserialize)]
 pub struct HttpTlsConfig {
     /// Optional path to a CA certificates bundle to validate servers with.
     #[serde(default)]
@@ -168,15 +168,6 @@ pub struct HttpTlsConfig {
     /// Optional path to an HTTP client TLS certificate.
     #[serde(default)]
     pub client_cert: Option<String>,
-}
-
-impl Default for HttpTlsConfig {
-    fn default() -> Self {
-        HttpTlsConfig {
-            ca_cert: None,
-            client_cert: None,
-        }
-    }
 }
 
 #[cfg(test)]

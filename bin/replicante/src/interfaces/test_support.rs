@@ -10,13 +10,13 @@ use replicante_stream_events::Stream as EventsStream;
 
 use replicore_models_tasks::MockTasks;
 
+use super::Api;
 use super::HealthChecks;
 use super::Interfaces;
 use super::Metrics;
 use super::Stores;
 use super::Streams;
 use super::Tracing;
-use super::API;
 
 /// A container for mocks used by interfaces.
 #[cfg(test)]
@@ -62,7 +62,7 @@ impl MockInterfaces {
         let metrics = Metrics::mock();
         let healthchecks = HealthChecks::new(Duration::from_secs(10));
         let tracing = Tracing::mock();
-        let (api, _) = API::mock(self.logger.clone(), &metrics, healthchecks.results_proxy());
+        let (api, _) = Api::mock(self.logger.clone(), &metrics, healthchecks.results_proxy());
         let coordinator = self.coordinator.mock();
         let events = EventsStream::mock();
         let stores = self.stores.mock();

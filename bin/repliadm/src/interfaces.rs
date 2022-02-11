@@ -18,7 +18,7 @@ pub struct Interfaces {
 
 impl Interfaces {
     /// Create a new `Interfaces` container.
-    pub fn new<'a>(args: &ArgMatches<'a>, logger: Logger) -> Result<Interfaces> {
+    pub fn new(args: &ArgMatches<'_>, logger: Logger) -> Result<Interfaces> {
         let progress_chunk = value_t!(args, "progress-chunk", u32)
             .with_context(|_| ErrorKind::Config("progress-chunk is not a positive integer"))?;
         if progress_chunk == 0 {
