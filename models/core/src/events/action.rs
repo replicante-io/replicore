@@ -1,7 +1,7 @@
 use chrono::DateTime;
 use chrono::Utc;
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde::Deserialize;
+use serde::Serialize;
 use uuid::Uuid;
 
 use replicante_models_agent::actions::ActionHistoryItem;

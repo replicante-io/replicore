@@ -2,8 +2,8 @@ use std::collections::HashMap;
 
 use chrono::DateTime;
 use chrono::Utc;
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde::Deserialize;
+use serde::Serialize;
 use serde_json::Value as Json;
 use uuid::Uuid;
 

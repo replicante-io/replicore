@@ -1,5 +1,5 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde::Deserialize;
+use serde::Serialize;
 
 use replicante_models_agent::info::DatastoreInfo as WireNode;
 use replicante_models_agent::info::Shard as WireShard;

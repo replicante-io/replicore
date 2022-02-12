@@ -1,7 +1,7 @@
 use chrono::DateTime;
 use chrono::Utc;
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde::Deserialize;
+use serde::Serialize;
 
 pub mod action;
 pub mod agent;

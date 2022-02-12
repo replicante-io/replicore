@@ -1,5 +1,5 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde::Deserialize;
+use serde::Serialize;
 
 /// Version information reported by external systems.
 #[derive(Clone, Eq, PartialEq, Hash, Debug, Serialize, Deserialize)]
