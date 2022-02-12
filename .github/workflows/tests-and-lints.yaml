@@ -17,7 +17,7 @@ jobs:
       matrix:
         rust:
           - stable   # Version of rust we aim to use.
-          - 1.52.0   # Earliest version of rust supported.
+          - 1.56.0   # Earliest version of rust supported.
     continue-on-error: ${{ matrix.rust != 'stable' }}
     steps:
       - uses: actions/checkout@v2
@@ -31,24 +31,12 @@ jobs:
           components: rustfmt, clippy
 
       # Replicante Core
-      - name: Build Core Packages
-        run: cargo build
-      - name: Run Core Tests
-        run: cargo test
-      - name: Run Core Clippy
-        run: cargo clippy -- -D warnings
-      - name: Check Core Formatting
-        run: cargo fmt --verbose -- --check
+      - name: Replicante Core
+        run: ci/test-and-lint-workspace.sh Core Cargo.toml
 
       # Replicante development tool CI.
-      - name: Build replidev Packages
-        run: cargo build --manifest-path devtools/replidev/Cargo.toml
-      - name: Run replidev Tests
-        run: cargo test --manifest-path devtools/replidev/Cargo.toml
-      - name: Run replidev Clippy
-        run: cargo clippy --manifest-path devtools/replidev/Cargo.toml -- -D warnings
-      - name: Check replidev Formatting
-        run: cargo fmt --manifest-path devtools/replidev/Cargo.toml --verbose -- --check
+      - name: Replicante Development Tool
+        run: ci/test-and-lint-workspace.sh "Replicante Development Tool" devtools/replidev/Cargo.toml
 
   nightly-tests-and-lints:
     runs-on: ubuntu-latest
@@ -65,21 +53,9 @@ jobs:
           components: rustfmt, clippy
 
       # Replicante Core
-      - name: Build Core Packages
-        run: cargo build || true
-      - name: Run Core Tests
-        run: cargo test || true
-      - name: Run Core Clippy
-        run: cargo clippy -- -D warnings || true
-      - name: Check Core Formatting
-        run: cargo fmt --verbose -- --check || true
+      - name: Replicante Core
+        run: ci/test-and-lint-workspace.sh Core Cargo.toml || true
 
       # Replicante development tool CI.
-      - name: Build replidev Packages
-        run: cargo build --manifest-path devtools/replidev/Cargo.toml || true
-      - name: Run replidev Tests
-        run: cargo test --manifest-path devtools/replidev/Cargo.toml || true
-      - name: Run replidev Clippy
-        run: cargo clippy --manifest-path devtools/replidev/Cargo.toml -- -D warnings || true
-      - name: Check replidev Formatting
-        run: cargo fmt --manifest-path devtools/replidev/Cargo.toml --verbose -- --check || true
+      - name: Replicante Development Tool
+        run: ci/test-and-lint-workspace.sh "Replicante Development Tool" devtools/replidev/Cargo.toml || true

@@ -2042,7 +2042,6 @@ dependencies = [
  "replicante_models_agent",
  "semver 0.11.0",
  "serde",
- "serde_derive",
  "serde_json",
  "uuid",
 ]
