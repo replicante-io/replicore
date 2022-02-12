@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Cluster discovery dynamically configured with `apply`.
 - Discovery settings apply and delete events.
 - List and delete `DiscoverySettings` objects (API and `replictl`).
+- Syntetic in-memory Cluster Views.
 
 ### Changed
 - **BREAKING**: The `events.stream` config block is no longer nested and is now simply `events`.

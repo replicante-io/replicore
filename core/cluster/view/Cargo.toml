@@ -1,0 +1,20 @@
+[package]
+name = "replicore_cluster_view"
+version = "0.1.0"
+authors = ["Stefano Pogliani <stefano@spogliani.net>"]
+edition = "2021"
+
+description = "Syntetic Cluster View logic"
+documentation = "https://www.replicante.io/docs"
+homepage = "https://www.replicante.io/"
+repository = "https://github.com/replicante-io/replicante"
+keywords = ["automation", "datastore", "operations"]
+license = "MIT"
+
+
+[dependencies]
+anyhow = "^1.0.53"
+serde = { version = "^1.0.34", features = ["derive"] }
+thiserror = "^1.0.30"
+
+replicante_models_core = { path = "../../../models/core" }
