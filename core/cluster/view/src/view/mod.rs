@@ -1,6 +1,12 @@
+use std::collections::HashMap;
+use std::collections::HashSet;
+use std::rc::Rc;
+
 use anyhow::anyhow;
 use anyhow::Result;
 
+use replicante_models_core::agent::Agent;
+use replicante_models_core::agent::AgentInfo;
 use replicante_models_core::cluster::discovery::ClusterDiscovery;
 use replicante_models_core::cluster::ClusterSettings;
 
@@ -18,6 +24,10 @@ pub struct ClusterView {
     // Whole cluster records.
     pub discovery: ClusterDiscovery,
     pub settings: ClusterSettings,
+
+    // Individual node records.
+    pub agents: Vec<Rc<Agent>>,
+    pub agents_info: HashMap<String, AgentInfo>,
 }
 
 impl ClusterView {
@@ -45,17 +55,60 @@ impl ClusterView {
             namespace,
             discovery,
             settings,
+            agents: Vec::new(),
+            agents_info: HashMap::new(),
         };
-        Ok(ClusterViewBuilder { view })
+        Ok(ClusterViewBuilder {
+            seen_agents: HashSet::new(),
+            seen_agents_info: HashSet::new(),
+            view,
+        })
     }
 }
 
 /// Incrementally build a Cluster view from individual records.
 pub struct ClusterViewBuilder {
+    // Track cluster entiries already added to the view.
+    seen_agents: HashSet<String>,
+    seen_agents_info: HashSet<String>,
+
+    // Keep the incrementally built view ready to return.
     view: ClusterView,
 }
 
 impl ClusterViewBuilder {
+    /// Add an Agent to the Cluster View.
+    pub fn agent(&mut self, agent: Agent) -> Result<&mut Self> {
+        // Can't add the same agent twice.
+        if self.seen_agents.contains(&agent.host) {
+            return Err(anyhow!(ClusterViewCorrupt::duplicate_agent(
+                &self.view.namespace,
+                &self.view.cluster_id,
+                agent.host,
+            )));
+        }
+
+        self.seen_agents.insert(agent.host.clone());
+        self.view.agents.push(Rc::new(agent));
+        Ok(self)
+    }
+
+    /// Add Agent information to the Cluster View.
+    pub fn agent_info(&mut self, info: AgentInfo) -> Result<&mut Self> {
+        // Can't add the same agent info twice.
+        if self.seen_agents_info.contains(&info.host) {
+            return Err(anyhow!(ClusterViewCorrupt::duplicate_agent_info(
+                &self.view.namespace,
+                &self.view.cluster_id,
+                info.host,
+            )));
+        }
+
+        self.seen_agents_info.insert(info.host.clone());
+        self.view.agents_info.insert(info.host.clone(), info);
+        Ok(self)
+    }
+
     /// Convert this view builder into a complete ClusterView.
     pub fn build(self) -> ClusterView {
         self.view
