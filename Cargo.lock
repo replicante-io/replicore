@@ -3061,6 +3061,7 @@ name = "replicore_cluster_view"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "replicante_models_agent",
  "replicante_models_core",
  "serde",
  "thiserror",

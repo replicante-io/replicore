@@ -17,4 +17,5 @@ anyhow = "^1.0.53"
 serde = { version = "^1.0.34", features = ["derive"] }
 thiserror = "^1.0.30"
 
+replicante_models_agent = { path = "../../../common/models/agent" }
 replicante_models_core = { path = "../../../models/core" }

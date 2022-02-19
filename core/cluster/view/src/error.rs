@@ -15,6 +15,14 @@ pub enum ClusterViewCorrupt {
     // namespace, cluster_id, agent_id.
     DuplicateAgentInfo(String, String, String),
 
+    #[error("view of cluster {0}.{1} already contains a node with ID {2}")]
+    // namespace, cluster_id, node_id.
+    DuplicateNode(String, String, String),
+
+    #[error("view of cluster {0}.{1} already contains shard ID {3} on node ID {2}")]
+    // namespace, cluster_id, node_id, shard_id.
+    DuplicateShard(String, String, String, String),
+
     #[error("cannot update view of cluster in namespace {0} with a record from namespace {1}")]
     // expected, actual
     NamespaceClash(String, String),
@@ -62,6 +70,39 @@ impl ClusterViewCorrupt {
         let cluster_id = cluster_id.into();
         let agent_id = agent_id.into();
         ClusterViewCorrupt::DuplicateAgentInfo(namespace, cluster_id, agent_id)
+    }
+
+    /// Adding the same node twice.
+    pub fn duplicate_node<S1, S2, S3>(namespace: S1, cluster_id: S2, node_id: S3) -> Self
+    where
+        S1: Into<String>,
+        S2: Into<String>,
+        S3: Into<String>,
+    {
+        let namespace = namespace.into();
+        let cluster_id = cluster_id.into();
+        let node_id = node_id.into();
+        ClusterViewCorrupt::DuplicateNode(namespace, cluster_id, node_id)
+    }
+
+    /// Adding the same shard twice on one node.
+    pub fn duplicate_shard<S1, S2, S3, S4>(
+        namespace: S1,
+        cluster_id: S2,
+        node_id: S3,
+        shard_id: S4,
+    ) -> Self
+    where
+        S1: Into<String>,
+        S2: Into<String>,
+        S3: Into<String>,
+        S4: Into<String>,
+    {
+        let namespace = namespace.into();
+        let cluster_id = cluster_id.into();
+        let node_id = node_id.into();
+        let shard_id = shard_id.into();
+        ClusterViewCorrupt::DuplicateShard(namespace, cluster_id, node_id, shard_id)
     }
 
     /// Adding a record that belongs to a different namespace.
