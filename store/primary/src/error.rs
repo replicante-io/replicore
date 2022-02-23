@@ -4,6 +4,41 @@ use failure::Backtrace;
 use failure::Context;
 use failure::Fail;
 
+/// Dumb wrapper to carry `anyhow::Error`s as `failure::Fail`s.
+pub struct AnyWrap(anyhow::Error);
+
+impl From<anyhow::Error> for AnyWrap {
+    fn from(error: anyhow::Error) -> AnyWrap {
+        AnyWrap(error)
+    }
+}
+
+impl Fail for AnyWrap {
+    fn cause(&self) -> Option<&dyn Fail> {
+        None
+    }
+
+    fn backtrace(&self) -> Option<&Backtrace> {
+        None
+    }
+
+    fn name(&self) -> Option<&str> {
+        Some("AnyWrap")
+    }
+}
+
+impl fmt::Display for AnyWrap {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        fmt::Display::fmt(&self.0, f)
+    }
+}
+
+impl fmt::Debug for AnyWrap {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        fmt::Debug::fmt(&self.0, f)
+    }
+}
+
 /// Error information returned by functions in case of errors.
 #[derive(Debug)]
 pub struct Error(Context<ErrorKind>);
@@ -72,6 +107,10 @@ pub enum ErrorKind {
 
     #[fail(display = "{} record with id '{}' not found", _0, _1)]
     RecordNotFound(&'static str, String),
+
+    #[fail(display = "unabled to build cluster view for {}.{}", _0, _1)]
+    // namespace, cluster_id
+    ViewBuild(String, String),
 }
 
 impl ErrorKind {
@@ -85,6 +124,7 @@ impl ErrorKind {
             ErrorKind::MongoDBCursor => "MongoDBCursor",
             ErrorKind::MongoDBOperation => "MongoDBOperation",
             ErrorKind::RecordNotFound(_, _) => "RecordNotFound",
+            ErrorKind::ViewBuild(_, _) => "ViewBuild",
         };
         Some(name)
     }

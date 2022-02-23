@@ -1,13 +1,18 @@
 use std::sync::Arc;
 
+use failure::ResultExt;
+use opentracingrust::SpanContext;
 use opentracingrust::Tracer;
 use slog::Logger;
 
 use replicante_service_healthcheck::HealthChecks;
+use replicore_cluster_view::ClusterView;
 
 use crate::backend::backend_factory;
 use crate::backend::StoreImpl;
+use crate::error::AnyWrap;
 use crate::Config;
+use crate::ErrorKind;
 use crate::Result;
 
 pub mod actions;
@@ -170,5 +175,52 @@ impl Store {
         let shards = self.store.shards();
         let attrs = self::shards::ShardsAttribures { cluster_id };
         Shards::new(shards, attrs)
+    }
+
+    /// Build a syntectic cluster view from individual records.
+    pub fn view<S>(&self, namespace: String, cluster_id: String, span: S) -> Result<ClusterView>
+    where
+        S: Into<Option<SpanContext>>,
+    {
+        let full_id = format!("{}.{}", &namespace, &cluster_id);
+        let span = span.into();
+
+        // Create the builder.
+        let settings = self
+            .cluster(namespace.clone(), cluster_id.clone())
+            .settings(span.clone())?
+            .ok_or_else(|| ErrorKind::RecordNotFound("settings", full_id.clone()))?;
+        let discovery = self
+            .cluster(namespace.clone(), cluster_id.clone())
+            .discovery(span.clone())?
+            .ok_or(ErrorKind::RecordNotFound("discovery", full_id))?;
+        let mut view = ClusterView::builder(settings, discovery)
+            .map_err(AnyWrap::from)
+            .with_context(|_| ErrorKind::ViewBuild(namespace.clone(), cluster_id.clone()))?;
+
+        // Add records to the builder.
+        for agent in self.agents(cluster_id.clone()).iter(span.clone())? {
+            view.agent(agent?)
+                .map_err(AnyWrap::from)
+                .with_context(|_| ErrorKind::ViewBuild(namespace.clone(), cluster_id.clone()))?;
+        }
+        for info in self.agents(cluster_id.clone()).iter_info(span.clone())? {
+            view.agent_info(info?)
+                .map_err(AnyWrap::from)
+                .with_context(|_| ErrorKind::ViewBuild(namespace.clone(), cluster_id.clone()))?;
+        }
+        for node in self.nodes(cluster_id.clone()).iter(span.clone())? {
+            view.node(node?)
+                .map_err(AnyWrap::from)
+                .with_context(|_| ErrorKind::ViewBuild(namespace.clone(), cluster_id.clone()))?;
+        }
+        for shard in self.shards(cluster_id.clone()).iter(span)? {
+            view.shard(shard?)
+                .map_err(AnyWrap::from)
+                .with_context(|_| ErrorKind::ViewBuild(namespace.clone(), cluster_id.clone()))?;
+        }
+
+        // Build and return the cluster view.
+        Ok(view.build())
     }
 }
