@@ -1,4 +1,4 @@
-name: Rust Tests and Lints
+name: Rust Checks
 
 on:
   push:
@@ -11,14 +11,37 @@ env:
 
 # TODO: I'd like to re-add the cargo audit task but I'm not sure yet where it should be.
 jobs:
-  tests-and-lints:
+  # Stable rust is the version we aim to use for builds.
+  checks-stable:
+    runs-on: ubuntu-latest
+    continue-on-error: false
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: recursive
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          override: true
+          components: rustfmt, clippy
+
+      # Replicante Core
+      - name: Replicante Core
+        run: ci/check-workspace.sh --full Core Cargo.toml
+
+      # Replicante development tool CI.
+      - name: Replicante Development Tool
+        run: ci/check-workspace.sh --full "Replicante Development Tool" devtools/replidev/Cargo.toml
+
+  checks:
     runs-on: ubuntu-latest
     strategy:
       matrix:
         rust:
-          - stable   # Version of rust we aim to use.
           - 1.56.0   # Earliest version of rust supported.
-    continue-on-error: ${{ matrix.rust != 'stable' }}
+          - nightly  # Prepare for the future!
+    continue-on-error: true
     steps:
       - uses: actions/checkout@v2
         with:
@@ -32,30 +55,8 @@ jobs:
 
       # Replicante Core
       - name: Replicante Core
-        run: ci/test-and-lint-workspace.sh Core Cargo.toml
+        run: ci/check-workspace.sh Core Cargo.toml
 
       # Replicante development tool CI.
       - name: Replicante Development Tool
-        run: ci/test-and-lint-workspace.sh "Replicante Development Tool" devtools/replidev/Cargo.toml
-
-  nightly-tests-and-lints:
-    runs-on: ubuntu-latest
-    continue-on-error: true
-    steps:
-      - uses: actions/checkout@v2
-        with:
-          submodules: recursive
-      - uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: nightly
-          override: true
-          components: rustfmt, clippy
-
-      # Replicante Core
-      - name: Replicante Core
-        run: ci/test-and-lint-workspace.sh Core Cargo.toml || true
-
-      # Replicante development tool CI.
-      - name: Replicante Development Tool
-        run: ci/test-and-lint-workspace.sh "Replicante Development Tool" devtools/replidev/Cargo.toml || true
+        run: ci/check-workspace.sh "Replicante Development Tool" devtools/replidev/Cargo.toml

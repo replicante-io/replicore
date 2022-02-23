@@ -1,13 +1,30 @@
 #!/bin/bash
 set -e
 
-# Check for required arguments
-if [ $# -ne 2 ]; then
-  echo "Usage: ci/test-and-lint-worksapce.sh NAME MANIFEST-PATH" >&2
+# Check for required arguments.
+if [ $# -lt 2 ]; then
+  echo "Usage: ci/check-worksapce.sh [OPTIONS] NAME MANIFEST-PATH" >&2
+  echo "" >&2
+  echo "OPTIONS:" >&2
+  echo "    --full    Run clippy and fmt checks on top of tests" >&2
   exit 1
 fi
-NAME="$1"
-MANIFEST="$2"
+
+# Parse CLI arguments.
+FULL_MODE=no
+
+while [ $# -gt 0 ]; do
+  arg=$1
+  shift
+  case "${arg}" in
+    --full) FULL_MODE=yes;;
+    *)
+      NAME="${arg}"
+      MANIFEST="$1"
+      shift
+      ;;
+  esac
+done
 
 # GitHub Actions log group support, when running in CI only.
 log_group() {
@@ -23,7 +40,7 @@ log_group_end() {
   fi
 }
 
-# Build, test, clippy, format stages
+# Build, test, clippy, format stages.
 log_group "Build ${NAME} packages"
 cargo build --manifest-path "${MANIFEST}"
 log_group_end
@@ -31,6 +48,11 @@ log_group_end
 log_group "Run ${NAME} tests"
 cargo test --manifest-path "${MANIFEST}"
 log_group_end
+
+# Stop early if not in full mode.
+if [ "${FULL_MODE}" != "yes" ]; then
+  exit 0
+fi
 
 log_group "Run ${NAME} clippy"
 cargo clippy --manifest-path "${MANIFEST}" -- -D warnings
