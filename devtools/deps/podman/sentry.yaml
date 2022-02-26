@@ -3,20 +3,20 @@
 containers:
   # Stateless servicies
   - name: memcached
-    image: memcached:1.6-alpine
+    image: docker.io/library/memcached:1.6-alpine
   - name: smtp
-    image: tianon/exim4
+    image: docker.io/tianon/exim4
 
   # Persistent data
   - name: clickhouse
-    image: yandex/clickhouse-server:19.11
+    image: docker.io/yandex/clickhouse-server:19.11
     mount:
       - type: bind
         src: '{{ DATA_ROOT }}/clickhouse'
         target: /var/lib/clickhouse
         relabel: private
   - name: postgres
-    image: postgres:9.6
+    image: docker.io/library/postgres:9.6
     env:
       POSTGRES_HOST_AUTH_METHOD: trust
     mount:
@@ -25,14 +25,14 @@ containers:
         target: /var/lib/postgresql/data
         relabel: private
   - name: redis
-    image: redis:5.0-alpine
+    image: docker.io/library/redis:5.0-alpine
     mount:
       - type: bind
         src: '{{ DATA_ROOT }}/redis'
         target: /data
         relabel: private
   - name: zookeeper
-    image: confluentinc/cp-zookeeper:5.1.2
+    image: docker.io/confluentinc/cp-zookeeper:5.1.2
     env:
       ZOOKEEPER_CLIENT_PORT: 2181
       CONFLUENT_SUPPORT_METRICS_ENABLE: false
@@ -52,7 +52,7 @@ containers:
         target: /etc/zookeeper/secrets
         relabel: private
   - name: kafka
-    image: confluentinc/cp-kafka:5.1.2
+    image: docker.io/confluentinc/cp-kafka:5.1.2
     env:
       KAFKA_ZOOKEEPER_CONNECT: 'localhost:2181'
       KAFKA_ADVERTISED_LISTENERS: 'PLAINTEXT://localhost:9092'
@@ -77,7 +77,7 @@ containers:
 
   # Snuba services
   - name: snuba-api
-    image: getsentry/snuba:latest
+    image: docker.io/getsentry/snuba:latest
     initialise:
       - /init.sh
     env:
@@ -94,7 +94,7 @@ containers:
         relabel: private
         ro: 'true'
   - name: snuba-consumer
-    image: getsentry/snuba:latest
+    image: docker.io/getsentry/snuba:latest
     command:
       - 'consumer'
       - '--auto-offset-reset=latest'
@@ -108,7 +108,7 @@ containers:
       UWSGI_MAX_REQUESTS: '10000'
       UWSGI_DISABLE_LOGGING: 'true'
   - name: snuba-replacer
-    image: getsentry/snuba:latest
+    image: docker.io/getsentry/snuba:latest
     command:
       - 'replacer'
       - '--auto-offset-reset=latest'
@@ -122,7 +122,7 @@ containers:
       UWSGI_MAX_REQUESTS: '10000'
       UWSGI_DISABLE_LOGGING: 'true'
   - name: snuba-cleanup
-    image: getsentry/snuba:latest
+    image: docker.io/getsentry/snuba:latest
     command:
       - 'bash'
       - '-c'
@@ -136,7 +136,7 @@ containers:
       UWSGI_MAX_REQUESTS: '10000'
       UWSGI_DISABLE_LOGGING: 'true'
   - name: symbolicator
-    image: getsentry/symbolicator:latest
+    image: docker.io/getsentry/symbolicator:latest
     command:
       - run
     mount:
@@ -147,7 +147,7 @@ containers:
 
   # Sentry
   - name: sentry-web
-    image: getsentry/sentry:latest
+    image: docker.io/getsentry/sentry:latest
     initialise:
       - /init.sh
     env:
@@ -174,7 +174,7 @@ containers:
         relabel: private
         ro: 'true'
   - name: sentry-cron
-    image: getsentry/sentry:latest
+    image: docker.io/getsentry/sentry:latest
     command:
       - run
       - cron
@@ -197,7 +197,7 @@ containers:
         relabel: private
         ro: 'true'
   - name: sentry-worker
-    image: getsentry/sentry:latest
+    image: docker.io/getsentry/sentry:latest
     command:
       - run
       - worker

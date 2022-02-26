@@ -1,7 +1,7 @@
 containers:
   # Zookeeper - for both kafka and replicante
   - name: zookeeper
-    image: zookeeper:3.5
+    image: docker.io/library/zookeeper:3.5
     env:
       ZOO_MY_ID: 1
     mount:
@@ -22,7 +22,7 @@ containers:
 
   # Nginx - to serve static pages (links index, static discovery, etc ...)
   - name: nginx
-    image: nginx:1.17
+    image: docker.io/library/nginx:1.17
     mount:
       - type: bind
         src: '{{ CONF_ROOT }}/static'
@@ -32,7 +32,7 @@ containers:
 
   # MongoDB - for persisted state.
   - name: mongo
-    image: mongo:4.2
+    image: docker.io/library/mongo:4.2
     initialise:
       - /replicore/init.sh
     command:
@@ -54,15 +54,15 @@ containers:
 
   # Kafka - for tasks and streams.
   - name: kafka
-    image: wurstmeister/kafka:2.12-2.4.1
+    image: docker.io/wurstmeister/kafka:2.12-2.4.1
     env:
       JMX_PORT: 9999
       KAFKA_BROKER_ID: 1
-      KAFKA_LISTENERS: 'PLAINTEXT://127.0.0.1:9092'
+      KAFKA_LISTENERS: 'PLAINTEXT://0.0.0.0:9092'
       KAFKA_LOG_FLUSH_SCHEDULER_INTERVAL_MS: 60000
       KAFKA_NUM_PARTITIONS: 4
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
-      KAFKA_ZOOKEEPER_CONNECT: 'podman-host:2181/kafka'
+      KAFKA_ZOOKEEPER_CONNECT: 'host.containers.internal:2181/kafka'
       KAFKA_ADVERTISED_HOST_NAME: '{{ PODMAN_HOSTNAME }}'
     mount:
       - type: bind

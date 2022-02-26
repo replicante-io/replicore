@@ -1,6 +1,6 @@
 containers:
   - name: prometheus
-    image: prom/prometheus:v2.17.1
+    image: docker.io/prom/prometheus:v2.17.1
     mount:
       - type: bind
         src: '{{ CONF_ROOT }}/prometheus.yml'

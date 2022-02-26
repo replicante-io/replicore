@@ -1,6 +1,6 @@
 containers:
   - name: grafana
-    image: grafana/grafana:6.7.1
+    image: docker.io/grafana/grafana:6.7.1
     env:
       GF_INSTALL_PLUGINS: 'grafana-simple-json-datasource'
     mount:

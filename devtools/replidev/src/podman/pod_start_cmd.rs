@@ -50,6 +50,13 @@ where
         .arg(format!("--name={}", name))
         .arg("--add-host")
         .arg(format!("podman-host:{}", conf.podman_host_ip()?));
+
+    // Configure network mode, if set.
+    if let Some(network) = &conf.podman_network_mode {
+        podman.arg("--network").arg(network);
+    }
+
+    // Configure published ports and labels.
     let mut labels = labels;
     for port in pod.ports {
         let host_port = port.host;
