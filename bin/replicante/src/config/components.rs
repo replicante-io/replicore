@@ -12,7 +12,7 @@ pub struct ComponentsConfig {
     #[serde(default)]
     core_api: Option<bool>,
 
-    /// Enable DiscoverySettings periodic scheduler.
+    /// Enable discovery periodic scheduler.
     #[serde(default)]
     discovery: Option<bool>,
 
@@ -20,7 +20,7 @@ pub struct ComponentsConfig {
     #[serde(default)]
     grafana: Option<bool>,
 
-    /// Enable ClusterSettings orchestrator periodic scheduler.
+    /// Enable cluster orchestrator periodic scheduler.
     #[serde(default)]
     orchestrator: Option<bool>,
 

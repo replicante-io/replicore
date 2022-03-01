@@ -139,13 +139,13 @@ components:
   # Enable Replicante Core API endpoints.
   core_api: null
 
-  # Enable DiscoverySettings periodic scheduler.
+  # Enable discovery periodic scheduler.
   discovery: null
 
   # Enable Grafana Annotations API endpoints (optional).
   grafana: null
 
-  # Enable ClusterSettings orchestrator periodic scheduler.
+  # Enable cluster orchestrator periodic scheduler.
   orchestrator: null
 
   # Enable the update checker (optional).
@@ -382,11 +382,11 @@ logging:
   verbose: false
 
 
-# The section below is for ClusterSettings orchestration scheduling configuration.
+# The section below is for cluster orchestration scheduling configuration.
 #
 # Discovery is the way the clusters that should be managed are found.
 orchestrator:
-  # Interval (in seconds) to wait between checks for pending ClusterSettings to schedule.
+  # Interval (in seconds) to wait between checks for pending cluster to schedule.
   interval: 15
 
   # Number of cycles before this node will re-run an election, 0 to disable re-runs.

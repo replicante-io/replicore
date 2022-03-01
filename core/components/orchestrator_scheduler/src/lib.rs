@@ -69,11 +69,11 @@ impl OrchestratorScheduler {
         let term = self.term;
         let (shutdown_sender, shutdown_receiver) = LoopingElectionOpts::shutdown_channel();
 
-        debug!(self.logger, "Starting ClusterSettings scheduler thread");
+        debug!(self.logger, "Starting orchestrator scheduler thread");
         let thread = ThreadBuilder::new("r:c:orchestrator")
             .full_name("replicore:component:orchestrator")
             .spawn(move |scope| {
-                scope.activity("initialising ClusterSettings scheduler election");
+                scope.activity("initialising orchestrator scheduler election");
                 let election = coordinator.election("orchestrator");
                 let looper = self::election::Election::new(logic, logger.clone(), scope);
                 let opts = LoopingElectionOpts::new(election, looper)

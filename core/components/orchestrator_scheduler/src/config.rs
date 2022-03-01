@@ -4,7 +4,7 @@ use serde::Serialize;
 /// Cluster orchestration scheduling options.
 #[derive(Clone, Eq, PartialEq, Hash, Debug, Serialize, Deserialize)]
 pub struct Config {
-    /// Interval (in seconds) to wait between checks for pending ClusterSettings to schedule.
+    /// Interval (in seconds) to wait between checks for pending cluster orchestrations to schedule.
     #[serde(default = "Config::default_interval")]
     pub interval: u64,
 
