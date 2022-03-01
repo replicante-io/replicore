@@ -55,20 +55,29 @@ containers:
   # Kafka - for tasks and streams.
   - name: kafka
     image: docker.io/wurstmeister/kafka:2.12-2.4.1
+    initialise:
+      - /replicore/init.sh
     env:
       JMX_PORT: 9999
       KAFKA_BROKER_ID: 1
       KAFKA_LISTENERS: 'PLAINTEXT://0.0.0.0:9092'
+      KAFKA_ADVERTISED_HOST_NAME: '{{ PODMAN_HOSTNAME }}'
+      KAFKA_ADVERTISED_LISTENERS: 'PLAINTEXT://{{ PODMAN_HOSTNAME }}:9092'
+      KAFKA_ZOOKEEPER_CONNECT: 'host.containers.internal:2181/kafka'
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'true'
       KAFKA_LOG_FLUSH_SCHEDULER_INTERVAL_MS: 60000
       KAFKA_NUM_PARTITIONS: 4
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
-      KAFKA_ZOOKEEPER_CONNECT: 'host.containers.internal:2181/kafka'
-      KAFKA_ADVERTISED_HOST_NAME: '{{ PODMAN_HOSTNAME }}'
     mount:
       - type: bind
         src: '{{ DATA_ROOT }}/kafka'
         target: /kafka
         relabel: private
+      - type: bind
+        src: '{{ CONF_ROOT }}/kafka'
+        target: /replicore
+        relabel: private
+        ro: 'true'
 
 
 ports:

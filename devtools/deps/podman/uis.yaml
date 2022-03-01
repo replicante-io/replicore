@@ -25,17 +25,14 @@ containers:
         ro: 'true'
 
   # Zookeeper UI - https://www.elkozmon.com/zoonavigator/
-  - name: zoonav-api
-    image: 'docker.io/elkozmon/zoonavigator-api'
+  - name: zoonav
+    image: 'docker.io/elkozmon/zoonavigator'
     env:
-      API_HTTP_PORT: 8001
-  - name: zoonav-web
-    image: 'docker.io/elkozmon/zoonavigator-web'
-    env:
-      AUTO_CONNECT_CONNECTION_STRING: 'podman-host:2181'
-      API_HOST: 'localhost'
-      API_PORT: 8001
-      WEB_HTTP_PORT: 8000
+      HTTP_PORT: 8000
+      AUTO_CONNECT_CONNECTION_ID: ZOO
+      CONNECTION_ZOO_NAME: 'RepliZoo'
+      CONNECTION_ZOO_CONN: 'host.containers.internal:2181'
+      ZK_SASL_CLIENT: 'false'
 
 ports:
   # MongoDB UI
