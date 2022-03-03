@@ -1,7 +1,6 @@
 # Replicante
 A distributed datastore orchestration system.
 
-
 ## Code of Conduct
 Our aim is to build a thriving, healthy and diverse community.  
 To help us get there we decided to adopt the [Contributor Covenant Code of Conduct](https://www.contributor-covenant.org/)
@@ -9,14 +8,15 @@ for all our projects.
 
 Any issue should be reported to [stefano-pogliani](https://github.com/stefano-pogliani)
 by emailing [conduct@replicante.io](mailto:conduct@replicante.io).  
-Unfortunately, as the community lucks members, we are unable to provide a second contact to report incidents to.  
+Unfortunately, as the community lucks members, we are unable to provide a second contact to report
+incidents to.  
 We would still encourage people to report issues, even anonymously.
 
 In addition to the Code Of Conduct the following documents are relevant:
 
-  * The [Reporting Guideline](https://www.replicante.io/conduct/reporting), especially if you wish to report an incident.
-  * The [Enforcement Guideline](https://www.replicante.io/conduct/enforcing)
-
+* The [Reporting Guideline](https://www.replicante.io/conduct/reporting), especially if you wish to
+  report an incident.
+* The [Enforcement Guideline](https://www.replicante.io/conduct/enforcing)
 
 ## Development environment
 Replicante Core requires a few dependencies in order to run.  
@@ -29,16 +29,13 @@ An opinionated development tool built on top of many generic projects is also av
 This is `replidev`, located in `devtools/replidev`, and is written in rust.
 As mentioned, it will require some additional tools to work:
 
-  * [Podman](https://podman.io/)
+* [Podman](https://podman.io/)
 
 It can be complied and installed in `$HOME/bin/replidev` with:
 
 ```bash
-$ make -C devtools/replidev install
+cargo install --path devtools/replidev
 ```
-
-This is convenient if you have `$HOME/bin` in `$PATH` since `replidev`
-can then just be used from any of the replicante projects.
 
 Once installed, the Replicante Core development environment can be set up with:
 
@@ -97,30 +94,27 @@ sentry        -         -         devtools/deps/podman/sentry.yaml
 uis           -         -         devtools/deps/podman/uis.yaml
 ```
 
-
 ### Build dependences
 
-  * clang: for rdkafka
-  * cmake
-  * openssl-devel
-
+* clang: for rdkafka
+* cmake
+* openssl-devel
 
 ## Playgrounds
 Playgrounds are docker and docker-compose projects that run distributed
 datastores locally so that replicante can be developed and tested.
 
-They moved to a dedicated repo: https://github.com/replicante-io/playgrounds
-
+They moved to a dedicated repo: <https://github.com/replicante-io/playgrounds>
 
 ## Development Documentation
 The code is documented with `rustdoc` even for private methods.
 This helps existing and new developers keep a handle on the codebase.
 
 Use the following command from the root of the repo to generate the documentation:
+
 ```bash
 cargo rustdoc -- --document-private-items
 ```
-
 
 ## Developers Notebook
 Architectural nodes, implementation details, suggestions, proposals and more.
@@ -129,7 +123,6 @@ The developers notebook is a collection of documents aimed at present and future
 as well as advanced users that want to know more about Replicante internals.
 It is also a place to jot down ideas for the future or potential changes that may be
 needed/usefull some day but are not quite yet.
-
 
 ## TODOs and the like
 You can scan the code for `TODO`s, `NOTE`s, etcetera with `fixme`.

@@ -178,7 +178,12 @@ impl Store {
     }
 
     /// Build a syntectic cluster view from individual records.
-    pub fn view<S>(&self, namespace: String, cluster_id: String, span: S) -> Result<ClusterView>
+    pub fn cluster_view<S>(
+        &self,
+        namespace: String,
+        cluster_id: String,
+        span: S,
+    ) -> Result<ClusterView>
     where
         S: Into<Option<SpanContext>>,
     {

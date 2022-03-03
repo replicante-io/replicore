@@ -6,6 +6,7 @@ use std::rc::Rc;
 
 use anyhow::anyhow;
 use anyhow::Result;
+use serde::ser::SerializeStruct;
 
 use replicante_models_core::agent::Agent;
 use replicante_models_core::agent::AgentInfo;
@@ -16,10 +17,13 @@ use replicante_models_core::cluster::ClusterSettings;
 
 use crate::ClusterViewCorrupt;
 
+mod refs;
+
 #[cfg(test)]
 mod tests;
 
 /// Syntetic in-memory view of a Cluster.
+#[derive(Debug)]
 pub struct ClusterView {
     // Cluster identification attributes
     pub cluster_id: String,
@@ -84,6 +88,48 @@ impl ClusterView {
         self.shards_by_node
             .get(node)
             .and_then(|node| node.get(shard).map(Deref::deref))
+    }
+}
+
+impl serde::Serialize for ClusterView {
+    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        let mut state = serializer.serialize_struct("ClusterView", 9)?;
+        state.serialize_field("cluster_id", &self.cluster_id)?;
+        state.serialize_field("namespace", &self.namespace)?;
+        state.serialize_field("settings", &self.settings)?;
+        state.serialize_field("discovery", &self.discovery)?;
+        state.serialize_field("agents", &self.agents)?;
+        state.serialize_field("agents_info", &self.agents_info)?;
+
+        // Translate maps to enable serialisation of `Rc` values.
+        let nodes: HashMap<&String, &Node> = self.nodes
+            .iter()
+            .map(|(k, v)| (k, v.as_ref()))
+            .collect();
+        let shards: Vec<&Shard> = self.shards
+            .iter()
+            .map(|s| s.as_ref())
+            .collect();
+        state.serialize_field("nodes", &nodes)?;
+        state.serialize_field("shards", &shards)?;
+
+        // Translate indexed maps to serialise IDs instead of full objects.
+        let shards_by_node: HashMap<&String, HashMap<&String, refs::ShardRef>> = self.shards_by_node
+            .iter()
+            .map(|(shard, nodes)| {
+                let mapped_nodes = nodes
+                    .iter()
+                    .map(|(node, info)| (node, info.as_ref().into()))
+                    .collect();
+                (shard, mapped_nodes)
+            })
+            .collect();
+
+        state.serialize_field("shards_by_node", &shards_by_node)?;
+        state.end()
     }
 }
 
