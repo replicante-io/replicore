@@ -39,7 +39,7 @@ jobs:
     strategy:
       matrix:
         rust:
-          - 1.56.0   # Earliest version of rust supported.
+          - 1.59.0   # Earliest version of rust supported (breaking clippy check).
           - nightly  # Prepare for the future!
     continue-on-error: true
     steps:

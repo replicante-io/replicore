@@ -48,7 +48,7 @@ impl ContextStore {
         opt.context
             .name
             .as_deref()
-            .or_else(|| self.active.as_deref())
+            .or(self.active.as_deref())
             .unwrap_or(super::DEFAULT_CONTEXT)
             .to_string()
     }

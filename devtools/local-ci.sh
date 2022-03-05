@@ -18,6 +18,6 @@ for_version() {
     devtools/replidev/Cargo.toml
 }
 
-for_version "stable"
-for_version "1.56.0"
+#for_version "stable"
+for_version "1.59.0"
 for_version "nightly"
