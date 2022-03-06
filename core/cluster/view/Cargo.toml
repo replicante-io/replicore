@@ -19,3 +19,6 @@ thiserror = "^1.0.30"
 
 replicante_models_agent = { path = "../../../common/models/agent" }
 replicante_models_core = { path = "../../../models/core" }
+
+[dev-dependencies]
+serde_json = "^1.0.0"

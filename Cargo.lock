@@ -3081,6 +3081,7 @@ dependencies = [
  "replicante_models_agent",
  "replicante_models_core",
  "serde",
+ "serde_json",
  "thiserror",
 ]
 

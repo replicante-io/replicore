@@ -92,6 +92,12 @@ impl ClusterView {
 }
 
 impl serde::Serialize for ClusterView {
+    /// Serialise a ClusterView as a structred object.
+    ///
+    /// References to the same objects from "indexes" are serialised as the IDs of the
+    /// referenced objects to avoid repeating the same objects multiple times.
+    ///
+    /// Additionally serialisation uses `BTreeMap`s to allow stable serialisation.
     fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
     where
         S: serde::Serializer,
@@ -101,23 +107,23 @@ impl serde::Serialize for ClusterView {
         state.serialize_field("namespace", &self.namespace)?;
         state.serialize_field("settings", &self.settings)?;
         state.serialize_field("discovery", &self.discovery)?;
-        state.serialize_field("agents", &self.agents)?;
-        state.serialize_field("agents_info", &self.agents_info)?;
+
+        // Convert HashMap to BTreeMap for stable serialisation.
+        let agents: BTreeMap<&String, &Agent> = self.agents.iter().collect();
+        let agents_info: BTreeMap<&String, &AgentInfo> = self.agents_info.iter().collect();
+        state.serialize_field("agents", &agents)?;
+        state.serialize_field("agents_info", &agents_info)?;
 
         // Translate maps to enable serialisation of `Rc` values.
-        let nodes: HashMap<&String, &Node> = self.nodes
-            .iter()
-            .map(|(k, v)| (k, v.as_ref()))
-            .collect();
-        let shards: Vec<&Shard> = self.shards
-            .iter()
-            .map(|s| s.as_ref())
-            .collect();
+        let nodes: BTreeMap<&String, &Node> =
+            self.nodes.iter().map(|(k, v)| (k, v.as_ref())).collect();
+        let shards: Vec<&Shard> = self.shards.iter().map(|s| s.as_ref()).collect();
         state.serialize_field("nodes", &nodes)?;
         state.serialize_field("shards", &shards)?;
 
         // Translate indexed maps to serialise IDs instead of full objects.
-        let shards_by_node: HashMap<&String, HashMap<&String, refs::ShardRef>> = self.shards_by_node
+        let shards_by_node: BTreeMap<&String, BTreeMap<&String, refs::ShardRef>> = self
+            .shards_by_node
             .iter()
             .map(|(shard, nodes)| {
                 let mapped_nodes = nodes

@@ -37,11 +37,8 @@ impl SyntheticView {
     pub fn resource(&self) -> impl HttpServiceFactory {
         let logger = self.data.logger.clone();
         let tracer = Arc::clone(&self.tracer);
-        let tracer = TracingMiddleware::with_name(
-            logger,
-            tracer,
-            "/cluster/{cluster_id}/synthetic_view",
-        );
+        let tracer =
+            TracingMiddleware::with_name(logger, tracer, "/cluster/{cluster_id}/synthetic_view");
         web::resource("/synthetic_view")
             .data(self.data.clone())
             .wrap(tracer)
