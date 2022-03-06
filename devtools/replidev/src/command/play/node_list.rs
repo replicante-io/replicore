@@ -75,35 +75,25 @@ pub async fn list_nodes(conf: &Conf) -> Result<Vec<PodInfo>> {
         let pod: PodRawInfo = serde_json::from_slice(&pod)
             .with_context(|_| ErrorKind::response_decode("podman inspect"))?;
         let cluster = pod
-            .config
             .labels
             .get("io.replicante.dev/play/cluster")
             .expect("playground pod without cluster can't be returned here")
             .to_string();
-        let port_agent = pod
-            .config
-            .labels
-            .get("io.replicante.dev/port/agent")
-            .cloned();
-        let port_client = pod
-            .config
-            .labels
-            .get("io.replicante.dev/port/client")
-            .cloned();
+        let port_agent = pod.labels.get("io.replicante.dev/port/agent").cloned();
+        let port_client = pod.labels.get("io.replicante.dev/port/client").cloned();
         let port_store = pod
-            .config
             .labels
             .get("io.replicante.dev/port/store")
             .expect("playground pod without store port can't be returned here")
             .to_string();
         let pod = PodInfo {
             cluster,
-            id: pod.config.id,
-            node: pod.config.name,
+            id: pod.id,
+            node: pod.name,
             port_agent,
             port_client,
             port_store,
-            status: pod.state.status,
+            status: pod.state,
         };
         pods.push(pod);
     }
@@ -125,21 +115,15 @@ pub struct PodInfo {
 
 #[derive(Debug, Deserialize)]
 struct PodRawInfo {
-    #[serde(rename = "Config")]
-    config: PodRawInfoConfig,
+    #[serde(rename = "Id")]
+    id: String,
+
+    #[serde(rename = "Name")]
+    name: String,
+
+    #[serde(rename = "Labels")]
+    labels: BTreeMap<String, String>,
 
     #[serde(rename = "State")]
-    state: PodRawInfoState,
-}
-
-#[derive(Debug, Deserialize)]
-struct PodRawInfoConfig {
-    id: String,
-    name: String,
-    labels: BTreeMap<String, String>,
-}
-
-#[derive(Debug, Deserialize)]
-struct PodRawInfoState {
-    status: String,
+    state: String,
 }
