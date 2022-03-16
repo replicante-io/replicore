@@ -40,9 +40,9 @@ pub struct Conf {
     #[serde(default)]
     pub crates: Crates,
 
-    /// Command to execute easypki.
-    #[serde(default = "Conf::default_easypki")]
-    pub easypki: String,
+    /// Command to execute easyrsa.
+    #[serde(default = "Conf::default_easyrsa")]
+    pub easyrsa: String,
 
     /// List of rules to extact binaries from container images.
     #[serde(default)]
@@ -55,6 +55,10 @@ pub struct Conf {
     /// Advanced configuration for npm packages in this project.
     #[serde(default)]
     pub npm: Npm,
+
+    /// Command to execute openssl.
+    #[serde(default = "Conf::default_openssl")]
+    pub openssl: String,
 
     /// Bind address and port for the playground API server.
     #[serde(default = "Conf::default_play_server_bind")]
@@ -141,8 +145,12 @@ impl Conf {
 }
 
 impl Conf {
-    fn default_easypki() -> String {
-        "easypki".into()
+    fn default_easyrsa() -> String {
+        "easyrsa".into()
+    }
+
+    fn default_openssl() -> String {
+        "openssl".into()
     }
 
     fn default_play_server_bind() -> String {

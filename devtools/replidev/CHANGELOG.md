@@ -10,6 +10,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Enable pod to host networking by default.
 - Wrapper command for `curl`.
 
+### Changed
+- **BREAKING**: Certificates location moved around with EasyRSA rework.
+- Replace deprecated `easypki` with [Easy-RSA](https://easy-rsa.readthedocs.io/en/latest/).
+
 ## 0.1.0 - 2020-05-28
 ### Added
 - Configurable podman command to use.
