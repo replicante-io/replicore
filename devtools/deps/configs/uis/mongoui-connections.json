@@ -1,11 +1,11 @@
 {
   "connections": {
     "replicore": {
-      "connection_string": "mongodb://podman-host:27017/replicore",
+      "connection_string": "mongodb://host.containers.internal:27017/replicore",
       "connection_options": {}
     },
     "repliview": {
-      "connection_string": "mongodb://podman-host:27017/repliview",
+      "connection_string": "mongodb://host.containers.internal:27017/repliview",
       "connection_options": {}
     }
   }

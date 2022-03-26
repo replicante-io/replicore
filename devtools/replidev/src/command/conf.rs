@@ -22,6 +22,6 @@ fn show_ip(conf: &Conf) -> Result<i32> {
     let ip = conf
         .podman_host_ip()
         .map_err(crate::error::wrap_for_anyhow)?;
-    println!("IP that will be used for podman-host alias: {}", ip);
+    println!("IP detected for the podman host: {}", ip);
     Ok(0)
 }

@@ -1,10 +1,9 @@
 global:
   scrape_interval: 15s
 
-
 scrape_configs:
   - job_name: replicante-dev-core
     metrics_path: '/api/unstable/introspect/metrics'
     static_configs:
       - targets:
-        - 'podman-host:16016'
+        - 'host.containers.internal:16016'
