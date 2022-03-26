@@ -57,26 +57,26 @@ jobs:
       - name: Replicante Development Tool
         run: ci/check-workspace.sh "Replicante Development Tool" devtools/replidev/Cargo.toml
 
+  # TODO: re-enable nightly after updating actix-web.
   # Prepare for the future!
-  check-nightly:
-    runs-on: ubuntu-latest
-    continue-on-error: true
-    steps:
-      - uses: actions/checkout@v2
-        with:
-          submodules: recursive
-      - uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: nightly
-          override: true
-          components: rustfmt, clippy
+  #check-nightly:
+  #  runs-on: ubuntu-latest
+  #  continue-on-error: true
+  #  steps:
+  #    - uses: actions/checkout@v2
+  #      with:
+  #        submodules: recursive
+  #    - uses: actions-rs/toolchain@v1
+  #      with:
+  #        profile: minimal
+  #        toolchain: nightly
+  #        override: true
+  #        components: rustfmt, clippy
 
-      # Replicante Core
-      - name: Replicante Core
-        run: ci/check-workspace.sh Core Cargo.toml || true
+  #    # Replicante Core
+  #    - name: Replicante Core
+  #      run: ci/check-workspace.sh Core Cargo.toml || true
 
-      # Replicante development tool CI.
-      - name: Replicante Development Tool
-        run: ci/check-workspace.sh "Replicante Development Tool" devtools/replidev/Cargo.toml || true
-
+  #    # Replicante development tool CI.
+  #    - name: Replicante Development Tool
+  #      run: ci/check-workspace.sh "Replicante Development Tool" devtools/replidev/Cargo.toml || true
