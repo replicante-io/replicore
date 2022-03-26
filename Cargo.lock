@@ -2786,6 +2786,7 @@ dependencies = [
  "replicante_stream_events",
  "replicante_util_failure",
  "replicante_util_tracing",
+ "replicore_cluster_view",
  "sentry",
  "serde_json",
  "slog",

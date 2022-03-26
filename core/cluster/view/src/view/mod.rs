@@ -83,6 +83,11 @@ impl ClusterView {
         })
     }
 
+    /// Lookup a specific node in the cluster.
+    pub fn node(&self, node: &str) -> Option<&Node> {
+        self.nodes.get(node).map(Deref::deref)
+    }
+
     /// Lookup a specific shard on a node in the cluster.
     pub fn shard_on_node(&self, node: &str, shard: &str) -> Option<&Shard> {
         self.shards_by_node

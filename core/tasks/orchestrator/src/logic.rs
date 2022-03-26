@@ -109,7 +109,18 @@ impl Logic {
         let span_context = span.context().clone();
         let namespace = Namespace::HARDCODED_FOR_ROLLOUT();
 
-        // Lookup the discovery record.
+        // Load the pre-refresh cluster view.
+        // We can use the discovery record from this view as it will be the most recent
+        // discovery stored in the DB regardless of the "freshness" of the other records.
+        let cluster_view_before = self
+            .store
+            .cluster_view(
+                namespace_id.to_string(),
+                cluster_id.to_string(),
+                span_context.clone(),
+            )
+            .with_context(|_| ErrorKind::build_cluster_view_from_store(namespace_id, cluster_id))?;
+        // TODO: remove this as the aggregator is updated to use cluster views.
         let discovery = self
             .store
             .cluster(namespace_id.to_string(), cluster_id.to_string())
@@ -138,7 +149,13 @@ impl Logic {
         let refresh_id = Utc::now().timestamp();
         let timer = SYNC_DURATION.start_timer();
         self.fetcher
-            .fetch(namespace, discovery.clone(), refresh_id, lock.watch(), span)
+            .fetch(
+                namespace,
+                &cluster_view_before,
+                refresh_id,
+                lock.watch(),
+                span,
+            )
             .with_context(|_| ErrorKind::refresh_cluster(namespace_id, cluster_id))?;
         self.aggregator
             .aggregate(discovery, lock.watch(), span)

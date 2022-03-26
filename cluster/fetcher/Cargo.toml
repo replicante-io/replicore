@@ -36,7 +36,7 @@ replicante_store_primary = { path = "../../store/primary" }
 replicante_stream_events = { path = "../../stream/events" }
 replicante_util_failure = { path = "../../common/util/failure" }
 replicante_util_tracing = { path = "../../common/util/tracing" }
-
+replicore_cluster_view = { path = "../../core/cluster/view" }
 
 [dev-dependencies]
 replicante_agent_client = { path = "../../agent/client", features = ["with_test_support"] }

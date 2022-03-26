@@ -52,6 +52,9 @@ pub enum ErrorKind {
     #[fail(display = "unable to aggregate cluster information for {}.{}", _0, _1)]
     Aggregate(String, String),
 
+    #[fail(display = "unable to build cluster view from DB for {}.{}", _0, _1)]
+    BuildClusterViewFromStore(String, String),
+
     #[fail(
         display = "another orchestration task is in progress for {}.{}",
         _0, _1
@@ -84,6 +87,14 @@ impl ErrorKind {
         S2: Into<String>,
     {
         ErrorKind::Aggregate(namespace.into(), cluster_id.into())
+    }
+
+    pub fn build_cluster_view_from_store<S1, S2>(namespace: S1, cluster_id: S2) -> ErrorKind
+    where
+        S1: Into<String>,
+        S2: Into<String>,
+    {
+        ErrorKind::BuildClusterViewFromStore(namespace.into(), cluster_id.into())
     }
 
     pub fn concurrent_orchestrate<S1, S2>(namespace: S1, cluster_id: S2) -> ErrorKind
@@ -137,6 +148,7 @@ impl ErrorKind {
     fn kind_name(&self) -> Option<&str> {
         let name = match self {
             ErrorKind::Aggregate(_, _) => "Aggregate",
+            ErrorKind::BuildClusterViewFromStore(_, _) => "BuildClusterViewFromStore",
             ErrorKind::ConcurrentOrchestrate(_, _) => "ConcurrentOrchestrate",
             ErrorKind::DeserializePayload => "DeserializePayload",
             ErrorKind::FetchDiscovery(_, _) => "FetchDiscovery",

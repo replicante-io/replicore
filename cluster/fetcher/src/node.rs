@@ -8,6 +8,8 @@ use replicante_store_primary::store::Store;
 use replicante_stream_events::EmitMessage;
 use replicante_stream_events::Stream as EventsStream;
 
+use replicore_cluster_view::ClusterView;
+
 use super::ClusterIdentityChecker;
 use super::Error;
 use super::ErrorKind;
@@ -27,6 +29,7 @@ impl NodeFetcher {
     pub(crate) fn process_node(
         &self,
         client: &dyn Client,
+        cluster_view: &ClusterView,
         id_checker: &mut ClusterIdentityChecker,
         span: &mut Span,
     ) -> Result<()> {
@@ -40,18 +43,10 @@ impl NodeFetcher {
         if let Some(display_name) = node.cluster_display_name.as_ref() {
             id_checker.check_or_set_display_name(display_name, &node.node_id)?;
         }
-        let cluster_id = node.cluster_id.clone();
-        let node_id = node.node_id.clone();
-        let record = self
-            .store
-            .node(cluster_id, node_id)
-            .get(span.context().clone());
-        match record {
-            Err(error) => Err(error)
-                .with_context(|_| ErrorKind::PrimaryStoreRead("node"))
-                .map_err(Error::from),
-            Ok(None) => self.process_node_new(node, span),
-            Ok(Some(old)) => self.process_node_existing(node, old, span),
+        let old = cluster_view.node(&node.node_id).cloned();
+        match old {
+            None => self.process_node_new(node, span),
+            Some(old) => self.process_node_existing(node, old, span),
         }
     }
 }

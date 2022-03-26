@@ -10,6 +10,8 @@ use replicante_store_primary::store::Store;
 use replicante_stream_events::EmitMessage;
 use replicante_stream_events::Stream as EventsStream;
 
+use replicore_cluster_view::ClusterView;
+
 use crate::Error;
 use crate::ErrorKind;
 use crate::Result;
@@ -25,41 +27,34 @@ impl AgentFetcher {
         AgentFetcher { events, store }
     }
 
-    pub(crate) fn process_agent(&self, agent: Agent, span: &mut Span) -> Result<()> {
-        let old = self
-            .store
-            .agent(agent.cluster_id.clone(), agent.host.clone())
-            .get(span.context().clone());
+    pub(crate) fn process_agent(
+        &self,
+        cluster_view: &ClusterView,
+        agent: Agent,
+        span: &mut Span,
+    ) -> Result<()> {
+        let old = cluster_view.agents.get(&agent.host).cloned();
         match old {
-            Err(error) => Err(error)
-                .with_context(|_| ErrorKind::PrimaryStoreRead("agent"))
-                .map_err(Error::from),
-            Ok(None) => self.process_agent_new(agent, span),
-            Ok(Some(old)) => self.process_agent_existing(agent, old, span),
+            None => self.process_agent_new(agent, span),
+            Some(old) => self.process_agent_existing(agent, old, span),
         }
     }
 
     pub(crate) fn process_agent_info(
         &self,
         client: &dyn Client,
-        cluster_id: String,
+        cluster_view: &ClusterView,
         node: String,
         span: &mut Span,
     ) -> Result<()> {
         let info = client
             .agent_info(span.context().clone().into())
             .with_context(|_| ErrorKind::AgentDown("agent info", client.id().to_string()))?;
-        let info = AgentInfo::new(cluster_id, node, info);
-        let old = self
-            .store
-            .agent(info.cluster_id.clone(), info.host.clone())
-            .info(span.context().clone());
+        let info = AgentInfo::new(cluster_view.cluster_id.clone(), node, info);
+        let old = cluster_view.agents_info.get(&info.host).cloned();
         match old {
-            Err(error) => Err(error)
-                .with_context(|_| ErrorKind::PrimaryStoreRead("agent info"))
-                .map_err(Error::from),
-            Ok(None) => self.process_agent_info_new(info, span),
-            Ok(Some(old)) => self.process_agent_info_existing(info, old, span),
+            None => self.process_agent_info_new(info, span),
+            Some(old) => self.process_agent_info_existing(info, old, span),
         }
     }
 }

@@ -12,12 +12,13 @@ use slog::Logger;
 use replicante_agent_client::HttpClient;
 use replicante_models_core::agent::Agent;
 use replicante_models_core::agent::AgentStatus;
-use replicante_models_core::cluster::discovery::ClusterDiscovery;
 use replicante_models_core::scope::Namespace;
 use replicante_service_coordinator::NonBlockingLockWatcher;
 use replicante_store_primary::store::Store as PrimaryStore;
 use replicante_stream_events::Stream as EventsStream;
 use replicante_util_failure::failure_info;
+
+use replicore_cluster_view::ClusterView;
 
 mod actions;
 mod agent;
@@ -131,14 +132,14 @@ impl Fetcher {
     pub fn fetch(
         &self,
         ns: Namespace,
-        cluster: ClusterDiscovery,
+        cluster_view: &ClusterView,
         refresh_id: i64,
         lock: NonBlockingLockWatcher,
         span: &mut Span,
     ) -> Result<()> {
         span.log(Log::new().log("stage", "fetch"));
         let _timer = FETCHER_DURATION.start_timer();
-        self.fetch_inner(ns, cluster, refresh_id, lock, span)
+        self.fetch_inner(ns, cluster_view, refresh_id, lock, span)
             .map_err(|error| {
                 FETCHER_ERRORS_COUNT.inc();
                 error
@@ -149,28 +150,32 @@ impl Fetcher {
     fn fetch_inner(
         &self,
         ns: Namespace,
-        cluster: ClusterDiscovery,
+        cluster_view: &ClusterView,
         refresh_id: i64,
         lock: NonBlockingLockWatcher,
         span: &mut Span,
     ) -> Result<()> {
-        let cluster_id = cluster.cluster_id;
-        debug!(self.logger, "Refreshing cluster state"; "cluster_id" => &cluster_id);
-        let mut id_checker = ClusterIdentityChecker::new(cluster_id.clone(), cluster.display_name);
+        let cluster_id = &cluster_view.cluster_id;
+        debug!(self.logger, "Refreshing cluster state"; "cluster_id" => cluster_id);
+        let mut id_checker = ClusterIdentityChecker::new(
+            cluster_id.clone(),
+            cluster_view.discovery.display_name.clone(),
+        );
         self.primary_store
             .cluster(ns.ns_id.clone(), cluster_id.clone())
             .mark_stale(span.context().clone())
             .with_context(|_| ErrorKind::PrimaryStoreWrite("cluster staleness"))?;
 
-        for agent_id in cluster.nodes {
+        for agent_id in &cluster_view.discovery.nodes {
             // Exit early if lock was lost.
             if !lock.inspect() {
                 span.log(Log::new().log("abbandoned", "lock lost"));
                 warn!(
                     self.logger,
                     "Cluster fetcher lock lost, skipping futher nodes";
-                    "cluster_id" => &cluster_id,
-                    "agent_id" => &agent_id
+                    "namespace" => &ns.ns_id,
+                    "cluster_id" => cluster_id,
+                    "agent_id" => agent_id,
                 );
                 return Ok(());
             }
@@ -180,8 +185,8 @@ impl Fetcher {
             // and abort the refresh operation, otherwise update the agent status.
             let target = self.process_target(
                 &ns,
-                &cluster_id,
-                &agent_id,
+                cluster_view,
+                agent_id,
                 refresh_id,
                 &mut id_checker,
                 span,
@@ -197,7 +202,8 @@ impl Fetcher {
                         debug!(
                             self.logger,
                             "Cluster sync operation not successful";
-                            "cluster_id" => &cluster_id,
+                            "namespace" => &ns.ns_id,
+                            "cluster_id" => cluster_id,
                             "agent_id" => &agent_id,
                             failure_info(&error),
                         );
@@ -207,6 +213,7 @@ impl Fetcher {
                 Ok(()) => AgentStatus::Up,
             };
             self.agent.process_agent(
+                cluster_view,
                 Agent::new(cluster_id.to_string(), agent_id.to_string(), agent_status),
                 span,
             )?;
@@ -217,7 +224,7 @@ impl Fetcher {
     fn process_target(
         &self,
         ns: &Namespace,
-        cluster: &str,
+        cluster_view: &ClusterView,
         node: &str,
         refresh_id: i64,
         id_checker: &mut ClusterIdentityChecker,
@@ -233,11 +240,13 @@ impl Fetcher {
         .with_context(|_| ErrorKind::AgentConnect(node.to_string()))?;
 
         self.agent
-            .process_agent_info(&client, cluster.to_string(), node.to_string(), span)?;
-        self.node.process_node(&client, id_checker, span)?;
-        self.shard.process_shards(&client, cluster, node, span)?;
+            .process_agent_info(&client, cluster_view, node.to_string(), span)?;
+        self.node
+            .process_node(&client, cluster_view, id_checker, span)?;
+        self.shard
+            .process_shards(&client, cluster_view, node, span)?;
         self.actions
-            .sync(&client, cluster, node, refresh_id, span)?;
+            .sync(&client, &cluster_view.cluster_id, node, refresh_id, span)?;
 
         Ok(())
     }
