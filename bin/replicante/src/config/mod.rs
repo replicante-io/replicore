@@ -93,10 +93,6 @@ pub struct Config {
     /// Distributed tracing configuration.
     #[serde(default)]
     pub tracing: TracingConfig,
-
-    /// Settings that will move to the DB once namespaces are fully introduced.
-    #[serde(default)]
-    pub tmp_namespace_settings: TmpNsSettings,
 }
 
 impl Config {
