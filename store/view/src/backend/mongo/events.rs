@@ -14,7 +14,6 @@ use replicante_models_core::events::Event;
 
 use super::super::EventsInterface;
 use super::constants::COLLECTION_EVENTS;
-use super::constants::EVENTS_FILTER_NOT_SNAPSHOT;
 use super::document::EventDocument;
 use crate::store::events::EventsFilters;
 use crate::store::events::EventsOptions;
@@ -60,11 +59,6 @@ impl EventsInterface for Events {
         }
         if let Some(event) = filters.event {
             filter.push(Bson::from(doc! {"event": {"$eq": event}}));
-        }
-        if filters.exclude_snapshots {
-            filter.push(Bson::from(doc! {
-                "event": EVENTS_FILTER_NOT_SNAPSHOT.clone()
-            }));
         }
         if filters.exclude_system_events {
             filter.push(Bson::from(doc! {"payload.cluster_id": {"$exists": false}}));

@@ -210,9 +210,6 @@ struct AdvancedQuery {
     #[serde(default)]
     event: Option<String>,
 
-    #[serde(default = "AdvancedQuery::default_exclude_snapshots")]
-    exclude_snapshots: bool,
-
     #[serde(default = "AdvancedQuery::default_exclude_system_events")]
     exclude_system_events: bool,
 
@@ -225,7 +222,6 @@ impl Default for AdvancedQuery {
         Self {
             cluster_id: None,
             event: None,
-            exclude_snapshots: Self::default_exclude_snapshots(),
             exclude_system_events: Self::default_exclude_system_events(),
             limit: Self::default_limit(),
         }
@@ -233,9 +229,6 @@ impl Default for AdvancedQuery {
 }
 
 impl AdvancedQuery {
-    fn default_exclude_snapshots() -> bool {
-        true
-    }
     fn default_exclude_system_events() -> bool {
         false
     }
@@ -297,13 +290,13 @@ async fn responder(
             serde_json::from_str(query).with_context(|_| ErrorKind::APIRequestBodyInvalid)?
         }
     };
-    let mut filters = EventsFilters::most();
-    filters.cluster_id = query.cluster_id;
-    filters.event = query.event;
-    filters.exclude_snapshots = query.exclude_snapshots;
-    filters.exclude_system_events = query.exclude_system_events;
-    filters.start_from = Some(body.range.from);
-    filters.stop_at = Some(body.range.to);
+    let filters = EventsFilters {
+        cluster_id: query.cluster_id,
+        event: query.event,
+        exclude_system_events: query.exclude_system_events,
+        start_from: Some(body.range.from),
+        stop_at: Some(body.range.to),
+    };
     let options = EventsOptions {
         limit: Some(query.limit),
         ..EventsOptions::default()
