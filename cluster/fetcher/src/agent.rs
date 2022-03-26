@@ -11,6 +11,7 @@ use replicante_stream_events::EmitMessage;
 use replicante_stream_events::Stream as EventsStream;
 
 use replicore_cluster_view::ClusterView;
+use replicore_cluster_view::ClusterViewBuilder;
 
 use crate::Error;
 use crate::ErrorKind;
@@ -30,9 +31,14 @@ impl AgentFetcher {
     pub(crate) fn process_agent(
         &self,
         cluster_view: &ClusterView,
+        new_cluster_view: &mut ClusterViewBuilder,
         agent: Agent,
         span: &mut Span,
     ) -> Result<()> {
+        new_cluster_view
+            .agent(agent.clone())
+            .map_err(crate::error::AnyWrap::from)
+            .context(ErrorKind::ClusterViewUpdate)?;
         let old = cluster_view.agents.get(&agent.host).cloned();
         match old {
             None => self.process_agent_new(agent, span),
@@ -44,6 +50,7 @@ impl AgentFetcher {
         &self,
         client: &dyn Client,
         cluster_view: &ClusterView,
+        new_cluster_view: &mut ClusterViewBuilder,
         node: String,
         span: &mut Span,
     ) -> Result<()> {
@@ -51,6 +58,10 @@ impl AgentFetcher {
             .agent_info(span.context().clone().into())
             .with_context(|_| ErrorKind::AgentDown("agent info", client.id().to_string()))?;
         let info = AgentInfo::new(cluster_view.cluster_id.clone(), node, info);
+        new_cluster_view
+            .agent_info(info.clone())
+            .map_err(crate::error::AnyWrap::from)
+            .context(ErrorKind::ClusterViewUpdate)?;
         let old = cluster_view.agents_info.get(&info.host).cloned();
         match old {
             None => self.process_agent_info_new(info, span),

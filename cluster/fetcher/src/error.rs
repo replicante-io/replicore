@@ -7,6 +7,41 @@ use failure::Fail;
 use replicante_models_core::agent::AgentStatus;
 use replicante_util_failure::format_fail;
 
+/// Dumb wrapper to carry `anyhow::Error`s as `failure::Fail`s.
+pub struct AnyWrap(anyhow::Error);
+
+impl From<anyhow::Error> for AnyWrap {
+    fn from(error: anyhow::Error) -> AnyWrap {
+        AnyWrap(error)
+    }
+}
+
+impl Fail for AnyWrap {
+    fn cause(&self) -> Option<&dyn Fail> {
+        None
+    }
+
+    fn backtrace(&self) -> Option<&Backtrace> {
+        None
+    }
+
+    fn name(&self) -> Option<&str> {
+        Some("AnyWrap")
+    }
+}
+
+impl fmt::Display for AnyWrap {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        fmt::Display::fmt(&self.0, f)
+    }
+}
+
+impl fmt::Debug for AnyWrap {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        fmt::Debug::fmt(&self.0, f)
+    }
+}
+
 /// Error information returned by functions in case of errors.
 #[derive(Debug)]
 pub struct Error(Context<ErrorKind>);
@@ -108,6 +143,9 @@ pub enum ErrorKind {
     )]
     ClusterIdDoesNotMatch(String, String, String),
 
+    #[fail(display = "error updating the cluster view with info from agents")]
+    ClusterViewUpdate,
+
     #[fail(display = "error emitting {} event", _0)]
     EventEmit(&'static str),
 
@@ -132,6 +170,7 @@ impl ErrorKind {
             ErrorKind::DatastoreDown(_, _) => "DatastoreDown",
             ErrorKind::ClusterDisplayNameDoesNotMatch(_, _, _) => "ClusterDisplayNameDoesNotMatch",
             ErrorKind::ClusterIdDoesNotMatch(_, _, _) => "ClusterIdDoesNotMatch",
+            ErrorKind::ClusterViewUpdate => "ClusterViewUpdate",
             ErrorKind::EventEmit(_) => "EventEmit",
             ErrorKind::PrimaryStoreRead(_) => "PrimaryStoreRead",
             ErrorKind::PrimaryStoreWrite(_) => "PrimaryStoreWrite",

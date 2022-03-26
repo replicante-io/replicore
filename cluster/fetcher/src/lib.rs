@@ -19,6 +19,7 @@ use replicante_stream_events::Stream as EventsStream;
 use replicante_util_failure::failure_info;
 
 use replicore_cluster_view::ClusterView;
+use replicore_cluster_view::ClusterViewBuilder;
 
 mod actions;
 mod agent;
@@ -133,13 +134,14 @@ impl Fetcher {
         &self,
         ns: Namespace,
         cluster_view: &ClusterView,
+        new_cluster_view: &mut ClusterViewBuilder,
         refresh_id: i64,
         lock: NonBlockingLockWatcher,
         span: &mut Span,
     ) -> Result<()> {
         span.log(Log::new().log("stage", "fetch"));
         let _timer = FETCHER_DURATION.start_timer();
-        self.fetch_inner(ns, cluster_view, refresh_id, lock, span)
+        self.fetch_inner(ns, cluster_view, new_cluster_view, refresh_id, lock, span)
             .map_err(|error| {
                 FETCHER_ERRORS_COUNT.inc();
                 error
@@ -151,6 +153,7 @@ impl Fetcher {
         &self,
         ns: Namespace,
         cluster_view: &ClusterView,
+        new_cluster_view: &mut ClusterViewBuilder,
         refresh_id: i64,
         lock: NonBlockingLockWatcher,
         span: &mut Span,
@@ -186,6 +189,7 @@ impl Fetcher {
             let target = self.process_target(
                 &ns,
                 cluster_view,
+                new_cluster_view,
                 agent_id,
                 refresh_id,
                 &mut id_checker,
@@ -214,6 +218,7 @@ impl Fetcher {
             };
             self.agent.process_agent(
                 cluster_view,
+                new_cluster_view,
                 Agent::new(cluster_id.to_string(), agent_id.to_string(), agent_status),
                 span,
             )?;
@@ -225,6 +230,7 @@ impl Fetcher {
         &self,
         ns: &Namespace,
         cluster_view: &ClusterView,
+        new_cluster_view: &mut ClusterViewBuilder,
         node: &str,
         refresh_id: i64,
         id_checker: &mut ClusterIdentityChecker,
@@ -240,11 +246,11 @@ impl Fetcher {
         .with_context(|_| ErrorKind::AgentConnect(node.to_string()))?;
 
         self.agent
-            .process_agent_info(&client, cluster_view, node.to_string(), span)?;
+            .process_agent_info(&client, cluster_view, new_cluster_view, node.to_string(), span)?;
         self.node
-            .process_node(&client, cluster_view, id_checker, span)?;
+            .process_node(&client, cluster_view, new_cluster_view, id_checker, span)?;
         self.shard
-            .process_shards(&client, cluster_view, node, span)?;
+            .process_shards(&client, cluster_view, new_cluster_view, node, span)?;
         self.actions
             .sync(&client, &cluster_view.cluster_id, node, refresh_id, span)?;
 

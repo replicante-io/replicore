@@ -2749,6 +2749,7 @@ dependencies = [
  "replicante_service_coordinator",
  "replicante_store_primary",
  "replicante_util_tracing",
+ "replicore_cluster_view",
  "slog",
 ]
 
@@ -2772,6 +2773,7 @@ dependencies = [
 name = "replicante_cluster_fetcher"
 version = "0.1.2"
 dependencies = [
+ "anyhow",
  "chrono",
  "failure",
  "failure_derive",
@@ -3187,6 +3189,7 @@ dependencies = [
 name = "replicore_task_orchestrator"
 version = "0.1.0"
 dependencies = [
+ "anyhow",
  "chrono",
  "failure",
  "lazy_static",
@@ -3201,6 +3204,7 @@ dependencies = [
  "replicante_stream_events",
  "replicante_util_failure",
  "replicante_util_tracing",
+ "replicore_cluster_view",
  "replicore_models_tasks",
  "slog",
 ]

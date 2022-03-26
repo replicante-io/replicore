@@ -23,3 +23,4 @@ replicante_models_core = { path = "../../models/core" }
 replicante_service_coordinator = { path = "../../service/coordinator" }
 replicante_store_primary = { path = "../../store/primary" }
 replicante_util_tracing = { path = "../../common/util/tracing" }
+replicore_cluster_view = { path = "../../core/cluster/view" }

@@ -9,6 +9,7 @@ use replicante_stream_events::EmitMessage;
 use replicante_stream_events::Stream as EventsStream;
 
 use replicore_cluster_view::ClusterView;
+use replicore_cluster_view::ClusterViewBuilder;
 
 use super::ClusterIdentityChecker;
 use super::Error;
@@ -30,6 +31,7 @@ impl NodeFetcher {
         &self,
         client: &dyn Client,
         cluster_view: &ClusterView,
+        new_cluster_view: &mut ClusterViewBuilder,
         id_checker: &mut ClusterIdentityChecker,
         span: &mut Span,
     ) -> Result<()> {
@@ -43,6 +45,10 @@ impl NodeFetcher {
         if let Some(display_name) = node.cluster_display_name.as_ref() {
             id_checker.check_or_set_display_name(display_name, &node.node_id)?;
         }
+        new_cluster_view
+            .node(node.clone())
+            .map_err(crate::error::AnyWrap::from)
+            .context(ErrorKind::ClusterViewUpdate)?;
         let old = cluster_view.node(&node.node_id).cloned();
         match old {
             None => self.process_node_new(node, span),

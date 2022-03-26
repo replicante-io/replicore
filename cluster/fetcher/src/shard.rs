@@ -9,6 +9,7 @@ use replicante_stream_events::EmitMessage;
 use replicante_stream_events::Stream as EventsStream;
 
 use replicore_cluster_view::ClusterView;
+use replicore_cluster_view::ClusterViewBuilder;
 
 use super::Error;
 use super::ErrorKind;
@@ -29,6 +30,7 @@ impl ShardFetcher {
         &self,
         client: &dyn Client,
         cluster_view: &ClusterView,
+        new_cluster_view: &mut ClusterViewBuilder,
         node: &str,
         span: &mut Span,
     ) -> Result<()> {
@@ -37,7 +39,7 @@ impl ShardFetcher {
             .with_context(|_| ErrorKind::AgentDown("shards", client.id().to_string()))?;
         for shard in shards.shards {
             let shard = Shard::new(cluster_view.cluster_id.clone(), node.to_string(), shard);
-            self.process_shard(cluster_view, shard, span)?;
+            self.process_shard(cluster_view, new_cluster_view, shard, span)?;
         }
         Ok(())
     }
@@ -47,9 +49,14 @@ impl ShardFetcher {
     fn process_shard(
         &self,
         cluster_view: &ClusterView,
+        new_cluster_view: &mut ClusterViewBuilder,
         shard: Shard,
         span: &mut Span,
     ) -> Result<()> {
+        new_cluster_view
+            .shard(shard.clone())
+            .map_err(crate::error::AnyWrap::from)
+            .context(ErrorKind::ClusterViewUpdate)?;
         let old = cluster_view
             .shard_on_node(&shard.node_id, &shard.shard_id)
             .cloned();
