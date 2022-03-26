@@ -14,7 +14,6 @@ mod cluster_meta;
 mod error;
 mod metrics;
 
-use self::cluster_meta::ClusterMetaAggregator;
 use self::metrics::AGGREGATE_DURATION;
 use self::metrics::AGGREGATE_ERRORS_COUNT;
 
@@ -46,10 +45,11 @@ impl Aggregator {
     ) -> Result<()> {
         span.log(Log::new().log("stage", "aggregate"));
         let _timer = AGGREGATE_DURATION.start_timer();
-        self.inner_process(cluster_view, lock, span).map_err(|error| {
-            AGGREGATE_ERRORS_COUNT.inc();
-            fail_span(error, span)
-        })
+        self.inner_process(cluster_view, lock, span)
+            .map_err(|error| {
+                AGGREGATE_ERRORS_COUNT.inc();
+                fail_span(error, span)
+            })
     }
 }
 
@@ -64,10 +64,8 @@ impl Aggregator {
         let cluster_id = cluster_view.discovery.cluster_id.clone();
         debug!(self.logger, "Aggregating cluster"; "cluster_id" => &cluster_id);
 
-        // (Re-)Aggregate cluster meta.
-        let mut meta = ClusterMetaAggregator::new(&cluster_view.discovery);
-        meta.aggregate(self.store.clone(), span)?;
-        let meta = meta.generate();
+        // Aggregate cluster meta.
+        let meta = crate::cluster_meta::aggregate(&cluster_view)?;
         if !lock.inspect() {
             return Err(ErrorKind::ClusterLockLost(cluster_id).into());
         }

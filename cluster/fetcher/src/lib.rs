@@ -226,6 +226,8 @@ impl Fetcher {
         Ok(())
     }
 
+    // This function is used only once in this file and hopefilly will loose some arguments.
+    #[allow(clippy::too_many_arguments)]
     fn process_target(
         &self,
         ns: &Namespace,
@@ -245,8 +247,13 @@ impl Fetcher {
         )
         .with_context(|_| ErrorKind::AgentConnect(node.to_string()))?;
 
-        self.agent
-            .process_agent_info(&client, cluster_view, new_cluster_view, node.to_string(), span)?;
+        self.agent.process_agent_info(
+            &client,
+            cluster_view,
+            new_cluster_view,
+            node.to_string(),
+            span,
+        )?;
         self.node
             .process_node(&client, cluster_view, new_cluster_view, id_checker, span)?;
         self.shard

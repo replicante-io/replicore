@@ -40,6 +40,7 @@ pub struct ClusterView {
     pub shards: Vec<Rc<Shard>>,
 
     // "Indexes" to access records in different ways.
+    shards_by_id: HashMap<String, BTreeMap<String, Rc<Shard>>>,
     shards_by_node: HashMap<String, BTreeMap<String, Rc<Shard>>>,
 }
 
@@ -72,6 +73,7 @@ impl ClusterView {
             agents_info: HashMap::new(),
             nodes: HashMap::new(),
             shards: Vec::new(),
+            shards_by_id: HashMap::new(),
             shards_by_node: HashMap::new(),
         };
         Ok(ClusterViewBuilder {
@@ -94,6 +96,11 @@ impl ClusterView {
             .get(node)
             .and_then(|node| node.get(shard).map(Deref::deref))
     }
+
+    /// Count the number of unique shards by ID.
+    pub fn unique_shards_count(&self) -> usize {
+        self.shards_by_id.len()
+    }
 }
 
 impl serde::Serialize for ClusterView {
@@ -107,7 +114,7 @@ impl serde::Serialize for ClusterView {
     where
         S: serde::Serializer,
     {
-        let mut state = serializer.serialize_struct("ClusterView", 9)?;
+        let mut state = serializer.serialize_struct("ClusterView", 10)?;
         state.serialize_field("cluster_id", &self.cluster_id)?;
         state.serialize_field("namespace", &self.namespace)?;
         state.serialize_field("settings", &self.settings)?;
@@ -127,18 +134,30 @@ impl serde::Serialize for ClusterView {
         state.serialize_field("shards", &shards)?;
 
         // Translate indexed maps to serialise IDs instead of full objects.
+        let shards_by_id: BTreeMap<&String, BTreeMap<&String, refs::ShardRef>> = self
+            .shards_by_id
+            .iter()
+            .map(|(shard_id, nodes)| {
+                let mapped_nodes = nodes
+                    .iter()
+                    .map(|(node_id, info)| (node_id, info.as_ref().into()))
+                    .collect();
+                (shard_id, mapped_nodes)
+            })
+            .collect();
         let shards_by_node: BTreeMap<&String, BTreeMap<&String, refs::ShardRef>> = self
             .shards_by_node
             .iter()
-            .map(|(shard, nodes)| {
-                let mapped_nodes = nodes
+            .map(|(node_id, shards)| {
+                let mapped_shards = shards
                     .iter()
-                    .map(|(node, info)| (node, info.as_ref().into()))
+                    .map(|(shard_id, info)| (shard_id, info.as_ref().into()))
                     .collect();
-                (shard, mapped_nodes)
+                (node_id, mapped_shards)
             })
             .collect();
 
+        state.serialize_field("shards_by_id", &shards_by_id)?;
         state.serialize_field("shards_by_node", &shards_by_node)?;
         state.end()
     }
@@ -262,6 +281,12 @@ impl ClusterViewBuilder {
         let shard = Rc::new(shard);
         self.seen_shards.insert(key);
         self.view.shards.push(Rc::clone(&shard));
+
+        self.view
+            .shards_by_id
+            .entry(shard.shard_id.clone())
+            .or_insert_with(BTreeMap::new)
+            .insert(shard.node_id.clone(), Rc::clone(&shard));
         self.view
             .shards_by_node
             .entry(shard.node_id.clone())

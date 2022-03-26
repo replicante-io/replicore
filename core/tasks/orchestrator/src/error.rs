@@ -87,7 +87,10 @@ pub enum ErrorKind {
     #[fail(display = "unable to aggregate cluster information for {}.{}", _0, _1)]
     Aggregate(String, String),
 
-    #[fail(display = "unable to build cluster view from agent reponses for {}.{}", _0, _1)]
+    #[fail(
+        display = "unable to build cluster view from agent reponses for {}.{}",
+        _0, _1
+    )]
     BuildClusterViewFromAgents(String, String),
 
     #[fail(display = "unable to build cluster view from DB for {}.{}", _0, _1)]

@@ -116,18 +116,16 @@ impl Logic {
         // discovery stored in the DB regardless of the "freshness" of the other records.
         let cluster_view_before = self
             .store
-            .cluster_view(
-                namespace_id.clone(),
-                cluster_id.clone(),
-                span_context.clone(),
-            )
-            .with_context(|_| ErrorKind::build_cluster_view_from_store(&namespace_id, &cluster_id))?;
-        let mut cluster_view_after = ClusterView::builder(
-            settings,
-            cluster_view_before.discovery.clone(),
-        )
-        .map_err(crate::error::AnyWrap::from)
-        .with_context(|_| ErrorKind::build_cluster_view_from_agents(&namespace_id, &cluster_id))?;
+            .cluster_view(namespace_id.clone(), cluster_id.clone(), span_context)
+            .with_context(|_| {
+                ErrorKind::build_cluster_view_from_store(&namespace_id, &cluster_id)
+            })?;
+        let mut cluster_view_after =
+            ClusterView::builder(settings, cluster_view_before.discovery.clone())
+                .map_err(crate::error::AnyWrap::from)
+                .with_context(|_| {
+                    ErrorKind::build_cluster_view_from_agents(&namespace_id, &cluster_id)
+                })?;
 
         // Perform the sync process.
         info!(
