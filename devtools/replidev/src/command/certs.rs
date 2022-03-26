@@ -194,6 +194,7 @@ pub async fn run(args: Opt, conf: Conf) -> Result<i32> {
 
     // Update keys path permissions to allow non-root pods to access them.
     println!("--> Updating file system permissions for dev access");
+    update_fs_permissions(pki_path, 0o755)?;
     update_fs_permissions(format!("{}/bundles", pki_path), 0o755)?;
     update_fs_permissions(format!("{}/issued", pki_path), 0o755)?;
     update_fs_permissions(format!("{}/private", pki_path), 0o755)?;

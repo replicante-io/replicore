@@ -60,6 +60,10 @@ pub struct Conf {
     #[serde(default = "Conf::default_openssl")]
     pub openssl: String,
 
+    /// Set the adress returned for agents in the play server discovery endpoint.
+    #[serde(default = "Conf::default_play_server_agents_address")]
+    pub play_server_agents_address: String,
+
     /// Bind address and port for the playground API server.
     #[serde(default = "Conf::default_play_server_bind")]
     pub play_server_bind: String,
@@ -71,7 +75,7 @@ pub struct Conf {
     #[serde(default = "Conf::default_podman")]
     pub podman: String,
 
-    /// IP address the `podman-host` alias attached to all pods points to.
+    /// IP address the host server running podman.
     #[serde(default)]
     pub podman_host_ip: Option<String>,
 
@@ -101,10 +105,10 @@ impl Conf {
         Ok(conf)
     }
 
-    /// IP address the `podman-host` alias attached to all pods points to.
+    /// IP address the host server running podman.
     ///
     /// If an IP address is not provided in the configuration an attempt to
-    /// auto-detect a non-local IP address is made.
+    /// auto-detect a non-local IPv4 address is made.
     pub fn podman_host_ip(&self) -> crate::error::Result<String> {
         // Use configure IP if possible.
         if let Some(ip) = &self.podman_host_ip {
@@ -142,6 +146,14 @@ impl Conf {
         Err(error.into())
         //anyhow::bail!("Could not find a non-loopback IP address");
     }
+
+    /// Lookup the play_server_agents_address from the environmnet of the configuration.
+    pub fn resolve_play_server_agents_address(&self) -> String {
+        match std::env::var("REPLIDEV_PLAY_SERVER_AGENTS_ADDRESS") {
+            Ok(address) => address,
+            Err(_) => self.play_server_agents_address.clone(),
+        }
+    }
 }
 
 impl Conf {
@@ -151,6 +163,10 @@ impl Conf {
 
     fn default_openssl() -> String {
         "openssl".into()
+    }
+
+    fn default_play_server_agents_address() -> String {
+        "host.containers.internal".into()
     }
 
     fn default_play_server_bind() -> String {
