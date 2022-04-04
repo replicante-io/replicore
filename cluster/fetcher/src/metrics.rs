@@ -7,14 +7,6 @@ use slog::debug;
 use slog::Logger;
 
 lazy_static! {
-    pub static ref FETCHER_ACTIONS_CHUNKS: Histogram = Histogram::with_opts(
-        HistogramOpts::new(
-            "replicore_fetcher_actions_chunks",
-            "Distribution of how many action ID chunks are needed to sync a node",
-        )
-        .buckets(vec![1.0, 2.0, 4.0, 8.0, 10.0]),
-    )
-    .expect("Failed to create FETCHER_ACTIONS_CHUNKS histogram");
     pub static ref FETCHER_ACTIONS_SYNCED: Histogram = Histogram::with_opts(
         HistogramOpts::new(
             "replicore_fetcher_actions_synced",
@@ -57,9 +49,6 @@ lazy_static! {
 ///
 /// Metrics that fail to register are logged and ignored.
 pub fn register_metrics(logger: &Logger, registry: &Registry) {
-    if let Err(error) = registry.register(Box::new(FETCHER_ACTIONS_CHUNKS.clone())) {
-        debug!(logger, "Failed to register FETCHER_ACTIONS_CHUNKS"; "error" => ?error);
-    }
     if let Err(error) = registry.register(Box::new(FETCHER_ACTIONS_SYNCED.clone())) {
         debug!(logger, "Failed to register FETCHER_ACTIONS_SYNCED"; "error" => ?error);
     }

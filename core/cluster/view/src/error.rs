@@ -1,4 +1,5 @@
 use thiserror::Error;
+use uuid::Uuid;
 
 /// The attempt to build a ClusterView resulted in a corrupt or invalid view.
 #[derive(Error, Debug)]
@@ -6,6 +7,10 @@ pub enum ClusterViewCorrupt {
     #[error("cannot update view of cluster ID {0}.{1} with a record from cluster ID {0}.{2}")]
     // namespace, expect, actual
     ClusterIdClash(String, String, String),
+
+    #[error("view of cluster {0}.{1} already contains an action with ID {3} on node with ID {2}")]
+    // namespace, cluster_id, node_id, action_id.
+    DuplicateAction(String, String, String, Uuid),
 
     #[error("view of cluster {0}.{1} already contains an agent with ID {2}")]
     // namespace, cluster_id, agent_id.
@@ -44,6 +49,24 @@ impl ClusterViewCorrupt {
         let expected_cluster = expected_cluster.into();
         let found_cluster = found_cluster.into();
         ClusterViewCorrupt::ClusterIdClash(namespace, expected_cluster, found_cluster)
+    }
+
+    /// Adding the same action twice.
+    pub fn duplicate_action<S1, S2, S3>(
+        namespace: S1,
+        cluster_id: S2,
+        node_id: S3,
+        action_id: Uuid,
+    ) -> Self
+    where
+        S1: Into<String>,
+        S2: Into<String>,
+        S3: Into<String>,
+    {
+        let namespace = namespace.into();
+        let cluster_id = cluster_id.into();
+        let node_id = node_id.into();
+        ClusterViewCorrupt::DuplicateAction(namespace, cluster_id, node_id, action_id)
     }
 
     /// Adding the same agent twice.

@@ -1,9 +1,9 @@
 use std::collections::HashSet;
 
-use chrono::Utc;
 use failure::Fail;
 use failure::ResultExt;
 use opentracingrust::Span;
+use slog::debug;
 use slog::info;
 use slog::Logger;
 use uuid::Uuid;
@@ -12,15 +12,15 @@ use replicante_agent_client::Client;
 use replicante_models_agent::actions::api::ActionScheduleRequest;
 use replicante_models_core::actions::Action;
 use replicante_models_core::actions::ActionState;
+use replicante_models_core::actions::ActionSummary;
 use replicante_models_core::events::Event;
-use replicante_store_primary::store::actions::ActionSyncState;
-use replicante_store_primary::store::actions::MAX_ACTIONS_STATE_FOR_SYNC;
-use replicante_store_primary::store::Store as PrimaryStore;
+use replicante_store_primary::store::Store;
 use replicante_stream_events::EmitMessage;
 use replicante_stream_events::Stream as EventsStream;
 use replicante_util_failure::SerializableFail;
+use replicore_cluster_view::ClusterView;
+use replicore_cluster_view::ClusterViewBuilder;
 
-use crate::metrics::FETCHER_ACTIONS_CHUNKS;
 use crate::metrics::FETCHER_ACTIONS_SYNCED;
 use crate::metrics::FETCHER_ACTION_SCHEDULE_DUPLICATE;
 use crate::metrics::FETCHER_ACTION_SCHEDULE_ERROR;
@@ -34,128 +34,244 @@ const MAX_SCHEDULE_ATTEMPTS: i32 = 10;
 pub(crate) struct ActionsFetcher {
     events: EventsStream,
     logger: Logger,
-    primary_store: PrimaryStore,
+    store: Store,
 }
 
 impl ActionsFetcher {
-    pub fn new(
-        events: EventsStream,
-        primary_store: PrimaryStore,
-        logger: Logger,
-    ) -> ActionsFetcher {
+    pub fn new(events: EventsStream, store: Store, logger: Logger) -> ActionsFetcher {
         ActionsFetcher {
             events,
             logger,
-            primary_store,
+            store,
         }
     }
 
     /// Sync the actions for the given node.
+    ///
+    /// Actions sync operates in the following order:
+    ///
+    /// 1. Fetch all actions from the agent.
+    /// 2. For each action from the agent:
+    ///    - If ID in cluster view => get action record from the DB and update it.
+    ///    - If ID not in cluster view => add new action record to the DB.
+    /// 3. For each action in the cluster view but not returned by agent:
+    ///    - If action is pending schedule => schedule action with the agent.
+    ///    - If action is running => update the action as lost.
     pub fn sync(
         &self,
         client: &dyn Client,
-        cluster_id: &str,
+        cluster_view: &ClusterView,
+        new_cluster_view: &mut ClusterViewBuilder,
         agent_id: &str,
-        refresh_id: i64,
         span: &mut Span,
     ) -> Result<()> {
-        let remote_ids = self.remote_ids(client, agent_id, span)?;
-        let sync_ids = self.check_ids_to_sync(cluster_id, agent_id, remote_ids, span)?;
-        let sync_size = sync_ids.len();
-        for action_info in sync_ids {
-            self.sync_action(client, cluster_id, agent_id, action_info, refresh_id, span)?;
-        }
-        FETCHER_ACTIONS_SYNCED.observe(sync_size as f64);
-        self.mark_lost_actions(cluster_id, agent_id, refresh_id, span)?;
-        self.schedule_pending(client, cluster_id, agent_id, span)
-    }
+        // Step 1: fetch agent info.
+        let remote_ids = self.remote_ids(client, &cluster_view.cluster_id, agent_id, span)?;
 
-    /// Check the given remote IDs against the primary store and return a list of IDs to sync.
-    fn check_ids_to_sync(
-        &self,
-        cluster_id: &str,
-        node_id: &str,
-        remote_ids: Vec<Uuid>,
-        span: &mut Span,
-    ) -> Result<Vec<(Uuid, ActionSyncState)>> {
-        let mut results = Vec::new();
-        let chunks = remote_ids.chunks(MAX_ACTIONS_STATE_FOR_SYNC);
-        let chunks_count = chunks.len();
-        for ids in chunks {
-            let mut states = self
-                .primary_store
-                .actions(cluster_id.to_string())
-                .state_for_sync(node_id.to_string(), ids, span.context().clone())
-                .with_context(|_| ErrorKind::PrimaryStoreRead("actions state for sync"))?;
-            for id in ids {
-                let state = states
-                    .remove(id)
-                    .expect("state_for_sync did not return all IDs");
-                match state {
-                    // Once we find the first `Finished` action we stop checking.
-                    // This works because of required ordering of actions.
-                    // See bin/replicante/src/tasks/cluster_refresh/mod.rs for details on the sync process.
-                    ActionSyncState::Finished => return Ok(results),
-                    state => results.push((*id, state)),
-                }
+        // Step 2: sync agent with core.
+        let mut synced_actions = 0.0;
+        for action_id in &remote_ids {
+            self.sync_agent_action(
+                client,
+                cluster_view,
+                new_cluster_view,
+                agent_id,
+                *action_id,
+                span,
+            )
+            .map_err(|error| {
+                FETCHER_ACTIONS_SYNCED.observe(synced_actions);
+                error
+            })?;
+            synced_actions += 1.0;
+        }
+        FETCHER_ACTIONS_SYNCED.observe(synced_actions);
+
+        // Step 3: sync core with agent.
+        let actions = match cluster_view.unfinished_actions_on_node(agent_id) {
+            Some(actions) => actions,
+            None => {
+                debug!(
+                    self.logger,
+                    "No unfinished actions for node to sync";
+                    "namesapces" => &cluster_view.namespace,
+                    "cluster_id" => &cluster_view.cluster_id,
+                    "node_id" => agent_id,
+                );
+                return Ok(());
             }
+        };
+        for action_summary in actions {
+            // Skip actions processed while looking at agent actions.
+            if remote_ids.contains(&action_summary.action_id) {
+                continue;
+            }
+            self.sync_core_action(
+                client,
+                cluster_view,
+                new_cluster_view,
+                agent_id,
+                action_summary,
+                span,
+            )?;
         }
-        FETCHER_ACTIONS_CHUNKS.observe(chunks_count as f64);
-        Ok(results)
+        Ok(())
     }
 
-    /// Mark unfinished actions on the node that were not refreshed as lost.
-    fn mark_lost_actions(
+    /// Update an action in the primary store so we can stop thinking of it.
+    fn action_lost(
         &self,
-        cluster_id: &str,
+        cluster_view: &ClusterView,
         node_id: &str,
-        refresh_id: i64,
+        action_summary: &ActionSummary,
         span: &mut Span,
     ) -> Result<()> {
-        // Emit acions for each lost action.
-        let finished_ts = Utc::now();
-        let lost = self
-            .primary_store
-            .actions(cluster_id.to_string())
-            .iter_lost(
-                node_id.to_string(),
-                refresh_id,
-                finished_ts,
-                span.context().clone(),
-            )
-            .with_context(|_| ErrorKind::PrimaryStoreRead("iter lost actions"))?;
-        for action in lost {
-            let mut action =
-                action.with_context(|_| ErrorKind::PrimaryStoreRead("iter lost actions"))?;
-            action.finished_ts = Some(finished_ts);
-            action.state = ActionState::Lost;
-            let event = Event::builder().action().lost(action);
-            let code = event.code();
-            let stream_key = event.stream_key();
-            let event = EmitMessage::with(stream_key, event)
-                .with_context(|_| ErrorKind::EventEmit(code))?
-                .trace(span.context().clone());
-            self.events
-                .emit(event)
-                .with_context(|_| ErrorKind::EventEmit(code))?;
-        }
+        // Get the action to emit the event correctly.
+        let span_context = span.context();
+        let action = self
+            .store
+            .action(cluster_view.cluster_id.clone(), action_summary.action_id)
+            .get(span_context.clone())
+            .with_context(|_| ErrorKind::PrimaryStoreRead("action"))?;
+        let mut action = match action {
+            // Can't lose an action we don't know about.
+            None => return Ok(()),
+            Some(action) => action,
+        };
+        action.finish(ActionState::Lost);
 
-        // Update these actions to be lost once events have been sent.
-        self.primary_store
-            .actions(cluster_id.to_string())
-            .mark_lost(
-                node_id.to_string(),
-                refresh_id,
-                finished_ts,
-                span.context().clone(),
-            )
-            .with_context(|_| ErrorKind::PrimaryStoreWrite("mark actions as lost"))?;
-        // TODO: count lost actions
+        // Emit action lost event.
+        let event = Event::builder().action().lost(action.clone());
+        let code = event.code();
+        let stream_key = event.stream_key();
+        let event = EmitMessage::with(stream_key, event)
+            .with_context(|_| ErrorKind::EventEmit(code))?
+            .trace(span_context.clone());
+        self.events
+            .emit(event)
+            .with_context(|_| ErrorKind::EventEmit(code))?;
+
+        // Persist lost action.
+        self.store
+            .persist()
+            .action(action, span_context.clone())
+            .with_context(|_| ErrorKind::PrimaryStoreWrite("action"))?;
+        debug!(
+            self.logger,
+            "Found lost action";
+            "namesapces" => &cluster_view.namespace,
+            "cluster_id" => &cluster_view.cluster_id,
+            "node_id" => node_id,
+            "action_id" => action_summary.action_id.to_string(),
+        );
+        Ok(())
+    }
+
+    /// Schedule a pending action with an agent.
+    ///
+    /// On success the state of the action is not updated so the next sync can do it.
+    /// This allows the system to auto-retry schedule attempts that appear successfull but are not.
+    fn action_schedule(
+        &self,
+        client: &dyn Client,
+        cluster_view: &ClusterView,
+        node_id: &str,
+        action_summary: &ActionSummary,
+        span: &mut Span,
+    ) -> Result<()> {
+        // Get the action to schedule.
+        let span_context = span.context();
+        let action = self
+            .store
+            .action(cluster_view.cluster_id.clone(), action_summary.action_id)
+            .get(span_context.clone())
+            .with_context(|_| ErrorKind::PrimaryStoreRead("action"))?
+            .ok_or_else(|| {
+                ErrorKind::ExpectedActionNotFound(
+                    cluster_view.namespace.clone(),
+                    cluster_view.cluster_id.clone(),
+                    action_summary.action_id,
+                )
+            })?;
+
+        // Schedule the action with the agent.
+        let request = ActionScheduleRequest {
+            action_id: Some(action.action_id),
+            args: action.args.clone(),
+            created_ts: Some(action.created_ts),
+            requester: Some(action.requester.clone()),
+        };
+        let result = client.schedule_action(
+            &action.kind,
+            &action.headers,
+            request,
+            Some(span.context().clone()),
+        );
+        FETCHER_ACTION_SCHEDULE_TOTAL.inc();
+
+        // Handle scheduling error to re-try later.
+        match result {
+            Err(error) if !error.kind().is_duplicate_action() => {
+                // After a while give up on trying to schedule actions.
+                let mut action = action;
+                let payload = SerializableFail::from(&error);
+                let payload = serde_json::to_value(payload).expect("errors must always serialise");
+                action.schedule_attempt += 1;
+                action.state_payload = Some(payload);
+                // TODO: make MAX_SCHEDULE_ATTEMPTS a namespace configuration once namesapces exist.
+                if action.schedule_attempt > MAX_SCHEDULE_ATTEMPTS {
+                    action.finish(ActionState::Failed);
+                }
+                self.store
+                    .persist()
+                    .action(action, span.context().clone())
+                    .with_context(|_| ErrorKind::PrimaryStoreWrite("action"))?;
+                FETCHER_ACTION_SCHEDULE_ERROR.inc();
+                let error =
+                    error.context(ErrorKind::AgentDown("action request", node_id.to_string()));
+                return Err(error.into());
+            }
+            Err(error) if error.kind().is_duplicate_action() => {
+                info!(
+                    self.logger,
+                    "Ignored duplicate action scheduling attempt";
+                    "namesapce" => &cluster_view.namespace,
+                    "cluster_id" => &cluster_view.cluster_id,
+                    "node_id" => node_id,
+                    "action_id" => action.action_id.to_string(),
+                );
+                FETCHER_ACTION_SCHEDULE_DUPLICATE.inc();
+            }
+            _ => (),
+        };
+
+        // On scheduling success reset attempt counter, if needed.
+        if action.schedule_attempt != 0 {
+            let mut action = action;
+            action.schedule_attempt = 0;
+            action.state_payload = None;
+            self.store
+                .persist()
+                .action(action, span_context.clone())
+                .with_context(|_| ErrorKind::PrimaryStoreWrite("action"))?;
+        }
         Ok(())
     }
 
     /// Fetch all action IDs currently available on the agent.
-    fn remote_ids(&self, client: &dyn Client, node_id: &str, span: &mut Span) -> Result<Vec<Uuid>> {
+    fn remote_ids(
+        &self,
+        client: &dyn Client,
+        cluster_id: &str,
+        node_id: &str,
+        span: &mut Span,
+    ) -> Result<Vec<Uuid>> {
+        debug!(
+            self.logger,
+            "Retriving action IDs from agent";
+            "cluster_id" => cluster_id,
+            "node_id" => node_id,
+        );
         let mut duplicate_ids = HashSet::new();
         let mut remote_ids = Vec::new();
         let queue = client
@@ -175,125 +291,42 @@ impl ActionsFetcher {
         Ok(remote_ids)
     }
 
-    pub fn schedule_pending(
+    /// Sync a single action from an agent to core.
+    fn sync_agent_action(
         &self,
         client: &dyn Client,
-        cluster_id: &str,
-        agent_id: &str,
-        span: &mut Span,
-    ) -> Result<()> {
-        let actions = self
-            .primary_store
-            .actions(cluster_id.to_string())
-            .pending_schedule(agent_id.to_string(), span.context().clone())
-            .with_context(|_| ErrorKind::PrimaryStoreRead("pending actions"))?;
-        for action in actions {
-            let mut action = action.with_context(|_| ErrorKind::PrimaryStoreRead("action"))?;
-            let action_id = action.action_id.to_string();
-            let request = ActionScheduleRequest {
-                action_id: Some(action.action_id),
-                args: action.args.clone(),
-                created_ts: Some(action.created_ts),
-                requester: Some(action.requester.clone()),
-            };
-            let result = client.schedule_action(
-                &action.kind,
-                &action.headers,
-                request,
-                Some(span.context().clone()),
-            );
-            FETCHER_ACTION_SCHEDULE_TOTAL.inc();
-            match result {
-                Ok(()) => (),
-                Err(error) => match error.kind() {
-                    replicante_agent_client::ErrorKind::DuplicateAction => {
-                        info!(
-                            self.logger,
-                            "Ignored duplicate action scheduling attempt";
-                            "cluster_id" => cluster_id,
-                            "agent_id" => agent_id,
-                            "action_id" => action_id,
-                        );
-                        FETCHER_ACTION_SCHEDULE_DUPLICATE.inc();
-                    }
-                    _ => {
-                        // After a while give up on trying to schedule actions.
-                        let payload = SerializableFail::from(&error);
-                        let payload =
-                            serde_json::to_value(payload).expect("errors must always serialise");
-                        action.schedule_attempt += 1;
-                        action.state_payload = Some(payload);
-                        // TODO: make MAX_SCHEDULE_ATTEMPTS a namespace configuration once namesapces exist.
-                        if action.schedule_attempt > MAX_SCHEDULE_ATTEMPTS {
-                            action.finish(ActionState::Failed);
-                        }
-                        self.primary_store
-                            .persist()
-                            .action(action, span.context().clone())
-                            .with_context(|_| ErrorKind::PrimaryStoreWrite("action"))?;
-                        FETCHER_ACTION_SCHEDULE_ERROR.inc();
-                        let error = error
-                            .context(ErrorKind::AgentDown("action request", agent_id.to_string()));
-                        return Err(error.into());
-                    }
-                },
-            };
-            // Reset schedule attempt count if needed.
-            if action.schedule_attempt != 0 {
-                action.schedule_attempt = 0;
-                action.state_payload = None;
-                self.primary_store
-                    .persist()
-                    .action(action, span.context().clone())
-                    .with_context(|_| ErrorKind::PrimaryStoreWrite("action"))?;
-            }
-        }
-        Ok(())
-    }
-
-    /// Sync a single action's details.
-    fn sync_action(
-        &self,
-        client: &dyn Client,
-        cluster_id: &str,
+        cluster_view: &ClusterView,
+        new_cluster_view: &mut ClusterViewBuilder,
         node_id: &str,
-        action_info: (Uuid, ActionSyncState),
-        refresh_id: i64,
+        action_id: Uuid,
         span: &mut Span,
     ) -> Result<()> {
         // Fetch and process the action.
-        let (action_id, action_sync_state) = action_info;
-        let info = client.action_info(&action_id, Some(span.context().clone()));
+        let span_context = span.context().clone();
+        let info = client.action_info(&action_id, Some(span_context.clone()));
         let info = match info {
             Err(ref error) if error.not_found() => return Ok(()),
             _ => info.with_context(|_| ErrorKind::AgentDown("action info", node_id.to_string())),
         }?;
-        let action = Action::new(
-            cluster_id.to_string(),
+        let action_agent = Action::new(
+            cluster_view.cluster_id.clone(),
             node_id.to_string(),
-            refresh_id,
+            0, // TODO: remove this.
             info.action,
         );
+        let action_db = self
+            .store
+            .action(cluster_view.cluster_id.clone(), action_id)
+            .get(span_context)
+            .with_context(|_| ErrorKind::PrimaryStoreRead("action"))?;
 
         // Emit action-related events.
-        match action_sync_state {
-            ActionSyncState::Found(old) => {
-                // Using a guard causes issues with ownership so check now for changes
-                // compared to our record of the action and conditionally emit an event.
-                if action.finished_ts.is_none() && action != old {
-                    let event = Event::builder().action().changed(old, action.clone());
-                    let code = event.code();
-                    let stream_key = event.stream_key();
-                    let event = EmitMessage::with(stream_key, event)
-                        .with_context(|_| ErrorKind::EventEmit(code))?
-                        .trace(span.context().clone());
-                    self.events
-                        .emit(event)
-                        .with_context(|_| ErrorKind::EventEmit(code))?;
-                }
-            }
-            ActionSyncState::NotFound => {
-                let event = Event::builder().action().new_action(action.clone());
+        let emit_action_finished;
+        // --> New or change events.
+        match action_db {
+            None => {
+                emit_action_finished = true;
+                let event = Event::builder().action().new_action(action_agent.clone());
                 let code = event.code();
                 let stream_key = event.stream_key();
                 let event = EmitMessage::with(stream_key, event)
@@ -303,10 +336,38 @@ impl ActionsFetcher {
                     .emit(event)
                     .with_context(|_| ErrorKind::EventEmit(code))?;
             }
-            _ => (),
+            Some(action_db) => {
+                // Skip updates for already finished and unchanged actions.
+                if action_db.finished_ts.is_some() || action_agent == action_db {
+                    debug!(
+                        self.logger,
+                        "Skipping sync for finished action";
+                        "namespace" => &cluster_view.namespace,
+                        "cluster_id" => &cluster_view.cluster_id,
+                        "node_id" => node_id,
+                        "action_id" => action_agent.action_id.to_string(),
+                    );
+                    return Ok(());
+                }
+
+                emit_action_finished = action_agent.finished_ts.is_some();
+                let event = Event::builder()
+                    .action()
+                    .changed(action_db, action_agent.clone());
+                let code = event.code();
+                let stream_key = event.stream_key();
+                let event = EmitMessage::with(stream_key, event)
+                    .with_context(|_| ErrorKind::EventEmit(code))?
+                    .trace(span.context().clone());
+                self.events
+                    .emit(event)
+                    .with_context(|_| ErrorKind::EventEmit(code))?;
+            }
         };
-        if action.finished_ts.is_some() {
-            let event = Event::builder().action().finished(action.clone());
+
+        // --> Action finished event (if action was not already finished).
+        if emit_action_finished && action_agent.finished_ts.is_some() {
+            let event = Event::builder().action().finished(action_agent.clone());
             let code = event.code();
             let stream_key = event.stream_key();
             let event = EmitMessage::with(stream_key, event)
@@ -317,12 +378,12 @@ impl ActionsFetcher {
                 .with_context(|_| ErrorKind::EventEmit(code))?;
         }
 
-        // Persist the new action information.
+        // --> Action history event.
         let event = Event::builder().action().history(
-            action.cluster_id.clone(),
-            action.node_id.clone(),
-            action.action_id,
-            action.finished_ts,
+            action_agent.cluster_id.clone(),
+            action_agent.node_id.clone(),
+            action_agent.action_id,
+            action_agent.finished_ts,
             info.history,
         );
         let code = event.code();
@@ -333,11 +394,58 @@ impl ActionsFetcher {
         self.events
             .emit(event)
             .with_context(|_| ErrorKind::EventEmit(code))?;
-        self.primary_store
+
+        // Update the new cluster view.
+        if action_agent.finished_ts.is_none() {
+            new_cluster_view
+                .action(ActionSummary::from(&action_agent))
+                .map_err(crate::error::AnyWrap::from)
+                .context(ErrorKind::ClusterViewUpdate)?;
+        }
+
+        // Persist the new action information.
+        self.store
             .persist()
-            .action(action, span.context().clone())
+            .action(action_agent, span.context().clone())
             .with_context(|_| ErrorKind::PrimaryStoreWrite("action"))?;
         Ok(())
+    }
+
+    /// Sync a single action from core to an agent.
+    fn sync_core_action(
+        &self,
+        client: &dyn Client,
+        cluster_view: &ClusterView,
+        new_cluster_view: &mut ClusterViewBuilder,
+        node_id: &str,
+        action_summary: &ActionSummary,
+        span: &mut Span,
+    ) -> Result<()> {
+        // Append pending actions to the new cluster view as well.
+        let pending_action = matches!(
+            action_summary.state,
+            ActionState::PendingApprove | ActionState::PendingSchedule
+        );
+        if pending_action {
+            new_cluster_view
+                .action(action_summary.clone())
+                .map_err(crate::error::AnyWrap::from)
+                .context(ErrorKind::ClusterViewUpdate)?;
+        }
+
+        // Process core actions based on their state.
+        match action_summary.state {
+            // Schedule pending actions with the agent.
+            ActionState::PendingSchedule => {
+                self.action_schedule(client, cluster_view, node_id, action_summary, span)
+            }
+            // Running actions no longer known to the agent are lost.
+            state if state.is_running() => {
+                self.action_lost(cluster_view, node_id, action_summary, span)
+            }
+            // Skip all other actions.
+            _ => Ok(()),
+        }
     }
 }
 
@@ -361,9 +469,13 @@ mod tests {
     use replicante_models_core::actions::Action as CoreAction;
     use replicante_models_core::actions::ActionRequester;
     use replicante_models_core::actions::ActionState as ActionStateCore;
-    use replicante_store_primary::mock::Mock as PrimaryStoreMock;
-    use replicante_store_primary::store::actions::ActionSyncState;
+    use replicante_models_core::actions::ActionSummary;
+    use replicante_models_core::cluster::discovery::ClusterDiscovery;
+    use replicante_models_core::cluster::ClusterSettings;
+    use replicante_store_primary::mock::Mock as StoreMock;
     use replicante_stream_events::Stream as EventsStream;
+    use replicore_cluster_view::ClusterView;
+    use replicore_cluster_view::ClusterViewBuilder;
 
     use super::ActionsFetcher;
 
@@ -372,6 +484,14 @@ mod tests {
         static ref UUID2: Uuid = "9084aec4-2234-4b9b-8a5d-aac914127255".parse().unwrap();
         static ref UUID3: Uuid = "be6ddf09-5c16-4be4-84dd-d03586eb1fc3".parse().unwrap();
         static ref UUID4: Uuid = "390ef9ab-ce0e-468e-977d-65873274c448".parse().unwrap();
+        static ref UUID5: Uuid = "e5a023c6-78a3-4eb0-bc8f-6c5d057964ef".parse().unwrap();
+        static ref UUID6: Uuid = "b9754ca6-824f-4796-8982-583888d2de19".parse().unwrap();
+    }
+
+    fn cluster_view_builder() -> ClusterViewBuilder {
+        let discovery = ClusterDiscovery::new("test", vec![]);
+        let settings = ClusterSettings::synthetic("test", "test");
+        ClusterView::builder(settings, discovery).expect("mock cluster view to build")
     }
 
     fn mock_agent_action(id: Uuid, finished: bool) -> AgentActionModel {
@@ -387,68 +507,29 @@ mod tests {
             kind: "action".into(),
             requester: ActionRequester::AgentApi,
             scheduled_ts,
-            state: ActionStateAgent::New,
+            state: if finished {
+                ActionStateAgent::Done
+            } else {
+                ActionStateAgent::New
+            },
             state_payload: None,
         }
     }
 
-    fn mock_core_action(id: Uuid, finished: bool) -> CoreAction {
-        let created_ts = Utc::now();
-        let finished_ts = if finished { Some(Utc::now()) } else { None };
-        let scheduled_ts = finished_ts.clone();
-        CoreAction {
-            action_id: id,
-            args: json!({}),
-            cluster_id: "cluster".into(),
-            created_ts,
-            finished_ts,
-            headers: HashMap::new(),
-            kind: "action".into(),
-            node_id: "node".into(),
-            refresh_id: 4321,
-            requester: ActionRequester::CoreApi,
-            schedule_attempt: 0,
-            scheduled_ts,
-            state: ActionStateCore::New,
-            state_payload: None,
-        }
+    fn mock_cluster_view() -> ClusterView {
+        mock_cluster_view_with_actions(vec![])
     }
 
-    #[test]
-    fn check_ids_to_sync() {
-        let store = PrimaryStoreMock::default();
-        let a2 = mock_core_action(*UUID2, false);
-        // Mock some actions and release the lock.
-        {
-            let mut store = store.state.lock().expect("MockStore state lock poisoned");
-            let a3 = mock_core_action(*UUID3, true);
-            store.actions.insert(
-                (a2.cluster_id.clone(), a2.node_id.clone(), a2.action_id),
-                a2.clone(),
-            );
-            store.actions.insert(
-                (a3.cluster_id.clone(), a3.node_id.clone(), a3.action_id),
-                a3,
-            );
-        }
+    fn mock_cluster_view_with_actions(actions: Vec<ActionSummary>) -> ClusterView {
+        let discovery = ClusterDiscovery::new("test", vec![]);
+        let settings = ClusterSettings::synthetic("test", "test");
+        let mut view =
+            ClusterView::builder(settings, discovery).expect("mock cluster view to build");
 
-        // Use the fetcher to check which IDs need to be synced.
-        let stream = EventsStream::mock();
-        let fetcher =
-            ActionsFetcher::new(stream, store.clone().store(), Logger::root(Discard, o!()));
-        let remote_ids = vec![*UUID1, *UUID2, *UUID3, *UUID4];
-        let (tracer, _) = NoopTracer::new();
-        let mut span = tracer.span("test");
-        let sync_ids = fetcher
-            .check_ids_to_sync("cluster", "node", remote_ids, &mut span)
-            .expect("check ids to sync failed");
-        assert_eq!(
-            sync_ids,
-            vec![
-                (*UUID1, ActionSyncState::NotFound),
-                (*UUID2, ActionSyncState::Found(a2)),
-            ],
-        );
+        for action in actions {
+            view.action(action).expect("action to be added to view");
+        }
+        view.build()
     }
 
     #[test]
@@ -475,13 +556,13 @@ mod tests {
                 state: ActionStateAgent::Done,
             },
         ];
-        let store = PrimaryStoreMock::default().store();
+        let store = StoreMock::default().store();
         let stream = EventsStream::mock();
         let fetcher = ActionsFetcher::new(stream, store, Logger::root(Discard, o!()));
         let (tracer, _) = NoopTracer::new();
         let mut span = tracer.span("test");
         let ids = fetcher
-            .remote_ids(&client, "node", &mut span)
+            .remote_ids(&client, "test", "node", &mut span)
             .expect("failed to fetch ids");
         assert_eq!(ids, vec![*UUID1, *UUID2, *UUID3]);
     }
@@ -529,72 +610,19 @@ mod tests {
                 state: ActionStateAgent::Done,
             },
         ];
-        let store = PrimaryStoreMock::default().store();
+        let store = StoreMock::default().store();
         let stream = EventsStream::mock();
         let fetcher = ActionsFetcher::new(stream, store, Logger::root(Discard, o!()));
         let (tracer, _) = NoopTracer::new();
         let mut span = tracer.span("test");
         let ids = fetcher
-            .remote_ids(&client, "node", &mut span)
+            .remote_ids(&client, "test", "node", &mut span)
             .expect("failed to fetch ids");
         assert_eq!(ids, vec![*UUID3, *UUID2, *UUID1, *UUID4]);
     }
 
     #[test]
-    fn mark_lost_actions() {
-        let store = PrimaryStoreMock::default();
-        // Mock some actions and release the lock.
-        {
-            let mut store = store.state.lock().expect("MockStore state lock poisoned");
-            let a1 = mock_core_action(*UUID1, false);
-            let mut a2 = mock_core_action(*UUID2, false);
-            a2.refresh_id = 1234;
-            store.actions.insert(
-                (a1.cluster_id.clone(), a1.node_id.clone(), a1.action_id),
-                a1,
-            );
-            store.actions.insert(
-                (a2.cluster_id.clone(), a2.node_id.clone(), a2.action_id),
-                a2,
-            );
-        }
-
-        // Set up fetcher and run mark function.
-        let stream = EventsStream::mock();
-        let fetcher =
-            ActionsFetcher::new(stream, store.clone().store(), Logger::root(Discard, o!()));
-        let (tracer, _) = NoopTracer::new();
-        let refresh_id = 1234;
-        let mut span = tracer.span("test");
-        fetcher
-            .mark_lost_actions("cluster", "node", refresh_id, &mut span)
-            .expect("marking lost actions failed");
-
-        // Assert actions are lost.
-        let action1 = {
-            let store = store
-                .state
-                .lock()
-                .expect("MockStore state lock is poisoned");
-            let key = ("cluster".into(), "node".into(), *UUID1);
-            store.actions.get(&key).expect("action not found").clone()
-        };
-        let action2 = {
-            let store = store
-                .state
-                .lock()
-                .expect("MockStore state lock is poisoned");
-            let key = ("cluster".into(), "node".into(), *UUID2);
-            store.actions.get(&key).expect("action not found").clone()
-        };
-        assert_eq!(action1.state, ActionStateCore::Lost);
-        assert!(action1.finished_ts.is_some());
-        assert_eq!(action2.state, ActionStateCore::New);
-        assert!(action2.finished_ts.is_none());
-    }
-
-    #[test]
-    fn sync_action() {
+    fn sync_action_new() {
         // Set up client.
         let mut client = MockClient::new(
             || panic!("unused in these tests"),
@@ -610,21 +638,21 @@ mod tests {
         client.actions.insert(*UUID1, info);
 
         // Set up fetcher and sync an action.
-        let store = PrimaryStoreMock::default();
+        let cluster_view = mock_cluster_view();
+        let mut new_cluster_view = cluster_view_builder();
+        let store = StoreMock::default();
         let stream = EventsStream::mock();
         let fetcher =
             ActionsFetcher::new(stream, store.clone().store(), Logger::root(Discard, o!()));
         let (tracer, _) = NoopTracer::new();
-        let refresh_id = 1234;
-        let action = CoreAction::new("cluster", "node", refresh_id, action);
         let mut span = tracer.span("test");
         fetcher
-            .sync_action(
+            .sync_agent_action(
                 &client,
-                "cluster",
+                &cluster_view,
+                &mut new_cluster_view,
                 "node",
-                (*UUID1, ActionSyncState::Found(action)),
-                refresh_id,
+                *UUID1,
                 &mut span,
             )
             .expect("action sync failed");
@@ -634,7 +662,7 @@ mod tests {
             let store = store.state.lock().expect("MockStore state lock poisoned");
             store
                 .actions
-                .get(&("cluster".into(), "node".into(), *UUID1))
+                .get(&("test".into(), "node".into(), *UUID1))
                 .expect("expected action not found")
                 .clone()
         };
@@ -643,43 +671,424 @@ mod tests {
     }
 
     #[test]
-    fn sync_action_not_found() {
+    fn sync_action_update() {
+        // Fill the store with an action.
+        let mut action = mock_agent_action(*UUID1, false);
+        action.state = ActionStateAgent::New;
+        let store = StoreMock::default();
+        store
+            .store()
+            .persist()
+            .action(
+                CoreAction::new("test", "node", 0 /* TODO: remove me */, action.clone()),
+                None,
+            )
+            .expect("failed to add action to store");
+
+        // Set up client.
+        let mut client = MockClient::new(
+            || panic!("unused in these tests"),
+            || panic!("unused in these tests"),
+            || panic!("unused in these tests"),
+        );
+        action.state = ActionStateAgent::Running;
+        let info = ActionInfoResponse {
+            action: action.clone(),
+            history: Vec::new(),
+        };
+        client.actions.insert(*UUID1, info);
+
+        // Set up fetcher and sync an action.
+        let cluster_view = mock_cluster_view();
+        let mut new_cluster_view = cluster_view_builder();
+        let stream = EventsStream::mock();
+        let fetcher =
+            ActionsFetcher::new(stream, store.clone().store(), Logger::root(Discard, o!()));
+        let (tracer, _) = NoopTracer::new();
+        let mut span = tracer.span("test");
+        fetcher
+            .sync_agent_action(
+                &client,
+                &cluster_view,
+                &mut new_cluster_view,
+                "node",
+                *UUID1,
+                &mut span,
+            )
+            .expect("action sync failed");
+
+        // Assert sync result.
+        let action = {
+            let store = store.state.lock().expect("MockStore state lock poisoned");
+            store
+                .actions
+                .get(&("test".into(), "node".into(), *UUID1))
+                .expect("expected action not found")
+                .clone()
+        };
+        assert_eq!(action.action_id, *UUID1);
+        assert_eq!(action.state, ActionStateCore::Running);
+    }
+
+    #[test]
+    fn sync_lost_actions() {
+        // Fill the store with finished and unfinished actions.
+        let store = StoreMock::default();
+        let action = mock_agent_action(*UUID1, true);
+        store
+            .store()
+            .persist()
+            .action(
+                CoreAction::new("test", "node", 0 /* TODO: remove me */, action),
+                None,
+            )
+            .expect("failed to add action to store");
+        let action = mock_agent_action(*UUID2, true);
+        store
+            .store()
+            .persist()
+            .action(
+                CoreAction::new("test", "node", 0 /* TODO: remove me */, action),
+                None,
+            )
+            .expect("failed to add action to store");
+        let action = mock_agent_action(*UUID3, false);
+        store
+            .store()
+            .persist()
+            .action(
+                CoreAction::new("test", "node", 0 /* TODO: remove me */, action),
+                None,
+            )
+            .expect("failed to add action to store");
+        let action = mock_agent_action(*UUID4, false);
+        store
+            .store()
+            .persist()
+            .action(
+                CoreAction::new("test", "node", 0 /* TODO: remove me */, action),
+                None,
+            )
+            .expect("failed to add action to store");
+
         // Set up client.
         let client = MockClient::new(
             || panic!("unused in these tests"),
             || panic!("unused in these tests"),
             || panic!("unused in these tests"),
         );
-        let mut action = mock_agent_action(*UUID1, false);
-        action.state = ActionStateAgent::New;
 
         // Set up fetcher and sync an action.
-        let store = PrimaryStoreMock::default();
+        let cluster_view = mock_cluster_view_with_actions(vec![
+            ActionSummary {
+                cluster_id: "test".into(),
+                node_id: "node".into(),
+                action_id: *UUID1,
+                state: ActionStateCore::Done,
+            },
+            ActionSummary {
+                cluster_id: "test".into(),
+                node_id: "node".into(),
+                action_id: *UUID2,
+                state: ActionStateCore::Done,
+            },
+            ActionSummary {
+                cluster_id: "test".into(),
+                node_id: "node".into(),
+                action_id: *UUID3,
+                state: ActionStateCore::New,
+            },
+            ActionSummary {
+                cluster_id: "test".into(),
+                node_id: "node".into(),
+                action_id: *UUID4,
+                state: ActionStateCore::New,
+            },
+        ]);
+        let mut new_cluster_view = cluster_view_builder();
         let stream = EventsStream::mock();
         let fetcher =
             ActionsFetcher::new(stream, store.clone().store(), Logger::root(Discard, o!()));
         let (tracer, _) = NoopTracer::new();
-        let refresh_id = 1234;
         let mut span = tracer.span("test");
         fetcher
-            .sync_action(
+            .sync(
                 &client,
-                "cluster",
+                &cluster_view,
+                &mut new_cluster_view,
                 "node",
-                (*UUID1, ActionSyncState::NotFound),
-                refresh_id,
                 &mut span,
             )
-            .expect("action sync failed");
+            .expect("actions sync failed");
 
-        // Assert sync result.
-        let found = {
-            let store = store.state.lock().expect("MockStore state lock poisoned");
-            store
-                .actions
-                .get(&("cluster".into(), "node".into(), *UUID1))
-                .is_some()
+        let action = store
+            .store()
+            .action("test".to_string(), *UUID1)
+            .get(None)
+            .expect("action to be in store")
+            .expect("action to be in store");
+        assert_eq!(action.state, ActionStateCore::Done);
+        let action = store
+            .store()
+            .action("test".to_string(), *UUID2)
+            .get(None)
+            .expect("action to be in store")
+            .expect("action to be in store");
+        assert_eq!(action.state, ActionStateCore::Done);
+        let action = store
+            .store()
+            .action("test".to_string(), *UUID3)
+            .get(None)
+            .expect("action to be in store")
+            .expect("action to be in store");
+        assert_eq!(action.state, ActionStateCore::Lost);
+        let action = store
+            .store()
+            .action("test".to_string(), *UUID4)
+            .get(None)
+            .expect("action to be in store")
+            .expect("action to be in store");
+        assert_eq!(action.state, ActionStateCore::Lost);
+    }
+
+    #[test]
+    fn sync_schedule_pending_actions() {
+        // Fill the store with pending approve and pending schedule actions.
+        let store = StoreMock::default();
+        let action = mock_agent_action(*UUID1, false);
+        let mut action = CoreAction::new("test", "node", 0 /* TODO: remove me */, action);
+        action.state = ActionStateCore::PendingApprove;
+        store
+            .store()
+            .persist()
+            .action(action, None)
+            .expect("failed to add action to store");
+
+        let action = mock_agent_action(*UUID2, false);
+        let mut action = CoreAction::new("test", "node", 0 /* TODO: remove me */, action);
+        action.state = ActionStateCore::PendingSchedule;
+        store
+            .store()
+            .persist()
+            .action(action, None)
+            .expect("failed to add action to store");
+
+        // Set up client.
+        let client = MockClient::new(
+            || panic!("unused in these tests"),
+            || panic!("unused in these tests"),
+            || panic!("unused in these tests"),
+        );
+
+        // Set up fetcher and sync an action.
+        let cluster_view = mock_cluster_view_with_actions(vec![
+            ActionSummary {
+                cluster_id: "test".into(),
+                node_id: "node".into(),
+                action_id: *UUID1,
+                state: ActionStateCore::PendingApprove,
+            },
+            ActionSummary {
+                cluster_id: "test".into(),
+                node_id: "node".into(),
+                action_id: *UUID2,
+                state: ActionStateCore::PendingSchedule,
+            },
+        ]);
+        let mut new_cluster_view = cluster_view_builder();
+        let stream = EventsStream::mock();
+        let fetcher =
+            ActionsFetcher::new(stream, store.clone().store(), Logger::root(Discard, o!()));
+        let (tracer, _) = NoopTracer::new();
+        let mut span = tracer.span("test");
+        fetcher
+            .sync(
+                &client,
+                &cluster_view,
+                &mut new_cluster_view,
+                "node",
+                &mut span,
+            )
+            .expect("actions sync failed");
+
+        // Check request sent to the agent.
+        let actions_to_schedule = client
+            .actions_to_schedule
+            .lock()
+            .expect("agent MockClient::actions_to_schedule lock poisoned");
+        assert_eq!(actions_to_schedule.len(), 1);
+        let (kind, request) = actions_to_schedule
+            .get(0)
+            .expect("schedule action request")
+            .clone();
+        assert_eq!(request.action_id, Some(*UUID2));
+        assert_eq!(kind, "action");
+    }
+
+    #[test]
+    fn track_unfinished_actons_in_cluster_view() {
+        // Fill DB with finished, running and pending actions.
+        let store = StoreMock::default();
+        let action = mock_agent_action(*UUID1, false);
+        let mut action = CoreAction::new("test", "node", 0 /* TODO: remove me */, action);
+        action.state = ActionStateCore::PendingApprove;
+        store
+            .store()
+            .persist()
+            .action(action, None)
+            .expect("failed to add action to store");
+
+        let action = mock_agent_action(*UUID2, true);
+        let action = CoreAction::new("test", "node", 0 /* TODO: remove me */, action);
+        store
+            .store()
+            .persist()
+            .action(action, None)
+            .expect("failed to add action to store");
+
+        let action = mock_agent_action(*UUID3, false);
+        let mut action = CoreAction::new("test", "node", 0 /* TODO: remove me */, action);
+        action.state = ActionStateCore::PendingSchedule;
+        store
+            .store()
+            .persist()
+            .action(action, None)
+            .expect("failed to add action to store");
+
+        let action = mock_agent_action(*UUID4, false);
+        let mut action = CoreAction::new("test", "node", 0 /* TODO: remove me */, action);
+        action.state = ActionStateCore::Running;
+        store
+            .store()
+            .persist()
+            .action(action, None)
+            .expect("failed to add action to store");
+
+        let action = mock_agent_action(*UUID5, false);
+        let mut action = CoreAction::new("test", "node", 0 /* TODO: remove me */, action);
+        action.state = ActionStateCore::Running;
+        store
+            .store()
+            .persist()
+            .action(action, None)
+            .expect("failed to add action to store");
+
+        // Fill the Cluster View with DB actions.
+        let cluster_view = mock_cluster_view_with_actions(vec![
+            ActionSummary {
+                cluster_id: "test".into(),
+                node_id: "node".into(),
+                action_id: *UUID1,
+                state: ActionStateCore::PendingApprove,
+            },
+            ActionSummary {
+                cluster_id: "test".into(),
+                node_id: "node".into(),
+                action_id: *UUID3,
+                state: ActionStateCore::PendingSchedule,
+            },
+            ActionSummary {
+                cluster_id: "test".into(),
+                node_id: "node".into(),
+                action_id: *UUID4,
+                state: ActionStateCore::Running,
+            },
+            ActionSummary {
+                cluster_id: "test".into(),
+                node_id: "node".into(),
+                action_id: *UUID5,
+                state: ActionStateCore::Running,
+            },
+        ]);
+
+        // Set up client with actions (the running action from DB as finished, new action).
+        let mut client = MockClient::new(
+            || panic!("unused in these tests"),
+            || panic!("unused in these tests"),
+            || panic!("unused in these tests"),
+        );
+        let info = ActionInfoResponse {
+            action: mock_agent_action(*UUID2, true),
+            history: Vec::new(),
         };
-        assert!(!found, "should not have action");
+        client.actions.insert(*UUID2, info);
+        client.actions_finished.push(ActionListItem {
+            id: *UUID2,
+            kind: "action".into(),
+            state: ActionStateAgent::Done,
+        });
+
+        let action = mock_agent_action(*UUID4, true);
+        let info = ActionInfoResponse {
+            action: action,
+            history: Vec::new(),
+        };
+        client.actions.insert(*UUID4, info);
+        client.actions_finished.push(ActionListItem {
+            id: *UUID4,
+            kind: "action".into(),
+            state: ActionStateAgent::Done,
+        });
+
+        let mut action = mock_agent_action(*UUID6, false);
+        action.state = ActionStateAgent::Running;
+        let info = ActionInfoResponse {
+            action: action,
+            history: Vec::new(),
+        };
+        client.actions.insert(*UUID6, info);
+        client.actions_queue.push(ActionListItem {
+            id: *UUID6,
+            kind: "action".into(),
+            state: ActionStateAgent::Running,
+        });
+
+        // Run sync.
+        let mut new_cluster_view = cluster_view_builder();
+        let stream = EventsStream::mock();
+        let fetcher =
+            ActionsFetcher::new(stream, store.clone().store(), Logger::root(Discard, o!()));
+        let (tracer, _) = NoopTracer::new();
+        let mut span = tracer.span("test");
+        fetcher
+            .sync(
+                &client,
+                &cluster_view,
+                &mut new_cluster_view,
+                "node",
+                &mut span,
+            )
+            .expect("actions sync failed");
+
+        // TODO: Finish new cluster view and check actions in it.
+        let new_cluster_view = new_cluster_view.build();
+        assert_eq!(new_cluster_view.actions_unfinished_by_node.len(), 1);
+        let actions = new_cluster_view
+            .actions_unfinished_by_node
+            .get("node")
+            .expect("missing actions for expected node");
+        assert_eq!(
+            *actions,
+            vec![
+                ActionSummary {
+                    cluster_id: "test".into(),
+                    node_id: "node".into(),
+                    action_id: *UUID6,
+                    state: ActionStateCore::Running,
+                },
+                ActionSummary {
+                    cluster_id: "test".into(),
+                    node_id: "node".into(),
+                    action_id: *UUID1,
+                    state: ActionStateCore::PendingApprove,
+                },
+                ActionSummary {
+                    cluster_id: "test".into(),
+                    node_id: "node".into(),
+                    action_id: *UUID3,
+                    state: ActionStateCore::PendingSchedule,
+                },
+            ]
+        );
     }
 }

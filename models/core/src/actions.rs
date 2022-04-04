@@ -149,8 +149,28 @@ pub enum ActionHistoryOrigin {
     Core,
 }
 
+/// Summary information about an action.
+#[derive(Clone, PartialEq, Debug, Serialize, Deserialize)]
+pub struct ActionSummary {
+    pub cluster_id: String,
+    pub node_id: String,
+    pub action_id: Uuid,
+    pub state: ActionState,
+}
+
+impl From<&Action> for ActionSummary {
+    fn from(action: &Action) -> ActionSummary {
+        ActionSummary {
+            cluster_id: action.cluster_id.clone(),
+            node_id: action.node_id.clone(),
+            action_id: action.action_id,
+            state: action.state,
+        }
+    }
+}
+
 /// Current state of an action execution.
-#[derive(Clone, Eq, PartialEq, Hash, Debug, Serialize, Deserialize)]
+#[derive(Clone, Copy, Eq, PartialEq, Hash, Debug, Serialize, Deserialize)]
 pub enum ActionState {
     /// The action was interrupted or never executed.
     #[serde(rename = "CANCELLED")]
@@ -183,6 +203,13 @@ pub enum ActionState {
     /// The action is running on the Replicante Agent.
     #[serde(rename = "RUNNING")]
     Running,
+}
+
+impl ActionState {
+    /// Check if the action is running or sent to the agent to run.
+    pub fn is_running(&self) -> bool {
+        matches!(self, ActionState::New | ActionState::Running)
+    }
 }
 
 impl From<ActionStateWire> for ActionState {

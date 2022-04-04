@@ -1,3 +1,5 @@
+use std::str::FromStr;
+
 use crate::ClusterView;
 use crate::ClusterViewCorrupt;
 
@@ -32,6 +34,108 @@ fn fail_when_starting_with_different_cluster_ids() {
         }
         _ => panic!("unexpected error value"),
     };
+}
+
+#[test]
+fn actions_cannot_be_added_twice() {
+    let discovery = self::fixtures::cluster_mongodb::discovery();
+    let settings = self::fixtures::cluster_mongodb::settings();
+    let mut builder =
+        ClusterView::builder(settings, discovery).expect("ClusterView builder should be created");
+
+    let err = builder
+        .action(self::fixtures::cluster_mongodb::blue_node_action_restart())
+        .unwrap()
+        .action(self::fixtures::cluster_mongodb::blue_node_action_restart())
+        .err()
+        .expect("duplicate action did not fail")
+        .downcast::<ClusterViewCorrupt>()
+        .expect("unexpected error type");
+
+    match err {
+        ClusterViewCorrupt::DuplicateAction(namespace, cluster_id, node_id, action_id) => {
+            assert_eq!(namespace, self::fixtures::cluster_mongodb::NAMESPACE);
+            assert_eq!(cluster_id, self::fixtures::cluster_mongodb::CLUSTER_ID);
+            assert_eq!(node_id, "https://blue.mongo.fixtures:12345/");
+            assert_eq!(
+                action_id,
+                uuid::Uuid::from_str("0436430c-2b02-624c-2032-570501212b57").unwrap(),
+            )
+        }
+        _ => panic!("unexpected error value"),
+    };
+}
+
+#[test]
+fn actions_must_be_from_cluster() {
+    let discovery = self::fixtures::cluster_mongodb::discovery();
+    let settings = self::fixtures::cluster_mongodb::settings();
+    let mut builder =
+        ClusterView::builder(settings, discovery).expect("ClusterView builder should be created");
+
+    let mut action = self::fixtures::cluster_mongodb::blue_node_action_restart();
+    action.cluster_id = self::fixtures::cluster_zookeeper::CLUSTER_ID.into();
+    let err = builder
+        .action(action)
+        .err()
+        .expect("invalid action did not fail")
+        .downcast::<ClusterViewCorrupt>()
+        .expect("unexpected error type");
+
+    match err {
+        ClusterViewCorrupt::ClusterIdClash(namespace, expected, found) => {
+            assert_eq!(namespace, self::fixtures::cluster_mongodb::NAMESPACE);
+            assert_eq!(expected, self::fixtures::cluster_mongodb::CLUSTER_ID);
+            assert_eq!(found, self::fixtures::cluster_zookeeper::CLUSTER_ID);
+        }
+        _ => panic!("unexpected error value"),
+    };
+}
+
+#[test]
+fn actions_tracked() {
+    let discovery = self::fixtures::cluster_mongodb::discovery();
+    let settings = self::fixtures::cluster_mongodb::settings();
+    let mut builder =
+        ClusterView::builder(settings, discovery).expect("ClusterView builder should be created");
+
+    let blue_node = self::fixtures::cluster_mongodb::blue_node();
+    let green_node = self::fixtures::cluster_mongodb::green_node();
+
+    builder
+        .action(self::fixtures::cluster_mongodb::blue_node_action_restart())
+        .unwrap()
+        .action(self::fixtures::cluster_mongodb::blue_node_action_stepdown())
+        .unwrap()
+        .action(self::fixtures::cluster_mongodb::green_node_action_stepdown())
+        .unwrap();
+
+    let view = builder.build();
+    let blue_actions: Vec<uuid::Uuid> = view
+        .actions_unfinished_by_node
+        .get(&blue_node.node_id)
+        .expect("failed to find actions for blue node")
+        .iter()
+        .map(|summary| summary.action_id)
+        .collect();
+    let green_actions: Vec<uuid::Uuid> = view
+        .actions_unfinished_by_node
+        .get(&green_node.node_id)
+        .expect("failed to find actions for green node")
+        .iter()
+        .map(|summary| summary.action_id)
+        .collect();
+    assert_eq!(
+        blue_actions,
+        vec![
+            uuid::Uuid::from_str("0436430c-2b02-624c-2032-570501212b57").unwrap(),
+            uuid::Uuid::from_str("347db8f1-dab4-401b-8956-04cd0ca25661").unwrap(),
+        ]
+    );
+    assert_eq!(
+        green_actions,
+        vec![uuid::Uuid::from_str("004089da-ec5a-4f4c-a4cc-adff9ec09015").unwrap()]
+    );
 }
 
 #[test]
@@ -289,212 +393,19 @@ fn serialise_cluster_view() {
         .shard(self::fixtures::cluster_mongodb::red_node_shard_hex())
         .unwrap();
 
+    // Add actions.
+    builder
+        .action(self::fixtures::cluster_mongodb::blue_node_action_restart())
+        .unwrap()
+        .action(self::fixtures::cluster_mongodb::blue_node_action_stepdown())
+        .unwrap()
+        .action(self::fixtures::cluster_mongodb::green_node_action_stepdown())
+        .unwrap();
+
     // Serialise the view to check format.
     let view = builder.build();
     let actual = serde_json::to_string_pretty(&view).expect("ClusterView to serialise");
-    assert_eq!(
-        actual,
-        r#"{
-  "cluster_id": "colours",
-  "namespace": "default",
-  "settings": {
-    "cluster_id": "colours",
-    "enabled": true,
-    "interval": 60,
-    "namespace": "default"
-  },
-  "discovery": {
-    "cluster_id": "colours",
-    "display_name": null,
-    "nodes": []
-  },
-  "agents": {
-    "https://blue.mongo.fixtures:12345/": {
-      "cluster_id": "colours",
-      "host": "https://blue.mongo.fixtures:12345/",
-      "status": {
-        "code": "AGENT_DOWN",
-        "data": "agent error"
-      }
-    },
-    "https://green.mongo.fixtures:12345/": {
-      "cluster_id": "colours",
-      "host": "https://green.mongo.fixtures:12345/",
-      "status": {
-        "code": "UP"
-      }
-    },
-    "https://red.mongo.fixtures:12345/": {
-      "cluster_id": "colours",
-      "host": "https://red.mongo.fixtures:12345/",
-      "status": {
-        "code": "NODE_DOWN",
-        "data": "node error"
-      }
-    }
-  },
-  "agents_info": {
-    "https://blue.mongo.fixtures:12345/": {
-      "cluster_id": "colours",
-      "host": "https://blue.mongo.fixtures:12345/",
-      "version_checkout": "",
-      "version_number": "1.2.3",
-      "version_taint": "not tainted"
-    },
-    "https://green.mongo.fixtures:12345/": {
-      "cluster_id": "colours",
-      "host": "https://green.mongo.fixtures:12345/",
-      "version_checkout": "",
-      "version_number": "3.2.1",
-      "version_taint": "tainted"
-    },
-    "https://red.mongo.fixtures:12345/": {
-      "cluster_id": "colours",
-      "host": "https://red.mongo.fixtures:12345/",
-      "version_checkout": "",
-      "version_number": "1.2.3",
-      "version_taint": "tainted"
-    }
-  },
-  "nodes": {
-    "https://blue.mongo.fixtures:12345/": {
-      "cluster_display_name": null,
-      "cluster_id": "colours",
-      "kind": "mongodb",
-      "node_id": "https://blue.mongo.fixtures:12345/",
-      "version": "4.5.6"
-    },
-    "https://green.mongo.fixtures:12345/": {
-      "cluster_display_name": null,
-      "cluster_id": "colours",
-      "kind": "mongodb",
-      "node_id": "https://green.mongo.fixtures:12345/",
-      "version": "6.5.4"
-    },
-    "https://red.mongo.fixtures:12345/": {
-      "cluster_display_name": null,
-      "cluster_id": "colours",
-      "kind": "mongodb",
-      "node_id": "https://red.mongo.fixtures:12345/",
-      "version": "4.5.6"
-    }
-  },
-  "shards": [
-    {
-      "cluster_id": "colours",
-      "commit_offset": null,
-      "lag": null,
-      "node_id": "https://blue.mongo.fixtures:12345/",
-      "role": "secondary",
-      "shard_id": "hex"
-    },
-    {
-      "cluster_id": "colours",
-      "commit_offset": null,
-      "lag": null,
-      "node_id": "https://blue.mongo.fixtures:12345/",
-      "role": "primary",
-      "shard_id": "rgb"
-    },
-    {
-      "cluster_id": "colours",
-      "commit_offset": null,
-      "lag": null,
-      "node_id": "https://green.mongo.fixtures:12345/",
-      "role": "secondary",
-      "shard_id": "cmyk"
-    },
-    {
-      "cluster_id": "colours",
-      "commit_offset": null,
-      "lag": null,
-      "node_id": "https://green.mongo.fixtures:12345/",
-      "role": "secondary",
-      "shard_id": "rgb"
-    },
-    {
-      "cluster_id": "colours",
-      "commit_offset": null,
-      "lag": null,
-      "node_id": "https://red.mongo.fixtures:12345/",
-      "role": "primary",
-      "shard_id": "cmyk"
-    },
-    {
-      "cluster_id": "colours",
-      "commit_offset": null,
-      "lag": null,
-      "node_id": "https://red.mongo.fixtures:12345/",
-      "role": "primary",
-      "shard_id": "hex"
-    }
-  ],
-  "shards_by_id": {
-    "cmyk": {
-      "https://green.mongo.fixtures:12345/": {
-        "node_id": "https://green.mongo.fixtures:12345/",
-        "shard_id": "cmyk"
-      },
-      "https://red.mongo.fixtures:12345/": {
-        "node_id": "https://red.mongo.fixtures:12345/",
-        "shard_id": "cmyk"
-      }
-    },
-    "hex": {
-      "https://blue.mongo.fixtures:12345/": {
-        "node_id": "https://blue.mongo.fixtures:12345/",
-        "shard_id": "hex"
-      },
-      "https://red.mongo.fixtures:12345/": {
-        "node_id": "https://red.mongo.fixtures:12345/",
-        "shard_id": "hex"
-      }
-    },
-    "rgb": {
-      "https://blue.mongo.fixtures:12345/": {
-        "node_id": "https://blue.mongo.fixtures:12345/",
-        "shard_id": "rgb"
-      },
-      "https://green.mongo.fixtures:12345/": {
-        "node_id": "https://green.mongo.fixtures:12345/",
-        "shard_id": "rgb"
-      }
-    }
-  },
-  "shards_by_node": {
-    "https://blue.mongo.fixtures:12345/": {
-      "hex": {
-        "node_id": "https://blue.mongo.fixtures:12345/",
-        "shard_id": "hex"
-      },
-      "rgb": {
-        "node_id": "https://blue.mongo.fixtures:12345/",
-        "shard_id": "rgb"
-      }
-    },
-    "https://green.mongo.fixtures:12345/": {
-      "cmyk": {
-        "node_id": "https://green.mongo.fixtures:12345/",
-        "shard_id": "cmyk"
-      },
-      "rgb": {
-        "node_id": "https://green.mongo.fixtures:12345/",
-        "shard_id": "rgb"
-      }
-    },
-    "https://red.mongo.fixtures:12345/": {
-      "cmyk": {
-        "node_id": "https://red.mongo.fixtures:12345/",
-        "shard_id": "cmyk"
-      },
-      "hex": {
-        "node_id": "https://red.mongo.fixtures:12345/",
-        "shard_id": "hex"
-      }
-    }
-  }
-}"#
-    );
+    assert_eq!(actual, std::include_str!("expected-encoded.json"));
 }
 
 #[test]

@@ -14,8 +14,10 @@ license = "MIT"
 
 [dependencies]
 anyhow = "^1.0.53"
+chrono = "^0.4.0"
 serde = { version = "^1.0.34", features = ["derive"] }
 thiserror = "^1.0.30"
+uuid = { version = "^0.8.0", features = ["serde"] }
 
 replicante_models_agent = { path = "../../../common/models/agent" }
 replicante_models_core = { path = "../../../models/core" }

@@ -3082,11 +3082,13 @@ name = "replicore_cluster_view"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "chrono",
  "replicante_models_agent",
  "replicante_models_core",
  "serde",
  "serde_json",
  "thiserror",
+ "uuid",
 ]
 
 [[package]]

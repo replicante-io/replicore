@@ -1,7 +1,6 @@
 use std::sync::Arc;
 use std::time::Duration;
 
-use chrono::Utc;
 use failure::ResultExt;
 use opentracingrust::Span;
 use opentracingrust::Tracer;
@@ -134,14 +133,12 @@ impl Logic {
             "namespace" => &namespace_id,
             "cluster_id" => &cluster_id,
         );
-        let refresh_id = Utc::now().timestamp();
         let timer = SYNC_DURATION.start_timer();
         self.fetcher
             .fetch(
                 namespace,
                 &cluster_view_before,
                 &mut cluster_view_after,
-                refresh_id,
                 lock.watch(),
                 span,
             )

@@ -135,13 +135,12 @@ impl Fetcher {
         ns: Namespace,
         cluster_view: &ClusterView,
         new_cluster_view: &mut ClusterViewBuilder,
-        refresh_id: i64,
         lock: NonBlockingLockWatcher,
         span: &mut Span,
     ) -> Result<()> {
         span.log(Log::new().log("stage", "fetch"));
         let _timer = FETCHER_DURATION.start_timer();
-        self.fetch_inner(ns, cluster_view, new_cluster_view, refresh_id, lock, span)
+        self.fetch_inner(ns, cluster_view, new_cluster_view, lock, span)
             .map_err(|error| {
                 FETCHER_ERRORS_COUNT.inc();
                 error
@@ -154,7 +153,6 @@ impl Fetcher {
         ns: Namespace,
         cluster_view: &ClusterView,
         new_cluster_view: &mut ClusterViewBuilder,
-        refresh_id: i64,
         lock: NonBlockingLockWatcher,
         span: &mut Span,
     ) -> Result<()> {
@@ -191,7 +189,6 @@ impl Fetcher {
                 cluster_view,
                 new_cluster_view,
                 agent_id,
-                refresh_id,
                 &mut id_checker,
                 span,
             );
@@ -234,7 +231,6 @@ impl Fetcher {
         cluster_view: &ClusterView,
         new_cluster_view: &mut ClusterViewBuilder,
         node: &str,
-        refresh_id: i64,
         id_checker: &mut ClusterIdentityChecker,
         span: &mut Span,
     ) -> Result<()> {
@@ -259,7 +255,7 @@ impl Fetcher {
         self.shard
             .process_shards(&client, cluster_view, new_cluster_view, node, span)?;
         self.actions
-            .sync(&client, &cluster_view.cluster_id, node, refresh_id, span)?;
+            .sync(&client, cluster_view, new_cluster_view, node, span)?;
 
         Ok(())
     }

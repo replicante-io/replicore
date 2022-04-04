@@ -149,6 +149,13 @@ pub enum ErrorKind {
     #[fail(display = "error emitting {} event", _0)]
     EventEmit(&'static str),
 
+    #[fail(
+        display = "could not find details for action {} in cluster {}.{}",
+        _2, _0, _1
+    )]
+    // namespace_id, cluster_id, action_id
+    ExpectedActionNotFound(String, String, uuid::Uuid),
+
     #[fail(display = "error fetching {} from the primary store", _0)]
     PrimaryStoreRead(&'static str),
 
@@ -172,6 +179,7 @@ impl ErrorKind {
             ErrorKind::ClusterIdDoesNotMatch(_, _, _) => "ClusterIdDoesNotMatch",
             ErrorKind::ClusterViewUpdate => "ClusterViewUpdate",
             ErrorKind::EventEmit(_) => "EventEmit",
+            ErrorKind::ExpectedActionNotFound(_, _, _) => "ExpectedActionNotFound",
             ErrorKind::PrimaryStoreRead(_) => "PrimaryStoreRead",
             ErrorKind::PrimaryStoreWrite(_) => "PrimaryStoreWrite",
             ErrorKind::ViewStoreRead(_) => "ViewStoreRead",

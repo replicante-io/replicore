@@ -1,4 +1,3 @@
-use std::collections::HashMap;
 use std::collections::HashSet;
 use std::ops::Deref;
 use std::ops::DerefMut;
@@ -13,6 +12,7 @@ use uuid::Uuid;
 
 use replicante_externals_mongodb::admin::ValidationResult;
 use replicante_models_core::actions::Action;
+use replicante_models_core::actions::ActionSummary;
 use replicante_models_core::admin::Version;
 use replicante_models_core::agent::Agent;
 use replicante_models_core::agent::AgentInfo;
@@ -24,7 +24,7 @@ use replicante_models_core::cluster::ClusterMeta;
 use replicante_models_core::cluster::ClusterSettings;
 use replicante_service_healthcheck::HealthChecks;
 
-use crate::store::actions::ActionSyncState;
+use crate::store::action::ActionAttributes;
 use crate::store::actions::ActionsAttributes;
 use crate::store::agent::AgentAttribures;
 use crate::store::agents::AgentsAttribures;
@@ -167,6 +167,7 @@ arc_interface! {
 
     interface {
         fn actions(&self) -> ActionsImpl;
+        fn action(&self) -> ActionImpl;
         fn agent(&self) -> AgentImpl;
         fn agents(&self) -> AgentsImpl;
         fn cluster(&self) -> ClusterImpl;
@@ -178,6 +179,24 @@ arc_interface! {
         fn persist(&self) -> PersistImpl;
         fn shard(&self) -> ShardImpl;
         fn shards(&self) -> ShardsImpl;
+    }
+}
+
+box_interface! {
+    /// Dynamic dispatch all operations to a backend-specific implementation.
+    struct ActionImpl,
+
+    /// Definition of supported operations on `Action`s.
+    ///
+    /// See `store::action::Action` for descriptions of methods.
+    trait ActionInterface,
+
+    interface {
+        fn get(
+            &self,
+            attrs: &ActionAttributes,
+            span: Option<SpanContext>,
+        ) -> Result<Option<Action>>;
     }
 }
 
@@ -225,13 +244,11 @@ box_interface! {
             agent_id: String,
             span: Option<SpanContext>,
         ) -> Result<Cursor<Action>>;
-        fn state_for_sync(
+        fn unfinished_summaries(
             &self,
             attrs: &ActionsAttributes,
-            node_id: String,
-            action_ids: &[Uuid],
             span: Option<SpanContext>,
-        ) -> Result<HashMap<Uuid, ActionSyncState>>;
+        ) -> Result<Cursor<ActionSummary>>;
     }
 }
 
