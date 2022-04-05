@@ -42,14 +42,10 @@ pub struct Action {
     pub state: ActionState,
     /// Action-dependent state data, if the action needs to persist state.
     pub state_payload: Option<Json>,
-
-    // TODO: remove this in favour of simpler approximate-view.
-    /// Random number generated at the start of a sync cycle.
-    pub refresh_id: i64,
 }
 
 impl Action {
-    pub fn new<S1, S2>(cluster_id: S1, node_id: S2, refresh_id: i64, action: ActionWire) -> Action
+    pub fn new<S1, S2>(cluster_id: S1, node_id: S2, action: ActionWire) -> Action
     where
         S1: Into<String>,
         S2: Into<String>,
@@ -63,7 +59,6 @@ impl Action {
             headers: action.headers,
             kind: action.kind,
             node_id: node_id.into(),
-            refresh_id,
             requester: action.requester,
             schedule_attempt: 0,
             scheduled_ts: Some(action.scheduled_ts),

@@ -102,7 +102,6 @@ impl AdminInterface for Admin {
 pub struct Store {
     client: Client,
     db: String,
-    logger: Logger,
     tracer: Option<Arc<Tracer>>,
 }
 
@@ -124,12 +123,7 @@ impl Store {
         let tracer = tracer.into();
         let healthcheck = MongoDBHealthCheck::new(client.clone());
         healthchecks.register("store:primary", healthcheck);
-        Ok(Store {
-            client,
-            db,
-            logger,
-            tracer,
-        })
+        Ok(Store { client, db, tracer })
     }
 }
 
@@ -159,12 +153,8 @@ impl StoreInterface for Store {
     }
 
     fn cluster(&self) -> ClusterImpl {
-        let cluster = self::cluster::Cluster::new(
-            self.client.clone(),
-            self.db.clone(),
-            self.logger.clone(),
-            self.tracer.clone(),
-        );
+        let cluster =
+            self::cluster::Cluster::new(self.client.clone(), self.db.clone(), self.tracer.clone());
         ClusterImpl::new(cluster)
     }
 

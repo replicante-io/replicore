@@ -311,7 +311,6 @@ impl ActionsFetcher {
         let action_agent = Action::new(
             cluster_view.cluster_id.clone(),
             node_id.to_string(),
-            0, // TODO: remove this.
             info.action,
         );
         let action_db = self
@@ -679,10 +678,7 @@ mod tests {
         store
             .store()
             .persist()
-            .action(
-                CoreAction::new("test", "node", 0 /* TODO: remove me */, action.clone()),
-                None,
-            )
+            .action(CoreAction::new("test", "node", action.clone()), None)
             .expect("failed to add action to store");
 
         // Set up client.
@@ -738,37 +734,25 @@ mod tests {
         store
             .store()
             .persist()
-            .action(
-                CoreAction::new("test", "node", 0 /* TODO: remove me */, action),
-                None,
-            )
+            .action(CoreAction::new("test", "node", action), None)
             .expect("failed to add action to store");
         let action = mock_agent_action(*UUID2, true);
         store
             .store()
             .persist()
-            .action(
-                CoreAction::new("test", "node", 0 /* TODO: remove me */, action),
-                None,
-            )
+            .action(CoreAction::new("test", "node", action), None)
             .expect("failed to add action to store");
         let action = mock_agent_action(*UUID3, false);
         store
             .store()
             .persist()
-            .action(
-                CoreAction::new("test", "node", 0 /* TODO: remove me */, action),
-                None,
-            )
+            .action(CoreAction::new("test", "node", action), None)
             .expect("failed to add action to store");
         let action = mock_agent_action(*UUID4, false);
         store
             .store()
             .persist()
-            .action(
-                CoreAction::new("test", "node", 0 /* TODO: remove me */, action),
-                None,
-            )
+            .action(CoreAction::new("test", "node", action), None)
             .expect("failed to add action to store");
 
         // Set up client.
@@ -856,7 +840,7 @@ mod tests {
         // Fill the store with pending approve and pending schedule actions.
         let store = StoreMock::default();
         let action = mock_agent_action(*UUID1, false);
-        let mut action = CoreAction::new("test", "node", 0 /* TODO: remove me */, action);
+        let mut action = CoreAction::new("test", "node", action);
         action.state = ActionStateCore::PendingApprove;
         store
             .store()
@@ -865,7 +849,7 @@ mod tests {
             .expect("failed to add action to store");
 
         let action = mock_agent_action(*UUID2, false);
-        let mut action = CoreAction::new("test", "node", 0 /* TODO: remove me */, action);
+        let mut action = CoreAction::new("test", "node", action);
         action.state = ActionStateCore::PendingSchedule;
         store
             .store()
@@ -930,7 +914,7 @@ mod tests {
         // Fill DB with finished, running and pending actions.
         let store = StoreMock::default();
         let action = mock_agent_action(*UUID1, false);
-        let mut action = CoreAction::new("test", "node", 0 /* TODO: remove me */, action);
+        let mut action = CoreAction::new("test", "node", action);
         action.state = ActionStateCore::PendingApprove;
         store
             .store()
@@ -939,7 +923,7 @@ mod tests {
             .expect("failed to add action to store");
 
         let action = mock_agent_action(*UUID2, true);
-        let action = CoreAction::new("test", "node", 0 /* TODO: remove me */, action);
+        let action = CoreAction::new("test", "node", action);
         store
             .store()
             .persist()
@@ -947,7 +931,7 @@ mod tests {
             .expect("failed to add action to store");
 
         let action = mock_agent_action(*UUID3, false);
-        let mut action = CoreAction::new("test", "node", 0 /* TODO: remove me */, action);
+        let mut action = CoreAction::new("test", "node", action);
         action.state = ActionStateCore::PendingSchedule;
         store
             .store()
@@ -956,7 +940,7 @@ mod tests {
             .expect("failed to add action to store");
 
         let action = mock_agent_action(*UUID4, false);
-        let mut action = CoreAction::new("test", "node", 0 /* TODO: remove me */, action);
+        let mut action = CoreAction::new("test", "node", action);
         action.state = ActionStateCore::Running;
         store
             .store()
@@ -965,7 +949,7 @@ mod tests {
             .expect("failed to add action to store");
 
         let action = mock_agent_action(*UUID5, false);
-        let mut action = CoreAction::new("test", "node", 0 /* TODO: remove me */, action);
+        let mut action = CoreAction::new("test", "node", action);
         action.state = ActionStateCore::Running;
         store
             .store()

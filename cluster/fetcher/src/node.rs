@@ -59,23 +59,19 @@ impl NodeFetcher {
 
 impl NodeFetcher {
     fn process_node_existing(&self, node: Node, old: Node, span: &mut Span) -> Result<()> {
-        if node != old {
-            let event = Event::builder().node().changed(old, node.clone());
-            let code = event.code();
-            let stream_key = event.stream_key();
-            let event = EmitMessage::with(stream_key, event)
-                .with_context(|_| ErrorKind::EventEmit(code))?
-                .trace(span.context().clone());
-            self.events
-                .emit(event)
-                .with_context(|_| ErrorKind::EventEmit(code))?;
+        if node == old {
+            return Ok(());
         }
-        // ALWAYS persist the model, even unchanged, to clear the staleness state.
-        self.store
-            .persist()
-            .node(node, span.context().clone())
-            .with_context(|_| ErrorKind::PrimaryStoreWrite("node update"))
-            .map_err(Error::from)
+        let event = Event::builder().node().changed(old, node);
+        let code = event.code();
+        let stream_key = event.stream_key();
+        let event = EmitMessage::with(stream_key, event)
+            .with_context(|_| ErrorKind::EventEmit(code))?
+            .trace(span.context().clone());
+        self.events
+            .emit(event)
+            .with_context(|_| ErrorKind::EventEmit(code))?;
+        Ok(())
     }
 
     fn process_node_new(&self, node: Node, span: &mut Span) -> Result<()> {

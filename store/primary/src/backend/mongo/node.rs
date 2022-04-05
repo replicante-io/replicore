@@ -11,7 +11,6 @@ use replicante_models_core::agent::Node as NodeModel;
 
 use super::super::NodeInterface;
 use super::constants::COLLECTION_NODES;
-use super::document::NodeDocument;
 use crate::store::node::NodeAttribures;
 use crate::ErrorKind;
 use crate::Result;
@@ -40,9 +39,8 @@ impl NodeInterface for Node {
             "node_id": &attrs.node_id,
         };
         let collection = self.client.database(&self.db).collection(COLLECTION_NODES);
-        let document: Option<NodeDocument> =
-            find_one(collection, filter, span, self.tracer.as_deref())
-                .with_context(|_| ErrorKind::MongoDBOperation)?;
-        Ok(document.map(NodeModel::from))
+        let document = find_one(collection, filter, span, self.tracer.as_deref())
+            .with_context(|_| ErrorKind::MongoDBOperation)?;
+        Ok(document)
     }
 }

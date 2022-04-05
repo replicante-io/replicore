@@ -13,7 +13,6 @@ use replicante_models_core::agent::AgentInfo as AgentInfoModel;
 use super::super::AgentInterface;
 use super::constants::COLLECTION_AGENTS;
 use super::constants::COLLECTION_AGENTS_INFO;
-use super::document::AgentInfoDocument;
 use crate::store::agent::AgentAttribures;
 use crate::ErrorKind;
 use crate::Result;
@@ -64,9 +63,8 @@ impl AgentInterface for Agent {
             .client
             .database(&self.db)
             .collection(COLLECTION_AGENTS_INFO);
-        let document: Option<AgentInfoDocument> =
-            find_one(collection, filter, span, self.tracer.as_deref())
-                .with_context(|_| ErrorKind::MongoDBOperation)?;
-        Ok(document.map(AgentInfoModel::from))
+        let document = find_one(collection, filter, span, self.tracer.as_deref())
+            .with_context(|_| ErrorKind::MongoDBOperation)?;
+        Ok(document)
     }
 }

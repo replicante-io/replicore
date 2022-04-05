@@ -1,13 +1,10 @@
 use std::sync::Arc;
 use std::sync::Mutex;
 
-use chrono::DateTime;
-use chrono::Utc;
 use opentracingrust::SpanContext;
 use uuid::Uuid;
 
 use replicante_models_core::actions::Action;
-use replicante_models_core::actions::ActionState;
 use replicante_models_core::actions::ActionSummary;
 use replicante_models_core::agent::Agent;
 use replicante_models_core::agent::AgentInfo;
@@ -163,76 +160,6 @@ impl ActionsInterface for Actions {
         _: Option<SpanContext>,
     ) -> Result<()> {
         panic!("TODO: MockStore::Actions::disapprove")
-    }
-
-    #[allow(clippy::needless_collect)]
-    fn iter_lost(
-        &self,
-        attrs: &ActionsAttributes,
-        node_id: String,
-        refresh_id: i64,
-        finished_ts: DateTime<Utc>,
-        _: Option<SpanContext>,
-    ) -> Result<Cursor<Action>> {
-        let store = self.state.lock().expect("MockStore state lock is poisoned");
-        let cluster_id = &attrs.cluster_id;
-        let cursor: Vec<Action> = store
-            .actions
-            .iter()
-            .filter(|(key, action)| {
-                key.0 == *cluster_id && key.1 == *node_id && action.refresh_id != refresh_id
-            })
-            .map(|(_, action)| {
-                // Simulate the changes that will be performed by `mark_lost` for clients.
-                let mut action = action.clone();
-                action.state = ActionState::Lost;
-                action.finished_ts = Some(finished_ts);
-                action
-            })
-            .collect();
-        Ok(Cursor::new(cursor.into_iter().map(Ok)))
-    }
-
-    fn mark_lost(
-        &self,
-        attrs: &ActionsAttributes,
-        node_id: String,
-        refresh_id: i64,
-        finished_ts: DateTime<Utc>,
-        _: Option<SpanContext>,
-    ) -> Result<()> {
-        let cluster_id = &attrs.cluster_id;
-        let mut store = self.state.lock().expect("MockStore state lock is poisoned");
-        let actions = store.actions.iter_mut().filter(|(key, action)| {
-            key.0 == *cluster_id && key.1 == *node_id && action.refresh_id != refresh_id
-        });
-        for (_, action) in actions {
-            action.state = ActionState::Lost;
-            action.finished_ts = Some(finished_ts);
-        }
-        Ok(())
-    }
-
-    #[allow(clippy::needless_collect)]
-    fn pending_schedule(
-        &self,
-        attrs: &ActionsAttributes,
-        node_id: String,
-        _: Option<SpanContext>,
-    ) -> Result<Cursor<Action>> {
-        let store = self.state.lock().expect("MockStore state lock is poisoned");
-        let cluster_id = &attrs.cluster_id;
-        let cursor: Vec<Action> = store
-            .actions
-            .iter()
-            .filter(|(key, action)| {
-                key.0 == *cluster_id
-                    && key.1 == *node_id
-                    && action.state == ActionState::PendingSchedule
-            })
-            .map(|(_, action)| action.clone())
-            .collect();
-        Ok(Cursor::new(cursor.into_iter().map(Ok)))
     }
 
     #[allow(clippy::needless_collect)]

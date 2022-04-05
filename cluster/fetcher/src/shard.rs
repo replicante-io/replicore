@@ -83,7 +83,6 @@ impl ShardFetcher {
         }
 
         // Persist the model so the latest offset and lag information are available.
-        // ALWAYS persist the model, even unchanged, to clear the staleness state.
         self.store
             .persist()
             .shard(shard, span.context().clone())

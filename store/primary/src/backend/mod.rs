@@ -1,10 +1,7 @@
-use std::collections::HashSet;
 use std::ops::Deref;
 use std::ops::DerefMut;
 use std::sync::Arc;
 
-use chrono::DateTime;
-use chrono::Utc;
 use opentracingrust::SpanContext;
 use opentracingrust::Tracer;
 use slog::Logger;
@@ -28,14 +25,12 @@ use crate::store::action::ActionAttributes;
 use crate::store::actions::ActionsAttributes;
 use crate::store::agent::AgentAttribures;
 use crate::store::agents::AgentsAttribures;
-use crate::store::agents::AgentsCounts;
 use crate::store::cluster::ClusterAttribures;
 use crate::store::discovery_settings::DiscoverySettingsAttributes;
 use crate::store::node::NodeAttribures;
 use crate::store::nodes::NodesAttribures;
 use crate::store::shard::ShardAttribures;
 use crate::store::shards::ShardsAttribures;
-use crate::store::shards::ShardsCounts;
 use crate::Config;
 use crate::Cursor;
 use crate::Result;
@@ -222,28 +217,6 @@ box_interface! {
             action_id: Uuid,
             span: Option<SpanContext>,
         ) -> Result<()>;
-        fn iter_lost(
-            &self,
-            attrs: &ActionsAttributes,
-            node_id: String,
-            refresh_id: i64,
-            finished_ts: DateTime<Utc>,
-            span: Option<SpanContext>,
-        ) -> Result<Cursor<Action>>;
-        fn mark_lost(
-            &self,
-            attrs: &ActionsAttributes,
-            node_id: String,
-            refresh_id: i64,
-            finished_ts: DateTime<Utc>,
-            span: Option<SpanContext>,
-        ) -> Result<()>;
-        fn pending_schedule(
-            &self,
-            attrs: &ActionsAttributes,
-            agent_id: String,
-            span: Option<SpanContext>,
-        ) -> Result<Cursor<Action>>;
         fn unfinished_summaries(
             &self,
             attrs: &ActionsAttributes,
@@ -278,11 +251,6 @@ box_interface! {
     trait AgentsInterface,
 
     interface {
-        fn counts(
-            &self,
-            attrs: &AgentsAttribures,
-            span: Option<SpanContext>,
-        ) -> Result<AgentsCounts>;
         fn iter(
             &self,
             attrs: &AgentsAttribures,
@@ -311,7 +279,6 @@ box_interface! {
             attrs: &ClusterAttribures,
             span: Option<SpanContext>,
         ) -> Result<Option<ClusterDiscovery>>;
-        fn mark_stale(&self, attrs: &ClusterAttribures, span: Option<SpanContext>) -> Result<()>;
         fn settings(
             &self,
             attrs: &ClusterAttribures,
@@ -436,11 +403,6 @@ box_interface! {
 
     interface {
         fn iter(&self, attrs: &NodesAttribures, span: Option<SpanContext>) -> Result<Cursor<Node>>;
-        fn kinds(
-            &self,
-            attrs: &NodesAttribures,
-            span: Option<SpanContext>,
-        ) -> Result<HashSet<String>>;
     }
 }
 
@@ -511,11 +473,6 @@ box_interface! {
     trait ShardsInterface,
 
     interface {
-        fn counts(
-            &self,
-            attrs: &ShardsAttribures,
-            span: Option<SpanContext>,
-        ) -> Result<ShardsCounts>;
         fn iter(
             &self,
             attrs: &ShardsAttribures,

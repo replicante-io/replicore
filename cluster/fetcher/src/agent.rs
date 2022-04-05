@@ -129,23 +129,19 @@ impl AgentFetcher {
         old: AgentInfo,
         span: &mut Span,
     ) -> Result<()> {
-        if agent != old {
-            let event = Event::builder().agent().info_changed(old, agent.clone());
-            let code = event.code();
-            let stream_key = event.stream_key();
-            let event = EmitMessage::with(stream_key, event)
-                .with_context(|_| ErrorKind::EventEmit(code))?
-                .trace(span.context().clone());
-            self.events
-                .emit(event)
-                .with_context(|_| ErrorKind::EventEmit(code))?;
+        if agent == old {
+            return Ok(());
         }
-        // ALWAYS persist the model, even unchanged, to clear the staleness state.
-        self.store
-            .persist()
-            .agent_info(agent, span.context().clone())
-            .with_context(|_| ErrorKind::PrimaryStoreWrite("agent info update"))
-            .map_err(Error::from)
+        let event = Event::builder().agent().info_changed(old, agent);
+        let code = event.code();
+        let stream_key = event.stream_key();
+        let event = EmitMessage::with(stream_key, event)
+            .with_context(|_| ErrorKind::EventEmit(code))?
+            .trace(span.context().clone());
+        self.events
+            .emit(event)
+            .with_context(|_| ErrorKind::EventEmit(code))?;
+        Ok(())
     }
 
     fn process_agent_info_new(&self, agent: AgentInfo, span: &mut Span) -> Result<()> {

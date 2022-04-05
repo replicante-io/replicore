@@ -87,7 +87,6 @@ pub struct Fetcher {
     agent: AgentFetcher,
     logger: Logger,
     node: NodeFetcher,
-    primary_store: PrimaryStore,
     shard: ShardFetcher,
     timeout: Duration,
     tracer: Arc<Tracer>,
@@ -104,13 +103,12 @@ impl Fetcher {
         let actions = ActionsFetcher::new(events.clone(), primary_store.clone(), logger.clone());
         let agent = AgentFetcher::new(events.clone(), primary_store.clone());
         let node = NodeFetcher::new(events.clone(), primary_store.clone());
-        let shard = ShardFetcher::new(events, primary_store.clone());
+        let shard = ShardFetcher::new(events, primary_store);
         Fetcher {
             actions,
             agent,
             logger,
             node,
-            primary_store,
             shard,
             timeout,
             tracer,
@@ -162,10 +160,6 @@ impl Fetcher {
             cluster_id.clone(),
             cluster_view.discovery.display_name.clone(),
         );
-        self.primary_store
-            .cluster(ns.ns_id.clone(), cluster_id.clone())
-            .mark_stale(span.context().clone())
-            .with_context(|_| ErrorKind::PrimaryStoreWrite("cluster staleness"))?;
 
         for agent_id in &cluster_view.discovery.nodes {
             // Exit early if lock was lost.

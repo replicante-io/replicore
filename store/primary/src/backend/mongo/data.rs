@@ -20,9 +20,6 @@ use super::constants::COLLECTION_DISCOVERIES;
 use super::constants::COLLECTION_NODES;
 use super::constants::COLLECTION_SHARDS;
 use super::document::ActionDocument;
-use super::document::AgentInfoDocument;
-use super::document::NodeDocument;
-use super::document::ShardDocument;
 use crate::Cursor;
 use crate::ErrorKind;
 use crate::Result;
@@ -67,8 +64,7 @@ impl DataInterface for Data {
             .collection(COLLECTION_AGENTS_INFO);
         let cursor = scan_collection(collection)
             .with_context(|_| ErrorKind::MongoDBOperation)?
-            .map(|item| item.map_err(|error| error.context(ErrorKind::MongoDBCursor).into()))
-            .map(|result: Result<AgentInfoDocument>| result.map(AgentInfo::from));
+            .map(|item| item.map_err(|error| error.context(ErrorKind::MongoDBCursor).into()));
         Ok(Cursor::new(cursor))
     }
 
@@ -98,8 +94,7 @@ impl DataInterface for Data {
         let collection = self.client.database(&self.db).collection(COLLECTION_NODES);
         let cursor = scan_collection(collection)
             .with_context(|_| ErrorKind::MongoDBOperation)?
-            .map(|item| item.map_err(|error| error.context(ErrorKind::MongoDBCursor).into()))
-            .map(|result: Result<NodeDocument>| result.map(Node::from));
+            .map(|item| item.map_err(|error| error.context(ErrorKind::MongoDBCursor).into()));
         Ok(Cursor::new(cursor))
     }
 
@@ -107,8 +102,7 @@ impl DataInterface for Data {
         let collection = self.client.database(&self.db).collection(COLLECTION_SHARDS);
         let cursor = scan_collection(collection)
             .with_context(|_| ErrorKind::MongoDBOperation)?
-            .map(|item| item.map_err(|error| error.context(ErrorKind::MongoDBCursor).into()))
-            .map(|result: Result<ShardDocument>| result.map(Shard::from));
+            .map(|item| item.map_err(|error| error.context(ErrorKind::MongoDBCursor).into()));
         Ok(Cursor::new(cursor))
     }
 }
