@@ -9,6 +9,7 @@ use failure::ResultExt;
 use slog::Logger;
 
 use replicante_models_core::api::discovery_settings::DiscoverySettingsListResponse;
+use replicante_models_core::scope::Namespace;
 use replicante_store_primary::store::Store;
 use replicante_util_actixweb::with_request_span;
 use replicante_util_actixweb::TracingMiddleware;
@@ -53,6 +54,12 @@ async fn responder(data: web::Data<ListData>, request: HttpRequest) -> Result<im
         .get("namespace")
         .ok_or(ErrorKind::APIRequestParameterNotFound("namespace"))?
         .to_string();
+
+    // TODO(namespace-rollout): Replace this check with NS lookup.
+    if namespace != Namespace::HARDCODED_FOR_ROLLOUT().ns_id {
+        let error = ErrorKind::NamespaceRolloutNotDefault(namespace);
+        return Err(error.into());
+    }
 
     let mut request = request;
     let cursor = with_request_span(&mut request, |span| {

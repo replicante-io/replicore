@@ -6,6 +6,7 @@ use uuid::Uuid;
 
 use replicante_models_core::api::apply::ApplyObject;
 use replicante_models_core::api::discovery_settings::DiscoverySettingsListResponse;
+use replicante_models_core::api::validate::ErrorsCollection;
 
 use crate::context::Context;
 
@@ -91,10 +92,12 @@ impl RepliClient {
 
         // Check apply-specific errors.
         if response.status().as_u16() == 400 {
-            let remote = response
-                .body_as()
-                .context("Failed to decode apply validation errors from API server")?;
-            anyhow::bail!(crate::InvalidApply::new(remote));
+            // Attempt to decode the response as apply errors.
+            // If decoding fails assume response is a generic error.
+            let remote = response.body_as::<ErrorsCollection>();
+            if let Ok(remote) = remote {
+                anyhow::bail!(crate::InvalidApply::new(remote));
+            }
         }
         response.check_status()?;
 

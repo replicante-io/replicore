@@ -121,6 +121,13 @@ pub enum ErrorKind {
     #[fail(display = "could not find model {} with ID {}", _0, _1)]
     ModelNotFound(&'static str, String),
 
+    // TODO(namespace-rollout): Replace this error with more appropriate namespace related errors.
+    #[fail(
+        display = "only the default namespace is supported at this time, found = {}",
+        _0
+    )]
+    NamespaceRolloutNotDefault(String),
+
     #[fail(display = "could not delete {} from the primary store", _0)]
     PrimaryStoreDelete(&'static str),
 
@@ -157,6 +164,7 @@ impl ErrorKind {
             Self::APIRequestParameterInvalid(_) => StatusCode::BAD_REQUEST,
             Self::APIRequestParameterNotFound(_) => StatusCode::BAD_REQUEST,
             Self::ModelNotFound(_, _) => StatusCode::NOT_FOUND,
+            Self::NamespaceRolloutNotDefault(_) => StatusCode::BAD_REQUEST,
             Self::ValidateFailed(_) => StatusCode::BAD_REQUEST,
             _ => StatusCode::INTERNAL_SERVER_ERROR,
         }
@@ -164,32 +172,33 @@ impl ErrorKind {
 
     fn kind_name(&self) -> Option<&str> {
         let name = match self {
-            ErrorKind::APIRequestBodyInvalid => "APIRequestBodyInvalid",
-            ErrorKind::APIRequestBodyNotFound => "APIRequestBodyNotFound",
-            ErrorKind::APIRequestParameterInvalid(_) => "APIRequestParameterInvalid",
-            ErrorKind::APIRequestParameterNotFound(_) => "APIRequestParameterNotFound",
-            ErrorKind::ClientInit(_) => "ClientInit",
-            ErrorKind::ClusterAggregation => "ClusterAggregation",
-            ErrorKind::ClusterRefresh => "ClusterRefresh",
-            ErrorKind::ConfigLoad => "ConfigLoad",
-            ErrorKind::Coordination => "Coordination",
-            ErrorKind::ComponentAlreadyRunning(_) => "ComponentAlreadyRunning",
-            ErrorKind::ComponentFailed(_) => "ComponentFailed",
-            ErrorKind::Deserialize(_, _) => "Deserialize",
-            ErrorKind::EventsStreamEmit(_) => "EventsStreamEmit",
-            ErrorKind::EventsStreamFollow(_) => "EventsStreamFollow",
-            ErrorKind::InterfaceAlreadyRunning(_) => "InterfaceAlreadyRunning",
-            ErrorKind::InterfaceInit(_) => "InterfaceInit",
-            ErrorKind::ModelNotFound(_, _) => "ModelNotFound",
-            ErrorKind::PrimaryStoreQuery(_) => "PrimaryStoreQuery",
-            ErrorKind::PrimaryStoreDelete(_) => "PrimaryStoreDelete",
-            ErrorKind::PrimaryStorePersist(_) => "PrimaryStorePersist",
-            ErrorKind::TaskWorkerRegistration(_) => "TaskWorkerRegistration",
-            ErrorKind::ThreadFailed => "ThreadFailed",
-            ErrorKind::ThreadSpawn(_) => "ThreadSpawn",
-            ErrorKind::ValidateFailed(_) => "ValidateFailed",
-            ErrorKind::ViewStoreQuery(_) => "ViewStoreQuery",
-            ErrorKind::ViewStorePersist(_) => "ViewStorePersist",
+            Self::APIRequestBodyInvalid => "APIRequestBodyInvalid",
+            Self::APIRequestBodyNotFound => "APIRequestBodyNotFound",
+            Self::APIRequestParameterInvalid(_) => "APIRequestParameterInvalid",
+            Self::APIRequestParameterNotFound(_) => "APIRequestParameterNotFound",
+            Self::ClientInit(_) => "ClientInit",
+            Self::ClusterAggregation => "ClusterAggregation",
+            Self::ClusterRefresh => "ClusterRefresh",
+            Self::ConfigLoad => "ConfigLoad",
+            Self::Coordination => "Coordination",
+            Self::ComponentAlreadyRunning(_) => "ComponentAlreadyRunning",
+            Self::ComponentFailed(_) => "ComponentFailed",
+            Self::Deserialize(_, _) => "Deserialize",
+            Self::EventsStreamEmit(_) => "EventsStreamEmit",
+            Self::EventsStreamFollow(_) => "EventsStreamFollow",
+            Self::InterfaceAlreadyRunning(_) => "InterfaceAlreadyRunning",
+            Self::InterfaceInit(_) => "InterfaceInit",
+            Self::ModelNotFound(_, _) => "ModelNotFound",
+            Self::NamespaceRolloutNotDefault(_) => "NamespaceRolloutNotDefault",
+            Self::PrimaryStoreQuery(_) => "PrimaryStoreQuery",
+            Self::PrimaryStoreDelete(_) => "PrimaryStoreDelete",
+            Self::PrimaryStorePersist(_) => "PrimaryStorePersist",
+            Self::TaskWorkerRegistration(_) => "TaskWorkerRegistration",
+            Self::ThreadFailed => "ThreadFailed",
+            Self::ThreadSpawn(_) => "ThreadSpawn",
+            Self::ValidateFailed(_) => "ValidateFailed",
+            Self::ViewStoreQuery(_) => "ViewStoreQuery",
+            Self::ViewStorePersist(_) => "ViewStorePersist",
         };
         Some(name)
     }

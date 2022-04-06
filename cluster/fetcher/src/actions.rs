@@ -94,7 +94,7 @@ impl ActionsFetcher {
                 debug!(
                     self.logger,
                     "No unfinished actions for node to sync";
-                    "namesapces" => &cluster_view.namespace,
+                    "namespace" => &cluster_view.namespace,
                     "cluster_id" => &cluster_view.cluster_id,
                     "node_id" => agent_id,
                 );
@@ -159,7 +159,7 @@ impl ActionsFetcher {
         debug!(
             self.logger,
             "Found lost action";
-            "namesapces" => &cluster_view.namespace,
+            "namespace" => &cluster_view.namespace,
             "cluster_id" => &cluster_view.cluster_id,
             "node_id" => node_id,
             "action_id" => action_summary.action_id.to_string(),
@@ -218,7 +218,7 @@ impl ActionsFetcher {
                 let payload = serde_json::to_value(payload).expect("errors must always serialise");
                 action.schedule_attempt += 1;
                 action.state_payload = Some(payload);
-                // TODO: make MAX_SCHEDULE_ATTEMPTS a namespace configuration once namesapces exist.
+                // TODO: make MAX_SCHEDULE_ATTEMPTS a namespace configuration once namespaces exist.
                 if action.schedule_attempt > MAX_SCHEDULE_ATTEMPTS {
                     action.finish(ActionState::Failed);
                 }
@@ -235,7 +235,7 @@ impl ActionsFetcher {
                 info!(
                     self.logger,
                     "Ignored duplicate action scheduling attempt";
-                    "namesapce" => &cluster_view.namespace,
+                    "namespace" => &cluster_view.namespace,
                     "cluster_id" => &cluster_view.cluster_id,
                     "node_id" => node_id,
                     "action_id" => action.action_id.to_string(),
@@ -1044,7 +1044,7 @@ mod tests {
             )
             .expect("actions sync failed");
 
-        // TODO: Finish new cluster view and check actions in it.
+        // Finish new cluster view and check actions in it.
         let new_cluster_view = new_cluster_view.build();
         assert_eq!(new_cluster_view.actions_unfinished_by_node.len(), 1);
         let actions = new_cluster_view

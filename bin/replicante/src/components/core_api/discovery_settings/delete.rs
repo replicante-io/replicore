@@ -10,6 +10,7 @@ use serde_json::json;
 use slog::Logger;
 
 use replicante_models_core::events::Event;
+use replicante_models_core::scope::Namespace;
 use replicante_store_primary::store::Store;
 use replicante_stream_events::EmitMessage;
 use replicante_stream_events::Stream;
@@ -64,6 +65,12 @@ async fn responder(data: web::Data<DeleteData>, request: HttpRequest) -> Result<
         .get("name")
         .ok_or(ErrorKind::APIRequestParameterNotFound("name"))?
         .to_string();
+
+    // TODO(namespace-rollout): Replace this check with NS lookup.
+    if namespace != Namespace::HARDCODED_FOR_ROLLOUT().ns_id {
+        let error = ErrorKind::NamespaceRolloutNotDefault(namespace);
+        return Err(error.into());
+    }
 
     let mut request = request;
     with_request_span(&mut request, |span| {
