@@ -1,14 +1,11 @@
-use std::collections::HashMap;
 use std::sync::Arc;
 use std::sync::Mutex;
 
-use chrono::DateTime;
-use chrono::Utc;
 use opentracingrust::SpanContext;
 use uuid::Uuid;
 
 use replicante_models_core::actions::Action;
-use replicante_models_core::actions::ActionState;
+use replicante_models_core::actions::ActionSummary;
 use replicante_models_core::agent::Agent;
 use replicante_models_core::agent::AgentInfo;
 use replicante_models_core::agent::Node;
@@ -19,6 +16,8 @@ use replicante_models_core::cluster::ClusterMeta;
 use replicante_models_core::cluster::ClusterSettings;
 
 use super::MockState;
+use crate::backend::ActionImpl;
+use crate::backend::ActionInterface;
 use crate::backend::ActionsImpl;
 use crate::backend::ActionsInterface;
 use crate::backend::AgentImpl;
@@ -36,7 +35,7 @@ use crate::backend::ShardImpl;
 use crate::backend::ShardsImpl;
 use crate::backend::StoreImpl;
 use crate::backend::StoreInterface;
-use crate::store::actions::ActionSyncState;
+use crate::store::action::ActionAttributes;
 use crate::store::actions::ActionsAttributes;
 use crate::store::Store;
 use crate::Cursor;
@@ -48,6 +47,13 @@ pub struct StoreMock {
 }
 
 impl StoreInterface for StoreMock {
+    fn action(&self) -> ActionImpl {
+        let action = ActionMock {
+            state: Arc::clone(&self.state),
+        };
+        ActionImpl::new(action)
+    }
+
     fn actions(&self) -> ActionsImpl {
         let actions = Actions {
             state: Arc::clone(&self.state),
@@ -113,6 +119,25 @@ impl From<StoreMock> for Store {
     }
 }
 
+/// Mock implementation of the `ActionInterface`.
+struct ActionMock {
+    state: Arc<Mutex<MockState>>,
+}
+
+impl ActionInterface for ActionMock {
+    fn get(&self, attrs: &ActionAttributes, _: Option<SpanContext>) -> Result<Option<Action>> {
+        let store = self.state.lock().expect("MockStore state lock is poisoned");
+        let action = store.actions.iter().find_map(|(key, action)| {
+            if key.0 == attrs.cluster_id && key.2 == attrs.action_id {
+                Some(action)
+            } else {
+                None
+            }
+        });
+        Ok(action.cloned())
+    }
+}
+
 /// Mock implementation of the `ActionsInterface`.
 struct Actions {
     state: Arc<Mutex<MockState>>,
@@ -138,105 +163,20 @@ impl ActionsInterface for Actions {
     }
 
     #[allow(clippy::needless_collect)]
-    fn iter_lost(
+    fn unfinished_summaries(
         &self,
         attrs: &ActionsAttributes,
-        node_id: String,
-        refresh_id: i64,
-        finished_ts: DateTime<Utc>,
         _: Option<SpanContext>,
-    ) -> Result<Cursor<Action>> {
+    ) -> Result<Cursor<ActionSummary>> {
         let store = self.state.lock().expect("MockStore state lock is poisoned");
         let cluster_id = &attrs.cluster_id;
-        let cursor: Vec<Action> = store
+        let cursor: Vec<ActionSummary> = store
             .actions
             .iter()
-            .filter(|(key, action)| {
-                key.0 == *cluster_id && key.1 == *node_id && action.refresh_id != refresh_id
-            })
-            .map(|(_, action)| {
-                // Simulate the changes that will be performed by `mark_lost` for clients.
-                let mut action = action.clone();
-                action.state = ActionState::Lost;
-                action.finished_ts = Some(finished_ts);
-                action
-            })
+            .filter(|(key, action)| key.0 == *cluster_id && action.finished_ts.is_none())
+            .map(|(_, action)| ActionSummary::from(action))
             .collect();
         Ok(Cursor::new(cursor.into_iter().map(Ok)))
-    }
-
-    fn mark_lost(
-        &self,
-        attrs: &ActionsAttributes,
-        node_id: String,
-        refresh_id: i64,
-        finished_ts: DateTime<Utc>,
-        _: Option<SpanContext>,
-    ) -> Result<()> {
-        let cluster_id = &attrs.cluster_id;
-        let mut store = self.state.lock().expect("MockStore state lock is poisoned");
-        let actions = store.actions.iter_mut().filter(|(key, action)| {
-            key.0 == *cluster_id && key.1 == *node_id && action.refresh_id != refresh_id
-        });
-        for (_, action) in actions {
-            action.state = ActionState::Lost;
-            action.finished_ts = Some(finished_ts);
-        }
-        Ok(())
-    }
-
-    #[allow(clippy::needless_collect)]
-    fn pending_schedule(
-        &self,
-        attrs: &ActionsAttributes,
-        node_id: String,
-        _: Option<SpanContext>,
-    ) -> Result<Cursor<Action>> {
-        let store = self.state.lock().expect("MockStore state lock is poisoned");
-        let cluster_id = &attrs.cluster_id;
-        let cursor: Vec<Action> = store
-            .actions
-            .iter()
-            .filter(|(key, action)| {
-                key.0 == *cluster_id
-                    && key.1 == *node_id
-                    && action.state == ActionState::PendingSchedule
-            })
-            .map(|(_, action)| action.clone())
-            .collect();
-        Ok(Cursor::new(cursor.into_iter().map(Ok)))
-    }
-
-    fn state_for_sync(
-        &self,
-        attrs: &ActionsAttributes,
-        node_id: String,
-        action_ids: &[Uuid],
-        _: Option<SpanContext>,
-    ) -> Result<HashMap<Uuid, ActionSyncState>> {
-        let mut results = HashMap::new();
-        // Check ids in the state map.
-        let store = self.state.lock().expect("MockStore state lock is poisoned");
-        for id in action_ids {
-            let state = store
-                .actions
-                .get(&(attrs.cluster_id.clone(), node_id.clone(), *id))
-                .map(|action| {
-                    if action.finished_ts.is_some() {
-                        ActionSyncState::Finished
-                    } else {
-                        ActionSyncState::Found(action.clone())
-                    }
-                })
-                .unwrap_or(ActionSyncState::NotFound);
-            results.insert(*id, state);
-        }
-
-        // Add other ids as not found.
-        for id in action_ids {
-            results.entry(*id).or_insert(ActionSyncState::NotFound);
-        }
-        Ok(results)
     }
 }
 

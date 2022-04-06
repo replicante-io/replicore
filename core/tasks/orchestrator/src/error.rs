@@ -4,6 +4,41 @@ use failure::Backtrace;
 use failure::Context;
 use failure::Fail;
 
+/// Dumb wrapper to carry `anyhow::Error`s as `failure::Fail`s.
+pub struct AnyWrap(anyhow::Error);
+
+impl From<anyhow::Error> for AnyWrap {
+    fn from(error: anyhow::Error) -> AnyWrap {
+        AnyWrap(error)
+    }
+}
+
+impl Fail for AnyWrap {
+    fn cause(&self) -> Option<&dyn Fail> {
+        None
+    }
+
+    fn backtrace(&self) -> Option<&Backtrace> {
+        None
+    }
+
+    fn name(&self) -> Option<&str> {
+        Some("AnyWrap")
+    }
+}
+
+impl fmt::Display for AnyWrap {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        fmt::Display::fmt(&self.0, f)
+    }
+}
+
+impl fmt::Debug for AnyWrap {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        fmt::Debug::fmt(&self.0, f)
+    }
+}
+
 /// Error information returned by this crate.
 #[derive(Debug)]
 pub struct Error(Context<ErrorKind>);
@@ -53,6 +88,15 @@ pub enum ErrorKind {
     Aggregate(String, String),
 
     #[fail(
+        display = "unable to build cluster view from agent reponses for {}.{}",
+        _0, _1
+    )]
+    BuildClusterViewFromAgents(String, String),
+
+    #[fail(display = "unable to build cluster view from DB for {}.{}", _0, _1)]
+    BuildClusterViewFromStore(String, String),
+
+    #[fail(
         display = "another orchestration task is in progress for {}.{}",
         _0, _1
     )]
@@ -84,6 +128,22 @@ impl ErrorKind {
         S2: Into<String>,
     {
         ErrorKind::Aggregate(namespace.into(), cluster_id.into())
+    }
+
+    pub fn build_cluster_view_from_agents<S1, S2>(namespace: S1, cluster_id: S2) -> ErrorKind
+    where
+        S1: Into<String>,
+        S2: Into<String>,
+    {
+        ErrorKind::BuildClusterViewFromAgents(namespace.into(), cluster_id.into())
+    }
+
+    pub fn build_cluster_view_from_store<S1, S2>(namespace: S1, cluster_id: S2) -> ErrorKind
+    where
+        S1: Into<String>,
+        S2: Into<String>,
+    {
+        ErrorKind::BuildClusterViewFromStore(namespace.into(), cluster_id.into())
     }
 
     pub fn concurrent_orchestrate<S1, S2>(namespace: S1, cluster_id: S2) -> ErrorKind
@@ -137,6 +197,8 @@ impl ErrorKind {
     fn kind_name(&self) -> Option<&str> {
         let name = match self {
             ErrorKind::Aggregate(_, _) => "Aggregate",
+            ErrorKind::BuildClusterViewFromAgents(_, _) => "BuildClusterViewFromAgents",
+            ErrorKind::BuildClusterViewFromStore(_, _) => "BuildClusterViewFromStore",
             ErrorKind::ConcurrentOrchestrate(_, _) => "ConcurrentOrchestrate",
             ErrorKind::DeserializePayload => "DeserializePayload",
             ErrorKind::FetchDiscovery(_, _) => "FetchDiscovery",

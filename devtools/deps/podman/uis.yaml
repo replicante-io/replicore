@@ -4,8 +4,8 @@ containers:
     image: 'docker.io/obsidiandynamics/kafdrop'
     env:
       JVM_OPTS: '-Xms32M -Xmx64M'
-      KAFKA_BROKERCONNECT: 'podman-host:9092'
-      ZOOKEEPER_CONNECT: 'podman-host:2181/kafka'
+      KAFKA_BROKERCONNECT: 'host.containers.internal:9092'
+      ZOOKEEPER_CONNECT: 'host.containers.internal:2181/kafka'
 
   # MongoDB UI - https://adminmongo.markmoffat.com/
   - name: mongo

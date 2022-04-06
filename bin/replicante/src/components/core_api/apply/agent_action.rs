@@ -141,7 +141,6 @@ pub fn replicante_io_v0(args: ApplierArgs) -> Result<Value> {
         headers: args.headers,
         kind: kind.to_string(),
         node_id: node.to_string(),
-        refresh_id: 0,
         requester: ActionRequester::CoreApi,
         schedule_attempt: 0,
         scheduled_ts: None,

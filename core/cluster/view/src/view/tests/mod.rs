@@ -1,3 +1,5 @@
+use std::str::FromStr;
+
 use crate::ClusterView;
 use crate::ClusterViewCorrupt;
 
@@ -32,6 +34,108 @@ fn fail_when_starting_with_different_cluster_ids() {
         }
         _ => panic!("unexpected error value"),
     };
+}
+
+#[test]
+fn actions_cannot_be_added_twice() {
+    let discovery = self::fixtures::cluster_mongodb::discovery();
+    let settings = self::fixtures::cluster_mongodb::settings();
+    let mut builder =
+        ClusterView::builder(settings, discovery).expect("ClusterView builder should be created");
+
+    let err = builder
+        .action(self::fixtures::cluster_mongodb::blue_node_action_restart())
+        .unwrap()
+        .action(self::fixtures::cluster_mongodb::blue_node_action_restart())
+        .err()
+        .expect("duplicate action did not fail")
+        .downcast::<ClusterViewCorrupt>()
+        .expect("unexpected error type");
+
+    match err {
+        ClusterViewCorrupt::DuplicateAction(namespace, cluster_id, node_id, action_id) => {
+            assert_eq!(namespace, self::fixtures::cluster_mongodb::NAMESPACE);
+            assert_eq!(cluster_id, self::fixtures::cluster_mongodb::CLUSTER_ID);
+            assert_eq!(node_id, "https://blue.mongo.fixtures:12345/");
+            assert_eq!(
+                action_id,
+                uuid::Uuid::from_str("0436430c-2b02-624c-2032-570501212b57").unwrap(),
+            )
+        }
+        _ => panic!("unexpected error value"),
+    };
+}
+
+#[test]
+fn actions_must_be_from_cluster() {
+    let discovery = self::fixtures::cluster_mongodb::discovery();
+    let settings = self::fixtures::cluster_mongodb::settings();
+    let mut builder =
+        ClusterView::builder(settings, discovery).expect("ClusterView builder should be created");
+
+    let mut action = self::fixtures::cluster_mongodb::blue_node_action_restart();
+    action.cluster_id = self::fixtures::cluster_zookeeper::CLUSTER_ID.into();
+    let err = builder
+        .action(action)
+        .err()
+        .expect("invalid action did not fail")
+        .downcast::<ClusterViewCorrupt>()
+        .expect("unexpected error type");
+
+    match err {
+        ClusterViewCorrupt::ClusterIdClash(namespace, expected, found) => {
+            assert_eq!(namespace, self::fixtures::cluster_mongodb::NAMESPACE);
+            assert_eq!(expected, self::fixtures::cluster_mongodb::CLUSTER_ID);
+            assert_eq!(found, self::fixtures::cluster_zookeeper::CLUSTER_ID);
+        }
+        _ => panic!("unexpected error value"),
+    };
+}
+
+#[test]
+fn actions_tracked() {
+    let discovery = self::fixtures::cluster_mongodb::discovery();
+    let settings = self::fixtures::cluster_mongodb::settings();
+    let mut builder =
+        ClusterView::builder(settings, discovery).expect("ClusterView builder should be created");
+
+    let blue_node = self::fixtures::cluster_mongodb::blue_node();
+    let green_node = self::fixtures::cluster_mongodb::green_node();
+
+    builder
+        .action(self::fixtures::cluster_mongodb::blue_node_action_restart())
+        .unwrap()
+        .action(self::fixtures::cluster_mongodb::blue_node_action_stepdown())
+        .unwrap()
+        .action(self::fixtures::cluster_mongodb::green_node_action_stepdown())
+        .unwrap();
+
+    let view = builder.build();
+    let blue_actions: Vec<uuid::Uuid> = view
+        .actions_unfinished_by_node
+        .get(&blue_node.node_id)
+        .expect("failed to find actions for blue node")
+        .iter()
+        .map(|summary| summary.action_id)
+        .collect();
+    let green_actions: Vec<uuid::Uuid> = view
+        .actions_unfinished_by_node
+        .get(&green_node.node_id)
+        .expect("failed to find actions for green node")
+        .iter()
+        .map(|summary| summary.action_id)
+        .collect();
+    assert_eq!(
+        blue_actions,
+        vec![
+            uuid::Uuid::from_str("0436430c-2b02-624c-2032-570501212b57").unwrap(),
+            uuid::Uuid::from_str("347db8f1-dab4-401b-8956-04cd0ca25661").unwrap(),
+        ]
+    );
+    assert_eq!(
+        green_actions,
+        vec![uuid::Uuid::from_str("004089da-ec5a-4f4c-a4cc-adff9ec09015").unwrap()]
+    );
 }
 
 #[test]
@@ -244,6 +348,67 @@ fn nodes_tracked() {
 }
 
 #[test]
+fn serialise_cluster_view() {
+    let discovery = self::fixtures::cluster_mongodb::discovery();
+    let settings = self::fixtures::cluster_mongodb::settings();
+    let mut builder =
+        ClusterView::builder(settings, discovery).expect("ClusterView builder should be created");
+
+    // Add agents and agents info.
+    builder
+        .agent(self::fixtures::cluster_mongodb::blue_node_agent())
+        .unwrap()
+        .agent_info(self::fixtures::cluster_mongodb::blue_node_agent_info())
+        .unwrap()
+        .agent(self::fixtures::cluster_mongodb::green_node_agent())
+        .unwrap()
+        .agent_info(self::fixtures::cluster_mongodb::green_node_agent_info())
+        .unwrap()
+        .agent(self::fixtures::cluster_mongodb::red_node_agent())
+        .unwrap()
+        .agent_info(self::fixtures::cluster_mongodb::red_node_agent_info())
+        .unwrap();
+
+    // Add nodes.
+    builder
+        .node(self::fixtures::cluster_mongodb::blue_node())
+        .unwrap()
+        .node(self::fixtures::cluster_mongodb::green_node())
+        .unwrap()
+        .node(self::fixtures::cluster_mongodb::red_node())
+        .unwrap();
+
+    // Add shards.
+    builder
+        .shard(self::fixtures::cluster_mongodb::blue_node_shard_hex())
+        .unwrap()
+        .shard(self::fixtures::cluster_mongodb::blue_node_shard_rgb())
+        .unwrap()
+        .shard(self::fixtures::cluster_mongodb::green_node_shard_cmyk())
+        .unwrap()
+        .shard(self::fixtures::cluster_mongodb::green_node_shard_rgb())
+        .unwrap()
+        .shard(self::fixtures::cluster_mongodb::red_node_shard_cmyk())
+        .unwrap()
+        .shard(self::fixtures::cluster_mongodb::red_node_shard_hex())
+        .unwrap();
+
+    // Add actions.
+    builder
+        .action(self::fixtures::cluster_mongodb::blue_node_action_restart())
+        .unwrap()
+        .action(self::fixtures::cluster_mongodb::blue_node_action_stepdown())
+        .unwrap()
+        .action(self::fixtures::cluster_mongodb::green_node_action_stepdown())
+        .unwrap();
+
+    // Serialise the view to check format.
+    let view = builder.build();
+    let actual = serde_json::to_string_pretty(&view).expect("ClusterView to serialise");
+    assert_eq!(actual, std::include_str!("expected-encoded.json"));
+}
+
+#[test]
 fn shards_cannot_be_added_twice() {
     let discovery = self::fixtures::cluster_mongodb::discovery();
     let settings = self::fixtures::cluster_mongodb::settings();
@@ -297,6 +462,35 @@ fn shards_indexed_by_node_and_id() {
         .expect("shard not found on node");
     assert_eq!(shard.node_id, "https://blue.mongo.fixtures:12345/");
     assert_eq!(shard.shard_id, "rgb");
+}
+
+#[test]
+fn shards_indexed_by_id_and_node() {
+    let discovery = self::fixtures::cluster_mongodb::discovery();
+    let settings = self::fixtures::cluster_mongodb::settings();
+    let mut builder =
+        ClusterView::builder(settings, discovery).expect("ClusterView builder should be created");
+
+    builder
+        .shard(self::fixtures::cluster_mongodb::blue_node_shard_hex())
+        .unwrap()
+        .shard(self::fixtures::cluster_mongodb::blue_node_shard_rgb())
+        .unwrap()
+        .shard(self::fixtures::cluster_mongodb::green_node_shard_cmyk())
+        .unwrap()
+        .shard(self::fixtures::cluster_mongodb::green_node_shard_rgb())
+        .unwrap()
+        .shard(self::fixtures::cluster_mongodb::red_node_shard_cmyk())
+        .unwrap()
+        .shard(self::fixtures::cluster_mongodb::red_node_shard_hex())
+        .unwrap();
+
+    let view = builder.build();
+    let nodes = view
+        .shards_by_id
+        .get("rgb")
+        .expect("shard not found in view");
+    assert_eq!(nodes.len(), 2);
 }
 
 #[test]

@@ -18,6 +18,7 @@ for_version() {
     devtools/replidev/Cargo.toml
 }
 
-#for_version "stable"
+for_version "stable"
 for_version "1.59.0"
-for_version "nightly"
+# TODO: re-enable nightly after updating actix-web.
+#for_version "nightly"

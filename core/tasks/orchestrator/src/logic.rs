@@ -1,12 +1,11 @@
 use std::sync::Arc;
 use std::time::Duration;
 
-use chrono::Utc;
 use failure::ResultExt;
 use opentracingrust::Span;
 use opentracingrust::Tracer;
-use slog::debug;
 use slog::info;
+use slog::warn;
 use slog::Logger;
 
 use replicante_cluster_aggregator::Aggregator;
@@ -16,6 +15,8 @@ use replicante_models_core::scope::Namespace;
 use replicante_service_coordinator::NonBlockingLock;
 use replicante_store_primary::store::Store;
 use replicante_stream_events::Stream;
+
+use replicore_cluster_view::ClusterView;
 
 use crate::metrics::SETTINGS_DISABLED_COUNT;
 use crate::metrics::SYNC_DURATION;
@@ -104,44 +105,56 @@ impl Logic {
         lock: &NonBlockingLock,
         span: &mut Span,
     ) -> Result<()> {
-        let namespace_id = &settings.namespace;
-        let cluster_id = &settings.cluster_id;
+        let namespace_id = settings.namespace.clone();
+        let cluster_id = settings.cluster_id.clone();
         let span_context = span.context().clone();
         let namespace = Namespace::HARDCODED_FOR_ROLLOUT();
 
-        // Lookup the discovery record.
-        let discovery = self
+        // Load the pre-refresh cluster view.
+        // We can use the discovery record from this view as it will be the most recent
+        // discovery stored in the DB regardless of the "freshness" of the other records.
+        let cluster_view_before = self
             .store
-            .cluster(namespace_id.to_string(), cluster_id.to_string())
-            .discovery(span_context)
-            .with_context(|_| ErrorKind::fetch_discovery(namespace_id, cluster_id))?;
-        let discovery = match discovery {
-            Some(discovery) => discovery,
-            None => {
-                debug!(
-                    self.logger,
-                    "Skipping sync of cluster without discovery record";
-                    "namespace" => &settings.namespace,
-                    "cluster_id" => &settings.cluster_id,
-                );
-                return Ok(());
-            }
-        };
+            .cluster_view(namespace_id.clone(), cluster_id.clone(), span_context)
+            .with_context(|_| {
+                ErrorKind::build_cluster_view_from_store(&namespace_id, &cluster_id)
+            })?;
+        let mut cluster_view_after =
+            ClusterView::builder(settings, cluster_view_before.discovery.clone())
+                .map_err(crate::error::AnyWrap::from)
+                .with_context(|_| {
+                    ErrorKind::build_cluster_view_from_agents(&namespace_id, &cluster_id)
+                })?;
 
         // Perform the sync process.
         info!(
             self.logger,
             "Sync state of cluster";
-            "namespace" => &settings.namespace,
-            "cluster_id" => &settings.cluster_id,
+            "namespace" => &namespace_id,
+            "cluster_id" => &cluster_id,
         );
-        let refresh_id = Utc::now().timestamp();
         let timer = SYNC_DURATION.start_timer();
         self.fetcher
-            .fetch(namespace, discovery.clone(), refresh_id, lock.watch(), span)
-            .with_context(|_| ErrorKind::refresh_cluster(namespace_id, cluster_id))?;
+            .fetch(
+                namespace,
+                &cluster_view_before,
+                &mut cluster_view_after,
+                lock.watch(),
+                span,
+            )
+            .with_context(|_| ErrorKind::refresh_cluster(&namespace_id, &cluster_id))?;
+        if !lock.watch().inspect() {
+            warn!(
+                self.logger,
+                "Cluster fetcher lock lost, skipping aggregation";
+                "namespace" => &namespace_id,
+                "cluster_id" => &cluster_id,
+            );
+            return Ok(());
+        }
+        let cluster_view_after = cluster_view_after.build();
         self.aggregator
-            .aggregate(discovery, lock.watch(), span)
+            .aggregate(cluster_view_after, lock.watch(), span)
             .with_context(|_| ErrorKind::aggregate(namespace_id, cluster_id))?;
         timer.observe_duration();
         Ok(())

@@ -12,7 +12,7 @@ env:
 # TODO: I'd like to re-add the cargo audit task but I'm not sure yet where it should be.
 jobs:
   # Stable rust is the version we aim to use for builds.
-  checks-stable:
+  check-stable:
     runs-on: ubuntu-latest
     continue-on-error: false
     steps:
@@ -34,13 +34,9 @@ jobs:
       - name: Replicante Development Tool
         run: ci/check-workspace.sh --full "Replicante Development Tool" devtools/replidev/Cargo.toml
 
-  checks:
+  # Earliest version of rust supported (breaking clippy check).
+  check-min-rust:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        rust:
-          - 1.59.0   # Earliest version of rust supported (breaking clippy check).
-          - nightly  # Prepare for the future!
     continue-on-error: true
     steps:
       - uses: actions/checkout@v2
@@ -49,7 +45,7 @@ jobs:
       - uses: actions-rs/toolchain@v1
         with:
           profile: minimal
-          toolchain: ${{ matrix.rust }}
+          toolchain: 1.59.0
           override: true
           components: rustfmt, clippy
 
@@ -60,3 +56,27 @@ jobs:
       # Replicante development tool CI.
       - name: Replicante Development Tool
         run: ci/check-workspace.sh "Replicante Development Tool" devtools/replidev/Cargo.toml
+
+  # TODO: re-enable nightly after updating actix-web.
+  # Prepare for the future!
+  #check-nightly:
+  #  runs-on: ubuntu-latest
+  #  continue-on-error: true
+  #  steps:
+  #    - uses: actions/checkout@v2
+  #      with:
+  #        submodules: recursive
+  #    - uses: actions-rs/toolchain@v1
+  #      with:
+  #        profile: minimal
+  #        toolchain: nightly
+  #        override: true
+  #        components: rustfmt, clippy
+
+  #    # Replicante Core
+  #    - name: Replicante Core
+  #      run: ci/check-workspace.sh Core Cargo.toml || true
+
+  #    # Replicante development tool CI.
+  #    - name: Replicante Development Tool
+  #      run: ci/check-workspace.sh "Replicante Development Tool" devtools/replidev/Cargo.toml || true

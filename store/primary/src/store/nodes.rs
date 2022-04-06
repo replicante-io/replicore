@@ -1,5 +1,3 @@
-use std::collections::HashSet;
-
 use opentracingrust::SpanContext;
 
 use replicante_models_core::agent::Node as NodeModel;
@@ -25,17 +23,6 @@ impl Nodes {
         S: Into<Option<SpanContext>>,
     {
         self.nodes.iter(&self.attrs, span.into())
-    }
-
-    /// Enumerate the different kinds of *active* nodes in the cluster.
-    ///
-    /// Active nodes are those not stale.
-    /// See `Store::cluster::mark_stale` for why nodes are marked stale.
-    pub fn kinds<S>(&self, span: S) -> Result<HashSet<String>>
-    where
-        S: Into<Option<SpanContext>>,
-    {
-        self.nodes.kinds(&self.attrs, span.into())
     }
 }
 

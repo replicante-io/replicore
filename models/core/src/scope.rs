@@ -35,7 +35,10 @@ impl Namespace {
     pub fn HARDCODED_FOR_ROLLOUT() -> Namespace {
         Namespace {
             ns_id: "default".to_string(),
-            https_transport: NsHttpsTransport::default(),
+            https_transport: NsHttpsTransport {
+                ca_bundle: std::env::var("REPLICORE_TMP_DEFAULT_AGENTS_CA_BUNDLE").ok(),
+                client_key_id: std::env::var("REPLICORE_TMP_DEFAULT_AGENTS_CLIENT_KEY").ok(),
+            },
         }
     }
 }

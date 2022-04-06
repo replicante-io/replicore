@@ -4,16 +4,16 @@ use opentracingrust::Span;
 use slog::debug;
 use slog::Logger;
 
-use replicante_models_core::cluster::discovery::ClusterDiscovery;
 use replicante_service_coordinator::NonBlockingLockWatcher;
 use replicante_store_primary::store::Store;
 use replicante_util_tracing::fail_span;
+
+use replicore_cluster_view::ClusterView;
 
 mod cluster_meta;
 mod error;
 mod metrics;
 
-use self::cluster_meta::ClusterMetaAggregator;
 use self::metrics::AGGREGATE_DURATION;
 use self::metrics::AGGREGATE_ERRORS_COUNT;
 
@@ -39,16 +39,17 @@ impl Aggregator {
     /// internal logic, ...) the process is aborted and the error propagated.
     pub fn aggregate(
         &self,
-        discovery: ClusterDiscovery,
+        cluster_view: ClusterView,
         lock: NonBlockingLockWatcher,
         span: &mut Span,
     ) -> Result<()> {
         span.log(Log::new().log("stage", "aggregate"));
         let _timer = AGGREGATE_DURATION.start_timer();
-        self.inner_process(discovery, lock, span).map_err(|error| {
-            AGGREGATE_ERRORS_COUNT.inc();
-            fail_span(error, span)
-        })
+        self.inner_process(cluster_view, lock, span)
+            .map_err(|error| {
+                AGGREGATE_ERRORS_COUNT.inc();
+                fail_span(error, span)
+            })
     }
 }
 
@@ -56,17 +57,15 @@ impl Aggregator {
     /// Wrapped logic to handle error cases only once.
     pub fn inner_process(
         &self,
-        discovery: ClusterDiscovery,
+        cluster_view: ClusterView,
         lock: NonBlockingLockWatcher,
         span: &mut Span,
     ) -> Result<()> {
-        let cluster_id = discovery.cluster_id.clone();
+        let cluster_id = cluster_view.discovery.cluster_id.clone();
         debug!(self.logger, "Aggregating cluster"; "cluster_id" => &cluster_id);
 
-        // (Re-)Aggregate cluster meta.
-        let mut meta = ClusterMetaAggregator::new(&discovery);
-        meta.aggregate(self.store.clone(), span)?;
-        let meta = meta.generate();
+        // Aggregate cluster meta.
+        let meta = crate::cluster_meta::aggregate(&cluster_view)?;
         if !lock.inspect() {
             return Err(ErrorKind::ClusterLockLost(cluster_id).into());
         }

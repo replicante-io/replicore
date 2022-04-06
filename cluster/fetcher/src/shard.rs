@@ -8,6 +8,9 @@ use replicante_store_primary::store::Store;
 use replicante_stream_events::EmitMessage;
 use replicante_stream_events::Stream as EventsStream;
 
+use replicore_cluster_view::ClusterView;
+use replicore_cluster_view::ClusterViewBuilder;
+
 use super::Error;
 use super::ErrorKind;
 use super::Result;
@@ -26,7 +29,8 @@ impl ShardFetcher {
     pub(crate) fn process_shards(
         &self,
         client: &dyn Client,
-        cluster: &str,
+        cluster_view: &ClusterView,
+        new_cluster_view: &mut ClusterViewBuilder,
         node: &str,
         span: &mut Span,
     ) -> Result<()> {
@@ -34,28 +38,31 @@ impl ShardFetcher {
             .shards(span.context().clone().into())
             .with_context(|_| ErrorKind::AgentDown("shards", client.id().to_string()))?;
         for shard in shards.shards {
-            let shard = Shard::new(cluster.to_string(), node.to_string(), shard);
-            self.process_shard(shard, span)?;
+            let shard = Shard::new(cluster_view.cluster_id.clone(), node.to_string(), shard);
+            self.process_shard(cluster_view, new_cluster_view, shard, span)?;
         }
         Ok(())
     }
 }
 
 impl ShardFetcher {
-    fn process_shard(&self, shard: Shard, span: &mut Span) -> Result<()> {
-        let cluster_id = shard.cluster_id.clone();
-        let node_id = shard.node_id.clone();
-        let shard_id = shard.shard_id.clone();
-        let old = self
-            .store
-            .shard(cluster_id, node_id, shard_id)
-            .get(span.context().clone());
+    fn process_shard(
+        &self,
+        cluster_view: &ClusterView,
+        new_cluster_view: &mut ClusterViewBuilder,
+        shard: Shard,
+        span: &mut Span,
+    ) -> Result<()> {
+        new_cluster_view
+            .shard(shard.clone())
+            .map_err(crate::error::AnyWrap::from)
+            .context(ErrorKind::ClusterViewUpdate)?;
+        let old = cluster_view
+            .shard_on_node(&shard.node_id, &shard.shard_id)
+            .cloned();
         match old {
-            Err(error) => Err(error)
-                .with_context(|_| ErrorKind::PrimaryStoreRead("shard"))
-                .map_err(Error::from),
-            Ok(None) => self.process_shard_new(shard, span),
-            Ok(Some(old)) => self.process_shard_existing(shard, old, span),
+            None => self.process_shard_new(shard, span),
+            Some(old) => self.process_shard_existing(shard, old, span),
         }
     }
 
@@ -76,7 +83,6 @@ impl ShardFetcher {
         }
 
         // Persist the model so the latest offset and lag information are available.
-        // ALWAYS persist the model, even unchanged, to clear the staleness state.
         self.store
             .persist()
             .shard(shard, span.context().clone())

@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::sync::Mutex;
 
 use opentracingrust::SpanContext;
 use uuid::Uuid;
@@ -27,6 +28,7 @@ where
     pub actions: HashMap<Uuid, ActionInfoResponse>,
     pub actions_finished: Vec<ActionListItem>,
     pub actions_queue: Vec<ActionListItem>,
+    pub actions_to_schedule: Mutex<Vec<(String, ActionScheduleRequest)>>,
     pub id: String,
 }
 
@@ -71,12 +73,15 @@ where
 
     fn schedule_action(
         &self,
-        _: &str,
+        kind: &str,
         _: &HashMap<String, String>,
-        _: ActionScheduleRequest,
+        request: ActionScheduleRequest,
         _: Option<SpanContext>,
     ) -> Result<()> {
-        // To be implemented when needed.
+        self.actions_to_schedule
+            .lock()
+            .expect("agent MockClient::actions_to_schedule lock poisoned")
+            .push((kind.to_string(), request));
         Ok(())
     }
 }
@@ -94,6 +99,7 @@ where
             actions: HashMap::new(),
             actions_finished: Vec::new(),
             actions_queue: Vec::new(),
+            actions_to_schedule: Mutex::new(Vec::new()),
             agent_info,
             datastore_info,
             id,

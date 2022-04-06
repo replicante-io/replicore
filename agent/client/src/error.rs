@@ -71,6 +71,10 @@ pub enum ErrorKind {
 }
 
 impl ErrorKind {
+    pub fn is_duplicate_action(&self) -> bool {
+        matches!(self, ErrorKind::DuplicateAction)
+    }
+
     fn kind_name(&self) -> Option<&str> {
         let name = match self {
             ErrorKind::DuplicateAction => "DuplicateAction",

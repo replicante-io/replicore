@@ -6,7 +6,15 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## Unreleased
 ### Added
+- Add `replidev deps init` as alias for `replidev deps initialise`.
+- Enable pod to host networking by default.
+- Play server supports configurable address for the playground agents.
 - Wrapper command for `curl`.
+
+### Changed
+- **BREAKING**: Certificates location moved around with EasyRSA rework.
+- Replace deprecated `easypki` with [Easy-RSA](https://easy-rsa.readthedocs.io/en/latest/).
+- Update artificial `podman-host` alias to `slirp4netns`'s built in `host.containers.internal`.
 
 ## 0.1.0 - 2020-05-28
 ### Added

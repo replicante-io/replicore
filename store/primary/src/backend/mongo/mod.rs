@@ -11,6 +11,7 @@ use replicante_externals_mongodb::MongoDBHealthCheck;
 use replicante_models_core::admin::Version;
 use replicante_service_healthcheck::HealthChecks;
 
+use super::ActionImpl;
 use super::ActionsImpl;
 use super::AdminInterface;
 use super::AgentImpl;
@@ -31,6 +32,7 @@ use crate::config::MongoDBConfig;
 use crate::ErrorKind;
 use crate::Result;
 
+mod action;
 mod actions;
 mod agent;
 mod agents;
@@ -100,7 +102,6 @@ impl AdminInterface for Admin {
 pub struct Store {
     client: Client,
     db: String,
-    logger: Logger,
     tracer: Option<Arc<Tracer>>,
 }
 
@@ -122,16 +123,17 @@ impl Store {
         let tracer = tracer.into();
         let healthcheck = MongoDBHealthCheck::new(client.clone());
         healthchecks.register("store:primary", healthcheck);
-        Ok(Store {
-            client,
-            db,
-            logger,
-            tracer,
-        })
+        Ok(Store { client, db, tracer })
     }
 }
 
 impl StoreInterface for Store {
+    fn action(&self) -> ActionImpl {
+        let action =
+            self::action::Action::new(self.client.clone(), self.db.clone(), self.tracer.clone());
+        ActionImpl::new(action)
+    }
+
     fn actions(&self) -> ActionsImpl {
         let actions =
             self::actions::Actions::new(self.client.clone(), self.db.clone(), self.tracer.clone());
@@ -151,12 +153,8 @@ impl StoreInterface for Store {
     }
 
     fn cluster(&self) -> ClusterImpl {
-        let cluster = self::cluster::Cluster::new(
-            self.client.clone(),
-            self.db.clone(),
-            self.logger.clone(),
-            self.tracer.clone(),
-        );
+        let cluster =
+            self::cluster::Cluster::new(self.client.clone(), self.db.clone(), self.tracer.clone());
         ClusterImpl::new(cluster)
     }
 

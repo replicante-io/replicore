@@ -16,6 +16,7 @@ db.shards.createIndex({cluster_id: 1, shard_id: 1, node_id: 1}, {unique: true});
 db.actions.createIndex({cluster_id: 1, node_id: 1, action_id: 1}, {unique: true});
 db.clusters_meta.createIndex({shards: -1, nodes: -1, cluster_id: 1});
 db.clusters_meta.createIndex({cluster_display_name: 1});
+db.cluster_settings.createIndex({next_orchestrate: 1});
 db.discovery_settings.createIndex({next_run: 1});
 
 //   TTL indexes for cleanup (14 days).

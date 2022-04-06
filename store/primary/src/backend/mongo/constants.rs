@@ -20,13 +20,6 @@ lazy_static! {
         set.insert("events");
         set
     };
-    pub static ref STALE_COLLECTIONS: HashSet<&'static str> = {
-        let mut set = HashSet::new();
-        set.insert(COLLECTION_AGENTS_INFO);
-        set.insert(COLLECTION_NODES);
-        set.insert(COLLECTION_SHARDS);
-        set
-    };
     pub static ref VALIDATE_EXPECTED_COLLECTIONS: HashSet<&'static str> = {
         let mut set = HashSet::new();
         set.insert(COLLECTION_ACTIONS);

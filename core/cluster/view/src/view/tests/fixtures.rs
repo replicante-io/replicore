@@ -1,5 +1,9 @@
+use std::str::FromStr;
+
 use replicante_models_agent::info::ShardRole;
 
+use replicante_models_core::actions::ActionState;
+use replicante_models_core::actions::ActionSummary;
 use replicante_models_core::agent::Agent;
 use replicante_models_core::agent::AgentInfo;
 use replicante_models_core::agent::AgentStatus;
@@ -22,6 +26,22 @@ pub mod cluster_mongodb {
             kind: "mongodb".into(),
             node_id: "https://blue.mongo.fixtures:12345/".into(),
             version: "4.5.6".into(),
+        }
+    }
+
+    pub fn blue_node_action_restart() -> ActionSummary {
+        ActionSummary {
+            cluster_id: CLUSTER_ID.into(),
+            node_id: "https://blue.mongo.fixtures:12345/".into(),
+            action_id: uuid::Uuid::from_str("0436430c-2b02-624c-2032-570501212b57").unwrap(),
+            state: ActionState::New,
+        }
+    }
+
+    pub fn blue_node_action_stepdown() -> ActionSummary {
+        ActionSummary {
+            action_id: uuid::Uuid::from_str("347db8f1-dab4-401b-8956-04cd0ca25661").unwrap(),
+            ..blue_node_action_restart()
         }
     }
 
@@ -73,6 +93,14 @@ pub mod cluster_mongodb {
             kind: "mongodb".into(),
             node_id: "https://green.mongo.fixtures:12345/".into(),
             version: "6.5.4".into(),
+        }
+    }
+
+    pub fn green_node_action_stepdown() -> ActionSummary {
+        ActionSummary {
+            node_id: "https://green.mongo.fixtures:12345/".into(),
+            action_id: uuid::Uuid::from_str("004089da-ec5a-4f4c-a4cc-adff9ec09015").unwrap(),
+            ..blue_node_action_restart()
         }
     }
 

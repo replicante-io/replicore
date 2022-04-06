@@ -29,11 +29,8 @@ use super::constants::COLLECTION_DISCOVERY_SETTINGS;
 use super::constants::COLLECTION_NODES;
 use super::constants::COLLECTION_SHARDS;
 use super::document::ActionDocument;
-use super::document::AgentInfoDocument;
 use super::document::ClusterSettingsDocument;
 use super::document::DiscoverySettingsDocument;
-use super::document::NodeDocument;
-use super::document::ShardDocument;
 use crate::ErrorKind;
 use crate::Result;
 
@@ -97,7 +94,6 @@ impl PersistInterface for Persist {
             "cluster_id": &agent.cluster_id,
             "host": &agent.host,
         };
-        let agent = AgentInfoDocument::from(agent);
         let collection = self
             .client
             .database(&self.db)
@@ -225,7 +221,6 @@ impl PersistInterface for Persist {
             "cluster_id": &node.cluster_id,
             "node_id": &node.node_id,
         };
-        let node = NodeDocument::from(node);
         let collection = self.client.database(&self.db).collection(COLLECTION_NODES);
         let document = bson::to_bson(&node).with_context(|_| ErrorKind::MongoDBBsonEncode)?;
         let document = match document {
@@ -243,7 +238,6 @@ impl PersistInterface for Persist {
             "node_id": &shard.node_id,
             "shard_id": &shard.shard_id,
         };
-        let shard = ShardDocument::from(shard);
         let collection = self.client.database(&self.db).collection(COLLECTION_SHARDS);
         let document = bson::to_bson(&shard).with_context(|_| ErrorKind::MongoDBBsonEncode)?;
         let document = match document {

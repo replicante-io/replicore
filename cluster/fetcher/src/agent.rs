@@ -10,6 +10,9 @@ use replicante_store_primary::store::Store;
 use replicante_stream_events::EmitMessage;
 use replicante_stream_events::Stream as EventsStream;
 
+use replicore_cluster_view::ClusterView;
+use replicore_cluster_view::ClusterViewBuilder;
+
 use crate::Error;
 use crate::ErrorKind;
 use crate::Result;
@@ -25,41 +28,44 @@ impl AgentFetcher {
         AgentFetcher { events, store }
     }
 
-    pub(crate) fn process_agent(&self, agent: Agent, span: &mut Span) -> Result<()> {
-        let old = self
-            .store
-            .agent(agent.cluster_id.clone(), agent.host.clone())
-            .get(span.context().clone());
+    pub(crate) fn process_agent(
+        &self,
+        cluster_view: &ClusterView,
+        new_cluster_view: &mut ClusterViewBuilder,
+        agent: Agent,
+        span: &mut Span,
+    ) -> Result<()> {
+        new_cluster_view
+            .agent(agent.clone())
+            .map_err(crate::error::AnyWrap::from)
+            .context(ErrorKind::ClusterViewUpdate)?;
+        let old = cluster_view.agents.get(&agent.host).cloned();
         match old {
-            Err(error) => Err(error)
-                .with_context(|_| ErrorKind::PrimaryStoreRead("agent"))
-                .map_err(Error::from),
-            Ok(None) => self.process_agent_new(agent, span),
-            Ok(Some(old)) => self.process_agent_existing(agent, old, span),
+            None => self.process_agent_new(agent, span),
+            Some(old) => self.process_agent_existing(agent, old, span),
         }
     }
 
     pub(crate) fn process_agent_info(
         &self,
         client: &dyn Client,
-        cluster_id: String,
+        cluster_view: &ClusterView,
+        new_cluster_view: &mut ClusterViewBuilder,
         node: String,
         span: &mut Span,
     ) -> Result<()> {
         let info = client
             .agent_info(span.context().clone().into())
             .with_context(|_| ErrorKind::AgentDown("agent info", client.id().to_string()))?;
-        let info = AgentInfo::new(cluster_id, node, info);
-        let old = self
-            .store
-            .agent(info.cluster_id.clone(), info.host.clone())
-            .info(span.context().clone());
+        let info = AgentInfo::new(cluster_view.cluster_id.clone(), node, info);
+        new_cluster_view
+            .agent_info(info.clone())
+            .map_err(crate::error::AnyWrap::from)
+            .context(ErrorKind::ClusterViewUpdate)?;
+        let old = cluster_view.agents_info.get(&info.host).cloned();
         match old {
-            Err(error) => Err(error)
-                .with_context(|_| ErrorKind::PrimaryStoreRead("agent info"))
-                .map_err(Error::from),
-            Ok(None) => self.process_agent_info_new(info, span),
-            Ok(Some(old)) => self.process_agent_info_existing(info, old, span),
+            None => self.process_agent_info_new(info, span),
+            Some(old) => self.process_agent_info_existing(info, old, span),
         }
     }
 }
@@ -123,23 +129,19 @@ impl AgentFetcher {
         old: AgentInfo,
         span: &mut Span,
     ) -> Result<()> {
-        if agent != old {
-            let event = Event::builder().agent().info_changed(old, agent.clone());
-            let code = event.code();
-            let stream_key = event.stream_key();
-            let event = EmitMessage::with(stream_key, event)
-                .with_context(|_| ErrorKind::EventEmit(code))?
-                .trace(span.context().clone());
-            self.events
-                .emit(event)
-                .with_context(|_| ErrorKind::EventEmit(code))?;
+        if agent == old {
+            return Ok(());
         }
-        // ALWAYS persist the model, even unchanged, to clear the staleness state.
-        self.store
-            .persist()
-            .agent_info(agent, span.context().clone())
-            .with_context(|_| ErrorKind::PrimaryStoreWrite("agent info update"))
-            .map_err(Error::from)
+        let event = Event::builder().agent().info_changed(old, agent);
+        let code = event.code();
+        let stream_key = event.stream_key();
+        let event = EmitMessage::with(stream_key, event)
+            .with_context(|_| ErrorKind::EventEmit(code))?
+            .trace(span.context().clone());
+        self.events
+            .emit(event)
+            .with_context(|_| ErrorKind::EventEmit(code))?;
+        Ok(())
     }
 
     fn process_agent_info_new(&self, agent: AgentInfo, span: &mut Span) -> Result<()> {

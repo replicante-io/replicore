@@ -42,14 +42,10 @@ pub struct Action {
     pub state: ActionState,
     /// Action-dependent state data, if the action needs to persist state.
     pub state_payload: Option<Json>,
-
-    // TODO: remove this in favour of simpler approximate-view.
-    /// Random number generated at the start of a sync cycle.
-    pub refresh_id: i64,
 }
 
 impl Action {
-    pub fn new<S1, S2>(cluster_id: S1, node_id: S2, refresh_id: i64, action: ActionWire) -> Action
+    pub fn new<S1, S2>(cluster_id: S1, node_id: S2, action: ActionWire) -> Action
     where
         S1: Into<String>,
         S2: Into<String>,
@@ -63,7 +59,6 @@ impl Action {
             headers: action.headers,
             kind: action.kind,
             node_id: node_id.into(),
-            refresh_id,
             requester: action.requester,
             schedule_attempt: 0,
             scheduled_ts: Some(action.scheduled_ts),
@@ -149,8 +144,28 @@ pub enum ActionHistoryOrigin {
     Core,
 }
 
+/// Summary information about an action.
+#[derive(Clone, PartialEq, Debug, Serialize, Deserialize)]
+pub struct ActionSummary {
+    pub cluster_id: String,
+    pub node_id: String,
+    pub action_id: Uuid,
+    pub state: ActionState,
+}
+
+impl From<&Action> for ActionSummary {
+    fn from(action: &Action) -> ActionSummary {
+        ActionSummary {
+            cluster_id: action.cluster_id.clone(),
+            node_id: action.node_id.clone(),
+            action_id: action.action_id,
+            state: action.state,
+        }
+    }
+}
+
 /// Current state of an action execution.
-#[derive(Clone, Eq, PartialEq, Hash, Debug, Serialize, Deserialize)]
+#[derive(Clone, Copy, Eq, PartialEq, Hash, Debug, Serialize, Deserialize)]
 pub enum ActionState {
     /// The action was interrupted or never executed.
     #[serde(rename = "CANCELLED")]
@@ -183,6 +198,13 @@ pub enum ActionState {
     /// The action is running on the Replicante Agent.
     #[serde(rename = "RUNNING")]
     Running,
+}
+
+impl ActionState {
+    /// Check if the action is running or sent to the agent to run.
+    pub fn is_running(&self) -> bool {
+        matches!(self, ActionState::New | ActionState::Running)
+    }
 }
 
 impl From<ActionStateWire> for ActionState {

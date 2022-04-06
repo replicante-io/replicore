@@ -4,6 +4,7 @@ use failure::ResultExt;
 use opentracingrust::SpanContext;
 use opentracingrust::Tracer;
 use slog::Logger;
+use uuid::Uuid;
 
 use replicante_service_healthcheck::HealthChecks;
 use replicore_cluster_view::ClusterView;
@@ -15,6 +16,7 @@ use crate::Config;
 use crate::ErrorKind;
 use crate::Result;
 
+pub mod action;
 pub mod actions;
 pub mod agent;
 pub mod agents;
@@ -28,6 +30,7 @@ pub mod persist;
 pub mod shard;
 pub mod shards;
 
+use self::action::Action;
 use self::actions::Actions;
 use self::agent::Agent;
 use self::agents::Agents;
@@ -84,6 +87,16 @@ impl Store {
     #[cfg(feature = "with_test_support")]
     pub(crate) fn with_impl(store: StoreImpl) -> Store {
         Store { store }
+    }
+
+    /// Operate on the action identified by the provided cluster_id and action_id.
+    pub fn action(&self, cluster_id: String, action_id: Uuid) -> Action {
+        let action = self.store.action();
+        let attrs = self::action::ActionAttributes {
+            action_id,
+            cluster_id,
+        };
+        Action::new(action, attrs)
     }
 
     /// Operate on actions for the cluster identified by cluster_id.
@@ -178,7 +191,12 @@ impl Store {
     }
 
     /// Build a syntectic cluster view from individual records.
-    pub fn view<S>(&self, namespace: String, cluster_id: String, span: S) -> Result<ClusterView>
+    pub fn cluster_view<S>(
+        &self,
+        namespace: String,
+        cluster_id: String,
+        span: S,
+    ) -> Result<ClusterView>
     where
         S: Into<Option<SpanContext>>,
     {
@@ -214,8 +232,16 @@ impl Store {
                 .map_err(AnyWrap::from)
                 .with_context(|_| ErrorKind::ViewBuild(namespace.clone(), cluster_id.clone()))?;
         }
-        for shard in self.shards(cluster_id.clone()).iter(span)? {
+        for shard in self.shards(cluster_id.clone()).iter(span.clone())? {
             view.shard(shard?)
+                .map_err(AnyWrap::from)
+                .with_context(|_| ErrorKind::ViewBuild(namespace.clone(), cluster_id.clone()))?;
+        }
+
+        // Add unfinished actions to the builder.
+        let actions = self.actions(cluster_id.clone()).unfinished_summaries(span);
+        for summary in actions? {
+            view.action(summary?)
                 .map_err(AnyWrap::from)
                 .with_context(|_| ErrorKind::ViewBuild(namespace.clone(), cluster_id.clone()))?;
         }

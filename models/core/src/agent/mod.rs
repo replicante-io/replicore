@@ -78,6 +78,18 @@ pub enum AgentStatus {
     Up,
 }
 
+impl AgentStatus {
+    /// Check if a node is confirmed down (agent is up but node is down).
+    pub fn is_node_down(&self) -> bool {
+        matches!(self, AgentStatus::NodeDown(_))
+    }
+
+    /// Check if both agent and node are up.
+    pub fn is_up(&self) -> bool {
+        matches!(self, AgentStatus::Up)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     mod agent {

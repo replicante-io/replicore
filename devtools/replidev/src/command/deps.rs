@@ -24,7 +24,7 @@ pub enum Opt {
     Clean(CleanOpt),
 
     /// Run the initialise command of each container in the given dependencies pods.
-    #[structopt(name = "initialise")]
+    #[structopt(name = "initialise", alias = "init")]
     Initialise(PodOpt),
 
     /// List running and available dependencies pods.
