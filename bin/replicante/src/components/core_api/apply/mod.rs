@@ -11,6 +11,7 @@ use serde_json::Value;
 use slog::debug;
 use slog::Logger;
 
+use replicante_models_core::scope::Namespace;
 use replicante_store_primary::store::Store as PrimaryStore;
 use replicante_stream_events::Stream;
 use replicante_util_actixweb::with_request_span;
@@ -20,6 +21,7 @@ use replicante_util_actixweb::TracingMiddleware;
 use crate::interfaces::api::APIRoot;
 use crate::interfaces::api::AppConfigContext;
 use crate::interfaces::Interfaces;
+use crate::ErrorKind;
 use crate::Result;
 
 mod agent_action;
@@ -99,8 +101,21 @@ async fn responder(
     let object = object.into_inner();
     let mut request = request;
 
-    // Validate basic attributes and find an "applier" for it.
+    // Validate basic attributes and check the namespace ID.
     let object = validate::required_attributes(object)?;
+
+    // TODO(namespace-rollout): Replace this check with NS lookup.
+    if let Some(namespace) = object.metadata.get("namespace") {
+        let namespace = namespace
+            .as_str()
+            .expect("ApplyObject validation to ensure namespace is a string");
+        if namespace != Namespace::HARDCODED_FOR_ROLLOUT().ns_id {
+            let error = ErrorKind::NamespaceRolloutNotDefault(namespace.to_string());
+            return Err(error.into());
+        }
+    }
+
+    // Find an "applier" for the object.
     let api_version = object.api_version.clone();
     let kind = object.kind.clone();
     APPLY_COUNT.with_label_values(&[&api_version, &kind]).inc();

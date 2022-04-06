@@ -8,6 +8,7 @@ use actix_web::Responder;
 use failure::ResultExt;
 use slog::Logger;
 
+use replicante_models_core::scope::Namespace;
 use replicante_store_primary::store::Store;
 use replicante_util_actixweb::with_request_span;
 use replicante_util_actixweb::TracingMiddleware;
@@ -59,11 +60,12 @@ async fn responder(data: web::Data<DiscoveryData>, request: HttpRequest) -> Resu
         .to_string();
 
     let mut request = request;
+    let namespace = Namespace::HARDCODED_FOR_ROLLOUT();
     let discovery = with_request_span(&mut request, |span| -> Result<_> {
         let span = span.map(|span| span.context().clone());
         let discovery = data
             .store
-            .cluster("TODO_NS".to_string(), cluster_id.clone())
+            .cluster(namespace.ns_id, cluster_id.clone())
             .discovery(span)
             .with_context(|_| ErrorKind::PrimaryStoreQuery("cluster.discovery"))?
             .ok_or(ErrorKind::ModelNotFound("ClusterDiscovery", cluster_id))?;

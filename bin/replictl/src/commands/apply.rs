@@ -38,6 +38,8 @@ pub async fn execute(logger: &Logger, opt: &crate::Opt, apply_opt: &Opt) -> Resu
     for (scope, value) in scopes {
         let value = match value {
             None => continue,
+            // Ignore override if the object expressly defines the scope.
+            Some(_) if object.metadata.contains_key(*scope) => continue,
             Some(value) => value,
         };
         debug!(
