@@ -156,7 +156,7 @@ where
 
         // If the container has a start delay wait a bit.
         if let Some(delay) = container.start_delay {
-            println!("--> Wating {}s for {} to start", delay, con_name);
+            println!("--> Waiting {}s for {} to start", delay, con_name);
             let delay = std::time::Duration::from_secs(delay);
             tokio::time::delay_for(delay).await;
         }

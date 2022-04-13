@@ -7,7 +7,7 @@ mod orchestrate;
 /// Show and manage clusters.
 #[derive(Debug, StructOpt)]
 pub enum Opt {
-    /// Schedule a cluster orchestrateion cycle.
+    /// Schedule a cluster orchestration cycle.
     Orchestrate,
 }
 

@@ -1,7 +1,7 @@
 #########################
 # Build replicante core #
 #########################
-ARG RUST_VERSION=1.56.0
+ARG RUST_VERSION=1.59.0
 FROM rust:$RUST_VERSION as builder
 
 # Add packages needed to build core.
