@@ -96,12 +96,15 @@ impl Annotations {
                     " indicates a membership change)",
                 )),
                 ClusterEvent::New(_) => "Cluster discovered for the first time".into(),
+                ClusterEvent::OrchestrateReport(report) => format!(
+                    "A cluster orchestration report was emitted for cluster {}.{}",
+                    report.namespace, report.cluster_id,
+                ),
                 ClusterEvent::SettingsSynthetic(settings) => format!(
                     "A synthetic ClusterSettings record was created for cluster {}.{}",
                     settings.namespace, settings.cluster_id,
                 ),
-                // TODO: for when #[non_exhaustive] is usable
-                //_ => event.code().to_string(),
+                _ => event.code().to_string(),
             },
             Payload::DiscoverySettings(settings) => match settings {
                 DiscoverySettingsEvent::Apply(settings) => format!(
@@ -166,12 +169,14 @@ impl Annotations {
             Payload::Cluster(cluster) => match cluster {
                 ClusterEvent::Changed(_) => "Cluster changed".into(),
                 ClusterEvent::New(_) => "New cluster detected".into(),
+                ClusterEvent::OrchestrateReport(_) => {
+                    "Cluster orchestration task emitted a report".into()
+                }
                 ClusterEvent::SettingsSynthetic(_) => "Synthetic ClusterSettings created".into(),
-                // TODO: for when #[non_exhaustive] is usable
-                //_ => event.code().to_string(),
+                _ => event.code().to_string(),
             },
             Payload::DiscoverySettings(settings) => match settings {
-                DiscoverySettingsEvent::Apply(_) => "DiscoverySettings applyed".into(),
+                DiscoverySettingsEvent::Apply(_) => "DiscoverySettings applied".into(),
                 DiscoverySettingsEvent::Delete(_) => "DiscoverySettings deleted".into(),
                 // TODO: for when #[non_exhaustive] is usable
                 //_ => event.code().to_string(),

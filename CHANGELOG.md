@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Cluster discovery dynamically configured with `apply`.
 - Discovery settings apply and delete events.
 - List and delete `DiscoverySettings` objects (API and `replictl`).
+- Orchestrate reports for details on the latest attempt to sync a cluster.
 - Reject any object with a non `default` namespace.
 - Synthetic in-memory Cluster Views.
 
@@ -147,7 +148,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Emit new `SHARD_ALLOCATION_NEW` event.
 - Events streaming interface (backed by store).
 - Fine-grained log level configuration.
-- Grafana annotations backend (through JSON datasource).
+- Grafana annotations backend (through JSON data source).
 - HA `discovery` component.
 - Periodically emit snapshot events.
 - ROADMAP.md to document "nearby" versions and their "aim".

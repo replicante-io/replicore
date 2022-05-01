@@ -4,6 +4,8 @@ use failure::Backtrace;
 use failure::Context;
 use failure::Fail;
 
+use replicante_models_core::cluster::OrchestrateReportOutcome;
+
 /// Dumb wrapper to carry `anyhow::Error`s as `failure::Fail`s.
 pub struct AnyWrap(anyhow::Error);
 
@@ -88,7 +90,7 @@ pub enum ErrorKind {
     Aggregate(String, String),
 
     #[fail(
-        display = "unable to build cluster view from agent reponses for {}.{}",
+        display = "unable to build cluster view from agent responses for {}.{}",
         _0, _1
     )]
     BuildClusterViewFromAgents(String, String),
@@ -213,3 +215,21 @@ impl ErrorKind {
 
 /// Short form alias for functions returning `Error`s.
 pub type Result<T> = ::std::result::Result<T, Error>;
+
+/// Covert a result into an orchestrate report outcome.
+pub fn orchestrate_outcome(result: &Result<()>) -> OrchestrateReportOutcome {
+    if let Err(error) = result {
+        let causes = <dyn Fail>::iter_causes(error);
+        OrchestrateReportOutcome {
+            error: Some(error.to_string()),
+            error_causes: causes.skip(1).map(ToString::to_string).collect(),
+            success: false,
+        }
+    } else {
+        OrchestrateReportOutcome {
+            error: None,
+            error_causes: Vec::new(),
+            success: true,
+        }
+    }
+}

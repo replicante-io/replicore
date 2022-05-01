@@ -13,6 +13,7 @@ use replicante_models_agent::actions::api::ActionScheduleRequest;
 use replicante_models_core::actions::Action;
 use replicante_models_core::actions::ActionState;
 use replicante_models_core::actions::ActionSummary;
+use replicante_models_core::cluster::OrchestrateReportBuilder;
 use replicante_models_core::events::Event;
 use replicante_store_primary::store::Store;
 use replicante_stream_events::EmitMessage;
@@ -62,6 +63,7 @@ impl ActionsFetcher {
         client: &dyn Client,
         cluster_view: &ClusterView,
         new_cluster_view: &mut ClusterViewBuilder,
+        report: &mut OrchestrateReportBuilder,
         agent_id: &str,
         span: &mut Span,
     ) -> Result<()> {
@@ -110,6 +112,7 @@ impl ActionsFetcher {
                 client,
                 cluster_view,
                 new_cluster_view,
+                report,
                 agent_id,
                 action_summary,
                 span,
@@ -122,6 +125,7 @@ impl ActionsFetcher {
     fn action_lost(
         &self,
         cluster_view: &ClusterView,
+        report: &mut OrchestrateReportBuilder,
         node_id: &str,
         action_summary: &ActionSummary,
         span: &mut Span,
@@ -139,6 +143,7 @@ impl ActionsFetcher {
             Some(action) => action,
         };
         action.finish(ActionState::Lost);
+        report.node_action_lost();
 
         // Emit action lost event.
         let event = Event::builder().action().lost(action.clone());
@@ -170,11 +175,12 @@ impl ActionsFetcher {
     /// Schedule a pending action with an agent.
     ///
     /// On success the state of the action is not updated so the next sync can do it.
-    /// This allows the system to auto-retry schedule attempts that appear successfull but are not.
+    /// This allows the system to auto-retry schedule attempts that appear successful but are not.
     fn action_schedule(
         &self,
         client: &dyn Client,
         cluster_view: &ClusterView,
+        report: &mut OrchestrateReportBuilder,
         node_id: &str,
         action_summary: &ActionSummary,
         span: &mut Span,
@@ -207,6 +213,7 @@ impl ActionsFetcher {
             request,
             Some(span.context().clone()),
         );
+        report.node_action_scheduled();
         FETCHER_ACTION_SCHEDULE_TOTAL.inc();
 
         // Handle scheduling error to re-try later.
@@ -227,6 +234,7 @@ impl ActionsFetcher {
                     .action(action, span.context().clone())
                     .with_context(|_| ErrorKind::PrimaryStoreWrite("action"))?;
                 FETCHER_ACTION_SCHEDULE_ERROR.inc();
+                report.node_action_schedule_failed();
                 let error =
                     error.context(ErrorKind::AgentDown("action request", node_id.to_string()));
                 return Err(error.into());
@@ -268,7 +276,7 @@ impl ActionsFetcher {
     ) -> Result<Vec<Uuid>> {
         debug!(
             self.logger,
-            "Retriving action IDs from agent";
+            "Retrieving action IDs from agent";
             "cluster_id" => cluster_id,
             "node_id" => node_id,
         );
@@ -411,11 +419,13 @@ impl ActionsFetcher {
     }
 
     /// Sync a single action from core to an agent.
+    #[allow(clippy::too_many_arguments)]
     fn sync_core_action(
         &self,
         client: &dyn Client,
         cluster_view: &ClusterView,
         new_cluster_view: &mut ClusterViewBuilder,
+        report: &mut OrchestrateReportBuilder,
         node_id: &str,
         action_summary: &ActionSummary,
         span: &mut Span,
@@ -436,11 +446,11 @@ impl ActionsFetcher {
         match action_summary.state {
             // Schedule pending actions with the agent.
             ActionState::PendingSchedule => {
-                self.action_schedule(client, cluster_view, node_id, action_summary, span)
+                self.action_schedule(client, cluster_view, report, node_id, action_summary, span)
             }
             // Running actions no longer known to the agent are lost.
             state if state.is_running() => {
-                self.action_lost(cluster_view, node_id, action_summary, span)
+                self.action_lost(cluster_view, report, node_id, action_summary, span)
             }
             // Skip all other actions.
             _ => Ok(()),
@@ -471,6 +481,7 @@ mod tests {
     use replicante_models_core::actions::ActionSummary;
     use replicante_models_core::cluster::discovery::ClusterDiscovery;
     use replicante_models_core::cluster::ClusterSettings;
+    use replicante_models_core::cluster::OrchestrateReportBuilder;
     use replicante_store_primary::mock::Mock as StoreMock;
     use replicante_stream_events::Stream as EventsStream;
     use replicore_cluster_view::ClusterView;
@@ -800,6 +811,7 @@ mod tests {
                 &client,
                 &cluster_view,
                 &mut new_cluster_view,
+                &mut OrchestrateReportBuilder::new(),
                 "node",
                 &mut span,
             )
@@ -890,6 +902,7 @@ mod tests {
                 &client,
                 &cluster_view,
                 &mut new_cluster_view,
+                &mut OrchestrateReportBuilder::new(),
                 "node",
                 &mut span,
             )
@@ -910,7 +923,7 @@ mod tests {
     }
 
     #[test]
-    fn track_unfinished_actons_in_cluster_view() {
+    fn track_unfinished_actions_in_cluster_view() {
         // Fill DB with finished, running and pending actions.
         let store = StoreMock::default();
         let action = mock_agent_action(*UUID1, false);
@@ -1039,6 +1052,7 @@ mod tests {
                 &client,
                 &cluster_view,
                 &mut new_cluster_view,
+                &mut OrchestrateReportBuilder::new(),
                 "node",
                 &mut span,
             )

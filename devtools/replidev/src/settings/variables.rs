@@ -16,10 +16,9 @@ use crate::Result;
 ///
 /// Supported variables:
 ///
-///   * `CONF_ROOT`: pod-scoped root to git-commited configs (path to dir).
+///   * `CONF_ROOT`: pod-scoped root to git-committed configs (path to dir).
 ///   * `DATA_ROOT`: pod-scoped root to git-ignored data (path to dir).
 ///   * `PODMAN_HOSTNAME`: takes the value of $HOSTNAME where replidev is running.
-///   * `PODMAN_IP`: IP address ussable to reach the podman host.
 ///
 /// Additional custom variables can be added with `Variables::set`.
 pub struct Variables {
@@ -36,7 +35,6 @@ impl Variables {
             "PKI_ROOT".to_string(),
             <dyn Paths>::pki(&conf.project).into(),
         );
-        vars.insert("PODMAN_IP".to_string(), conf.podman_host_ip()?.into());
         if let Ok(hostname) = std::env::var("HOSTNAME") {
             vars.insert("PODMAN_HOSTNAME".to_string(), hostname.into());
         }

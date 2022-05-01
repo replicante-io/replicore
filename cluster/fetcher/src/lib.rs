@@ -12,6 +12,7 @@ use slog::Logger;
 use replicante_agent_client::HttpClient;
 use replicante_models_core::agent::Agent;
 use replicante_models_core::agent::AgentStatus;
+use replicante_models_core::cluster::OrchestrateReportBuilder;
 use replicante_models_core::scope::Namespace;
 use replicante_service_coordinator::NonBlockingLockWatcher;
 use replicante_store_primary::store::Store as PrimaryStore;
@@ -118,12 +119,12 @@ impl Fetcher {
     /// Fetch an optimistic view of the cluster state.
     ///
     /// # Errors
-    /// The frech process can encounter two kinds of errors:
+    /// The fetch process can encounter two kinds of errors:
     ///
     ///   * Core errors: store, coordinator, internal logic, ...
     ///   * Remote errors: agent is down, network issue, invalid data returned, ...
     ///
-    /// Core errors are returned and interupt the fetching process early (if the primary store is
+    /// Core errors are returned and interrupt the fetching process early (if the primary store is
     /// failing to respond it is likely to fail again in a short time).
     ///
     /// Remote errors are logged and accounted for as part of the refresh process (a remote agent
@@ -133,12 +134,13 @@ impl Fetcher {
         ns: Namespace,
         cluster_view: &ClusterView,
         new_cluster_view: &mut ClusterViewBuilder,
+        report: &mut OrchestrateReportBuilder,
         lock: NonBlockingLockWatcher,
         span: &mut Span,
     ) -> Result<()> {
         span.log(Log::new().log("stage", "fetch"));
         let _timer = FETCHER_DURATION.start_timer();
-        self.fetch_inner(ns, cluster_view, new_cluster_view, lock, span)
+        self.fetch_inner(ns, cluster_view, new_cluster_view, report, lock, span)
             .map_err(|error| {
                 FETCHER_ERRORS_COUNT.inc();
                 error
@@ -151,6 +153,7 @@ impl Fetcher {
         ns: Namespace,
         cluster_view: &ClusterView,
         new_cluster_view: &mut ClusterViewBuilder,
+        report: &mut OrchestrateReportBuilder,
         lock: NonBlockingLockWatcher,
         span: &mut Span,
     ) -> Result<()> {
@@ -164,10 +167,10 @@ impl Fetcher {
         for agent_id in &cluster_view.discovery.nodes {
             // Exit early if lock was lost.
             if !lock.inspect() {
-                span.log(Log::new().log("abbandoned", "lock lost"));
+                span.log(Log::new().log("abandoned", "lock lost"));
                 warn!(
                     self.logger,
-                    "Cluster fetcher lock lost, skipping futher nodes";
+                    "Cluster fetcher lock lost, skipping further nodes";
                     "namespace" => &ns.ns_id,
                     "cluster_id" => cluster_id,
                     "agent_id" => agent_id,
@@ -178,10 +181,12 @@ impl Fetcher {
             // Process the target node and inspect the result.
             // If an error within Replicante Core is reported pass it back to the caller
             // and abort the refresh operation, otherwise update the agent status.
+            report.node_syncing();
             let target = self.process_target(
                 &ns,
                 cluster_view,
                 new_cluster_view,
+                report,
                 agent_id,
                 &mut id_checker,
                 span,
@@ -202,6 +207,7 @@ impl Fetcher {
                             "agent_id" => &agent_id,
                             failure_info(&error),
                         );
+                        report.node_failed();
                         status
                     }
                 },
@@ -217,13 +223,14 @@ impl Fetcher {
         Ok(())
     }
 
-    // This function is used only once in this file and hopefilly will loose some arguments.
+    // This function is used only once in this file and hopefully will loose some arguments.
     #[allow(clippy::too_many_arguments)]
     fn process_target(
         &self,
         ns: &Namespace,
         cluster_view: &ClusterView,
         new_cluster_view: &mut ClusterViewBuilder,
+        report: &mut OrchestrateReportBuilder,
         node: &str,
         id_checker: &mut ClusterIdentityChecker,
         span: &mut Span,
@@ -249,8 +256,7 @@ impl Fetcher {
         self.shard
             .process_shards(&client, cluster_view, new_cluster_view, node, span)?;
         self.actions
-            .sync(&client, cluster_view, new_cluster_view, node, span)?;
-
+            .sync(&client, cluster_view, new_cluster_view, report, node, span)?;
         Ok(())
     }
 }
