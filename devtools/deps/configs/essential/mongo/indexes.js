@@ -6,6 +6,7 @@ db = db.getSiblingDB("replicore");
 db.actions.createIndex({cluster_id: 1, action_id: 1}, {unique: true});
 db.agents.createIndex({cluster_id: 1, host: 1}, {unique: true});
 db.agents_info.createIndex({cluster_id: 1, host: 1}, {unique: true});
+db.cluster_settings.createIndex({cluster_id: 1}, {unique: true});
 db.clusters_meta.createIndex({cluster_id: 1}, {unique: true});
 db.discoveries.createIndex({cluster_id: 1}, {unique: true});
 db.discovery_settings.createIndex({namespace: 1, name: 1}, {unique: true});
@@ -38,6 +39,7 @@ db.actions_history.createIndex({
 
 //   Indexes for performance reasons.
 db.actions.createIndex({cluster_id: 1, created_ts: -1});
+db.cluster_orchestrate_report.createIndex({cluster_id: 1}, {unique: true});
 
 //   TTL index lasting 14 days.
 db.actions.createIndex({finished_ts: 1}, {expireAfterSeconds: 1209600});

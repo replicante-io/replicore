@@ -13,10 +13,12 @@ use replicante_externals_mongodb::admin::ValidationResult;
 use replicante_models_core::actions::Action;
 use replicante_models_core::actions::ActionHistory;
 use replicante_models_core::admin::Version;
+use replicante_models_core::cluster::OrchestrateReport;
 use replicante_models_core::events::Event;
 use replicante_service_healthcheck::HealthChecks;
 
 use crate::store::actions::SearchFilters as ActionsSearchFilters;
+use crate::store::cluster::ClusterAttributes;
 use crate::store::events::EventsFilters;
 use crate::store::events::EventsOptions;
 use crate::Config;
@@ -149,6 +151,7 @@ arc_interface! {
 
     interface {
         fn actions(&self, cluster_id: String) -> ActionsImpl;
+        fn cluster(&self) -> ClusterImpl;
         fn events(&self) -> EventsImpl;
         fn persist(&self) -> PersistImpl;
     }
@@ -181,6 +184,24 @@ box_interface! {
             filters: ActionsSearchFilters,
             span: Option<SpanContext>,
         ) -> Result<Cursor<Action>>;
+    }
+}
+
+box_interface! {
+    /// Dynamic dispatch cluster operations to a backend-specific implementation.
+    struct ClusterImpl,
+
+    /// Definition of cluster operations.
+    ///
+    /// See `store::cluster::Cluster` for descriptions of methods.
+    trait ClusterInterface,
+
+    interface {
+        fn orchestrate_report(
+            &self,
+            attrs: &ClusterAttributes,
+            span: Option<SpanContext>,
+        ) -> Result<Option<OrchestrateReport>>;
     }
 }
 
@@ -237,6 +258,11 @@ box_interface! {
         fn action_history(
             &self,
             history: Vec<ActionHistory>,
+            span: Option<SpanContext>,
+        ) -> Result<()>;
+        fn cluster_orchestrate_report(
+            &self,
+            report: OrchestrateReport,
             span: Option<SpanContext>,
         ) -> Result<()>;
         fn event(&self, event: Event, span: Option<SpanContext>) -> Result<()>;

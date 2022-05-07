@@ -17,6 +17,7 @@ use crate::Result;
 
 use super::ActionsImpl;
 use super::AdminInterface;
+use super::ClusterImpl;
 use super::DataImpl;
 use super::EventsImpl;
 use super::PersistImpl;
@@ -24,6 +25,7 @@ use super::StoreInterface;
 use super::ValidateImpl;
 
 mod actions;
+mod cluster;
 mod constants;
 mod data;
 mod document;
@@ -107,6 +109,12 @@ impl StoreInterface for Store {
             cluster_id,
         );
         ActionsImpl::new(actions)
+    }
+
+    fn cluster(&self) -> ClusterImpl {
+        let cluster =
+            self::cluster::Cluster::new(self.client.clone(), self.db.clone(), self.tracer.clone());
+        ClusterImpl::new(cluster)
     }
 
     fn events(&self) -> EventsImpl {

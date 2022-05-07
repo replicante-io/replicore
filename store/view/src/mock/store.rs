@@ -5,16 +5,20 @@ use uuid::Uuid;
 
 use replicante_models_core::actions::Action;
 use replicante_models_core::actions::ActionHistory;
+use replicante_models_core::cluster::OrchestrateReport;
 use replicante_models_core::events::Event;
 
 use crate::backend::ActionsImpl;
 use crate::backend::ActionsInterface;
+use crate::backend::ClusterImpl;
+use crate::backend::ClusterInterface;
 use crate::backend::EventsImpl;
 use crate::backend::PersistImpl;
 use crate::backend::PersistInterface;
 use crate::backend::StoreImpl;
 use crate::backend::StoreInterface;
 use crate::store::actions::SearchFilters as ActionsSearchFilters;
+use crate::store::cluster::ClusterAttributes;
 use crate::store::Store;
 use crate::Cursor;
 use crate::Result;
@@ -28,6 +32,11 @@ impl StoreInterface for StoreMock {
     fn actions(&self, _: String) -> ActionsImpl {
         let actions = Actions {};
         ActionsImpl::new(actions)
+    }
+
+    fn cluster(&self) -> ClusterImpl {
+        let cluster = Cluster {};
+        ClusterImpl::new(cluster)
     }
 
     fn events(&self) -> EventsImpl {
@@ -69,6 +78,21 @@ impl ActionsInterface for Actions {
     }
 }
 
+struct Cluster {
+    // TODO: implement when needed.
+}
+
+impl ClusterInterface for Cluster {
+    fn orchestrate_report(
+        &self,
+        _: &ClusterAttributes,
+        _: Option<SpanContext>,
+    ) -> Result<Option<OrchestrateReport>> {
+        // Noop for now.
+        Ok(None)
+    }
+}
+
 struct Persist {
     // TODO: implement when needed.
 }
@@ -80,6 +104,15 @@ impl PersistInterface for Persist {
     }
 
     fn action_history(&self, _: Vec<ActionHistory>, _: Option<SpanContext>) -> Result<()> {
+        // Noop for now.
+        Ok(())
+    }
+
+    fn cluster_orchestrate_report(
+        &self,
+        _: OrchestrateReport,
+        _: Option<SpanContext>,
+    ) -> Result<()> {
         // Noop for now.
         Ok(())
     }

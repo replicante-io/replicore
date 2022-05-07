@@ -25,7 +25,7 @@ use crate::store::action::ActionAttributes;
 use crate::store::actions::ActionsAttributes;
 use crate::store::agent::AgentAttribures;
 use crate::store::agents::AgentsAttribures;
-use crate::store::cluster::ClusterAttribures;
+use crate::store::cluster::ClusterAttributes;
 use crate::store::discovery_settings::DiscoverySettingsAttributes;
 use crate::store::node::NodeAttribures;
 use crate::store::nodes::NodesAttribures;
@@ -276,12 +276,12 @@ box_interface! {
     interface {
         fn discovery(
             &self,
-            attrs: &ClusterAttribures,
+            attrs: &ClusterAttributes,
             span: Option<SpanContext>,
         ) -> Result<Option<ClusterDiscovery>>;
         fn settings(
             &self,
-            attrs: &ClusterAttribures,
+            attrs: &ClusterAttributes,
             span: Option<SpanContext>,
         ) -> Result<Option<ClusterSettings>>;
     }

@@ -10,6 +10,7 @@ mod discovery;
 mod events;
 mod meta;
 mod nodes;
+mod orchestrate_report;
 
 pub fn configure(interfaces: &mut Interfaces) -> impl Fn(&mut AppConfigContext) {
     let action = self::actions::ActionInfo::new(interfaces);
@@ -19,6 +20,7 @@ pub fn configure(interfaces: &mut Interfaces) -> impl Fn(&mut AppConfigContext) 
     let events = self::events::Events::new(interfaces);
     let meta = self::meta::Meta::new(interfaces);
     let nodes = self::nodes::Nodes::new(interfaces);
+    let orchestrate_report = self::orchestrate_report::OrchestrateReport::new(interfaces);
     move |conf| {
         APIRoot::UnstableWebUI.and_then(&conf.context.flags, |root| {
             let scope = actix_web::web::scope("/cluster/{cluster_id}")
@@ -28,7 +30,8 @@ pub fn configure(interfaces: &mut Interfaces) -> impl Fn(&mut AppConfigContext) 
                 .service(discovery.resource())
                 .service(events.resource())
                 .service(meta.resource())
-                .service(nodes.resource());
+                .service(nodes.resource())
+                .service(orchestrate_report.resource());
             conf.scoped_service(root.prefix(), scope);
         });
     }

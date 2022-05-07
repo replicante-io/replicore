@@ -12,15 +12,18 @@ use replicante_externals_mongodb::operations::insert_one;
 use replicante_externals_mongodb::operations::replace_one;
 use replicante_models_core::actions::Action;
 use replicante_models_core::actions::ActionHistory;
+use replicante_models_core::cluster::OrchestrateReport;
 use replicante_models_core::events::Event;
 
 use super::super::PersistInterface;
 use super::constants::COLLECTION_ACTIONS;
 use super::constants::COLLECTION_ACTIONS_HISTORY;
+use super::constants::COLLECTION_CLUSTER_ORCHESTRATE_REPORT;
 use super::constants::COLLECTION_EVENTS;
 use super::document::ActionDocument;
 use super::document::ActionHistoryDocument;
 use super::document::EventDocument;
+use super::document::OrchestrateReportDocument;
 use crate::Error;
 use crate::ErrorKind;
 use crate::Result;
@@ -83,6 +86,31 @@ impl PersistInterface for Persist {
         insert_many(collection, records, span, self.tracer.as_deref())
             .with_context(|_| ErrorKind::MongoDBOperation)
             .map_err(Error::from)
+    }
+
+    fn cluster_orchestrate_report(
+        &self,
+        report: OrchestrateReport,
+        span: Option<SpanContext>,
+    ) -> Result<()> {
+        let collection = self
+            .client
+            .database(&self.db)
+            .collection(COLLECTION_CLUSTER_ORCHESTRATE_REPORT);
+        let report = OrchestrateReportDocument::from(report);
+        let filter = doc! {
+            "namespace": &report.namespace,
+            "cluster_id": &report.cluster_id,
+        };
+        let report = bson::to_bson(&report).with_context(|_| ErrorKind::MongoDBBsonEncode)?;
+        let report = match report {
+            Bson::Document(report) => report,
+            _ => panic!("OrchestrateReport failed to encode as BSON document"),
+        };
+        replace_one(collection, filter, report, span, self.tracer.as_deref())
+            .with_context(|_| ErrorKind::MongoDBOperation)
+            .map_err(Error::from)?;
+        Ok(())
     }
 
     fn event(&self, event: Event, span: Option<SpanContext>) -> Result<()> {
