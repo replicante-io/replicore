@@ -6,6 +6,7 @@ use super::EventBuilder;
 use super::Payload;
 use crate::cluster::discovery::ClusterDiscovery;
 use crate::cluster::ClusterSettings;
+use crate::cluster::OrchestrateReport;
 
 /// Metadata attached to cluster status change events.
 #[derive(Clone, Eq, PartialEq, Hash, Debug, Serialize, Deserialize)]
@@ -18,7 +19,7 @@ pub struct ClusterChanged {
 /// Enumerates all possible cluster events emitted by the system.
 #[derive(Clone, Eq, PartialEq, Hash, Debug, Serialize, Deserialize)]
 #[serde(tag = "event", content = "payload")]
-// TODO: use when possible #[non_exhaustive]
+#[non_exhaustive]
 pub enum ClusterEvent {
     /// Service discovery record for a cluster changed.
     #[serde(rename = "CLUSTER_CHANGED")]
@@ -27,6 +28,10 @@ pub enum ClusterEvent {
     /// Service discovery found a new cluster.
     #[serde(rename = "CLUSTER_NEW")]
     New(ClusterDiscovery),
+
+    /// Report information about a cluster orchestration task.
+    #[serde(rename = "ORCHESTRATE_REPORT")]
+    OrchestrateReport(OrchestrateReport),
 
     /// A synthetic ClusterSettings record was created for a discovered cluster without it.
     #[serde(rename = "CLUSTER_SETTINGS_SYNTHETIC")]
@@ -39,6 +44,7 @@ impl ClusterEvent {
         let cluster_id = match self {
             ClusterEvent::Changed(change) => &change.cluster_id,
             ClusterEvent::New(discovery) => &discovery.cluster_id,
+            ClusterEvent::OrchestrateReport(report) => &report.cluster_id,
             ClusterEvent::SettingsSynthetic(settings) => &settings.cluster_id,
         };
         Some(cluster_id)
@@ -49,6 +55,7 @@ impl ClusterEvent {
         match self {
             ClusterEvent::Changed(_) => "CLUSTER_CHANGED",
             ClusterEvent::New(_) => "CLUSTER_NEW",
+            ClusterEvent::OrchestrateReport(_) => "ORCHESTRATE_REPORT",
             ClusterEvent::SettingsSynthetic(_) => "CLUSTER_SETTINGS_SYNTHETIC",
         }
     }
@@ -79,6 +86,13 @@ impl ClusterEventBuilder {
     /// Build a `ClusterEvent::New` event.
     pub fn new_cluster(self, discovery: ClusterDiscovery) -> Event {
         let event = ClusterEvent::New(discovery);
+        let payload = Payload::Cluster(event);
+        self.builder.finish(payload)
+    }
+
+    /// Build a `ClusterEvent::OrchestrateReport` event.
+    pub fn orchestrate_report(self, report: OrchestrateReport) -> Event {
+        let event = ClusterEvent::OrchestrateReport(report);
         let payload = Payload::Cluster(event);
         self.builder.finish(payload)
     }

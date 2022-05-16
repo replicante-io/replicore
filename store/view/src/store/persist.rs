@@ -2,6 +2,7 @@ use opentracingrust::SpanContext;
 
 use replicante_models_core::actions::Action;
 use replicante_models_core::actions::ActionHistory;
+use replicante_models_core::cluster::OrchestrateReport;
 use replicante_models_core::events::Event;
 
 use crate::backend::PersistImpl;
@@ -31,6 +32,14 @@ impl Persist {
         S: Into<Option<SpanContext>>,
     {
         self.persist.action_history(history, span.into())
+    }
+
+    /// Create or update a cluster `OrchestrateReport` record.
+    pub fn cluster_orchestrate_report<S>(&self, report: OrchestrateReport, span: S) -> Result<()>
+    where
+        S: Into<Option<SpanContext>>,
+    {
+        self.persist.cluster_orchestrate_report(report, span.into())
     }
 
     /// Create or update an `Event` record.

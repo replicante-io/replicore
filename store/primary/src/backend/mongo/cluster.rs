@@ -13,7 +13,7 @@ use replicante_models_core::cluster::ClusterSettings;
 use super::super::ClusterInterface;
 use super::constants::COLLECTION_CLUSTER_SETTINGS;
 use super::constants::COLLECTION_DISCOVERIES;
-use crate::store::cluster::ClusterAttribures;
+use crate::store::cluster::ClusterAttributes;
 use crate::ErrorKind;
 use crate::Result;
 
@@ -37,7 +37,7 @@ impl Cluster {
 impl ClusterInterface for Cluster {
     fn discovery(
         &self,
-        attrs: &ClusterAttribures,
+        attrs: &ClusterAttributes,
         span: Option<SpanContext>,
     ) -> Result<Option<ClusterDiscovery>> {
         let filter = doc! {"cluster_id": &attrs.cluster_id};
@@ -52,7 +52,7 @@ impl ClusterInterface for Cluster {
 
     fn settings(
         &self,
-        attrs: &ClusterAttribures,
+        attrs: &ClusterAttributes,
         span: Option<SpanContext>,
     ) -> Result<Option<ClusterSettings>> {
         let filter = doc! {

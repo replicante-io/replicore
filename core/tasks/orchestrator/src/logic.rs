@@ -11,6 +11,7 @@ use slog::Logger;
 use replicante_cluster_aggregator::Aggregator;
 use replicante_cluster_fetcher::Fetcher;
 use replicante_models_core::cluster::ClusterSettings;
+use replicante_models_core::cluster::OrchestrateReportBuilder;
 use replicante_models_core::scope::Namespace;
 use replicante_service_coordinator::NonBlockingLock;
 use replicante_store_primary::store::Store;
@@ -63,6 +64,7 @@ impl Logic {
         &self,
         namespace: S1,
         cluster_id: S2,
+        report: &mut OrchestrateReportBuilder,
         lock: &NonBlockingLock,
         span: &mut Span,
     ) -> Result<()>
@@ -94,7 +96,7 @@ impl Logic {
         }
 
         // Perform all orchestration steps.
-        self.sync_cluster(settings, lock, span)?;
+        self.sync_cluster(settings, report, lock, span)?;
         Ok(())
     }
 
@@ -102,6 +104,7 @@ impl Logic {
     fn sync_cluster(
         &self,
         settings: ClusterSettings,
+        report: &mut OrchestrateReportBuilder,
         lock: &NonBlockingLock,
         span: &mut Span,
     ) -> Result<()> {
@@ -139,6 +142,7 @@ impl Logic {
                 namespace,
                 &cluster_view_before,
                 &mut cluster_view_after,
+                report,
                 lock.watch(),
                 span,
             )

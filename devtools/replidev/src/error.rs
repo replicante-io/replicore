@@ -145,6 +145,9 @@ pub enum ErrorKind {
     #[fail(display = "received invalid variable JSON file '{}'", _0)]
     InvalidCliVarFile(String),
 
+    #[fail(display = "hostname not set or not utf-8 in the HOSTNAME environment variable")]
+    InvalidHostnameVar,
+
     #[fail(display = "could not find a non-loopback IP address")]
     IpNotDetected,
 
@@ -192,6 +195,10 @@ impl ErrorKind {
 
     pub fn invalid_cli_var_file<N: Into<String>>(name: N) -> Self {
         Self::InvalidCliVarFile(name.into())
+    }
+
+    pub fn invalid_hostname_var() -> Self {
+        Self::InvalidHostnameVar
     }
 
     pub fn invalid_pod<S: Into<String>>(pod: S) -> Self {

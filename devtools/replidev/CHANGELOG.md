@@ -9,12 +9,17 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Add `replidev deps init` as alias for `replidev deps initialise`.
 - Enable pod to host networking by default.
 - Play server supports configurable address for the playground agents.
+- Pods and containers can resolve `PODMAN_HOSTNAME` to the `host.containers.internal` IP.
 - Wrapper command for `curl`.
 
 ### Changed
 - **BREAKING**: Certificates location moved around with EasyRSA rework.
+- Replace custom `podman-host` alias with `slirp4netns`'s built in `host.containers.internal`.
 - Replace deprecated `easypki` with [Easy-RSA](https://easy-rsa.readthedocs.io/en/latest/).
-- Update artificial `podman-host` alias to `slirp4netns`'s built in `host.containers.internal`.
+
+### Removed
+- **BREAKING**: Don't set `PODMAN_IP` environment variable for `replidev deps`.
+- **BREAKING**: Don't set `podman-host` as an IP alias.
 
 ## 0.1.0 - 2020-05-28
 ### Added

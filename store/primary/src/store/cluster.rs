@@ -9,11 +9,11 @@ use crate::Result;
 /// Operate on cluster-level models.
 pub struct Cluster {
     cluster: ClusterImpl,
-    attrs: ClusterAttribures,
+    attrs: ClusterAttributes,
 }
 
 impl Cluster {
-    pub(crate) fn new(cluster: ClusterImpl, attrs: ClusterAttribures) -> Cluster {
+    pub(crate) fn new(cluster: ClusterImpl, attrs: ClusterAttributes) -> Cluster {
         Cluster { cluster, attrs }
     }
 
@@ -35,7 +35,7 @@ impl Cluster {
 }
 
 /// Attributes attached to all cluster-level operations.
-pub struct ClusterAttribures {
+pub struct ClusterAttributes {
     pub cluster_id: String,
     pub namespace: String,
 }

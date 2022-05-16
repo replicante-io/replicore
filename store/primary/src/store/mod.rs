@@ -123,7 +123,7 @@ impl Store {
     /// Operate on cluster-level models.
     pub fn cluster(&self, namespace: String, cluster_id: String) -> Cluster {
         let cluster = self.store.cluster();
-        let attrs = self::cluster::ClusterAttribures {
+        let attrs = self::cluster::ClusterAttributes {
             cluster_id,
             namespace,
         };

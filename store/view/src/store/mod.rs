@@ -11,10 +11,12 @@ use crate::Config;
 use crate::Result;
 
 pub mod actions;
+pub mod cluster;
 pub mod events;
 pub mod persist;
 
 use self::actions::Actions;
+use self::cluster::Cluster;
 use self::events::Events;
 use self::persist::Persist;
 
@@ -24,7 +26,7 @@ use self::persist::Persist;
 /// hides implementation details about storage software and data encoding.
 ///
 /// # Purpose
-/// The view store is responsable for data used to respond to API requests
+/// The view store is responsible for data used to respond to API requests
 /// or to provide more context, debugging data, introspection, and similar data.
 /// No data in the view store is used by Replicante Core to perform its function.
 ///
@@ -65,6 +67,17 @@ impl Store {
     pub fn actions(&self, cluster_id: String) -> Actions {
         let actions = self.store.actions(cluster_id);
         Actions::new(actions)
+    }
+
+    /// Operate on a specific Cluster.
+    pub fn cluster<'query>(
+        &self,
+        namespace: &'query str,
+        cluster_id: &'query str,
+    ) -> Cluster<'query> {
+        let attrs = cluster::ClusterAttributes::new(namespace, cluster_id);
+        let cluster = self.store.cluster();
+        Cluster::new(cluster, attrs)
     }
 
     /// Operate on events.

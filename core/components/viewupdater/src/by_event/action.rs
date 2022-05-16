@@ -28,7 +28,7 @@ pub fn process(follower: &Follower, event: &ActionEvent, span: Option<&mut Span>
     }
 }
 
-/// Helper function to persist an action to the viwe store.
+/// Helper function to persist an action to the view store.
 fn persist_action(follower: &Follower, action: &Action, span: Option<&mut Span>) -> Result<()> {
     follower
         .store

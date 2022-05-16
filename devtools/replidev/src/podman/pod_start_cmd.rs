@@ -47,9 +47,17 @@ where
     podman
         .arg("pod")
         .arg("create")
-        .arg(format!("--name={}", name))
-        .arg("--add-host")
-        .arg(format!("podman-host:{}", conf.podman_host_ip()?));
+        .arg(format!("--name={}", name));
+
+    // Ensure PODMAN_HOSTNAME resolves to slirp4netns virtual router IP.
+    if conf.podman_hostname_as_internal {
+        let hostname =
+            std::env::var("HOSTNAME").with_context(|_| ErrorKind::invalid_hostname_var())?;
+        podman.arg("--add-host").arg(format!(
+            "{}:{}",
+            hostname, conf.podman_network_virtual_router_ip
+        ));
+    }
 
     // Configure network mode, if set.
     if let Some(network) = &conf.podman_network_mode {

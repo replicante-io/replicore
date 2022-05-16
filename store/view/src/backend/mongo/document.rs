@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::time::Duration;
 
 use bson::DateTime;
 use serde_derive::Deserialize;
@@ -9,6 +10,8 @@ use replicante_models_core::actions::ActionHistory;
 use replicante_models_core::actions::ActionHistoryOrigin;
 use replicante_models_core::actions::ActionRequester;
 use replicante_models_core::actions::ActionState;
+use replicante_models_core::cluster::OrchestrateReport;
+use replicante_models_core::cluster::OrchestrateReportOutcome;
 use replicante_models_core::events::Event;
 use replicante_models_core::events::Payload;
 
@@ -171,6 +174,60 @@ impl From<EventDocument> for Event {
         Event {
             payload: event.payload,
             timestamp: event.timestamp.0,
+        }
+    }
+}
+
+/// Wrap an `OrchestrateReport` to allow BSON to encode/decode timestamps correctly.
+#[derive(Clone, PartialEq, Debug, Serialize, Deserialize)]
+pub struct OrchestrateReportDocument {
+    // Cluster identification attributes.
+    pub namespace: String,
+    pub cluster_id: String,
+
+    // Orchestration task metadata.
+    pub start_time: DateTime,
+    pub duration: Duration,
+    pub outcome: OrchestrateReportOutcome,
+
+    // Orchestration task details.
+    pub node_actions_lost: u64,
+    pub node_actions_schedule_failed: u64,
+    pub node_actions_scheduled: u64,
+    pub nodes_failed: u64,
+    pub nodes_synced: u64,
+}
+
+impl From<OrchestrateReport> for OrchestrateReportDocument {
+    fn from(report: OrchestrateReport) -> OrchestrateReportDocument {
+        OrchestrateReportDocument {
+            namespace: report.namespace,
+            cluster_id: report.cluster_id,
+            start_time: DateTime::from(report.start_time),
+            duration: report.duration,
+            outcome: report.outcome,
+            node_actions_lost: report.node_actions_lost,
+            node_actions_schedule_failed: report.node_actions_schedule_failed,
+            node_actions_scheduled: report.node_actions_scheduled,
+            nodes_failed: report.nodes_failed,
+            nodes_synced: report.nodes_synced,
+        }
+    }
+}
+
+impl From<OrchestrateReportDocument> for OrchestrateReport {
+    fn from(document: OrchestrateReportDocument) -> OrchestrateReport {
+        OrchestrateReport {
+            namespace: document.namespace,
+            cluster_id: document.cluster_id,
+            start_time: document.start_time.0,
+            duration: document.duration,
+            outcome: document.outcome,
+            node_actions_lost: document.node_actions_lost,
+            node_actions_schedule_failed: document.node_actions_schedule_failed,
+            node_actions_scheduled: document.node_actions_scheduled,
+            nodes_failed: document.nodes_failed,
+            nodes_synced: document.nodes_synced,
         }
     }
 }

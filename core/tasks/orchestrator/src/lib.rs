@@ -1,19 +1,25 @@
-//! Implmentation of the cluster orchestration process.
+//! Implementation of the cluster orchestration process.
 use std::sync::Arc;
 use std::time::Duration;
 
+use anyhow::Context;
 use failure::Fail;
 use failure::ResultExt;
 use opentracingrust::Span;
+use opentracingrust::SpanContext;
 use opentracingrust::Tracer;
 use slog::debug;
 use slog::info;
 use slog::Logger;
 
+use replicante_models_core::cluster::OrchestrateReport;
+use replicante_models_core::cluster::OrchestrateReportBuilder;
+use replicante_models_core::events::Event;
 use replicante_service_coordinator::Coordinator;
 use replicante_service_coordinator::ErrorKind as CoordinatorErrorKind;
 use replicante_service_tasks::TaskHandler;
 use replicante_store_primary::store::Store;
+use replicante_stream_events::EmitMessage;
 use replicante_stream_events::Stream;
 use replicante_util_failure::capture_fail;
 use replicante_util_failure::failure_info;
@@ -39,6 +45,7 @@ use self::metrics::ORCHESTRATE_LOCKED;
 /// Task handler for `ReplicanteQueues::OrchestrateCluster` tasks.
 pub struct OrchestrateCluster {
     coordinator: Coordinator,
+    events: Stream,
     logic: Logic,
     logger: Logger,
     tracer: Arc<Tracer>,
@@ -55,26 +62,53 @@ impl OrchestrateCluster {
     ) -> OrchestrateCluster {
         let logic = Logic::new(
             agents_timeout,
-            events,
+            events.clone(),
             logger.clone(),
             store,
             Arc::clone(&tracer),
         );
         OrchestrateCluster {
             coordinator,
+            events,
             logic,
             logger,
             tracer,
         }
     }
 
-    fn handle_task(&self, task: &Task, span: &mut Span) -> Result<()> {
+    /// Handle emitting an `OrchestrateReport` event to aid operational support.
+    fn emit_report(
+        &self,
+        report: anyhow::Result<OrchestrateReport>,
+        span: &SpanContext,
+    ) -> anyhow::Result<()> {
+        let report = report?;
+        let event = Event::builder().cluster().orchestrate_report(report);
+        let stream_key = event.stream_key();
+        let event = EmitMessage::with(stream_key, event)
+            .map_err(|error| anyhow::Error::new(error.compat()))
+            .context("unable to serialise event payload")?
+            .trace(span.clone());
+        self.events
+            .emit(event)
+            .map_err(|error| anyhow::Error::new(error.compat()))
+            .context("unable to emit orchestrate report")?;
+        Ok(())
+    }
+
+    fn handle_task(
+        &self,
+        task: &Task,
+        report: &mut OrchestrateReportBuilder,
+        span: &mut Span,
+    ) -> Result<()> {
         let payload: OrchestrateClusterPayload =
             task.deserialize().context(ErrorKind::DeserializePayload)?;
         let namespace = payload.namespace;
         let cluster_id = payload.cluster_id;
         span.tag("cluster.namespace", namespace.clone());
         span.tag("cluster.id", cluster_id.clone());
+        report.for_cluster(&namespace, &cluster_id);
 
         // Ensure only one orchestration task is running for the same cluster.
         let span_context = span.context().clone();
@@ -109,9 +143,10 @@ impl OrchestrateCluster {
             "namespace" => &namespace,
             "cluster_id" => &cluster_id,
         );
+        report.start_now();
         let timer = ORCHESTRATE_DURATION.start_timer();
         self.logic
-            .orchestrate(&namespace, &cluster_id, &lock, span)?;
+            .orchestrate(&namespace, &cluster_id, report, &lock, span)?;
         timer.observe_duration();
 
         // Done.
@@ -130,7 +165,7 @@ impl OrchestrateCluster {
 impl TaskHandler<ReplicanteQueues> for OrchestrateCluster {
     fn handle(&self, task: Task) {
         let mut span = self.tracer.span("task.orchestrate_cluster").auto_finish();
-        // If the task is carring a tracing context set it as the parent span.
+        // If the task is carrying a tracing context set it as the parent span.
         match task.trace(&self.tracer) {
             Ok(Some(parent)) => span.follows(parent),
             Ok(None) => (),
@@ -144,9 +179,20 @@ impl TaskHandler<ReplicanteQueues> for OrchestrateCluster {
                 );
             }
         };
+
+        // Start an orchestrate report for debugging this task.
+        let mut report = OrchestrateReportBuilder::new();
+
+        // Handle the task.
         let result = self
-            .handle_task(&task, &mut span)
+            .handle_task(&task, &mut report, &mut span)
             .map_err(|error| fail_span(error, &mut *span));
+
+        // Finish the report and emit it as an event.
+        report.outcome(crate::error::orchestrate_outcome(&result));
+        let report = report.build();
+
+        // Ack or nack the task execution.
         match result {
             Ok(()) => {
                 if let Err(error) = task.success() {
@@ -174,6 +220,17 @@ impl TaskHandler<ReplicanteQueues> for OrchestrateCluster {
                     );
                 }
             }
+        }
+
+        // Emit orchestrate reports.
+        // Errors building or emitting orchestrate reports are logged but we don't
+        // want to impact system functionality on debugging data.
+        if let Err(error) = self.emit_report(report, span.context()) {
+            debug!(
+                self.logger,
+                "Unable to emit orchestrate report";
+                "cause" => #?error,
+            );
         }
     }
 }
