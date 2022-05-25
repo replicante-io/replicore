@@ -78,7 +78,7 @@ impl AgentFetcher {
         if agent.status != old.status {
             let event = Event::builder().agent().transition(old, agent.clone());
             let code = event.code();
-            let stream_key = event.stream_key();
+            let stream_key = event.entity_id().partition_key();
             let event = EmitMessage::with(stream_key, event)
                 .with_context(|_| ErrorKind::EventEmit(code))?
                 .trace(span.context().clone());
@@ -96,7 +96,7 @@ impl AgentFetcher {
     fn process_agent_new(&self, agent: Agent, span: &mut Span) -> Result<()> {
         let event = Event::builder().agent().new_agent(agent.clone());
         let code = event.code();
-        let stream_key = event.stream_key();
+        let stream_key = event.entity_id().partition_key();
         let event = EmitMessage::with(stream_key, event)
             .with_context(|_| ErrorKind::EventEmit(code))?
             .trace(span.context().clone());
@@ -109,7 +109,7 @@ impl AgentFetcher {
         let before = Agent::new(agent.cluster_id.clone(), agent.host.clone(), before);
         let event = Event::builder().agent().transition(before, agent.clone());
         let code = event.code();
-        let stream_key = event.stream_key();
+        let stream_key = event.entity_id().partition_key();
         let event = EmitMessage::with(stream_key, event)
             .with_context(|_| ErrorKind::EventEmit(code))?
             .trace(span.context().clone());
@@ -134,7 +134,7 @@ impl AgentFetcher {
         }
         let event = Event::builder().agent().info_changed(old, agent);
         let code = event.code();
-        let stream_key = event.stream_key();
+        let stream_key = event.entity_id().partition_key();
         let event = EmitMessage::with(stream_key, event)
             .with_context(|_| ErrorKind::EventEmit(code))?
             .trace(span.context().clone());
@@ -147,7 +147,7 @@ impl AgentFetcher {
     fn process_agent_info_new(&self, agent: AgentInfo, span: &mut Span) -> Result<()> {
         let event = Event::builder().agent().new_agent_info(agent.clone());
         let code = event.code();
-        let stream_key = event.stream_key();
+        let stream_key = event.entity_id().partition_key();
         let event = EmitMessage::with(stream_key, event)
             .with_context(|_| ErrorKind::EventEmit(code))?
             .trace(span.context().clone());

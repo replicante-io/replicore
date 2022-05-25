@@ -151,7 +151,7 @@ pub fn replicante_io_v0(args: ApplierArgs) -> Result<Value> {
     // Store the pending action for later sheduling.
     let span = args.span.map(|span| span.context().clone());
     let event = Event::builder().action().new_action(action.clone());
-    let stream_key = event.stream_key();
+    let stream_key = event.entity_id().partition_key();
     let event = EmitMessage::with(stream_key, event)
         .with_context(|_| ErrorKind::EventsStreamEmit("ACTION_NEW"))?
         .trace(span.clone());

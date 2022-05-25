@@ -117,7 +117,7 @@ impl DiscoverClusters {
         };
         if let Some(event) = event {
             let code = event.code();
-            let stream_key = event.stream_key();
+            let stream_key = event.entity_id().partition_key();
             let event = EmitMessage::with(stream_key, event)
                 .with_context(|_| ErrorKind::emit_event(code))?
                 .trace(span.context().clone());
@@ -145,7 +145,7 @@ impl DiscoverClusters {
                 .cluster()
                 .synthetic_settings(settings.clone());
             let code = event.code();
-            let stream_key = event.stream_key();
+            let stream_key = event.entity_id().partition_key();
             let event = EmitMessage::with(stream_key, event)
                 .with_context(|_| ErrorKind::emit_event(code))?
                 .trace(span_context.clone());

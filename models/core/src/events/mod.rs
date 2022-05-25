@@ -10,6 +10,8 @@ pub mod discovery_settings;
 pub mod node;
 pub mod shard;
 
+use crate::scope::EntityId;
+
 /// Attempt to deserialize an event or return its code if desertification fails.
 ///
 /// # Example
@@ -54,20 +56,6 @@ impl Event {
         EventBuilder::new()
     }
 
-    /// Look up the cluster ID for the event, if they have one.
-    pub fn cluster_id(&self) -> Option<&str> {
-        match &self.payload {
-            Payload::Action(event) => event.cluster_id(),
-            Payload::Agent(event) => event.cluster_id(),
-            Payload::Cluster(event) => event.cluster_id(),
-            Payload::DiscoverySettings(_) => None,
-            Payload::Node(event) => event.cluster_id(),
-            Payload::Shard(event) => event.cluster_id(),
-            #[cfg(test)]
-            Payload::Test(event) => event.cluster_id(),
-        }
-    }
-
     /// Return the event "code", the string that represents the event type.
     pub fn code(&self) -> &'static str {
         match &self.payload {
@@ -82,22 +70,17 @@ impl Event {
         }
     }
 
-    /// Return the "ordering key" for correctly streaming the event.
-    pub fn stream_key(&self) -> String {
-        self.stream_key_str().to_string()
-    }
-
-    /// Equivalent to `Event::stream_key` without conversion to `String`.
-    pub fn stream_key_str(&self) -> &str {
+    /// Identifier of the entity the event is about.
+    pub fn entity_id(&self) -> EntityId {
         match &self.payload {
-            Payload::Action(event) => event.stream_key(),
-            Payload::Agent(event) => event.stream_key(),
-            Payload::Cluster(event) => event.stream_key(),
-            Payload::DiscoverySettings(event) => event.stream_key(),
-            Payload::Node(event) => event.stream_key(),
-            Payload::Shard(event) => event.stream_key(),
+            Payload::Action(event) => event.entity_id(),
+            Payload::Agent(event) => event.entity_id(),
+            Payload::Cluster(event) => event.entity_id(),
+            Payload::DiscoverySettings(event) => event.entity_id(),
+            Payload::Node(event) => event.entity_id(),
+            Payload::Shard(event) => event.entity_id(),
             #[cfg(test)]
-            Payload::Test(event) => event.stream_key(),
+            Payload::Test(event) => event.entity_id(),
         }
     }
 }
@@ -235,6 +218,11 @@ impl TestEvent {
         match self {
             TestEvent::New(_) => "TEST_NEW",
         }
+    }
+
+    /// Identifier of the entity the test event is about.
+    pub fn entity_id(&self) -> EntityId {
+        EntityId::System
     }
 
     pub fn stream_key(&self) -> &str {

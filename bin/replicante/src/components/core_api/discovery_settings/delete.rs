@@ -79,7 +79,7 @@ async fn responder(data: web::Data<DeleteData>, request: HttpRequest) -> Result<
             .discovery_settings()
             .delete(namespace.clone(), name.clone());
         let code = event.code();
-        let stream_key = event.stream_key();
+        let stream_key = event.entity_id().partition_key();
         let event = EmitMessage::with(stream_key, event)
             .with_context(|_| ErrorKind::EventsStreamEmit(code))?
             .trace(span.clone());

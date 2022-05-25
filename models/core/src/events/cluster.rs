@@ -7,6 +7,8 @@ use super::Payload;
 use crate::cluster::discovery::ClusterDiscovery;
 use crate::cluster::ClusterSettings;
 use crate::cluster::OrchestrateReport;
+use crate::scope::EntityId;
+use crate::scope::Namespace;
 
 /// Metadata attached to cluster status change events.
 #[derive(Clone, Eq, PartialEq, Hash, Debug, Serialize, Deserialize)]
@@ -39,17 +41,6 @@ pub enum ClusterEvent {
 }
 
 impl ClusterEvent {
-    /// Look up the cluster ID for the event, if they have one.
-    pub fn cluster_id(&self) -> Option<&str> {
-        let cluster_id = match self {
-            ClusterEvent::Changed(change) => &change.cluster_id,
-            ClusterEvent::New(discovery) => &discovery.cluster_id,
-            ClusterEvent::OrchestrateReport(report) => &report.cluster_id,
-            ClusterEvent::SettingsSynthetic(settings) => &settings.cluster_id,
-        };
-        Some(cluster_id)
-    }
-
     /// Returns the event "code", the string that represents the event type.
     pub fn code(&self) -> &'static str {
         match self {
@@ -60,9 +51,26 @@ impl ClusterEvent {
         }
     }
 
-    /// Returns the "ordering ID" for correctly streaming the event.
-    pub fn stream_key(&self) -> &str {
-        self.cluster_id().unwrap_or("<system>")
+    /// Identifier of the cluster the cluster event is about.
+    pub fn entity_id(&self) -> EntityId {
+        let namespace = match self {
+            //ClusterEvent::Changed(change) => &change.cluster_id,
+            //ClusterEvent::New(discovery) => &discovery.cluster_id,
+            ClusterEvent::OrchestrateReport(report) => &report.namespace,
+            ClusterEvent::SettingsSynthetic(settings) => &settings.namespace,
+            _ => {
+                // TODO: Must use a static string because of refs until clusters have namespaces attached.
+                let _ns = Namespace::HARDCODED_FOR_ROLLOUT();
+                "default"
+            }
+        };
+        let cluster_id = match self {
+            ClusterEvent::Changed(change) => &change.cluster_id,
+            ClusterEvent::New(discovery) => &discovery.cluster_id,
+            ClusterEvent::OrchestrateReport(report) => &report.cluster_id,
+            ClusterEvent::SettingsSynthetic(settings) => &settings.cluster_id,
+        };
+        EntityId::Cluster(namespace, cluster_id)
     }
 }
 

@@ -48,7 +48,7 @@ impl Annotations {
     fn tags(event: &Event) -> Vec<String> {
         vec![
             event.code().into(),
-            String::from(event.cluster_id().unwrap_or("System")),
+            event.entity_id().as_cluster().to_string(),
         ]
     }
 

@@ -10,6 +10,8 @@ use super::Event;
 use super::EventBuilder;
 use super::Payload;
 use crate::actions::Action;
+use crate::scope::EntityId;
+use crate::scope::Namespace;
 
 /// Hold data about an action change with before and after state.
 #[derive(Clone, PartialEq, Debug, Serialize, Deserialize)]
@@ -57,18 +59,6 @@ pub enum ActionEvent {
 }
 
 impl ActionEvent {
-    /// Look up the cluster ID for the event, if they have one.
-    pub fn cluster_id(&self) -> Option<&str> {
-        let cluster_id = match self {
-            ActionEvent::Changed(change) => &change.cluster_id,
-            ActionEvent::Finished(action) => &action.cluster_id,
-            ActionEvent::History(info) => &info.cluster_id,
-            ActionEvent::Lost(action) => &action.cluster_id,
-            ActionEvent::New(action) => &action.cluster_id,
-        };
-        Some(cluster_id)
-    }
-
     /// Returns the event "code", the string that represents the event type.
     pub fn code(&self) -> &'static str {
         match self {
@@ -80,9 +70,32 @@ impl ActionEvent {
         }
     }
 
-    /// Returns the "ordering ID" for correctly streaming the event.
-    pub fn stream_key(&self) -> &str {
-        self.cluster_id().unwrap_or("<system>")
+    /// Identifier of the cluster the action event is about.
+    pub fn entity_id(&self) -> EntityId {
+        let cluster_id = match self {
+            ActionEvent::Changed(change) => &change.cluster_id,
+            ActionEvent::Finished(action) => &action.cluster_id,
+            ActionEvent::History(info) => &info.cluster_id,
+            ActionEvent::Lost(action) => &action.cluster_id,
+            ActionEvent::New(action) => &action.cluster_id,
+        };
+        let node = match self {
+            ActionEvent::Changed(change) => &change.current.node_id,
+            ActionEvent::Finished(action) => &action.node_id,
+            ActionEvent::History(info) => &info.node_id,
+            ActionEvent::Lost(action) => &action.node_id,
+            ActionEvent::New(action) => &action.node_id,
+        };
+        let action = match self {
+            ActionEvent::Changed(change) => &change.current.action_id,
+            ActionEvent::Finished(action) => &action.action_id,
+            ActionEvent::History(info) => &info.action_id,
+            ActionEvent::Lost(action) => &action.action_id,
+            ActionEvent::New(action) => &action.action_id,
+        };
+        // TODO: Must use a static string because of refs until actions have namespaces attached.
+        let _ns = Namespace::HARDCODED_FOR_ROLLOUT();
+        EntityId::NodeAction("default", cluster_id, node, *action)
     }
 }
 

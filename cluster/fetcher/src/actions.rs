@@ -148,7 +148,7 @@ impl ActionsFetcher {
         // Emit action lost event.
         let event = Event::builder().action().lost(action.clone());
         let code = event.code();
-        let stream_key = event.stream_key();
+        let stream_key = event.entity_id().partition_key();
         let event = EmitMessage::with(stream_key, event)
             .with_context(|_| ErrorKind::EventEmit(code))?
             .trace(span_context.clone());
@@ -335,7 +335,7 @@ impl ActionsFetcher {
                 emit_action_finished = true;
                 let event = Event::builder().action().new_action(action_agent.clone());
                 let code = event.code();
-                let stream_key = event.stream_key();
+                let stream_key = event.entity_id().partition_key();
                 let event = EmitMessage::with(stream_key, event)
                     .with_context(|_| ErrorKind::EventEmit(code))?
                     .trace(span.context().clone());
@@ -362,7 +362,7 @@ impl ActionsFetcher {
                     .action()
                     .changed(action_db, action_agent.clone());
                 let code = event.code();
-                let stream_key = event.stream_key();
+                let stream_key = event.entity_id().partition_key();
                 let event = EmitMessage::with(stream_key, event)
                     .with_context(|_| ErrorKind::EventEmit(code))?
                     .trace(span.context().clone());
@@ -376,7 +376,7 @@ impl ActionsFetcher {
         if emit_action_finished && action_agent.finished_ts.is_some() {
             let event = Event::builder().action().finished(action_agent.clone());
             let code = event.code();
-            let stream_key = event.stream_key();
+            let stream_key = event.entity_id().partition_key();
             let event = EmitMessage::with(stream_key, event)
                 .with_context(|_| ErrorKind::EventEmit(code))?
                 .trace(span.context().clone());
@@ -394,7 +394,7 @@ impl ActionsFetcher {
             info.history,
         );
         let code = event.code();
-        let stream_key = event.stream_key();
+        let stream_key = event.entity_id().partition_key();
         let event = EmitMessage::with(stream_key, event)
             .with_context(|_| ErrorKind::EventEmit(code))?
             .trace(span.context().clone());
