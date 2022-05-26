@@ -8,6 +8,8 @@ use super::Payload;
 use crate::agent::Agent;
 use crate::agent::AgentInfo;
 use crate::agent::AgentStatus;
+use crate::scope::EntityId;
+use crate::scope::Namespace;
 
 /// Enumerates all possible agent events emitted by the system.
 #[derive(Clone, Eq, PartialEq, Hash, Debug, Serialize, Deserialize)]
@@ -36,18 +38,6 @@ pub enum AgentEvent {
 }
 
 impl AgentEvent {
-    /// Look up the cluster ID for the event, if they have one.
-    pub fn cluster_id(&self) -> Option<&str> {
-        let cluster_id = match self {
-            AgentEvent::Down(change) => &change.cluster_id,
-            AgentEvent::InfoChanged(change) => &change.cluster_id,
-            AgentEvent::InfoNew(info) => &info.cluster_id,
-            AgentEvent::New(agent) => &agent.cluster_id,
-            AgentEvent::Up(change) => &change.cluster_id,
-        };
-        Some(cluster_id)
-    }
-
     /// Returns the event "code", the string that represents the event type.
     pub fn code(&self) -> &'static str {
         match self {
@@ -59,9 +49,25 @@ impl AgentEvent {
         }
     }
 
-    /// Returns the "ordering ID" for correctly streaming the event.
-    pub fn stream_key(&self) -> &str {
-        self.cluster_id().unwrap_or("<system>")
+    /// Identifier of the node the event is about.
+    pub fn entity_id(&self) -> EntityId {
+        let cluster_id = match self {
+            AgentEvent::Down(change) => &change.cluster_id,
+            AgentEvent::InfoChanged(change) => &change.cluster_id,
+            AgentEvent::InfoNew(info) => &info.cluster_id,
+            AgentEvent::New(agent) => &agent.cluster_id,
+            AgentEvent::Up(change) => &change.cluster_id,
+        };
+        let node = match self {
+            AgentEvent::Down(change) => &change.host,
+            AgentEvent::InfoChanged(change) => &change.after.host,
+            AgentEvent::InfoNew(info) => &info.host,
+            AgentEvent::New(agent) => &agent.host,
+            AgentEvent::Up(change) => &change.host,
+        };
+        // TODO: Must use a static string because of refs until agents have namespaces attached.
+        let _ns = Namespace::HARDCODED_FOR_ROLLOUT();
+        EntityId::Node("default", cluster_id, node)
     }
 }
 

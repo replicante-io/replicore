@@ -6,6 +6,8 @@ use super::Event;
 use super::EventBuilder;
 use super::Payload;
 use crate::agent::Node;
+use crate::scope::EntityId;
+use crate::scope::Namespace;
 
 /// Metadata attached to node changed events.
 #[derive(Clone, Eq, PartialEq, Hash, Debug, Serialize, Deserialize)]
@@ -39,17 +41,6 @@ pub enum NodeEvent {
 }
 
 impl NodeEvent {
-    /// Look up the cluster ID for the event, if they have one.
-    pub fn cluster_id(&self) -> Option<&str> {
-        let cluster_id = match self {
-            NodeEvent::Changed(change) => &change.cluster_id,
-            NodeEvent::Down(change) => &change.cluster_id,
-            NodeEvent::New(node) => &node.cluster_id,
-            NodeEvent::Up(change) => &change.cluster_id,
-        };
-        Some(cluster_id)
-    }
-
     /// Returns the event "code", the string that represents the event type.
     pub fn code(&self) -> &'static str {
         match self {
@@ -60,9 +51,23 @@ impl NodeEvent {
         }
     }
 
-    /// Returns the "ordering ID" for correctly streaming the event.
-    pub fn stream_key(&self) -> &str {
-        self.cluster_id().unwrap_or("<system>")
+    /// Identifier of the cluster the node event is about.
+    pub fn entity_id(&self) -> EntityId {
+        let cluster_id = match self {
+            NodeEvent::Changed(change) => &change.cluster_id,
+            NodeEvent::Down(change) => &change.cluster_id,
+            NodeEvent::New(node) => &node.cluster_id,
+            NodeEvent::Up(change) => &change.cluster_id,
+        };
+        let node = match self {
+            NodeEvent::Changed(change) => &change.node_id,
+            NodeEvent::Down(change) => &change.host,
+            NodeEvent::New(node) => &node.node_id,
+            NodeEvent::Up(change) => &change.host,
+        };
+        // TODO: Must use a static string because of refs until nodes have namespaces attached.
+        let _ns = Namespace::HARDCODED_FOR_ROLLOUT();
+        EntityId::Node("default", cluster_id, node)
     }
 }
 

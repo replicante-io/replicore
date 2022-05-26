@@ -84,7 +84,7 @@ impl OrchestrateCluster {
     ) -> anyhow::Result<()> {
         let report = report?;
         let event = Event::builder().cluster().orchestrate_report(report);
-        let stream_key = event.stream_key();
+        let stream_key = event.entity_id().partition_key();
         let event = EmitMessage::with(stream_key, event)
             .map_err(|error| anyhow::Error::new(error.compat()))
             .context("unable to serialise event payload")?

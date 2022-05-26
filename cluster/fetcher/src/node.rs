@@ -64,7 +64,7 @@ impl NodeFetcher {
         }
         let event = Event::builder().node().changed(old, node);
         let code = event.code();
-        let stream_key = event.stream_key();
+        let stream_key = event.entity_id().partition_key();
         let event = EmitMessage::with(stream_key, event)
             .with_context(|_| ErrorKind::EventEmit(code))?
             .trace(span.context().clone());
@@ -77,7 +77,7 @@ impl NodeFetcher {
     fn process_node_new(&self, node: Node, span: &mut Span) -> Result<()> {
         let event = Event::builder().node().new_node(node.clone());
         let code = event.code();
-        let stream_key = event.stream_key();
+        let stream_key = event.entity_id().partition_key();
         let event = EmitMessage::with(stream_key, event)
             .with_context(|_| ErrorKind::EventEmit(code))?
             .trace(span.context().clone());

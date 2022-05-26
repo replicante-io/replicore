@@ -5,6 +5,7 @@ use super::Event;
 use super::EventBuilder;
 use super::Payload;
 use crate::cluster::discovery::DiscoverySettings;
+use crate::scope::EntityId;
 
 /// Enumerates all possible discovery settings events emitted by the system.
 #[derive(Clone, PartialEq, Debug, Serialize, Deserialize)]
@@ -33,12 +34,13 @@ impl DiscoverySettingsEvent {
         }
     }
 
-    /// Returns the "ordering ID" for correctly streaming the event.
-    pub fn stream_key(&self) -> &str {
-        match self {
+    /// Identifier of the namespace the discovery settings event is about.
+    pub fn entity_id(&self) -> EntityId {
+        let namespace = match self {
             DiscoverySettingsEvent::Apply(settings) => &settings.namespace,
             DiscoverySettingsEvent::Delete(id) => &id.namespace,
-        }
+        };
+        EntityId::Namespace(namespace)
     }
 }
 

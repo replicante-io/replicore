@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Changed
 - **BREAKING**: The `events.stream` config block is no longer nested and is now simply `events`.
+- **BREAKING**: Refactor event partition keys for streams.
 - Populate view DB from the events stream.
 - Refactor cluster discovery.
 - Refactor cluster orchestration (also know as refresh).

@@ -4,7 +4,7 @@ use serde::Serialize;
 /// Namespaces are logically isolated groups of resources.
 ///
 /// Namespaces are also a place to define settings such as cluster discovery,
-/// agent trasport settings, etcetera.
+/// agent transport settings, etcetera.
 ///
 /// Resources includes all concepts in replicante outside users and organisations.
 /// This means all clusters, playbooks, roles, and more.
