@@ -3,8 +3,8 @@ use failure::ResultExt;
 use serde_json::Value;
 use uuid::Uuid;
 
+use replicante_models_core::actions::ActionApproval;
 use replicante_models_core::actions::node::Action;
-use replicante_models_core::actions::node::ActionApproval;
 use replicante_models_core::actions::node::ActionRequester;
 use replicante_models_core::actions::node::ActionState;
 use replicante_models_core::actions::ActionApproval;
@@ -21,7 +21,7 @@ use crate::Result;
 
 /// Validate an action request and add it to the DB.
 pub fn replicante_io_v0(args: ApplierArgs) -> Result<Value> {
-    // Valiate request.
+    // Validate request.
     let mut errors = ErrorsCollection::new();
     let object = &args.object;
     if object.metadata.get(SCOPE_CLUSTER).is_none() {

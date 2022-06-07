@@ -22,13 +22,13 @@ pub struct Action {
     pub action_id: Uuid,
 
     // Record attributes.
-    /// Action-dependent arguments attached to the action.
+    /// Action-dependent arguments to execute the action with.
     pub args: Json,
     /// Timestamp of action creation.
     pub created_ts: DateTime<Utc>,
     /// Timestamp action entered a final state (success or failure).
     pub finished_ts: Option<DateTime<Utc>>,
-    /// Headers attached to the action.
+    /// Arbitrary key/value headers attached to the action.
     pub headers: HashMap<String, String>,
     /// Identifier of the action logic to execute.
     pub kind: String,
@@ -71,24 +71,6 @@ impl Action {
     pub fn finish(&mut self, state: ActionState) {
         self.state = state;
         self.finished_ts = Some(Utc::now());
-    }
-}
-
-/// Approval requirements for action scheduling.
-#[derive(Clone, Eq, PartialEq, Hash, Debug, Serialize, Deserialize)]
-pub enum ActionApproval {
-    /// Approval is granted and the action can be scheduled.
-    #[serde(rename = "granted", alias = "GRANTED", alias = "Granted")]
-    Granted,
-
-    /// Approval from a user is required and the action CANNOT be scheduled yet.
-    #[serde(rename = "required", alias = "REQUIRED", alias = "Required")]
-    Required,
-}
-
-impl Default for ActionApproval {
-    fn default() -> ActionApproval {
-        ActionApproval::Granted
     }
 }
 
@@ -203,7 +185,7 @@ pub enum ActionState {
 impl ActionState {
     /// Check if the action is running or sent to the agent to run.
     pub fn is_running(&self) -> bool {
-        matches!(self, ActionState::New | ActionState::Running)
+        matches!(self, Self::New | Self::Running)
     }
 }
 
