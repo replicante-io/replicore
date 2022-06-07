@@ -12,7 +12,7 @@ use replicante_models_core::agent::Shard;
 use replicante_models_core::cluster::discovery::ClusterDiscovery;
 use replicante_models_core::cluster::ClusterSettings;
 
-/// Fixtures for a fixtional MongoDB cluster.
+/// Fixtures for a fictional MongoDB cluster.
 pub mod cluster_mongodb {
     use super::*;
 
@@ -193,7 +193,7 @@ pub mod cluster_mongodb {
     }
 }
 
-/// Fixtures for a fixtional Zookeeepr cluster.
+/// Fixtures for a fictional Zookeeepr cluster.
 pub mod cluster_zookeeper {
     use super::*;
 

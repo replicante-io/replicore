@@ -1,30 +1,31 @@
 use std::collections::BTreeMap;
 use std::collections::HashMap;
-use std::collections::HashSet;
 use std::ops::Deref;
 use std::rc::Rc;
 
-use anyhow::anyhow;
 use anyhow::Result;
 use serde::ser::SerializeStruct;
-use uuid::Uuid;
 
 use replicante_models_core::actions::ActionSummary;
 use replicante_models_core::agent::Agent;
 use replicante_models_core::agent::AgentInfo;
 use replicante_models_core::agent::Node;
 use replicante_models_core::agent::Shard;
+use replicante_models_core::agent::ShardRole;
 use replicante_models_core::cluster::discovery::ClusterDiscovery;
 use replicante_models_core::cluster::ClusterSettings;
 
-use crate::ClusterViewCorrupt;
+use crate::ManyPrimariesFound;
 
+mod builder;
 mod refs;
 
 #[cfg(test)]
 mod tests;
 
-/// Syntetic in-memory view of a Cluster.
+pub use self::builder::ClusterViewBuilder;
+
+/// Synthetic in-memory view of a Cluster.
 #[derive(Debug)]
 pub struct ClusterView {
     // Cluster identification attributes
@@ -48,46 +49,12 @@ pub struct ClusterView {
 }
 
 impl ClusterView {
-    /// Start building a Cluster view from essential data.
+    /// Start building an empty `ClusterView` from required data.
     pub fn builder(
         settings: ClusterSettings,
         discovery: ClusterDiscovery,
     ) -> Result<ClusterViewBuilder> {
-        // Grab the namespace and cluster id from the settings.
-        let namespace = settings.namespace.clone();
-        let cluster_id = settings.cluster_id.clone();
-
-        // Then make sure the discovery record is for the same cluster.
-        // TODO(namespace-rollout): Validate namespaces match.
-        if discovery.cluster_id != cluster_id {
-            return Err(anyhow!(ClusterViewCorrupt::cluster_id_clash(
-                namespace,
-                cluster_id,
-                discovery.cluster_id
-            )));
-        }
-
-        let view = ClusterView {
-            cluster_id,
-            namespace,
-            discovery,
-            settings,
-            actions_unfinished_by_node: HashMap::new(),
-            agents: HashMap::new(),
-            agents_info: HashMap::new(),
-            nodes: HashMap::new(),
-            shards: Vec::new(),
-            shards_by_id: HashMap::new(),
-            shards_by_node: HashMap::new(),
-        };
-        Ok(ClusterViewBuilder {
-            seen_actions: HashMap::new(),
-            seen_agents: HashSet::new(),
-            seen_agents_info: HashSet::new(),
-            seen_nodes: HashSet::new(),
-            seen_shards: HashSet::new(),
-            view,
-        })
+        ClusterViewBuilder::new(settings, discovery)
     }
 
     /// Lookup a specific node in the cluster.
@@ -102,6 +69,38 @@ impl ClusterView {
             .and_then(|node| node.get(shard).map(Deref::deref))
     }
 
+    /// Lookup the primary shard record for a shard.
+    ///
+    /// If multiple shards with the given ID and primary role are found
+    /// a `ManyPrimariesFound` error is return.
+    pub fn shard_primary(&self, shard: &str) -> Result<Option<&Shard>> {
+        let nodes = match self.shards_by_id.get(shard) {
+            None => return Ok(None),
+            Some(nodes) => nodes,
+        };
+        let primaries: Vec<&Shard> = nodes
+            .values()
+            .filter(|shard| shard.role == ShardRole::Primary)
+            .map(Deref::deref)
+            .collect();
+
+        // Error if more then one primary is found.
+        if primaries.len() > 1 {
+            let error = ManyPrimariesFound {
+                namespace: self.namespace.clone(),
+                cluster_id: self.cluster_id.clone(),
+                shard_id: shard.to_string(),
+                records: primaries.into_iter().cloned().collect(),
+            };
+            anyhow::bail!(error);
+        }
+
+        // Or return the maybe one found.
+        let mut primaries = primaries;
+        let primary = primaries.pop();
+        Ok(primary)
+    }
+
     /// Lookup unfinished actions targeting a node.
     pub fn unfinished_actions_on_node(&self, node: &str) -> Option<&Vec<ActionSummary>> {
         self.actions_unfinished_by_node.get(node)
@@ -114,7 +113,7 @@ impl ClusterView {
 }
 
 impl serde::Serialize for ClusterView {
-    /// Serialise a ClusterView as a structred object.
+    /// Serialise a ClusterView as a structured object.
     ///
     /// References to the same objects from "indexes" are serialised as the IDs of the
     /// referenced objects to avoid repeating the same objects multiple times.
@@ -173,176 +172,5 @@ impl serde::Serialize for ClusterView {
         state.serialize_field("shards_by_id", &shards_by_id)?;
         state.serialize_field("shards_by_node", &shards_by_node)?;
         state.end()
-    }
-}
-
-/// Incrementally build a Cluster view from individual records.
-pub struct ClusterViewBuilder {
-    // Track cluster entiries already added to the view.
-    seen_actions: HashMap<String, HashSet<Uuid>>,
-    seen_agents: HashSet<String>,
-    seen_agents_info: HashSet<String>,
-    seen_nodes: HashSet<String>,
-    seen_shards: HashSet<(String, String)>,
-
-    // Keep the incrementally built view ready to return.
-    view: ClusterView,
-}
-
-impl ClusterViewBuilder {
-    /// Add an Action to the Cluster View.
-    pub fn action(&mut self, summary: ActionSummary) -> Result<&mut Self> {
-        // Can't add an action from another cluster.
-        if self.view.cluster_id != summary.cluster_id {
-            return Err(anyhow!(ClusterViewCorrupt::cluster_id_clash(
-                &self.view.namespace,
-                &self.view.cluster_id,
-                summary.cluster_id,
-            )));
-        }
-
-        // Can't add the same agent twice.
-        let seen = match self.seen_actions.get(&summary.node_id) {
-            None => false,
-            Some(actions) => actions.contains(&summary.action_id),
-        };
-        if seen {
-            return Err(anyhow!(ClusterViewCorrupt::duplicate_action(
-                &self.view.namespace,
-                &self.view.cluster_id,
-                summary.node_id,
-                summary.action_id,
-            )));
-        }
-        self.seen_actions
-            .entry(summary.node_id.clone())
-            .or_insert_with(HashSet::new)
-            .insert(summary.action_id);
-
-        self.view
-            .actions_unfinished_by_node
-            .entry(summary.node_id.clone())
-            .or_insert_with(Vec::new)
-            .push(summary);
-        Ok(self)
-    }
-
-    /// Add an Agent to the Cluster View.
-    pub fn agent(&mut self, agent: Agent) -> Result<&mut Self> {
-        // Can't add an agent from another cluster.
-        if self.view.cluster_id != agent.cluster_id {
-            return Err(anyhow!(ClusterViewCorrupt::cluster_id_clash(
-                &self.view.namespace,
-                &self.view.cluster_id,
-                agent.cluster_id,
-            )));
-        }
-
-        // Can't add the same agent twice.
-        if self.seen_agents.contains(&agent.host) {
-            return Err(anyhow!(ClusterViewCorrupt::duplicate_agent(
-                &self.view.namespace,
-                &self.view.cluster_id,
-                agent.host,
-            )));
-        }
-
-        self.seen_agents.insert(agent.host.clone());
-        self.view.agents.insert(agent.host.clone(), agent);
-        Ok(self)
-    }
-
-    /// Add Agent information to the Cluster View.
-    pub fn agent_info(&mut self, info: AgentInfo) -> Result<&mut Self> {
-        // Can't add agent info from another cluster.
-        if self.view.cluster_id != info.cluster_id {
-            return Err(anyhow!(ClusterViewCorrupt::cluster_id_clash(
-                &self.view.namespace,
-                &self.view.cluster_id,
-                info.cluster_id,
-            )));
-        }
-
-        // Can't add the same agent info twice.
-        if self.seen_agents_info.contains(&info.host) {
-            return Err(anyhow!(ClusterViewCorrupt::duplicate_agent_info(
-                &self.view.namespace,
-                &self.view.cluster_id,
-                info.host,
-            )));
-        }
-
-        self.seen_agents_info.insert(info.host.clone());
-        self.view.agents_info.insert(info.host.clone(), info);
-        Ok(self)
-    }
-
-    /// Convert this view builder into a complete ClusterView.
-    pub fn build(self) -> ClusterView {
-        self.view
-    }
-
-    /// Add node information to the Cluster View.
-    pub fn node(&mut self, node: Node) -> Result<&mut Self> {
-        // Can't add node from another cluster.
-        if self.view.cluster_id != node.cluster_id {
-            return Err(anyhow!(ClusterViewCorrupt::cluster_id_clash(
-                &self.view.namespace,
-                &self.view.cluster_id,
-                node.cluster_id,
-            )));
-        }
-
-        // Can't add the same node twice.
-        if self.seen_nodes.contains(&node.node_id) {
-            return Err(anyhow!(ClusterViewCorrupt::duplicate_node(
-                &self.view.namespace,
-                &self.view.cluster_id,
-                node.node_id,
-            )));
-        }
-
-        self.seen_nodes.insert(node.node_id.clone());
-        self.view.nodes.insert(node.node_id.clone(), Rc::new(node));
-        Ok(self)
-    }
-
-    /// Add shard information to the Cluster View.
-    pub fn shard(&mut self, shard: Shard) -> Result<&mut Self> {
-        // Can't add shard from another cluster.
-        if self.view.cluster_id != shard.cluster_id {
-            return Err(anyhow!(ClusterViewCorrupt::cluster_id_clash(
-                &self.view.namespace,
-                &self.view.cluster_id,
-                shard.cluster_id,
-            )));
-        }
-
-        // Can't add the same shard twice.
-        let key = (shard.node_id.clone(), shard.shard_id.clone());
-        if self.seen_shards.contains(&key) {
-            return Err(anyhow!(ClusterViewCorrupt::duplicate_shard(
-                &self.view.namespace,
-                &self.view.cluster_id,
-                shard.node_id,
-                shard.shard_id,
-            )));
-        }
-
-        let shard = Rc::new(shard);
-        self.seen_shards.insert(key);
-        self.view.shards.push(Rc::clone(&shard));
-
-        self.view
-            .shards_by_id
-            .entry(shard.shard_id.clone())
-            .or_insert_with(BTreeMap::new)
-            .insert(shard.node_id.clone(), Rc::clone(&shard));
-        self.view
-            .shards_by_node
-            .entry(shard.node_id.clone())
-            .or_insert_with(BTreeMap::new)
-            .insert(shard.shard_id.clone(), shard);
-        Ok(self)
     }
 }

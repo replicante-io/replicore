@@ -22,5 +22,7 @@ slog = "^2.1.1"
 replicante_models_core = { path = "../../models/core" }
 replicante_service_coordinator = { path = "../../service/coordinator" }
 replicante_store_primary = { path = "../../store/primary" }
+replicante_stream_events = { path = "../../stream/events" }
 replicante_util_tracing = { path = "../../common/util/tracing" }
 replicore_cluster_view = { path = "../../core/cluster/view" }
+replicore_util_errors = { path = "../../core/util/errors" }

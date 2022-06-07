@@ -13,6 +13,7 @@ members = [
   "core/components/viewupdater",
   "core/tasks/discovery",
   "core/tasks/orchestrator",
+  "core/util/errors",
   "externals/kafka",
   "externals/mongodb",
   "models/core",
