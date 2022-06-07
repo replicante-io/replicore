@@ -1,6 +1,8 @@
 use thiserror::Error;
 use uuid::Uuid;
 
+use replicante_models_core::agent::Shard;
+
 /// The attempt to build a ClusterView resulted in a corrupt or invalid view.
 #[derive(Error, Debug)]
 pub enum ClusterViewCorrupt {
@@ -138,4 +140,14 @@ impl ClusterViewCorrupt {
         let found_ns = found_ns.into();
         ClusterViewCorrupt::NamespaceClash(expected_ns, found_ns)
     }
+}
+
+/// The `ClusterView::shard_primary` operation found more then one `ShardRole::Primary` records.
+#[derive(Error, Debug)]
+#[error("found more the one primary for shard {shard_id} in cluster {namespace}.{cluster_id}")]
+pub struct ManyPrimariesFound {
+    pub namespace: String,
+    pub cluster_id: String,
+    pub shard_id: String,
+    pub records: Vec<Shard>,
 }

@@ -40,7 +40,7 @@ impl Logic {
         store: Store,
         tracer: Arc<Tracer>,
     ) -> Logic {
-        let aggregator = Aggregator::new(logger.clone(), store.clone());
+        let aggregator = Aggregator::new(logger.clone(), events.clone(), store.clone());
         let fetcher = Fetcher::new(
             logger.clone(),
             events,

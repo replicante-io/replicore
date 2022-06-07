@@ -52,6 +52,12 @@ pub enum ErrorKind {
     #[fail(display = "aggregator lock for cluster '{}' was lost", _0)]
     ClusterLockLost(String),
 
+    #[fail(display = "error emitting {} event", _0)]
+    EventEmit(&'static str),
+
+    #[fail(display = "cluster state is not valid for aggregation")]
+    InvalidClusterState,
+
     #[fail(display = "missing cluster metadata attribute '{}'", _0)]
     MissingMetadata(&'static str),
 
@@ -66,6 +72,8 @@ impl ErrorKind {
     fn kind_name(&self) -> Option<&str> {
         let name = match self {
             ErrorKind::ClusterLockLost(_) => "ClusterLockLost",
+            ErrorKind::EventEmit(_) => "EventEmit",
+            ErrorKind::InvalidClusterState => "InvalidClusterState",
             ErrorKind::MissingMetadata(_) => "MissingMetadata",
             ErrorKind::StoreRead(_) => "StoreRead",
             ErrorKind::StoreWrite(_) => "StoreWrite",

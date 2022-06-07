@@ -2748,8 +2748,10 @@ dependencies = [
  "replicante_models_core",
  "replicante_service_coordinator",
  "replicante_store_primary",
+ "replicante_stream_events",
  "replicante_util_tracing",
  "replicore_cluster_view",
+ "replicore_util_errors",
  "slog",
 ]
 
@@ -3212,6 +3214,14 @@ dependencies = [
  "replicore_cluster_view",
  "replicore_models_tasks",
  "slog",
+]
+
+[[package]]
+name = "replicore_util_errors"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "failure",
 ]
 
 [[package]]

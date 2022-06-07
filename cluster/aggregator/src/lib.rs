@@ -6,6 +6,7 @@ use slog::Logger;
 
 use replicante_service_coordinator::NonBlockingLockWatcher;
 use replicante_store_primary::store::Store;
+use replicante_stream_events::Stream as EventsStream;
 use replicante_util_tracing::fail_span;
 
 use replicore_cluster_view::ClusterView;
@@ -13,6 +14,7 @@ use replicore_cluster_view::ClusterView;
 mod cluster_meta;
 mod error;
 mod metrics;
+mod shard_lag;
 
 use self::metrics::AGGREGATE_DURATION;
 use self::metrics::AGGREGATE_ERRORS_COUNT;
@@ -24,13 +26,18 @@ pub use self::metrics::register_metrics;
 
 /// Node (agent and datastore) status aggregator logic.
 pub struct Aggregator {
+    events: EventsStream,
     logger: Logger,
     store: Store,
 }
 
 impl Aggregator {
-    pub fn new(logger: Logger, store: Store) -> Aggregator {
-        Aggregator { logger, store }
+    pub fn new(logger: Logger, events: EventsStream, store: Store) -> Aggregator {
+        Aggregator {
+            events,
+            logger,
+            store,
+        }
     }
 
     /// Process aggregations for a cluster.
@@ -74,7 +81,11 @@ impl Aggregator {
             .persist_cluster_meta(meta, span.context().clone())
             .with_context(|_| ErrorKind::StoreWrite("ClusterMeta"))?;
 
-        // Generated all aggrgations.
+        // Synthesise lag metrics for secondary shard without them.
+        // TODO(if cluster view needed back): update shard_lag to return an updated ClusterView.
+        crate::shard_lag::synthesise(cluster_view, &self.logger, &self.store, &self.events, span)?;
+
+        // Generated all aggregations.
         Ok(())
     }
 }
