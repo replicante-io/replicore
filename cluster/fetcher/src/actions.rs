@@ -10,9 +10,9 @@ use uuid::Uuid;
 
 use replicante_agent_client::Client;
 use replicante_models_agent::actions::api::ActionScheduleRequest;
-use replicante_models_core::actions::Action;
-use replicante_models_core::actions::ActionState;
-use replicante_models_core::actions::ActionSummary;
+use replicante_models_core::actions::node::Action;
+use replicante_models_core::actions::node::ActionState;
+use replicante_models_core::actions::node::ActionSummary;
 use replicante_models_core::cluster::OrchestrateReportBuilder;
 use replicante_models_core::events::Event;
 use replicante_store_primary::store::Store;
@@ -475,10 +475,10 @@ mod tests {
     use replicante_models_agent::actions::ActionListItem;
     use replicante_models_agent::actions::ActionModel as AgentActionModel;
     use replicante_models_agent::actions::ActionState as ActionStateAgent;
-    use replicante_models_core::actions::Action as CoreAction;
-    use replicante_models_core::actions::ActionRequester;
-    use replicante_models_core::actions::ActionState as ActionStateCore;
-    use replicante_models_core::actions::ActionSummary;
+    use replicante_models_core::actions::node::Action as CoreAction;
+    use replicante_models_core::actions::node::ActionRequester;
+    use replicante_models_core::actions::node::ActionState as ActionStateCore;
+    use replicante_models_core::actions::node::ActionSummary;
     use replicante_models_core::cluster::discovery::ClusterDiscovery;
     use replicante_models_core::cluster::ClusterSettings;
     use replicante_models_core::cluster::OrchestrateReportBuilder;

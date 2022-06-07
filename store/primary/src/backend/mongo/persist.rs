@@ -10,7 +10,7 @@ use opentracingrust::Tracer;
 
 use replicante_externals_mongodb::operations::replace_one;
 use replicante_externals_mongodb::operations::update_one;
-use replicante_models_core::actions::Action as ActionModel;
+use replicante_models_core::actions::node::Action as ActionModel;
 use replicante_models_core::agent::Agent as AgentModel;
 use replicante_models_core::agent::AgentInfo as AgentInfoModel;
 use replicante_models_core::agent::Node as NodeModel;

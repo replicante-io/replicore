@@ -16,8 +16,8 @@ use uuid::Uuid;
 use replicante_externals_mongodb::operations::find_one;
 use replicante_externals_mongodb::operations::find_with_options;
 use replicante_externals_mongodb::operations::update_many;
-use replicante_models_core::actions::Action;
-use replicante_models_core::actions::ActionHistory;
+use replicante_models_core::actions::node::Action;
+use replicante_models_core::actions::node::ActionHistory;
 
 use super::super::ActionsInterface;
 use super::constants::COLLECTION_ACTIONS;

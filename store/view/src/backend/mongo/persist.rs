@@ -10,8 +10,8 @@ use opentracingrust::Tracer;
 use replicante_externals_mongodb::operations::insert_many;
 use replicante_externals_mongodb::operations::insert_one;
 use replicante_externals_mongodb::operations::replace_one;
-use replicante_models_core::actions::Action;
-use replicante_models_core::actions::ActionHistory;
+use replicante_models_core::actions::node::Action;
+use replicante_models_core::actions::node::ActionHistory;
 use replicante_models_core::cluster::OrchestrateReport;
 use replicante_models_core::events::Event;
 

@@ -5,11 +5,11 @@ use bson::DateTime;
 use serde_derive::Deserialize;
 use serde_derive::Serialize;
 
-use replicante_models_core::actions::Action;
-use replicante_models_core::actions::ActionHistory;
-use replicante_models_core::actions::ActionHistoryOrigin;
-use replicante_models_core::actions::ActionRequester;
-use replicante_models_core::actions::ActionState;
+use replicante_models_core::actions::node::Action;
+use replicante_models_core::actions::node::ActionHistory;
+use replicante_models_core::actions::node::ActionHistoryOrigin;
+use replicante_models_core::actions::node::ActionRequester;
+use replicante_models_core::actions::node::ActionState;
 use replicante_models_core::cluster::OrchestrateReport;
 use replicante_models_core::cluster::OrchestrateReportOutcome;
 use replicante_models_core::events::Event;

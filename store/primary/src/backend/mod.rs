@@ -8,8 +8,8 @@ use slog::Logger;
 use uuid::Uuid;
 
 use replicante_externals_mongodb::admin::ValidationResult;
-use replicante_models_core::actions::Action;
-use replicante_models_core::actions::ActionSummary;
+use replicante_models_core::actions::node::Action;
+use replicante_models_core::actions::node::ActionSummary;
 use replicante_models_core::admin::Version;
 use replicante_models_core::agent::Agent;
 use replicante_models_core::agent::AgentInfo;

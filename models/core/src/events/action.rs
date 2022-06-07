@@ -9,7 +9,7 @@ use replicante_models_agent::actions::ActionHistoryItem;
 use super::Event;
 use super::EventBuilder;
 use super::Payload;
-use crate::actions::Action;
+use crate::actions::node::Action;
 use crate::scope::EntityId;
 use crate::scope::Namespace;
 

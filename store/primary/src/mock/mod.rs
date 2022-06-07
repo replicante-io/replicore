@@ -4,7 +4,7 @@ use std::sync::Mutex;
 
 use uuid::Uuid;
 
-use replicante_models_core::actions::Action;
+use replicante_models_core::actions::node::Action;
 use replicante_models_core::agent::Agent;
 use replicante_models_core::agent::AgentInfo;
 use replicante_models_core::agent::Node;

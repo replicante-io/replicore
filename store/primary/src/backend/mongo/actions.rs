@@ -13,8 +13,8 @@ use uuid::Uuid;
 
 use replicante_externals_mongodb::operations::find_with_options;
 use replicante_externals_mongodb::operations::update_one;
-use replicante_models_core::actions::ActionState;
-use replicante_models_core::actions::ActionSummary;
+use replicante_models_core::actions::node::ActionState;
+use replicante_models_core::actions::node::ActionSummary;
 
 use super::constants::COLLECTION_ACTIONS;
 use crate::backend::ActionsInterface;

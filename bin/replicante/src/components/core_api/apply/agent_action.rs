@@ -3,10 +3,11 @@ use failure::ResultExt;
 use serde_json::Value;
 use uuid::Uuid;
 
-use replicante_models_core::actions::Action;
+use replicante_models_core::actions::node::Action;
+use replicante_models_core::actions::node::ActionApproval;
+use replicante_models_core::actions::node::ActionRequester;
+use replicante_models_core::actions::node::ActionState;
 use replicante_models_core::actions::ActionApproval;
-use replicante_models_core::actions::ActionRequester;
-use replicante_models_core::actions::ActionState;
 use replicante_models_core::api::apply::SCOPE_CLUSTER;
 use replicante_models_core::api::apply::SCOPE_NODE;
 use replicante_models_core::api::apply::SCOPE_NS;

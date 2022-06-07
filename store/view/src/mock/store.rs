@@ -3,8 +3,8 @@ use chrono::Utc;
 use opentracingrust::SpanContext;
 use uuid::Uuid;
 
-use replicante_models_core::actions::Action;
-use replicante_models_core::actions::ActionHistory;
+use replicante_models_core::actions::node::Action;
+use replicante_models_core::actions::node::ActionHistory;
 use replicante_models_core::cluster::OrchestrateReport;
 use replicante_models_core::events::Event;
 

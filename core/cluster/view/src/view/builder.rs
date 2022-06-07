@@ -7,7 +7,7 @@ use anyhow::anyhow;
 use anyhow::Result;
 use uuid::Uuid;
 
-use replicante_models_core::actions::ActionSummary;
+use replicante_models_core::actions::node::ActionSummary;
 use replicante_models_core::agent::Agent;
 use replicante_models_core::agent::AgentInfo;
 use replicante_models_core::agent::Node;

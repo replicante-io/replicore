@@ -1,7 +1,7 @@
 use opentracingrust::SpanContext;
 use uuid::Uuid;
 
-use replicante_models_core::actions::ActionSummary;
+use replicante_models_core::actions::node::ActionSummary;
 
 use crate::backend::ActionsImpl;
 use crate::Cursor;

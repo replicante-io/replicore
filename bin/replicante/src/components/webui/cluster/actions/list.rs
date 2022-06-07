@@ -12,7 +12,7 @@ use serde_derive::Deserialize;
 use serde_derive::Serialize;
 use slog::Logger;
 
-use replicante_models_core::actions::Action;
+use replicante_models_core::actions::node::Action;
 use replicante_store_view::store::actions::SearchFilters;
 use replicante_store_view::store::Store;
 use replicante_util_actixweb::with_request_span;

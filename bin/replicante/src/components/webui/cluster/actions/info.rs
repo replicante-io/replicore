@@ -12,8 +12,8 @@ use serde_json::json;
 use slog::Logger;
 use uuid::Uuid;
 
-use replicante_models_core::actions::Action;
-use replicante_models_core::actions::ActionHistory;
+use replicante_models_core::actions::node::Action;
+use replicante_models_core::actions::node::ActionHistory;
 use replicante_store_view::store::Store;
 use replicante_util_actixweb::with_request_span;
 use replicante_util_actixweb::TracingMiddleware;

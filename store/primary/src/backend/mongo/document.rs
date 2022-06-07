@@ -4,9 +4,9 @@ use bson::DateTime;
 use serde_derive::Deserialize;
 use serde_derive::Serialize;
 
-use replicante_models_core::actions::Action;
-use replicante_models_core::actions::ActionRequester;
-use replicante_models_core::actions::ActionState;
+use replicante_models_core::actions::node::Action;
+use replicante_models_core::actions::node::ActionRequester;
+use replicante_models_core::actions::node::ActionState;
 use replicante_models_core::cluster::discovery::DiscoverySettings;
 use replicante_models_core::cluster::ClusterSettings;
 

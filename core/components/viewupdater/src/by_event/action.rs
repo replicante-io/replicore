@@ -6,10 +6,10 @@ use failure::ResultExt;
 use opentracingrust::Span;
 use slog::debug;
 
-use replicante_models_core::actions::Action;
-use replicante_models_core::actions::ActionHistory;
-use replicante_models_core::actions::ActionHistoryOrigin;
-use replicante_models_core::actions::ActionState;
+use replicante_models_core::actions::node::Action;
+use replicante_models_core::actions::node::ActionHistory;
+use replicante_models_core::actions::node::ActionHistoryOrigin;
+use replicante_models_core::actions::node::ActionState;
 use replicante_models_core::events::action::ActionEvent;
 use replicante_models_core::events::action::ActionHistory as ActionHistoryEvent;
 
