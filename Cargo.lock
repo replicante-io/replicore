@@ -3161,6 +3161,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "replicore_iface_orchestrator_action"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "lazy_static",
+ "thiserror",
+]
+
+[[package]]
 name = "replicore_models_tasks"
 version = "0.1.0"
 dependencies = [
