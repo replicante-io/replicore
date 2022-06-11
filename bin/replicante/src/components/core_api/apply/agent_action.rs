@@ -3,7 +3,6 @@ use failure::ResultExt;
 use serde_json::Value;
 use uuid::Uuid;
 
-use replicante_models_core::actions::ActionApproval;
 use replicante_models_core::actions::node::Action;
 use replicante_models_core::actions::node::ActionRequester;
 use replicante_models_core::actions::node::ActionState;

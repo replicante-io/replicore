@@ -3083,6 +3083,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "replicore_action_debug"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "replicore_iface_orchestrator_action",
+]
+
+[[package]]
 name = "replicore_cluster_view"
 version = "0.1.0"
 dependencies = [

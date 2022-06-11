@@ -12,6 +12,7 @@ members = [
   "core/components/orchestrator_scheduler",
   "core/components/viewupdater",
   "core/interface/orchestrator_action",
+  "core/orchestrator_action/debug",
   "core/tasks/discovery",
   "core/tasks/orchestrator",
   "core/util/errors",
