@@ -85,17 +85,8 @@ pub enum ErrorKind {
     #[fail(display = "could not initialise client interface for {}", _0)]
     ClientInit(&'static str),
 
-    #[fail(display = "cloud not generate cluster aggregates")]
-    ClusterAggregation,
-
-    #[fail(display = "cloud not refresh cluster state")]
-    ClusterRefresh,
-
     #[fail(display = "could not load configuration")]
     ConfigLoad,
-
-    #[fail(display = "could not coordinate with other processes")]
-    Coordination,
 
     #[fail(display = "could not run already running component '{}'", _0)]
     ComponentAlreadyRunning(&'static str),
@@ -108,9 +99,6 @@ pub enum ErrorKind {
 
     #[fail(display = "could not emit a '{}' to the events stream", _0)]
     EventsStreamEmit(&'static str),
-
-    #[fail(display = "could not follow the events stream with group '{}'", _0)]
-    EventsStreamFollow(&'static str),
 
     #[fail(display = "could not run already running interface '{}'", _0)]
     InterfaceAlreadyRunning(&'static str),
@@ -177,15 +165,11 @@ impl ErrorKind {
             Self::APIRequestParameterInvalid(_) => "APIRequestParameterInvalid",
             Self::APIRequestParameterNotFound(_) => "APIRequestParameterNotFound",
             Self::ClientInit(_) => "ClientInit",
-            Self::ClusterAggregation => "ClusterAggregation",
-            Self::ClusterRefresh => "ClusterRefresh",
             Self::ConfigLoad => "ConfigLoad",
-            Self::Coordination => "Coordination",
             Self::ComponentAlreadyRunning(_) => "ComponentAlreadyRunning",
             Self::ComponentFailed(_) => "ComponentFailed",
             Self::Deserialize(_, _) => "Deserialize",
             Self::EventsStreamEmit(_) => "EventsStreamEmit",
-            Self::EventsStreamFollow(_) => "EventsStreamFollow",
             Self::InterfaceAlreadyRunning(_) => "InterfaceAlreadyRunning",
             Self::InterfaceInit(_) => "InterfaceInit",
             Self::ModelNotFound(_, _) => "ModelNotFound",

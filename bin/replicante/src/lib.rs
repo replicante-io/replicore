@@ -12,6 +12,8 @@ use slog::Logger;
 
 use replicante_util_upkeep::Upkeep;
 
+use replicore_iface_orchestrator_action::OrchestratorActionRegistryBuilder;
+
 mod components;
 mod config;
 mod error;
@@ -64,6 +66,15 @@ fn initialise_and_run(config: Config, logger: Logger) -> Result<bool> {
     Components::register_metrics(&logger, interfaces.metrics.registry());
     self::metrics::register_metrics(&logger, interfaces.metrics.registry());
     let mut components = Components::new(&config, logger.clone(), &mut interfaces)?;
+
+    // Register built-in actions.
+    #[allow(unused_mut)]
+    let mut builder = OrchestratorActionRegistryBuilder::empty();
+    #[cfg(feature = "action-debug")]
+    replicore_action_debug::register(&mut builder)
+        .map_err(replicore_util_errors::AnyWrap::from)
+        .with_context(|_| ErrorKind::InterfaceInit("orchestrator actions registry"))?;
+    builder.build_as_current();
 
     // Initialisation done, run all interfaces and components.
     info!(logger, "Starting sub-systems ...");
