@@ -44,7 +44,7 @@ pub const VERSION: &str = concat!(
 /// Replicante is built on top of two kinds of units:
 ///
 ///   * Interfaces: units used to inspect the system or interact with it.
-///   * Components: units that perfom actions and implement logic.
+///   * Components: units that perform actions and implement logic.
 ///
 /// Most, if not all, components start background threads and must join on drop.
 /// Interfaces can work in the same way if they need threads but some may just provide
@@ -121,7 +121,7 @@ pub fn initialise_sentry(config: Option<SentryConfig>, logger: &Logger) -> Resul
     Ok(client)
 }
 
-/// Attemps to register all metrics from other replicante_* crates.
+/// Attempt to register all metrics from other replicante_* crates.
 ///
 /// Metrics that fail to register are logged and ignored.
 pub fn register_crates_metrics(logger: &Logger, registry: &Registry) {
@@ -184,7 +184,7 @@ pub fn run() -> Result<bool> {
     slog_stdlog::init().expect("Failed to initialise log -> slog integration");
     debug!(logger, "Logging configured");
 
-    // Iniialise sentry as soon as possible.
+    // Initialise sentry as soon as possible.
     let _sentry = initialise_sentry(config.sentry.clone(), &logger)?;
     let result = initialise_and_run(config, logger.clone()).map_err(|error| {
         capture_fail(&error);
