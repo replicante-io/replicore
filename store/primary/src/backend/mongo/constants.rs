@@ -3,6 +3,7 @@ use std::collections::HashSet;
 use lazy_static::lazy_static;
 
 pub const COLLECTION_ACTIONS: &str = "actions";
+pub const COLLECTION_ACTIONS_ORCHESTRATOR: &str = "actions_orchestrator";
 pub const COLLECTION_AGENTS: &str = "agents";
 pub const COLLECTION_AGENTS_INFO: &str = "agents_info";
 pub const COLLECTION_CLUSTER_META: &str = "clusters_meta";
@@ -23,6 +24,7 @@ lazy_static! {
     pub static ref VALIDATE_EXPECTED_COLLECTIONS: HashSet<&'static str> = {
         let mut set = HashSet::new();
         set.insert(COLLECTION_ACTIONS);
+        set.insert(COLLECTION_ACTIONS_ORCHESTRATOR);
         set.insert(COLLECTION_AGENTS);
         set.insert(COLLECTION_AGENTS_INFO);
         set.insert(COLLECTION_CLUSTER_META);

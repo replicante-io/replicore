@@ -10,6 +10,7 @@ use uuid::Uuid;
 use replicante_externals_mongodb::admin::ValidationResult;
 use replicante_models_core::actions::node::Action;
 use replicante_models_core::actions::node::ActionSummary;
+use replicante_models_core::actions::orchestrator::OrchestratorAction;
 use replicante_models_core::admin::Version;
 use replicante_models_core::agent::Agent;
 use replicante_models_core::agent::AgentInfo;
@@ -445,6 +446,11 @@ box_interface! {
             span: Option<SpanContext>,
         ) -> Result<()>;
         fn node(&self, node: Node, span: Option<SpanContext>) -> Result<()>;
+        fn orchestrator_action(
+            &self,
+            action: OrchestratorAction,
+            span: Option<SpanContext>,
+        ) -> Result<()>;
         fn shard(&self, shard: Shard, span: Option<SpanContext>) -> Result<()>;
     }
 }

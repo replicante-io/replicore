@@ -7,6 +7,8 @@ use serde_derive::Serialize;
 use replicante_models_core::actions::node::Action;
 use replicante_models_core::actions::node::ActionRequester;
 use replicante_models_core::actions::node::ActionState;
+use replicante_models_core::actions::orchestrator::OrchestratorAction;
+use replicante_models_core::actions::orchestrator::OrchestratorActionState;
 use replicante_models_core::cluster::discovery::DiscoverySettings;
 use replicante_models_core::cluster::ClusterSettings;
 
@@ -135,5 +137,74 @@ impl From<DiscoverySettings> for DiscoverySettingsDocument {
 impl From<DiscoverySettingsDocument> for DiscoverySettings {
     fn from(document: DiscoverySettingsDocument) -> DiscoverySettings {
         document.settings
+    }
+}
+
+/// Wrap an `OrchestratorAction` with store only fields and MongoDB specific types.
+#[derive(Clone, PartialEq, Debug, Serialize, Deserialize)]
+pub struct OrchestratorActionDocument {
+    // ID attributes.
+    pub cluster_id: String,
+    pub action_id: String,
+
+    // Record attributes.
+    pub created_ts: DateTime,
+    pub finished_ts: Option<DateTime>,
+    pub headers: HashMap<String, String>,
+    pub kind: String,
+    pub scheduled_ts: Option<DateTime>,
+    pub state: OrchestratorActionState,
+
+    // The encoded JSON form uses unsigned integers which are not supported by BSON.
+    // For this reason store JSON as a String and transparently encode/decode.
+    pub args: String,
+    pub state_payload: Option<String>,
+}
+
+impl From<OrchestratorAction> for OrchestratorActionDocument {
+    fn from(action: OrchestratorAction) -> OrchestratorActionDocument {
+        let args =
+            serde_json::to_string(&action.args).expect("serde_json::Value not converted to String");
+        let state_payload = action.state_payload.map(|payload| {
+            serde_json::to_string(&payload).expect("serde_json::Value not converted to String")
+        });
+        OrchestratorActionDocument {
+            action_id: action.action_id.to_string(),
+            args,
+            cluster_id: action.cluster_id,
+            created_ts: DateTime::from(action.created_ts),
+            finished_ts: action.finished_ts.map(DateTime::from),
+            headers: action.headers,
+            kind: action.kind,
+            scheduled_ts: action.scheduled_ts.map(DateTime::from),
+            state: action.state,
+            state_payload,
+        }
+    }
+}
+
+impl From<OrchestratorActionDocument> for OrchestratorAction {
+    fn from(action: OrchestratorActionDocument) -> OrchestratorAction {
+        let action_id = action
+            .action_id
+            .parse()
+            .expect("Action ID not converted to UUID");
+        let args =
+            serde_json::from_str(&action.args).expect("String not converted to serde_json::Value");
+        let state_payload = action.state_payload.map(|payload| {
+            serde_json::from_str(&payload).expect("String not converted to serde_json::Value")
+        });
+        OrchestratorAction {
+            action_id,
+            args,
+            cluster_id: action.cluster_id,
+            created_ts: action.created_ts.0,
+            finished_ts: action.finished_ts.map(|ts| ts.0),
+            headers: action.headers,
+            kind: action.kind,
+            scheduled_ts: action.scheduled_ts.map(|ts| ts.0),
+            state: action.state,
+            state_payload,
+        }
     }
 }

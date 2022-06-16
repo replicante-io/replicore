@@ -6,6 +6,7 @@ use uuid::Uuid;
 
 use replicante_models_core::actions::node::Action;
 use replicante_models_core::actions::node::ActionSummary;
+use replicante_models_core::actions::orchestrator::OrchestratorAction;
 use replicante_models_core::agent::Agent;
 use replicante_models_core::agent::AgentInfo;
 use replicante_models_core::agent::Node;
@@ -285,6 +286,10 @@ impl PersistInterface for Persist {
 
     fn node(&self, _node: Node, _: Option<SpanContext>) -> Result<()> {
         panic!("TODO: MockStore::Persist::node")
+    }
+
+    fn orchestrator_action(&self, _: OrchestratorAction, _: Option<SpanContext>) -> Result<()> {
+        panic!("TODO: MockStore::Persist::orchestrator_action")
     }
 
     fn shard(&self, _shard: Shard, _: Option<SpanContext>) -> Result<()> {

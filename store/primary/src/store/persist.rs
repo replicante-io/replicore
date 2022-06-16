@@ -1,6 +1,7 @@
 use opentracingrust::SpanContext;
 
 use replicante_models_core::actions::node::Action as ActionModel;
+use replicante_models_core::actions::orchestrator::OrchestratorAction as OrchestratorActionModel;
 use replicante_models_core::agent::Agent as AgentModel;
 use replicante_models_core::agent::AgentInfo as AgentInfoModel;
 use replicante_models_core::agent::Node as NodeModel;
@@ -90,7 +91,7 @@ impl Persist {
         self.persist.next_discovery_run(settings, span.into())
     }
 
-    /// Creat or update a Node record.
+    /// Create or update a Node record.
     pub fn node<S>(&self, node: NodeModel, span: S) -> Result<()>
     where
         S: Into<Option<SpanContext>>,
@@ -98,7 +99,15 @@ impl Persist {
         self.persist.node(node, span.into())
     }
 
-    /// Creat or update a Shard record.
+    /// Create or update an OrchestratorAction record.
+    pub fn orchestrator_action<S>(&self, action: OrchestratorActionModel, span: S) -> Result<()>
+    where
+        S: Into<Option<SpanContext>>,
+    {
+        self.persist.orchestrator_action(action, span.into())
+    }
+
+    /// Create or update a Shard record.
     pub fn shard<S>(&self, shard: ShardModel, span: S) -> Result<()>
     where
         S: Into<Option<SpanContext>>,

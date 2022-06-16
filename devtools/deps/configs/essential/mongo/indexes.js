@@ -4,6 +4,7 @@ db = db.getSiblingDB("replicore");
 // Create indexes if missing.
 //   Unique indexes for data integrity.
 db.actions.createIndex({cluster_id: 1, action_id: 1}, {unique: true});
+db.actions_orchestrator.createIndex({cluster_id: 1, action_id: 1}, {unique: true});
 db.agents.createIndex({cluster_id: 1, host: 1}, {unique: true});
 db.agents_info.createIndex({cluster_id: 1, host: 1}, {unique: true});
 db.cluster_settings.createIndex({cluster_id: 1}, {unique: true});
@@ -22,6 +23,7 @@ db.discovery_settings.createIndex({next_run: 1});
 
 //   TTL indexes for cleanup (14 days).
 db.actions.createIndex({finished_ts: 1}, {expireAfterSeconds: 1209600});
+db.actions_orchestrator.createIndex({finished_ts: 1}, {expireAfterSeconds: 1209600});
 
 
 /*** VIEW STORE ***/

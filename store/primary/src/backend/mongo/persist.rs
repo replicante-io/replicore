@@ -11,6 +11,7 @@ use opentracingrust::Tracer;
 use replicante_externals_mongodb::operations::replace_one;
 use replicante_externals_mongodb::operations::update_one;
 use replicante_models_core::actions::node::Action as ActionModel;
+use replicante_models_core::actions::orchestrator::OrchestratorAction as OrchestratorActionModel;
 use replicante_models_core::agent::Agent as AgentModel;
 use replicante_models_core::agent::AgentInfo as AgentInfoModel;
 use replicante_models_core::agent::Node as NodeModel;
@@ -21,6 +22,7 @@ use replicante_models_core::cluster::ClusterSettings as ClusterSettingsModel;
 
 use super::super::PersistInterface;
 use super::constants::COLLECTION_ACTIONS;
+use super::constants::COLLECTION_ACTIONS_ORCHESTRATOR;
 use super::constants::COLLECTION_AGENTS;
 use super::constants::COLLECTION_AGENTS_INFO;
 use super::constants::COLLECTION_CLUSTER_SETTINGS;
@@ -31,6 +33,7 @@ use super::constants::COLLECTION_SHARDS;
 use super::document::ActionDocument;
 use super::document::ClusterSettingsDocument;
 use super::document::DiscoverySettingsDocument;
+use super::document::OrchestratorActionDocument;
 use crate::ErrorKind;
 use crate::Result;
 
@@ -226,6 +229,30 @@ impl PersistInterface for Persist {
         let document = match document {
             Bson::Document(document) => document,
             _ => panic!("Node failed to encode as BSON document"),
+        };
+        replace_one(collection, filter, document, span, self.tracer.as_deref())
+            .with_context(|_| ErrorKind::MongoDBOperation)?;
+        Ok(())
+    }
+
+    fn orchestrator_action(
+        &self,
+        action: OrchestratorActionModel,
+        span: Option<SpanContext>,
+    ) -> Result<()> {
+        let action = OrchestratorActionDocument::from(action);
+        let filter = doc! {
+            "cluster_id": &action.cluster_id,
+            "action_id": &action.action_id,
+        };
+        let collection = self
+            .client
+            .database(&self.db)
+            .collection(COLLECTION_ACTIONS_ORCHESTRATOR);
+        let document = bson::to_bson(&action).with_context(|_| ErrorKind::MongoDBBsonEncode)?;
+        let document = match document {
+            Bson::Document(document) => document,
+            _ => panic!("OrchestratorAction failed to encode as BSON document"),
         };
         replace_one(collection, filter, document, span, self.tracer.as_deref())
             .with_context(|_| ErrorKind::MongoDBOperation)?;
