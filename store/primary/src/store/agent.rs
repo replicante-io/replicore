@@ -9,11 +9,11 @@ use crate::Result;
 /// Operate on the agent identified by the provided cluster_id and host.
 pub struct Agent {
     agent: AgentImpl,
-    attrs: AgentAttribures,
+    attrs: AgentAttributes,
 }
 
 impl Agent {
-    pub(crate) fn new(agent: AgentImpl, attrs: AgentAttribures) -> Agent {
+    pub(crate) fn new(agent: AgentImpl, attrs: AgentAttributes) -> Agent {
         Agent { agent, attrs }
     }
 
@@ -35,7 +35,7 @@ impl Agent {
 }
 
 /// Attributes attached to all `Agent` operations.
-pub struct AgentAttribures {
+pub struct AgentAttributes {
     pub cluster_id: String,
     pub host: String,
 }

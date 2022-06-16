@@ -24,14 +24,14 @@ use replicante_service_healthcheck::HealthChecks;
 
 use crate::store::action::ActionAttributes;
 use crate::store::actions::ActionsAttributes;
-use crate::store::agent::AgentAttribures;
-use crate::store::agents::AgentsAttribures;
+use crate::store::agent::AgentAttributes;
+use crate::store::agents::AgentsAttributes;
 use crate::store::cluster::ClusterAttributes;
 use crate::store::discovery_settings::DiscoverySettingsAttributes;
-use crate::store::node::NodeAttribures;
-use crate::store::nodes::NodesAttribures;
-use crate::store::shard::ShardAttribures;
-use crate::store::shards::ShardsAttribures;
+use crate::store::node::NodeAttributes;
+use crate::store::nodes::NodesAttributes;
+use crate::store::shard::ShardAttributes;
+use crate::store::shards::ShardsAttributes;
 use crate::Config;
 use crate::Cursor;
 use crate::Result;
@@ -236,8 +236,8 @@ box_interface! {
     trait AgentInterface,
 
     interface {
-        fn get(&self, attrs: &AgentAttribures, span: Option<SpanContext>) -> Result<Option<Agent>>;
-        fn info(&self, attrs: &AgentAttribures, span: Option<SpanContext>)
+        fn get(&self, attrs: &AgentAttributes, span: Option<SpanContext>) -> Result<Option<Agent>>;
+        fn info(&self, attrs: &AgentAttributes, span: Option<SpanContext>)
             -> Result<Option<AgentInfo>>;
     }
 }
@@ -254,12 +254,12 @@ box_interface! {
     interface {
         fn iter(
             &self,
-            attrs: &AgentsAttribures,
+            attrs: &AgentsAttributes,
             span: Option<SpanContext>,
         ) -> Result<Cursor<Agent>>;
         fn iter_info(
             &self,
-            attrs: &AgentsAttribures,
+            attrs: &AgentsAttributes,
             span: Option<SpanContext>,
         ) -> Result<Cursor<AgentInfo>>;
     }
@@ -389,7 +389,7 @@ box_interface! {
     trait NodeInterface,
 
     interface {
-        fn get(&self, attrs: &NodeAttribures, span: Option<SpanContext>) -> Result<Option<Node>>;
+        fn get(&self, attrs: &NodeAttributes, span: Option<SpanContext>) -> Result<Option<Node>>;
     }
 }
 
@@ -403,7 +403,7 @@ box_interface! {
     trait NodesInterface,
 
     interface {
-        fn iter(&self, attrs: &NodesAttribures, span: Option<SpanContext>) -> Result<Cursor<Node>>;
+        fn iter(&self, attrs: &NodesAttributes, span: Option<SpanContext>) -> Result<Cursor<Node>>;
     }
 }
 
@@ -465,7 +465,7 @@ box_interface! {
     trait ShardInterface,
 
     interface {
-        fn get(&self, attrs: &ShardAttribures, span: Option<SpanContext>) -> Result<Option<Shard>>;
+        fn get(&self, attrs: &ShardAttributes, span: Option<SpanContext>) -> Result<Option<Shard>>;
     }
 }
 
@@ -481,7 +481,7 @@ box_interface! {
     interface {
         fn iter(
             &self,
-            attrs: &ShardsAttribures,
+            attrs: &ShardsAttributes,
             span: Option<SpanContext>,
         ) -> Result<Cursor<Shard>>;
     }

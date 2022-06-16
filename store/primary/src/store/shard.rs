@@ -8,11 +8,11 @@ use super::super::Result;
 /// Operate on the shard identified by the provided cluster_id, node_id, shard_id.
 pub struct Shard {
     shard: ShardImpl,
-    attrs: ShardAttribures,
+    attrs: ShardAttributes,
 }
 
 impl Shard {
-    pub(crate) fn new(shard: ShardImpl, attrs: ShardAttribures) -> Shard {
+    pub(crate) fn new(shard: ShardImpl, attrs: ShardAttributes) -> Shard {
         Shard { shard, attrs }
     }
 
@@ -26,7 +26,7 @@ impl Shard {
 }
 
 /// Attributes attached to all shard operations.
-pub struct ShardAttribures {
+pub struct ShardAttributes {
     pub cluster_id: String,
     pub node_id: String,
     pub shard_id: String,

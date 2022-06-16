@@ -12,7 +12,7 @@ use replicante_models_core::agent::Node;
 
 use super::super::NodesInterface;
 use super::constants::COLLECTION_NODES;
-use crate::store::nodes::NodesAttribures;
+use crate::store::nodes::NodesAttributes;
 use crate::Cursor;
 use crate::ErrorKind;
 use crate::Result;
@@ -35,7 +35,7 @@ impl Nodes {
 }
 
 impl NodesInterface for Nodes {
-    fn iter(&self, attrs: &NodesAttribures, span: Option<SpanContext>) -> Result<Cursor<Node>> {
+    fn iter(&self, attrs: &NodesAttributes, span: Option<SpanContext>) -> Result<Cursor<Node>> {
         let filter = doc! {"cluster_id": &attrs.cluster_id};
         let collection = self.client.database(&self.db).collection(COLLECTION_NODES);
         let cursor = find(collection, filter, span, self.tracer.as_deref())

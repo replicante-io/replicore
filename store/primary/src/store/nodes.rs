@@ -9,11 +9,11 @@ use super::super::Result;
 /// Operate on all nodes in the cluster identified by cluster_id.
 pub struct Nodes {
     nodes: NodesImpl,
-    attrs: NodesAttribures,
+    attrs: NodesAttributes,
 }
 
 impl Nodes {
-    pub(crate) fn new(nodes: NodesImpl, attrs: NodesAttribures) -> Nodes {
+    pub(crate) fn new(nodes: NodesImpl, attrs: NodesAttributes) -> Nodes {
         Nodes { nodes, attrs }
     }
 
@@ -27,6 +27,6 @@ impl Nodes {
 }
 
 /// Attributes attached to all nodes operations.
-pub struct NodesAttribures {
+pub struct NodesAttributes {
     pub cluster_id: String,
 }

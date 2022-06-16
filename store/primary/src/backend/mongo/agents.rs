@@ -11,7 +11,7 @@ use replicante_externals_mongodb::operations::find;
 use replicante_models_core::agent::Agent as AgentModel;
 use replicante_models_core::agent::AgentInfo as AgentInfoModel;
 
-use super::super::super::store::agents::AgentsAttribures;
+use super::super::super::store::agents::AgentsAttributes;
 use super::super::super::Cursor;
 use super::super::super::ErrorKind;
 use super::super::super::Result;
@@ -39,7 +39,7 @@ impl Agents {
 impl AgentsInterface for Agents {
     fn iter(
         &self,
-        attrs: &AgentsAttribures,
+        attrs: &AgentsAttributes,
         span: Option<SpanContext>,
     ) -> Result<Cursor<AgentModel>> {
         let filter = doc! {"cluster_id": &attrs.cluster_id};
@@ -52,7 +52,7 @@ impl AgentsInterface for Agents {
 
     fn iter_info(
         &self,
-        attrs: &AgentsAttribures,
+        attrs: &AgentsAttributes,
         span: Option<SpanContext>,
     ) -> Result<Cursor<AgentInfoModel>> {
         let filter = doc! {"cluster_id": &attrs.cluster_id};

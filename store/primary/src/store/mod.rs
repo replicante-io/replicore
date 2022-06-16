@@ -109,14 +109,14 @@ impl Store {
     /// Operate on the agent identified by the provided cluster_id and host.
     pub fn agent(&self, cluster_id: String, host: String) -> Agent {
         let agent = self.store.agent();
-        let attrs = self::agent::AgentAttribures { cluster_id, host };
+        let attrs = self::agent::AgentAttributes { cluster_id, host };
         Agent::new(agent, attrs)
     }
 
     /// Operate on all agent in the cluster identified by cluster_id.
     pub fn agents(&self, cluster_id: String) -> Agents {
         let agents = self.store.agents();
-        let attrs = self::agents::AgentsAttribures { cluster_id };
+        let attrs = self::agents::AgentsAttributes { cluster_id };
         Agents::new(agents, attrs)
     }
 
@@ -152,7 +152,7 @@ impl Store {
     /// Operate on the node identified by the provided cluster_id and node_id.
     pub fn node(&self, cluster_id: String, node_id: String) -> Node {
         let node = self.store.node();
-        let attrs = self::node::NodeAttribures {
+        let attrs = self::node::NodeAttributes {
             cluster_id,
             node_id,
         };
@@ -162,7 +162,7 @@ impl Store {
     /// Operate on all nodes in the cluster identified by cluster_id.
     pub fn nodes(&self, cluster_id: String) -> Nodes {
         let nodes = self.store.nodes();
-        let attrs = self::nodes::NodesAttribures { cluster_id };
+        let attrs = self::nodes::NodesAttributes { cluster_id };
         Nodes::new(nodes, attrs)
     }
 
@@ -175,7 +175,7 @@ impl Store {
     /// Operate on the shard identified by the provided cluster_id, node_id, shard_id.
     pub fn shard(&self, cluster_id: String, node_id: String, shard_id: String) -> Shard {
         let shard = self.store.shard();
-        let attrs = self::shard::ShardAttribures {
+        let attrs = self::shard::ShardAttributes {
             cluster_id,
             node_id,
             shard_id,
@@ -186,7 +186,7 @@ impl Store {
     /// Operate on all shards in the cluster identified by cluster_id.
     pub fn shards(&self, cluster_id: String) -> Shards {
         let shards = self.store.shards();
-        let attrs = self::shards::ShardsAttribures { cluster_id };
+        let attrs = self::shards::ShardsAttributes { cluster_id };
         Shards::new(shards, attrs)
     }
 
