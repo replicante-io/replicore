@@ -2,6 +2,7 @@ use opentracingrust::SpanContext;
 
 use replicante_models_core::actions::node::Action;
 use replicante_models_core::actions::node::ActionHistory;
+use replicante_models_core::actions::orchestrator::OrchestratorAction;
 use replicante_models_core::cluster::OrchestrateReport;
 use replicante_models_core::events::Event;
 
@@ -48,5 +49,13 @@ impl Persist {
         S: Into<Option<SpanContext>>,
     {
         self.persist.event(event, span.into())
+    }
+
+    /// Create or update an `OrchestratorAction` record.
+    pub fn orchestrator_action<S>(&self, action: OrchestratorAction, span: S) -> Result<()>
+    where
+        S: Into<Option<SpanContext>>,
+    {
+        self.persist.orchestrator_action(action, span.into())
     }
 }

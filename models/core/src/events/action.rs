@@ -10,6 +10,7 @@ use super::Event;
 use super::EventBuilder;
 use super::Payload;
 use crate::actions::node::Action;
+use crate::actions::orchestrator::OrchestratorAction;
 use crate::scope::EntityId;
 use crate::scope::Namespace;
 
@@ -56,6 +57,10 @@ pub enum ActionEvent {
     /// An action was discovered for the first time.
     #[serde(rename = "ACTION_NEW")]
     New(Action),
+
+    /// An orchestrator action was created.
+    #[serde(rename = "ACTION_ORCHESTRATOR_NEW")]
+    OrchestratorNew(OrchestratorAction),
 }
 
 impl ActionEvent {
@@ -67,6 +72,7 @@ impl ActionEvent {
             ActionEvent::History(_) => "ACTION_HISTORY",
             ActionEvent::Lost(_) => "ACTION_LOST",
             ActionEvent::New(_) => "ACTION_NEW",
+            ActionEvent::OrchestratorNew(_) => "ACTION_ORCHESTRATOR_NEW",
         }
     }
 
@@ -78,24 +84,30 @@ impl ActionEvent {
             ActionEvent::History(info) => &info.cluster_id,
             ActionEvent::Lost(action) => &action.cluster_id,
             ActionEvent::New(action) => &action.cluster_id,
+            ActionEvent::OrchestratorNew(action) => &action.cluster_id,
         };
         let node = match self {
-            ActionEvent::Changed(change) => &change.current.node_id,
-            ActionEvent::Finished(action) => &action.node_id,
-            ActionEvent::History(info) => &info.node_id,
-            ActionEvent::Lost(action) => &action.node_id,
-            ActionEvent::New(action) => &action.node_id,
+            ActionEvent::Changed(change) => Some(&change.current.node_id),
+            ActionEvent::Finished(action) => Some(&action.node_id),
+            ActionEvent::History(info) => Some(&info.node_id),
+            ActionEvent::Lost(action) => Some(&action.node_id),
+            ActionEvent::New(action) => Some(&action.node_id),
+            ActionEvent::OrchestratorNew(_) => None,
         };
         let action = match self {
-            ActionEvent::Changed(change) => &change.current.action_id,
-            ActionEvent::Finished(action) => &action.action_id,
-            ActionEvent::History(info) => &info.action_id,
-            ActionEvent::Lost(action) => &action.action_id,
-            ActionEvent::New(action) => &action.action_id,
+            ActionEvent::Changed(change) => change.current.action_id,
+            ActionEvent::Finished(action) => action.action_id,
+            ActionEvent::History(info) => info.action_id,
+            ActionEvent::Lost(action) => action.action_id,
+            ActionEvent::New(action) => action.action_id,
+            ActionEvent::OrchestratorNew(action) => action.action_id,
         };
         // TODO: Must use a static string because of refs until actions have namespaces attached.
         let _ns = Namespace::HARDCODED_FOR_ROLLOUT();
-        EntityId::NodeAction("default", cluster_id, node, *action)
+        match node {
+            Some(node) => EntityId::NodeAction("default", cluster_id, node, action),
+            None => EntityId::OrchestratorAction("default", cluster_id, action),
+        }
     }
 }
 
@@ -154,6 +166,13 @@ impl ActionEventBuilder {
     /// Build an `ActionEvent::New` event.
     pub fn new_action(self, action: Action) -> Event {
         let event = ActionEvent::New(action);
+        let payload = Payload::Action(event);
+        self.builder.finish(payload)
+    }
+
+    /// Build an `ActionEvent::OrchestratorNew` event.
+    pub fn new_orchestrator_action(self, action: OrchestratorAction) -> Event {
+        let event = ActionEvent::OrchestratorNew(action);
         let payload = Payload::Action(event);
         self.builder.finish(payload)
     }

@@ -28,6 +28,7 @@ mod agent_action;
 mod appliers;
 mod discovery_settings;
 mod metrics;
+mod orchestrator_action;
 mod validate;
 
 pub use metrics::register_metrics;
@@ -145,6 +146,7 @@ async fn responder(
     let headers = request
         .headers()
         .iter()
+        .filter(|(name, _)| !HTTP_HEADERS_IGNORE.contains(name.as_str()))
         .map(|(name, value)| {
             let name = name.as_str().to_string();
             let value = match value.to_str() {
@@ -153,7 +155,6 @@ async fn responder(
             };
             (name, value)
         })
-        .filter(|(name, _)| !HTTP_HEADERS_IGNORE.contains(name))
         .collect();
     let timer = APPLY_DURATION
         .with_label_values(&[&api_version, &kind])

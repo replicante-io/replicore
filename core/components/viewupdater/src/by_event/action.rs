@@ -10,6 +10,7 @@ use replicante_models_core::actions::node::Action;
 use replicante_models_core::actions::node::ActionHistory;
 use replicante_models_core::actions::node::ActionHistoryOrigin;
 use replicante_models_core::actions::node::ActionState;
+use replicante_models_core::actions::orchestrator::OrchestratorAction;
 use replicante_models_core::events::action::ActionEvent;
 use replicante_models_core::events::action::ActionHistory as ActionHistoryEvent;
 
@@ -25,6 +26,7 @@ pub fn process(follower: &Follower, event: &ActionEvent, span: Option<&mut Span>
         ActionEvent::History(info) => process_history(follower, info, span),
         ActionEvent::Lost(action) => persist_action(follower, action, span),
         ActionEvent::New(action) => persist_action(follower, action, span),
+        ActionEvent::OrchestratorNew(action) => persist_orchestrator_action(follower, action, span),
     }
 }
 
@@ -97,5 +99,22 @@ fn process_history(
             .finish_history(action_id, finished_ts, span_context)
             .with_context(|_| ErrorKind::StoreWrite("history finish timestamp"))?;
     }
+    Ok(())
+}
+
+/// Helper function to persist an orchestrator action to the view store.
+fn persist_orchestrator_action(
+    follower: &Follower,
+    action: &OrchestratorAction,
+    span: Option<&mut Span>,
+) -> Result<()> {
+    follower
+        .store
+        .persist()
+        .orchestrator_action(
+            action.clone(),
+            span.as_ref().map(|span| span.context().clone()),
+        )
+        .with_context(|_| ErrorKind::StoreWrite("action"))?;
     Ok(())
 }

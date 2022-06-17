@@ -3,12 +3,10 @@ use failure::ResultExt;
 use serde_json::Value;
 use uuid::Uuid;
 
-use replicante_models_core::actions::node::Action;
-use replicante_models_core::actions::node::ActionRequester;
-use replicante_models_core::actions::node::ActionState;
+use replicante_models_core::actions::orchestrator::OrchestratorAction;
+use replicante_models_core::actions::orchestrator::OrchestratorActionState;
 use replicante_models_core::actions::ActionApproval;
 use replicante_models_core::api::apply::SCOPE_CLUSTER;
-use replicante_models_core::api::apply::SCOPE_NODE;
 use replicante_models_core::api::apply::SCOPE_NS;
 use replicante_models_core::api::validate::ErrorsCollection;
 use replicante_models_core::events::Event;
@@ -18,7 +16,7 @@ use super::appliers::ApplierArgs;
 use crate::ErrorKind;
 use crate::Result;
 
-/// Validate an action request and add it to the DB.
+/// Validate an orchestrator action request and add it to the DB.
 pub fn replicante_io_v0(args: ApplierArgs) -> Result<Value> {
     // Validate request.
     let mut errors = ErrorsCollection::new();
@@ -28,13 +26,6 @@ pub fn replicante_io_v0(args: ApplierArgs) -> Result<Value> {
             "MissingAttribute",
             format!("metadata.{}", SCOPE_CLUSTER),
             "A cluster id must be attached to the request",
-        );
-    }
-    if object.metadata.get(SCOPE_NODE).is_none() {
-        errors.collect(
-            "MissingAttribute",
-            format!("metadata.{}", SCOPE_NODE),
-            "A node id must be attached to the request",
         );
     }
     if object.metadata.get(SCOPE_NS).is_none() {
@@ -103,12 +94,6 @@ pub fn replicante_io_v0(args: ApplierArgs) -> Result<Value> {
         .expect("validation should have caught this")
         .as_str()
         .expect("validation should have caught this");
-    let node = object
-        .metadata
-        .get(SCOPE_NODE)
-        .expect("validation should have caught this")
-        .as_str()
-        .expect("validation should have caught this");
     let spec = object
         .attributes
         .get("spec")
@@ -127,12 +112,12 @@ pub fn replicante_io_v0(args: ApplierArgs) -> Result<Value> {
         }
     };
     let state = match approval {
-        ActionApproval::Granted => ActionState::PendingSchedule,
-        ActionApproval::Required => ActionState::PendingApprove,
+        ActionApproval::Granted => OrchestratorActionState::PendingSchedule,
+        ActionApproval::Required => OrchestratorActionState::PendingApprove,
     };
 
     let now = Utc::now();
-    let action = Action {
+    let action = OrchestratorAction {
         action_id: Uuid::new_v4(),
         args: action_args,
         cluster_id: cluster.to_string(),
@@ -140,9 +125,6 @@ pub fn replicante_io_v0(args: ApplierArgs) -> Result<Value> {
         finished_ts: None,
         headers: args.headers,
         kind: kind.to_string(),
-        node_id: node.to_string(),
-        requester: ActionRequester::CoreApi,
-        schedule_attempt: 0,
         scheduled_ts: None,
         state,
         state_payload: None,
@@ -150,17 +132,19 @@ pub fn replicante_io_v0(args: ApplierArgs) -> Result<Value> {
 
     // Store the pending action for later scheduling.
     let span = args.span.map(|span| span.context().clone());
-    let event = Event::builder().action().new_action(action.clone());
+    let event = Event::builder()
+        .action()
+        .new_orchestrator_action(action.clone());
     let stream_key = event.entity_id().partition_key();
     let event = EmitMessage::with(stream_key, event)
-        .with_context(|_| ErrorKind::EventsStreamEmit("ACTION_NEW"))?
+        .with_context(|_| ErrorKind::EventsStreamEmit("ACTION_ORCHESTRATOR_NEW"))?
         .trace(span.clone());
     args.events
         .emit(event)
-        .with_context(|_| ErrorKind::EventsStreamEmit("ACTION_NEW"))?;
+        .with_context(|_| ErrorKind::EventsStreamEmit("ACTION_ORCHESTRATOR_NEW"))?;
     args.store
         .persist()
-        .action(action, span)
-        .with_context(|_| ErrorKind::PrimaryStorePersist("action"))?;
+        .orchestrator_action(action, span)
+        .with_context(|_| ErrorKind::PrimaryStorePersist("orchestrator action"))?;
     Ok(Value::Null)
 }

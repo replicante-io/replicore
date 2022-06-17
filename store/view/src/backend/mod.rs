@@ -12,6 +12,7 @@ use uuid::Uuid;
 use replicante_externals_mongodb::admin::ValidationResult;
 use replicante_models_core::actions::node::Action;
 use replicante_models_core::actions::node::ActionHistory;
+use replicante_models_core::actions::orchestrator::OrchestratorAction;
 use replicante_models_core::admin::Version;
 use replicante_models_core::cluster::OrchestrateReport;
 use replicante_models_core::events::Event;
@@ -266,6 +267,11 @@ box_interface! {
             span: Option<SpanContext>,
         ) -> Result<()>;
         fn event(&self, event: Event, span: Option<SpanContext>) -> Result<()>;
+        fn orchestrator_action(
+            &self,
+            action: OrchestratorAction,
+            span: Option<SpanContext>,
+        ) -> Result<()>;
     }
 }
 

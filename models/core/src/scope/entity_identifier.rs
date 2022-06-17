@@ -17,14 +17,14 @@ pub enum EntityId<'entity> {
     /// Identifies a managed cluster by (Namespace, Cluster) ID.
     Cluster(&'entity str, &'entity str),
 
-    /// Identifies an action targeting a managed cluster by (Namespace, Cluster, Action) ID.
-    ClusterAction(&'entity str, &'entity str, Uuid),
-
     /// Identifies a managed cluster node by (Namespace, Cluster, Node) ID.
     Node(&'entity str, &'entity str, &'entity str),
 
     /// Identifies an action targeting a managed cluster node by (Namespace, Cluster, Node, Action) ID.
     NodeAction(&'entity str, &'entity str, &'entity str, Uuid),
+
+    /// Identifies an action targeting a managed cluster by (Namespace, Cluster, Action) ID.
+    OrchestratorAction(&'entity str, &'entity str, Uuid),
 
     /// Identifies a managed cluster data shard by (Namespace, Cluster, Node, Shard) ID.
     Shard(&'entity str, &'entity str, &'entity str, &'entity str),
@@ -38,11 +38,11 @@ impl<'entity> EntityId<'entity> {
         match self {
             Self::System => Self::System,
             Self::Namespace(ns) => Self::Namespace(ns),
-            Self::Cluster(ns, cluster) => Self::Cluster(ns, cluster),
-            Self::ClusterAction(ns, cluster, _) => Self::Cluster(ns, cluster),
-            Self::Node(ns, cluster, _) => Self::Cluster(ns, cluster),
-            Self::NodeAction(ns, cluster, _, _) => Self::Cluster(ns, cluster),
-            Self::Shard(ns, cluster, _, _) => Self::Cluster(ns, cluster),
+            Self::Cluster(ns, cluster)
+            | Self::Node(ns, cluster, _)
+            | Self::NodeAction(ns, cluster, _, _)
+            | Self::OrchestratorAction(ns, cluster, _)
+            | Self::Shard(ns, cluster, _, _) => Self::Cluster(ns, cluster),
         }
     }
 
@@ -58,11 +58,11 @@ impl<'entity> EntityId<'entity> {
         match self {
             Self::System => "<replicore>".to_string(),
             Self::Namespace(ns) => format!("[{ns}]"),
-            Self::Cluster(ns, cluster) => format!("[{ns}].({cluster})"),
-            Self::ClusterAction(ns, cluster, _) => format!("[{ns}].({cluster})"),
-            Self::Node(ns, cluster, _) => format!("[{ns}].({cluster})"),
-            Self::NodeAction(ns, cluster, _, _) => format!("[{ns}].({cluster})"),
-            Self::Shard(ns, cluster, _, _) => format!("[{ns}].({cluster})"),
+            Self::Cluster(ns, cluster)
+            | Self::Node(ns, cluster, _)
+            | Self::NodeAction(ns, cluster, _, _)
+            | Self::OrchestratorAction(ns, cluster, _)
+            | Self::Shard(ns, cluster, _, _) => format!("[{ns}].({cluster})"),
         }
     }
 }
@@ -73,7 +73,7 @@ impl<'entity> std::fmt::Display for EntityId<'entity> {
             Self::System => write!(f, "<replicore>"),
             Self::Namespace(ns) => write!(f, "{}", ns),
             Self::Cluster(ns, cluster) => write!(f, "{}.{}", ns, cluster),
-            Self::ClusterAction(ns, cluster, action) => {
+            Self::OrchestratorAction(ns, cluster, action) => {
                 write!(f, "{}.{}/action={}", ns, cluster, action)
             }
             Self::Node(ns, cluster, node) => write!(f, "{}.{}/node={}", ns, cluster, node),
