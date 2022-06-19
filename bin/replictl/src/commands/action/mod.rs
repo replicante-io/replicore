@@ -27,10 +27,12 @@ pub struct CommonOpt {
 #[derive(Debug, StructOpt)]
 pub enum Opt {
     /// Approve an action that is pending approval.
-    Approve(CommonOpt),
+    #[structopt(alias = "approve")]
+    ApproveNodeAction(CommonOpt),
 
     /// Disapprove (reject) an action that is pending approval.
-    Disapprove(CommonOpt),
+    #[structopt(alias = "disapprove")]
+    DisapproveNodeAction(CommonOpt),
 
     /// List known orchestrator actions for a cluster.
     ListOrchestratorActions,
@@ -39,8 +41,10 @@ pub enum Opt {
 /// Execute the selected command.
 pub async fn execute(logger: &Logger, opt: &crate::Opt, action_cmd: &Opt) -> Result<i32> {
     match &action_cmd {
-        Opt::Approve(approve_opt) => approve::execute(logger, opt, approve_opt).await,
-        Opt::Disapprove(disapprove_opt) => disapprove::execute(logger, opt, disapprove_opt).await,
+        Opt::ApproveNodeAction(approve_opt) => approve::execute(logger, opt, approve_opt).await,
+        Opt::DisapproveNodeAction(disapprove_opt) => {
+            disapprove::execute(logger, opt, disapprove_opt).await
+        }
         Opt::ListOrchestratorActions => orchestrator_list::execute(logger, opt).await,
     }
 }

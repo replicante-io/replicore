@@ -22,6 +22,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Populate view DB from the events stream.
 - Refactor cluster discovery.
 - Refactor cluster orchestration (also know as refresh).
+- Start aliasing [agent] actions to node actions.
 
 ### Fixed
 - Added Grafana API friendly text for missing events.

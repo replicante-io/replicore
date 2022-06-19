@@ -15,6 +15,7 @@ use crate::Result;
 const APIV_REPLI_V0: &str = "replicante.io/v0";
 const KIND_AGENT_ACTION: &str = "AgentAction";
 const KIND_DISCOVERY_SETTING: &str = "DiscoverySettings";
+const KIND_NODE_ACTION: &str = "NodeAction";
 const KIND_ORCHESTRATOR_ACTION: &str = "OrchestratorAction";
 
 /// Type of closure that handles a specific `kind` for a specific `apiVersion`.
@@ -34,7 +35,9 @@ pub fn find(object: &ApplyObject) -> Option<Applier> {
     let api_version = object.api_version.as_str();
     let kind = object.kind.as_str();
     match (api_version, kind) {
-        (APIV_REPLI_V0, KIND_AGENT_ACTION) => Some(Box::new(agent_action::replicante_io_v0)),
+        (APIV_REPLI_V0, KIND_AGENT_ACTION) | (APIV_REPLI_V0, KIND_NODE_ACTION) => {
+            Some(Box::new(agent_action::replicante_io_v0))
+        }
         (APIV_REPLI_V0, KIND_DISCOVERY_SETTING) => {
             Some(Box::new(discovery_settings::replicante_io_v0))
         }

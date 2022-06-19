@@ -1,5 +1,5 @@
 apiVersion: replicante.io/v0
-kind: AgentAction
+kind: NodeAction
 
 metadata:
   namespace: default
