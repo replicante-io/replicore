@@ -16,6 +16,7 @@ use replicante_models_core::agent::Agent;
 use replicante_models_core::agent::AgentInfo;
 use replicante_models_core::agent::Node;
 use replicante_models_core::agent::Shard;
+use replicante_models_core::api::orchestrator_action::OrchestratorActionSummary;
 use replicante_models_core::cluster::discovery::ClusterDiscovery;
 use replicante_models_core::cluster::discovery::DiscoverySettings;
 use replicante_models_core::cluster::ClusterMeta;
@@ -30,6 +31,7 @@ use crate::store::cluster::ClusterAttributes;
 use crate::store::discovery_settings::DiscoverySettingsAttributes;
 use crate::store::node::NodeAttributes;
 use crate::store::nodes::NodesAttributes;
+use crate::store::orchestrator_actions::OrchestratorActionsAttributes;
 use crate::store::shard::ShardAttributes;
 use crate::store::shards::ShardsAttributes;
 use crate::Config;
@@ -172,6 +174,7 @@ arc_interface! {
         fn legacy(&self) -> LegacyImpl;
         fn node(&self) -> NodeImpl;
         fn nodes(&self) -> NodesImpl;
+        fn orchestrator_actions(&self) -> OrchestratorActionsImpl;
         fn persist(&self) -> PersistImpl;
         fn shard(&self) -> ShardImpl;
         fn shards(&self) -> ShardsImpl;
@@ -404,6 +407,24 @@ box_interface! {
 
     interface {
         fn iter(&self, attrs: &NodesAttributes, span: Option<SpanContext>) -> Result<Cursor<Node>>;
+    }
+}
+
+box_interface! {
+    /// Dynamic dispatch orchestrator actions operations to a backend-specific implementation.
+    struct OrchestratorActionsImpl,
+
+    /// Definition of supported operations on all orchestrator actions in a cluster.
+    ///
+    /// See `store::orchestrator_actions::OrchestratorActions` for descriptions of methods.
+    trait OrchestratorActionsInterface,
+
+    interface {
+        fn iter_summary(
+            &self,
+            attrs: &OrchestratorActionsAttributes,
+            span: Option<SpanContext>,
+        ) -> Result<Cursor<OrchestratorActionSummary>>;
     }
 }
 

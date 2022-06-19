@@ -26,6 +26,7 @@ pub mod global_search;
 pub mod legacy;
 pub mod node;
 pub mod nodes;
+pub mod orchestrator_actions;
 pub mod persist;
 pub mod shard;
 pub mod shards;
@@ -40,6 +41,7 @@ use self::global_search::GlobalSearch;
 use self::legacy::Legacy;
 use self::node::Node;
 use self::nodes::Nodes;
+use self::orchestrator_actions::OrchestratorActions;
 use self::persist::Persist;
 use self::shard::Shard;
 use self::shards::Shards;
@@ -50,7 +52,7 @@ use self::shards::Shards;
 /// hides implementation details about storage software and data encoding.
 ///
 /// # Purpose
-/// The primary store is responsable for data used by Replicante Core itself and
+/// The primary store is responsible for data used by Replicante Core itself and
 /// needed to implement the platform.
 ///
 /// Any other data, such as historical or aggregated data kept purely for the API,
@@ -164,6 +166,13 @@ impl Store {
         let nodes = self.store.nodes();
         let attrs = self::nodes::NodesAttributes { cluster_id };
         Nodes::new(nodes, attrs)
+    }
+
+    /// Operate on all orchestrator actions in the cluster identified by cluster_id.
+    pub fn orchestrator_actions(&self, cluster_id: String) -> OrchestratorActions {
+        let orchestrator_actions = self.store.orchestrator_actions();
+        let attrs = self::orchestrator_actions::OrchestratorActionsAttributes { cluster_id };
+        OrchestratorActions::new(orchestrator_actions, attrs)
     }
 
     /// Persist (insert or update) models to the store.

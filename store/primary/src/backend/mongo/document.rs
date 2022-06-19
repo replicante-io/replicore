@@ -9,6 +9,7 @@ use replicante_models_core::actions::node::ActionRequester;
 use replicante_models_core::actions::node::ActionState;
 use replicante_models_core::actions::orchestrator::OrchestratorAction;
 use replicante_models_core::actions::orchestrator::OrchestratorActionState;
+use replicante_models_core::api::orchestrator_action::OrchestratorActionSummary;
 use replicante_models_core::cluster::discovery::DiscoverySettings;
 use replicante_models_core::cluster::ClusterSettings;
 
@@ -205,6 +206,34 @@ impl From<OrchestratorActionDocument> for OrchestratorAction {
             scheduled_ts: action.scheduled_ts.map(|ts| ts.0),
             state: action.state,
             state_payload,
+        }
+    }
+}
+
+/// Wrap an `OrchestratorActionSummary` with store only fields and MongoDB specific types.
+#[derive(Clone, PartialEq, Debug, Serialize, Deserialize)]
+pub struct OrchestratorActionSummaryDocument {
+    pub cluster_id: String,
+    pub action_id: String,
+    pub created_ts: DateTime,
+    pub finished_ts: Option<DateTime>,
+    pub kind: String,
+    pub state: OrchestratorActionState,
+}
+
+impl From<OrchestratorActionSummaryDocument> for OrchestratorActionSummary {
+    fn from(action: OrchestratorActionSummaryDocument) -> OrchestratorActionSummary {
+        let action_id = action
+            .action_id
+            .parse()
+            .expect("Action ID not converted to UUID");
+        OrchestratorActionSummary {
+            action_id,
+            cluster_id: action.cluster_id,
+            created_ts: action.created_ts.0,
+            finished_ts: action.finished_ts.map(|ts| ts.0),
+            kind: action.kind,
+            state: action.state,
         }
     }
 }

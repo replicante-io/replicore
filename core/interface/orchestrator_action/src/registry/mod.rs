@@ -30,7 +30,7 @@
 // # Testing support
 //
 // Global state makes tests harder to write and potentially chaotic if they start clashing.
-// For that reason this crate offers a `test_api` feature.
+// For that reason this crate offers a `test-api` feature.
 // When this feature is enabled the implementation of the global registry is changed so:
 //
 // - The current global registry static `RwLock` does NOT EVEN exist.
@@ -46,7 +46,7 @@
 //
 // Because testing support is essentially a completely different API it has its own dedicated
 // tests implemented in `src/registry/test_api_tests.rs` which are run with
-// `cargo test --features test_api`.
+// `cargo test --features test-api`.
 // ##############################################################################################
 use std::collections::hash_map::Entry;
 use std::collections::HashMap;
@@ -58,16 +58,16 @@ use anyhow::Result;
 use crate::ActionAlreadyRegistered;
 use crate::OrchestratorAction;
 
-// When test are enabled but the `test_api` is off.
-#[cfg(all(test, not(feature = "test_api")))]
+// When test are enabled but the `test-api` is off.
+#[cfg(all(test, not(feature = "test-api")))]
 mod tests;
 
-// When test are enabled and the `test_api` is on.
-#[cfg(all(test, feature = "test_api"))]
+// When test are enabled and the `test-api` is on.
+#[cfg(all(test, feature = "test-api"))]
 mod test_api_tests;
 
-// Global registry is only defined outside of `test_api` mode.
-#[cfg(not(feature = "test_api"))]
+// Global registry is only defined outside of `test-api` mode.
+#[cfg(not(feature = "test-api"))]
 lazy_static::lazy_static! {
     /// Global OrchestratorActionRegistry instance currently active.
     ///
@@ -76,8 +76,8 @@ lazy_static::lazy_static! {
     static ref ORCH_ACT_REG: RwLock<Option<Arc<OrchestratorActionRegistry>>> = RwLock::new(None);
 }
 
-// Thread local definitions when outside of `test_api` mode.
-#[cfg(not(feature = "test_api"))]
+// Thread local definitions when outside of `test-api` mode.
+#[cfg(not(feature = "test-api"))]
 thread_local! {
     /// Thread-local read-only "cache" for the current `OrchestratorActionRegistry`.
     static ORCH_ACT_REG_TLS: Arc<OrchestratorActionRegistry> = {
@@ -95,10 +95,10 @@ thread_local! {
     };
 }
 
-// Thread local definitions when in `test_api` mode.
-#[cfg(feature = "test_api")]
+// Thread local definitions when in `test-api` mode.
+#[cfg(feature = "test-api")]
 thread_local! {
-    /// When `test_api` is enabled then threads get isolated registries.
+    /// When `test-api` is enabled then threads get isolated registries.
     static ORCH_ACT_REG_TLS: RwLock<Option<Arc<OrchestratorActionRegistry>>> = RwLock::new(None);
 }
 
@@ -118,7 +118,7 @@ thread_local! {
 ///
 /// ### Testing support
 ///
-/// To support testing code that makes use of the global registry an optional `test_api` feature
+/// To support testing code that makes use of the global registry an optional `test-api` feature
 /// is provided by this crate. When enabled:
 ///
 /// * Initialising the global registry with the standard method will panic.
@@ -161,11 +161,11 @@ impl OrchestratorActionRegistry {
     /// is initialised with `OrchestratorActionRegistryBuilder::build_as_current`.
     pub fn current() -> Arc<OrchestratorActionRegistry> {
         // Simply read the cache outside of test mode.
-        #[cfg(not(feature = "test_api"))]
+        #[cfg(not(feature = "test-api"))]
         return ORCH_ACT_REG_TLS.with(Arc::clone);
 
         // In test mode check if registry is set first.
-        #[cfg(feature = "test_api")]
+        #[cfg(feature = "test-api")]
         ORCH_ACT_REG_TLS.with(|state| {
             let registry = state
                 .read()
@@ -203,12 +203,12 @@ impl OrchestratorActionRegistryBuilder {
     ///
     /// # Test mode
     ///
-    /// When the `test_api` feature is enabled this method sets a per-thread registry.
+    /// When the `test-api` feature is enabled this method sets a per-thread registry.
     pub fn build_as_current(self) {
         let registry = Arc::new(self.build());
 
         // Set the global registry outside of test mode.
-        #[cfg(not(feature = "test_api"))]
+        #[cfg(not(feature = "test-api"))]
         {
             let mut current = ORCH_ACT_REG
                 .write()
@@ -222,7 +222,7 @@ impl OrchestratorActionRegistryBuilder {
         }
 
         // In test mode set the local thread state only.
-        #[cfg(feature = "test_api")]
+        #[cfg(feature = "test-api")]
         ORCH_ACT_REG_TLS.with(|state| {
             let mut current = state
                 .write()
@@ -237,7 +237,7 @@ impl OrchestratorActionRegistryBuilder {
     }
 
     /// Test API method to clear the currently set registry.
-    #[cfg(feature = "test_api")]
+    #[cfg(feature = "test-api")]
     pub fn clear_current() {
         ORCH_ACT_REG_TLS.with(|state| {
             let mut current = state
@@ -297,10 +297,10 @@ impl OrchestratorActionRegistryBuilder {
 /// Automatically clear the current test registry on drop.
 ///
 /// This struct is helpful when writing tests to ensure the registry is unset at the end.
-#[cfg(feature = "test_api")]
+#[cfg(feature = "test-api")]
 pub struct TestRegistryClearGuard {}
 
-#[cfg(feature = "test_api")]
+#[cfg(feature = "test-api")]
 impl Drop for TestRegistryClearGuard {
     fn drop(&mut self) {
         // This implementation of clearing ignores poisoned locks to avoid double panics.

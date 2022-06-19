@@ -16,7 +16,7 @@ pub enum Command {
     /// Show and manage actions.
     Action(action::Opt),
 
-    /// Apply changes as decribed by the YAML input (heavily inspired by https://kubernetes.io/).
+    /// Apply changes as described by the YAML input (heavily inspired by https://kubernetes.io/).
     Apply(apply::Opt),
 
     /// Show and manage clusters.

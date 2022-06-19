@@ -30,6 +30,7 @@ use crate::backend::LegacyImpl;
 use crate::backend::LegacyInterface;
 use crate::backend::NodeImpl;
 use crate::backend::NodesImpl;
+use crate::backend::OrchestratorActionsImpl;
 use crate::backend::PersistImpl;
 use crate::backend::PersistInterface;
 use crate::backend::ShardImpl;
@@ -95,6 +96,10 @@ impl StoreInterface for StoreMock {
 
     fn nodes(&self) -> NodesImpl {
         panic!("TODO: StoreMock::nodes");
+    }
+
+    fn orchestrator_actions(&self) -> OrchestratorActionsImpl {
+        panic!("TODO: StoreMock::orchestrator_actions");
     }
 
     fn persist(&self) -> PersistImpl {

@@ -38,12 +38,15 @@ db.actions_history.createIndex({
   timestamp: 1,
   state: 1,
 }, {unique: true});
+db.actions_orchestrator.createIndex({cluster_id: 1, action_id: 1}, {unique: true});
 
 //   Indexes for performance reasons.
 db.actions.createIndex({cluster_id: 1, created_ts: -1});
+db.actions_orchestrator.createIndex({cluster_id: 1, created_ts: -1});
 db.cluster_orchestrate_report.createIndex({cluster_id: 1}, {unique: true});
 
 //   TTL index lasting 14 days.
 db.actions.createIndex({finished_ts: 1}, {expireAfterSeconds: 1209600});
 db.actions_history.createIndex({finished_ts: 1}, {expireAfterSeconds: 1209600});
+db.actions_orchestrator.createIndex({finished_ts: 1}, {expireAfterSeconds: 1209600});
 db.events.createIndex({timestamp: 1}, {expireAfterSeconds: 1209600});

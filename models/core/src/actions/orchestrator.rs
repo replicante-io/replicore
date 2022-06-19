@@ -67,3 +67,16 @@ impl OrchestratorActionState {
         matches!(self, Self::Running)
     }
 }
+
+impl std::fmt::Display for OrchestratorActionState {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        match self {
+            Self::Cancelled => write!(f, "CANCELLED"),
+            Self::Done => write!(f, "DONE"),
+            Self::Failed => write!(f, "FAILED"),
+            Self::PendingApprove => write!(f, "PENDING_APPROVE"),
+            Self::PendingSchedule => write!(f, "PENDING_SCHEDULE"),
+            Self::Running => write!(f, "RUNNING"),
+        }
+    }
+}

@@ -5,6 +5,7 @@ use uuid::Uuid;
 
 mod approve;
 mod disapprove;
+mod orchestrator_list;
 
 // Command line options common to all action commands.
 //
@@ -30,6 +31,9 @@ pub enum Opt {
 
     /// Disapprove (reject) an action that is pending approval.
     Disapprove(CommonOpt),
+
+    /// List known orchestrator actions for a cluster.
+    ListOrchestratorActions,
 }
 
 /// Execute the selected command.
@@ -37,5 +41,6 @@ pub async fn execute(logger: &Logger, opt: &crate::Opt, action_cmd: &Opt) -> Res
     match &action_cmd {
         Opt::Approve(approve_opt) => approve::execute(logger, opt, approve_opt).await,
         Opt::Disapprove(disapprove_opt) => disapprove::execute(logger, opt, disapprove_opt).await,
+        Opt::ListOrchestratorActions => orchestrator_list::execute(logger, opt).await,
     }
 }

@@ -17,6 +17,6 @@ pub async fn execute(logger: &Logger, opt: &Opt, approve_opt: &CommonOpt) -> Res
     client.action_approve(&cluster, action).await?;
     tokio::task::spawn_blocking(|| println!("Action approved for scheduling"))
         .await
-        .context("failed to wite to stdout")?;
+        .context("failed to write to stdout")?;
     Ok(0)
 }
