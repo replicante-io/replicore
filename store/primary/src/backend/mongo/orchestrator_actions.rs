@@ -6,8 +6,10 @@ use mongodb::options::FindOptions;
 use mongodb::sync::Client;
 use opentracingrust::SpanContext;
 use opentracingrust::Tracer;
+use uuid::Uuid;
 
 use replicante_externals_mongodb::operations::find_with_options;
+use replicante_models_core::actions::orchestrator::OrchestratorActionState;
 use replicante_models_core::api::orchestrator_action::OrchestratorActionSummary;
 
 use super::super::OrchestratorActionsInterface;
@@ -36,6 +38,47 @@ impl OrchestratorActions {
 }
 
 impl OrchestratorActionsInterface for OrchestratorActions {
+    fn approve(
+        &self,
+        attrs: &OrchestratorActionsAttributes,
+        action_id: Uuid,
+        span: Option<SpanContext>,
+    ) -> Result<()> {
+        let collection = self
+            .client
+            .database(&self.db)
+            .collection(COLLECTION_ACTIONS_ORCHESTRATOR);
+        super::actions::action_generic_approve(
+            &attrs.cluster_id,
+            action_id,
+            collection,
+            span,
+            self.tracer.as_deref(),
+        )?;
+        Ok(())
+    }
+
+    fn disapprove(
+        &self,
+        attrs: &OrchestratorActionsAttributes,
+        action_id: Uuid,
+        span: Option<SpanContext>,
+    ) -> Result<()> {
+        let collection = self
+            .client
+            .database(&self.db)
+            .collection(COLLECTION_ACTIONS_ORCHESTRATOR);
+        super::actions::action_generic_disapprove(
+            &attrs.cluster_id,
+            action_id,
+            bson::to_bson(&OrchestratorActionState::Cancelled).unwrap(),
+            collection,
+            span,
+            self.tracer.as_deref(),
+        )?;
+        Ok(())
+    }
+
     fn iter_summary(
         &self,
         attrs: &OrchestratorActionsAttributes,

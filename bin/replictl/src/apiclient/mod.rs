@@ -15,12 +15,14 @@ use crate::context::Context;
 mod http;
 
 const ENDPOINT_APPLY: &str = "/api/unstable/core/apply";
+
+const ENDPOINT_CLUSTER: &str = "/api/unstable/core/cluster";
 const ENDPOINT_CLUSTER_ACTION_APPROVE: &str = "approve";
 const ENDPOINT_CLUSTER_ACTION_DISAPPROVE: &str = "disapprove";
-const ENDPOINT_CLUSTER_ACTION_ORCHESTRATOR_SUMMARY: &str = "orchestrator_action/summary";
-const ENDPOINT_CLUSTER_ACTION: &str = "action";
+const ENDPOINT_CLUSTER_ACTION_NODE: &str = "action";
+const ENDPOINT_CLUSTER_ACTION_ORCHESTRATOR: &str = "orchestrator-action";
+const ENDPOINT_CLUSTER_ACTION_SUMMARY: &str = "summary";
 const ENDPOINT_CLUSTER_ORCHESTRATE: &str = "orchestrate";
-const ENDPOINT_CLUSTER: &str = "/api/unstable/core/cluster";
 
 const ENDPOINT_DISCOVERY_SETTINGS: &str = "/api/unstable/core/discoverysettings";
 const ENDPOINT_DISCOVERY_SETTINGS_DELETE: &str = "delete";
@@ -44,7 +46,7 @@ impl RepliClient {
             "{}/{}/{}/{}/{}",
             ENDPOINT_CLUSTER,
             cluster,
-            ENDPOINT_CLUSTER_ACTION,
+            ENDPOINT_CLUSTER_ACTION_NODE,
             action,
             ENDPOINT_CLUSTER_ACTION_APPROVE,
         );
@@ -53,7 +55,7 @@ impl RepliClient {
             .client
             .send(request)
             .await
-            .context("Unable to approve action")?;
+            .context("unable to approve action")?;
         response.check_status()?;
         Ok(())
     }
@@ -69,7 +71,7 @@ impl RepliClient {
             "{}/{}/{}/{}/{}",
             ENDPOINT_CLUSTER,
             cluster,
-            ENDPOINT_CLUSTER_ACTION,
+            ENDPOINT_CLUSTER_ACTION_NODE,
             action,
             ENDPOINT_CLUSTER_ACTION_DISAPPROVE,
         );
@@ -78,7 +80,47 @@ impl RepliClient {
             .client
             .send(request)
             .await
-            .context("Unable to disapprove action")?;
+            .context("unable to disapprove action")?;
+        response.check_status()?;
+        Ok(())
+    }
+
+    /// Approve a PENDING_APPROVE orchestrator action so it can be scheduled and executed.
+    pub async fn action_orchestrator_approve(&self, cluster: &str, action: Uuid) -> Result<()> {
+        let uri = format!(
+            "{}/{}/{}/{}/{}",
+            ENDPOINT_CLUSTER,
+            cluster,
+            ENDPOINT_CLUSTER_ACTION_ORCHESTRATOR,
+            action,
+            ENDPOINT_CLUSTER_ACTION_APPROVE,
+        );
+        let request = self.client.post(&uri);
+        let response = self
+            .client
+            .send(request)
+            .await
+            .context("unable to approve orchestrator action")?;
+        response.check_status()?;
+        Ok(())
+    }
+
+    /// Disprove a PENDING_APPROVE orchestrator action so it will not be scheduled.
+    pub async fn action_orchestrator_disapprove(&self, cluster: &str, action: Uuid) -> Result<()> {
+        let uri = format!(
+            "{}/{}/{}/{}/{}",
+            ENDPOINT_CLUSTER,
+            cluster,
+            ENDPOINT_CLUSTER_ACTION_ORCHESTRATOR,
+            action,
+            ENDPOINT_CLUSTER_ACTION_DISAPPROVE,
+        );
+        let request = self.client.post(&uri);
+        let response = self
+            .client
+            .send(request)
+            .await
+            .context("unable to disapprove orchestrator action")?;
         response.check_status()?;
         Ok(())
     }
@@ -89,8 +131,11 @@ impl RepliClient {
         cluster: &str,
     ) -> Result<Vec<OrchestratorActionSummary>> {
         let uri = format!(
-            "{}/{}/{}",
-            ENDPOINT_CLUSTER, cluster, ENDPOINT_CLUSTER_ACTION_ORCHESTRATOR_SUMMARY,
+            "{}/{}/{}/{}",
+            ENDPOINT_CLUSTER,
+            cluster,
+            ENDPOINT_CLUSTER_ACTION_ORCHESTRATOR,
+            ENDPOINT_CLUSTER_ACTION_SUMMARY,
         );
         let request = self.client.get(&uri);
         let response = self

@@ -1,12 +1,14 @@
 use std::sync::Arc;
 
 use bson::doc;
+use bson::Bson;
 use bson::DateTime as UtcDateTime;
 use chrono::Utc;
 use failure::Fail;
 use failure::ResultExt;
 use mongodb::options::FindOptions;
 use mongodb::sync::Client;
+use mongodb::sync::Collection;
 use opentracingrust::SpanContext;
 use opentracingrust::Tracer;
 use uuid::Uuid;
@@ -22,6 +24,57 @@ use crate::store::actions::ActionsAttributes;
 use crate::Cursor;
 use crate::ErrorKind;
 use crate::Result;
+
+/// Approve a PENDING_APPROVE node or orchestrator action.
+///
+/// Returns true if the action record was updated.
+pub fn action_generic_approve(
+    cluster_id: &str,
+    action_id: Uuid,
+    collection: Collection,
+    span: Option<SpanContext>,
+    tracer: Option<&Tracer>,
+) -> Result<bool> {
+    let filter = doc! {
+        "cluster_id": cluster_id,
+        "action_id": action_id.to_string(),
+        "state": "PENDING_APPROVE",
+    };
+    let update = doc! {
+        "$set": {"state": "PENDING_SCHEDULE"}
+    };
+    let result = update_one(collection, filter, update, span, tracer)
+        .with_context(|_| ErrorKind::MongoDBOperation)?;
+    Ok(result.modified_count != 0)
+}
+
+/// Disapprove (reject) a PENDING_APPROVE node or orchestrator action.
+///
+/// Returns true if the action record was updated.
+pub fn action_generic_disapprove(
+    cluster_id: &str,
+    action_id: Uuid,
+    state: Bson,
+    collection: Collection,
+    span: Option<SpanContext>,
+    tracer: Option<&Tracer>,
+) -> Result<bool> {
+    let filter = doc! {
+        "cluster_id": &cluster_id,
+        "action_id": action_id.to_string(),
+        "state": "PENDING_APPROVE",
+    };
+    let finished_ts = UtcDateTime::from(Utc::now());
+    let update = doc! {
+        "$set": {
+            "finished_ts": bson::to_bson(&finished_ts).unwrap(),
+            "state": state,
+        }
+    };
+    let result = update_one(collection, filter, update, span, tracer)
+        .with_context(|_| ErrorKind::MongoDBOperation)?;
+    Ok(result.modified_count != 0)
+}
 
 /// Actions operations implementation using MongoDB.
 pub struct Actions {
@@ -47,20 +100,17 @@ impl ActionsInterface for Actions {
         action_id: Uuid,
         span: Option<SpanContext>,
     ) -> Result<()> {
-        let filter = doc! {
-            "cluster_id": &attrs.cluster_id,
-            "action_id": action_id.to_string(),
-            "state": "PENDING_APPROVE",
-        };
-        let update = doc! {
-            "$set": {"state": "PENDING_SCHEDULE"}
-        };
         let collection = self
             .client
             .database(&self.db)
             .collection(COLLECTION_ACTIONS);
-        update_one(collection, filter, update, span, self.tracer.as_deref())
-            .with_context(|_| ErrorKind::MongoDBOperation)?;
+        action_generic_approve(
+            &attrs.cluster_id,
+            action_id,
+            collection,
+            span,
+            self.tracer.as_deref(),
+        )?;
         Ok(())
     }
 
@@ -70,24 +120,18 @@ impl ActionsInterface for Actions {
         action_id: Uuid,
         span: Option<SpanContext>,
     ) -> Result<()> {
-        let filter = doc! {
-            "cluster_id": &attrs.cluster_id,
-            "action_id": action_id.to_string(),
-            "state": "PENDING_APPROVE",
-        };
-        let finished_ts = UtcDateTime::from(Utc::now());
-        let update = doc! {
-            "$set": {
-                "finished_ts": bson::to_bson(&finished_ts).unwrap(),
-                "state": bson::to_bson(&ActionState::Cancelled).unwrap(),
-            }
-        };
         let collection = self
             .client
             .database(&self.db)
             .collection(COLLECTION_ACTIONS);
-        update_one(collection, filter, update, span, self.tracer.as_deref())
-            .with_context(|_| ErrorKind::MongoDBOperation)?;
+        action_generic_disapprove(
+            &attrs.cluster_id,
+            action_id,
+            bson::to_bson(&ActionState::Cancelled).unwrap(),
+            collection,
+            span,
+            self.tracer.as_deref(),
+        )?;
         Ok(())
     }
 

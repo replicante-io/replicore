@@ -1,4 +1,3 @@
-use anyhow::Context;
 use anyhow::Result;
 use slog::Logger;
 
@@ -14,9 +13,9 @@ pub async fn execute(logger: &Logger, opt: &Opt, approve_opt: &CommonOpt) -> Res
     let cluster = context.cluster(&opt.context)?;
     let action = approve_opt.action;
     let client = RepliClient::new(logger, context).await?;
-    client.action_disapprove(&cluster, action).await?;
-    tokio::task::spawn_blocking(|| println!("Action disapproved and will not be scheduled"))
-        .await
-        .context("failed to write to stdout")?;
+    client
+        .action_orchestrator_disapprove(&cluster, action)
+        .await?;
+    println!("Orchestrator action disapproved and will not be scheduled");
     Ok(0)
 }

@@ -420,6 +420,18 @@ box_interface! {
     trait OrchestratorActionsInterface,
 
     interface {
+        fn approve(
+            &self,
+            attrs: &OrchestratorActionsAttributes,
+            action_id: Uuid,
+            span: Option<SpanContext>,
+        ) -> Result<()>;
+        fn disapprove(
+            &self,
+            attrs: &OrchestratorActionsAttributes,
+            action_id: Uuid,
+            span: Option<SpanContext>,
+        ) -> Result<()>;
         fn iter_summary(
             &self,
             attrs: &OrchestratorActionsAttributes,
