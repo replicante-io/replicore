@@ -6,7 +6,13 @@ use crate::OrchestratorActionRegistryBuilder;
 /// Dummy action to test types and interfaces.
 #[derive(Default)]
 struct TestAction {}
-impl OrchestratorAction for TestAction {}
+impl OrchestratorAction for TestAction {
+    fn describe(&self) -> crate::OrchestratorActionDescriptor {
+        crate::OrchestratorActionDescriptor {
+            summary: "A test action".into(),
+        }
+    }
+}
 
 #[test]
 fn builder_build() {
@@ -124,6 +130,32 @@ fn global_registry_lookup_and_init() {
     if let Ok(_) = dual_init_thread.join() {
         panic!("dual initialisation should panic");
     }
+}
+
+#[test]
+fn registry_iter() {
+    let mut builder = OrchestratorActionRegistryBuilder::empty();
+    builder
+        .register_type::<TestAction>("core.replicante.io/test.2")
+        .expect("action should be registered");
+    builder
+        .register_type::<TestAction>("core.replicante.io/test.1")
+        .expect("action should be registered");
+    builder
+        .register_type::<TestAction>("core.replicante.io/test.3")
+        .expect("action should be registered");
+    assert_eq!(builder.actions.len(), 3);
+
+    let registry = builder.build();
+    let names: Vec<&str> = registry.iter().map(|(id, _)| id).collect();
+    assert_eq!(
+        names,
+        vec![
+            "core.replicante.io/test.1",
+            "core.replicante.io/test.2",
+            "core.replicante.io/test.3",
+        ]
+    )
 }
 
 #[test]

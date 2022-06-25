@@ -48,8 +48,8 @@
 // tests implemented in `src/registry/test_api_tests.rs` which are run with
 // `cargo test --features test-api`.
 // ##############################################################################################
-use std::collections::hash_map::Entry;
-use std::collections::HashMap;
+use std::collections::btree_map::Entry;
+use std::collections::BTreeMap;
 use std::sync::Arc;
 use std::sync::RwLock;
 
@@ -149,7 +149,7 @@ thread_local! {
 /// }
 /// ```
 pub struct OrchestratorActionRegistry {
-    actions: HashMap<String, Box<dyn OrchestratorAction>>,
+    actions: BTreeMap<String, Box<dyn OrchestratorAction>>,
 }
 
 impl OrchestratorActionRegistry {
@@ -175,6 +175,13 @@ impl OrchestratorActionRegistry {
         })
     }
 
+    /// Iterate over registered action (&ID, &Handler) tuples.
+    pub fn iter(&self) -> impl Iterator<Item = (&str, &dyn OrchestratorAction)> {
+        self.actions
+            .iter()
+            .map(|(id, action)| (id.as_str(), action.as_ref()))
+    }
+
     /// Lookup an `OrchestratorAction` implementation from the registry.
     pub fn lookup(&self, id: &str) -> Option<&dyn OrchestratorAction> {
         self.actions.get(id).map(AsRef::as_ref)
@@ -184,7 +191,7 @@ impl OrchestratorActionRegistry {
 /// Builds a new OrchestratorActionRegistry instance.
 #[derive(Default)]
 pub struct OrchestratorActionRegistryBuilder {
-    actions: HashMap<String, Box<dyn OrchestratorAction>>,
+    actions: BTreeMap<String, Box<dyn OrchestratorAction>>,
 }
 
 impl OrchestratorActionRegistryBuilder {

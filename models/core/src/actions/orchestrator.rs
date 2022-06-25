@@ -33,6 +33,12 @@ pub struct OrchestratorAction {
     pub state_payload: Option<Json>,
 }
 
+/// Metadata to describe orchestrator actions (mainly to humans).
+#[derive(Clone, Eq, PartialEq, Hash, Debug, Serialize, Deserialize)]
+pub struct OrchestratorActionDescriptor {
+    pub summary: String,
+}
+
 /// Current state of an orchestrator action execution.
 #[derive(Clone, Copy, Eq, PartialEq, Hash, Debug, Serialize, Deserialize)]
 pub enum OrchestratorActionState {

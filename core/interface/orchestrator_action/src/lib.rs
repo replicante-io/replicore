@@ -1,3 +1,5 @@
+pub use replicante_models_core::actions::orchestrator::OrchestratorActionDescriptor;
+
 mod error;
 mod registry;
 mod traits;

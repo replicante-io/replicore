@@ -19,3 +19,5 @@ test-api = []
 anyhow = "^1.0.53"
 lazy_static = "^1.4.0"
 thiserror = "^1.0.30"
+
+replicante_models_core = { path = "../../../models/core" }

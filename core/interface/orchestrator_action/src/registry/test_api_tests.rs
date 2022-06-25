@@ -5,7 +5,13 @@ use crate::OrchestratorActionRegistryBuilder;
 /// Dummy action to test types and interfaces.
 #[derive(Default)]
 struct TestAction {}
-impl OrchestratorAction for TestAction {}
+impl OrchestratorAction for TestAction {
+    fn describe(&self) -> crate::OrchestratorActionDescriptor {
+        crate::OrchestratorActionDescriptor {
+            summary: "A test action".into(),
+        }
+    }
+}
 
 #[test]
 #[should_panic(expected = "accessed current OrchestratorActionRegistry before it is initialised")]
