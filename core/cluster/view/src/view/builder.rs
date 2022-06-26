@@ -7,7 +7,7 @@ use anyhow::anyhow;
 use anyhow::Result;
 use uuid::Uuid;
 
-use replicante_models_core::actions::node::ActionSummary;
+use replicante_models_core::actions::node::ActionSyncSummary;
 use replicante_models_core::agent::Agent;
 use replicante_models_core::agent::AgentInfo;
 use replicante_models_core::agent::Node;
@@ -75,7 +75,7 @@ impl ClusterViewBuilder {
     }
 
     /// Add an Action to the Cluster View.
-    pub fn action(&mut self, summary: ActionSummary) -> Result<&mut Self> {
+    pub fn action(&mut self, summary: ActionSyncSummary) -> Result<&mut Self> {
         // Can't add an action from another cluster.
         if self.view.cluster_id != summary.cluster_id {
             return Err(anyhow!(ClusterViewCorrupt::cluster_id_clash(

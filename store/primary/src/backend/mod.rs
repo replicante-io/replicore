@@ -9,8 +9,9 @@ use uuid::Uuid;
 
 use replicante_externals_mongodb::admin::ValidationResult;
 use replicante_models_core::actions::node::Action;
-use replicante_models_core::actions::node::ActionSummary;
+use replicante_models_core::actions::node::ActionSyncSummary;
 use replicante_models_core::actions::orchestrator::OrchestratorAction;
+use replicante_models_core::actions::orchestrator::OrchestratorActionSyncSummary;
 use replicante_models_core::admin::Version;
 use replicante_models_core::agent::Agent;
 use replicante_models_core::agent::AgentInfo;
@@ -225,7 +226,7 @@ box_interface! {
             &self,
             attrs: &ActionsAttributes,
             span: Option<SpanContext>,
-        ) -> Result<Cursor<ActionSummary>>;
+        ) -> Result<Cursor<ActionSyncSummary>>;
     }
 }
 
@@ -437,6 +438,11 @@ box_interface! {
             attrs: &OrchestratorActionsAttributes,
             span: Option<SpanContext>,
         ) -> Result<Cursor<OrchestratorActionSummary>>;
+        fn unfinished_summaries(
+            &self,
+            attrs: &OrchestratorActionsAttributes,
+            span: Option<SpanContext>,
+        ) -> Result<Cursor<OrchestratorActionSyncSummary>>;
     }
 }
 

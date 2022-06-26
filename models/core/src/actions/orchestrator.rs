@@ -86,3 +86,21 @@ impl std::fmt::Display for OrchestratorActionState {
         }
     }
 }
+
+/// Sync-needed information about an orchestrator action.
+#[derive(Clone, PartialEq, Debug, Serialize, Deserialize)]
+pub struct OrchestratorActionSyncSummary {
+    pub cluster_id: String,
+    pub action_id: Uuid,
+    pub state: OrchestratorActionState,
+}
+
+impl From<&OrchestratorAction> for OrchestratorActionSyncSummary {
+    fn from(action: &OrchestratorAction) -> OrchestratorActionSyncSummary {
+        OrchestratorActionSyncSummary {
+            cluster_id: action.cluster_id.clone(),
+            action_id: action.action_id,
+            state: action.state,
+        }
+    }
+}

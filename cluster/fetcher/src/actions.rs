@@ -12,7 +12,7 @@ use replicante_agent_client::Client;
 use replicante_models_agent::actions::api::ActionScheduleRequest;
 use replicante_models_core::actions::node::Action;
 use replicante_models_core::actions::node::ActionState;
-use replicante_models_core::actions::node::ActionSummary;
+use replicante_models_core::actions::node::ActionSyncSummary;
 use replicante_models_core::cluster::OrchestrateReportBuilder;
 use replicante_models_core::events::Event;
 use replicante_store_primary::store::Store;
@@ -127,7 +127,7 @@ impl ActionsFetcher {
         cluster_view: &ClusterView,
         report: &mut OrchestrateReportBuilder,
         node_id: &str,
-        action_summary: &ActionSummary,
+        action_summary: &ActionSyncSummary,
         span: &mut Span,
     ) -> Result<()> {
         // Get the action to emit the event correctly.
@@ -182,7 +182,7 @@ impl ActionsFetcher {
         cluster_view: &ClusterView,
         report: &mut OrchestrateReportBuilder,
         node_id: &str,
-        action_summary: &ActionSummary,
+        action_summary: &ActionSyncSummary,
         span: &mut Span,
     ) -> Result<()> {
         // Get the action to schedule.
@@ -405,7 +405,7 @@ impl ActionsFetcher {
         // Update the new cluster view.
         if action_agent.finished_ts.is_none() {
             new_cluster_view
-                .action(ActionSummary::from(&action_agent))
+                .action(ActionSyncSummary::from(&action_agent))
                 .map_err(crate::error::AnyWrap::from)
                 .context(ErrorKind::ClusterViewUpdate)?;
         }
@@ -427,7 +427,7 @@ impl ActionsFetcher {
         new_cluster_view: &mut ClusterViewBuilder,
         report: &mut OrchestrateReportBuilder,
         node_id: &str,
-        action_summary: &ActionSummary,
+        action_summary: &ActionSyncSummary,
         span: &mut Span,
     ) -> Result<()> {
         // Append pending actions to the new cluster view as well.
@@ -478,7 +478,7 @@ mod tests {
     use replicante_models_core::actions::node::Action as CoreAction;
     use replicante_models_core::actions::node::ActionRequester;
     use replicante_models_core::actions::node::ActionState as ActionStateCore;
-    use replicante_models_core::actions::node::ActionSummary;
+    use replicante_models_core::actions::node::ActionSyncSummary;
     use replicante_models_core::cluster::discovery::ClusterDiscovery;
     use replicante_models_core::cluster::ClusterSettings;
     use replicante_models_core::cluster::OrchestrateReportBuilder;
@@ -530,7 +530,7 @@ mod tests {
         mock_cluster_view_with_actions(vec![])
     }
 
-    fn mock_cluster_view_with_actions(actions: Vec<ActionSummary>) -> ClusterView {
+    fn mock_cluster_view_with_actions(actions: Vec<ActionSyncSummary>) -> ClusterView {
         let discovery = ClusterDiscovery::new("test", vec![]);
         let settings = ClusterSettings::synthetic("test", "test");
         let mut view =
@@ -775,25 +775,25 @@ mod tests {
 
         // Set up fetcher and sync an action.
         let cluster_view = mock_cluster_view_with_actions(vec![
-            ActionSummary {
+            ActionSyncSummary {
                 cluster_id: "test".into(),
                 node_id: "node".into(),
                 action_id: *UUID1,
                 state: ActionStateCore::Done,
             },
-            ActionSummary {
+            ActionSyncSummary {
                 cluster_id: "test".into(),
                 node_id: "node".into(),
                 action_id: *UUID2,
                 state: ActionStateCore::Done,
             },
-            ActionSummary {
+            ActionSyncSummary {
                 cluster_id: "test".into(),
                 node_id: "node".into(),
                 action_id: *UUID3,
                 state: ActionStateCore::New,
             },
-            ActionSummary {
+            ActionSyncSummary {
                 cluster_id: "test".into(),
                 node_id: "node".into(),
                 action_id: *UUID4,
@@ -878,13 +878,13 @@ mod tests {
 
         // Set up fetcher and sync an action.
         let cluster_view = mock_cluster_view_with_actions(vec![
-            ActionSummary {
+            ActionSyncSummary {
                 cluster_id: "test".into(),
                 node_id: "node".into(),
                 action_id: *UUID1,
                 state: ActionStateCore::PendingApprove,
             },
-            ActionSummary {
+            ActionSyncSummary {
                 cluster_id: "test".into(),
                 node_id: "node".into(),
                 action_id: *UUID2,
@@ -972,25 +972,25 @@ mod tests {
 
         // Fill the Cluster View with DB actions.
         let cluster_view = mock_cluster_view_with_actions(vec![
-            ActionSummary {
+            ActionSyncSummary {
                 cluster_id: "test".into(),
                 node_id: "node".into(),
                 action_id: *UUID1,
                 state: ActionStateCore::PendingApprove,
             },
-            ActionSummary {
+            ActionSyncSummary {
                 cluster_id: "test".into(),
                 node_id: "node".into(),
                 action_id: *UUID3,
                 state: ActionStateCore::PendingSchedule,
             },
-            ActionSummary {
+            ActionSyncSummary {
                 cluster_id: "test".into(),
                 node_id: "node".into(),
                 action_id: *UUID4,
                 state: ActionStateCore::Running,
             },
-            ActionSummary {
+            ActionSyncSummary {
                 cluster_id: "test".into(),
                 node_id: "node".into(),
                 action_id: *UUID5,
@@ -1068,19 +1068,19 @@ mod tests {
         assert_eq!(
             *actions,
             vec![
-                ActionSummary {
+                ActionSyncSummary {
                     cluster_id: "test".into(),
                     node_id: "node".into(),
                     action_id: *UUID6,
                     state: ActionStateCore::Running,
                 },
-                ActionSummary {
+                ActionSyncSummary {
                     cluster_id: "test".into(),
                     node_id: "node".into(),
                     action_id: *UUID1,
                     state: ActionStateCore::PendingApprove,
                 },
-                ActionSummary {
+                ActionSyncSummary {
                     cluster_id: "test".into(),
                     node_id: "node".into(),
                     action_id: *UUID3,

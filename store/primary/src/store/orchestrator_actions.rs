@@ -1,6 +1,7 @@
 use opentracingrust::SpanContext;
 use uuid::Uuid;
 
+use replicante_models_core::actions::orchestrator::OrchestratorActionSyncSummary;
 use replicante_models_core::api::orchestrator_action::OrchestratorActionSummary;
 
 use super::super::backend::OrchestratorActionsImpl;
@@ -43,6 +44,14 @@ impl OrchestratorActions {
         S: Into<Option<SpanContext>>,
     {
         self.actions.iter_summary(&self.attrs, span.into())
+    }
+
+    /// Iterate over sync information about the cluster unfinished orchestrator actions.
+    pub fn unfinished_summaries<S>(&self, span: S) -> Result<Cursor<OrchestratorActionSyncSummary>>
+    where
+        S: Into<Option<SpanContext>>,
+    {
+        self.actions.unfinished_summaries(&self.attrs, span.into())
     }
 }
 

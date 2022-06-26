@@ -5,7 +5,7 @@ use opentracingrust::SpanContext;
 use uuid::Uuid;
 
 use replicante_models_core::actions::node::Action;
-use replicante_models_core::actions::node::ActionSummary;
+use replicante_models_core::actions::node::ActionSyncSummary;
 use replicante_models_core::actions::orchestrator::OrchestratorAction;
 use replicante_models_core::agent::Agent;
 use replicante_models_core::agent::AgentInfo;
@@ -173,14 +173,14 @@ impl ActionsInterface for Actions {
         &self,
         attrs: &ActionsAttributes,
         _: Option<SpanContext>,
-    ) -> Result<Cursor<ActionSummary>> {
+    ) -> Result<Cursor<ActionSyncSummary>> {
         let store = self.state.lock().expect("MockStore state lock is poisoned");
         let cluster_id = &attrs.cluster_id;
-        let cursor: Vec<ActionSummary> = store
+        let cursor: Vec<ActionSyncSummary> = store
             .actions
             .iter()
             .filter(|(key, action)| key.0 == *cluster_id && action.finished_ts.is_none())
-            .map(|(_, action)| ActionSummary::from(action))
+            .map(|(_, action)| ActionSyncSummary::from(action))
             .collect();
         Ok(Cursor::new(cursor.into_iter().map(Ok)))
     }

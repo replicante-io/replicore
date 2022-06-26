@@ -1,6 +1,7 @@
 use std::sync::Arc;
 
 use bson::doc;
+use failure::Fail;
 use failure::ResultExt;
 use mongodb::options::FindOptions;
 use mongodb::sync::Client;
@@ -10,6 +11,7 @@ use uuid::Uuid;
 
 use replicante_externals_mongodb::operations::find_with_options;
 use replicante_models_core::actions::orchestrator::OrchestratorActionState;
+use replicante_models_core::actions::orchestrator::OrchestratorActionSyncSummary;
 use replicante_models_core::api::orchestrator_action::OrchestratorActionSummary;
 
 use super::super::OrchestratorActionsInterface;
@@ -110,6 +112,31 @@ impl OrchestratorActionsInterface for OrchestratorActions {
                 document.with_context(|_| ErrorKind::MongoDBCursor)?;
             Ok(OrchestratorActionSummary::from(document))
         });
+        Ok(Cursor::new(cursor))
+    }
+
+    fn unfinished_summaries(
+        &self,
+        attrs: &OrchestratorActionsAttributes,
+        span: Option<SpanContext>,
+    ) -> Result<Cursor<OrchestratorActionSyncSummary>> {
+        let filter = doc! {
+            "cluster_id": &attrs.cluster_id,
+            "finished_ts": null,
+        };
+        let mut options = FindOptions::default();
+        options.projection = Some(doc! {
+            "cluster_id": 1,
+            "action_id": 1,
+            "state": 1,
+        });
+        let collection = self
+            .client
+            .database(&self.db)
+            .collection(COLLECTION_ACTIONS_ORCHESTRATOR);
+        let cursor = find_with_options(collection, filter, options, span, self.tracer.as_deref())
+            .with_context(|_| ErrorKind::MongoDBOperation)?
+            .map(|item| item.map_err(|error| error.context(ErrorKind::MongoDBCursor).into()));
         Ok(Cursor::new(cursor))
     }
 }

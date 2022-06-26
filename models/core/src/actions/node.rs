@@ -126,26 +126,6 @@ pub enum ActionHistoryOrigin {
     Core,
 }
 
-/// Summary information about an action.
-#[derive(Clone, PartialEq, Debug, Serialize, Deserialize)]
-pub struct ActionSummary {
-    pub cluster_id: String,
-    pub node_id: String,
-    pub action_id: Uuid,
-    pub state: ActionState,
-}
-
-impl From<&Action> for ActionSummary {
-    fn from(action: &Action) -> ActionSummary {
-        ActionSummary {
-            cluster_id: action.cluster_id.clone(),
-            node_id: action.node_id.clone(),
-            action_id: action.action_id,
-            state: action.state,
-        }
-    }
-}
-
 /// Current state of an action execution.
 #[derive(Clone, Copy, Eq, PartialEq, Hash, Debug, Serialize, Deserialize)]
 pub enum ActionState {
@@ -196,6 +176,26 @@ impl From<ActionStateWire> for ActionState {
             ActionStateWire::Failed => ActionState::Failed,
             ActionStateWire::New => ActionState::New,
             ActionStateWire::Running => ActionState::Running,
+        }
+    }
+}
+
+/// Sync-needed information about an action.
+#[derive(Clone, PartialEq, Debug, Serialize, Deserialize)]
+pub struct ActionSyncSummary {
+    pub cluster_id: String,
+    pub node_id: String,
+    pub action_id: Uuid,
+    pub state: ActionState,
+}
+
+impl From<&Action> for ActionSyncSummary {
+    fn from(action: &Action) -> ActionSyncSummary {
+        ActionSyncSummary {
+            cluster_id: action.cluster_id.clone(),
+            node_id: action.node_id.clone(),
+            action_id: action.action_id,
+            state: action.state,
         }
     }
 }

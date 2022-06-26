@@ -6,7 +6,7 @@ use std::rc::Rc;
 use anyhow::Result;
 use serde::ser::SerializeStruct;
 
-use replicante_models_core::actions::node::ActionSummary;
+use replicante_models_core::actions::node::ActionSyncSummary;
 use replicante_models_core::agent::Agent;
 use replicante_models_core::agent::AgentInfo;
 use replicante_models_core::agent::Node;
@@ -37,7 +37,7 @@ pub struct ClusterView {
     pub settings: ClusterSettings,
 
     // Cluster entity records.
-    pub actions_unfinished_by_node: HashMap<String, Vec<ActionSummary>>,
+    pub actions_unfinished_by_node: HashMap<String, Vec<ActionSyncSummary>>,
     pub agents: HashMap<String, Agent>,
     pub agents_info: HashMap<String, AgentInfo>,
     pub nodes: HashMap<String, Rc<Node>>,
@@ -102,7 +102,7 @@ impl ClusterView {
     }
 
     /// Lookup unfinished actions targeting a node.
-    pub fn unfinished_actions_on_node(&self, node: &str) -> Option<&Vec<ActionSummary>> {
+    pub fn unfinished_actions_on_node(&self, node: &str) -> Option<&Vec<ActionSyncSummary>> {
         self.actions_unfinished_by_node.get(node)
     }
 
@@ -130,7 +130,7 @@ impl serde::Serialize for ClusterView {
         state.serialize_field("discovery", &self.discovery)?;
 
         // Convert HashMap to BTreeMap for stable serialisation.
-        let actions_unfinished_by_node: BTreeMap<&String, &Vec<ActionSummary>> =
+        let actions_unfinished_by_node: BTreeMap<&String, &Vec<ActionSyncSummary>> =
             self.actions_unfinished_by_node.iter().collect();
         let agents: BTreeMap<&String, &Agent> = self.agents.iter().collect();
         let agents_info: BTreeMap<&String, &AgentInfo> = self.agents_info.iter().collect();

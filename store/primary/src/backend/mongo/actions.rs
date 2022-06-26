@@ -16,7 +16,7 @@ use uuid::Uuid;
 use replicante_externals_mongodb::operations::find_with_options;
 use replicante_externals_mongodb::operations::update_one;
 use replicante_models_core::actions::node::ActionState;
-use replicante_models_core::actions::node::ActionSummary;
+use replicante_models_core::actions::node::ActionSyncSummary;
 
 use super::constants::COLLECTION_ACTIONS;
 use crate::backend::ActionsInterface;
@@ -139,7 +139,7 @@ impl ActionsInterface for Actions {
         &self,
         attrs: &ActionsAttributes,
         span: Option<SpanContext>,
-    ) -> Result<Cursor<ActionSummary>> {
+    ) -> Result<Cursor<ActionSyncSummary>> {
         let filter = doc! {
             "cluster_id": &attrs.cluster_id,
             "finished_ts": null,

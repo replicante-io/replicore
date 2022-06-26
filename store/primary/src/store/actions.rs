@@ -1,7 +1,7 @@
 use opentracingrust::SpanContext;
 use uuid::Uuid;
 
-use replicante_models_core::actions::node::ActionSummary;
+use replicante_models_core::actions::node::ActionSyncSummary;
 
 use crate::backend::ActionsImpl;
 use crate::Cursor;
@@ -35,7 +35,7 @@ impl Actions {
     }
 
     /// Iterate all unfinished actions for the cluster returning only summary information.
-    pub fn unfinished_summaries<S>(&self, span: S) -> Result<Cursor<ActionSummary>>
+    pub fn unfinished_summaries<S>(&self, span: S) -> Result<Cursor<ActionSyncSummary>>
     where
         S: Into<Option<SpanContext>>,
     {
