@@ -29,7 +29,7 @@ mod metrics;
 mod node;
 mod shard;
 
-use self::actions::ActionsFetcher;
+use self::actions::node::NodeActionsFetcher;
 use self::agent::AgentFetcher;
 use self::metrics::FETCHER_DURATION;
 use self::metrics::FETCHER_ERRORS_COUNT;
@@ -84,7 +84,7 @@ impl ClusterIdentityChecker {
 /// Fetches agent data to "refresh" the persisted view of cluster nodes.
 /// See bin/replicante/tasks/cluster_refresh/mod.rs for details on the sync process.
 pub struct Fetcher {
-    actions: ActionsFetcher,
+    actions: NodeActionsFetcher,
     agent: AgentFetcher,
     logger: Logger,
     node: NodeFetcher,
@@ -101,7 +101,8 @@ impl Fetcher {
         timeout: Duration,
         tracer: Arc<Tracer>,
     ) -> Fetcher {
-        let actions = ActionsFetcher::new(events.clone(), primary_store.clone(), logger.clone());
+        let actions =
+            NodeActionsFetcher::new(events.clone(), primary_store.clone(), logger.clone());
         let agent = AgentFetcher::new(events.clone(), primary_store.clone());
         let node = NodeFetcher::new(events.clone(), primary_store.clone());
         let shard = ShardFetcher::new(events, primary_store);

@@ -26,6 +26,10 @@ pub enum ClusterViewCorrupt {
     // namespace, cluster_id, node_id.
     DuplicateNode(String, String, String),
 
+    #[error("view of cluster {0}.{1} already contains an orchestrator action with ID {2}")]
+    // namespace, cluster_id, action_id.
+    DuplicateOrchestratorAction(String, String, Uuid),
+
     #[error("view of cluster {0}.{1} already contains shard ID {3} on node ID {2}")]
     // namespace, cluster_id, node_id, shard_id.
     DuplicateShard(String, String, String, String),
@@ -108,6 +112,21 @@ impl ClusterViewCorrupt {
         let cluster_id = cluster_id.into();
         let node_id = node_id.into();
         ClusterViewCorrupt::DuplicateNode(namespace, cluster_id, node_id)
+    }
+
+    /// Adding the same orchestrator action twice.
+    pub fn duplicate_orchestrator_action<S1, S2>(
+        namespace: S1,
+        cluster_id: S2,
+        action_id: Uuid,
+    ) -> Self
+    where
+        S1: Into<String>,
+        S2: Into<String>,
+    {
+        let namespace = namespace.into();
+        let cluster_id = cluster_id.into();
+        ClusterViewCorrupt::DuplicateOrchestratorAction(namespace, cluster_id, action_id)
     }
 
     /// Adding the same shard twice on one node.

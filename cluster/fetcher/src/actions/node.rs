@@ -32,15 +32,15 @@ use crate::Result;
 const MAX_SCHEDULE_ATTEMPTS: i32 = 10;
 
 /// Actions fetch and sync processing.
-pub(crate) struct ActionsFetcher {
+pub(crate) struct NodeActionsFetcher {
     events: EventsStream,
     logger: Logger,
     store: Store,
 }
 
-impl ActionsFetcher {
-    pub fn new(events: EventsStream, store: Store, logger: Logger) -> ActionsFetcher {
-        ActionsFetcher {
+impl NodeActionsFetcher {
+    pub fn new(events: EventsStream, store: Store, logger: Logger) -> NodeActionsFetcher {
+        NodeActionsFetcher {
             events,
             logger,
             store,
@@ -487,7 +487,7 @@ mod tests {
     use replicore_cluster_view::ClusterView;
     use replicore_cluster_view::ClusterViewBuilder;
 
-    use super::ActionsFetcher;
+    use super::NodeActionsFetcher;
 
     lazy_static::lazy_static! {
         static ref UUID1: Uuid = "a7514ce6-48f4-4f9d-bb22-78cbfc37c664".parse().unwrap();
@@ -568,7 +568,7 @@ mod tests {
         ];
         let store = StoreMock::default().store();
         let stream = EventsStream::mock();
-        let fetcher = ActionsFetcher::new(stream, store, Logger::root(Discard, o!()));
+        let fetcher = NodeActionsFetcher::new(stream, store, Logger::root(Discard, o!()));
         let (tracer, _) = NoopTracer::new();
         let mut span = tracer.span("test");
         let ids = fetcher
@@ -622,7 +622,7 @@ mod tests {
         ];
         let store = StoreMock::default().store();
         let stream = EventsStream::mock();
-        let fetcher = ActionsFetcher::new(stream, store, Logger::root(Discard, o!()));
+        let fetcher = NodeActionsFetcher::new(stream, store, Logger::root(Discard, o!()));
         let (tracer, _) = NoopTracer::new();
         let mut span = tracer.span("test");
         let ids = fetcher
@@ -653,7 +653,7 @@ mod tests {
         let store = StoreMock::default();
         let stream = EventsStream::mock();
         let fetcher =
-            ActionsFetcher::new(stream, store.clone().store(), Logger::root(Discard, o!()));
+            NodeActionsFetcher::new(stream, store.clone().store(), Logger::root(Discard, o!()));
         let (tracer, _) = NoopTracer::new();
         let mut span = tracer.span("test");
         fetcher
@@ -710,7 +710,7 @@ mod tests {
         let mut new_cluster_view = cluster_view_builder();
         let stream = EventsStream::mock();
         let fetcher =
-            ActionsFetcher::new(stream, store.clone().store(), Logger::root(Discard, o!()));
+            NodeActionsFetcher::new(stream, store.clone().store(), Logger::root(Discard, o!()));
         let (tracer, _) = NoopTracer::new();
         let mut span = tracer.span("test");
         fetcher
@@ -803,7 +803,7 @@ mod tests {
         let mut new_cluster_view = cluster_view_builder();
         let stream = EventsStream::mock();
         let fetcher =
-            ActionsFetcher::new(stream, store.clone().store(), Logger::root(Discard, o!()));
+            NodeActionsFetcher::new(stream, store.clone().store(), Logger::root(Discard, o!()));
         let (tracer, _) = NoopTracer::new();
         let mut span = tracer.span("test");
         fetcher
@@ -894,7 +894,7 @@ mod tests {
         let mut new_cluster_view = cluster_view_builder();
         let stream = EventsStream::mock();
         let fetcher =
-            ActionsFetcher::new(stream, store.clone().store(), Logger::root(Discard, o!()));
+            NodeActionsFetcher::new(stream, store.clone().store(), Logger::root(Discard, o!()));
         let (tracer, _) = NoopTracer::new();
         let mut span = tracer.span("test");
         fetcher
@@ -1044,7 +1044,7 @@ mod tests {
         let mut new_cluster_view = cluster_view_builder();
         let stream = EventsStream::mock();
         let fetcher =
-            ActionsFetcher::new(stream, store.clone().store(), Logger::root(Discard, o!()));
+            NodeActionsFetcher::new(stream, store.clone().store(), Logger::root(Discard, o!()));
         let (tracer, _) = NoopTracer::new();
         let mut span = tracer.span("test");
         fetcher

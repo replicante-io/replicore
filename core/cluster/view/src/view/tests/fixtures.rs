@@ -4,6 +4,8 @@ use replicante_models_agent::info::ShardRole;
 
 use replicante_models_core::actions::node::ActionState;
 use replicante_models_core::actions::node::ActionSyncSummary;
+use replicante_models_core::actions::orchestrator::OrchestratorActionState;
+use replicante_models_core::actions::orchestrator::OrchestratorActionSyncSummary;
 use replicante_models_core::agent::Agent;
 use replicante_models_core::agent::AgentInfo;
 use replicante_models_core::agent::AgentStatus;
@@ -138,6 +140,22 @@ pub mod cluster_mongodb {
             node_id: "https://green.mongo.fixtures:12345/".into(),
             role: ShardRole::Secondary,
             shard_id: "cmyk".into(),
+        }
+    }
+
+    pub fn orchestrator_action_backup() -> OrchestratorActionSyncSummary {
+        OrchestratorActionSyncSummary {
+            cluster_id: CLUSTER_ID.into(),
+            action_id: uuid::Uuid::from_str("347db8f1-dab4-401b-8956-04cd0ca25661").unwrap(),
+            state: OrchestratorActionState::PendingSchedule,
+        }
+    }
+
+    pub fn orchestrator_action_init() -> OrchestratorActionSyncSummary {
+        OrchestratorActionSyncSummary {
+            cluster_id: CLUSTER_ID.into(),
+            action_id: uuid::Uuid::from_str("004089da-ec5a-4f4c-a4cc-adff9ec09015").unwrap(),
+            state: OrchestratorActionState::Running,
         }
     }
 

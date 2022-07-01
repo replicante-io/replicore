@@ -199,7 +199,7 @@ impl Store {
         Shards::new(shards, attrs)
     }
 
-    /// Build a syntectic cluster view from individual records.
+    /// Build a synthetic cluster view from individual records.
     pub fn cluster_view<S>(
         &self,
         namespace: String,
@@ -248,9 +248,21 @@ impl Store {
         }
 
         // Add unfinished actions to the builder.
-        let actions = self.actions(cluster_id.clone()).unfinished_summaries(span);
+        let actions = self
+            .actions(cluster_id.clone())
+            .unfinished_summaries(span.clone());
         for summary in actions? {
             view.action(summary?)
+                .map_err(AnyWrap::from)
+                .with_context(|_| ErrorKind::ViewBuild(namespace.clone(), cluster_id.clone()))?;
+        }
+
+        // Add unfinished orchestrator actions to the builder.
+        let actions = self
+            .orchestrator_actions(cluster_id.clone())
+            .unfinished_summaries(span);
+        for summary in actions? {
+            view.orchestrator_action(summary?)
                 .map_err(AnyWrap::from)
                 .with_context(|_| ErrorKind::ViewBuild(namespace.clone(), cluster_id.clone()))?;
         }
