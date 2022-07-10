@@ -9,9 +9,21 @@ pub mod success;
 
 /// Register debug actions with the given registry builder.
 pub fn register(builder: &mut OrchestratorActionRegistryBuilder) -> Result<()> {
-    builder.register_type::<counting::Counting>("core.replicante.io/debug.counting")?;
-    builder.register_type::<failing::Failing>("core.replicante.io/debug.failing")?;
-    builder.register_type::<ping::Ping>("core.replicante.io/debug.ping")?;
-    builder.register_type::<success::Success>("core.replicante.io/debug.success")?;
+    builder.register(
+        "core.replicante.io/debug.counting",
+        counting::Counting::registry_entry(),
+    )?;
+    builder.register(
+        "core.replicante.io/debug.failing",
+        failing::Failing::registry_entry(),
+    )?;
+    builder.register(
+        "core.replicante.io/debug.ping",
+        ping::Ping::registry_entry(),
+    )?;
+    builder.register(
+        "core.replicante.io/debug.success",
+        success::Success::registry_entry(),
+    )?;
     Ok(())
 }

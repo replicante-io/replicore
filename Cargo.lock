@@ -3090,6 +3090,7 @@ name = "replicore_action_debug"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "replicante_models_core",
  "replicore_iface_orchestrator_action",
 ]
 

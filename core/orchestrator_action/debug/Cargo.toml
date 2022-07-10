@@ -14,4 +14,5 @@ license = "MIT"
 [dependencies]
 anyhow = "^1.0.53"
 
+replicante_models_core = { path = "../../../models/core" }
 replicore_iface_orchestrator_action = { path = "../../interface/orchestrator_action" }

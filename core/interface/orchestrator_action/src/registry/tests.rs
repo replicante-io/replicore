@@ -3,28 +3,30 @@ use crate::OrchestratorAction;
 use crate::OrchestratorActionRegistry;
 use crate::OrchestratorActionRegistryBuilder;
 
+use replicante_models_core::actions::orchestrator::OrchestratorActionScheduleMode;
+
 /// Dummy action to test types and interfaces.
 #[derive(Default)]
 struct TestAction {}
-impl OrchestratorAction for TestAction {
-    fn describe(&self) -> crate::OrchestratorActionDescriptor {
-        crate::OrchestratorActionDescriptor {
-            summary: "A test action".into(),
-        }
-    }
+impl OrchestratorAction for TestAction {}
+
+crate::registry_entry_factory! {
+    handler: TestAction,
+    schedule_mode: OrchestratorActionScheduleMode::Exclusive,
+    summary: "no-op test action for registry tests",
 }
 
 #[test]
 fn builder_build() {
     let mut builder = OrchestratorActionRegistryBuilder::empty();
     builder
-        .register_type::<TestAction>("core.replicante.io/test.1")
+        .register("core.replicante.io/test.1", TestAction::registry_entry())
         .expect("action should be registered");
     builder
-        .register_type::<TestAction>("core.replicante.io/test.2")
+        .register("core.replicante.io/test.2", TestAction::registry_entry())
         .expect("action should be registered");
     builder
-        .register_type::<TestAction>("core.replicante.io/test.3")
+        .register("core.replicante.io/test.3", TestAction::registry_entry())
         .expect("action should be registered");
     assert_eq!(builder.actions.len(), 3);
 
@@ -42,48 +44,35 @@ fn builder_empty() {
 }
 
 #[test]
-fn builder_register_boxed() {
-    let action = Box::new(TestAction {});
-    let mut builder = OrchestratorActionRegistryBuilder::empty();
-    builder
-        .register_boxed("core.replicante.io/test.boxed", action)
-        .expect("action should be registered");
-    assert_eq!(builder.actions.len(), 1);
-}
-
-#[test]
 fn builder_register_generic() {
-    let action = TestAction {};
     let mut builder = OrchestratorActionRegistryBuilder::empty();
     builder
-        .register("core.replicante.io/test.generic", action)
-        .expect("action should be registered");
-    assert_eq!(builder.actions.len(), 1);
-}
-
-#[test]
-fn builder_register_type() {
-    let mut builder = OrchestratorActionRegistryBuilder::empty();
-    builder
-        .register_type::<TestAction>("core.replicante.io/test.generic")
+        .register(
+            "core.replicante.io/test.generic",
+            TestAction::registry_entry(),
+        )
         .expect("action should be registered");
     assert_eq!(builder.actions.len(), 1);
 }
 
 #[test]
 fn builder_register_error_on_duplicate() {
-    let action = TestAction {};
     let mut builder = OrchestratorActionRegistryBuilder::empty();
 
     // Insert the action the fist time.
     builder
-        .register("core.replicante.io/test.generic", action)
+        .register(
+            "core.replicante.io/test.generic",
+            TestAction::registry_entry(),
+        )
         .expect("action should be registered");
     assert_eq!(builder.actions.len(), 1);
 
     // Then again to check the duplicate logic.
-    let action = TestAction {};
-    let check = builder.register("core.replicante.io/test.generic", action);
+    let check = builder.register(
+        "core.replicante.io/test.generic",
+        TestAction::registry_entry(),
+    );
     match check {
         Ok(_) => panic!("should have failed on duplicate action"),
         Err(error) if error.is::<ActionAlreadyRegistered>() => (),
@@ -105,7 +94,10 @@ fn global_registry_lookup_and_init() {
     // Initialise the global registry.
     let mut builder = OrchestratorActionRegistryBuilder::empty();
     builder
-        .register_type::<TestAction>("core.replicante.io/test.action")
+        .register(
+            "core.replicante.io/test.action",
+            TestAction::registry_entry(),
+        )
         .expect("action should be registered");
     builder.build_as_current();
 
@@ -136,13 +128,13 @@ fn global_registry_lookup_and_init() {
 fn registry_iter() {
     let mut builder = OrchestratorActionRegistryBuilder::empty();
     builder
-        .register_type::<TestAction>("core.replicante.io/test.2")
+        .register("core.replicante.io/test.2", TestAction::registry_entry())
         .expect("action should be registered");
     builder
-        .register_type::<TestAction>("core.replicante.io/test.1")
+        .register("core.replicante.io/test.1", TestAction::registry_entry())
         .expect("action should be registered");
     builder
-        .register_type::<TestAction>("core.replicante.io/test.3")
+        .register("core.replicante.io/test.3", TestAction::registry_entry())
         .expect("action should be registered");
     assert_eq!(builder.actions.len(), 3);
 
@@ -162,7 +154,10 @@ fn registry_iter() {
 fn registry_lookup() {
     let mut builder = OrchestratorActionRegistryBuilder::empty();
     builder
-        .register_type::<TestAction>("core.replicante.io/test.action")
+        .register(
+            "core.replicante.io/test.action",
+            TestAction::registry_entry(),
+        )
         .expect("action should be registered");
     let registry = builder.build();
     let action = registry.lookup("core.replicante.io/test.action");

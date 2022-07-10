@@ -8,7 +8,7 @@ use actix_web::Responder;
 use slog::Logger;
 
 use replicante_util_actixweb::TracingMiddleware;
-use replicore_iface_orchestrator_action::OrchestratorActionDescriptor;
+use replicore_iface_orchestrator_action::OrchestratorActionMetadata;
 use replicore_iface_orchestrator_action::OrchestratorActionRegistry;
 
 use crate::interfaces::Interfaces;
@@ -40,9 +40,9 @@ impl OrchestratorActions {
 
 async fn responder() -> Result<impl Responder> {
     let registry = OrchestratorActionRegistry::current();
-    let catalogue: BTreeMap<&str, OrchestratorActionDescriptor> = registry
+    let catalogue: BTreeMap<&str, &OrchestratorActionMetadata> = registry
         .iter()
-        .map(|(id, handler)| (id, handler.describe()))
+        .map(|(id, entry)| (id, &entry.metadata))
         .collect();
     let response = HttpResponse::Ok().json(catalogue);
     Ok(response)

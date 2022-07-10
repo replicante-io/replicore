@@ -1,16 +1,20 @@
 use crate::OrchestratorAction;
 use crate::OrchestratorActionRegistry;
 use crate::OrchestratorActionRegistryBuilder;
+use crate::OrchestratorActionRegistryEntry;
+
+use replicante_models_core::actions::orchestrator::OrchestratorActionMetadata;
+use replicante_models_core::actions::orchestrator::OrchestratorActionScheduleMode;
 
 /// Dummy action to test types and interfaces.
 #[derive(Default)]
 struct TestAction {}
-impl OrchestratorAction for TestAction {
-    fn describe(&self) -> crate::OrchestratorActionDescriptor {
-        crate::OrchestratorActionDescriptor {
-            summary: "A test action".into(),
-        }
-    }
+impl OrchestratorAction for TestAction {}
+
+crate::registry_entry_factory! {
+    handler: TestAction,
+    schedule_mode: OrchestratorActionScheduleMode::Exclusive,
+    summary: "no-op test action for registry tests",
 }
 
 #[test]
@@ -23,7 +27,10 @@ fn access_without_registry_panics() {
 fn registry_access() {
     let mut builder = OrchestratorActionRegistryBuilder::empty();
     builder
-        .register_type::<TestAction>("core.replicante.io/test.action")
+        .register(
+            "core.replicante.io/test.action",
+            TestAction::registry_entry(),
+        )
         .expect("action should be registered");
     builder.build_as_current();
 
@@ -36,7 +43,10 @@ fn registry_access() {
 fn registry_clear_api() {
     let mut builder = OrchestratorActionRegistryBuilder::empty();
     builder
-        .register_type::<TestAction>("core.replicante.io/test.action")
+        .register(
+            "core.replicante.io/test.action",
+            TestAction::registry_entry(),
+        )
         .expect("action should be registered");
     builder.build_as_current();
     let registry = OrchestratorActionRegistry::current();
@@ -46,10 +56,16 @@ fn registry_clear_api() {
 
     let mut builder = OrchestratorActionRegistryBuilder::empty();
     builder
-        .register_type::<TestAction>("core.replicante.io/test.action")
+        .register(
+            "core.replicante.io/test.action",
+            TestAction::registry_entry(),
+        )
         .expect("action should be registered");
     builder
-        .register_type::<TestAction>("core.replicante.io/test.action.two")
+        .register(
+            "core.replicante.io/test.action.two",
+            TestAction::registry_entry(),
+        )
         .expect("action should be registered");
     builder.build_as_current();
     let registry = OrchestratorActionRegistry::current();
@@ -60,13 +76,16 @@ fn registry_clear_api() {
 fn registry_clear_guard() {
     let mut builder = OrchestratorActionRegistryBuilder::empty();
     builder
-        .register_type::<TestAction>("core.replicante.io/test.action")
+        .register(
+            "core.replicante.io/test.action",
+            TestAction::registry_entry(),
+        )
         .expect("action should be registered");
     builder.build_as_current();
 
     // Start nested scope after which the registry is cleared.
     {
-        let _guard = crate::TestRegistryClearGuard {};
+        let _guard = crate::TestRegistryClearGuard::default();
         let registry = OrchestratorActionRegistry::current();
         assert_eq!(registry.actions.len(), 1);
     }
@@ -74,7 +93,10 @@ fn registry_clear_guard() {
     // Re-building a new registry will work again now.
     let mut builder = OrchestratorActionRegistryBuilder::empty();
     builder
-        .register_type::<TestAction>("core.replicante.io/test.action")
+        .register(
+            "core.replicante.io/test.action",
+            TestAction::registry_entry(),
+        )
         .expect("action should be registered");
     builder.build_as_current();
 }
@@ -84,7 +106,10 @@ fn registry_is_different_for_threads() {
     let thread_one = std::thread::spawn(move || {
         let mut builder = OrchestratorActionRegistryBuilder::empty();
         builder
-            .register_type::<TestAction>("core.replicante.io/test.action")
+            .register(
+                "core.replicante.io/test.action",
+                TestAction::registry_entry(),
+            )
             .expect("action should be registered");
         builder.build_as_current();
 
@@ -94,10 +119,16 @@ fn registry_is_different_for_threads() {
     let thread_two = std::thread::spawn(move || {
         let mut builder = OrchestratorActionRegistryBuilder::empty();
         builder
-            .register_type::<TestAction>("core.replicante.io/test.action")
+            .register(
+                "core.replicante.io/test.action",
+                TestAction::registry_entry(),
+            )
             .expect("action should be registered");
         builder
-            .register_type::<TestAction>("core.replicante.io/test.action.two")
+            .register(
+                "core.replicante.io/test.action.two",
+                TestAction::registry_entry(),
+            )
             .expect("action should be registered");
         builder.build_as_current();
 
@@ -116,16 +147,25 @@ fn registry_is_different_for_threads() {
 fn registry_set_twice_panics() {
     let mut builder = OrchestratorActionRegistryBuilder::empty();
     builder
-        .register_type::<TestAction>("core.replicante.io/test.action")
+        .register(
+            "core.replicante.io/test.action",
+            TestAction::registry_entry(),
+        )
         .expect("action should be registered");
     builder.build_as_current();
 
     let mut builder = OrchestratorActionRegistryBuilder::empty();
     builder
-        .register_type::<TestAction>("core.replicante.io/test.action")
+        .register(
+            "core.replicante.io/test.action",
+            TestAction::registry_entry(),
+        )
         .expect("action should be registered");
     builder
-        .register_type::<TestAction>("core.replicante.io/test.action.two")
+        .register(
+            "core.replicante.io/test.action.two",
+            TestAction::registry_entry(),
+        )
         .expect("action should be registered");
     builder.build_as_current();
 }

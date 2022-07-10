@@ -33,10 +33,25 @@ pub struct OrchestratorAction {
     pub state_payload: Option<Json>,
 }
 
-/// Metadata to describe orchestrator actions (mainly to humans).
+/// Metadata attached to and orchestrator action (for both humans and the system).
 #[derive(Clone, Eq, PartialEq, Hash, Debug, Serialize, Deserialize)]
-pub struct OrchestratorActionDescriptor {
+pub struct OrchestratorActionMetadata {
+    /// Concurrent scheduling mode supported by the action.
+    pub schedule_mode: OrchestratorActionScheduleMode,
+
+    /// A short summary of what the action does, for human consumption.
     pub summary: String,
+}
+
+/// Possible scheduling modes for orchestrator actions.
+#[derive(Clone, Copy, Eq, PartialEq, Hash, Debug, Serialize, Deserialize)]
+pub enum OrchestratorActionScheduleMode {
+    /// The action must be the only thing running in the cluster.
+    ///
+    /// Scheduling of the action will wait for running (orchestrator and node) actions to complete.
+    /// Scheduling of other (orchestrator and node) actions is blocked until the action is complete.
+    #[serde(rename = "EXCLUSIVE")]
+    Exclusive,
 }
 
 /// Current state of an orchestrator action execution.

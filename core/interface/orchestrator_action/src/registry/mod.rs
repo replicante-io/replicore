@@ -57,6 +57,9 @@ use anyhow::Result;
 
 use crate::ActionAlreadyRegistered;
 use crate::OrchestratorAction;
+use crate::OrchestratorActionMetadata;
+
+mod macros;
 
 // When test are enabled but the `test-api` is off.
 #[cfg(all(test, not(feature = "test-api")))]
@@ -131,7 +134,7 @@ thread_local! {
 /// // Add action implementations to the register.
 /// let mut builder = OrchestratorActionRegistryBuilder::empty();
 /// builder
-///     .register_type::<ActionImplementation>("action.scope/id")
+///     .register("action.scope/id", ActionImplementation::registry_entry())
 ///     .expect("expect action to be registered");
 ///
 /// // Build the registry and set it as the current registry.
@@ -142,14 +145,20 @@ thread_local! {
 ///
 /// // And for tests:
 /// #[test]
-/// #[orchestrator_action_registry_fixture(init = "path::to::init_fn", name = "local_var_name")]
 /// fn some_test_that_uses_the_registry() {
-///   // Register is also available as `local_var_name`.
-///   OrchestratorActionRegistry::current() == local_var_name
+///   // Build the registry (ideally with fixtures).
+///   let mut builder = ...
+///   builder.build_as_current();
+///
+///   // Set up a guard to clear the registry when the test ends (even on fail).
+///   let _ = TestRegistryClearGuard::default();
+///
+///   // Directly or indirectly access the registry as normal.
+///   let register = OrchestratorActionRegistry::current();
 /// }
 /// ```
 pub struct OrchestratorActionRegistry {
-    actions: BTreeMap<String, Box<dyn OrchestratorAction>>,
+    actions: BTreeMap<String, OrchestratorActionRegistryEntry>,
 }
 
 impl OrchestratorActionRegistry {
@@ -176,22 +185,22 @@ impl OrchestratorActionRegistry {
     }
 
     /// Iterate over registered action (&ID, &Handler) tuples.
-    pub fn iter(&self) -> impl Iterator<Item = (&str, &dyn OrchestratorAction)> {
+    pub fn iter(&self) -> impl Iterator<Item = (&str, &OrchestratorActionRegistryEntry)> {
         self.actions
             .iter()
-            .map(|(id, action)| (id.as_str(), action.as_ref()))
+            .map(|(id, action)| (id.as_str(), action))
     }
 
     /// Lookup an `OrchestratorAction` implementation from the registry.
-    pub fn lookup(&self, id: &str) -> Option<&dyn OrchestratorAction> {
-        self.actions.get(id).map(AsRef::as_ref)
+    pub fn lookup(&self, id: &str) -> Option<&OrchestratorActionRegistryEntry> {
+        self.actions.get(id)
     }
 }
 
 /// Builds a new OrchestratorActionRegistry instance.
 #[derive(Default)]
 pub struct OrchestratorActionRegistryBuilder {
-    actions: BTreeMap<String, Box<dyn OrchestratorAction>>,
+    actions: BTreeMap<String, OrchestratorActionRegistryEntry>,
 }
 
 impl OrchestratorActionRegistryBuilder {
@@ -259,52 +268,43 @@ impl OrchestratorActionRegistryBuilder {
         Self::default()
     }
 
-    /// Register an `OrchestratorAction` implementation.
-    pub fn register<S, OA>(&mut self, id: S, action: OA) -> Result<&mut Self>
-    where
-        S: Into<String>,
-        OA: OrchestratorAction + 'static,
-    {
-        let action = Box::new(action);
-        self.register_boxed(id, action)
-    }
-
-    /// Register an `OrchestratorAction` `Box`ed implementation.
-    pub fn register_boxed<S>(
+    /// Register an `OrchestratorAction` implementation and metadata.
+    pub fn register<S>(
         &mut self,
         id: S,
-        action: Box<dyn OrchestratorAction>,
+        entry: OrchestratorActionRegistryEntry,
     ) -> Result<&mut Self>
     where
         S: Into<String>,
     {
         let id = id.into();
         match self.actions.entry(id) {
-            Entry::Occupied(entry) => {
-                let id = entry.key().to_owned();
+            Entry::Occupied(found_entry) => {
+                let id = found_entry.key().to_owned();
                 anyhow::bail!(ActionAlreadyRegistered { id });
             }
-            Entry::Vacant(entry) => {
-                entry.insert(action);
+            Entry::Vacant(found_entry) => {
+                found_entry.insert(entry);
                 Ok(self)
             }
         }
     }
+}
 
-    /// Register an `OrchestratorAction` implementation for the given implementing type.
-    pub fn register_type<OA>(&mut self, id: &str) -> Result<&mut Self>
-    where
-        OA: OrchestratorAction + Default + 'static,
-    {
-        let action = Box::new(OA::default());
-        self.register_boxed(id, action)
-    }
+/// A single entry in the orchestrator actions registry.
+pub struct OrchestratorActionRegistryEntry {
+    /// Implementation of the `OrchestratorAction` trait to execute the action.
+    pub handler: Box<dyn OrchestratorAction>,
+
+    /// Metadata attached to the `OrchestratorAction`.
+    pub metadata: OrchestratorActionMetadata,
 }
 
 /// Automatically clear the current test registry on drop.
 ///
 /// This struct is helpful when writing tests to ensure the registry is unset at the end.
 #[cfg(feature = "test-api")]
+#[derive(Default)]
 pub struct TestRegistryClearGuard {}
 
 #[cfg(feature = "test-api")]
