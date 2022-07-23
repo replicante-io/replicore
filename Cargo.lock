@@ -2794,9 +2794,12 @@ dependencies = [
  "replicante_util_failure",
  "replicante_util_tracing",
  "replicore_cluster_view",
+ "replicore_iface_orchestrator_action",
+ "replicore_util_errors",
  "sentry",
  "serde_json",
  "slog",
+ "thiserror",
  "uuid",
 ]
 

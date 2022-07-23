@@ -1,9 +1,7 @@
 use crate::OrchestratorAction;
 use crate::OrchestratorActionRegistry;
 use crate::OrchestratorActionRegistryBuilder;
-use crate::OrchestratorActionRegistryEntry;
 
-use replicante_models_core::actions::orchestrator::OrchestratorActionMetadata;
 use replicante_models_core::actions::orchestrator::OrchestratorActionScheduleMode;
 
 /// Dummy action to test types and interfaces.
@@ -18,7 +16,7 @@ crate::registry_entry_factory! {
 }
 
 #[test]
-#[should_panic(expected = "accessed current OrchestratorActionRegistry before it is initialised")]
+#[should_panic(expected = "accessed test OrchestratorActionRegistry before it is initialised")]
 fn access_without_registry_panics() {
     let _ = OrchestratorActionRegistry::current();
 }

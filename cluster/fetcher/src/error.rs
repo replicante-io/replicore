@@ -7,40 +7,7 @@ use failure::Fail;
 use replicante_models_core::agent::AgentStatus;
 use replicante_util_failure::format_fail;
 
-/// Dumb wrapper to carry `anyhow::Error`s as `failure::Fail`s.
-pub struct AnyWrap(anyhow::Error);
-
-impl From<anyhow::Error> for AnyWrap {
-    fn from(error: anyhow::Error) -> AnyWrap {
-        AnyWrap(error)
-    }
-}
-
-impl Fail for AnyWrap {
-    fn cause(&self) -> Option<&dyn Fail> {
-        None
-    }
-
-    fn backtrace(&self) -> Option<&Backtrace> {
-        None
-    }
-
-    fn name(&self) -> Option<&str> {
-        Some("AnyWrap")
-    }
-}
-
-impl fmt::Display for AnyWrap {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        fmt::Display::fmt(&self.0, f)
-    }
-}
-
-impl fmt::Debug for AnyWrap {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        fmt::Debug::fmt(&self.0, f)
-    }
-}
+pub use replicore_util_errors::AnyWrap;
 
 /// Error information returned by functions in case of errors.
 #[derive(Debug)]
@@ -191,3 +158,36 @@ impl ErrorKind {
 
 /// Short form alias for functions returning `Error`s.
 pub type Result<T> = ::std::result::Result<T, Error>;
+
+/// Errors encountered while computing a scheduling choice.
+#[derive(thiserror::Error, Debug)]
+pub enum SchedChoiceError {
+    /// An orchestrator action in the cluster is not available in the registry.
+    ///
+    /// Attached to this error are:
+    ///
+    ///   * The missing orchestrator action kind.
+    ///   * The cluster namespace.
+    ///   * The cluster id.
+    #[error("unknown orchestrator action {0} in cluster {1}.{2}")]
+    OrchestratorActionNotFound(String, String, String),
+}
+
+impl SchedChoiceError {
+    /// Return a `SchedChoiceError::OrchestratorActionNotFound` error.
+    pub fn orchestrator_action_not_found<KIND, NS, CID>(
+        kind: KIND,
+        namespace: NS,
+        cluster: CID,
+    ) -> Self
+    where
+        KIND: Into<String>,
+        NS: Into<String>,
+        CID: Into<String>,
+    {
+        let kind = kind.into();
+        let namespace = namespace.into();
+        let cluster = cluster.into();
+        SchedChoiceError::OrchestratorActionNotFound(kind, namespace, cluster)
+    }
+}

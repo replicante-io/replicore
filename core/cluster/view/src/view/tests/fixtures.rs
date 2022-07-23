@@ -1,7 +1,6 @@
 use std::str::FromStr;
 
 use replicante_models_agent::info::ShardRole;
-
 use replicante_models_core::actions::node::ActionState;
 use replicante_models_core::actions::node::ActionSyncSummary;
 use replicante_models_core::actions::orchestrator::OrchestratorActionState;
@@ -145,8 +144,9 @@ pub mod cluster_mongodb {
 
     pub fn orchestrator_action_backup() -> OrchestratorActionSyncSummary {
         OrchestratorActionSyncSummary {
-            cluster_id: CLUSTER_ID.into(),
             action_id: uuid::Uuid::from_str("347db8f1-dab4-401b-8956-04cd0ca25661").unwrap(),
+            cluster_id: CLUSTER_ID.into(),
+            kind: "test.core.replicante.io/cluster.backup".into(),
             state: OrchestratorActionState::PendingSchedule,
         }
     }
@@ -155,6 +155,7 @@ pub mod cluster_mongodb {
         OrchestratorActionSyncSummary {
             cluster_id: CLUSTER_ID.into(),
             action_id: uuid::Uuid::from_str("004089da-ec5a-4f4c-a4cc-adff9ec09015").unwrap(),
+            kind: "test.core.replicante.io/cluster.init".into(),
             state: OrchestratorActionState::Running,
         }
     }

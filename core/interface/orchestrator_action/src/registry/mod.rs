@@ -180,7 +180,7 @@ impl OrchestratorActionRegistry {
                 .read()
                 .expect("OrchestratorActionRegistry test state is poisoned")
                 .clone();
-            registry.expect("accessed current OrchestratorActionRegistry before it is initialised")
+            registry.expect("accessed test OrchestratorActionRegistry before it is initialised")
         })
     }
 

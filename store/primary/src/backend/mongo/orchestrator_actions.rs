@@ -128,6 +128,7 @@ impl OrchestratorActionsInterface for OrchestratorActions {
         options.projection = Some(doc! {
             "cluster_id": 1,
             "action_id": 1,
+            "kind": 1,
             "state": 1,
         });
         let collection = self

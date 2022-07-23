@@ -107,6 +107,7 @@ impl std::fmt::Display for OrchestratorActionState {
 pub struct OrchestratorActionSyncSummary {
     pub cluster_id: String,
     pub action_id: Uuid,
+    pub kind: String,
     pub state: OrchestratorActionState,
 }
 
@@ -115,6 +116,7 @@ impl From<&OrchestratorAction> for OrchestratorActionSyncSummary {
         OrchestratorActionSyncSummary {
             cluster_id: action.cluster_id.clone(),
             action_id: action.action_id,
+            kind: action.kind.clone(),
             state: action.state,
         }
     }

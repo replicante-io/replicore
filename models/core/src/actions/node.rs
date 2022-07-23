@@ -163,6 +163,11 @@ pub enum ActionState {
 }
 
 impl ActionState {
+    /// Check if the action is waiting to be scheduled on a node.
+    pub fn is_pending_schedule(&self) -> bool {
+        matches!(self, Self::PendingSchedule)
+    }
+
     /// Check if the action is running or sent to the agent to run.
     pub fn is_running(&self) -> bool {
         matches!(self, Self::New | Self::Running)
