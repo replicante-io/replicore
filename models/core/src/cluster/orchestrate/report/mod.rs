@@ -8,6 +8,8 @@ use serde::Serialize;
 mod builder;
 mod error;
 
+use super::sched_choice::SchedChoice;
+
 #[cfg(test)]
 mod tests;
 
@@ -28,6 +30,8 @@ pub struct OrchestrateReport {
     pub outcome: OrchestrateReportOutcome,
 
     // Orchestration task details.
+    /// Details of action scheduling choices made.
+    pub action_scheduling_choices: Option<SchedChoice>,
     /// Number of node actions incomplete in core but no longer reported.
     pub node_actions_lost: u64,
     /// Number of node actions scheduling attempts that failed.

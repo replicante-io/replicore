@@ -30,8 +30,6 @@ mod tests;
 /// Improving this function to use the latest available data SHOULD lead to more efficient
 /// action scheduling as sync cycles are not wasted between an action being safe to schedule
 /// and this logic actually knowing about that.
-// TODO: remove allow once this function is used.
-#[allow(dead_code)]
 pub fn choose_scheduling(cluster: &ClusterView) -> Result<SchedChoice> {
     let mut any_node_pending = false;
     let mut any_node_running = false;

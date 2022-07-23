@@ -6,6 +6,7 @@ use chrono::Utc;
 use super::OrchestrateReport;
 use super::OrchestrateReportError;
 use super::OrchestrateReportOutcome;
+use super::SchedChoice;
 
 /// Incrementally build a report by adding information as cluster orchestration progresses.
 pub struct OrchestrateReportBuilder {
@@ -15,6 +16,7 @@ pub struct OrchestrateReportBuilder {
     start_time: Option<DateTime<Utc>>,
     outcome: Option<OrchestrateReportOutcome>,
 
+    action_scheduling_choices: Option<SchedChoice>,
     node_actions_lost: u64,
     node_actions_schedule_failed: u64,
     node_actions_scheduled: u64,
@@ -29,12 +31,19 @@ impl OrchestrateReportBuilder {
             cluster_id: None,
             start_time: None,
             outcome: None,
+            action_scheduling_choices: None,
             node_actions_lost: 0,
             node_actions_schedule_failed: 0,
             node_actions_scheduled: 0,
             nodes_failed: 0,
             nodes_synced: 0,
         }
+    }
+
+    /// Attach action scheduling choice information to the report.
+    pub fn action_scheduling_choices(&mut self, choices: SchedChoice) -> &mut Self {
+        self.action_scheduling_choices = Some(choices);
+        self
     }
 
     /// Consume be builder to finalise a report.
@@ -64,6 +73,7 @@ impl OrchestrateReportBuilder {
             start_time,
             duration,
             outcome,
+            action_scheduling_choices: self.action_scheduling_choices,
             node_actions_lost: self.node_actions_lost,
             node_actions_schedule_failed: self.node_actions_schedule_failed,
             node_actions_scheduled: self.node_actions_scheduled,

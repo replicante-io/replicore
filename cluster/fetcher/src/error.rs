@@ -95,6 +95,9 @@ pub enum ErrorKind {
     #[fail(display = "error fetching/sending {} from/to agent {}", _0, _1)]
     AgentDown(&'static str, String),
 
+    #[fail(display = "anywrap error handling rollout boundary")]
+    AnyWrapped,
+
     #[fail(display = "error fetching/sending {} from/to agent {}", _0, _1)]
     DatastoreDown(&'static str, String),
 
@@ -141,10 +144,11 @@ impl ErrorKind {
         let name = match self {
             ErrorKind::AgentConnect(_) => "AgentConnect",
             ErrorKind::AgentDown(_, _) => "AgentDown",
-            ErrorKind::DatastoreDown(_, _) => "DatastoreDown",
+            ErrorKind::AnyWrapped => "AnyWrapped",
             ErrorKind::ClusterDisplayNameDoesNotMatch(_, _, _) => "ClusterDisplayNameDoesNotMatch",
             ErrorKind::ClusterIdDoesNotMatch(_, _, _) => "ClusterIdDoesNotMatch",
             ErrorKind::ClusterViewUpdate => "ClusterViewUpdate",
+            ErrorKind::DatastoreDown(_, _) => "DatastoreDown",
             ErrorKind::EventEmit(_) => "EventEmit",
             ErrorKind::ExpectedActionNotFound(_, _, _) => "ExpectedActionNotFound",
             ErrorKind::PrimaryStoreRead(_) => "PrimaryStoreRead",

@@ -30,6 +30,7 @@ mod node;
 mod shard;
 
 use self::actions::node::NodeActionsFetcher;
+use self::actions::orchestrator::choose_scheduling;
 use self::agent::AgentFetcher;
 use self::metrics::FETCHER_DURATION;
 use self::metrics::FETCHER_ERRORS_COUNT;
@@ -165,6 +166,10 @@ impl Fetcher {
             cluster_id.clone(),
             cluster_view.discovery.display_name.clone(),
         );
+        let sched_choices = choose_scheduling(cluster_view)
+            .map_err(replicore_util_errors::AnyWrap::from)
+            .context(ErrorKind::AnyWrapped)?;
+        report.action_scheduling_choices(sched_choices);
 
         for agent_id in &cluster_view.discovery.nodes {
             // Exit early if lock was lost.

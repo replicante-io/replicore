@@ -14,6 +14,7 @@ use replicante_models_core::actions::orchestrator::OrchestratorAction;
 use replicante_models_core::actions::orchestrator::OrchestratorActionState;
 use replicante_models_core::cluster::OrchestrateReport;
 use replicante_models_core::cluster::OrchestrateReportOutcome;
+use replicante_models_core::cluster::SchedChoice;
 use replicante_models_core::events::Event;
 use replicante_models_core::events::Payload;
 
@@ -193,6 +194,7 @@ pub struct OrchestrateReportDocument {
     pub outcome: OrchestrateReportOutcome,
 
     // Orchestration task details.
+    pub action_scheduling_choices: Option<SchedChoice>,
     pub node_actions_lost: u64,
     pub node_actions_schedule_failed: u64,
     pub node_actions_scheduled: u64,
@@ -208,6 +210,7 @@ impl From<OrchestrateReport> for OrchestrateReportDocument {
             start_time: DateTime::from(report.start_time),
             duration: report.duration,
             outcome: report.outcome,
+            action_scheduling_choices: report.action_scheduling_choices,
             node_actions_lost: report.node_actions_lost,
             node_actions_schedule_failed: report.node_actions_schedule_failed,
             node_actions_scheduled: report.node_actions_scheduled,
@@ -225,6 +228,7 @@ impl From<OrchestrateReportDocument> for OrchestrateReport {
             start_time: document.start_time.0,
             duration: document.duration,
             outcome: document.outcome,
+            action_scheduling_choices: document.action_scheduling_choices,
             node_actions_lost: document.node_actions_lost,
             node_actions_schedule_failed: document.node_actions_schedule_failed,
             node_actions_scheduled: document.node_actions_scheduled,
