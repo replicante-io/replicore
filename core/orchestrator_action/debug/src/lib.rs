@@ -3,7 +3,7 @@ use anyhow::Result;
 use replicore_iface_orchestrator_action::OrchestratorActionRegistryBuilder;
 
 pub mod counting;
-pub mod failing;
+pub mod fail;
 pub mod ping;
 pub mod success;
 
@@ -14,8 +14,8 @@ pub fn register(builder: &mut OrchestratorActionRegistryBuilder) -> Result<()> {
         counting::Counting::registry_entry(),
     )?;
     builder.register(
-        "core.replicante.io/debug.failing",
-        failing::Failing::registry_entry(),
+        "core.replicante.io/debug.fail",
+        fail::Fail::registry_entry(),
     )?;
     builder.register(
         "core.replicante.io/debug.ping",

@@ -1,13 +1,21 @@
+use anyhow::Result;
+
 use crate::OrchestratorAction;
 use crate::OrchestratorActionRegistry;
 use crate::OrchestratorActionRegistryBuilder;
+use crate::ProgressChanges;
 
+use replicante_models_core::actions::orchestrator::OrchestratorAction as OARecord;
 use replicante_models_core::actions::orchestrator::OrchestratorActionScheduleMode;
 
 /// Dummy action to test types and interfaces.
 #[derive(Default)]
 struct TestAction {}
-impl OrchestratorAction for TestAction {}
+impl OrchestratorAction for TestAction {
+    fn progress(&self, _: &OARecord) -> Result<Option<ProgressChanges>> {
+        Ok(None)
+    }
+}
 
 crate::registry_entry_factory! {
     handler: TestAction,

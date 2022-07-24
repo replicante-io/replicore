@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - List and delete `DiscoverySettings` objects (API and `replictl`).
 - Orchestrate reports for details on the latest attempt to sync a cluster.
 - Orchestrator actions, executing during cluster orchestration.
+- Orchestrator debug actions `counting`, `fail`, `ping` and `success`.
 - Reject any object with a non `default` namespace.
 - Synthesise lag metrics for shards that don't report it.
 - Synthetic in-memory Cluster Views.

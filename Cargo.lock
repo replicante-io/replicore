@@ -3095,6 +3095,7 @@ dependencies = [
  "anyhow",
  "replicante_models_core",
  "replicore_iface_orchestrator_action",
+ "serde_json",
 ]
 
 [[package]]
@@ -3182,6 +3183,7 @@ dependencies = [
  "anyhow",
  "lazy_static",
  "replicante_models_core",
+ "serde_json",
  "thiserror",
 ]
 

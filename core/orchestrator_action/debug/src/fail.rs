@@ -7,20 +7,20 @@ use replicore_iface_orchestrator_action::registry_entry_factory;
 use replicore_iface_orchestrator_action::OrchestratorAction;
 use replicore_iface_orchestrator_action::ProgressChanges;
 
-/// A simple action that succeeds the first time it is progressed.
+/// A simple action that fails the first time it is progressed.
 #[derive(Default)]
-pub struct Success {}
+pub struct Fail {}
 
 registry_entry_factory! {
-    handler: Success,
+    handler: Fail,
     schedule_mode: OrchestratorActionScheduleMode::Exclusive,
-    summary: "Complete at first progression",
+    summary: "Fail at the first progression",
 }
 
-impl OrchestratorAction for Success {
+impl OrchestratorAction for Fail {
     fn progress(&self, _: &OARecord) -> Result<Option<ProgressChanges>> {
         let changes = ProgressChanges {
-            state: OrchestratorActionState::Done,
+            state: OrchestratorActionState::Failed,
             state_payload: None,
         };
         Ok(Some(changes))

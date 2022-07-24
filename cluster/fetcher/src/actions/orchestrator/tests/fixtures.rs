@@ -1,7 +1,10 @@
 use std::str::FromStr;
 
+use anyhow::Result;
+
 use replicante_models_core::actions::node::ActionState;
 use replicante_models_core::actions::node::ActionSyncSummary;
+use replicante_models_core::actions::orchestrator::OrchestratorAction as OARecord;
 use replicante_models_core::actions::orchestrator::OrchestratorActionScheduleMode;
 use replicante_models_core::actions::orchestrator::OrchestratorActionState;
 use replicante_models_core::actions::orchestrator::OrchestratorActionSyncSummary;
@@ -12,6 +15,7 @@ use replicore_cluster_view::ClusterViewBuilder;
 use replicore_iface_orchestrator_action::registry_entry_factory;
 use replicore_iface_orchestrator_action::OrchestratorAction;
 use replicore_iface_orchestrator_action::OrchestratorActionRegistryBuilder;
+use replicore_iface_orchestrator_action::ProgressChanges;
 use replicore_iface_orchestrator_action::TestRegistryClearGuard;
 
 pub const CLUSTER_ID: &str = "colours";
@@ -19,7 +23,11 @@ pub const NAMESPACE: &str = "default";
 
 #[derive(Default)]
 pub struct ScheduleExclusive {}
-impl OrchestratorAction for ScheduleExclusive {}
+impl OrchestratorAction for ScheduleExclusive {
+    fn progress(&self, _: &OARecord) -> Result<Option<ProgressChanges>> {
+        Ok(None)
+    }
+}
 
 registry_entry_factory! {
     handler: ScheduleExclusive,
