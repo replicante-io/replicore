@@ -13,6 +13,7 @@ use replicante_agent_client::HttpClient;
 use replicante_models_core::agent::Agent;
 use replicante_models_core::agent::AgentStatus;
 use replicante_models_core::cluster::OrchestrateReportBuilder;
+use replicante_models_core::cluster::SchedChoice;
 use replicante_models_core::scope::Namespace;
 use replicante_service_coordinator::NonBlockingLockWatcher;
 use replicante_store_primary::store::Store as PrimaryStore;
@@ -169,7 +170,7 @@ impl Fetcher {
         let sched_choices = choose_scheduling(cluster_view)
             .map_err(replicore_util_errors::AnyWrap::from)
             .context(ErrorKind::AnyWrapped)?;
-        report.action_scheduling_choices(sched_choices);
+        report.action_scheduling_choices(sched_choices.clone());
 
         for agent_id in &cluster_view.discovery.nodes {
             // Exit early if lock was lost.
@@ -194,6 +195,7 @@ impl Fetcher {
                 cluster_view,
                 new_cluster_view,
                 report,
+                &sched_choices,
                 agent_id,
                 &mut id_checker,
                 span,
@@ -238,6 +240,7 @@ impl Fetcher {
         cluster_view: &ClusterView,
         new_cluster_view: &mut ClusterViewBuilder,
         report: &mut OrchestrateReportBuilder,
+        sched_choices: &SchedChoice,
         node: &str,
         id_checker: &mut ClusterIdentityChecker,
         span: &mut Span,
@@ -262,8 +265,15 @@ impl Fetcher {
             .process_node(&client, cluster_view, new_cluster_view, id_checker, span)?;
         self.shard
             .process_shards(&client, cluster_view, new_cluster_view, node, span)?;
-        self.actions
-            .sync(&client, cluster_view, new_cluster_view, report, node, span)?;
+        self.actions.sync(
+            &client,
+            cluster_view,
+            new_cluster_view,
+            report,
+            sched_choices,
+            node,
+            span,
+        )?;
         Ok(())
     }
 }

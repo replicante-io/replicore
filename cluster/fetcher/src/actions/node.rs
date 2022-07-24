@@ -14,6 +14,7 @@ use replicante_models_core::actions::node::Action;
 use replicante_models_core::actions::node::ActionState;
 use replicante_models_core::actions::node::ActionSyncSummary;
 use replicante_models_core::cluster::OrchestrateReportBuilder;
+use replicante_models_core::cluster::SchedChoice;
 use replicante_models_core::events::Event;
 use replicante_store_primary::store::Store;
 use replicante_stream_events::EmitMessage;
@@ -58,12 +59,15 @@ impl NodeActionsFetcher {
     /// 3. For each action in the cluster view but not returned by agent:
     ///    - If action is pending schedule => schedule action with the agent.
     ///    - If action is running => update the action as lost.
+    // This function is used only once in this crate and hopefully will loose some arguments.
+    #[allow(clippy::too_many_arguments)]
     pub fn sync(
         &self,
         client: &dyn Client,
         cluster_view: &ClusterView,
         new_cluster_view: &mut ClusterViewBuilder,
         report: &mut OrchestrateReportBuilder,
+        sched_choices: &SchedChoice,
         agent_id: &str,
         span: &mut Span,
     ) -> Result<()> {
@@ -113,6 +117,7 @@ impl NodeActionsFetcher {
                 cluster_view,
                 new_cluster_view,
                 report,
+                sched_choices,
                 agent_id,
                 action_summary,
                 span,
@@ -426,6 +431,7 @@ impl NodeActionsFetcher {
         cluster_view: &ClusterView,
         new_cluster_view: &mut ClusterViewBuilder,
         report: &mut OrchestrateReportBuilder,
+        sched_choices: &SchedChoice,
         node_id: &str,
         action_summary: &ActionSyncSummary,
         span: &mut Span,
@@ -446,6 +452,16 @@ impl NodeActionsFetcher {
         match action_summary.state {
             // Schedule pending actions with the agent.
             ActionState::PendingSchedule => {
+                if sched_choices.block_node {
+                    debug!(
+                        self.logger, "Scheduling choices blocked node actions";
+                        "namespace" => &cluster_view.namespace,
+                        "cluster_id" => &cluster_view.cluster_id,
+                        "node_id" => node_id,
+                        "action_id" => action_summary.action_id.to_string(),
+                    );
+                    return Ok(());
+                }
                 self.action_schedule(client, cluster_view, report, node_id, action_summary, span)
             }
             // Running actions no longer known to the agent are lost.
@@ -482,6 +498,7 @@ mod tests {
     use replicante_models_core::cluster::discovery::ClusterDiscovery;
     use replicante_models_core::cluster::ClusterSettings;
     use replicante_models_core::cluster::OrchestrateReportBuilder;
+    use replicante_models_core::cluster::SchedChoice;
     use replicante_store_primary::mock::Mock as StoreMock;
     use replicante_stream_events::Stream as EventsStream;
     use replicore_cluster_view::ClusterView;
@@ -812,6 +829,7 @@ mod tests {
                 &cluster_view,
                 &mut new_cluster_view,
                 &mut OrchestrateReportBuilder::new(),
+                &SchedChoice::default(),
                 "node",
                 &mut span,
             )
@@ -903,6 +921,7 @@ mod tests {
                 &cluster_view,
                 &mut new_cluster_view,
                 &mut OrchestrateReportBuilder::new(),
+                &SchedChoice::default(),
                 "node",
                 &mut span,
             )
@@ -920,6 +939,63 @@ mod tests {
             .clone();
         assert_eq!(request.action_id, Some(*UUID2));
         assert_eq!(kind, "action");
+    }
+
+    #[test]
+    fn sync_schedule_pending_actions_blocked() {
+        // Fill the store with pending pending schedule actions.
+        let store = StoreMock::default();
+        let action = mock_agent_action(*UUID2, false);
+        let mut action = CoreAction::new("test", "node", action);
+        action.state = ActionStateCore::PendingSchedule;
+        store
+            .store()
+            .persist()
+            .action(action, None)
+            .expect("failed to add action to store");
+
+        // Set up client.
+        let client = MockClient::new(
+            || panic!("unused in these tests"),
+            || panic!("unused in these tests"),
+            || panic!("unused in these tests"),
+        );
+
+        // Set up fetcher and sync an action.
+        let cluster_view = mock_cluster_view_with_actions(vec![ActionSyncSummary {
+            cluster_id: "test".into(),
+            node_id: "node".into(),
+            action_id: *UUID2,
+            state: ActionStateCore::PendingSchedule,
+        }]);
+        let mut new_cluster_view = cluster_view_builder();
+        let stream = EventsStream::mock();
+        let fetcher =
+            NodeActionsFetcher::new(stream, store.clone().store(), Logger::root(Discard, o!()));
+        let (tracer, _) = NoopTracer::new();
+        let mut span = tracer.span("test");
+        let sched_choices = SchedChoice {
+            block_node: true,
+            ..SchedChoice::default()
+        };
+        fetcher
+            .sync(
+                &client,
+                &cluster_view,
+                &mut new_cluster_view,
+                &mut OrchestrateReportBuilder::new(),
+                &sched_choices,
+                "node",
+                &mut span,
+            )
+            .expect("actions sync failed");
+
+        // Check request sent to the agent.
+        let actions_to_schedule = client
+            .actions_to_schedule
+            .lock()
+            .expect("agent MockClient::actions_to_schedule lock poisoned");
+        assert_eq!(actions_to_schedule.len(), 0);
     }
 
     #[test]
@@ -1053,6 +1129,7 @@ mod tests {
                 &cluster_view,
                 &mut new_cluster_view,
                 &mut OrchestrateReportBuilder::new(),
+                &SchedChoice::default(),
                 "node",
                 &mut span,
             )
