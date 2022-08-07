@@ -47,7 +47,7 @@ impl MockInterfaces {
 
     /// Mock interfaces using the given logger and wrap them in an `Interfaces` instance.
     pub fn mock_with_logger(logger: Logger) -> MockInterfaces {
-        let coordinator = MockCoordinator::new(logger.clone());
+        let coordinator = MockCoordinator::default();
         let stores = MockStores::new();
         let tasks = Arc::new(MockTasks::new());
         MockInterfaces {

@@ -86,17 +86,8 @@ impl From<ErrorKind> for Error {
 /// Exhaustive list of possible errors emitted by this crate.
 #[derive(Debug, Fail)]
 pub enum ErrorKind {
-    #[fail(display = "unable to aggregate cluster information for {}.{}", _0, _1)]
-    Aggregate(String, String),
-
-    #[fail(
-        display = "unable to build cluster view from agent responses for {}.{}",
-        _0, _1
-    )]
-    BuildClusterViewFromAgents(String, String),
-
-    #[fail(display = "unable to build cluster view from DB for {}.{}", _0, _1)]
-    BuildClusterViewFromStore(String, String),
+    #[fail(display = "unable to orchestrate cluster {}.{}", _0, _1)]
+    Orchestrate(String, String),
 
     #[fail(
         display = "another orchestration task is in progress for {}.{}",
@@ -107,14 +98,8 @@ pub enum ErrorKind {
     #[fail(display = "unable to deserialize task payload")]
     DeserializePayload,
 
-    #[fail(display = "unable to fetch cluster discovery record for {}.{}", _0, _1)]
-    FetchDiscovery(String, String),
-
     #[fail(display = "unable to fetch cluster settings record for {}.{}", _0, _1)]
     FetchSettings(String, String),
-
-    #[fail(display = "unable to refresh cluster information for {}.{}", _0, _1)]
-    RefreshCluster(String, String),
 
     #[fail(display = "unable to release orchestration lock for {}.{}", _0, _1)]
     ReleaseLock(String, String),
@@ -124,28 +109,12 @@ pub enum ErrorKind {
 }
 
 impl ErrorKind {
-    pub fn aggregate<S1, S2>(namespace: S1, cluster_id: S2) -> ErrorKind
+    pub fn orchestrate<S1, S2>(namespace: S1, cluster_id: S2) -> ErrorKind
     where
         S1: Into<String>,
         S2: Into<String>,
     {
-        ErrorKind::Aggregate(namespace.into(), cluster_id.into())
-    }
-
-    pub fn build_cluster_view_from_agents<S1, S2>(namespace: S1, cluster_id: S2) -> ErrorKind
-    where
-        S1: Into<String>,
-        S2: Into<String>,
-    {
-        ErrorKind::BuildClusterViewFromAgents(namespace.into(), cluster_id.into())
-    }
-
-    pub fn build_cluster_view_from_store<S1, S2>(namespace: S1, cluster_id: S2) -> ErrorKind
-    where
-        S1: Into<String>,
-        S2: Into<String>,
-    {
-        ErrorKind::BuildClusterViewFromStore(namespace.into(), cluster_id.into())
+        ErrorKind::Orchestrate(namespace.into(), cluster_id.into())
     }
 
     pub fn concurrent_orchestrate<S1, S2>(namespace: S1, cluster_id: S2) -> ErrorKind
@@ -156,28 +125,12 @@ impl ErrorKind {
         ErrorKind::ConcurrentOrchestrate(namespace.into(), cluster_id.into())
     }
 
-    pub fn fetch_discovery<S1, S2>(namespace: S1, cluster_id: S2) -> ErrorKind
-    where
-        S1: Into<String>,
-        S2: Into<String>,
-    {
-        ErrorKind::FetchDiscovery(namespace.into(), cluster_id.into())
-    }
-
     pub fn fetch_settings<S1, S2>(namespace: S1, cluster_id: S2) -> ErrorKind
     where
         S1: Into<String>,
         S2: Into<String>,
     {
         ErrorKind::FetchSettings(namespace.into(), cluster_id.into())
-    }
-
-    pub fn refresh_cluster<S1, S2>(namespace: S1, cluster_id: S2) -> ErrorKind
-    where
-        S1: Into<String>,
-        S2: Into<String>,
-    {
-        ErrorKind::RefreshCluster(namespace.into(), cluster_id.into())
     }
 
     pub fn release_lock<S1, S2>(namespace: S1, cluster_id: S2) -> ErrorKind
@@ -198,14 +151,10 @@ impl ErrorKind {
 
     fn kind_name(&self) -> Option<&str> {
         let name = match self {
-            ErrorKind::Aggregate(_, _) => "Aggregate",
-            ErrorKind::BuildClusterViewFromAgents(_, _) => "BuildClusterViewFromAgents",
-            ErrorKind::BuildClusterViewFromStore(_, _) => "BuildClusterViewFromStore",
+            ErrorKind::Orchestrate(_, _) => "Orchestrate",
             ErrorKind::ConcurrentOrchestrate(_, _) => "ConcurrentOrchestrate",
             ErrorKind::DeserializePayload => "DeserializePayload",
-            ErrorKind::FetchDiscovery(_, _) => "FetchDiscovery",
             ErrorKind::FetchSettings(_, _) => "FetchSettings",
-            ErrorKind::RefreshCluster(_, _) => "RefreshCluster",
             ErrorKind::ReleaseLock(_, _) => "ReleaseLock",
             ErrorKind::SettingsNotFound(_, _) => "SettingsNotFound",
         };

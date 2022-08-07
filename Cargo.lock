@@ -2678,9 +2678,7 @@ dependencies = [
  "opentracingrust",
  "prometheus",
  "replicante_agent_client",
- "replicante_cluster_aggregator",
  "replicante_cluster_discovery",
- "replicante_cluster_fetcher",
  "replicante_externals_kafka",
  "replicante_externals_mongodb",
  "replicante_logging",
@@ -2741,24 +2739,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "replicante_cluster_aggregator"
-version = "0.1.1"
-dependencies = [
- "failure",
- "lazy_static",
- "opentracingrust",
- "prometheus",
- "replicante_models_core",
- "replicante_service_coordinator",
- "replicante_store_primary",
- "replicante_stream_events",
- "replicante_util_tracing",
- "replicore_cluster_view",
- "replicore_util_errors",
- "slog",
-]
-
-[[package]]
 name = "replicante_cluster_discovery"
 version = "0.2.1"
 dependencies = [
@@ -2772,35 +2752,6 @@ dependencies = [
  "serde_derive",
  "serde_json",
  "slog",
-]
-
-[[package]]
-name = "replicante_cluster_fetcher"
-version = "0.1.2"
-dependencies = [
- "anyhow",
- "chrono",
- "failure",
- "failure_derive",
- "lazy_static",
- "opentracingrust",
- "prometheus",
- "replicante_agent_client",
- "replicante_models_agent",
- "replicante_models_core",
- "replicante_service_coordinator",
- "replicante_store_primary",
- "replicante_stream_events",
- "replicante_util_failure",
- "replicante_util_tracing",
- "replicore_cluster_view",
- "replicore_iface_orchestrator_action",
- "replicore_util_errors",
- "sentry",
- "serde_json",
- "slog",
- "thiserror",
- "uuid",
 ]
 
 [[package]]
@@ -3099,6 +3050,31 @@ dependencies = [
 ]
 
 [[package]]
+name = "replicore_cluster_orchestrate"
+version = "0.2.0"
+dependencies = [
+ "anyhow",
+ "chrono",
+ "failure",
+ "lazy_static",
+ "opentracingrust",
+ "prometheus",
+ "replicante_agent_client",
+ "replicante_models_agent",
+ "replicante_models_core",
+ "replicante_service_coordinator",
+ "replicante_store_primary",
+ "replicante_stream_events",
+ "replicante_util_failure",
+ "replicore_cluster_view",
+ "replicore_iface_orchestrator_action",
+ "serde_json",
+ "slog",
+ "thiserror",
+ "uuid",
+]
+
+[[package]]
 name = "replicore_cluster_view"
 version = "0.1.0"
 dependencies = [
@@ -3229,8 +3205,6 @@ dependencies = [
  "lazy_static",
  "opentracingrust",
  "prometheus",
- "replicante_cluster_aggregator",
- "replicante_cluster_fetcher",
  "replicante_models_core",
  "replicante_service_coordinator",
  "replicante_service_tasks",
@@ -3238,8 +3212,10 @@ dependencies = [
  "replicante_stream_events",
  "replicante_util_failure",
  "replicante_util_tracing",
+ "replicore_cluster_orchestrate",
  "replicore_cluster_view",
  "replicore_models_tasks",
+ "replicore_util_errors",
  "slog",
 ]
 

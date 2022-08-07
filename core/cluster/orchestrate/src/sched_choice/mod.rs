@@ -7,7 +7,7 @@ use replicante_models_core::cluster::SchedChoiceReason;
 use replicore_cluster_view::ClusterView;
 use replicore_iface_orchestrator_action::OrchestratorActionRegistry;
 
-use crate::SchedChoiceError;
+use crate::errors::SchedChoiceError;
 
 #[cfg(test)]
 mod tests;

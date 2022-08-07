@@ -482,8 +482,7 @@ mod tests {
     }
 
     fn mock_coordinator() -> MockCoordinator {
-        let logger = ::slog::Logger::root(::slog::Discard, o!());
-        MockCoordinator::new(logger)
+        MockCoordinator::default()
     }
 
     #[test]

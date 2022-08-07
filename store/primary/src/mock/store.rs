@@ -245,12 +245,24 @@ impl PersistInterface for Persist {
         Ok(())
     }
 
-    fn agent(&self, _agent: Agent, _: Option<SpanContext>) -> Result<()> {
-        panic!("TODO: MockStore::Persist::agent")
+    fn agent(&self, agent: Agent, _: Option<SpanContext>) -> Result<()> {
+        let key = (agent.cluster_id.clone(), agent.host.clone());
+        self.state
+            .lock()
+            .expect("MockStore state lock poisoned")
+            .agents
+            .insert(key, agent);
+        Ok(())
     }
 
-    fn agent_info(&self, _agent: AgentInfo, _: Option<SpanContext>) -> Result<()> {
-        panic!("TODO: MockStore::Persist::agent_info")
+    fn agent_info(&self, agent: AgentInfo, _: Option<SpanContext>) -> Result<()> {
+        let key = (agent.cluster_id.clone(), agent.host.clone());
+        self.state
+            .lock()
+            .expect("MockStore state lock poisoned")
+            .agents_info
+            .insert(key, agent);
+        Ok(())
     }
 
     fn cluster_discovery(
@@ -289,15 +301,31 @@ impl PersistInterface for Persist {
         panic!("TODO: MockStore::Persist::next_discovery_run")
     }
 
-    fn node(&self, _node: Node, _: Option<SpanContext>) -> Result<()> {
-        panic!("TODO: MockStore::Persist::node")
+    fn node(&self, node: Node, _: Option<SpanContext>) -> Result<()> {
+        let key = (node.cluster_id.clone(), node.node_id.clone());
+        self.state
+            .lock()
+            .expect("MockStore state lock poisoned")
+            .nodes
+            .insert(key, node);
+        Ok(())
     }
 
     fn orchestrator_action(&self, _: OrchestratorAction, _: Option<SpanContext>) -> Result<()> {
         panic!("TODO: MockStore::Persist::orchestrator_action")
     }
 
-    fn shard(&self, _shard: Shard, _: Option<SpanContext>) -> Result<()> {
-        panic!("TODO: MockStore::Persist::shard")
+    fn shard(&self, shard: Shard, _: Option<SpanContext>) -> Result<()> {
+        let key = (
+            shard.cluster_id.clone(),
+            shard.node_id.clone(),
+            shard.shard_id.clone(),
+        );
+        self.state
+            .lock()
+            .expect("MockStore state lock poisoned")
+            .shards
+            .insert(key, shard);
+        Ok(())
     }
 }

@@ -1,11 +1,12 @@
+mod fixtures;
+
 use replicante_models_core::actions::node::ActionSyncSummary;
 use replicante_models_core::actions::orchestrator::OrchestratorActionSyncSummary;
 use replicante_models_core::cluster::SchedChoice;
 use replicante_models_core::cluster::SchedChoiceReason;
 use replicore_cluster_view::ClusterView;
 
-use super::super::choose_scheduling;
-use super::fixtures;
+use super::choose_scheduling;
 
 /// Build a ClusterView with the given node and orchestrator action information.
 fn build_view(

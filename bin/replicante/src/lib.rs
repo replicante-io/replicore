@@ -126,9 +126,7 @@ pub fn initialise_sentry(config: Option<SentryConfig>, logger: &Logger) -> Resul
 /// Metrics that fail to register are logged and ignored.
 pub fn register_crates_metrics(logger: &Logger, registry: &Registry) {
     replicante_agent_client::register_metrics(logger, registry);
-    replicante_cluster_aggregator::register_metrics(logger, registry);
     replicante_cluster_discovery::register_metrics(logger, registry);
-    replicante_cluster_fetcher::register_metrics(logger, registry);
     replicante_externals_kafka::register_metrics(logger, registry);
     replicante_externals_mongodb::register_metrics(logger, registry);
     replicante_service_coordinator::register_metrics(logger, registry);

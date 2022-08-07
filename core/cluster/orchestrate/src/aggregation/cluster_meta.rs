@@ -1,13 +1,23 @@
 use std::collections::HashSet;
 
+use anyhow::Context;
+use anyhow::Result;
+
 use replicante_models_core::agent::ShardRole;
 use replicante_models_core::cluster::ClusterMeta;
-use replicore_cluster_view::ClusterView;
 
-use super::Result;
+use crate::errors::SyncError;
+use crate::ClusterAggregateExtra;
+use crate::ClusterAggregateExtraMut;
+use crate::ClusterOrchestrate;
 
-/// Aggregate cluster metadata from a ClusterView.
-pub(crate) fn aggregate(cluster_view: &ClusterView) -> Result<ClusterMeta> {
+/// Aggregate cluster metadata from a `ClusterView`.
+pub fn aggregate(
+    data: &ClusterOrchestrate,
+    extra: &ClusterAggregateExtra,
+    data_mut: &mut ClusterAggregateExtraMut,
+) -> Result<()> {
+    let cluster_view = &extra.new_cluster_view;
     let cluster_id = cluster_view.cluster_id.clone();
     let cluster_display_name = cluster_view
         .discovery
@@ -44,5 +54,15 @@ pub(crate) fn aggregate(cluster_view: &ClusterView) -> Result<ClusterMeta> {
         }
     }
 
-    Ok(meta)
+    // Persist ClusterMeta to the primary store.
+    super::check_lock(data, data_mut)?;
+    let span_context = data_mut.span.as_ref().map(|span| span.context().clone());
+    data.store
+        .legacy()
+        .persist_cluster_meta(meta, span_context)
+        .map_err(failure::Fail::compat)
+        .with_context(|| {
+            SyncError::store_persist(&data.namespace.ns_id, &data.cluster_view.cluster_id)
+        })
+        .map_err(anyhow::Error::from)
 }

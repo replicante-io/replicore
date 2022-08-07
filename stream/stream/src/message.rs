@@ -26,7 +26,7 @@ pub struct EmitMessage<T>
 where
     T: Serialize + 'static,
 {
-    _enfoce_paylod_type: PhantomData<T>,
+    _enforce_payload_type: PhantomData<T>,
     pub(crate) id: String,
     pub(crate) headers: HashMap<String, String>,
     pub(crate) payload: Vec<u8>,
@@ -46,7 +46,7 @@ where
         let id = id.into();
         let headers = HashMap::new();
         Ok(EmitMessage {
-            _enfoce_paylod_type: PhantomData,
+            _enforce_payload_type: PhantomData,
             id,
             headers,
             payload,
@@ -101,7 +101,7 @@ pub struct Message<T>
 where
     T: DeserializeOwned + 'static,
 {
-    _enfoce_paylod_type: PhantomData<T>,
+    _enforce_payload_type: PhantomData<T>,
     follow_id: String,
     headers: HashMap<String, String>,
     inner: Rc<dyn MessageInterface>,
@@ -116,7 +116,7 @@ where
 {
     fn clone(&self) -> Message<T> {
         Message {
-            _enfoce_paylod_type: PhantomData,
+            _enforce_payload_type: PhantomData,
             follow_id: self.follow_id.clone(),
             headers: self.headers.clone(),
             inner: self.inner.clone(),
@@ -139,7 +139,7 @@ where
         inner: Rc<dyn MessageInterface>,
     ) -> Message<T> {
         Message {
-            _enfoce_paylod_type: PhantomData,
+            _enforce_payload_type: PhantomData,
             follow_id,
             headers,
             inner,

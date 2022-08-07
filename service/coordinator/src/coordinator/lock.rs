@@ -101,21 +101,12 @@ impl NonBlockingLockWatcher {
 
 #[cfg(test)]
 mod tests {
-    use slog::o;
-    use slog::Discard;
-    use slog::Logger;
-
     use super::super::super::mock::MockCoordinator;
     use super::super::super::ErrorKind;
 
-    fn mock_coordinator() -> MockCoordinator {
-        let logger = Logger::root(Discard, o!());
-        MockCoordinator::new(logger)
-    }
-
     #[test]
     fn acquire() {
-        let mock_coordinator = mock_coordinator();
+        let mock_coordinator = MockCoordinator::default();
         let coordinator = mock_coordinator.mock();
         let mut lock = coordinator.non_blocking_lock("some/test/lock");
         let mock = mock_coordinator.non_blocking_lock("some/test/lock");
@@ -127,7 +118,7 @@ mod tests {
 
     #[test]
     fn acquire_locked_fails() {
-        let mock_coordinator = mock_coordinator();
+        let mock_coordinator = MockCoordinator::default();
         let coordinator = mock_coordinator.mock();
         let mut lock1 = coordinator.non_blocking_lock("some/test/lock");
         let mut lock2 = coordinator.non_blocking_lock("some/test/lock");
@@ -148,7 +139,7 @@ mod tests {
 
     #[test]
     fn check() {
-        let mock_coordinator = mock_coordinator();
+        let mock_coordinator = MockCoordinator::default();
         let coordinator = mock_coordinator.mock();
         let mut lock = coordinator.non_blocking_lock("some/test/lock");
         let mock = mock_coordinator.non_blocking_lock("some/test/lock");
@@ -166,7 +157,7 @@ mod tests {
 
     #[test]
     fn release() {
-        let mock_coordinator = mock_coordinator();
+        let mock_coordinator = MockCoordinator::default();
         let coordinator = mock_coordinator.mock();
         let mut lock = coordinator.non_blocking_lock("some/test/lock");
         let mock = mock_coordinator.non_blocking_lock("some/test/lock");
@@ -181,7 +172,7 @@ mod tests {
 
     #[test]
     fn release_on_drop() {
-        let mock_coordinator = mock_coordinator();
+        let mock_coordinator = MockCoordinator::default();
         let coordinator = mock_coordinator.mock();
         let mock = mock_coordinator.non_blocking_lock("some/test/lock");
         {
@@ -196,7 +187,7 @@ mod tests {
 
     #[test]
     fn release_unlocked_fails() {
-        let mock_coordinator = mock_coordinator();
+        let mock_coordinator = MockCoordinator::default();
         let coordinator = mock_coordinator.mock();
         let mut lock = coordinator.non_blocking_lock("some/test/lock");
         let mock = mock_coordinator.non_blocking_lock("some/test/lock");

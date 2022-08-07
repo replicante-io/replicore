@@ -61,9 +61,7 @@ slog-stdlog = "^4.0.0"
 uuid = { version = "^0.8.0", features = ["serde", "v4"] }
 
 replicante_agent_client = { path = "../../agent/client" }
-replicante_cluster_aggregator = { path = "../../cluster/aggregator" }
 replicante_cluster_discovery = { path = "../../cluster/discovery" }
-replicante_cluster_fetcher = { path = "../../cluster/fetcher" }
 replicante_externals_kafka = { path = "../../externals/kafka" }
 replicante_externals_mongodb = { path = "../../externals/mongodb" }
 replicante_logging = { path = "../../common/logging" }
