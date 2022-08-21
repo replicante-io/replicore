@@ -38,6 +38,10 @@ pub enum SyncError {
     // (namespace_id, cluster_id, node_id, action_id)
     ExpectedActionNotFound(String, String, String, String),
 
+    #[error("unable to find orchestrator action with ID {2} for cluster {0}.{1}")]
+    // (namespace_id, cluster_id, action_id)
+    ExpectedOrchestratorActionNotFound(String, String, String),
+
     #[error("failed to persist record about cluster {0}.{1}")]
     // (namespace_id, cluster_id)
     // NOTE: Should this be a full sync ending error?
@@ -52,12 +56,19 @@ pub enum SyncError {
     //       What if the issue is actually the client data instead of the DB service?
     StorePersistForNode(String, String, String),
 
+    #[error("failed to read record for cluster {0}.{1}")]
+    // (namespace_id, cluster_id)
+    // NOTE: Should this be a full sync ending error?
+    //       Does a core dependency error warrant never orchestrating a cluster?
+    //       What if the issue is actually the client data instead of the DB service?
+    StoreRead(String, String),
+
     #[error("failed to read record about node {2} for cluster {0}.{1}")]
     // (namespace_id, cluster_id, node_id)
     // NOTE: Should this be a full sync ending error?
     //       Does a core dependency error warrant never orchestrating a cluster?
     //       What if the issue is actually the client data instead of the DB service?
-    StoreRead(String, String, String),
+    StoreReadForNode(String, String, String),
 }
 
 impl SyncError {
@@ -145,6 +156,7 @@ impl SyncError {
         )
     }
 
+    /// An expected action was not found in the DB.
     pub fn expected_action_not_found<CID, NID, NODE, AID>(
         namespace_id: NID,
         cluster_id: CID,
@@ -161,6 +173,24 @@ impl SyncError {
             namespace_id.into(),
             cluster_id.into(),
             node_id.into(),
+            action_id.to_string(),
+        )
+    }
+
+    /// An expected orchestrator action was not found in the DB.
+    pub fn expected_orchestrator_action_not_found<CID, NID, AID>(
+        namespace_id: NID,
+        cluster_id: CID,
+        action_id: AID,
+    ) -> SyncError
+    where
+        CID: Into<String>,
+        NID: Into<String>,
+        AID: ToString,
+    {
+        SyncError::ExpectedOrchestratorActionNotFound(
+            namespace_id.into(),
+            cluster_id.into(),
             action_id.to_string(),
         )
     }
@@ -188,8 +218,17 @@ impl SyncError {
         SyncError::StorePersistForNode(namespace_id.into(), cluster_id.into(), node_id.into())
     }
 
-    /// Error reading records from the store.
-    pub fn store_read<CID, NID, NODE>(
+    /// Error reading cluster records from the store.
+    pub fn store_read<CID, NID>(namespace_id: NID, cluster_id: CID) -> SyncError
+    where
+        CID: Into<String>,
+        NID: Into<String>,
+    {
+        SyncError::StoreRead(namespace_id.into(), cluster_id.into())
+    }
+
+    /// Error reading node records from the store.
+    pub fn store_read_for_node<CID, NID, NODE>(
         namespace_id: NID,
         cluster_id: CID,
         node_id: NODE,
@@ -199,6 +238,6 @@ impl SyncError {
         NID: Into<String>,
         NODE: Into<String>,
     {
-        SyncError::StoreRead(namespace_id.into(), cluster_id.into(), node_id.into())
+        SyncError::StoreReadForNode(namespace_id.into(), cluster_id.into(), node_id.into())
     }
 }

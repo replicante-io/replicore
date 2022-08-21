@@ -6,7 +6,7 @@ use super::fixtures::mock_client_with_node;
 
 #[test]
 fn agent_info_error() {
-    let mut report = super::fixtures::orchestrate_report_builder();
+    let mut report = crate::tests::fixtures::orchestrate_report_builder();
     let (data, mut data_mut, _fixture) = super::fixtures::cluster(&mut report);
     let client = mock_client_err();
 
@@ -16,14 +16,14 @@ fn agent_info_error() {
 
 #[test]
 fn agent_info_existing_record() {
-    let mut report = super::fixtures::orchestrate_report_builder();
+    let mut report = crate::tests::fixtures::orchestrate_report_builder();
     let (data, mut data_mut, fixture) = super::fixtures::cluster(&mut report);
     let client = mock_client_ok();
 
     let result = crate::sync::info::sync_agent_info(&data, &mut data_mut, &client, "node0");
     assert!(result.is_ok());
 
-    let key = (super::fixtures::CLUSTER_ID.into(), "node0".into());
+    let key = (crate::tests::fixtures::CLUSTER_ID.into(), "node0".into());
     let info = fixture
         .mock_store
         .state
@@ -40,14 +40,14 @@ fn agent_info_existing_record() {
 
 #[test]
 fn agent_info_new_record() {
-    let mut report = super::fixtures::orchestrate_report_builder();
+    let mut report = crate::tests::fixtures::orchestrate_report_builder();
     let (data, mut data_mut, fixture) = super::fixtures::cluster(&mut report);
     let client = mock_client_ok();
 
     let result = crate::sync::info::sync_agent_info(&data, &mut data_mut, &client, "node5");
     assert!(result.is_ok());
 
-    let key = (super::fixtures::CLUSTER_ID.into(), "node5".into());
+    let key = (crate::tests::fixtures::CLUSTER_ID.into(), "node5".into());
     let info = fixture
         .mock_store
         .state
@@ -64,13 +64,13 @@ fn agent_info_new_record() {
 
 #[test]
 fn agent_existing_record() {
-    let mut report = super::fixtures::orchestrate_report_builder();
+    let mut report = crate::tests::fixtures::orchestrate_report_builder();
     let (data, mut data_mut, fixture) = super::fixtures::cluster(&mut report);
 
     let result = crate::sync::info::sync_agent(&data, &mut data_mut, "node0", Ok(()), Ok(()));
     assert!(result.is_ok());
 
-    let key = (super::fixtures::CLUSTER_ID.into(), "node0".into());
+    let key = (crate::tests::fixtures::CLUSTER_ID.into(), "node0".into());
     let info = fixture
         .mock_store
         .state
@@ -85,13 +85,13 @@ fn agent_existing_record() {
 
 #[test]
 fn agent_new_record() {
-    let mut report = super::fixtures::orchestrate_report_builder();
+    let mut report = crate::tests::fixtures::orchestrate_report_builder();
     let (data, mut data_mut, fixture) = super::fixtures::cluster(&mut report);
 
     let result = crate::sync::info::sync_agent(&data, &mut data_mut, "node5", Ok(()), Ok(()));
     assert!(result.is_ok());
 
-    let key = (super::fixtures::CLUSTER_ID.into(), "node5".into());
+    let key = (crate::tests::fixtures::CLUSTER_ID.into(), "node5".into());
     let info = fixture
         .mock_store
         .state
@@ -106,7 +106,7 @@ fn agent_new_record() {
 
 #[test]
 fn node_info_error() {
-    let mut report = super::fixtures::orchestrate_report_builder();
+    let mut report = crate::tests::fixtures::orchestrate_report_builder();
     let (data, mut data_mut, _fixture) = super::fixtures::cluster(&mut report);
     let client = mock_client_err();
 
@@ -116,14 +116,14 @@ fn node_info_error() {
 
 #[test]
 fn node_info_existing_record() {
-    let mut report = super::fixtures::orchestrate_report_builder();
+    let mut report = crate::tests::fixtures::orchestrate_report_builder();
     let (data, mut data_mut, fixture) = super::fixtures::cluster(&mut report);
     let client = mock_client_ok();
 
     let result = crate::sync::info::sync_node_info(&data, &mut data_mut, &client, "node0");
     assert!(result.is_ok());
 
-    let key = (super::fixtures::CLUSTER_ID.into(), "node0".into());
+    let key = (crate::tests::fixtures::CLUSTER_ID.into(), "node0".into());
     let info = fixture
         .mock_store
         .state
@@ -139,14 +139,14 @@ fn node_info_existing_record() {
 
 #[test]
 fn node_info_new_record() {
-    let mut report = super::fixtures::orchestrate_report_builder();
+    let mut report = crate::tests::fixtures::orchestrate_report_builder();
     let (data, mut data_mut, fixture) = super::fixtures::cluster(&mut report);
     let client = mock_client_with_node("node5");
 
     let result = crate::sync::info::sync_node_info(&data, &mut data_mut, &client, "node5");
     assert!(result.is_ok());
 
-    let key = (super::fixtures::CLUSTER_ID.into(), "node5".into());
+    let key = (crate::tests::fixtures::CLUSTER_ID.into(), "node5".into());
     let info = fixture
         .mock_store
         .state
@@ -162,7 +162,7 @@ fn node_info_new_record() {
 
 #[test]
 fn sync_agent_with_agent_error() {
-    let mut report = super::fixtures::orchestrate_report_builder();
+    let mut report = crate::tests::fixtures::orchestrate_report_builder();
     let (data, mut data_mut, fixture) = super::fixtures::cluster(&mut report);
     let client = mock_client_err();
 
@@ -172,7 +172,7 @@ fn sync_agent_with_agent_error() {
         crate::sync::info::sync_agent(&data, &mut data_mut, "node5", agent_info, node_info);
     assert!(result.is_err());
 
-    let key = (super::fixtures::CLUSTER_ID.into(), "node5".into());
+    let key = (crate::tests::fixtures::CLUSTER_ID.into(), "node5".into());
     let info = fixture
         .mock_store
         .state
@@ -188,7 +188,7 @@ fn sync_agent_with_agent_error() {
 
 #[test]
 fn sync_agent_with_node_error() {
-    let mut report = super::fixtures::orchestrate_report_builder();
+    let mut report = crate::tests::fixtures::orchestrate_report_builder();
     let (data, mut data_mut, fixture) = super::fixtures::cluster(&mut report);
     let client = mock_client_err();
 
@@ -198,7 +198,7 @@ fn sync_agent_with_node_error() {
         crate::sync::info::sync_agent(&data, &mut data_mut, "node5", agent_info, node_info);
     assert!(result.is_err());
 
-    let key = (super::fixtures::CLUSTER_ID.into(), "node5".into());
+    let key = (crate::tests::fixtures::CLUSTER_ID.into(), "node5".into());
     let info = fixture
         .mock_store
         .state
@@ -214,7 +214,7 @@ fn sync_agent_with_node_error() {
 
 #[test]
 fn sync_agent_with_valid_info() {
-    let mut report = super::fixtures::orchestrate_report_builder();
+    let mut report = crate::tests::fixtures::orchestrate_report_builder();
     let (data, mut data_mut, fixture) = super::fixtures::cluster(&mut report);
 
     let agent_info = Ok(());
@@ -223,7 +223,7 @@ fn sync_agent_with_valid_info() {
         crate::sync::info::sync_agent(&data, &mut data_mut, "node5", agent_info, node_info);
     assert!(result.is_ok());
 
-    let key = (super::fixtures::CLUSTER_ID.into(), "node5".into());
+    let key = (crate::tests::fixtures::CLUSTER_ID.into(), "node5".into());
     let info = fixture
         .mock_store
         .state

@@ -1,3 +1,6 @@
+use serde::Deserialize;
+use serde::Serialize;
+
 pub use replicante_models_core::actions::orchestrator::OrchestratorActionMetadata;
 
 use replicante_models_core::actions::orchestrator::OrchestratorActionState;
@@ -16,6 +19,7 @@ pub use self::traits::OrchestratorAction;
 pub use self::registry::TestRegistryClearGuard;
 
 /// Store changes made to an `OrchestratorAction` model as a result of progressing the action.
+#[derive(Clone, Eq, PartialEq, Debug, Serialize, Deserialize)]
 pub struct ProgressChanges {
     pub state: OrchestratorActionState,
     pub state_payload: Option<serde_json::Value>,

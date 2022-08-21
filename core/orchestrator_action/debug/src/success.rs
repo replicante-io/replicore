@@ -15,6 +15,7 @@ registry_entry_factory! {
     handler: Success,
     schedule_mode: OrchestratorActionScheduleMode::Exclusive,
     summary: "Complete at first progression",
+    timeout: crate::ONE_HOUR,
 }
 
 impl OrchestratorAction for Success {

@@ -26,6 +26,12 @@ pub fn process(follower: &Follower, event: &ActionEvent, span: Option<&mut Span>
         ActionEvent::History(info) => process_history(follower, info, span),
         ActionEvent::Lost(action) => persist_action(follower, action, span),
         ActionEvent::New(action) => persist_action(follower, action, span),
+        ActionEvent::OrchestratorChanged(change) => {
+            persist_orchestrator_action(follower, &change.current, span)
+        }
+        ActionEvent::OrchestratorFinished(action) => {
+            persist_orchestrator_action(follower, action, span)
+        }
         ActionEvent::OrchestratorNew(action) => persist_orchestrator_action(follower, action, span),
     }
 }

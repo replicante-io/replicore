@@ -1,10 +1,12 @@
 use anyhow::Result;
 
+mod action;
 mod init;
 mod operation;
 mod sched_choice;
 mod sync;
 
+pub use self::action::ActionError;
 pub use self::init::InitError;
 pub use self::operation::OperationError;
 pub use self::sched_choice::SchedChoiceError;

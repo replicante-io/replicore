@@ -2,7 +2,7 @@ use replicante_models_agent::info::ShardRole;
 
 #[test]
 fn shard_error() {
-    let mut report = super::fixtures::orchestrate_report_builder();
+    let mut report = crate::tests::fixtures::orchestrate_report_builder();
     let (data, mut data_mut, _fixture) = super::fixtures::cluster(&mut report);
     let client = super::fixtures::mock_client_err();
 
@@ -12,7 +12,7 @@ fn shard_error() {
 
 #[test]
 fn shard_existing_record() {
-    let mut report = super::fixtures::orchestrate_report_builder();
+    let mut report = crate::tests::fixtures::orchestrate_report_builder();
     let (data, mut data_mut, fixture) = super::fixtures::cluster(&mut report);
     let client = super::fixtures::mock_client_ok();
 
@@ -20,12 +20,12 @@ fn shard_existing_record() {
     assert!(result.is_ok());
 
     let key1 = (
-        super::fixtures::CLUSTER_ID.into(),
+        crate::tests::fixtures::CLUSTER_ID.into(),
         "node0".into(),
         "shard0".into(),
     );
     let key2 = (
-        super::fixtures::CLUSTER_ID.into(),
+        crate::tests::fixtures::CLUSTER_ID.into(),
         "node0".into(),
         "shard1".into(),
     );
@@ -50,7 +50,7 @@ fn shard_existing_record() {
 
 #[test]
 fn shard_new_record() {
-    let mut report = super::fixtures::orchestrate_report_builder();
+    let mut report = crate::tests::fixtures::orchestrate_report_builder();
     let (data, mut data_mut, fixture) = super::fixtures::cluster(&mut report);
     let client = super::fixtures::mock_client_ok();
 
@@ -58,12 +58,12 @@ fn shard_new_record() {
     assert!(result.is_ok());
 
     let key1 = (
-        super::fixtures::CLUSTER_ID.into(),
+        crate::tests::fixtures::CLUSTER_ID.into(),
         "node5".into(),
         "shard0".into(),
     );
     let key2 = (
-        super::fixtures::CLUSTER_ID.into(),
+        crate::tests::fixtures::CLUSTER_ID.into(),
         "node5".into(),
         "shard1".into(),
     );

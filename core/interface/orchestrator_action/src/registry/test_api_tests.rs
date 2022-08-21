@@ -21,6 +21,7 @@ crate::registry_entry_factory! {
     handler: TestAction,
     schedule_mode: OrchestratorActionScheduleMode::Exclusive,
     summary: "no-op test action for registry tests",
+    timeout: std::time::Duration::from_secs(0),
 }
 
 #[test]

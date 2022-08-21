@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::time::Duration;
 
 use bson::DateTime;
 use serde_derive::Deserialize;
@@ -155,11 +156,13 @@ pub struct OrchestratorActionDocument {
     pub kind: String,
     pub scheduled_ts: Option<DateTime>,
     pub state: OrchestratorActionState,
+    pub timeout: Option<Duration>,
 
     // The encoded JSON form uses unsigned integers which are not supported by BSON.
     // For this reason store JSON as a String and transparently encode/decode.
     pub args: String,
     pub state_payload: Option<String>,
+    pub state_payload_error: Option<String>,
 }
 
 impl From<OrchestratorAction> for OrchestratorActionDocument {
@@ -167,6 +170,9 @@ impl From<OrchestratorAction> for OrchestratorActionDocument {
         let args =
             serde_json::to_string(&action.args).expect("serde_json::Value not converted to String");
         let state_payload = action.state_payload.map(|payload| {
+            serde_json::to_string(&payload).expect("serde_json::Value not converted to String")
+        });
+        let state_payload_error = action.state_payload_error.map(|payload| {
             serde_json::to_string(&payload).expect("serde_json::Value not converted to String")
         });
         OrchestratorActionDocument {
@@ -180,6 +186,8 @@ impl From<OrchestratorAction> for OrchestratorActionDocument {
             scheduled_ts: action.scheduled_ts.map(DateTime::from),
             state: action.state,
             state_payload,
+            state_payload_error,
+            timeout: action.timeout,
         }
     }
 }
@@ -195,6 +203,9 @@ impl From<OrchestratorActionDocument> for OrchestratorAction {
         let state_payload = action.state_payload.map(|payload| {
             serde_json::from_str(&payload).expect("String not converted to serde_json::Value")
         });
+        let state_payload_error = action.state_payload_error.map(|payload| {
+            serde_json::from_str(&payload).expect("String not converted to serde_json::Value")
+        });
         OrchestratorAction {
             action_id,
             args,
@@ -206,6 +217,8 @@ impl From<OrchestratorActionDocument> for OrchestratorAction {
             scheduled_ts: action.scheduled_ts.map(|ts| ts.0),
             state: action.state,
             state_payload,
+            state_payload_error,
+            timeout: action.timeout,
         }
     }
 }

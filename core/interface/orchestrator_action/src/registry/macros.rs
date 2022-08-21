@@ -11,6 +11,7 @@ macro_rules! registry_entry_factory {
         handler: $handler:ty,
         schedule_mode: $schedule_mode:expr,
         summary: $summary:expr,
+        timeout: $timeout:expr,
     ) => {
         impl $handler {
             /// Create an entry to register the action for global lookup.
@@ -19,6 +20,7 @@ macro_rules! registry_entry_factory {
                 let metadata = $crate::OrchestratorActionMetadata {
                     schedule_mode: $schedule_mode,
                     summary: String::from($summary),
+                    timeout: std::time::Duration::from($timeout),
                 };
                 $crate::OrchestratorActionRegistryEntry { handler, metadata }
             }

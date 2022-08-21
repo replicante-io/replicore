@@ -33,6 +33,7 @@ registry_entry_factory! {
     handler: ScheduleExclusive,
     schedule_mode: OrchestratorActionScheduleMode::Exclusive,
     summary: "action for test",
+    timeout: std::time::Duration::from_secs(0),
 }
 
 pub fn orchestrator_action_exclusive_pending() -> OrchestratorActionSyncSummary {

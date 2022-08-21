@@ -26,6 +26,7 @@ pub mod global_search;
 pub mod legacy;
 pub mod node;
 pub mod nodes;
+pub mod orchestrator_action;
 pub mod orchestrator_actions;
 pub mod persist;
 pub mod shard;
@@ -41,6 +42,7 @@ use self::global_search::GlobalSearch;
 use self::legacy::Legacy;
 use self::node::Node;
 use self::nodes::Nodes;
+use self::orchestrator_action::OrchestratorAction;
 use self::orchestrator_actions::OrchestratorActions;
 use self::persist::Persist;
 use self::shard::Shard;
@@ -166,6 +168,19 @@ impl Store {
         let nodes = self.store.nodes();
         let attrs = self::nodes::NodesAttributes { cluster_id };
         Nodes::new(nodes, attrs)
+    }
+
+    /// Operate on the orchestrator action identified by the provided cluster_id and action_id.
+    pub fn orchestrator_action<S>(&self, cluster_id: S, action_id: Uuid) -> OrchestratorAction
+    where
+        S: Into<String>,
+    {
+        let action = self.store.orchestrator_action();
+        let attrs = self::orchestrator_action::OrchestratorActionAttributes {
+            action_id,
+            cluster_id: cluster_id.into(),
+        };
+        OrchestratorAction::new(action, attrs)
     }
 
     /// Operate on all orchestrator actions in the cluster identified by cluster_id.

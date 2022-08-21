@@ -22,17 +22,14 @@ pub mod errors;
 
 mod aggregation;
 mod metrics;
+mod orchestrate_actions;
 mod sched_choice;
 mod sync;
 
-pub use self::metrics::register_metrics;
+#[cfg(test)]
+mod tests;
 
-/*
- * !!!!!!!!!!!!! REWRITE OBJECTIVES !!!!!!!!!!!!!
- *
- * 6. Implement cluster orchestration action handling logic.
- * 7. Add tests for orchestrate logic.
- */
+pub use self::metrics::register_metrics;
 
 /// Collect all immutable data for the cluster aggregation stage.
 pub struct ClusterAggregateExtra {
@@ -137,7 +134,14 @@ pub fn orchestrate(data: &ClusterOrchestrate, mut data_mut: ClusterOrchestrateMu
     })?;
     timer.observe_duration();
 
-    // TODO: 2. Progress and schedule orchestration actions.
+    // 2. Progress and schedule orchestration actions.
+    let timer = self::metrics::ORCHESTRATE_ACTIONS_DURATION.start_timer();
+    self::orchestrate_actions::orchestrate(data, &mut data_mut).map_err(|error| {
+        self::metrics::ORCHESTRATE_ACTIONS_ERRORS_COUNT.inc();
+        // TODO(open-telemetry): Proper error tagging on span.
+        error
+    })?;
+    timer.observe_duration();
 
     // 3. Aggregate new cluster view into cluster as a whole data.
     let _timer = self::metrics::AGGREGATE_DURATION.start_timer();
@@ -152,4 +156,6 @@ pub fn orchestrate(data: &ClusterOrchestrate, mut data_mut: ClusterOrchestrateMu
         // TODO(open-telemetry): Proper error tagging on span.
         error
     })
+
+    // TODO: 4. Converge declarative clusters (by scheduling actions).
 }

@@ -17,6 +17,7 @@ registry_entry_factory! {
     handler: Counting,
     schedule_mode: OrchestratorActionScheduleMode::Exclusive,
     summary: "Increment a counter every progression before completing",
+    timeout: crate::ONE_DAY,
 }
 
 impl OrchestratorAction for Counting {

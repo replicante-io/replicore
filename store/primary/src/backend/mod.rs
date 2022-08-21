@@ -32,6 +32,7 @@ use crate::store::cluster::ClusterAttributes;
 use crate::store::discovery_settings::DiscoverySettingsAttributes;
 use crate::store::node::NodeAttributes;
 use crate::store::nodes::NodesAttributes;
+use crate::store::orchestrator_action::OrchestratorActionAttributes;
 use crate::store::orchestrator_actions::OrchestratorActionsAttributes;
 use crate::store::shard::ShardAttributes;
 use crate::store::shards::ShardsAttributes;
@@ -175,6 +176,7 @@ arc_interface! {
         fn legacy(&self) -> LegacyImpl;
         fn node(&self) -> NodeImpl;
         fn nodes(&self) -> NodesImpl;
+        fn orchestrator_action(&self) -> OrchestratorActionImpl;
         fn orchestrator_actions(&self) -> OrchestratorActionsImpl;
         fn persist(&self) -> PersistImpl;
         fn shard(&self) -> ShardImpl;
@@ -408,6 +410,24 @@ box_interface! {
 
     interface {
         fn iter(&self, attrs: &NodesAttributes, span: Option<SpanContext>) -> Result<Cursor<Node>>;
+    }
+}
+
+box_interface! {
+    /// Dynamic dispatch orchestrator action operations to a backend-specific implementation.
+    struct OrchestratorActionImpl,
+
+    /// Definition of supported operations on specific orchestrator actions in a cluster.
+    ///
+    /// See `store::orchestrator_action::OrchestratorAction` for descriptions of methods.
+    trait OrchestratorActionInterface,
+
+    interface {
+        fn get(
+            &self,
+            attrs: &OrchestratorActionAttributes,
+            span: Option<SpanContext>,
+        ) -> Result<Option<OrchestratorAction>>;
     }
 }
 

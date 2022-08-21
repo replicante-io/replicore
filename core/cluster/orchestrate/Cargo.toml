@@ -31,9 +31,12 @@ replicante_stream_events = { path = "../../../stream/events" }
 replicante_util_failure = { path = "../../../common/util/failure" }
 replicore_cluster_view = { path = "../view" }
 replicore_iface_orchestrator_action = { path = "../../interface/orchestrator_action" }
+replicore_util_errors = { path = "../../util/errors" }
 
 [dev-dependencies]
 uuid = { version = "^0.8.0", features = ["serde", "v4"] }
+
+replicore_action_debug = { path = "../../orchestrator_action/debug" }
 
 [dev-dependencies.replicante_agent_client]
 features = ["with_test_support"]

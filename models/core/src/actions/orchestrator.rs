@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::time::Duration;
 
 use chrono::DateTime;
 use chrono::Utc;
@@ -31,6 +32,19 @@ pub struct OrchestratorAction {
     pub state: OrchestratorActionState,
     /// Action-dependent state data, if the action needs to persist state.
     pub state_payload: Option<Json>,
+    /// Information about errors encountered when executing the action.
+    pub state_payload_error: Option<Json>,
+    /// Timeout after which the running action is failed. Overrides the handler's default.
+    #[serde(default)]
+    pub timeout: Option<Duration>,
+}
+
+impl OrchestratorAction {
+    /// Mark the action as finished and sets the finish timestamp to now.
+    pub fn finish(&mut self, state: OrchestratorActionState) {
+        self.state = state;
+        self.finished_ts = Some(Utc::now());
+    }
 }
 
 /// Metadata attached to and orchestrator action (for both humans and the system).
@@ -41,6 +55,9 @@ pub struct OrchestratorActionMetadata {
 
     /// A short summary of what the action does, for human consumption.
     pub summary: String,
+
+    /// Default timeout after which running orchestrator actions are failed.
+    pub timeout: Duration,
 }
 
 /// Possible scheduling modes for orchestrator actions.
@@ -52,6 +69,30 @@ pub enum OrchestratorActionScheduleMode {
     /// Scheduling of other (orchestrator and node) actions is blocked until the action is complete.
     #[serde(rename = "EXCLUSIVE")]
     Exclusive,
+}
+
+impl OrchestratorActionScheduleMode {
+    /// Indicate this action mode is exclusive across all scheduling modes.
+    ///
+    /// Exclusive actions expect to be the only ones running regardless of scheduling mode
+    /// of other actions.
+    /// When an exclusive action is started no further action should be started.
+    pub fn is_exclusive(&self) -> bool {
+        match self {
+            Self::Exclusive => true,
+        }
+    }
+
+    /// Indicate this action mode is exclusive across actions with the same mode.
+    ///
+    /// Exclusive with mode actions expect to be the only ones running for their schedule mode.
+    /// When an exclusive with mode action is started no further action with the same mode
+    /// should be started but actions with other mode can start.
+    pub fn is_exclusive_with_mode(&self) -> bool {
+        match self {
+            Self::Exclusive => true,
+        }
+    }
 }
 
 /// Current state of an orchestrator action execution.
@@ -83,6 +124,11 @@ pub enum OrchestratorActionState {
 }
 
 impl OrchestratorActionState {
+    /// Check if the action is in a final state (done, failed, ...).
+    pub fn is_final(&self) -> bool {
+        matches!(self, Self::Cancelled | Self::Done | Self::Failed)
+    }
+
     /// Check if the action is running or sent to the agent to run.
     pub fn is_running(&self) -> bool {
         matches!(self, Self::Running)

@@ -93,27 +93,20 @@ where
         tail: bool,
     ) -> Result<Iter<'a, T>> {
         let stream_id: &'static str = self.stream_id;
-        let iter: Box<dyn Iterator<Item = Result<Message<T>>> + 'a> = if tail {
-            Box::new(ChannelIter {
-                _enfoce_paylod_type: PhantomData,
-                follow_id: group.clone(),
-                receiver: self.receiver.clone(),
-                thread,
-                stream_id,
-            })
-        } else {
-            let follow_id = group.clone();
-            Box::new(self.receiver.clone().into_iter().map(move |message| {
-                let message = message.deserialize(stream_id, follow_id.clone());
-                Ok(message)
-            }))
+        let iter = ChannelIter {
+            _enfoce_paylod_type: PhantomData,
+            follow_id: group.clone(),
+            receiver: self.receiver.clone(),
+            tail,
+            thread,
+            stream_id,
         };
         Ok(Iter::with_iter(
             self.stream_id,
             group,
             Backoff::fast(),
             thread,
-            iter,
+            Box::new(iter),
         ))
     }
 }
@@ -126,6 +119,7 @@ where
     follow_id: String,
     receiver: Receiver<SerialisedMessage>,
     stream_id: &'static str,
+    tail: bool,
     thread: Option<&'a ThreadScope>,
 }
 
@@ -139,7 +133,7 @@ where
         while !self.thread.map(|t| t.should_shutdown()).unwrap_or(false) {
             let message = match self.receiver.recv_timeout(Duration::from_millis(50)) {
                 Ok(message) => message,
-                Err(error) if error.is_timeout() => continue,
+                Err(error) if self.tail && error.is_timeout() => continue,
                 Err(_) => return None,
             };
             let message = message.deserialize(self.stream_id, self.follow_id.clone());

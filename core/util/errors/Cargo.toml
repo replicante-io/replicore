@@ -14,3 +14,4 @@ license = "MIT"
 [dependencies]
 anyhow = "^1.0.53"
 failure = "^0.1.5"
+serde = "^1.0"

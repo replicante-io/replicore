@@ -15,6 +15,7 @@ registry_entry_factory! {
     handler: Ping,
     schedule_mode: OrchestratorActionScheduleMode::Exclusive,
     summary: "Return as output the given arguments and complete immediately",
+    timeout: crate::ONE_HOUR,
 }
 
 impl OrchestratorAction for Ping {

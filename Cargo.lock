@@ -2696,6 +2696,7 @@ dependencies = [
  "replicante_util_tracing",
  "replicante_util_upkeep",
  "replicore_action_debug",
+ "replicore_cluster_orchestrate",
  "replicore_component_discovery_scheduler",
  "replicore_component_orchestrator_scheduler",
  "replicore_component_viewupdater",
@@ -3066,8 +3067,10 @@ dependencies = [
  "replicante_store_primary",
  "replicante_stream_events",
  "replicante_util_failure",
+ "replicore_action_debug",
  "replicore_cluster_view",
  "replicore_iface_orchestrator_action",
+ "replicore_util_errors",
  "serde_json",
  "slog",
  "thiserror",
@@ -3159,6 +3162,7 @@ dependencies = [
  "anyhow",
  "lazy_static",
  "replicante_models_core",
+ "serde",
  "serde_json",
  "thiserror",
 ]
@@ -3225,6 +3229,7 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "failure",
+ "serde",
 ]
 
 [[package]]

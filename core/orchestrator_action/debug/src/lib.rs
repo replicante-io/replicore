@@ -7,6 +7,9 @@ pub mod fail;
 pub mod ping;
 pub mod success;
 
+const ONE_DAY: std::time::Duration = std::time::Duration::from_secs(60 * 60 * 24);
+const ONE_HOUR: std::time::Duration = std::time::Duration::from_secs(60 * 60);
+
 /// Register debug actions with the given registry builder.
 pub fn register(builder: &mut OrchestratorActionRegistryBuilder) -> Result<()> {
     builder.register(

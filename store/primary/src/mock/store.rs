@@ -30,6 +30,8 @@ use crate::backend::LegacyImpl;
 use crate::backend::LegacyInterface;
 use crate::backend::NodeImpl;
 use crate::backend::NodesImpl;
+use crate::backend::OrchestratorActionImpl;
+use crate::backend::OrchestratorActionInterface;
 use crate::backend::OrchestratorActionsImpl;
 use crate::backend::PersistImpl;
 use crate::backend::PersistInterface;
@@ -39,6 +41,7 @@ use crate::backend::StoreImpl;
 use crate::backend::StoreInterface;
 use crate::store::action::ActionAttributes;
 use crate::store::actions::ActionsAttributes;
+use crate::store::orchestrator_action::OrchestratorActionAttributes;
 use crate::store::Store;
 use crate::Cursor;
 use crate::Result;
@@ -96,6 +99,13 @@ impl StoreInterface for StoreMock {
 
     fn nodes(&self) -> NodesImpl {
         panic!("TODO: StoreMock::nodes");
+    }
+
+    fn orchestrator_action(&self) -> OrchestratorActionImpl {
+        let action = OrchestratorActionMock {
+            state: Arc::clone(&self.state),
+        };
+        OrchestratorActionImpl::new(action)
     }
 
     fn orchestrator_actions(&self) -> OrchestratorActionsImpl {
@@ -225,6 +235,29 @@ impl LegacyInterface for Legacy {
     }
 }
 
+/// Mock implementation of the `OrchestratorActionInterface`.
+struct OrchestratorActionMock {
+    state: Arc<Mutex<MockState>>,
+}
+
+impl OrchestratorActionInterface for OrchestratorActionMock {
+    fn get(
+        &self,
+        attrs: &OrchestratorActionAttributes,
+        _: Option<SpanContext>,
+    ) -> Result<Option<OrchestratorAction>> {
+        let store = self.state.lock().expect("MockStore state lock is poisoned");
+        let action = store.orchestrator_actions.iter().find_map(|(key, action)| {
+            if key.0 == attrs.cluster_id && key.1 == attrs.action_id {
+                Some(action)
+            } else {
+                None
+            }
+        });
+        Ok(action.cloned())
+    }
+}
+
 /// Mock implementation of the `PersistInterface`.
 struct Persist {
     state: Arc<Mutex<MockState>>,
@@ -311,8 +344,18 @@ impl PersistInterface for Persist {
         Ok(())
     }
 
-    fn orchestrator_action(&self, _: OrchestratorAction, _: Option<SpanContext>) -> Result<()> {
-        panic!("TODO: MockStore::Persist::orchestrator_action")
+    fn orchestrator_action(
+        &self,
+        action: OrchestratorAction,
+        _: Option<SpanContext>,
+    ) -> Result<()> {
+        let key = (action.cluster_id.clone(), action.action_id);
+        self.state
+            .lock()
+            .expect("MockStore state lock poisoned")
+            .orchestrator_actions
+            .insert(key, action);
+        Ok(())
     }
 
     fn shard(&self, shard: Shard, _: Option<SpanContext>) -> Result<()> {

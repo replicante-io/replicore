@@ -33,7 +33,7 @@ fn fetch_remote_ids() {
         },
     ];
 
-    let mut report = super::fixtures::orchestrate_report_builder();
+    let mut report = crate::tests::fixtures::orchestrate_report_builder();
     let (data, mut data_mut, _fixture) = super::fixtures::cluster(&mut report);
     let ids =
         crate::sync::actions::fetch_remote_actions_ids(&data, &mut data_mut, &client, "node0")
@@ -81,7 +81,7 @@ fn fetch_remote_ids_with_duplicates() {
         },
     ];
 
-    let mut report = super::fixtures::orchestrate_report_builder();
+    let mut report = crate::tests::fixtures::orchestrate_report_builder();
     let (data, mut data_mut, _fixture) = super::fixtures::cluster(&mut report);
     let ids =
         crate::sync::actions::fetch_remote_actions_ids(&data, &mut data_mut, &client, "node0")
@@ -100,12 +100,16 @@ fn sync_action_new() {
     };
     client.actions.insert(*UUID6, info);
 
-    let mut report = super::fixtures::orchestrate_report_builder();
+    let mut report = crate::tests::fixtures::orchestrate_report_builder();
     let (data, mut data_mut, fixture) = super::fixtures::cluster(&mut report);
     crate::sync::actions::sync_agent_action(&data, &mut data_mut, &client, "node0", *UUID6)
         .expect("action sync failed");
 
-    let key = (super::fixtures::CLUSTER_ID.into(), "node0".into(), *UUID6);
+    let key = (
+        crate::tests::fixtures::CLUSTER_ID.into(),
+        "node0".into(),
+        *UUID6,
+    );
     let action = fixture
         .mock_store
         .state
@@ -122,7 +126,7 @@ fn sync_action_new() {
 #[test]
 fn sync_action_update() {
     let mut client = super::fixtures::mock_client_ok();
-    let mut report = super::fixtures::orchestrate_report_builder();
+    let mut report = crate::tests::fixtures::orchestrate_report_builder();
     let (data, mut data_mut, fixture) = super::fixtures::cluster(&mut report);
 
     // Create an action in the store.
@@ -137,7 +141,11 @@ fn sync_action_update() {
     crate::sync::actions::sync_agent_action(&data, &mut data_mut, &client, "node0", *UUID3)
         .expect("action sync failed");
 
-    let key = (super::fixtures::CLUSTER_ID.into(), "node0".into(), *UUID3);
+    let key = (
+        crate::tests::fixtures::CLUSTER_ID.into(),
+        "node0".into(),
+        *UUID3,
+    );
     let action = fixture
         .mock_store
         .state
@@ -154,7 +162,7 @@ fn sync_action_update() {
 #[test]
 fn sync_lost_actions() {
     let client = super::fixtures::mock_client_ok();
-    let mut report = super::fixtures::orchestrate_report_builder();
+    let mut report = crate::tests::fixtures::orchestrate_report_builder();
     let (data, mut data_mut, _fixture) = super::fixtures::cluster(&mut report);
 
     crate::sync::actions::sync_node_actions(&data, &mut data_mut, &client, "node0")
@@ -162,28 +170,28 @@ fn sync_lost_actions() {
 
     let action = data
         .store
-        .action(super::fixtures::CLUSTER_ID.to_string(), *UUID1)
+        .action(crate::tests::fixtures::CLUSTER_ID.to_string(), *UUID1)
         .get(None)
         .expect("action to be in store")
         .expect("action to be in store");
     assert_eq!(action.state, ActionState::Done);
     let action = data
         .store
-        .action(super::fixtures::CLUSTER_ID.to_string(), *UUID2)
+        .action(crate::tests::fixtures::CLUSTER_ID.to_string(), *UUID2)
         .get(None)
         .expect("action to be in store")
         .expect("action to be in store");
     assert_eq!(action.state, ActionState::Done);
     let action = data
         .store
-        .action(super::fixtures::CLUSTER_ID.to_string(), *UUID3)
+        .action(crate::tests::fixtures::CLUSTER_ID.to_string(), *UUID3)
         .get(None)
         .expect("action to be in store")
         .expect("action to be in store");
     assert_eq!(action.state, ActionState::Lost);
     let action = data
         .store
-        .action(super::fixtures::CLUSTER_ID.to_string(), *UUID4)
+        .action(crate::tests::fixtures::CLUSTER_ID.to_string(), *UUID4)
         .get(None)
         .expect("action to be in store")
         .expect("action to be in store");
@@ -193,7 +201,7 @@ fn sync_lost_actions() {
 #[test]
 fn sync_schedule_pending_actions() {
     let client = super::fixtures::mock_client_ok();
-    let mut report = super::fixtures::orchestrate_report_builder();
+    let mut report = crate::tests::fixtures::orchestrate_report_builder();
     let (data, mut data_mut, _fixture) = super::fixtures::cluster(&mut report);
 
     crate::sync::actions::sync_node_actions(&data, &mut data_mut, &client, "node0")
@@ -216,7 +224,7 @@ fn sync_schedule_pending_actions() {
 #[test]
 fn sync_schedule_pending_actions_blocked() {
     let client = super::fixtures::mock_client_ok();
-    let mut report = super::fixtures::orchestrate_report_builder();
+    let mut report = crate::tests::fixtures::orchestrate_report_builder();
     let (mut data, mut data_mut, _fixture) = super::fixtures::cluster(&mut report);
     data.sched_choices.block_node = true;
 
@@ -234,7 +242,7 @@ fn sync_schedule_pending_actions_blocked() {
 #[test]
 fn track_unfinished_actions_in_cluster_view() {
     let mut client = super::fixtures::mock_client_ok();
-    let mut report = super::fixtures::orchestrate_report_builder();
+    let mut report = crate::tests::fixtures::orchestrate_report_builder();
     let (data, mut data_mut, _fixture) = super::fixtures::cluster(&mut report);
 
     let action = super::fixtures::agent_action(*UUID3, true);
@@ -274,7 +282,7 @@ fn track_unfinished_actions_in_cluster_view() {
     assert_eq!(
         actions[0],
         ActionSyncSummary {
-            cluster_id: super::fixtures::CLUSTER_ID.into(),
+            cluster_id: crate::tests::fixtures::CLUSTER_ID.into(),
             node_id: "node0".into(),
             action_id: *UUID4,
             state: ActionState::Running,
@@ -283,7 +291,7 @@ fn track_unfinished_actions_in_cluster_view() {
     assert_eq!(
         actions[1],
         ActionSyncSummary {
-            cluster_id: super::fixtures::CLUSTER_ID.into(),
+            cluster_id: crate::tests::fixtures::CLUSTER_ID.into(),
             node_id: "node0".into(),
             action_id: *UUID5,
             state: ActionState::PendingApprove,
@@ -292,7 +300,7 @@ fn track_unfinished_actions_in_cluster_view() {
     assert_eq!(
         actions[2],
         ActionSyncSummary {
-            cluster_id: super::fixtures::CLUSTER_ID.into(),
+            cluster_id: crate::tests::fixtures::CLUSTER_ID.into(),
             node_id: "node0".into(),
             action_id: *UUID7,
             state: ActionState::PendingSchedule,

@@ -7,7 +7,7 @@ use crate::errors::OperationError;
 
 #[test]
 fn all_nodes_processed() {
-    let mut report = self::fixtures::orchestrate_report_builder();
+    let mut report = crate::tests::fixtures::orchestrate_report_builder();
     let (data, mut data_mut, _fixture) = self::fixtures::cluster(&mut report);
 
     super::sync_cluster(&data, &mut data_mut).expect("cluster sync should work");
@@ -19,7 +19,7 @@ fn all_nodes_processed() {
 
 #[test]
 fn lock_lost_exits_early() {
-    let mut report = self::fixtures::orchestrate_report_builder();
+    let mut report = crate::tests::fixtures::orchestrate_report_builder();
     let (data, mut data_mut, mut fixture) = self::fixtures::cluster(&mut report);
     fixture
         .lock
@@ -32,8 +32,8 @@ fn lock_lost_exits_early() {
         Err(error) if !error.is::<OperationError>() => panic!("unexpected error from node sync"),
         Err(error) => match error.downcast::<OperationError>().unwrap() {
             OperationError::LockLost(ns, cid) => {
-                assert_eq!(ns, self::fixtures::NAMESPACE);
-                assert_eq!(cid, self::fixtures::CLUSTER_ID);
+                assert_eq!(ns, crate::tests::fixtures::NAMESPACE);
+                assert_eq!(cid, crate::tests::fixtures::CLUSTER_ID);
             }
         },
     }

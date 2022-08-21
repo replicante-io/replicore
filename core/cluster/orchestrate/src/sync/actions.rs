@@ -15,7 +15,7 @@ use replicante_models_core::events::Event;
 use replicante_util_failure::SerializableFail;
 
 use crate::errors::SyncError;
-use crate::metrics::ACTIONS_SYNCED;
+use crate::metrics::NODE_ACTIONS_SYNCED;
 use crate::ClusterOrchestrate;
 use crate::ClusterOrchestrateMut;
 
@@ -35,12 +35,12 @@ pub fn sync_node_actions(
     let mut synced_actions = 0.0;
     for action_id in &remote_ids {
         sync_agent_action(data, data_mut, client, node_id, *action_id).map_err(|error| {
-            ACTIONS_SYNCED.observe(synced_actions);
+            NODE_ACTIONS_SYNCED.observe(synced_actions);
             error
         })?;
         synced_actions += 1.0;
     }
-    ACTIONS_SYNCED.observe(synced_actions);
+    NODE_ACTIONS_SYNCED.observe(synced_actions);
 
     // Step 3: sync core with agent.
     let actions = match data.cluster_view.unfinished_actions_on_node(node_id) {
@@ -150,7 +150,7 @@ pub(super) fn sync_agent_action(
         .get(span_context.clone())
         .map_err(failure::Fail::compat)
         .with_context(|| {
-            SyncError::store_read(
+            SyncError::store_read_for_node(
                 &data.namespace.ns_id,
                 &data.cluster_view.cluster_id,
                 node_id,
@@ -301,7 +301,7 @@ fn core_action_lost(
         .get(span_context.clone())
         .map_err(failure::Fail::compat)
         .with_context(|| {
-            SyncError::store_read(
+            SyncError::store_read_for_node(
                 &data.namespace.ns_id,
                 &data.cluster_view.cluster_id,
                 node_id,
@@ -361,7 +361,7 @@ fn core_action_schedule(
         .get(span_context.clone())
         .map_err(failure::Fail::compat)
         .with_context(|| {
-            SyncError::store_read(
+            SyncError::store_read_for_node(
                 &data.namespace.ns_id,
                 &data.cluster_view.cluster_id,
                 node_id,
@@ -386,7 +386,7 @@ fn core_action_schedule(
     let result =
         client.schedule_action(&action.kind, &action.headers, request, span_context.clone());
     data_mut.report.node_action_scheduled();
-    crate::metrics::ACTION_SCHEDULE_TOTAL.inc();
+    crate::metrics::NODE_ACTION_SCHEDULE_TOTAL.inc();
 
     // Handle scheduling error to re-try later.
     match result {
@@ -399,7 +399,7 @@ fn core_action_schedule(
                 "node_id" => node_id,
                 "action_id" => action.action_id.to_string(),
             );
-            crate::metrics::ACTION_SCHEDULE_DUPLICATE.inc();
+            crate::metrics::NODE_ACTION_SCHEDULE_DUPLICATE.inc();
         }
         Err(error) if !error.kind().is_duplicate_action() => {
             // After a while give up on trying to schedule actions.
@@ -423,7 +423,7 @@ fn core_action_schedule(
                         node_id,
                     )
                 })?;
-            crate::metrics::ACTION_SCHEDULE_ERROR.inc();
+            crate::metrics::NODE_ACTION_SCHEDULE_ERROR.inc();
             data_mut.report.node_action_schedule_failed();
             let error = failure::Fail::compat(error);
             let error = anyhow::Error::from(error).context(SyncError::client_response(

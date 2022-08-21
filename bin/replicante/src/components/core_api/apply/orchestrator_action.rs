@@ -1,3 +1,5 @@
+use std::time::Duration;
+
 use chrono::Utc;
 use failure::ResultExt;
 use serde_json::Value;
@@ -55,19 +57,32 @@ pub fn replicante_io_v0(args: ApplierArgs) -> Result<Value> {
         ),
     }
     match object.attributes.get("spec") {
-        Some(spec) if spec.is_object() => match spec.get("action") {
-            Some(kind) if kind.is_string() => (),
-            Some(_) => errors.collect(
-                "TypeError",
-                "spec.action",
-                "The action kind identifier must be a string",
-            ),
-            None => errors.collect(
-                "MissingAttribute",
-                "spec.action",
-                "An action kind identifier is required",
-            ),
-        },
+        Some(spec) if spec.is_object() => {
+            // Ensure action is set and valid.
+            match spec.get("action") {
+                Some(kind) if kind.is_string() => (),
+                Some(_) => errors.collect(
+                    "TypeError",
+                    "spec.action",
+                    "The action kind identifier must be a string",
+                ),
+                None => errors.collect(
+                    "MissingAttribute",
+                    "spec.action",
+                    "An action kind identifier is required",
+                ),
+            };
+            // Ensure timeout is a Duration, if set.
+            if let Some(timeout) = spec.get("timeout").cloned() {
+                if let Err(error) = serde_json::from_value::<Duration>(timeout) {
+                    errors.collect(
+                        "InvalidAttribute",
+                        "spec.timeout",
+                        format!("Invalid timeout: {}", error),
+                    );
+                }
+            }
+        }
         None => errors.collect(
             "MissingAttribute",
             "spec",
@@ -115,6 +130,12 @@ pub fn replicante_io_v0(args: ApplierArgs) -> Result<Value> {
         ActionApproval::Granted => OrchestratorActionState::PendingSchedule,
         ActionApproval::Required => OrchestratorActionState::PendingApprove,
     };
+    let timeout = match spec.get("timeout") {
+        None => None,
+        Some(timeout) => {
+            serde_json::from_value(timeout.clone()).expect("validation should have caught this")
+        }
+    };
 
     let now = Utc::now();
     let action = OrchestratorAction {
@@ -128,6 +149,8 @@ pub fn replicante_io_v0(args: ApplierArgs) -> Result<Value> {
         scheduled_ts: None,
         state,
         state_payload: None,
+        state_payload_error: None,
+        timeout,
     };
 
     // Store the pending action for later scheduling.

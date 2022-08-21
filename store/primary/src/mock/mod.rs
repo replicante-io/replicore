@@ -5,6 +5,7 @@ use std::sync::Mutex;
 use uuid::Uuid;
 
 use replicante_models_core::actions::node::Action;
+use replicante_models_core::actions::orchestrator::OrchestratorAction;
 use replicante_models_core::agent::Agent;
 use replicante_models_core::agent::AgentInfo;
 use replicante_models_core::agent::Node;
@@ -49,5 +50,6 @@ pub struct MockState {
     pub discoveries: HashMap<String, ClusterDiscovery>,
     pub events: Vec<Event>,
     pub nodes: HashMap<(String, String), Node>,
+    pub orchestrator_actions: HashMap<(String, Uuid), OrchestratorAction>,
     pub shards: HashMap<(String, String, String), Shard>,
 }
