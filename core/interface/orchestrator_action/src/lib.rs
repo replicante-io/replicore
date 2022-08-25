@@ -21,6 +21,12 @@ pub use self::registry::TestRegistryClearGuard;
 /// Store changes made to an `OrchestratorAction` model as a result of progressing the action.
 #[derive(Clone, Eq, PartialEq, Debug, Serialize, Deserialize)]
 pub struct ProgressChanges {
+    /// New state of the action.
     pub state: OrchestratorActionState,
-    pub state_payload: Option<serde_json::Value>,
+
+    /// If set, updates the action state payload.
+    pub state_payload: Option<Option<serde_json::Value>>,
+
+    /// If set, updates the action state error payload.
+    pub state_payload_error: Option<Option<serde_json::Value>>,
 }

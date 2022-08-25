@@ -23,6 +23,7 @@ impl OrchestratorAction for Success {
         let changes = ProgressChanges {
             state: OrchestratorActionState::Done,
             state_payload: None,
+            state_payload_error: None,
         };
         Ok(Some(changes))
     }

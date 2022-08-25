@@ -62,7 +62,8 @@ impl OrchestratorAction for Counting {
         }));
         let changes = ProgressChanges {
             state,
-            state_payload,
+            state_payload: Some(state_payload),
+            state_payload_error: None,
         };
         Ok(Some(changes))
     }

@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Cluster discovery dynamically configured with `apply`.
 - Discovery settings apply and delete events.
 - Introduce `core.replicante.io/debug.*` actions: `counting`, `fail`, `ping` and `success`.
+- Introduce `core.replicante.io/http` action.
 - List and delete `DiscoverySettings` objects (API and `replictl`).
 - Orchestrate reports for details on the latest attempt to sync a cluster.
 - Orchestrator actions, executing during cluster orchestration.

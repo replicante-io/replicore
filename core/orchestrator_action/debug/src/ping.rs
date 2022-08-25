@@ -25,7 +25,8 @@ impl OrchestratorAction for Ping {
         });
         let changes = ProgressChanges {
             state: OrchestratorActionState::Done,
-            state_payload: Some(pong),
+            state_payload: Some(Some(pong)),
+            state_payload_error: None,
         };
         Ok(Some(changes))
     }

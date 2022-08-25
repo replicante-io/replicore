@@ -68,7 +68,12 @@ pub fn run_action(
     // Update the action record.
     let mut action_record = action_record;
     action_record.state = updates.state;
-    action_record.state_payload = updates.state_payload;
+    if let Some(state_payload) = updates.state_payload {
+        action_record.state_payload = state_payload;
+    }
+    if let Some(state_payload_error) = updates.state_payload_error {
+        action_record.state_payload_error = state_payload_error;
+    }
 
     // Ensure running actions have a scheduled timestamp
     // (and use this opportunity to also correct missed records from the past).
