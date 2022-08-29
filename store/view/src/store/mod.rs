@@ -13,11 +13,13 @@ use crate::Result;
 pub mod actions;
 pub mod cluster;
 pub mod events;
+pub mod orchestrator_actions;
 pub mod persist;
 
 use self::actions::Actions;
 use self::cluster::Cluster;
 use self::events::Events;
+use self::orchestrator_actions::OrchestratorActions;
 use self::persist::Persist;
 
 /// Interface to Replicante view store layer.
@@ -84,6 +86,15 @@ impl Store {
     pub fn events(&self) -> Events {
         let events = self.store.events();
         Events::new(events)
+    }
+
+    /// Operate on orchestrator actions.
+    pub fn orchestrator_actions<S>(&self, cluster_id: S) -> OrchestratorActions
+    where
+        S: Into<String>,
+    {
+        let actions = self.store.orchestrator_actions(cluster_id.into());
+        OrchestratorActions::new(actions)
     }
 
     /// Persist (insert or update) models to the store.

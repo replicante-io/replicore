@@ -20,6 +20,7 @@ use super::AdminInterface;
 use super::ClusterImpl;
 use super::DataImpl;
 use super::EventsImpl;
+use super::OrchestratorActionsImpl;
 use super::PersistImpl;
 use super::StoreInterface;
 use super::ValidateImpl;
@@ -30,6 +31,7 @@ mod constants;
 mod data;
 mod document;
 mod events;
+mod orchestrator_actions;
 mod persist;
 mod validate;
 
@@ -121,6 +123,16 @@ impl StoreInterface for Store {
         let events =
             self::events::Events::new(self.client.clone(), self.db.clone(), self.tracer.clone());
         EventsImpl::new(events)
+    }
+
+    fn orchestrator_actions(&self, cluster_id: String) -> OrchestratorActionsImpl {
+        let actions = self::orchestrator_actions::OrchestratorActions::new(
+            self.client.clone(),
+            self.db.clone(),
+            self.tracer.clone(),
+            cluster_id,
+        );
+        OrchestratorActionsImpl::new(actions)
     }
 
     fn persist(&self) -> PersistImpl {

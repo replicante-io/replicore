@@ -22,6 +22,7 @@ use crate::store::actions::SearchFilters as ActionsSearchFilters;
 use crate::store::cluster::ClusterAttributes;
 use crate::store::events::EventsFilters;
 use crate::store::events::EventsOptions;
+use crate::store::orchestrator_actions::SearchFilters as OrchestratorActionsSearchFilters;
 use crate::Config;
 use crate::Cursor;
 use crate::Result;
@@ -154,6 +155,7 @@ arc_interface! {
         fn actions(&self, cluster_id: String) -> ActionsImpl;
         fn cluster(&self) -> ClusterImpl;
         fn events(&self) -> EventsImpl;
+        fn orchestrator_actions(&self, cluster_id: String) -> OrchestratorActionsImpl;
         fn persist(&self) -> PersistImpl;
     }
 }
@@ -238,6 +240,29 @@ box_interface! {
         fn actions(&self) -> Result<Cursor<Action>>;
         fn actions_history(&self) -> Result<Cursor<ActionHistory>>;
         fn events(&self) -> Result<Cursor<Event>>;
+    }
+}
+
+box_interface! {
+    /// Dynamic dispatch orchestrator actions operations to a backend-specific implementation.
+    struct OrchestratorActionsImpl,
+
+    /// Definition of orchestrator actions operations.
+    ///
+    /// See `store::orchestrator_actions::OrchestratorActions` for descriptions of methods.
+    trait OrchestratorActionsInterface,
+
+    interface {
+        fn orchestrator_action(
+            &self,
+            action_id: Uuid,
+            span: Option<SpanContext>,
+        ) -> Result<Option<OrchestratorAction>>;
+        fn search(
+            &self,
+            filters: OrchestratorActionsSearchFilters,
+            span: Option<SpanContext>,
+        ) -> Result<Cursor<OrchestratorAction>>;
     }
 }
 
