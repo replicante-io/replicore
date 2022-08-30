@@ -1,0 +1,9 @@
+apiVersion: replicante.io/v0
+kind: OrchestratorAction
+
+metadata:
+  namespace: default
+  cluster: dev-agent-zookeeper
+
+spec:
+  action: core.replicante.io/debug.fail

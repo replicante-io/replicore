@@ -36,6 +36,20 @@
       }
     ]
   },
+  "actions_unfinished_orchestrator": [
+    {
+      "cluster_id": "colours",
+      "action_id": "004089da-ec5a-4f4c-a4cc-adff9ec09015",
+      "kind": "test.core.replicante.io/cluster.init",
+      "state": "RUNNING"
+    },
+    {
+      "cluster_id": "colours",
+      "action_id": "347db8f1-dab4-401b-8956-04cd0ca25661",
+      "kind": "test.core.replicante.io/cluster.backup",
+      "state": "PENDING_SCHEDULE"
+    }
+  ],
   "agents": {
     "https://blue.mongo.fixtures:12345/": {
       "cluster_id": "colours",

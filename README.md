@@ -18,6 +18,30 @@ In addition to the Code Of Conduct the following documents are relevant:
   report an incident.
 * The [Enforcement Guideline](https://www.replicante.io/conduct/enforcing)
 
+## Features and feature naming convention
+
+Rust offers [features](https://doc.rust-lang.org/cargo/reference/features.html)
+to conditionally code, logic and options into the final build.
+
+In Replicante Core features are used to choose what to include with regards to things like:
+
+* Backend implementations: such as stores, messaging platform, etc ... (WIP)
+* Built-in orchestrator actions.
+* Experimental or advanced features.
+
+A naming convention for features is defined here to ensure consistency: `$namespace-$feature`.
+
+* `$namespace`: logical grouping of features (for example `action` or `store_backend`).
+* `$feature`: the exact feature (for example `debug` [actions] or `mongo` [store backend]).
+
+The characters allowed in features name are restricted by rust and even more by <crates.io>:
+<https://doc.rust-lang.org/cargo/reference/features.html#the-features-section>
+
+As such the following two special characters should be the only one in use:
+
+* `-` as the separator between `$namespace` and `$feature`.
+* `_` as the world separator within each of `$namespace` and `$feature`.
+
 ## Development environment
 Replicante Core requires a few dependencies in order to run.  
 To make development easier and faster these dependencies are run locally using containers.

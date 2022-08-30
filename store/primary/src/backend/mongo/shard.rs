@@ -11,7 +11,7 @@ use replicante_models_core::agent::Shard as ShardModel;
 
 use super::super::ShardInterface;
 use super::constants::COLLECTION_SHARDS;
-use crate::store::shard::ShardAttribures;
+use crate::store::shard::ShardAttributes;
 use crate::ErrorKind;
 use crate::Result;
 
@@ -35,7 +35,7 @@ impl Shard {
 impl ShardInterface for Shard {
     fn get(
         &self,
-        attrs: &ShardAttribures,
+        attrs: &ShardAttributes,
         span: Option<SpanContext>,
     ) -> Result<Option<ShardModel>> {
         let filter = doc! {

@@ -7,7 +7,8 @@ use anyhow::anyhow;
 use anyhow::Result;
 use uuid::Uuid;
 
-use replicante_models_core::actions::ActionSummary;
+use replicante_models_core::actions::node::ActionSyncSummary;
+use replicante_models_core::actions::orchestrator::OrchestratorActionSyncSummary;
 use replicante_models_core::agent::Agent;
 use replicante_models_core::agent::AgentInfo;
 use replicante_models_core::agent::Node;
@@ -21,7 +22,8 @@ use crate::ClusterViewCorrupt;
 /// Incrementally build a Cluster view from individual records.
 pub struct ClusterViewBuilder {
     // Track cluster entities already added to the view.
-    seen_actions: HashMap<String, HashSet<Uuid>>,
+    seen_actions_by_node: HashMap<String, HashSet<Uuid>>,
+    seen_actions_orchestrator: HashSet<Uuid>,
     seen_agents: HashSet<String>,
     seen_agents_info: HashSet<String>,
     seen_nodes: HashSet<String>,
@@ -57,6 +59,7 @@ impl ClusterViewBuilder {
             discovery,
             settings,
             actions_unfinished_by_node: HashMap::new(),
+            actions_unfinished_orchestrator: Vec::new(),
             agents: HashMap::new(),
             agents_info: HashMap::new(),
             nodes: HashMap::new(),
@@ -65,7 +68,8 @@ impl ClusterViewBuilder {
             shards_by_node: HashMap::new(),
         };
         Ok(ClusterViewBuilder {
-            seen_actions: HashMap::new(),
+            seen_actions_by_node: HashMap::new(),
+            seen_actions_orchestrator: HashSet::new(),
             seen_agents: HashSet::new(),
             seen_agents_info: HashSet::new(),
             seen_nodes: HashSet::new(),
@@ -75,7 +79,7 @@ impl ClusterViewBuilder {
     }
 
     /// Add an Action to the Cluster View.
-    pub fn action(&mut self, summary: ActionSummary) -> Result<&mut Self> {
+    pub fn action(&mut self, summary: ActionSyncSummary) -> Result<&mut Self> {
         // Can't add an action from another cluster.
         if self.view.cluster_id != summary.cluster_id {
             return Err(anyhow!(ClusterViewCorrupt::cluster_id_clash(
@@ -85,8 +89,8 @@ impl ClusterViewBuilder {
             )));
         }
 
-        // Can't add the same agent twice.
-        let seen = match self.seen_actions.get(&summary.node_id) {
+        // Can't add the same action twice.
+        let seen = match self.seen_actions_by_node.get(&summary.node_id) {
             None => false,
             Some(actions) => actions.contains(&summary.action_id),
         };
@@ -98,7 +102,7 @@ impl ClusterViewBuilder {
                 summary.action_id,
             )));
         }
-        self.seen_actions
+        self.seen_actions_by_node
             .entry(summary.node_id.clone())
             .or_insert_with(HashSet::new)
             .insert(summary.action_id);
@@ -188,6 +192,34 @@ impl ClusterViewBuilder {
 
         self.seen_nodes.insert(node.node_id.clone());
         self.view.nodes.insert(node.node_id.clone(), Rc::new(node));
+        Ok(self)
+    }
+
+    /// Add an OrchestratorAction to the Cluster View.
+    pub fn orchestrator_action(
+        &mut self,
+        summary: OrchestratorActionSyncSummary,
+    ) -> Result<&mut Self> {
+        // Can't add an action for another cluster.
+        if self.view.cluster_id != summary.cluster_id {
+            return Err(anyhow!(ClusterViewCorrupt::cluster_id_clash(
+                &self.view.namespace,
+                &self.view.cluster_id,
+                summary.cluster_id,
+            )));
+        }
+
+        // Can't add the same orchestrator action twice.
+        if self.seen_actions_orchestrator.contains(&summary.action_id) {
+            return Err(anyhow!(ClusterViewCorrupt::duplicate_orchestrator_action(
+                &self.view.namespace,
+                &self.view.cluster_id,
+                summary.action_id,
+            )));
+        }
+        self.seen_actions_orchestrator.insert(summary.action_id);
+
+        self.view.actions_unfinished_orchestrator.push(summary);
         Ok(self)
     }
 

@@ -347,6 +347,89 @@ fn nodes_tracked() {
 }
 
 #[test]
+fn orchestrator_actions_cannot_be_added_twice() {
+    let discovery = self::fixtures::cluster_mongodb::discovery();
+    let settings = self::fixtures::cluster_mongodb::settings();
+    let mut builder =
+        ClusterView::builder(settings, discovery).expect("ClusterView builder should be created");
+
+    let err = builder
+        .orchestrator_action(self::fixtures::cluster_mongodb::orchestrator_action_init())
+        .unwrap()
+        .orchestrator_action(self::fixtures::cluster_mongodb::orchestrator_action_init())
+        .err()
+        .expect("duplicate orchestrator action did not fail")
+        .downcast::<ClusterViewCorrupt>()
+        .expect("unexpected error type");
+
+    match err {
+        ClusterViewCorrupt::DuplicateOrchestratorAction(namespace, cluster_id, action_id) => {
+            assert_eq!(namespace, self::fixtures::cluster_mongodb::NAMESPACE);
+            assert_eq!(cluster_id, self::fixtures::cluster_mongodb::CLUSTER_ID);
+            assert_eq!(
+                action_id,
+                uuid::Uuid::from_str("004089da-ec5a-4f4c-a4cc-adff9ec09015").unwrap(),
+            )
+        }
+        _ => panic!("unexpected error value"),
+    };
+}
+
+#[test]
+fn orchestrator_actions_must_be_from_cluster() {
+    let discovery = self::fixtures::cluster_mongodb::discovery();
+    let settings = self::fixtures::cluster_mongodb::settings();
+    let mut builder =
+        ClusterView::builder(settings, discovery).expect("ClusterView builder should be created");
+
+    let mut action = self::fixtures::cluster_mongodb::orchestrator_action_init();
+    action.cluster_id = self::fixtures::cluster_zookeeper::CLUSTER_ID.into();
+    let err = builder
+        .orchestrator_action(action)
+        .err()
+        .expect("invalid orchestrator action did not fail")
+        .downcast::<ClusterViewCorrupt>()
+        .expect("unexpected error type");
+
+    match err {
+        ClusterViewCorrupt::ClusterIdClash(namespace, expected, found) => {
+            assert_eq!(namespace, self::fixtures::cluster_mongodb::NAMESPACE);
+            assert_eq!(expected, self::fixtures::cluster_mongodb::CLUSTER_ID);
+            assert_eq!(found, self::fixtures::cluster_zookeeper::CLUSTER_ID);
+        }
+        _ => panic!("unexpected error value"),
+    };
+}
+
+#[test]
+fn orchestrator_actions_tracked() {
+    let discovery = self::fixtures::cluster_mongodb::discovery();
+    let settings = self::fixtures::cluster_mongodb::settings();
+    let mut builder =
+        ClusterView::builder(settings, discovery).expect("ClusterView builder should be created");
+
+    builder
+        .orchestrator_action(self::fixtures::cluster_mongodb::orchestrator_action_init())
+        .unwrap()
+        .orchestrator_action(self::fixtures::cluster_mongodb::orchestrator_action_backup())
+        .unwrap();
+
+    let view = builder.build();
+    let actions: Vec<uuid::Uuid> = view
+        .actions_unfinished_orchestrator
+        .iter()
+        .map(|summary| summary.action_id)
+        .collect();
+    assert_eq!(
+        actions,
+        vec![
+            uuid::Uuid::from_str("004089da-ec5a-4f4c-a4cc-adff9ec09015").unwrap(),
+            uuid::Uuid::from_str("347db8f1-dab4-401b-8956-04cd0ca25661").unwrap(),
+        ]
+    );
+}
+
+#[test]
 fn shards_cannot_be_added_twice() {
     let discovery = self::fixtures::cluster_mongodb::discovery();
     let settings = self::fixtures::cluster_mongodb::settings();

@@ -43,7 +43,7 @@ macro_rules! deserialize_event {
 }
 
 /// Model an event that is emitted by the system.
-#[derive(Clone, PartialEq, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub struct Event {
     #[serde(flatten)]
     pub payload: Payload,
@@ -166,7 +166,7 @@ pub enum DeserializeResult<E> {
 }
 
 /// Enumerates all possible events emitted by the system.
-#[derive(Clone, PartialEq, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "category")]
 // TODO: use when possible #[non_exhaustive]
 pub enum Payload {

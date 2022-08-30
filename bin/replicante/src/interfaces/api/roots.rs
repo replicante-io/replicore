@@ -13,6 +13,9 @@ pub enum APIRoot {
     /// Endpoints in this root are NOT subject to ANY compatibility guarantees!
     UnstableApi,
 
+    /// Replicante catalogues of known kinds and objects.
+    UnstableCatalogue,
+
     /// Replicante core APIs, unstable version.
     UnstableCoreApi,
 
@@ -26,12 +29,13 @@ pub enum APIRoot {
 impl RootDescriptor for APIRoot {
     fn enabled(&self, flags: &APIFlags) -> bool {
         match self {
-            APIRoot::UnstableApi | APIRoot::UnstableCoreApi | APIRoot::UnstableWebUI => {
-                match flags.get("unstable") {
-                    Some(flag) => *flag,
-                    None => true,
-                }
-            }
+            APIRoot::UnstableApi
+            | APIRoot::UnstableCatalogue
+            | APIRoot::UnstableCoreApi
+            | APIRoot::UnstableWebUI => match flags.get("unstable") {
+                Some(flag) => *flag,
+                None => true,
+            },
             APIRoot::UnstableIntrospect => match flags.get("unstable") {
                 Some(flag) if !flag => *flag,
                 _ => match flags.get("introspect") {
@@ -45,6 +49,7 @@ impl RootDescriptor for APIRoot {
     fn prefix(&self) -> &'static str {
         match self {
             APIRoot::UnstableApi => "/api/unstable",
+            APIRoot::UnstableCatalogue => "/api/unstable/catalogue",
             APIRoot::UnstableCoreApi => "/api/unstable/core",
             APIRoot::UnstableIntrospect => "/api/unstable/introspect",
             APIRoot::UnstableWebUI => "/api/unstable/webui",

@@ -9,12 +9,13 @@ use replicante_models_agent::actions::ActionHistoryItem;
 use super::Event;
 use super::EventBuilder;
 use super::Payload;
-use crate::actions::Action;
+use crate::actions::node::Action;
+use crate::actions::orchestrator::OrchestratorAction;
 use crate::scope::EntityId;
 use crate::scope::Namespace;
 
 /// Hold data about an action change with before and after state.
-#[derive(Clone, PartialEq, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub struct ActionChanged {
     pub cluster_id: String,
     pub current: Action,
@@ -22,7 +23,7 @@ pub struct ActionChanged {
 }
 
 /// Hold data about an action history from the agent.
-#[derive(Clone, PartialEq, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub struct ActionHistory {
     pub action_id: Uuid,
     pub cluster_id: String,
@@ -32,7 +33,7 @@ pub struct ActionHistory {
 }
 
 /// Enumerates all possible action events emitted by the system.
-#[derive(Clone, PartialEq, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "event", content = "payload")]
 #[allow(clippy::large_enum_variant)]
 // TODO: use when possible #[non_exhaustive]
@@ -56,6 +57,18 @@ pub enum ActionEvent {
     /// An action was discovered for the first time.
     #[serde(rename = "ACTION_NEW")]
     New(Action),
+
+    /// An orchestrator action was changed.
+    #[serde(rename = "ACTION_ORCHESTRATOR_CHANGED")]
+    OrchestratorChanged(Box<OrchestratorActionChanged>),
+
+    /// An orchestrator action has finished.
+    #[serde(rename = "ACTION_ORCHESTRATOR_FINISHED")]
+    OrchestratorFinished(OrchestratorAction),
+
+    /// An orchestrator action was created.
+    #[serde(rename = "ACTION_ORCHESTRATOR_NEW")]
+    OrchestratorNew(OrchestratorAction),
 }
 
 impl ActionEvent {
@@ -67,6 +80,9 @@ impl ActionEvent {
             ActionEvent::History(_) => "ACTION_HISTORY",
             ActionEvent::Lost(_) => "ACTION_LOST",
             ActionEvent::New(_) => "ACTION_NEW",
+            ActionEvent::OrchestratorChanged(_) => "ACTION_ORCHESTRATOR_CHANGED",
+            ActionEvent::OrchestratorFinished(_) => "ACTION_ORCHESTRATOR_FINISHED",
+            ActionEvent::OrchestratorNew(_) => "ACTION_ORCHESTRATOR_NEW",
         }
     }
 
@@ -78,24 +94,36 @@ impl ActionEvent {
             ActionEvent::History(info) => &info.cluster_id,
             ActionEvent::Lost(action) => &action.cluster_id,
             ActionEvent::New(action) => &action.cluster_id,
+            ActionEvent::OrchestratorChanged(action) => &action.current.cluster_id,
+            ActionEvent::OrchestratorFinished(action) => &action.cluster_id,
+            ActionEvent::OrchestratorNew(action) => &action.cluster_id,
         };
         let node = match self {
-            ActionEvent::Changed(change) => &change.current.node_id,
-            ActionEvent::Finished(action) => &action.node_id,
-            ActionEvent::History(info) => &info.node_id,
-            ActionEvent::Lost(action) => &action.node_id,
-            ActionEvent::New(action) => &action.node_id,
+            ActionEvent::Changed(change) => Some(&change.current.node_id),
+            ActionEvent::Finished(action) => Some(&action.node_id),
+            ActionEvent::History(info) => Some(&info.node_id),
+            ActionEvent::Lost(action) => Some(&action.node_id),
+            ActionEvent::New(action) => Some(&action.node_id),
+            ActionEvent::OrchestratorChanged(_) => None,
+            ActionEvent::OrchestratorFinished(_) => None,
+            ActionEvent::OrchestratorNew(_) => None,
         };
         let action = match self {
-            ActionEvent::Changed(change) => &change.current.action_id,
-            ActionEvent::Finished(action) => &action.action_id,
-            ActionEvent::History(info) => &info.action_id,
-            ActionEvent::Lost(action) => &action.action_id,
-            ActionEvent::New(action) => &action.action_id,
+            ActionEvent::Changed(change) => change.current.action_id,
+            ActionEvent::Finished(action) => action.action_id,
+            ActionEvent::History(info) => info.action_id,
+            ActionEvent::Lost(action) => action.action_id,
+            ActionEvent::New(action) => action.action_id,
+            ActionEvent::OrchestratorChanged(action) => action.current.action_id,
+            ActionEvent::OrchestratorFinished(action) => action.action_id,
+            ActionEvent::OrchestratorNew(action) => action.action_id,
         };
         // TODO: Must use a static string because of refs until actions have namespaces attached.
         let _ns = Namespace::HARDCODED_FOR_ROLLOUT();
-        EntityId::NodeAction("default", cluster_id, node, *action)
+        match node {
+            Some(node) => EntityId::NodeAction("default", cluster_id, node, action),
+            None => EntityId::OrchestratorAction("default", cluster_id, action),
+        }
     }
 }
 
@@ -157,4 +185,40 @@ impl ActionEventBuilder {
         let payload = Payload::Action(event);
         self.builder.finish(payload)
     }
+
+    /// Build an `ActionEvent::OrchestratorNew` event.
+    pub fn new_orchestrator_action(self, action: OrchestratorAction) -> Event {
+        let event = ActionEvent::OrchestratorNew(action);
+        let payload = Payload::Action(event);
+        self.builder.finish(payload)
+    }
+
+    /// Build an `ActionEvent::OrchestratorChanged` event.
+    pub fn orchestrator_action_changed(
+        self,
+        old: OrchestratorAction,
+        new: OrchestratorAction,
+    ) -> Event {
+        let event = Box::new(OrchestratorActionChanged {
+            current: new,
+            previous: old,
+        });
+        let event = ActionEvent::OrchestratorChanged(event);
+        let payload = Payload::Action(event);
+        self.builder.finish(payload)
+    }
+
+    /// Build an `ActionEvent::OrchestratorFinished` event.
+    pub fn orchestrator_action_finished(self, action: OrchestratorAction) -> Event {
+        let event = ActionEvent::OrchestratorFinished(action);
+        let payload = Payload::Action(event);
+        self.builder.finish(payload)
+    }
+}
+
+/// Hold data about an action change with before and after state.
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
+pub struct OrchestratorActionChanged {
+    pub current: OrchestratorAction,
+    pub previous: OrchestratorAction,
 }

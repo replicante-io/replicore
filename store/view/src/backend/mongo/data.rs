@@ -3,8 +3,8 @@ use failure::ResultExt;
 use mongodb::sync::Client;
 
 use replicante_externals_mongodb::operations::scan_collection;
-use replicante_models_core::actions::Action;
-use replicante_models_core::actions::ActionHistory;
+use replicante_models_core::actions::node::Action;
+use replicante_models_core::actions::node::ActionHistory;
 use replicante_models_core::events::Event;
 
 use super::constants::COLLECTION_ACTIONS;

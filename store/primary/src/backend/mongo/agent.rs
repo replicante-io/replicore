@@ -13,7 +13,7 @@ use replicante_models_core::agent::AgentInfo as AgentInfoModel;
 use super::super::AgentInterface;
 use super::constants::COLLECTION_AGENTS;
 use super::constants::COLLECTION_AGENTS_INFO;
-use crate::store::agent::AgentAttribures;
+use crate::store::agent::AgentAttributes;
 use crate::ErrorKind;
 use crate::Result;
 
@@ -37,7 +37,7 @@ impl Agent {
 impl AgentInterface for Agent {
     fn get(
         &self,
-        attrs: &AgentAttribures,
+        attrs: &AgentAttributes,
         span: Option<SpanContext>,
     ) -> Result<Option<AgentModel>> {
         let filter = doc! {
@@ -52,7 +52,7 @@ impl AgentInterface for Agent {
 
     fn info(
         &self,
-        attrs: &AgentAttribures,
+        attrs: &AgentAttributes,
         span: Option<SpanContext>,
     ) -> Result<Option<AgentInfoModel>> {
         let filter = doc! {

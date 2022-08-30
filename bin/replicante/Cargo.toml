@@ -25,6 +25,14 @@ path = "src/lib.rs"
 
 
 [features]
+default = [
+  "action-debug",
+]
+
+# Built-in orchestrator actions to include.
+action-debug = ["replicore_action_debug"]
+
+# Additional introspection and debugging features.
 journald = ["replicante_logging/journald"]
 
 
@@ -53,9 +61,7 @@ slog-stdlog = "^4.0.0"
 uuid = { version = "^0.8.0", features = ["serde", "v4"] }
 
 replicante_agent_client = { path = "../../agent/client" }
-replicante_cluster_aggregator = { path = "../../cluster/aggregator" }
 replicante_cluster_discovery = { path = "../../cluster/discovery" }
-replicante_cluster_fetcher = { path = "../../cluster/fetcher" }
 replicante_externals_kafka = { path = "../../externals/kafka" }
 replicante_externals_mongodb = { path = "../../externals/mongodb" }
 replicante_logging = { path = "../../common/logging" }
@@ -73,12 +79,16 @@ replicante_util_failure = { path = "../../common/util/failure" }
 replicante_util_tracing = { path = "../../common/util/tracing" }
 replicante_util_upkeep = { path = "../../common/util/upkeep" }
 
+replicore_action_debug = { path = "../../core/orchestrator_action/debug", optional = true }
+replicore_cluster_orchestrate = { path = "../../core/cluster/orchestrate" }
 replicore_component_discovery_scheduler = { path = "../../core/components/discovery_scheduler" }
 replicore_component_orchestrator_scheduler = { path = "../../core/components/orchestrator_scheduler" }
 replicore_component_viewupdater = { path = "../../core/components/viewupdater" }
+replicore_iface_orchestrator_action = { path = "../../core/interface/orchestrator_action" }
 replicore_models_tasks = { path = "../../models/tasks" }
 replicore_task_discovery = { path = "../../core/tasks/discovery" }
 replicore_task_orchestrator = { path = "../../core/tasks/orchestrator" }
+replicore_util_errors = { path = "../../core/util/errors" }
 
 
 [build-dependencies]

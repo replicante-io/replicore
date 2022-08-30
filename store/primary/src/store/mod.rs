@@ -26,6 +26,8 @@ pub mod global_search;
 pub mod legacy;
 pub mod node;
 pub mod nodes;
+pub mod orchestrator_action;
+pub mod orchestrator_actions;
 pub mod persist;
 pub mod shard;
 pub mod shards;
@@ -40,6 +42,8 @@ use self::global_search::GlobalSearch;
 use self::legacy::Legacy;
 use self::node::Node;
 use self::nodes::Nodes;
+use self::orchestrator_action::OrchestratorAction;
+use self::orchestrator_actions::OrchestratorActions;
 use self::persist::Persist;
 use self::shard::Shard;
 use self::shards::Shards;
@@ -50,7 +54,7 @@ use self::shards::Shards;
 /// hides implementation details about storage software and data encoding.
 ///
 /// # Purpose
-/// The primary store is responsable for data used by Replicante Core itself and
+/// The primary store is responsible for data used by Replicante Core itself and
 /// needed to implement the platform.
 ///
 /// Any other data, such as historical or aggregated data kept purely for the API,
@@ -109,14 +113,14 @@ impl Store {
     /// Operate on the agent identified by the provided cluster_id and host.
     pub fn agent(&self, cluster_id: String, host: String) -> Agent {
         let agent = self.store.agent();
-        let attrs = self::agent::AgentAttribures { cluster_id, host };
+        let attrs = self::agent::AgentAttributes { cluster_id, host };
         Agent::new(agent, attrs)
     }
 
     /// Operate on all agent in the cluster identified by cluster_id.
     pub fn agents(&self, cluster_id: String) -> Agents {
         let agents = self.store.agents();
-        let attrs = self::agents::AgentsAttribures { cluster_id };
+        let attrs = self::agents::AgentsAttributes { cluster_id };
         Agents::new(agents, attrs)
     }
 
@@ -152,7 +156,7 @@ impl Store {
     /// Operate on the node identified by the provided cluster_id and node_id.
     pub fn node(&self, cluster_id: String, node_id: String) -> Node {
         let node = self.store.node();
-        let attrs = self::node::NodeAttribures {
+        let attrs = self::node::NodeAttributes {
             cluster_id,
             node_id,
         };
@@ -162,8 +166,28 @@ impl Store {
     /// Operate on all nodes in the cluster identified by cluster_id.
     pub fn nodes(&self, cluster_id: String) -> Nodes {
         let nodes = self.store.nodes();
-        let attrs = self::nodes::NodesAttribures { cluster_id };
+        let attrs = self::nodes::NodesAttributes { cluster_id };
         Nodes::new(nodes, attrs)
+    }
+
+    /// Operate on the orchestrator action identified by the provided cluster_id and action_id.
+    pub fn orchestrator_action<S>(&self, cluster_id: S, action_id: Uuid) -> OrchestratorAction
+    where
+        S: Into<String>,
+    {
+        let action = self.store.orchestrator_action();
+        let attrs = self::orchestrator_action::OrchestratorActionAttributes {
+            action_id,
+            cluster_id: cluster_id.into(),
+        };
+        OrchestratorAction::new(action, attrs)
+    }
+
+    /// Operate on all orchestrator actions in the cluster identified by cluster_id.
+    pub fn orchestrator_actions(&self, cluster_id: String) -> OrchestratorActions {
+        let orchestrator_actions = self.store.orchestrator_actions();
+        let attrs = self::orchestrator_actions::OrchestratorActionsAttributes { cluster_id };
+        OrchestratorActions::new(orchestrator_actions, attrs)
     }
 
     /// Persist (insert or update) models to the store.
@@ -175,7 +199,7 @@ impl Store {
     /// Operate on the shard identified by the provided cluster_id, node_id, shard_id.
     pub fn shard(&self, cluster_id: String, node_id: String, shard_id: String) -> Shard {
         let shard = self.store.shard();
-        let attrs = self::shard::ShardAttribures {
+        let attrs = self::shard::ShardAttributes {
             cluster_id,
             node_id,
             shard_id,
@@ -186,11 +210,11 @@ impl Store {
     /// Operate on all shards in the cluster identified by cluster_id.
     pub fn shards(&self, cluster_id: String) -> Shards {
         let shards = self.store.shards();
-        let attrs = self::shards::ShardsAttribures { cluster_id };
+        let attrs = self::shards::ShardsAttributes { cluster_id };
         Shards::new(shards, attrs)
     }
 
-    /// Build a syntectic cluster view from individual records.
+    /// Build a synthetic cluster view from individual records.
     pub fn cluster_view<S>(
         &self,
         namespace: String,
@@ -239,9 +263,21 @@ impl Store {
         }
 
         // Add unfinished actions to the builder.
-        let actions = self.actions(cluster_id.clone()).unfinished_summaries(span);
+        let actions = self
+            .actions(cluster_id.clone())
+            .unfinished_summaries(span.clone());
         for summary in actions? {
             view.action(summary?)
+                .map_err(AnyWrap::from)
+                .with_context(|_| ErrorKind::ViewBuild(namespace.clone(), cluster_id.clone()))?;
+        }
+
+        // Add unfinished orchestrator actions to the builder.
+        let actions = self
+            .orchestrator_actions(cluster_id.clone())
+            .unfinished_summaries(span);
+        for summary in actions? {
+            view.orchestrator_action(summary?)
                 .map_err(AnyWrap::from)
                 .with_context(|_| ErrorKind::ViewBuild(namespace.clone(), cluster_id.clone()))?;
         }

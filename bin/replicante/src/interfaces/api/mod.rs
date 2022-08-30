@@ -208,7 +208,7 @@ impl Api {
         healthchecks: HealthResultsCache,
     ) -> (Api, MockCoordinator) {
         let config = FullConfig::mock();
-        let coordinator = MockCoordinator::new(logger.clone());
+        let coordinator = MockCoordinator::default();
         let api = Api::new(config, coordinator.mock(), logger, metrics, healthchecks);
         (api, coordinator)
     }

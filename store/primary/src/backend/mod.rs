@@ -8,13 +8,16 @@ use slog::Logger;
 use uuid::Uuid;
 
 use replicante_externals_mongodb::admin::ValidationResult;
-use replicante_models_core::actions::Action;
-use replicante_models_core::actions::ActionSummary;
+use replicante_models_core::actions::node::Action;
+use replicante_models_core::actions::node::ActionSyncSummary;
+use replicante_models_core::actions::orchestrator::OrchestratorAction;
+use replicante_models_core::actions::orchestrator::OrchestratorActionSyncSummary;
 use replicante_models_core::admin::Version;
 use replicante_models_core::agent::Agent;
 use replicante_models_core::agent::AgentInfo;
 use replicante_models_core::agent::Node;
 use replicante_models_core::agent::Shard;
+use replicante_models_core::api::orchestrator_action::OrchestratorActionSummary;
 use replicante_models_core::cluster::discovery::ClusterDiscovery;
 use replicante_models_core::cluster::discovery::DiscoverySettings;
 use replicante_models_core::cluster::ClusterMeta;
@@ -23,14 +26,16 @@ use replicante_service_healthcheck::HealthChecks;
 
 use crate::store::action::ActionAttributes;
 use crate::store::actions::ActionsAttributes;
-use crate::store::agent::AgentAttribures;
-use crate::store::agents::AgentsAttribures;
+use crate::store::agent::AgentAttributes;
+use crate::store::agents::AgentsAttributes;
 use crate::store::cluster::ClusterAttributes;
 use crate::store::discovery_settings::DiscoverySettingsAttributes;
-use crate::store::node::NodeAttribures;
-use crate::store::nodes::NodesAttribures;
-use crate::store::shard::ShardAttribures;
-use crate::store::shards::ShardsAttribures;
+use crate::store::node::NodeAttributes;
+use crate::store::nodes::NodesAttributes;
+use crate::store::orchestrator_action::OrchestratorActionAttributes;
+use crate::store::orchestrator_actions::OrchestratorActionsAttributes;
+use crate::store::shard::ShardAttributes;
+use crate::store::shards::ShardsAttributes;
 use crate::Config;
 use crate::Cursor;
 use crate::Result;
@@ -171,6 +176,8 @@ arc_interface! {
         fn legacy(&self) -> LegacyImpl;
         fn node(&self) -> NodeImpl;
         fn nodes(&self) -> NodesImpl;
+        fn orchestrator_action(&self) -> OrchestratorActionImpl;
+        fn orchestrator_actions(&self) -> OrchestratorActionsImpl;
         fn persist(&self) -> PersistImpl;
         fn shard(&self) -> ShardImpl;
         fn shards(&self) -> ShardsImpl;
@@ -221,7 +228,7 @@ box_interface! {
             &self,
             attrs: &ActionsAttributes,
             span: Option<SpanContext>,
-        ) -> Result<Cursor<ActionSummary>>;
+        ) -> Result<Cursor<ActionSyncSummary>>;
     }
 }
 
@@ -235,8 +242,8 @@ box_interface! {
     trait AgentInterface,
 
     interface {
-        fn get(&self, attrs: &AgentAttribures, span: Option<SpanContext>) -> Result<Option<Agent>>;
-        fn info(&self, attrs: &AgentAttribures, span: Option<SpanContext>)
+        fn get(&self, attrs: &AgentAttributes, span: Option<SpanContext>) -> Result<Option<Agent>>;
+        fn info(&self, attrs: &AgentAttributes, span: Option<SpanContext>)
             -> Result<Option<AgentInfo>>;
     }
 }
@@ -253,12 +260,12 @@ box_interface! {
     interface {
         fn iter(
             &self,
-            attrs: &AgentsAttribures,
+            attrs: &AgentsAttributes,
             span: Option<SpanContext>,
         ) -> Result<Cursor<Agent>>;
         fn iter_info(
             &self,
-            attrs: &AgentsAttribures,
+            attrs: &AgentsAttributes,
             span: Option<SpanContext>,
         ) -> Result<Cursor<AgentInfo>>;
     }
@@ -388,7 +395,7 @@ box_interface! {
     trait NodeInterface,
 
     interface {
-        fn get(&self, attrs: &NodeAttribures, span: Option<SpanContext>) -> Result<Option<Node>>;
+        fn get(&self, attrs: &NodeAttributes, span: Option<SpanContext>) -> Result<Option<Node>>;
     }
 }
 
@@ -402,7 +409,60 @@ box_interface! {
     trait NodesInterface,
 
     interface {
-        fn iter(&self, attrs: &NodesAttribures, span: Option<SpanContext>) -> Result<Cursor<Node>>;
+        fn iter(&self, attrs: &NodesAttributes, span: Option<SpanContext>) -> Result<Cursor<Node>>;
+    }
+}
+
+box_interface! {
+    /// Dynamic dispatch orchestrator action operations to a backend-specific implementation.
+    struct OrchestratorActionImpl,
+
+    /// Definition of supported operations on specific orchestrator actions in a cluster.
+    ///
+    /// See `store::orchestrator_action::OrchestratorAction` for descriptions of methods.
+    trait OrchestratorActionInterface,
+
+    interface {
+        fn get(
+            &self,
+            attrs: &OrchestratorActionAttributes,
+            span: Option<SpanContext>,
+        ) -> Result<Option<OrchestratorAction>>;
+    }
+}
+
+box_interface! {
+    /// Dynamic dispatch orchestrator actions operations to a backend-specific implementation.
+    struct OrchestratorActionsImpl,
+
+    /// Definition of supported operations on all orchestrator actions in a cluster.
+    ///
+    /// See `store::orchestrator_actions::OrchestratorActions` for descriptions of methods.
+    trait OrchestratorActionsInterface,
+
+    interface {
+        fn approve(
+            &self,
+            attrs: &OrchestratorActionsAttributes,
+            action_id: Uuid,
+            span: Option<SpanContext>,
+        ) -> Result<()>;
+        fn disapprove(
+            &self,
+            attrs: &OrchestratorActionsAttributes,
+            action_id: Uuid,
+            span: Option<SpanContext>,
+        ) -> Result<()>;
+        fn iter_summary(
+            &self,
+            attrs: &OrchestratorActionsAttributes,
+            span: Option<SpanContext>,
+        ) -> Result<Cursor<OrchestratorActionSummary>>;
+        fn unfinished_summaries(
+            &self,
+            attrs: &OrchestratorActionsAttributes,
+            span: Option<SpanContext>,
+        ) -> Result<Cursor<OrchestratorActionSyncSummary>>;
     }
 }
 
@@ -445,6 +505,11 @@ box_interface! {
             span: Option<SpanContext>,
         ) -> Result<()>;
         fn node(&self, node: Node, span: Option<SpanContext>) -> Result<()>;
+        fn orchestrator_action(
+            &self,
+            action: OrchestratorAction,
+            span: Option<SpanContext>,
+        ) -> Result<()>;
         fn shard(&self, shard: Shard, span: Option<SpanContext>) -> Result<()>;
     }
 }
@@ -459,7 +524,7 @@ box_interface! {
     trait ShardInterface,
 
     interface {
-        fn get(&self, attrs: &ShardAttribures, span: Option<SpanContext>) -> Result<Option<Shard>>;
+        fn get(&self, attrs: &ShardAttributes, span: Option<SpanContext>) -> Result<Option<Shard>>;
     }
 }
 
@@ -475,7 +540,7 @@ box_interface! {
     interface {
         fn iter(
             &self,
-            attrs: &ShardsAttribures,
+            attrs: &ShardsAttributes,
             span: Option<SpanContext>,
         ) -> Result<Cursor<Shard>>;
     }

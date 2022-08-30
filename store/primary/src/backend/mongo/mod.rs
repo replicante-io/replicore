@@ -23,6 +23,8 @@ use super::GlobalSearchImpl;
 use super::LegacyImpl;
 use super::NodeImpl;
 use super::NodesImpl;
+use super::OrchestratorActionImpl;
+use super::OrchestratorActionsImpl;
 use super::PersistImpl;
 use super::ShardImpl;
 use super::ShardsImpl;
@@ -45,6 +47,8 @@ mod global_search;
 mod legacy;
 mod node;
 mod nodes;
+mod orchestrator_action;
+mod orchestrator_actions;
 mod persist;
 mod shard;
 mod shards;
@@ -191,6 +195,24 @@ impl StoreInterface for Store {
         let nodes =
             self::nodes::Nodes::new(self.client.clone(), self.db.clone(), self.tracer.clone());
         NodesImpl::new(nodes)
+    }
+
+    fn orchestrator_action(&self) -> OrchestratorActionImpl {
+        let action = self::orchestrator_action::OrchestratorAction::new(
+            self.client.clone(),
+            self.db.clone(),
+            self.tracer.clone(),
+        );
+        OrchestratorActionImpl::new(action)
+    }
+
+    fn orchestrator_actions(&self) -> OrchestratorActionsImpl {
+        let actions = self::orchestrator_actions::OrchestratorActions::new(
+            self.client.clone(),
+            self.db.clone(),
+            self.tracer.clone(),
+        );
+        OrchestratorActionsImpl::new(actions)
     }
 
     fn persist(&self) -> PersistImpl {

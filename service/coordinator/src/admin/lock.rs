@@ -49,20 +49,11 @@ impl Iterator for NonBlockingLocks {
 
 #[cfg(test)]
 mod tests {
-    use slog::o;
-    use slog::Discard;
-    use slog::Logger;
-
     use super::super::super::mock::MockCoordinator;
-
-    fn mock_coordinator() -> MockCoordinator {
-        let logger = Logger::root(Discard, o!());
-        MockCoordinator::new(logger)
-    }
 
     #[test]
     fn force_remove() {
-        let mock_coordinator = mock_coordinator();
+        let mock_coordinator = MockCoordinator::default();
         let coordinator = mock_coordinator.mock();
         let mut held_lock = coordinator.non_blocking_lock("some/test/lock");
         held_lock.acquire(None).unwrap();
@@ -77,7 +68,7 @@ mod tests {
 
     #[test]
     fn owner() {
-        let mock_coordinator = mock_coordinator();
+        let mock_coordinator = MockCoordinator::default();
         let coordinator = mock_coordinator.mock();
         let node_id = coordinator.node_id().clone();
         let mut held_lock = coordinator.non_blocking_lock("some/test/lock");

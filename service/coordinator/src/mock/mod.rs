@@ -5,8 +5,6 @@ use std::sync::atomic::Ordering;
 use std::sync::Arc;
 use std::sync::Mutex;
 
-use slog::Logger;
-
 use super::backend::ElectionBehaviour;
 use super::coordinator::ElectionStatus;
 use super::coordinator::ElectionWatch;
@@ -23,6 +21,7 @@ use self::admin::MockAdmin;
 use self::backend::MockBackend;
 
 /// Helper to mock distributed coordination services.
+#[derive(Default)]
 pub struct MockCoordinator {
     pub elections: Arc<Mutex<HashMap<String, MockElection>>>,
     pub nblocks: Arc<Mutex<HashMap<String, MockNonBlockingLock>>>,
@@ -30,8 +29,7 @@ pub struct MockCoordinator {
 }
 
 impl MockCoordinator {
-    #[allow(clippy::needless_pass_by_value)]
-    pub fn new(_logger: Logger) -> MockCoordinator {
+    pub fn new() -> MockCoordinator {
         MockCoordinator {
             elections: Arc::new(Mutex::new(HashMap::new())),
             nblocks: Arc::new(Mutex::new(HashMap::new())),

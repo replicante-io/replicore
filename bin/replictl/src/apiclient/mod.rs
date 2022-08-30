@@ -6,6 +6,8 @@ use uuid::Uuid;
 
 use replicante_models_core::api::apply::ApplyObject;
 use replicante_models_core::api::discovery_settings::DiscoverySettingsListResponse;
+use replicante_models_core::api::orchestrator_action::OrchestratorActionSummariesResponse;
+use replicante_models_core::api::orchestrator_action::OrchestratorActionSummary;
 use replicante_models_core::api::validate::ErrorsCollection;
 
 use crate::context::Context;
@@ -13,10 +15,13 @@ use crate::context::Context;
 mod http;
 
 const ENDPOINT_APPLY: &str = "/api/unstable/core/apply";
+
 const ENDPOINT_CLUSTER: &str = "/api/unstable/core/cluster";
-const ENDPOINT_CLUSTER_ACTION: &str = "action";
 const ENDPOINT_CLUSTER_ACTION_APPROVE: &str = "approve";
 const ENDPOINT_CLUSTER_ACTION_DISAPPROVE: &str = "disapprove";
+const ENDPOINT_CLUSTER_ACTION_NODE: &str = "action";
+const ENDPOINT_CLUSTER_ACTION_ORCHESTRATOR: &str = "orchestrator-action";
+const ENDPOINT_CLUSTER_ACTION_SUMMARY: &str = "summary";
 const ENDPOINT_CLUSTER_ORCHESTRATE: &str = "orchestrate";
 
 const ENDPOINT_DISCOVERY_SETTINGS: &str = "/api/unstable/core/discoverysettings";
@@ -41,7 +46,7 @@ impl RepliClient {
             "{}/{}/{}/{}/{}",
             ENDPOINT_CLUSTER,
             cluster,
-            ENDPOINT_CLUSTER_ACTION,
+            ENDPOINT_CLUSTER_ACTION_NODE,
             action,
             ENDPOINT_CLUSTER_ACTION_APPROVE,
         );
@@ -50,12 +55,12 @@ impl RepliClient {
             .client
             .send(request)
             .await
-            .context("Unable to approve action")?;
+            .context("unable to approve action")?;
         response.check_status()?;
         Ok(())
     }
 
-    /// Dispprove a PENDING_APPROVE action so it will not be scheduled.
+    /// Disprove a PENDING_APPROVE action so it will not be scheduled.
     pub async fn action_disapprove(&self, cluster: &str, action: Uuid) -> Result<()> {
         debug!(
             self.logger, "About to POST action disapprove request";
@@ -66,7 +71,7 @@ impl RepliClient {
             "{}/{}/{}/{}/{}",
             ENDPOINT_CLUSTER,
             cluster,
-            ENDPOINT_CLUSTER_ACTION,
+            ENDPOINT_CLUSTER_ACTION_NODE,
             action,
             ENDPOINT_CLUSTER_ACTION_DISAPPROVE,
         );
@@ -75,9 +80,74 @@ impl RepliClient {
             .client
             .send(request)
             .await
-            .context("Unable to disapprove action")?;
+            .context("unable to disapprove action")?;
         response.check_status()?;
         Ok(())
+    }
+
+    /// Approve a PENDING_APPROVE orchestrator action so it can be scheduled and executed.
+    pub async fn action_orchestrator_approve(&self, cluster: &str, action: Uuid) -> Result<()> {
+        let uri = format!(
+            "{}/{}/{}/{}/{}",
+            ENDPOINT_CLUSTER,
+            cluster,
+            ENDPOINT_CLUSTER_ACTION_ORCHESTRATOR,
+            action,
+            ENDPOINT_CLUSTER_ACTION_APPROVE,
+        );
+        let request = self.client.post(&uri);
+        let response = self
+            .client
+            .send(request)
+            .await
+            .context("unable to approve orchestrator action")?;
+        response.check_status()?;
+        Ok(())
+    }
+
+    /// Disprove a PENDING_APPROVE orchestrator action so it will not be scheduled.
+    pub async fn action_orchestrator_disapprove(&self, cluster: &str, action: Uuid) -> Result<()> {
+        let uri = format!(
+            "{}/{}/{}/{}/{}",
+            ENDPOINT_CLUSTER,
+            cluster,
+            ENDPOINT_CLUSTER_ACTION_ORCHESTRATOR,
+            action,
+            ENDPOINT_CLUSTER_ACTION_DISAPPROVE,
+        );
+        let request = self.client.post(&uri);
+        let response = self
+            .client
+            .send(request)
+            .await
+            .context("unable to disapprove orchestrator action")?;
+        response.check_status()?;
+        Ok(())
+    }
+
+    /// Return summaries of orchestrator actions for a cluster.
+    pub async fn action_orchestrator_summaries(
+        &self,
+        cluster: &str,
+    ) -> Result<Vec<OrchestratorActionSummary>> {
+        let uri = format!(
+            "{}/{}/{}/{}",
+            ENDPOINT_CLUSTER,
+            cluster,
+            ENDPOINT_CLUSTER_ACTION_ORCHESTRATOR,
+            ENDPOINT_CLUSTER_ACTION_SUMMARY,
+        );
+        let request = self.client.get(&uri);
+        let response = self
+            .client
+            .send(request)
+            .await
+            .context("Failed to list OrchestratorActionSummary objects")?;
+        response.check_status()?;
+        let response = response
+            .body_as::<OrchestratorActionSummariesResponse>()
+            .context("Failed to decode OrchestratorActionSummary list response")?;
+        Ok(response.actions)
     }
 
     /// Send an `ApplyObject` to Replicate Core to request changes.

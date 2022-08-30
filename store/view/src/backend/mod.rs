@@ -10,8 +10,9 @@ use slog::Logger;
 use uuid::Uuid;
 
 use replicante_externals_mongodb::admin::ValidationResult;
-use replicante_models_core::actions::Action;
-use replicante_models_core::actions::ActionHistory;
+use replicante_models_core::actions::node::Action;
+use replicante_models_core::actions::node::ActionHistory;
+use replicante_models_core::actions::orchestrator::OrchestratorAction;
 use replicante_models_core::admin::Version;
 use replicante_models_core::cluster::OrchestrateReport;
 use replicante_models_core::events::Event;
@@ -21,6 +22,7 @@ use crate::store::actions::SearchFilters as ActionsSearchFilters;
 use crate::store::cluster::ClusterAttributes;
 use crate::store::events::EventsFilters;
 use crate::store::events::EventsOptions;
+use crate::store::orchestrator_actions::SearchFilters as OrchestratorActionsSearchFilters;
 use crate::Config;
 use crate::Cursor;
 use crate::Result;
@@ -153,6 +155,7 @@ arc_interface! {
         fn actions(&self, cluster_id: String) -> ActionsImpl;
         fn cluster(&self) -> ClusterImpl;
         fn events(&self) -> EventsImpl;
+        fn orchestrator_actions(&self, cluster_id: String) -> OrchestratorActionsImpl;
         fn persist(&self) -> PersistImpl;
     }
 }
@@ -241,6 +244,29 @@ box_interface! {
 }
 
 box_interface! {
+    /// Dynamic dispatch orchestrator actions operations to a backend-specific implementation.
+    struct OrchestratorActionsImpl,
+
+    /// Definition of orchestrator actions operations.
+    ///
+    /// See `store::orchestrator_actions::OrchestratorActions` for descriptions of methods.
+    trait OrchestratorActionsInterface,
+
+    interface {
+        fn orchestrator_action(
+            &self,
+            action_id: Uuid,
+            span: Option<SpanContext>,
+        ) -> Result<Option<OrchestratorAction>>;
+        fn search(
+            &self,
+            filters: OrchestratorActionsSearchFilters,
+            span: Option<SpanContext>,
+        ) -> Result<Cursor<OrchestratorAction>>;
+    }
+}
+
+box_interface! {
     /// Dynamic dispatch persist operations to a backend-specific implementation.
     struct PersistImpl,
 
@@ -266,6 +292,11 @@ box_interface! {
             span: Option<SpanContext>,
         ) -> Result<()>;
         fn event(&self, event: Event, span: Option<SpanContext>) -> Result<()>;
+        fn orchestrator_action(
+            &self,
+            action: OrchestratorAction,
+            span: Option<SpanContext>,
+        ) -> Result<()>;
     }
 }
 

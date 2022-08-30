@@ -3,10 +3,10 @@ use failure::ResultExt;
 use serde_json::Value;
 use uuid::Uuid;
 
-use replicante_models_core::actions::Action;
+use replicante_models_core::actions::node::Action;
+use replicante_models_core::actions::node::ActionRequester;
+use replicante_models_core::actions::node::ActionState;
 use replicante_models_core::actions::ActionApproval;
-use replicante_models_core::actions::ActionRequester;
-use replicante_models_core::actions::ActionState;
 use replicante_models_core::api::apply::SCOPE_CLUSTER;
 use replicante_models_core::api::apply::SCOPE_NODE;
 use replicante_models_core::api::apply::SCOPE_NS;
@@ -20,7 +20,7 @@ use crate::Result;
 
 /// Validate an action request and add it to the DB.
 pub fn replicante_io_v0(args: ApplierArgs) -> Result<Value> {
-    // Valiate request.
+    // Validate request.
     let mut errors = ErrorsCollection::new();
     let object = &args.object;
     if object.metadata.get(SCOPE_CLUSTER).is_none() {
@@ -148,7 +148,7 @@ pub fn replicante_io_v0(args: ApplierArgs) -> Result<Value> {
         state_payload: None,
     };
 
-    // Store the pending action for later sheduling.
+    // Store the pending action for later scheduling.
     let span = args.span.map(|span| span.context().clone());
     let event = Event::builder().action().new_action(action.clone());
     let stream_key = event.entity_id().partition_key();

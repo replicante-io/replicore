@@ -56,6 +56,13 @@ fn serialise_cluster_view() {
         .action(self::fixtures::cluster_mongodb::green_node_action_stepdown())
         .unwrap();
 
+    // Add orchestrator actions.
+    builder
+        .orchestrator_action(self::fixtures::cluster_mongodb::orchestrator_action_init())
+        .unwrap()
+        .orchestrator_action(self::fixtures::cluster_mongodb::orchestrator_action_backup())
+        .unwrap();
+
     // Serialise the view to check format.
     let view = builder.build();
     let actual = serde_json::to_string_pretty(&view).expect("ClusterView to serialise");

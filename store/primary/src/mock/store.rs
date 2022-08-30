@@ -4,8 +4,9 @@ use std::sync::Mutex;
 use opentracingrust::SpanContext;
 use uuid::Uuid;
 
-use replicante_models_core::actions::Action;
-use replicante_models_core::actions::ActionSummary;
+use replicante_models_core::actions::node::Action;
+use replicante_models_core::actions::node::ActionSyncSummary;
+use replicante_models_core::actions::orchestrator::OrchestratorAction;
 use replicante_models_core::agent::Agent;
 use replicante_models_core::agent::AgentInfo;
 use replicante_models_core::agent::Node;
@@ -29,6 +30,9 @@ use crate::backend::LegacyImpl;
 use crate::backend::LegacyInterface;
 use crate::backend::NodeImpl;
 use crate::backend::NodesImpl;
+use crate::backend::OrchestratorActionImpl;
+use crate::backend::OrchestratorActionInterface;
+use crate::backend::OrchestratorActionsImpl;
 use crate::backend::PersistImpl;
 use crate::backend::PersistInterface;
 use crate::backend::ShardImpl;
@@ -37,6 +41,7 @@ use crate::backend::StoreImpl;
 use crate::backend::StoreInterface;
 use crate::store::action::ActionAttributes;
 use crate::store::actions::ActionsAttributes;
+use crate::store::orchestrator_action::OrchestratorActionAttributes;
 use crate::store::Store;
 use crate::Cursor;
 use crate::Result;
@@ -94,6 +99,17 @@ impl StoreInterface for StoreMock {
 
     fn nodes(&self) -> NodesImpl {
         panic!("TODO: StoreMock::nodes");
+    }
+
+    fn orchestrator_action(&self) -> OrchestratorActionImpl {
+        let action = OrchestratorActionMock {
+            state: Arc::clone(&self.state),
+        };
+        OrchestratorActionImpl::new(action)
+    }
+
+    fn orchestrator_actions(&self) -> OrchestratorActionsImpl {
+        panic!("TODO: StoreMock::orchestrator_actions");
     }
 
     fn persist(&self) -> PersistImpl {
@@ -167,14 +183,14 @@ impl ActionsInterface for Actions {
         &self,
         attrs: &ActionsAttributes,
         _: Option<SpanContext>,
-    ) -> Result<Cursor<ActionSummary>> {
+    ) -> Result<Cursor<ActionSyncSummary>> {
         let store = self.state.lock().expect("MockStore state lock is poisoned");
         let cluster_id = &attrs.cluster_id;
-        let cursor: Vec<ActionSummary> = store
+        let cursor: Vec<ActionSyncSummary> = store
             .actions
             .iter()
             .filter(|(key, action)| key.0 == *cluster_id && action.finished_ts.is_none())
-            .map(|(_, action)| ActionSummary::from(action))
+            .map(|(_, action)| ActionSyncSummary::from(action))
             .collect();
         Ok(Cursor::new(cursor.into_iter().map(Ok)))
     }
@@ -219,6 +235,29 @@ impl LegacyInterface for Legacy {
     }
 }
 
+/// Mock implementation of the `OrchestratorActionInterface`.
+struct OrchestratorActionMock {
+    state: Arc<Mutex<MockState>>,
+}
+
+impl OrchestratorActionInterface for OrchestratorActionMock {
+    fn get(
+        &self,
+        attrs: &OrchestratorActionAttributes,
+        _: Option<SpanContext>,
+    ) -> Result<Option<OrchestratorAction>> {
+        let store = self.state.lock().expect("MockStore state lock is poisoned");
+        let action = store.orchestrator_actions.iter().find_map(|(key, action)| {
+            if key.0 == attrs.cluster_id && key.1 == attrs.action_id {
+                Some(action)
+            } else {
+                None
+            }
+        });
+        Ok(action.cloned())
+    }
+}
+
 /// Mock implementation of the `PersistInterface`.
 struct Persist {
     state: Arc<Mutex<MockState>>,
@@ -239,12 +278,24 @@ impl PersistInterface for Persist {
         Ok(())
     }
 
-    fn agent(&self, _agent: Agent, _: Option<SpanContext>) -> Result<()> {
-        panic!("TODO: MockStore::Persist::agent")
+    fn agent(&self, agent: Agent, _: Option<SpanContext>) -> Result<()> {
+        let key = (agent.cluster_id.clone(), agent.host.clone());
+        self.state
+            .lock()
+            .expect("MockStore state lock poisoned")
+            .agents
+            .insert(key, agent);
+        Ok(())
     }
 
-    fn agent_info(&self, _agent: AgentInfo, _: Option<SpanContext>) -> Result<()> {
-        panic!("TODO: MockStore::Persist::agent_info")
+    fn agent_info(&self, agent: AgentInfo, _: Option<SpanContext>) -> Result<()> {
+        let key = (agent.cluster_id.clone(), agent.host.clone());
+        self.state
+            .lock()
+            .expect("MockStore state lock poisoned")
+            .agents_info
+            .insert(key, agent);
+        Ok(())
     }
 
     fn cluster_discovery(
@@ -283,11 +334,41 @@ impl PersistInterface for Persist {
         panic!("TODO: MockStore::Persist::next_discovery_run")
     }
 
-    fn node(&self, _node: Node, _: Option<SpanContext>) -> Result<()> {
-        panic!("TODO: MockStore::Persist::node")
+    fn node(&self, node: Node, _: Option<SpanContext>) -> Result<()> {
+        let key = (node.cluster_id.clone(), node.node_id.clone());
+        self.state
+            .lock()
+            .expect("MockStore state lock poisoned")
+            .nodes
+            .insert(key, node);
+        Ok(())
     }
 
-    fn shard(&self, _shard: Shard, _: Option<SpanContext>) -> Result<()> {
-        panic!("TODO: MockStore::Persist::shard")
+    fn orchestrator_action(
+        &self,
+        action: OrchestratorAction,
+        _: Option<SpanContext>,
+    ) -> Result<()> {
+        let key = (action.cluster_id.clone(), action.action_id);
+        self.state
+            .lock()
+            .expect("MockStore state lock poisoned")
+            .orchestrator_actions
+            .insert(key, action);
+        Ok(())
+    }
+
+    fn shard(&self, shard: Shard, _: Option<SpanContext>) -> Result<()> {
+        let key = (
+            shard.cluster_id.clone(),
+            shard.node_id.clone(),
+            shard.shard_id.clone(),
+        );
+        self.state
+            .lock()
+            .expect("MockStore state lock poisoned")
+            .shards
+            .insert(key, shard);
+        Ok(())
     }
 }

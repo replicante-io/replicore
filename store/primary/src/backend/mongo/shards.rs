@@ -12,7 +12,7 @@ use replicante_models_core::agent::Shard;
 
 use super::super::ShardsInterface;
 use super::constants::COLLECTION_SHARDS;
-use crate::store::shards::ShardsAttribures;
+use crate::store::shards::ShardsAttributes;
 use crate::Cursor;
 use crate::ErrorKind;
 use crate::Result;
@@ -35,7 +35,7 @@ impl Shards {
 }
 
 impl ShardsInterface for Shards {
-    fn iter(&self, attrs: &ShardsAttribures, span: Option<SpanContext>) -> Result<Cursor<Shard>> {
+    fn iter(&self, attrs: &ShardsAttributes, span: Option<SpanContext>) -> Result<Cursor<Shard>> {
         let filter = doc! {"cluster_id": &attrs.cluster_id};
         let collection = self.client.database(&self.db).collection(COLLECTION_SHARDS);
         let cursor = find(collection, filter, span, self.tracer.as_deref())

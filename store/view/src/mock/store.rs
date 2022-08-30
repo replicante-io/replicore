@@ -3,8 +3,9 @@ use chrono::Utc;
 use opentracingrust::SpanContext;
 use uuid::Uuid;
 
-use replicante_models_core::actions::Action;
-use replicante_models_core::actions::ActionHistory;
+use replicante_models_core::actions::node::Action;
+use replicante_models_core::actions::node::ActionHistory;
+use replicante_models_core::actions::orchestrator::OrchestratorAction;
 use replicante_models_core::cluster::OrchestrateReport;
 use replicante_models_core::events::Event;
 
@@ -13,6 +14,7 @@ use crate::backend::ActionsInterface;
 use crate::backend::ClusterImpl;
 use crate::backend::ClusterInterface;
 use crate::backend::EventsImpl;
+use crate::backend::OrchestratorActionsImpl;
 use crate::backend::PersistImpl;
 use crate::backend::PersistInterface;
 use crate::backend::StoreImpl;
@@ -41,6 +43,10 @@ impl StoreInterface for StoreMock {
 
     fn events(&self) -> EventsImpl {
         panic!("TODO: StoreMock::events")
+    }
+
+    fn orchestrator_actions(&self, _: String) -> OrchestratorActionsImpl {
+        panic!("TODO: StoreMock::orchestrator_actions")
     }
 
     fn persist(&self) -> PersistImpl {
@@ -118,6 +124,11 @@ impl PersistInterface for Persist {
     }
 
     fn event(&self, _: Event, _: Option<SpanContext>) -> Result<()> {
+        // Noop for now.
+        Ok(())
+    }
+
+    fn orchestrator_action(&self, _: OrchestratorAction, _: Option<SpanContext>) -> Result<()> {
         // Noop for now.
         Ok(())
     }

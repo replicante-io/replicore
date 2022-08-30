@@ -12,6 +12,8 @@ use slog::Logger;
 
 use replicante_util_upkeep::Upkeep;
 
+use replicore_iface_orchestrator_action::OrchestratorActionRegistryBuilder;
+
 mod components;
 mod config;
 mod error;
@@ -42,7 +44,7 @@ pub const VERSION: &str = concat!(
 /// Replicante is built on top of two kinds of units:
 ///
 ///   * Interfaces: units used to inspect the system or interact with it.
-///   * Components: units that perfom actions and implement logic.
+///   * Components: units that perform actions and implement logic.
 ///
 /// Most, if not all, components start background threads and must join on drop.
 /// Interfaces can work in the same way if they need threads but some may just provide
@@ -64,6 +66,15 @@ fn initialise_and_run(config: Config, logger: Logger) -> Result<bool> {
     Components::register_metrics(&logger, interfaces.metrics.registry());
     self::metrics::register_metrics(&logger, interfaces.metrics.registry());
     let mut components = Components::new(&config, logger.clone(), &mut interfaces)?;
+
+    // Register built-in actions.
+    #[allow(unused_mut)]
+    let mut builder = OrchestratorActionRegistryBuilder::empty();
+    #[cfg(feature = "action-debug")]
+    replicore_action_debug::register(&mut builder)
+        .map_err(replicore_util_errors::AnyWrap::from)
+        .with_context(|_| ErrorKind::InterfaceInit("orchestrator actions registry"))?;
+    builder.build_as_current();
 
     // Initialisation done, run all interfaces and components.
     info!(logger, "Starting sub-systems ...");
@@ -110,19 +121,18 @@ pub fn initialise_sentry(config: Option<SentryConfig>, logger: &Logger) -> Resul
     Ok(client)
 }
 
-/// Attemps to register all metrics from other replicante_* crates.
+/// Attempt to register all metrics from other replicante_* crates.
 ///
 /// Metrics that fail to register are logged and ignored.
 pub fn register_crates_metrics(logger: &Logger, registry: &Registry) {
     replicante_agent_client::register_metrics(logger, registry);
-    replicante_cluster_aggregator::register_metrics(logger, registry);
     replicante_cluster_discovery::register_metrics(logger, registry);
-    replicante_cluster_fetcher::register_metrics(logger, registry);
     replicante_externals_kafka::register_metrics(logger, registry);
     replicante_externals_mongodb::register_metrics(logger, registry);
     replicante_service_coordinator::register_metrics(logger, registry);
     replicante_service_tasks::register_metrics(logger, registry);
     replicante_stream::register_metrics(logger, registry);
+    replicore_cluster_orchestrate::register_metrics(logger, registry);
 }
 
 /// Parse command line, load configuration, initialise logger.
@@ -173,7 +183,7 @@ pub fn run() -> Result<bool> {
     slog_stdlog::init().expect("Failed to initialise log -> slog integration");
     debug!(logger, "Logging configured");
 
-    // Iniialise sentry as soon as possible.
+    // Initialise sentry as soon as possible.
     let _sentry = initialise_sentry(config.sentry.clone(), &logger)?;
     let result = initialise_and_run(config, logger.clone()).map_err(|error| {
         capture_fail(&error);

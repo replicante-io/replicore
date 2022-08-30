@@ -1,0 +1,19 @@
+[package]
+name = "replicore_action_debug"
+version = "0.1.0"
+authors = ["Stefano Pogliani <stefano@spogliani.net>"]
+edition = "2021"
+
+description = "Replicante Core debug orchestrator actions"
+documentation = "https://www.replicante.io/docs"
+homepage = "https://www.replicante.io/"
+repository = "https://github.com/replicante-io/replicante"
+license = "MIT"
+
+
+[dependencies]
+anyhow = "^1.0.53"
+serde_json = "^1.0"
+
+replicante_models_core = { path = "../../../models/core" }
+replicore_iface_orchestrator_action = { path = "../../interface/orchestrator_action" }

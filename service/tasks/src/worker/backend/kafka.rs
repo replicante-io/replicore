@@ -355,7 +355,7 @@ impl Kafka {
         let now = ::rdkafka::message::Timestamp::now().to_millis().unwrap();
         let retry_delay = queue.retry_delay();
         let retry_delay = retry_delay.as_secs() * 1000 + u64::from(retry_delay.subsec_millis());
-        let retry = (now - timestamp).abs() as u64 >= retry_delay;
+        let retry = (now - timestamp).unsigned_abs() >= retry_delay;
 
         // If so, re-publish the message to the task queue.
         if retry {

@@ -11,7 +11,7 @@ use replicante_models_core::agent::Node as NodeModel;
 
 use super::super::NodeInterface;
 use super::constants::COLLECTION_NODES;
-use crate::store::node::NodeAttribures;
+use crate::store::node::NodeAttributes;
 use crate::ErrorKind;
 use crate::Result;
 
@@ -33,7 +33,7 @@ impl Node {
 }
 
 impl NodeInterface for Node {
-    fn get(&self, attrs: &NodeAttribures, span: Option<SpanContext>) -> Result<Option<NodeModel>> {
+    fn get(&self, attrs: &NodeAttributes, span: Option<SpanContext>) -> Result<Option<NodeModel>> {
         let filter = doc! {
             "cluster_id": &attrs.cluster_id,
             "node_id": &attrs.node_id,

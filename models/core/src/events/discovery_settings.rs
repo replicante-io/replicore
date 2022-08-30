@@ -8,7 +8,7 @@ use crate::cluster::discovery::DiscoverySettings;
 use crate::scope::EntityId;
 
 /// Enumerates all possible discovery settings events emitted by the system.
-#[derive(Clone, PartialEq, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "event", content = "payload")]
 // TODO: use when possible #[non_exhaustive]
 pub enum DiscoverySettingsEvent {

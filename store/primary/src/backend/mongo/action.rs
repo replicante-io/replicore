@@ -7,7 +7,7 @@ use opentracingrust::SpanContext;
 use opentracingrust::Tracer;
 
 use replicante_externals_mongodb::operations::find_one;
-use replicante_models_core::actions::Action as ActionModel;
+use replicante_models_core::actions::node::Action as ActionModel;
 
 use super::constants::COLLECTION_ACTIONS;
 use crate::backend::ActionInterface;

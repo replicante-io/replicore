@@ -20,7 +20,7 @@ use crate::Error;
 use crate::ErrorKind;
 use crate::Result;
 
-/// Attemps to register metrics with the Registry.
+/// Attempts to register metrics with the Registry.
 ///
 /// Metrics that fail to register are logged and ignored.
 pub fn register_metrics(logger: &Logger, registry: &Registry) {

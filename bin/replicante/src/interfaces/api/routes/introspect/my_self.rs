@@ -34,9 +34,6 @@ mod tests {
     use actix_web::test::read_body;
     use actix_web::test::TestRequest;
     use actix_web::App;
-    use slog::o;
-    use slog::Discard;
-    use slog::Logger;
 
     use replicante_service_coordinator::mock::MockCoordinator;
 
@@ -44,7 +41,7 @@ mod tests {
 
     #[actix_rt::test]
     async fn my_self_info() {
-        let coordinator = MockCoordinator::new(Logger::root(Discard, o!()));
+        let coordinator = MockCoordinator::default();
         let coordinator = coordinator;
         let my_self = MySelf::new(coordinator.mock());
         let app = App::new().service(my_self.resource());
