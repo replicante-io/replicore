@@ -7,14 +7,14 @@ use serde::Serialize;
 use replicante_models_core::actions::orchestrator::OrchestratorAction;
 
 /// Arguments passed to an HTTP request.
-#[derive(Clone, PartialEq, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub struct Args {
     /// The remote system to invoke the action against.
     pub remote: RemoteArgs,
 }
 
 /// Configuration for the remote to invoke actions against.
-#[derive(Clone, PartialEq, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub struct RemoteArgs {
     /// Optional PEM encoded certificate authority to add to the client.
     pub ca: Option<String>,

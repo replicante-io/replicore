@@ -15,7 +15,7 @@ use crate::scope::EntityId;
 use crate::scope::Namespace;
 
 /// Hold data about an action change with before and after state.
-#[derive(Clone, PartialEq, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub struct ActionChanged {
     pub cluster_id: String,
     pub current: Action,
@@ -23,7 +23,7 @@ pub struct ActionChanged {
 }
 
 /// Hold data about an action history from the agent.
-#[derive(Clone, PartialEq, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub struct ActionHistory {
     pub action_id: Uuid,
     pub cluster_id: String,
@@ -33,7 +33,7 @@ pub struct ActionHistory {
 }
 
 /// Enumerates all possible action events emitted by the system.
-#[derive(Clone, PartialEq, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "event", content = "payload")]
 #[allow(clippy::large_enum_variant)]
 // TODO: use when possible #[non_exhaustive]
@@ -217,7 +217,7 @@ impl ActionEventBuilder {
 }
 
 /// Hold data about an action change with before and after state.
-#[derive(Clone, PartialEq, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub struct OrchestratorActionChanged {
     pub current: OrchestratorAction,
     pub previous: OrchestratorAction,

@@ -14,7 +14,7 @@ use replicante_models_agent::actions::ActionState as ActionStateWire;
 pub use replicante_models_agent::actions::ActionRequester;
 
 /// Action state and metadata information.
-#[derive(Clone, PartialEq, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub struct Action {
     // ID attributes.
     pub cluster_id: String,
@@ -75,7 +75,7 @@ impl Action {
 }
 
 /// Action history metadata and transitions.
-#[derive(Clone, PartialEq, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub struct ActionHistory {
     // ID attributes.
     pub cluster_id: String,
@@ -186,7 +186,7 @@ impl From<ActionStateWire> for ActionState {
 }
 
 /// Sync-needed information about an action.
-#[derive(Clone, PartialEq, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub struct ActionSyncSummary {
     pub cluster_id: String,
     pub node_id: String,

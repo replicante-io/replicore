@@ -19,7 +19,7 @@ use replicante_models_core::events::Event;
 use replicante_models_core::events::Payload;
 
 /// Wrap an `Action` with store only fields and MongoDB specific types.
-#[derive(Clone, PartialEq, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub struct ActionDocument {
     // ID attributes.
     pub cluster_id: String,
@@ -97,7 +97,7 @@ impl From<ActionDocument> for Action {
 }
 
 /// Wrap an `ActionHistory` with MongoDB specific types.
-#[derive(Clone, PartialEq, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub struct ActionHistoryDocument {
     // ID attributes.
     pub cluster_id: String,
@@ -156,7 +156,7 @@ impl From<ActionHistoryDocument> for ActionHistory {
 }
 
 /// Wrap an `Event` to allow BSON to encode/decode timestamps correctly.
-#[derive(Clone, PartialEq, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub struct EventDocument {
     #[serde(flatten)]
     pub payload: Payload,
@@ -182,7 +182,7 @@ impl From<EventDocument> for Event {
 }
 
 /// Wrap an `OrchestrateReport` to allow BSON to encode/decode timestamps correctly.
-#[derive(Clone, PartialEq, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub struct OrchestrateReportDocument {
     // Cluster identification attributes.
     pub namespace: String,
@@ -239,7 +239,7 @@ impl From<OrchestrateReportDocument> for OrchestrateReport {
 }
 
 /// Wrap an `Action` with store only fields and MongoDB specific types.
-#[derive(Clone, PartialEq, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub struct OrchestratorActionDocument {
     // ID attributes.
     pub cluster_id: String,

@@ -9,7 +9,7 @@ use serde_json::Value as Json;
 use uuid::Uuid;
 
 /// Orchestrator action state and metadata information.
-#[derive(Clone, PartialEq, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub struct OrchestratorAction {
     // ID attributes.
     pub cluster_id: String,
@@ -149,7 +149,7 @@ impl std::fmt::Display for OrchestratorActionState {
 }
 
 /// Sync-needed information about an orchestrator action.
-#[derive(Clone, PartialEq, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub struct OrchestratorActionSyncSummary {
     pub cluster_id: String,
     pub action_id: Uuid,

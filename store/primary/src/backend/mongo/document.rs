@@ -15,7 +15,7 @@ use replicante_models_core::cluster::discovery::DiscoverySettings;
 use replicante_models_core::cluster::ClusterSettings;
 
 /// Wrap an `Action` with store only fields and MongoDB specific types.
-#[derive(Clone, PartialEq, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub struct ActionDocument {
     // ID attributes.
     pub cluster_id: String,
@@ -143,7 +143,7 @@ impl From<DiscoverySettingsDocument> for DiscoverySettings {
 }
 
 /// Wrap an `OrchestratorAction` with store only fields and MongoDB specific types.
-#[derive(Clone, PartialEq, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub struct OrchestratorActionDocument {
     // ID attributes.
     pub cluster_id: String,
@@ -224,7 +224,7 @@ impl From<OrchestratorActionDocument> for OrchestratorAction {
 }
 
 /// Wrap an `OrchestratorActionSummary` with store only fields and MongoDB specific types.
-#[derive(Clone, PartialEq, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub struct OrchestratorActionSummaryDocument {
     pub cluster_id: String,
     pub action_id: String,
