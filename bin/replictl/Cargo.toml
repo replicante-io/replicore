@@ -48,7 +48,7 @@ version = "^1.0.34"
 
 [dependencies.tokio]
 features = ["full"]
-version = "^0.2.0"
+version = "^1.20.1"
 
 [dependencies.uuid]
 features = ["serde", "v4"]
