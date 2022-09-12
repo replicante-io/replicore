@@ -11,6 +11,10 @@ repository = "https://github.com/replicante-io/replicante"
 license = "MIT"
 
 
+[features]
+with_test_support = []
+
+
 [dependencies]
 failure = "^0.1.3"
 futures = "^0.3.4"

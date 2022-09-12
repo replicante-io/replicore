@@ -17,7 +17,7 @@ RUN cargo build --manifest-path /code/Cargo.toml --release --locked
 #####################################
 # Package core into a smaller image #
 #####################################
-FROM debian:buster-slim
+FROM debian:bullseye-slim
 
 # Create a replicante user to avoid using root.
 ARG REPLI_GID=1616

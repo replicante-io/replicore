@@ -10,7 +10,7 @@ const CI_RUN_ERROR: &str = "CI tests failed, please review the logs and fix any 
 
 /// Run CI checks for the project to ensure they pass.
 pub async fn run() -> Result<()> {
-    let path = Path::new("ci/travis/build-script.sh");
+    let path = Path::new("devtools/local-ci.sh");
     if !path.exists() {
         return Ok(());
     }

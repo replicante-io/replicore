@@ -1,4 +1,5 @@
 # Releasing Replicante Core
+
 All replicante projects must be released using the `replidev release` commands.
 These commands will guide the you through release tasks,
 automating the repetitive parts and performing checks along the way.
@@ -14,7 +15,7 @@ $ git commit .
 # Run checks to ensure the release is ready.
 $ replidev release check
 
-# Make sure you are logged into docker hub so the push can suceed:
+# Make sure you are logged into docker hub so the push can succeed:
 $ podman login registry-1.docker.io
 
 # Once all changes are committed and the checks pass publish the release.

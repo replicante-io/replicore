@@ -109,17 +109,17 @@ impl<Q: TaskQueue> Tasks<Q> {
     }
 }
 
-#[cfg(debug_assertions)]
+#[cfg(any(debug_assertions, feature = "with_test_support"))]
 pub type MockedRequests<Q> = Arc<::std::sync::Mutex<Vec<(TaskRequest<Q>, ::serde_json::Value)>>>;
 
 /// Mock tools to test `Tasks` users.
-#[cfg(debug_assertions)]
+#[cfg(any(debug_assertions, feature = "with_test_support"))]
 #[derive(Default)]
 pub struct MockTasks<Q: TaskQueue> {
     pub requests: MockedRequests<Q>,
 }
 
-#[cfg(debug_assertions)]
+#[cfg(any(debug_assertions, feature = "with_test_support"))]
 impl<Q: TaskQueue> MockTasks<Q> {
     /// Create a mock tasks instance to be used for tests.
     pub fn new() -> MockTasks<Q> {

@@ -27,9 +27,9 @@ pub use self::worker::TaskHandler;
 pub use self::worker::WorkerSet;
 pub use self::worker::WorkerSetPool;
 
-#[cfg(debug_assertions)]
+#[cfg(any(debug_assertions, feature = "with_test_support"))]
 pub use self::request::MockTasks;
-#[cfg(debug_assertions)]
+#[cfg(any(debug_assertions, feature = "with_test_support"))]
 pub use self::worker::mock as worker_mock;
 
 /// Application defined queue definition.
@@ -37,7 +37,7 @@ pub use self::worker::mock as worker_mock;
 /// Letting the application define a type for queues means that application can choose flexibility
 /// (the TaskQueue is a String) or compile time checks (the TaskQueue is an enumeration).
 ///
-/// Anything in beetween is also supported with variant attributes and complex structures.
+/// Anything in between is also supported with variant attributes and complex structures.
 pub trait TaskQueue:
     Clone + Eq + FromStr<Err = failure::Error> + Hash + Send + Sync + 'static
 {
@@ -51,7 +51,7 @@ pub trait TaskQueue:
     fn retry_delay(&self) -> Duration;
 }
 
-/// Attemps to register metrics with the Registry.
+/// Attempts to register metrics with the Registry.
 ///
 /// Metrics that fail to register are logged and ignored.
 pub fn register_metrics(logger: &Logger, registry: &Registry) {

@@ -29,7 +29,7 @@ use super::backend::Backend;
 
 use super::TaskQueue;
 
-#[cfg(debug_assertions)]
+#[cfg(any(debug_assertions, feature = "with_test_support"))]
 pub mod mock;
 
 const TIMEOUT_MS_POLL: u64 = 500;

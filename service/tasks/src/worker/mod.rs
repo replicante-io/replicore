@@ -19,7 +19,7 @@ use super::TaskQueue;
 mod backend;
 mod set;
 
-#[cfg(debug_assertions)]
+#[cfg(any(debug_assertions, feature = "with_test_support"))]
 pub mod mock;
 
 pub use self::backend::AckStrategy;

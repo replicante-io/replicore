@@ -3,7 +3,7 @@ use super::TaskQueue;
 use super::TaskRequest;
 
 pub mod kafka;
-#[cfg(debug_assertions)]
+#[cfg(any(debug_assertions, feature = "with_test_support"))]
 pub mod mock;
 
 /// Internal interface used to request tasks form the queue system backend.

@@ -12,7 +12,7 @@ license = "MIT"
 
 
 [features]
-with_test_support = []
+with_test_support = ["replicante_service_tasks/with_test_support"]
 
 
 [dependencies]

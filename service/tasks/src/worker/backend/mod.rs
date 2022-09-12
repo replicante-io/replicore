@@ -5,7 +5,7 @@ use super::Task;
 use super::TaskQueue;
 
 pub mod kafka;
-#[cfg(debug_assertions)]
+#[cfg(any(debug_assertions, feature = "with_test_support"))]
 pub mod mock;
 
 /// Backend specific task acknowledgement logic.

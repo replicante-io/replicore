@@ -22,13 +22,6 @@ extract_binaries:
       from: cargo
       path: 'bin/replicante/Cargo.toml'
 
-  - extract: file
-    path: '/opt/replicante/bin/repliadm'
-    repo: replicante
-    version:
-      from: cargo
-      path: 'bin/replicante/Cargo.toml'
-
 images:
   - name: core
     repo: replicante
