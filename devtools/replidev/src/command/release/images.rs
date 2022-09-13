@@ -18,7 +18,7 @@ const TARGET_PATH: &str = "target/prebuilt-binaries";
 
 /// Information about what to extract from an image.
 #[derive(Debug)]
-struct ExtractEnrty {
+struct ExtractEntry {
     mode: ExtractBinaryMode,
     path: String,
     target_name: Option<String>,
@@ -59,7 +59,7 @@ pub async fn extract_binaries(conf: &Conf, skip_pull: bool) -> Result<()> {
             "{}:v{}.{}.{}",
             prefix, version.major, version.minor, version.patch
         );
-        let entry = ExtractEnrty {
+        let entry = ExtractEntry {
             mode: binary.extract,
             path: binary.path.clone(),
             target_name: binary.target_name.clone(),
@@ -100,7 +100,7 @@ pub async fn extract_binaries(conf: &Conf, skip_pull: bool) -> Result<()> {
         )
         .await?;
 
-        // Extract entires from the container.
+        // Extract entries from the container.
         let result = extract_entries(conf, entries).await;
 
         // Delete the extraction container, even on extraction fail.
@@ -148,12 +148,12 @@ pub async fn push(conf: &Conf) -> Result<()> {
 }
 
 /// Extract every entry from the running extraction container.
-async fn extract_entries(conf: &Conf, entries: Vec<ExtractEnrty>) -> Result<Vec<String>> {
+async fn extract_entries(conf: &Conf, entries: Vec<ExtractEntry>) -> Result<Vec<String>> {
     let mut extracted = Vec::new();
     for entry in entries {
         let file = match entry.mode {
-            ExtractBinaryMode::Direcotry => {
-                extract_direcotry(conf, &entry.path, entry.target_name).await?
+            ExtractBinaryMode::Directory => {
+                extract_directory(conf, &entry.path, entry.target_name).await?
             }
             ExtractBinaryMode::File => extract_file(conf, &entry.path, entry.target_name).await?,
         };
@@ -163,7 +163,7 @@ async fn extract_entries(conf: &Conf, entries: Vec<ExtractEnrty>) -> Result<Vec<
 }
 
 /// Extract a directory as a tar archive from the running extraction container.
-async fn extract_direcotry(conf: &Conf, path: &str, target_name: Option<String>) -> Result<String> {
+async fn extract_directory(conf: &Conf, path: &str, target_name: Option<String>) -> Result<String> {
     // Figure out the name the archive file will have.
     let file = match target_name {
         Some(file) => file,

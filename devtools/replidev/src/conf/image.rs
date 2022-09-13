@@ -31,7 +31,7 @@ impl Image {
     }
 
     pub(crate) fn default_registry() -> String {
-        "replicanteio".to_string()
+        "docker.io/replicanteio".to_string()
     }
 }
 
