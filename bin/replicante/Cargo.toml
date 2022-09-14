@@ -1,6 +1,6 @@
 [package]
 name = "replicante"
-version = "0.7.0"
+version = "0.7.1"
 authors = ["Stefano Pogliani <stefano@spogliani.net>"]
 edition = "2018"
 build = "../../build.rs"
@@ -27,10 +27,12 @@ path = "src/lib.rs"
 [features]
 default = [
   "action-debug",
+  "action-http",
 ]
 
 # Built-in orchestrator actions to include.
 action-debug = ["replicore_action_debug"]
+action-http = ["replicore_action_http"]
 
 # Additional introspection and debugging features.
 journald = ["replicante_logging/journald"]
@@ -80,6 +82,8 @@ replicante_util_tracing = { path = "../../common/util/tracing" }
 replicante_util_upkeep = { path = "../../common/util/upkeep" }
 
 replicore_action_debug = { path = "../../core/orchestrator_action/debug", optional = true }
+replicore_action_http = { path = "../../core/orchestrator_action/http", optional = true }
+
 replicore_cluster_orchestrate = { path = "../../core/cluster/orchestrate" }
 replicore_component_discovery_scheduler = { path = "../../core/components/discovery_scheduler" }
 replicore_component_orchestrator_scheduler = { path = "../../core/components/orchestrator_scheduler" }

@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [0.7.1] - 2022-09-14
+### Changed
+- **HOTFIX**: Use cargo resolver v2 as resolver v1 adds test code to releases and corrupts them.
+
 ## [0.7.0] - 2022-09-13
 ### Added
 - Cluster discovery dynamically configured with `apply`.
@@ -201,7 +205,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Validate contents of the store.
 - WebUI endpoints for initial UI.
 
-[Unreleased]: https://github.com/replicante-io/replicante/compare/v0.6.0...HEAD
+[Unreleased]: https://github.com/replicante-io/replicante/compare/v0.7.1...HEAD
+[0.7.1]: https://github.com/replicante-io/replicante/compare/v0.7.0...v0.7.1
+[0.7.0]: https://github.com/replicante-io/replicante/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/replicante-io/replicante/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/replicante-io/replicante/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/replicante-io/replicante/compare/v0.3.1...v0.4.0

@@ -2766,7 +2766,7 @@ dependencies = [
 
 [[package]]
 name = "repliadm"
-version = "0.7.0"
+version = "0.7.1"
 dependencies = [
  "clap",
  "failure",
@@ -2797,7 +2797,7 @@ dependencies = [
 
 [[package]]
 name = "replicante"
-version = "0.7.0"
+version = "0.7.1"
 dependencies = [
  "actix-rt",
  "actix-web",
@@ -2830,6 +2830,7 @@ dependencies = [
  "replicante_util_tracing",
  "replicante_util_upkeep",
  "replicore_action_debug",
+ "replicore_action_http",
  "replicore_cluster_orchestrate",
  "replicore_component_discovery_scheduler",
  "replicore_component_orchestrator_scheduler",
@@ -3384,7 +3385,7 @@ dependencies = [
 
 [[package]]
 name = "replictl"
-version = "0.7.0"
+version = "0.7.1"
 dependencies = [
  "anyhow",
  "dialoguer",

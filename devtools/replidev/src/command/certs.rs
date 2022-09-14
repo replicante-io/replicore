@@ -70,7 +70,7 @@ pub async fn run(args: Opt, conf: Conf) -> Result<i32> {
     };
 
     // Initialise the Certificate Authority.
-    println!("--> Initialising Certificate Authotity");
+    println!("--> Initialising Certificate Authority");
     let status = Command::new(easyrsa)
         .envs(env.iter())
         .arg("init-pki")
@@ -86,7 +86,7 @@ pub async fn run(args: Opt, conf: Conf) -> Result<i32> {
     }
 
     // Create the Certificate Authority.
-    println!("--> Creating Certificate Authotity");
+    println!("--> Creating Certificate Authority");
     let status = Command::new(easyrsa)
         .envs(env.iter())
         .arg("build-ca")

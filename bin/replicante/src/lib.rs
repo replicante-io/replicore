@@ -51,6 +51,21 @@ pub const VERSION: &str = concat!(
 /// services to other interfaces and/or components.
 #[allow(clippy::needless_pass_by_value)]
 fn initialise_and_run(config: Config, logger: Logger) -> Result<bool> {
+    // Register built-in actions before any other thread is spawned.
+    #[allow(unused_mut)]
+    let mut builder = OrchestratorActionRegistryBuilder::empty();
+
+    #[cfg(feature = "action-debug")]
+    replicore_action_debug::register(&mut builder)
+        .map_err(replicore_util_errors::AnyWrap::from)
+        .with_context(|_| ErrorKind::InterfaceInit("orchestrator actions registry"))?;
+    #[cfg(feature = "action-http")]
+    replicore_action_http::register(&mut builder)
+        .map_err(replicore_util_errors::AnyWrap::from)
+        .with_context(|_| ErrorKind::InterfaceInit("orchestrator actions registry"))?;
+
+    builder.build_as_current();
+
     // Initialise Upkeep instance and signals.
     let mut upkeep = Upkeep::new();
     upkeep
@@ -66,15 +81,6 @@ fn initialise_and_run(config: Config, logger: Logger) -> Result<bool> {
     Components::register_metrics(&logger, interfaces.metrics.registry());
     self::metrics::register_metrics(&logger, interfaces.metrics.registry());
     let mut components = Components::new(&config, logger.clone(), &mut interfaces)?;
-
-    // Register built-in actions.
-    #[allow(unused_mut)]
-    let mut builder = OrchestratorActionRegistryBuilder::empty();
-    #[cfg(feature = "action-debug")]
-    replicore_action_debug::register(&mut builder)
-        .map_err(replicore_util_errors::AnyWrap::from)
-        .with_context(|_| ErrorKind::InterfaceInit("orchestrator actions registry"))?;
-    builder.build_as_current();
 
     // Initialisation done, run all interfaces and components.
     info!(logger, "Starting sub-systems ...");

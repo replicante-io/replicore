@@ -1,7 +1,9 @@
 # Replicante
+
 A distributed datastore orchestration system.
 
 ## Code of Conduct
+
 Our aim is to build a thriving, healthy and diverse community.  
 To help us get there we decided to adopt the [Contributor Covenant Code of Conduct](https://www.contributor-covenant.org/)
 for all our projects.
@@ -43,6 +45,7 @@ As such the following two special characters should be the only one in use:
 * `_` as the world separator within each of `$namespace` and `$feature`.
 
 ## Development environment
+
 Replicante Core requires a few dependencies in order to run.  
 To make development easier and faster these dependencies are run locally using containers.
 
@@ -65,7 +68,7 @@ Once installed, the Replicante Core development environment can be set up with:
 
 ```bash
 # Start the essential dependences (kafka, mongo, zookeeper)
-# as well as an NGINX server for static content (inclues an "useful links" page).
+# as well as an NGINX server for static content (includes an "useful links" page).
 $ replidev deps start essential
 --> Create pod replideps-essential
 3062d4295cbec38890f271b283f5d7aeae1e9987d865fc249685e48884608bf4
@@ -125,12 +128,14 @@ uis           -         -         devtools/deps/podman/uis.yaml
 * openssl-devel
 
 ## Playgrounds
+
 Playgrounds are docker and docker-compose projects that run distributed
 datastores locally so that replicante can be developed and tested.
 
 They moved to a dedicated repo: <https://github.com/replicante-io/playgrounds>
 
 ## Development Documentation
+
 The code is documented with `rustdoc` even for private methods.
 This helps existing and new developers keep a handle on the codebase.
 
@@ -141,14 +146,16 @@ cargo rustdoc -- --document-private-items
 ```
 
 ## Developers Notebook
+
 Architectural nodes, implementation details, suggestions, proposals and more.
 
 The developers notebook is a collection of documents aimed at present and future project developers
 as well as advanced users that want to know more about Replicante internals.
 It is also a place to jot down ideas for the future or potential changes that may be
-needed/usefull some day but are not quite yet.
+needed/useful some day but are not quite yet.
 
 ## TODOs and the like
+
 You can scan the code for `TODO`s, `NOTE`s, etcetera with `fixme`.
 
 ```bash
