@@ -6,16 +6,15 @@ use crate::interfaces::api::APIRoot;
 use crate::interfaces::api::AppConfigContext;
 use crate::interfaces::Interfaces;
 
-mod action_approve;
-mod action_disapprove;
+mod node_action;
 mod orchestrate;
 mod orchestrator_action;
 mod synthetic_view;
 
 /// Return an `AppConfig` callback to configure cluster endpoints.
 pub fn configure(logger: &Logger, interfaces: &mut Interfaces) -> impl Fn(&mut AppConfigContext) {
-    let action_approve = self::action_approve::Approve::new(logger, interfaces);
-    let action_disapprove = self::action_disapprove::Disapprove::new(logger, interfaces);
+    let node_action_approve = self::node_action::approve::Approve::new(logger, interfaces);
+    let node_action_disapprove = self::node_action::disapprove::Disapprove::new(logger, interfaces);
     let orchestrate = self::orchestrate::Orchestrate::new(logger, interfaces);
     let orchestrator_action_approve =
         self::orchestrator_action::approve::Approve::new(logger, interfaces);
@@ -27,8 +26,8 @@ pub fn configure(logger: &Logger, interfaces: &mut Interfaces) -> impl Fn(&mut A
     move |conf| {
         APIRoot::UnstableCoreApi.and_then(&conf.context.flags, |root| {
             let scope = actix_web::web::scope("/cluster/{cluster_id}")
-                .service(action_approve.resource())
-                .service(action_disapprove.resource())
+                .service(node_action_approve.resource())
+                .service(node_action_disapprove.resource())
                 .service(orchestrate.resource())
                 .service(orchestrator_action_approve.resource())
                 .service(orchestrator_action_disapprove.resource())
