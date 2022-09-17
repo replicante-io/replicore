@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 ### Fix
-- Emit `ACTION_CHANGED` event on action approve.
+- Emit `ACTION_CHANGED` event on action approve and disapprove.
 
 ## [0.7.1] - 2022-09-14
 ### Changed

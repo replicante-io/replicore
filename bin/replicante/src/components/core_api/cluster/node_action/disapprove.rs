@@ -11,7 +11,9 @@ use slog::debug;
 use slog::Logger;
 use uuid::Uuid;
 
+use replicante_models_core::actions::node::ActionState;
 use replicante_store_primary::store::Store;
+use replicante_stream_events::Stream;
 use replicante_util_actixweb::with_request_span;
 use replicante_util_actixweb::TracingMiddleware;
 
@@ -27,6 +29,7 @@ pub struct Disapprove {
 impl Disapprove {
     pub fn new(logger: &Logger, interfaces: &mut Interfaces) -> Disapprove {
         let data = DisapproveData {
+            events: interfaces.streams.events.clone(),
             logger: logger.clone(),
             store: interfaces.stores.primary.clone(),
         };
@@ -67,12 +70,29 @@ async fn responder(
         .with_context(|_| ErrorKind::APIRequestParameterInvalid("action_id"))?;
 
     let mut request = request;
-    with_request_span(&mut request, |span| {
-        let span = span.map(|span| span.context().clone());
-        data.store
-            .actions(cluster_id.clone())
-            .disapprove(action_id, span)
-            .with_context(|_| ErrorKind::PrimaryStorePersist("action disapproval"))
+    let response = with_request_span(&mut request, |span| {
+        super::load_transform_persist_event(
+            cluster_id.clone(),
+            action_id,
+            span,
+            &data.events,
+            &data.store,
+            |mut action| {
+                // Reject requests if the action is not PENDING_SCHEDULE.
+                if action.state != ActionState::PendingSchedule {
+                    let response = json!({
+                        "reason": "action state not PENDING_SCHEDULE",
+                        "state": action.state,
+                    });
+                    let response = HttpResponse::BadRequest().json(response);
+                    return Err(response);
+                }
+
+                // Cancel the action.
+                action.finish(ActionState::Cancelled);
+                Ok(action)
+            },
+        )
     })?;
 
     debug!(
@@ -81,12 +101,13 @@ async fn responder(
         "cluster" => cluster_id,
         "action" => %action_id,
     );
-    let response = HttpResponse::Ok().json(json!({}));
+    let response = response.unwrap_or_else(|| HttpResponse::Ok().json(json!({})));
     Ok(response)
 }
 
 #[derive(Clone)]
 struct DisapproveData {
+    events: Stream,
     logger: Logger,
     store: Store,
 }
