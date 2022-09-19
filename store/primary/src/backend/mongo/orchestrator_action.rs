@@ -10,6 +10,7 @@ use replicante_externals_mongodb::operations::find_one;
 use replicante_models_core::actions::orchestrator::OrchestratorAction as OrchestratorActionModel;
 
 use super::constants::COLLECTION_ACTIONS_ORCHESTRATOR;
+use super::document::OrchestratorActionDocument;
 use crate::backend::OrchestratorActionInterface;
 use crate::store::orchestrator_action::OrchestratorActionAttributes;
 use crate::ErrorKind;
@@ -46,8 +47,9 @@ impl OrchestratorActionInterface for OrchestratorAction {
             .client
             .database(&self.db)
             .collection(COLLECTION_ACTIONS_ORCHESTRATOR);
-        let action = find_one(collection, filter, span, self.tracer.as_deref())
-            .with_context(|_| ErrorKind::MongoDBOperation)?;
-        Ok(action)
+        let action: Option<OrchestratorActionDocument> =
+            find_one(collection, filter, span, self.tracer.as_deref())
+                .with_context(|_| ErrorKind::MongoDBOperation)?;
+        Ok(action.map(OrchestratorActionModel::from))
     }
 }

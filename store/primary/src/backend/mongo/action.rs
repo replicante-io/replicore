@@ -10,6 +10,7 @@ use replicante_externals_mongodb::operations::find_one;
 use replicante_models_core::actions::node::Action as ActionModel;
 
 use super::constants::COLLECTION_ACTIONS;
+use super::document::ActionDocument;
 use crate::backend::ActionInterface;
 use crate::store::action::ActionAttributes;
 use crate::ErrorKind;
@@ -46,8 +47,9 @@ impl ActionInterface for Action {
             .client
             .database(&self.db)
             .collection(COLLECTION_ACTIONS);
-        let action = find_one(collection, filter, span, self.tracer.as_deref())
-            .with_context(|_| ErrorKind::MongoDBOperation)?;
-        Ok(action)
+        let action: Option<ActionDocument> =
+            find_one(collection, filter, span, self.tracer.as_deref())
+                .with_context(|_| ErrorKind::MongoDBOperation)?;
+        Ok(action.map(ActionModel::from))
     }
 }

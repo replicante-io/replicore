@@ -75,10 +75,11 @@ async fn responder(data: web::Data<ApproveData>, request: HttpRequest) -> Result
             &data.events,
             &data.store,
             |mut action| {
-                // Reject requests if the action is not PENDING_SCHEDULE.
-                if action.state != ActionState::PendingSchedule {
+                // Reject requests if the action is not PENDING_APPROVE.
+                if action.state != ActionState::PendingApprove {
                     let response = json!({
-                        "reason": "action state not PENDING_SCHEDULE",
+                        "error": "action state not PENDING_APPROVE",
+                        "layers": [],
                         "state": action.state,
                     });
                     let response = HttpResponse::BadRequest().json(response);
@@ -93,12 +94,14 @@ async fn responder(data: web::Data<ApproveData>, request: HttpRequest) -> Result
     })?;
 
     // Inform the user of the update.
-    debug!(
-        data.logger,
-        "Approved action for scheduling";
-        "cluster" => cluster_id,
-        "action" => %action_id,
-    );
+    if response.is_none() {
+        debug!(
+            data.logger,
+            "Approved action for scheduling";
+            "cluster" => cluster_id,
+            "action" => %action_id,
+        );
+    }
     let response = response.unwrap_or_else(|| HttpResponse::Ok().json(json!({})));
     Ok(response)
 }

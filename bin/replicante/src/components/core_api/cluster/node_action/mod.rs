@@ -41,7 +41,10 @@ where
     let action = match action {
         Some(action) => action,
         None => {
-            let response = HttpResponse::NotFound().json(serde_json::json!({}));
+            let response = HttpResponse::NotFound().json(serde_json::json!({
+                "error": "action not found",
+                "layers": [],
+            }));
             return Ok(Some(response));
         }
     };

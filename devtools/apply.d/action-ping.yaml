@@ -9,7 +9,6 @@ metadata:
   approval: required
 
 spec:
-  action: agent.replicante.io/debug.progress
+  action: agent.replicante.io/test.ping
   args:
-    test: true
-    parameter: 12
+    count: 5

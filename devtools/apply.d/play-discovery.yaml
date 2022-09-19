@@ -6,6 +6,6 @@ metadata:
 spec:
   backend: http
   enabled: true
-  interval: 300
+  interval: 60
   method: GET
   url: 'http://localhost:9876/discover'
