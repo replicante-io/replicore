@@ -71,7 +71,7 @@ async fn responder(
 
     let mut request = request;
     let response = with_request_span(&mut request, |span| {
-        super::load_transform_persist_event(
+        super::load_transform_event_persist(
             cluster_id.clone(),
             action_id,
             span,

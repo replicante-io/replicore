@@ -68,7 +68,7 @@ async fn responder(data: web::Data<ApproveData>, request: HttpRequest) -> Result
 
     let mut request = request;
     let response = with_request_span(&mut request, |span| {
-        super::load_transform_persist_event(
+        super::load_transform_event_persist(
             cluster_id.clone(),
             action_id,
             span,

@@ -18,7 +18,7 @@ pub mod disapprove;
 /// Load a NodeAction, apply a transformation to it and persist it back.
 ///
 /// A NodeAction changed event is emitted for the transformation.
-fn load_transform_persist_event<Transform>(
+fn load_transform_event_persist<Transform>(
     cluster_id: String,
     action_id: Uuid,
     span: Option<&mut Span>,

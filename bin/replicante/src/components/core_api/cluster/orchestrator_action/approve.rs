@@ -7,10 +7,13 @@ use actix_web::HttpResponse;
 use actix_web::Responder;
 use failure::ResultExt;
 use serde_json::json;
+use slog::debug;
 use slog::Logger;
 use uuid::Uuid;
 
+use replicante_models_core::actions::orchestrator::OrchestratorActionState;
 use replicante_store_primary::store::Store;
+use replicante_stream_events::Stream;
 use replicante_util_actixweb::with_request_span;
 use replicante_util_actixweb::TracingMiddleware;
 
@@ -26,6 +29,7 @@ pub struct Approve {
 impl Approve {
     pub fn new(logger: &Logger, interfaces: &mut Interfaces) -> Approve {
         let data = ApproveData {
+            events: interfaces.streams.events.clone(),
             logger: logger.clone(),
             store: interfaces.stores.primary.clone(),
         };
@@ -63,20 +67,48 @@ async fn responder(data: web::Data<ApproveData>, request: HttpRequest) -> Result
         .with_context(|_| ErrorKind::APIRequestParameterInvalid("action_id"))?;
 
     let mut request = request;
-    with_request_span(&mut request, |span| {
-        let span = span.map(|span| span.context().clone());
-        data.store
-            .orchestrator_actions(cluster_id.clone())
-            .approve(action_id, span)
-            .with_context(|_| ErrorKind::PrimaryStorePersist("orchestrator action approval"))
+    let response = with_request_span(&mut request, |span| {
+        super::load_transform_event_persist(
+            cluster_id.clone(),
+            action_id,
+            span,
+            &data.events,
+            &data.store,
+            |mut action| {
+                // Reject requests if the action is not PENDING_APPROVE.
+                if action.state != OrchestratorActionState::PendingApprove {
+                    let response = json!({
+                        "error": "orchestrator action state not PENDING_APPROVE",
+                        "layers": [],
+                        "state": action.state,
+                    });
+                    let response = HttpResponse::BadRequest().json(response);
+                    return Err(response);
+                }
+
+                // Approve the action.
+                action.state = OrchestratorActionState::PendingSchedule;
+                Ok(action)
+            },
+        )
     })?;
 
-    let response = HttpResponse::Ok().json(json!({}));
+    // Inform the user of the update.
+    if response.is_none() {
+        debug!(
+            data.logger,
+            "Approved orchestrator action for scheduling";
+            "cluster" => cluster_id,
+            "action" => %action_id,
+        );
+    }
+    let response = response.unwrap_or_else(|| HttpResponse::Ok().json(json!({})));
     Ok(response)
 }
 
 #[derive(Clone)]
 struct ApproveData {
+    events: Stream,
     logger: Logger,
     store: Store,
 }
