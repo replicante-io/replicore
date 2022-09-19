@@ -2,7 +2,6 @@ use std::sync::Arc;
 use std::sync::Mutex;
 
 use opentracingrust::SpanContext;
-use uuid::Uuid;
 
 use replicante_models_core::actions::node::Action;
 use replicante_models_core::actions::node::ActionSyncSummary;
@@ -160,24 +159,6 @@ struct Actions {
 }
 
 impl ActionsInterface for Actions {
-    fn approve(
-        &self,
-        _attrs: &ActionsAttributes,
-        _action_id: Uuid,
-        _: Option<SpanContext>,
-    ) -> Result<()> {
-        panic!("TODO: MockStore::Actions::approve")
-    }
-
-    fn disapprove(
-        &self,
-        _attrs: &ActionsAttributes,
-        _action_id: Uuid,
-        _: Option<SpanContext>,
-    ) -> Result<()> {
-        panic!("TODO: MockStore::Actions::disapprove")
-    }
-
     #[allow(clippy::needless_collect)]
     fn unfinished_summaries(
         &self,

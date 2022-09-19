@@ -3,7 +3,7 @@ kind: OrchestratorAction
 
 metadata:
   namespace: default
-  cluster: dev-agent-zookeeper
+  cluster: mongo-rs
 
 spec:
   action: core.replicante.io/debug.fail

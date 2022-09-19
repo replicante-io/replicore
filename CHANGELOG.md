@@ -6,6 +6,16 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+### Changed
+- Emit `ACTION_CHANGED` events on action approve and disapprove.
+- Emit `ACTION_CHANGED` events when node actions fail to schedule.
+- Emit `ACTION_ORCHESTRATOR_CHANGED` events on orchestrator approve and disapprove.
+- Errors during node sync are logged as info instead of debug.
+- Node action approve and disapprove endpoints reject requests for actions not pending approval.
+- Node action approve and disapprove endpoints reject requests for missing actions.
+
+### Fix
+- Fixed loading node and orchestrator actions from the database.
 
 ## [0.7.1] - 2022-09-14
 ### Changed

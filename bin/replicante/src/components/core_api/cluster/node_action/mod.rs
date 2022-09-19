@@ -3,7 +3,7 @@ use failure::ResultExt;
 use opentracingrust::Span;
 use uuid::Uuid;
 
-use replicante_models_core::actions::orchestrator::OrchestratorAction;
+use replicante_models_core::actions::node::Action;
 use replicante_models_core::events::Event;
 use replicante_store_primary::store::Store;
 use replicante_stream_events::EmitMessage;
@@ -14,11 +14,10 @@ use crate::Result;
 
 pub mod approve;
 pub mod disapprove;
-pub mod summary;
 
-/// Load an OrchestratorAction, apply a transformation to it and persist it back.
+/// Load a NodeAction, apply a transformation to it and persist it back.
 ///
-/// An OrchestratorAction changed event is emitted for the transformation.
+/// A NodeAction changed event is emitted for the transformation.
 fn load_transform_event_persist<Transform>(
     cluster_id: String,
     action_id: Uuid,
@@ -28,22 +27,22 @@ fn load_transform_event_persist<Transform>(
     transform: Transform,
 ) -> Result<Option<HttpResponse>>
 where
-    Transform: FnOnce(OrchestratorAction) -> std::result::Result<OrchestratorAction, HttpResponse>,
+    Transform: FnOnce(Action) -> std::result::Result<Action, HttpResponse>,
 {
     let span_context = span.map(|span| span.context().clone());
 
     // Load the action.
     let action = store
-        .orchestrator_action(cluster_id, action_id)
+        .action(cluster_id, action_id)
         .get(span_context.clone())
-        .with_context(|_| ErrorKind::PrimaryStoreQuery("orchestrator action"))?;
+        .with_context(|_| ErrorKind::PrimaryStoreQuery("action"))?;
 
     // Reject requests for missing actions.
     let action = match action {
         Some(action) => action,
         None => {
             let response = HttpResponse::NotFound().json(serde_json::json!({
-                "error": "orchestrator action not found",
+                "error": "action not found",
                 "layers": [],
             }));
             return Ok(Some(response));
@@ -63,19 +62,19 @@ where
     // Emit the change event.
     let event = Event::builder()
         .action()
-        .orchestrator_action_changed(old_action, action.clone());
+        .changed(old_action, action.clone());
     let stream_key = event.entity_id().partition_key();
     let event = EmitMessage::with(stream_key, event)
-        .with_context(|_| ErrorKind::EventsStreamEmit("ACTION_ORCHESTRATOR_CHANGED"))?
+        .with_context(|_| ErrorKind::EventsStreamEmit("ACTION_CHANGED"))?
         .trace(span_context.clone());
     events
         .emit(event)
-        .with_context(|_| ErrorKind::EventsStreamEmit("ACTION_ORCHESTRATOR_CHANGED"))?;
+        .with_context(|_| ErrorKind::EventsStreamEmit("ACTION_CHANGED"))?;
 
     // Persist the action back to the store.
     store
         .persist()
-        .orchestrator_action(action, span_context)
-        .with_context(|_| ErrorKind::PrimaryStorePersist("orchestrator action"))?;
+        .action(action, span_context)
+        .with_context(|_| ErrorKind::PrimaryStorePersist("action"))?;
     Ok(None)
 }

@@ -5,7 +5,6 @@ use std::sync::Arc;
 use opentracingrust::SpanContext;
 use opentracingrust::Tracer;
 use slog::Logger;
-use uuid::Uuid;
 
 use replicante_externals_mongodb::admin::ValidationResult;
 use replicante_models_core::actions::node::Action;
@@ -212,18 +211,6 @@ box_interface! {
     trait ActionsInterface,
 
     interface {
-        fn approve(
-            &self,
-            attrs: &ActionsAttributes,
-            action_id: Uuid,
-            span: Option<SpanContext>,
-        ) -> Result<()>;
-        fn disapprove(
-            &self,
-            attrs: &ActionsAttributes,
-            action_id: Uuid,
-            span: Option<SpanContext>,
-        ) -> Result<()>;
         fn unfinished_summaries(
             &self,
             attrs: &ActionsAttributes,
@@ -441,18 +428,6 @@ box_interface! {
     trait OrchestratorActionsInterface,
 
     interface {
-        fn approve(
-            &self,
-            attrs: &OrchestratorActionsAttributes,
-            action_id: Uuid,
-            span: Option<SpanContext>,
-        ) -> Result<()>;
-        fn disapprove(
-            &self,
-            attrs: &OrchestratorActionsAttributes,
-            action_id: Uuid,
-            span: Option<SpanContext>,
-        ) -> Result<()>;
         fn iter_summary(
             &self,
             attrs: &OrchestratorActionsAttributes,

@@ -3,7 +3,7 @@ use std::sync::Arc;
 use anyhow::Context;
 use anyhow::Result;
 use opentracingrust::Log;
-use slog::debug;
+use slog::info;
 use slog::warn;
 
 use replicante_agent_client::HttpClient;
@@ -47,7 +47,7 @@ pub fn sync_cluster(data: &ClusterOrchestrate, data_mut: &mut ClusterOrchestrate
             //let mut event = sentry::integrations::failure::event_from_fail(&error);
             //event.level = sentry::Level::Debug;
             //sentry::capture_event(event);
-            debug!(
+            info!(
                 data.logger,
                 "Node-only error during sync for cluster orchestration";
                 "namespace" => &data.cluster_view.namespace,

@@ -401,17 +401,29 @@ fn core_action_schedule(
             );
             crate::metrics::NODE_ACTION_SCHEDULE_DUPLICATE.inc();
         }
-        Err(error) if !error.kind().is_duplicate_action() => {
-            // After a while give up on trying to schedule actions.
+        Err(error) => {
+            let old_action = action.clone();
             let mut action = action;
+
+            // Record the failure for user debugging.
             let payload = SerializableFail::from(&error);
             let payload = serde_json::to_value(payload).expect("errors must always serialise");
             action.schedule_attempt += 1;
             action.state_payload = Some(payload);
+
+            // After a while give up on trying to schedule actions.
             // TODO: make MAX_SCHEDULE_ATTEMPTS a namespace configuration once namespaces exist.
             if action.schedule_attempt > MAX_SCHEDULE_ATTEMPTS {
                 action.finish(ActionState::Failed);
             }
+
+            // Emit an action changed event so the error is tracked.
+            let event = Event::builder()
+                .action()
+                .changed(old_action, action.clone());
+            super::emit_event(data, data_mut, node_id, event)?;
+
+            // Persist the error info to the DB.
             data.store
                 .persist()
                 .action(action, span_context)
