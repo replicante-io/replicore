@@ -5,6 +5,7 @@ use uuid::Uuid;
 
 mod approve;
 mod disapprove;
+mod node_list;
 mod orchestrator_approve;
 mod orchestrator_disapprove;
 mod orchestrator_list;
@@ -42,6 +43,9 @@ pub enum Opt {
     /// Disapprove (reject) an orchestrator action that is pending approval.
     DisapproveOrchestratorAction(CommonOpt),
 
+    /// List known node actions for a cluster.
+    ListNodeActions,
+
     /// List known orchestrator actions for a cluster.
     ListOrchestratorActions,
 }
@@ -59,6 +63,7 @@ pub async fn execute(logger: &Logger, opt: &crate::Opt, action_cmd: &Opt) -> Res
         Opt::DisapproveOrchestratorAction(disapprove_opt) => {
             orchestrator_disapprove::execute(logger, opt, disapprove_opt).await
         }
+        Opt::ListNodeActions => node_list::execute(logger, opt).await,
         Opt::ListOrchestratorActions => orchestrator_list::execute(logger, opt).await,
     }
 }

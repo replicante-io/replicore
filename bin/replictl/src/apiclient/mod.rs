@@ -6,6 +6,8 @@ use uuid::Uuid;
 
 use replicante_models_core::api::apply::ApplyObject;
 use replicante_models_core::api::discovery_settings::DiscoverySettingsListResponse;
+use replicante_models_core::api::node_action::NodeActionSummariesResponse;
+use replicante_models_core::api::node_action::NodeActionSummary;
 use replicante_models_core::api::orchestrator_action::OrchestratorActionSummariesResponse;
 use replicante_models_core::api::orchestrator_action::OrchestratorActionSummary;
 use replicante_models_core::api::validate::ErrorsCollection;
@@ -83,6 +85,28 @@ impl RepliClient {
             .context("unable to disapprove action")?;
         response.check_status()?;
         Ok(())
+    }
+
+    /// Return summaries of node actions for a cluster.
+    pub async fn action_node_summaries(&self, cluster: &str) -> Result<Vec<NodeActionSummary>> {
+        let uri = format!(
+            "{}/{}/{}/{}",
+            ENDPOINT_CLUSTER,
+            cluster,
+            ENDPOINT_CLUSTER_ACTION_NODE,
+            ENDPOINT_CLUSTER_ACTION_SUMMARY,
+        );
+        let request = self.client.get(&uri);
+        let response = self
+            .client
+            .send(request)
+            .await
+            .context("Failed to list NodeActionSummary objects")?;
+        response.check_status()?;
+        let response = response
+            .body_as::<NodeActionSummariesResponse>()
+            .context("Failed to decode NodeActionSummary list response")?;
+        Ok(response.actions)
     }
 
     /// Approve a PENDING_APPROVE orchestrator action so it can be scheduled and executed.

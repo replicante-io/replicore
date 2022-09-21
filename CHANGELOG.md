@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Errors during node sync are logged as info instead of debug.
 - Node action approve and disapprove endpoints reject requests for actions not pending approval.
 - Node action approve and disapprove endpoints reject requests for missing actions.
+- Support debug log level in release builds.
 
 ### Fix
 - Fixed loading node and orchestrator actions from the database.

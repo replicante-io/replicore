@@ -15,6 +15,7 @@ mod synthetic_view;
 pub fn configure(logger: &Logger, interfaces: &mut Interfaces) -> impl Fn(&mut AppConfigContext) {
     let node_action_approve = self::node_action::approve::Approve::new(logger, interfaces);
     let node_action_disapprove = self::node_action::disapprove::Disapprove::new(logger, interfaces);
+    let node_action_summary = self::node_action::summary::Summary::new(logger, interfaces);
     let orchestrate = self::orchestrate::Orchestrate::new(logger, interfaces);
     let orchestrator_action_approve =
         self::orchestrator_action::approve::Approve::new(logger, interfaces);
@@ -28,6 +29,7 @@ pub fn configure(logger: &Logger, interfaces: &mut Interfaces) -> impl Fn(&mut A
             let scope = actix_web::web::scope("/cluster/{cluster_id}")
                 .service(node_action_approve.resource())
                 .service(node_action_disapprove.resource())
+                .service(node_action_summary.resource())
                 .service(orchestrate.resource())
                 .service(orchestrator_action_approve.resource())
                 .service(orchestrator_action_disapprove.resource())

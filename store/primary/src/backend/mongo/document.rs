@@ -10,6 +10,7 @@ use replicante_models_core::actions::node::ActionRequester;
 use replicante_models_core::actions::node::ActionState;
 use replicante_models_core::actions::orchestrator::OrchestratorAction;
 use replicante_models_core::actions::orchestrator::OrchestratorActionState;
+use replicante_models_core::api::node_action::NodeActionSummary;
 use replicante_models_core::api::orchestrator_action::OrchestratorActionSummary;
 use replicante_models_core::cluster::discovery::DiscoverySettings;
 use replicante_models_core::cluster::ClusterSettings;
@@ -139,6 +140,38 @@ impl From<DiscoverySettings> for DiscoverySettingsDocument {
 impl From<DiscoverySettingsDocument> for DiscoverySettings {
     fn from(document: DiscoverySettingsDocument) -> DiscoverySettings {
         document.settings
+    }
+}
+
+/// Wrap a `NodeActionSummary` with store only fields and MongoDB specific types.
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
+pub struct NodeActionSummaryDocument {
+    pub cluster_id: String,
+    pub node_id: String,
+    pub action_id: String,
+    pub created_ts: DateTime,
+    pub finished_ts: Option<DateTime>,
+    pub kind: String,
+    pub scheduled_ts: Option<DateTime>,
+    pub state: ActionState,
+}
+
+impl From<NodeActionSummaryDocument> for NodeActionSummary {
+    fn from(action: NodeActionSummaryDocument) -> NodeActionSummary {
+        let action_id = action
+            .action_id
+            .parse()
+            .expect("Action ID not converted to UUID");
+        NodeActionSummary {
+            action_id,
+            cluster_id: action.cluster_id,
+            node_id: action.node_id,
+            created_ts: action.created_ts.0,
+            finished_ts: action.finished_ts.map(|ts| ts.0),
+            kind: action.kind,
+            scheduled_ts: action.scheduled_ts.map(|ts| ts.0),
+            state: action.state,
+        }
     }
 }
 

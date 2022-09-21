@@ -16,6 +16,7 @@ use replicante_models_core::agent::Agent;
 use replicante_models_core::agent::AgentInfo;
 use replicante_models_core::agent::Node;
 use replicante_models_core::agent::Shard;
+use replicante_models_core::api::node_action::NodeActionSummary;
 use replicante_models_core::api::orchestrator_action::OrchestratorActionSummary;
 use replicante_models_core::cluster::discovery::ClusterDiscovery;
 use replicante_models_core::cluster::discovery::DiscoverySettings;
@@ -211,6 +212,11 @@ box_interface! {
     trait ActionsInterface,
 
     interface {
+        fn iter_summary(
+            &self,
+            attrs: &ActionsAttributes,
+            span: Option<SpanContext>,
+        ) -> Result<Cursor<NodeActionSummary>>;
         fn unfinished_summaries(
             &self,
             attrs: &ActionsAttributes,

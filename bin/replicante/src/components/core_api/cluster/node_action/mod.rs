@@ -14,6 +14,7 @@ use crate::Result;
 
 pub mod approve;
 pub mod disapprove;
+pub mod summary;
 
 /// Load a NodeAction, apply a transformation to it and persist it back.
 ///

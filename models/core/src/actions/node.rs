@@ -174,6 +174,21 @@ impl ActionState {
     }
 }
 
+impl std::fmt::Display for ActionState {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        match self {
+            Self::Cancelled => write!(f, "CANCELLED"),
+            Self::Done => write!(f, "DONE"),
+            Self::Failed => write!(f, "FAILED"),
+            Self::Lost => write!(f, "LOST"),
+            Self::New => write!(f, "NEW"),
+            Self::PendingApprove => write!(f, "PENDING_APPROVE"),
+            Self::PendingSchedule => write!(f, "PENDING_SCHEDULE"),
+            Self::Running => write!(f, "RUNNING"),
+        }
+    }
+}
+
 impl From<ActionStateWire> for ActionState {
     fn from(state: ActionStateWire) -> ActionState {
         match state {
