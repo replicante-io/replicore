@@ -10,6 +10,7 @@ use replicante_models_core::agent::Agent;
 use replicante_models_core::agent::AgentInfo;
 use replicante_models_core::agent::Node;
 use replicante_models_core::agent::Shard;
+use replicante_models_core::api::node_action::NodeActionSummary;
 use replicante_models_core::cluster::discovery::ClusterDiscovery;
 use replicante_models_core::cluster::discovery::DiscoverySettings;
 use replicante_models_core::cluster::ClusterMeta;
@@ -159,6 +160,23 @@ struct Actions {
 }
 
 impl ActionsInterface for Actions {
+    #[allow(clippy::needless_collect)]
+    fn iter_summary(
+        &self,
+        attrs: &ActionsAttributes,
+        _: Option<SpanContext>,
+    ) -> Result<Cursor<NodeActionSummary>> {
+        let store = self.state.lock().expect("MockStore state lock is poisoned");
+        let cluster_id = &attrs.cluster_id;
+        let cursor: Vec<NodeActionSummary> = store
+            .actions
+            .iter()
+            .filter(|(key, _)| key.0 == *cluster_id)
+            .map(|(_, action)| NodeActionSummary::from(action.clone()))
+            .collect();
+        Ok(Cursor::new(cursor.into_iter().map(Ok)))
+    }
+
     #[allow(clippy::needless_collect)]
     fn unfinished_summaries(
         &self,
