@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+## [0.7.2] - 2022-09-25
 ### Changed
 - Emit `ACTION_CHANGED` events on action approve and disapprove.
 - Emit `ACTION_CHANGED` events when node actions fail to schedule.
@@ -15,7 +17,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Node action approve and disapprove endpoints reject requests for missing actions.
 - Support debug log level in release builds.
 
-### Fix
+### Fixed
 - Fixed loading node and orchestrator actions from the database.
 
 ## [0.7.1] - 2022-09-14
@@ -216,7 +218,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Validate contents of the store.
 - WebUI endpoints for initial UI.
 
-[Unreleased]: https://github.com/replicante-io/replicante/compare/v0.7.1...HEAD
+[Unreleased]: https://github.com/replicante-io/replicante/compare/v0.7.2...HEAD
+[0.7.2]: https://github.com/replicante-io/replicante/compare/v0.7.1...v0.7.2
 [0.7.1]: https://github.com/replicante-io/replicante/compare/v0.7.0...v0.7.1
 [0.7.0]: https://github.com/replicante-io/replicante/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/replicante-io/replicante/compare/v0.5.0...v0.6.0
