@@ -8,8 +8,8 @@ use actix_web::Responder;
 use chrono::DateTime;
 use chrono::Utc;
 use failure::ResultExt;
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde::Deserialize;
+use serde::Serialize;
 use slog::Logger;
 
 use replicante_models_core::actions::node::Action;
@@ -23,7 +23,7 @@ use crate::Interfaces;
 use crate::Result;
 
 pub struct Actions {
-    data: ActionsData,
+    data: web::Data<ActionsData>,
     logger: Logger,
     tracer: Arc<opentracingrust::Tracer>,
 }
@@ -34,7 +34,7 @@ impl Actions {
             store: interfaces.stores.view.clone(),
         };
         Actions {
-            data,
+            data: web::Data::new(data),
             logger: interfaces.logger.clone(),
             tracer: interfaces.tracing.tracer(),
         }
@@ -45,7 +45,7 @@ impl Actions {
         let tracer = Arc::clone(&self.tracer);
         let tracer = TracingMiddleware::with_name(logger, tracer, "/cluster/{cluster}/actions");
         web::resource("/actions")
-            .data(self.data.clone())
+            .app_data(self.data.clone())
             .wrap(tracer)
             .route(web::post().to(responder))
     }

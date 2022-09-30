@@ -1,9 +1,10 @@
 use std::sync::Arc;
 
-use bson::doc;
 use failure::ResultExt;
+use mongodb::bson::doc;
 use mongodb::options::FindOptions;
 use mongodb::sync::Client;
+use mongodb::sync::Collection;
 use opentracingrust::SpanContext;
 use opentracingrust::Tracer;
 
@@ -46,7 +47,7 @@ impl DiscoverySettingsInterface for DiscoverySettings {
             "namespace": &attrs.namespace,
             "name": name,
         };
-        let collection = self
+        let collection: Collection<DiscoverySettingsDocument> = self
             .client
             .database(&self.db)
             .collection(COLLECTION_DISCOVERY_SETTINGS);

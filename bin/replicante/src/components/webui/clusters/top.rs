@@ -17,7 +17,7 @@ use crate::Interfaces;
 use crate::Result;
 
 pub struct Top {
-    data: TopData,
+    data: web::Data<TopData>,
     logger: Logger,
     tracer: Arc<opentracingrust::Tracer>,
 }
@@ -28,7 +28,7 @@ impl Top {
             store: interfaces.stores.primary.clone(),
         };
         Top {
-            data,
+            data: web::Data::new(data),
             logger: interfaces.logger.clone(),
             tracer: interfaces.tracing.tracer(),
         }
@@ -39,7 +39,7 @@ impl Top {
         let tracer = Arc::clone(&self.tracer);
         let tracer = TracingMiddleware::with_name(logger, tracer, "/clusters/top");
         web::resource("/top")
-            .data(self.data.clone())
+            .app_data(self.data.clone())
             .wrap(tracer)
             .route(web::get().to(responder))
     }
@@ -70,8 +70,8 @@ async fn responder(data: web::Data<TopData>, request: HttpRequest) -> Result<imp
 
 #[cfg(test)]
 mod tests {
+    use actix_web::test::call_and_read_body_json;
     use actix_web::test::init_service;
-    use actix_web::test::read_response_json;
     use actix_web::test::TestRequest;
     use actix_web::App;
 
@@ -117,7 +117,7 @@ mod tests {
         let mut app = init_service(app).await;
 
         let request = TestRequest::get().uri("/top").to_request();
-        let response: Vec<ClusterMeta> = read_response_json(&mut app, request).await;
+        let response: Vec<ClusterMeta> = call_and_read_body_json(&mut app, request).await;
 
         let cluster_1 = small_cluster();
         let cluster_2 = large_cluster();

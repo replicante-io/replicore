@@ -1,6 +1,5 @@
-use clap::App;
 use clap::ArgMatches;
-use clap::SubCommand;
+use clap::Command;
 use failure::Fail;
 use slog::info;
 
@@ -37,11 +36,11 @@ macro_rules! scan_model {
     };
 }
 
-pub fn command() -> App<'static, 'static> {
-    SubCommand::with_name(COMMAND).about("Validate all records in the primary store")
+pub fn command() -> Command {
+    Command::new(COMMAND).about("Validate all records in the primary store")
 }
 
-pub fn run<'a>(args: &ArgMatches<'a>, interfaces: &Interfaces) -> Result<Outcomes> {
+pub fn run(args: &ArgMatches, interfaces: &Interfaces) -> Result<Outcomes> {
     let logger = interfaces.logger();
     let admin = primary_store_admin(args, logger.clone())?;
     let mut outcomes = Outcomes::new();

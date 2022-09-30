@@ -7,17 +7,18 @@ use replicante_service_coordinator::Coordinator;
 
 /// Report information about the node itself.
 pub struct MySelf {
-    coordinator: Coordinator,
+    coordinator: web::Data<Coordinator>,
 }
 
 impl MySelf {
     pub fn new(coordinator: Coordinator) -> MySelf {
+        let coordinator = web::Data::new(coordinator);
         MySelf { coordinator }
     }
 
     pub fn resource(&self) -> Resource {
         web::resource("/self")
-            .data(self.coordinator.clone())
+            .app_data(self.coordinator.clone())
             .route(web::get().to(responder))
     }
 }

@@ -106,7 +106,8 @@ impl ContextStore {
         ensure_store_path(logger, &path).await?;
 
         // Encode the store to a buffer so it can be written to disk asynchronously.
-        let buffer = serde_yaml::to_vec(self)
+        let mut buffer = Vec::new();
+        serde_yaml::to_writer(&mut buffer, self)
             .with_context(|| format!("unable to YAML encode contexts store to {}", &path))?;
         let mut file = OpenOptions::new()
             .create(true)

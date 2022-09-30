@@ -1,6 +1,5 @@
-use clap::App;
 use clap::ArgMatches;
-use clap::SubCommand;
+use clap::Command;
 use slog::error;
 use slog::info;
 use slog::warn;
@@ -24,8 +23,8 @@ mod update_compatibility;
 mod view_store_data;
 mod view_store_schema;
 
-pub fn command() -> App<'static, 'static> {
-    SubCommand::with_name(COMMAND)
+pub fn command() -> Command {
+    Command::new(COMMAND)
         .about("Validate the state of system dependencies")
         .subcommand(all::command())
         .subcommand(config::command())
@@ -41,7 +40,7 @@ pub fn command() -> App<'static, 'static> {
         .subcommand(view_store_schema::command())
 }
 
-pub fn run<'a>(args: &ArgMatches<'a>, interfaces: &Interfaces) -> Result<()> {
+pub fn run(args: &ArgMatches, interfaces: &Interfaces) -> Result<()> {
     let command = args.subcommand_matches(COMMAND).unwrap();
     let command = command.subcommand_name();
 

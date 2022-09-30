@@ -21,12 +21,12 @@ failure = "^0.1.5"
 failure_derive = "^0.1.5"
 lazy_static = "^1.0.0"
 opentracingrust = "^0.4.0"
-prometheus = "^0.9.0"
-serde = "^1.0.34"
-serde_derive = "^1.0.34"
+prometheus = "^0.13.0"
+serde = "^1.0"
+serde_derive = "^1.0"
 serde_json = "^1.0.0"
 slog = "^2.2.0"
-uuid = { version = "^0.8.0", features = ["serde", "v4"] }
+uuid = { version = "^1.0", features = ["serde", "v4"] }
 
 replicante_models_agent = { path = "../../common/models/agent" }
 replicante_models_core = { path = "../../models/core" }
@@ -35,5 +35,5 @@ replicante_util_tracing = { path = "../../common/util/tracing" }
 
 [dependencies.reqwest]
 # Use rustls-tls to access PEM files as Identity objects.
-features = ["rustls-tls", "blocking"]
-version = "^0.10.4"
+features = ["blocking", "json", "rustls-tls"]
+version = "^0.11"

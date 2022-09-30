@@ -76,10 +76,9 @@ pub fn run() -> Result<i32> {
     );
 
     // Set up a tokio runtime.
-    let mut runtime = tokio::runtime::Builder::new()
+    let runtime = tokio::runtime::Builder::new_multi_thread()
         .enable_all()
         .thread_name("replictl-tokio-worker")
-        .threaded_scheduler()
         .build()
         .expect("tokio runtime initialisation failed");
     let result = runtime.block_on(commands::execute(&logger, &opt));

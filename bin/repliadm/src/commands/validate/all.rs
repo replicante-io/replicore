@@ -1,6 +1,5 @@
-use clap::App;
 use clap::ArgMatches;
-use clap::SubCommand;
+use clap::Command;
 
 pub const COMMAND: &str = "all";
 
@@ -9,11 +8,11 @@ use crate::Result;
 
 use crate::outcome::Outcomes;
 
-pub fn command() -> App<'static, 'static> {
-    SubCommand::with_name(COMMAND).about("Run all validate operations")
+pub fn command() -> Command {
+    Command::new(COMMAND).about("Run all validate operations")
 }
 
-pub fn run(args: &ArgMatches<'_>, interfaces: &Interfaces) -> Result<Outcomes> {
+pub fn run(args: &ArgMatches, interfaces: &Interfaces) -> Result<Outcomes> {
     let mut outcomes = Outcomes::new();
     let logger = interfaces.logger();
 

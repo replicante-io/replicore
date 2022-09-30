@@ -12,7 +12,7 @@ license = "MIT"
 
 
 [dependencies]
-anyhow = "^1.0.53"
+anyhow = "^1.0"
 reqwest = { version = "^0.11", features = ["blocking", "gzip", "json"]}
 serde = "^1.0"
 serde_json = "^1.0"
@@ -23,5 +23,5 @@ replicore_iface_orchestrator_action = { path = "../../interface/orchestrator_act
 
 [dev-dependencies]
 chrono = { version = "^0.4.0", features = ["serde"] }
-lazy_static = "^1.0.0"
-uuid = { version = "^0.8.0", features = ["serde", "v4"] }
+lazy_static = "^1.0"
+uuid = { version = "^1.0", features = ["serde", "v4"] }

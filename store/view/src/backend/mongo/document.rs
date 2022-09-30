@@ -1,9 +1,9 @@
 use std::collections::HashMap;
 use std::time::Duration;
 
-use bson::DateTime;
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use mongodb::bson::DateTime;
+use serde::Deserialize;
+use serde::Serialize;
 
 use replicante_models_core::actions::node::Action;
 use replicante_models_core::actions::node::ActionHistory;
@@ -82,14 +82,14 @@ impl From<ActionDocument> for Action {
             action_id,
             args,
             cluster_id: action.cluster_id,
-            created_ts: action.created_ts.0,
-            finished_ts: action.finished_ts.map(|ts| ts.0),
+            created_ts: action.created_ts.to_chrono(),
+            finished_ts: action.finished_ts.map(DateTime::to_chrono),
             headers: action.headers,
             kind: action.kind,
             node_id: action.node_id,
             requester: action.requester,
             schedule_attempt: action.schedule_attempt,
-            scheduled_ts: action.scheduled_ts.map(|ts| ts.0),
+            scheduled_ts: action.scheduled_ts.map(DateTime::to_chrono),
             state: action.state,
             state_payload,
         }
@@ -146,9 +146,9 @@ impl From<ActionHistoryDocument> for ActionHistory {
             cluster_id: history.cluster_id,
             node_id: history.node_id,
             action_id,
-            finished_ts: history.finished_ts.map(|ts| ts.0),
+            finished_ts: history.finished_ts.map(DateTime::to_chrono),
             origin: history.origin,
-            timestamp: history.timestamp.0,
+            timestamp: history.timestamp.to_chrono(),
             state: history.state,
             state_payload,
         }
@@ -176,7 +176,7 @@ impl From<EventDocument> for Event {
     fn from(event: EventDocument) -> Event {
         Event {
             payload: event.payload,
-            timestamp: event.timestamp.0,
+            timestamp: event.timestamp.to_chrono(),
         }
     }
 }
@@ -225,7 +225,7 @@ impl From<OrchestrateReportDocument> for OrchestrateReport {
         OrchestrateReport {
             namespace: document.namespace,
             cluster_id: document.cluster_id,
-            start_time: document.start_time.0,
+            start_time: document.start_time.to_chrono(),
             duration: document.duration,
             outcome: document.outcome,
             action_scheduling_choices: document.action_scheduling_choices,
@@ -306,11 +306,11 @@ impl From<OrchestratorActionDocument> for OrchestratorAction {
             action_id,
             args,
             cluster_id: action.cluster_id,
-            created_ts: action.created_ts.0,
-            finished_ts: action.finished_ts.map(|ts| ts.0),
+            created_ts: action.created_ts.to_chrono(),
+            finished_ts: action.finished_ts.map(DateTime::to_chrono),
             headers: action.headers,
             kind: action.kind,
-            scheduled_ts: action.scheduled_ts.map(|ts| ts.0),
+            scheduled_ts: action.scheduled_ts.map(DateTime::to_chrono),
             state: action.state,
             state_payload,
             state_payload_error,

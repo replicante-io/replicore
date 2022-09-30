@@ -11,16 +11,16 @@ repository = "https://github.com/replicante-io/replicante"
 license = "MIT"
 
 [dependencies]
-anyhow = "^1.0.0"
+anyhow = "^1.0"
 chrono = { version = "^0.4.0", features = ["serde"] }
 failure = "^0.1.5"
-lazy_static = "^1.0.0"
+lazy_static = "^1.0"
 opentracingrust = "^0.4.0"
-prometheus = "^0.9.0"
-serde_json = "^1.0.0"
-slog = "^2.1.1"
+prometheus = "^0.13"
+serde_json = "^1.0"
+slog = "^2.1"
 thiserror = "^1.0"
-uuid = { version = "^0.8.0", features = ["serde", "v4"] }
+uuid = { version = "^1.0", features = ["serde", "v4"] }
 
 replicante_agent_client = { path = "../../../agent/client" }
 replicante_models_agent = { path = "../../../common/models/agent" }
@@ -34,8 +34,6 @@ replicore_iface_orchestrator_action = { path = "../../interface/orchestrator_act
 replicore_util_errors = { path = "../../util/errors" }
 
 [dev-dependencies]
-uuid = { version = "^0.8.0", features = ["serde", "v4"] }
-
 replicore_action_debug = { path = "../../orchestrator_action/debug" }
 
 [dev-dependencies.replicante_agent_client]

@@ -23,11 +23,11 @@ lazy_static! {
 }
 
 /// Report all replicante versions (repliadm, static lib, running cluster).
-pub fn versions<'a>(args: &ArgMatches<'a>, logger: &Logger) -> Result<()> {
+pub fn versions(args: &ArgMatches, logger: &Logger) -> Result<()> {
     println!("==> Local repliadm: {}", *VERSION);
 
     let command = args.subcommand_matches(super::COMMAND).unwrap();
-    let cluster = command.value_of("cluster").unwrap();
+    let cluster = command.get_one::<String>("cluster").unwrap();
     let version = api_version(cluster).map(|version| {
         format!(
             "{} [{}; {}]",

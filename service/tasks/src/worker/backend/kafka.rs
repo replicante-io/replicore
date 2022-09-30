@@ -380,7 +380,8 @@ impl Kafka {
                 message.topic(),
                 message.partition(),
                 Offset(message.offset() + 1),
-            );
+            )
+            .expect("failed to add partition offset to list");
             if retry_cache.attempts >= self.commit_retries {
                 let message_id = format!(
                     "{}:{}:{}",
@@ -541,7 +542,8 @@ impl KafkaAck {
         }
         *self.commit_attempts.borrow_mut() += 1;
         let mut list = TopicPartitionList::new();
-        list.add_partition_offset(topic, self.partition, Offset(self.offset + 1));
+        list.add_partition_offset(topic, self.partition, Offset(self.offset + 1))
+            .expect("failed to add partition offset to list");
         self.consumer
             .commit(&list, CommitMode::Sync)
             .with_context(|_| ErrorKind::CommitFailed)?;

@@ -1,6 +1,4 @@
-use clap::value_t;
 use clap::ArgMatches;
-use failure::ResultExt;
 use slog::info;
 use slog::Logger;
 
@@ -18,15 +16,15 @@ pub struct Interfaces {
 
 impl Interfaces {
     /// Create a new `Interfaces` container.
-    pub fn new(args: &ArgMatches<'_>, logger: Logger) -> Result<Interfaces> {
-        let progress_chunk = value_t!(args, "progress-chunk", u32)
-            .with_context(|_| ErrorKind::Config("progress-chunk is not a positive integer"))?;
+    pub fn new(args: &ArgMatches, logger: Logger) -> Result<Interfaces> {
+        let progress_chunk = *args.get_one::<u32>("progress-chunk")
+            .ok_or_else(|| ErrorKind::Config("progress-chunk is not a positive integer"))?;
         if progress_chunk == 0 {
             return Err(ErrorKind::Config("progress-chunck must be grater then 0").into());
         }
         Ok(Interfaces {
             logger,
-            progress: !args.is_present("no-progress"),
+            progress: !args.get_flag("no-progress"),
             progress_chunk,
         })
     }

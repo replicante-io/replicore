@@ -1,10 +1,12 @@
 use std::sync::Arc;
 
-use bson::doc;
-use bson::Bson;
 use chrono::Utc;
 use failure::ResultExt;
+use mongodb::bson;
+use mongodb::bson::doc;
+use mongodb::bson::Bson;
 use mongodb::sync::Client;
+use mongodb::sync::Collection;
 use opentracingrust::SpanContext;
 use opentracingrust::Tracer;
 
@@ -190,7 +192,7 @@ impl PersistInterface for Persist {
         };
         let next_orchestrate = Utc::now() + chrono::Duration::seconds(settings.interval);
         let update = doc! {"$set": {"next_orchestrate": next_orchestrate}};
-        let collection = self
+        let collection: Collection<ClusterSettingsDocument> = self
             .client
             .database(&self.db)
             .collection(COLLECTION_CLUSTER_SETTINGS);
@@ -210,7 +212,7 @@ impl PersistInterface for Persist {
         };
         let next_run = Utc::now() + chrono::Duration::seconds(settings.interval);
         let update = doc! {"$set": {"next_run": next_run}};
-        let collection = self
+        let collection: Collection<DiscoverySettingsDocument> = self
             .client
             .database(&self.db)
             .collection(COLLECTION_DISCOVERY_SETTINGS);

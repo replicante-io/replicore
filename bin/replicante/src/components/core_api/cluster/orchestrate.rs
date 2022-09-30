@@ -6,7 +6,7 @@ use actix_web::HttpRequest;
 use actix_web::HttpResponse;
 use actix_web::Responder;
 use failure::ResultExt;
-use serde_derive::Serialize;
+use serde::Serialize;
 use slog::Logger;
 
 use replicante_models_core::scope::Namespace;
@@ -26,7 +26,7 @@ use crate::ErrorKind;
 use crate::Result;
 
 pub struct Orchestrate {
-    data: OrchestrateData,
+    data: web::Data<OrchestrateData>,
 }
 
 impl Orchestrate {
@@ -37,6 +37,7 @@ impl Orchestrate {
             tasks: interfaces.tasks.clone(),
             tracer: interfaces.tracing.tracer(),
         };
+        let data = web::Data::new(data);
         Orchestrate { data }
     }
 
@@ -46,7 +47,7 @@ impl Orchestrate {
         let tracer =
             TracingMiddleware::with_name(logger, tracer, "/cluster/{cluster_id}/orchestrate");
         web::resource("/orchestrate")
-            .data(self.data.clone())
+            .app_data(self.data.clone())
             .wrap(tracer)
             .route(web::post().to(responder))
     }

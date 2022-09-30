@@ -1,7 +1,7 @@
 use actix_web::get;
 use actix_web::HttpResponse;
 use actix_web::Responder;
-use serde_derive::Serialize;
+use serde::Serialize;
 
 use humthreads::registered_threads;
 use humthreads::ThreadStatus;

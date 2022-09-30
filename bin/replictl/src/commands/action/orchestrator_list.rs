@@ -1,5 +1,4 @@
 use anyhow::Result;
-use prettytable::cell;
 use prettytable::row;
 use slog::Logger;
 

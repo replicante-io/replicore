@@ -1,7 +1,6 @@
-use clap::App;
 use clap::Arg;
 use clap::ArgMatches;
-use clap::SubCommand;
+use clap::Command;
 use slog::info;
 use slog::warn;
 use slog::Logger;
@@ -19,20 +18,20 @@ use crate::Result;
 
 pub const COMMAND: &str = "versions";
 
-pub fn command() -> App<'static, 'static> {
-    SubCommand::with_name(COMMAND)
+pub fn command() -> Command {
+    Command::new(COMMAND)
         .about("Report version information for various systems")
         .arg(
-            Arg::with_name("cluster")
+            Arg::new("cluster")
                 .long("cluster")
                 .value_name("URL")
                 .default_value("http://localhost:16016/")
-                .takes_value(true)
+                .num_args(1)
                 .help("URL of the Replicante Core cluster to connect to"),
         )
 }
 
-pub fn run<'a>(args: &ArgMatches<'a>, interfaces: &Interfaces) -> Result<()> {
+pub fn run(args: &ArgMatches, interfaces: &Interfaces) -> Result<()> {
     let logger = interfaces.logger();
     info!(logger, "Showing versions");
 

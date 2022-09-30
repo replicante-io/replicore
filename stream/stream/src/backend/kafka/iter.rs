@@ -142,7 +142,9 @@ impl MessageInterface for KafkaMessage {
         // not the offset of the last message processed.
         let offset = Offset::Offset(self.offset + 1);
         let mut request = TopicPartitionList::with_capacity(1);
-        request.add_partition_offset(&self.topic, self.partition, offset);
+        request
+            .add_partition_offset(&self.topic, self.partition, offset)
+            .expect("unable to add offset to topic partition list");
         self.consumer
             .store_offsets(&request)
             .with_context(|_| ErrorKind::AckFailed)?;

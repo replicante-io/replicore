@@ -22,7 +22,7 @@ use crate::ErrorKind;
 use crate::Result;
 
 pub struct Approve {
-    data: ApproveData,
+    data: web::Data<ApproveData>,
     tracer: Arc<opentracingrust::Tracer>,
 }
 
@@ -34,7 +34,7 @@ impl Approve {
             store: interfaces.stores.primary.clone(),
         };
         Approve {
-            data,
+            data: web::Data::new(data),
             tracer: interfaces.tracing.tracer(),
         }
     }
@@ -48,7 +48,7 @@ impl Approve {
             "/cluster/{cluster_id}/action/{action_id}/approve",
         );
         web::resource("/action/{action_id}/approve")
-            .data(self.data.clone())
+            .app_data(self.data.clone())
             .wrap(tracer)
             .route(web::post().to(responder))
     }

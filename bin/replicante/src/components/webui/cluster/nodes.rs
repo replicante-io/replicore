@@ -17,7 +17,7 @@ use crate::Interfaces;
 use crate::Result;
 
 pub struct Nodes {
-    data: NodesData,
+    data: web::Data<NodesData>,
     logger: Logger,
     tracer: Arc<opentracingrust::Tracer>,
 }
@@ -28,7 +28,7 @@ impl Nodes {
             store: interfaces.stores.primary.clone(),
         };
         Nodes {
-            data,
+            data: web::Data::new(data),
             logger: interfaces.logger.clone(),
             tracer: interfaces.tracing.tracer(),
         }
@@ -39,7 +39,7 @@ impl Nodes {
         let tracer = Arc::clone(&self.tracer);
         let tracer = TracingMiddleware::with_name(logger, tracer, "/cluster/{cluster_id}/nodes");
         web::resource("/nodes")
-            .data(self.data.clone())
+            .app_data(self.data.clone())
             .wrap(tracer)
             .route(web::get().to(responder))
     }

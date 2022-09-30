@@ -19,7 +19,7 @@ use crate::Interfaces;
 use crate::Result;
 
 pub struct Find {
-    data: FindData,
+    data: web::Data<FindData>,
     logger: Logger,
     tracer: Arc<opentracingrust::Tracer>,
 }
@@ -30,7 +30,7 @@ impl Find {
             store: interfaces.stores.primary.clone(),
         };
         Find {
-            data,
+            data: web::Data::new(data),
             logger: interfaces.logger.clone(),
             tracer: interfaces.tracing.tracer(),
         }
@@ -49,7 +49,7 @@ impl Find {
         let tracer = Arc::clone(&self.tracer);
         let tracer = TracingMiddleware::with_name(logger, tracer, "/clusters/find/{query}");
         resource
-            .data(self.data.clone())
+            .app_data(self.data.clone())
             .wrap(tracer)
             .route(web::get().to(responder))
     }

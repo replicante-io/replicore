@@ -32,7 +32,7 @@ pub fn configure(interfaces: &mut Interfaces) -> impl Fn(&mut AppConfigContext) 
 }
 
 struct Events {
-    data: EventsData,
+    data: web::Data<EventsData>,
     logger: Logger,
     tracer: Arc<opentracingrust::Tracer>,
 }
@@ -43,7 +43,7 @@ impl Events {
             store: interfaces.stores.view.clone(),
         };
         Events {
-            data,
+            data: web::Data::new(data),
             logger: interfaces.logger.clone(),
             tracer: interfaces.tracing.tracer(),
         }
@@ -54,7 +54,7 @@ impl Events {
         let tracer = Arc::clone(&self.tracer);
         let tracer = TracingMiddleware::with_name(logger, tracer, "/events");
         web::resource("/events")
-            .data(self.data.clone())
+            .app_data(self.data.clone())
             .wrap(tracer)
             .route(web::get().to(responder))
     }

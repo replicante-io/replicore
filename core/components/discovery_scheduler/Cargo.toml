@@ -15,11 +15,11 @@ license = "MIT"
 failure = "^0.1.5"
 failure_derive = "^0.1.5"
 humthreads = "^0.2.0"
-lazy_static = "^1.0.0"
+lazy_static = "^1.0"
 opentracingrust = "^0.4.0"
-prometheus = "^0.9.0"
-serde = "^1.0.34"
-slog = "^2.2.0"
+prometheus = "^0.13.0"
+serde = "^1.0"
+slog = "^2.2"
 
 replicante_cluster_discovery = { path = "../../../cluster/discovery" }
 replicante_models_core = { path = "../../../models/core" }

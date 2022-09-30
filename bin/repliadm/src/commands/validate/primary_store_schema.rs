@@ -1,6 +1,5 @@
-use clap::App;
 use clap::ArgMatches;
-use clap::SubCommand;
+use clap::Command;
 use failure::Fail;
 use slog::debug;
 use slog::info;
@@ -18,8 +17,8 @@ use crate::ErrorKind;
 use crate::Interfaces;
 use crate::Result;
 
-pub fn command() -> App<'static, 'static> {
-    SubCommand::with_name(COMMAND).about("Validate the primary store schema")
+pub fn command() -> Command {
+    Command::new(COMMAND).about("Validate the primary store schema")
 }
 
 /// Validate the primary store schema compatibility with this version of replicante.
@@ -29,7 +28,7 @@ pub fn command() -> App<'static, 'static> {
 ///   * All needed collections/tables exist and have the correct schema.
 ///   * All needed and recommended indexes exist.
 ///   * No dropped collections/tables or indexes exist.
-pub fn run<'a>(args: &ArgMatches<'a>, interfaces: &Interfaces) -> Result<Outcomes> {
+pub fn run(args: &ArgMatches, interfaces: &Interfaces) -> Result<Outcomes> {
     let logger = interfaces.logger();
     let store = primary_store_admin(args, logger.clone())?;
     let mut outcomes = Outcomes::new();

@@ -18,7 +18,7 @@ use crate::Interfaces;
 use crate::Result;
 
 pub struct Discovery {
-    data: DiscoveryData,
+    data: web::Data<DiscoveryData>,
     logger: Logger,
     tracer: Arc<opentracingrust::Tracer>,
 }
@@ -29,7 +29,7 @@ impl Discovery {
             store: interfaces.stores.primary.clone(),
         };
         Discovery {
-            data,
+            data: web::Data::new(data),
             logger: interfaces.logger.clone(),
             tracer: interfaces.tracing.tracer(),
         }
@@ -41,7 +41,7 @@ impl Discovery {
         let tracer =
             TracingMiddleware::with_name(logger, tracer, "/cluster/{cluster_id}/discovery");
         web::resource("/discovery")
-            .data(self.data.clone())
+            .app_data(self.data.clone())
             .wrap(tracer)
             .route(web::get().to(responder))
     }

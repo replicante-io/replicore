@@ -19,7 +19,7 @@ use crate::Interfaces;
 use crate::Result;
 
 pub struct OrchestratorActionInfo {
-    data: OrchestratorActionData,
+    data: web::Data<OrchestratorActionData>,
     logger: Logger,
     tracer: Arc<opentracingrust::Tracer>,
 }
@@ -30,7 +30,7 @@ impl OrchestratorActionInfo {
             store: interfaces.stores.view.clone(),
         };
         OrchestratorActionInfo {
-            data,
+            data: web::Data::new(data),
             logger: interfaces.logger.clone(),
             tracer: interfaces.tracing.tracer(),
         }
@@ -45,7 +45,7 @@ impl OrchestratorActionInfo {
             "/cluster/{cluster_id}/orchestrator-action/{action_id}",
         );
         web::resource("/orchestrator-action/{action_id}")
-            .data(self.data.clone())
+            .app_data(self.data.clone())
             .wrap(tracer)
             .route(web::get().to(responder))
     }

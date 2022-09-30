@@ -1,5 +1,5 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde::Deserialize;
+use serde::Serialize;
 
 /// Task workers enabling configuration.
 #[derive(Clone, Eq, PartialEq, Hash, Debug, Serialize, Deserialize)]

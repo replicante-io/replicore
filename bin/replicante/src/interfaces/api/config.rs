@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde::Deserialize;
+use serde::Serialize;
 
 /// API server configuration options.
 #[derive(Clone, Eq, PartialEq, Hash, Debug, Serialize, Deserialize)]
@@ -81,8 +81,8 @@ impl APITrees {
     }
 }
 
-// We can's fulfill the wish of the implicit-hasher clippy because
-// we do not use the genieric hasher parameter in any LOCAL type.
+// We can's fulfils the wish of the implicit-hasher clippy because
+// we do not use the generic hasher parameter in any LOCAL type.
 #[allow(clippy::implicit_hasher)]
 impl From<APITrees> for HashMap<&'static str, bool> {
     fn from(trees: APITrees) -> HashMap<&'static str, bool> {
@@ -98,7 +98,7 @@ impl From<APITrees> for HashMap<&'static str, bool> {
 pub struct Timeouts {
     /// Control the timeout, in seconds, for keep alive connections.
     #[serde(default = "Timeouts::default_keep_alive")]
-    pub keep_alive: Option<usize>,
+    pub keep_alive: Option<u64>,
 
     /// Control the timeout, in seconds, for reads on existing connections.
     #[serde(default = "Timeouts::default_read")]
@@ -120,7 +120,7 @@ impl Default for Timeouts {
 }
 
 impl Timeouts {
-    fn default_keep_alive() -> Option<usize> {
+    fn default_keep_alive() -> Option<u64> {
         Some(5)
     }
 

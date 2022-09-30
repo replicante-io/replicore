@@ -6,8 +6,8 @@ use actix_web::HttpRequest;
 use actix_web::HttpResponse;
 use actix_web::Responder;
 use failure::ResultExt;
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde::Deserialize;
+use serde::Serialize;
 use serde_json::json;
 use slog::Logger;
 use uuid::Uuid;
@@ -23,7 +23,7 @@ use crate::Interfaces;
 use crate::Result;
 
 pub struct ActionInfo {
-    data: ActionData,
+    data: web::Data<ActionData>,
     logger: Logger,
     tracer: Arc<opentracingrust::Tracer>,
 }
@@ -34,7 +34,7 @@ impl ActionInfo {
             store: interfaces.stores.view.clone(),
         };
         ActionInfo {
-            data,
+            data: web::Data::new(data),
             logger: interfaces.logger.clone(),
             tracer: interfaces.tracing.tracer(),
         }
@@ -49,7 +49,7 @@ impl ActionInfo {
             "/cluster/{cluster_id}/action/{action_id}",
         );
         web::resource("/action/{action_id}")
-            .data(self.data.clone())
+            .app_data(self.data.clone())
             .wrap(tracer)
             .route(web::get().to(responder))
     }

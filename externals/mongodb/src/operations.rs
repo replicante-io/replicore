@@ -1,7 +1,8 @@
-use bson::doc;
-use bson::Document;
 use failure::Fail;
 use failure::ResultExt;
+use mongodb::bson;
+use mongodb::bson::doc;
+use mongodb::bson::Document;
 use mongodb::options::FindOptions;
 use mongodb::options::ReplaceOptions;
 use mongodb::options::UpdateOptions;
@@ -11,6 +12,7 @@ use opentracingrust::SpanContext;
 use opentracingrust::StartOptions;
 use opentracingrust::Tracer;
 use serde::de::DeserializeOwned;
+use serde::Serialize;
 
 use replicante_util_tracing::fail_span;
 
@@ -25,13 +27,13 @@ use crate::Result;
 ///
 /// [`aggregate`]: https://docs.mongodb.com/manual/reference/method/db.collection.aggregate/
 pub fn aggregate<T>(
-    collection: Collection,
+    collection: Collection<T>,
     pipeline: Vec<Document>,
     span: Option<SpanContext>,
     tracer: Option<&Tracer>,
 ) -> Result<impl Iterator<Item = Result<T>>>
 where
-    T: DeserializeOwned,
+    T: DeserializeOwned + Send + Sync,
 {
     let mut span = match (tracer, span) {
         (Some(tracer), Some(context)) => {
@@ -80,12 +82,15 @@ where
 /// Perform an [`deleteOne`] operation.
 ///
 /// [`deleteOne`]: https://docs.mongodb.com/manual/reference/method/db.collection.deleteOne/
-pub fn delete_one(
-    collection: Collection,
+pub fn delete_one<T>(
+    collection: Collection<T>,
     filter: Document,
     span: Option<SpanContext>,
     tracer: Option<&Tracer>,
-) -> Result<()> {
+) -> Result<()>
+where
+    T: Send + Sync,
+{
     let mut span = match (tracer, span) {
         (Some(tracer), Some(context)) => {
             let opts = StartOptions::default().child_of(context);
@@ -123,13 +128,13 @@ pub fn delete_one(
 ///
 /// [`find`]: https://docs.mongodb.com/manual/reference/method/db.collection.find/
 pub fn find<T>(
-    collection: Collection,
+    collection: Collection<T>,
     filter: Document,
     span: Option<SpanContext>,
     tracer: Option<&Tracer>,
 ) -> Result<impl Iterator<Item = Result<T>>>
 where
-    T: DeserializeOwned,
+    T: DeserializeOwned + Send + Sync + Unpin,
 {
     let options = FindOptions::default();
     find_with_options(collection, filter, options, span, tracer)
@@ -146,13 +151,13 @@ where
 ///
 /// [`findOne`]: https://docs.mongodb.com/manual/reference/method/db.collection.findOne/
 pub fn find_one<T>(
-    collection: Collection,
+    collection: Collection<T>,
     filter: Document,
     span: Option<SpanContext>,
     tracer: Option<&Tracer>,
 ) -> Result<Option<T>>
 where
-    T: DeserializeOwned,
+    T: DeserializeOwned + Send + Sync + Unpin,
 {
     let mut span = match (tracer, span) {
         (Some(tracer), Some(context)) => {
@@ -186,16 +191,10 @@ where
         .map_err(|error| fail_span(error, span.as_deref_mut()))?;
     timer.observe_duration();
     drop(span);
-    if document.is_none() {
-        return Ok(None);
-    }
-    let document = document.unwrap();
-    let id = document
-        .get_object_id("_id")
-        .map(bson::oid::ObjectId::to_hex)
-        .unwrap_or_else(|_| "<NO ID>".into());
-    let document = bson::from_bson::<T>(bson::Bson::Document(document))
-        .map_err(|error| error.context(ErrorKind::InvalidRecord(id)))?;
+    let document = match document {
+        None => return Ok(None),
+        Some(document) => document,
+    };
     Ok(Some(document))
 }
 
@@ -203,14 +202,14 @@ where
 ///
 /// [`find`]: https://docs.mongodb.com/manual/reference/method/db.collection.find/
 pub fn find_with_options<T>(
-    collection: Collection,
+    collection: Collection<T>,
     filter: Document,
     options: FindOptions,
     span: Option<SpanContext>,
     tracer: Option<&Tracer>,
 ) -> Result<impl Iterator<Item = Result<T>>>
 where
-    T: DeserializeOwned,
+    T: DeserializeOwned + Send + Sync + Unpin,
 {
     let mut span = match (tracer, span) {
         (Some(tracer), Some(context)) => {
@@ -249,12 +248,7 @@ where
     drop(span);
     let cursor = cursor.map(|document| {
         let document = document.with_context(|_| ErrorKind::FindCursor)?;
-        let id = document
-            .get_object_id("_id")
-            .map(bson::oid::ObjectId::to_hex)
-            .unwrap_or_else(|_| "<NO ID>".into());
-        bson::from_bson::<T>(bson::Bson::Document(document))
-            .map_err(|error| error.context(ErrorKind::InvalidRecord(id)).into())
+        Ok(document)
     });
     Ok(cursor)
 }
@@ -262,12 +256,15 @@ where
 /// Perform an [`insertMany`] operation.
 ///
 /// [`insertMany`]: https://docs.mongodb.com/manual/reference/method/db.collection.insertMany/
-pub fn insert_many(
-    collection: Collection,
-    records: Vec<Document>,
+pub fn insert_many<T>(
+    collection: Collection<T>,
+    records: Vec<T>,
     span: Option<SpanContext>,
     tracer: Option<&Tracer>,
-) -> Result<()> {
+) -> Result<()>
+where
+    T: Serialize + Send + Sync,
+{
     let mut span = match (tracer, span) {
         (Some(tracer), Some(context)) => {
             let opts = StartOptions::default().child_of(context);
@@ -299,12 +296,15 @@ pub fn insert_many(
 /// Perform an [`insertOne`] operation.
 ///
 /// [`insertOne`]: https://docs.mongodb.com/manual/reference/method/db.collection.insertOne/
-pub fn insert_one(
-    collection: Collection,
-    document: Document,
+pub fn insert_one<T>(
+    collection: Collection<T>,
+    document: T,
     span: Option<SpanContext>,
     tracer: Option<&Tracer>,
-) -> Result<()> {
+) -> Result<()>
+where
+    T: Serialize + Send + Sync,
+{
     let mut span = match (tracer, span) {
         (Some(tracer), Some(context)) => {
             let opts = StartOptions::default().child_of(context);
@@ -341,13 +341,16 @@ pub fn insert_one(
 /// Perform an upserted [`replaceOne`] operation.
 ///
 /// [`replaceOne`]: https://docs.mongodb.com/manual/reference/method/db.collection.replaceOne/
-pub fn replace_one(
-    collection: Collection,
+pub fn replace_one<T>(
+    collection: Collection<T>,
     filter: Document,
-    document: Document,
+    document: T,
     span: Option<SpanContext>,
     tracer: Option<&Tracer>,
-) -> Result<()> {
+) -> Result<()>
+where
+    T: Serialize + Send + Sync,
+{
     let mut options = ReplaceOptions::default();
     options.upsert = Some(true);
     let mut span = match (tracer, span) {
@@ -391,9 +394,9 @@ pub fn replace_one(
 /// Scan all documents in a collection.
 ///
 /// Intended for data validation purposes.
-pub fn scan_collection<T>(collection: Collection) -> Result<impl Iterator<Item = Result<T>>>
+pub fn scan_collection<T>(collection: Collection<T>) -> Result<impl Iterator<Item = Result<T>>>
 where
-    T: DeserializeOwned,
+    T: DeserializeOwned + Send + Sync + Unpin,
 {
     let filter = doc! {};
     let sort = doc! {"_id": 1};
@@ -401,20 +404,26 @@ where
     options.sort = Some(sort);
     let cursor = find_with_options(collection, filter, options, None, None)
         .with_context(|_| ErrorKind::FindOp)?
-        .map(|item| item.map_err(|error| error.context(ErrorKind::FindCursor).into()));
+        .map(|item| {
+            let item = item.context(ErrorKind::FindCursor)?;
+            Ok(item)
+        });
     Ok(cursor)
 }
 
 /// Perform an [`updateMany`] operation.
 ///
 /// [`updateMany`]: https://docs.mongodb.com/manual/reference/method/db.collection.updateMany/
-pub fn update_many(
-    collection: Collection,
+pub fn update_many<T>(
+    collection: Collection<T>,
     filter: Document,
     update: Document,
     span: Option<SpanContext>,
     tracer: Option<&Tracer>,
-) -> Result<UpdateResult> {
+) -> Result<UpdateResult>
+where
+    T: Send + Sync,
+{
     let mut span = match (tracer, span) {
         (Some(tracer), Some(context)) => {
             let options = StartOptions::default().child_of(context);
@@ -456,13 +465,16 @@ pub fn update_many(
 /// Perform an [`updateOne`] operation.
 ///
 /// [`updateOne`]: https://docs.mongodb.com/manual/reference/method/db.collection.updateOne/
-pub fn update_one(
-    collection: Collection,
+pub fn update_one<T>(
+    collection: Collection<T>,
     filter: Document,
     update: Document,
     span: Option<SpanContext>,
     tracer: Option<&Tracer>,
-) -> Result<UpdateResult> {
+) -> Result<UpdateResult>
+where
+    T: Send + Sync,
+{
     let options = UpdateOptions::default();
     update_one_with_options(collection, filter, update, options, span, tracer)
 }
@@ -470,8 +482,8 @@ pub fn update_one(
 /// Perform an [`updateOne`] operation with additional options.
 ///
 /// [`updateOne`]: https://docs.mongodb.com/manual/reference/method/db.collection.updateOne/
-pub fn update_one_with_options(
-    collection: Collection,
+pub fn update_one_with_options<T>(
+    collection: Collection<T>,
     filter: Document,
     update: Document,
     options: UpdateOptions,

@@ -22,7 +22,7 @@ use crate::ErrorKind;
 use crate::Result;
 
 pub struct Delete {
-    data: DeleteData,
+    data: web::Data<DeleteData>,
     logger: Logger,
     tracer: Arc<opentracingrust::Tracer>,
 }
@@ -34,7 +34,7 @@ impl Delete {
             store: interfaces.stores.primary.clone(),
         };
         Delete {
-            data,
+            data: web::Data::new(data),
             logger: logger.clone(),
             tracer: interfaces.tracing.tracer(),
         }
@@ -49,7 +49,7 @@ impl Delete {
             "/discoverysettings/{namespace}/{name}/delete",
         );
         web::resource("/{name}/delete")
-            .data(self.data.clone())
+            .app_data(self.data.clone())
             .wrap(tracer)
             .route(web::delete().to(responder))
     }

@@ -18,7 +18,7 @@ use crate::ErrorKind;
 use crate::Result;
 
 pub struct Summary {
-    data: SummaryData,
+    data: web::Data<SummaryData>,
     tracer: Arc<opentracingrust::Tracer>,
 }
 
@@ -29,7 +29,7 @@ impl Summary {
             store: interfaces.stores.primary.clone(),
         };
         Summary {
-            data,
+            data: web::Data::new(data),
             tracer: interfaces.tracing.tracer(),
         }
     }
@@ -40,7 +40,7 @@ impl Summary {
         let tracer =
             TracingMiddleware::with_name(logger, tracer, "/cluster/{cluster_id}/action/summary");
         web::resource("/action/summary")
-            .data(self.data.clone())
+            .app_data(self.data.clone())
             .wrap(tracer)
             .route(web::get().to(responder))
     }

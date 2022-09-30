@@ -1,7 +1,6 @@
-use clap::App;
 use clap::Arg;
 use clap::ArgMatches;
-use clap::SubCommand;
+use clap::Command;
 use failure::ResultExt;
 use slog::info;
 
@@ -13,25 +12,25 @@ use crate::ErrorKind;
 use crate::Interfaces;
 use crate::Result;
 
-pub fn command() -> App<'static, 'static> {
-    SubCommand::with_name(COMMAND)
+pub fn command() -> Command {
+    Command::new(COMMAND)
         .about("*** DANGER *** Force a primary to be re-elected")
         .arg(
-            Arg::with_name("election")
+            Arg::new("election")
                 .long("election")
                 .help("Name of the election to step-down")
                 .value_name("ELECTION")
-                .takes_value(true)
+                .num_args(1)
                 .required(true),
         )
         .arg(take_responsibility_arg())
 }
 
-pub fn run<'a>(args: &ArgMatches<'a>, interfaces: &Interfaces) -> Result<()> {
+pub fn run(args: &ArgMatches, interfaces: &Interfaces) -> Result<()> {
     let command = args.subcommand_matches(super::COMMAND).unwrap();
     let command = command.subcommand_matches(COMMAND).unwrap();
-    let name = command.value_of("election").unwrap();
-    if !command.is_present("take-responsibility") {
+    let name = command.get_one::<String>("election").unwrap();
+    if !command.get_flag("take-responsibility") {
         return Err(ErrorKind::TakeResponsibility.into());
     }
 

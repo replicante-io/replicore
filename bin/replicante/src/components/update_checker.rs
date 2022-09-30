@@ -4,7 +4,7 @@ use failure::ResultExt;
 use humthreads::Builder;
 use lazy_static::lazy_static;
 use semver::Version;
-use serde_derive::Deserialize;
+use serde::Deserialize;
 use slog::debug;
 use slog::warn;
 use slog::Logger;

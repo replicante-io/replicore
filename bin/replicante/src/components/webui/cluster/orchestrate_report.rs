@@ -18,7 +18,7 @@ use crate::Interfaces;
 use crate::Result;
 
 pub struct OrchestrateReport {
-    data: OrchestrateReportData,
+    data: web::Data<OrchestrateReportData>,
     logger: Logger,
     tracer: Arc<opentracingrust::Tracer>,
 }
@@ -29,7 +29,7 @@ impl OrchestrateReport {
             store: interfaces.stores.view.clone(),
         };
         OrchestrateReport {
-            data,
+            data: web::Data::new(data),
             logger: interfaces.logger.clone(),
             tracer: interfaces.tracing.tracer(),
         }
@@ -44,7 +44,7 @@ impl OrchestrateReport {
             "/cluster/{cluster_id}/orchestrate_report",
         );
         web::resource("/orchestrate_report")
-            .data(self.data.clone())
+            .app_data(self.data.clone())
             .wrap(tracer)
             .route(web::get().to(responder))
     }

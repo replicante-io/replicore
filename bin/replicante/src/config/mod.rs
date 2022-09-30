@@ -3,8 +3,8 @@ use std::io::Read;
 use std::path::Path;
 
 use failure::ResultExt;
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde::Deserialize;
+use serde::Serialize;
 
 use replicante_logging::Config as LoggingConfig;
 use replicante_logging::LoggingLevel;
@@ -26,7 +26,6 @@ mod task_workers;
 mod timeouts;
 
 pub use self::components::ComponentsConfig;
-pub use self::sentry::SentryCaptureApi;
 pub use self::sentry::SentryConfig;
 pub use self::storage::StorageConfig;
 pub use self::task_workers::TaskWorkers;

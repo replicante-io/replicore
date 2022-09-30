@@ -7,6 +7,7 @@ use slog::Logger;
 use replicante_util_tracing::tracer;
 use replicante_util_tracing::Config;
 use replicante_util_upkeep::Upkeep;
+use replicore_util_errors::AnyWrap;
 
 use super::ErrorKind;
 use super::Result;
@@ -24,7 +25,9 @@ impl Tracing {
     /// reporting thread but this is backend dependent.
     pub fn new(config: Config, logger: Logger, upkeep: &mut Upkeep) -> Result<Tracing> {
         let opts = replicante_util_tracing::Opts::new("replicore", logger, upkeep);
-        let tracer = tracer(config, opts).with_context(|_| ErrorKind::InterfaceInit("tracing"))?;
+        let tracer = tracer(config, opts)
+            .map_err(AnyWrap::from)
+            .with_context(|_| ErrorKind::InterfaceInit("tracing"))?;
         let tracer = Arc::new(tracer);
         Ok(Tracing { tracer })
     }
