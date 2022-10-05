@@ -45,37 +45,24 @@ enum Opt {
     Release(command::release::Opt),
 }
 
-impl Opt {
-    fn need_actix_rt(&self) -> bool {
-        match self {
-            Self::Play(play) => play.need_actix_rt(),
-            _ => false,
-        }
-    }
-}
-
 pub fn run() -> anyhow::Result<i32> {
     // Parse CLI & conf.
     let args = Opt::from_args();
     let conf = conf::Conf::from_file()?;
 
-    // Set up tokio runtime for all futures and a LocalSet for actix-web.
-    let mut runtime = tokio::runtime::Builder::new()
+    // Set up tokio runtime for all futures.
+    // The AcitxWeb HttpServer can run in tokio native (even multi-threaded) unless it needs
+    // actor-based features (such as web-sockets).
+    // If the use of actix_rt::System becomes necessary a dedicated thread for actix-web becomes
+    // the only option, with the questions about cross-runtime clients that may come with it.
+    let runtime = tokio::runtime::Builder::new_multi_thread()
         .enable_all()
         .thread_name("replidev-tokio-worker")
-        .threaded_scheduler()
         .build()
         .expect("tokio runtime init failed");
-    let local = tokio::task::LocalSet::new();
-
-    // Create an actix runtime that uses the existing tokio runtime.
-    // This is required by some commands to run the web server.
-    if args.need_actix_rt() {
-        local.spawn_local(actix_rt::System::run_in_tokio("replidev-actix", &local));
-    }
 
     // Run all commands inside the tokio runtime.
-    let result = local.block_on(&mut runtime, async {
+    let result = runtime.block_on(async {
         match args {
             Opt::Cargo(cargo) => command::cargo::run(cargo, &conf).await,
             Opt::Configuration(cfg) => command::conf::run(cfg, conf).await,

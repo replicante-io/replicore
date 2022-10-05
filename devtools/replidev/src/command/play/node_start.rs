@@ -63,7 +63,7 @@ fn random_name(len: usize) -> String {
     let mut rng = rand::thread_rng();
     let name: String = (0..len)
         .map(|_| {
-            let idx = rng.gen_range(0, CHARSET.len());
+            let idx = rng.gen_range(0..CHARSET.len());
             CHARSET[idx] as char
         })
         .collect();

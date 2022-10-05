@@ -36,7 +36,7 @@ pub async fn run(conf: Conf) -> Result<i32> {
     let bind = conf.play_server_bind.clone();
     let server = HttpServer::new(move || {
         App::new()
-            .data(DiscoverData::from_conf(&conf))
+            .app_data(Data::new(DiscoverData::from_conf(&conf)))
             .service(index)
             .service(discover)
     })
@@ -62,9 +62,10 @@ async fn discover(data: Data<DiscoverData>) -> impl Responder {
     let nodes = match nodes {
         Ok(nodes) => nodes,
         Err(error) => {
-            let error = format_fail(&error);
-            let response = HttpResponse::InternalServerError().body(error);
-            return Err(response);
+            let formatted_error = format_fail(&error);
+            let response = HttpResponse::InternalServerError().body(formatted_error);
+            let error = actix_web::error::InternalError::from_response(error, response);
+            return Err(error);
         }
     };
 

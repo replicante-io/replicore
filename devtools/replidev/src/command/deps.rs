@@ -2,7 +2,6 @@ use std::collections::BTreeMap;
 use std::fs::File;
 
 use failure::ResultExt;
-use prettytable::cell;
 use prettytable::row;
 use serde::Deserialize;
 use structopt::StructOpt;

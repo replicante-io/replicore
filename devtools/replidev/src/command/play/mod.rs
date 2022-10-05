@@ -62,12 +62,6 @@ pub enum Opt {
     Server,
 }
 
-impl Opt {
-    pub fn need_actix_rt(&self) -> bool {
-        matches!(self, Self::Server)
-    }
-}
-
 #[derive(Debug, StructOpt)]
 pub struct CleanClusterOpt {
     /// List of clusters to clean up.
