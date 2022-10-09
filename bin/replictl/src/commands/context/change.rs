@@ -3,16 +3,16 @@ use anyhow::Result;
 use dialoguer::Input;
 use slog::Logger;
 
-use crate::context::ContextNotFound;
 use crate::context::ContextStore;
-use crate::Opt;
+use crate::errors::ContextNotFound;
+use crate::Cli;
 
 const INTERACT_ERROR: &str = "error while interacting with the user";
 
 /// Execute the command.
-pub async fn execute(logger: &Logger, opt: &Opt) -> Result<i32> {
-    let mut store = ContextStore::load(logger, opt).await?;
-    let name = store.active_context_name(opt);
+pub async fn execute(logger: &Logger, cli: &Cli) -> Result<i32> {
+    let mut store = ContextStore::load(logger, cli).await?;
+    let name = store.active_context_name(cli);
     let context = store.get(&name);
 
     // Print an error if the context does not exist.
@@ -22,9 +22,9 @@ pub async fn execute(logger: &Logger, opt: &Opt) -> Result<i32> {
     };
 
     // Use the CLI options as default if set.
-    let namespace = context.namespace(&opt.context).ok();
-    let cluster = context.cluster(&opt.context).ok();
-    let node = context.node(&opt.context).ok();
+    let namespace = context.namespace(&cli.context).ok();
+    let cluster = context.cluster(&cli.context).ok();
+    let node = context.node(&cli.context).ok();
 
     // Interact with the user to update the scope.
     context.scope.namespace =
@@ -35,7 +35,7 @@ pub async fn execute(logger: &Logger, opt: &Opt) -> Result<i32> {
 
     // Save the updated context to the store and the store to disk.
     store.upsert(name, context);
-    store.save(logger, opt).await?;
+    store.save(logger, cli).await?;
     Ok(0)
 }
 

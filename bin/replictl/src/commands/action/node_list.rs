@@ -4,14 +4,14 @@ use slog::Logger;
 
 use crate::apiclient::RepliClient;
 use crate::context::ContextStore;
-use crate::Opt;
+use crate::Cli;
 
 /// Execute the command.
-pub async fn execute(logger: &Logger, opt: &Opt) -> Result<i32> {
+pub async fn execute(logger: &Logger, cli: &Cli) -> Result<i32> {
     // Figure out the cluster being requested.
-    let context = ContextStore::active_context(logger, opt).await?;
-    let _ns = context.namespace(&opt.context)?;
-    let cluster = context.cluster(&opt.context)?;
+    let context = ContextStore::active_context(logger, cli).await?;
+    let _ns = context.namespace(&cli.context)?;
+    let cluster = context.cluster(&cli.context)?;
 
     // Fetch node actions summaries.
     let client = RepliClient::new(logger, context).await?;

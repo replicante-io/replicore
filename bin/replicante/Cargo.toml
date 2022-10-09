@@ -43,7 +43,7 @@ actix-rt = "^2.0"
 actix-web = { version = "^4.0.0", features = ["openssl"] }
 anyhow = "^1.0"
 chrono = "^0.4.6"
-clap = "^4.0"
+clap = { version = "^4.0", features = ["derive"] }
 failure = "^0.1.5"
 futures = "^0.3.4"
 humthreads = "^0.2.0"

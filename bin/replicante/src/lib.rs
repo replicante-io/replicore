@@ -1,5 +1,4 @@
-use clap::Arg;
-use clap::Command;
+use clap::Parser;
 use failure::ResultExt;
 use prometheus::Registry;
 use sentry::integrations::anyhow::capture_anyhow;
@@ -38,6 +37,17 @@ pub const VERSION: &str = concat!(
     env!("GIT_BUILD_TAINT"),
     "]",
 );
+
+/// Replicante Core datastore orchestration control plane.
+#[derive(Debug, Parser)]
+#[command(long_about = None)]
+#[command(version = VERSION)]
+pub struct Cli {
+    /// Specifies the configuration file to use.
+    #[arg(short = 'c', long = "config", value_name = "FILE")]
+    #[arg(default_value = "replicante.yaml")]
+    config: String,
+}
 
 /// Initialised interfaces and components and waits for the system to exit.
 ///
@@ -144,20 +154,7 @@ pub fn register_crates_metrics(logger: &Logger, registry: &Registry) {
 /// Once the configuration is loaded control is passed to `initialise_and_run`.
 pub fn run() -> Result<bool> {
     // Initialise and parse command line arguments.
-    let cli_args = Command::new("Replicante Core")
-        .version(VERSION)
-        .about(env!("CARGO_PKG_DESCRIPTION"))
-        .arg(
-            Arg::new("config")
-                .short('c')
-                .long("config")
-                .value_name("FILE")
-                .default_value("replicante.yaml")
-                .help("Specifies the configuration file to use")
-                .num_args(1)
-                .value_parser(clap::value_parser!(String)),
-        )
-        .get_matches();
+    let args = Cli::parse();
 
     // Log initialisation start message.
     let logger_opts = replicante_logging::Opts::new(env!("GIT_BUILD_HASH").into());
@@ -171,7 +168,7 @@ pub fn run() -> Result<bool> {
     );
 
     // Load configuration.
-    let config_location: &String = cli_args.get_one("config").unwrap();
+    let config_location = &args.config;
     info!(logger, "Loading configuration ..."; "config" => config_location);
     let config = Config::from_file(config_location).with_context(|_| ErrorKind::ConfigLoad)?;
     let config = config.transform();

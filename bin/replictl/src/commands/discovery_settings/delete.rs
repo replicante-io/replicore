@@ -7,11 +7,11 @@ use crate::context::ContextStore;
 /// Execute the selected command.
 pub async fn execute(
     logger: &Logger,
-    opt: &crate::Opt,
+    cli: &crate::Cli,
     delete_opt: &super::CommonOpt,
 ) -> Result<i32> {
-    let context = ContextStore::active_context(logger, opt).await?;
-    let ns = context.namespace(&opt.context)?;
+    let context = ContextStore::active_context(logger, cli).await?;
+    let ns = context.namespace(&cli.context)?;
     let name = &delete_opt.discovery_name;
     let client = RepliClient::new(logger, context).await?;
     client.discovery_settings_delete(&ns, name).await?;

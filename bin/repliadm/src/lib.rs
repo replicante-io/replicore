@@ -80,7 +80,8 @@ pub fn run() -> Result<()> {
         .get_matches();
 
     // Initialise logging.
-    let log_level = args.get_one::<LogLevel>("log-level")
+    let log_level = args
+        .get_one::<LogLevel>("log-level")
         .cloned()
         .unwrap_or_default();
     let logger = logging::configure(log_level);

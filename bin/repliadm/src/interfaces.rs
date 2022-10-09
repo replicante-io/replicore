@@ -17,8 +17,12 @@ pub struct Interfaces {
 impl Interfaces {
     /// Create a new `Interfaces` container.
     pub fn new(args: &ArgMatches, logger: Logger) -> Result<Interfaces> {
-        let progress_chunk = *args.get_one::<u32>("progress-chunk")
-            .ok_or_else(|| ErrorKind::Config("progress-chunk is not a positive integer"))?;
+        let progress_chunk =
+            args.get_one::<u32>("progress-chunk")
+                .copied()
+                .ok_or(ErrorKind::Config(
+                    "progress-chunk is not a positive integer",
+                ))?;
         if progress_chunk == 0 {
             return Err(ErrorKind::Config("progress-chunck must be grater then 0").into());
         }
@@ -29,7 +33,7 @@ impl Interfaces {
         })
     }
 
-    /// Access the logger instnace.
+    /// Access the logger instance.
     pub fn logger(&self) -> &Logger {
         &self.logger
     }

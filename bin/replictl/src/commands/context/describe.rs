@@ -2,14 +2,14 @@ use anyhow::Context;
 use anyhow::Result;
 use slog::Logger;
 
-use crate::context::ContextNotFound;
 use crate::context::ContextStore;
-use crate::Opt;
+use crate::errors::ContextNotFound;
+use crate::Cli;
 
 /// Execute the command.
-pub async fn execute(logger: &Logger, opt: &Opt) -> Result<i32> {
-    let store = ContextStore::load(logger, opt).await?;
-    let name = store.active_context_name(opt);
+pub async fn execute(logger: &Logger, cli: &Cli) -> Result<i32> {
+    let store = ContextStore::load(logger, cli).await?;
+    let name = store.active_context_name(cli);
     let context = store.get(&name);
 
     // Print an error if the context does not exist.
@@ -23,6 +23,6 @@ pub async fn execute(logger: &Logger, opt: &Opt) -> Result<i32> {
         .with_context(|| format!("failed to YAML encode context {}", name))?;
     tokio::task::spawn_blocking(move || println!("{}", encoded))
         .await
-        .with_context(|| format!("failed to output descibed context '{}'", name))?;
+        .with_context(|| format!("failed to output described context '{}'", name))?;
     Ok(0)
 }

@@ -4,10 +4,10 @@ use prettytable::row;
 use slog::Logger;
 
 use crate::context::ContextStore;
-use crate::Opt;
+use crate::Cli;
 
 /// Execute the command.
-pub async fn execute(logger: &Logger, opt: &Opt) -> Result<i32> {
+pub async fn execute(logger: &Logger, cli: &Cli) -> Result<i32> {
     let mut table = prettytable::Table::new();
     table.add_row(row![
         "ACTIVE",
@@ -20,8 +20,8 @@ pub async fn execute(logger: &Logger, opt: &Opt) -> Result<i32> {
         "NODE",
     ]);
 
-    let store = ContextStore::load(logger, opt).await?;
-    let active_name = store.active_context_name(opt);
+    let store = ContextStore::load(logger, cli).await?;
+    let active_name = store.active_context_name(cli);
     for (name, context) in store.iter() {
         let ca_bundle = yes_or_no(&context.connection.ca_bundle);
         let client_key = yes_or_no(&context.connection.client_key);

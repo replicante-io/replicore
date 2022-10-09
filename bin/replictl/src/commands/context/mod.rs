@@ -1,6 +1,6 @@
 use anyhow::Result;
+use clap::Subcommand;
 use slog::Logger;
-use structopt::StructOpt;
 
 mod change;
 mod describe;
@@ -10,12 +10,12 @@ mod logout;
 mod select;
 
 /// Commands to operate on `replictl` contexts.
-#[derive(Debug, StructOpt)]
+#[derive(Debug, Subcommand)]
 pub enum Opt {
     /// Set or update an existing context's scope attributes.
     Change,
 
-    /// Descibe the active context.
+    /// Describe the active context.
     Describe,
 
     /// List known contexts.
@@ -32,13 +32,13 @@ pub enum Opt {
 }
 
 /// Execute the selected command.
-pub async fn execute(logger: &Logger, opt: &crate::Opt, context_cmd: &Opt) -> Result<i32> {
+pub async fn execute(logger: &Logger, cli: &crate::Cli, context_cmd: &Opt) -> Result<i32> {
     match &context_cmd {
-        Opt::Change => change::execute(logger, opt).await,
-        Opt::Describe => describe::execute(logger, opt).await,
-        Opt::List => list::execute(logger, opt).await,
-        Opt::Login => login::execute(logger, opt).await,
-        Opt::Logout => logout::execute(logger, opt).await,
-        Opt::Select => select::execute(logger, opt).await,
+        Opt::Change => change::execute(logger, cli).await,
+        Opt::Describe => describe::execute(logger, cli).await,
+        Opt::List => list::execute(logger, cli).await,
+        Opt::Login => login::execute(logger, cli).await,
+        Opt::Logout => logout::execute(logger, cli).await,
+        Opt::Select => select::execute(logger, cli).await,
     }
 }

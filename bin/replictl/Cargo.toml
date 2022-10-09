@@ -2,7 +2,7 @@
 name = "replictl"
 version = "0.7.2"
 authors = ["Stefano Pogliani <stefano@spogliani.net>"]
-edition = "2018"
+edition = "2021"
 build = "../../build.rs"
 
 description = "Replicante Core command line tool"
@@ -25,14 +25,13 @@ path = "src/lib.rs"
 
 [dependencies]
 anyhow = "^1.0"
+clap = { version = "^4.0", features = ["derive", "env"] }
 dialoguer = "^0.10"
 prettytable-rs = "^0.9"
 serde_json = "^1.0"
 serde_yaml = "^0.9"
 slog = "^2.1"
 slog-json = "^2.3"
-# TODO: replace with clap v4
-structopt = "^0.3"
 thiserror = "^1.0"
 
 replicante_models_core = { path = "../../models/core" }
