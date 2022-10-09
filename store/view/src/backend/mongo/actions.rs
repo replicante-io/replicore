@@ -1,14 +1,16 @@
 use std::sync::Arc;
 
-use bson::doc;
-use bson::Bson;
-use bson::DateTime as UtcDateTime;
 use chrono::DateTime;
 use chrono::Utc;
 use failure::Fail;
 use failure::ResultExt;
+use mongodb::bson;
+use mongodb::bson::doc;
+use mongodb::bson::Bson;
+use mongodb::bson::DateTime as UtcDateTime;
 use mongodb::options::FindOptions;
 use mongodb::sync::Client;
+use mongodb::sync::Collection;
 use opentracingrust::SpanContext;
 use opentracingrust::Tracer;
 use uuid::Uuid;
@@ -85,7 +87,7 @@ impl ActionsInterface for Actions {
                 "finished_ts": bson::to_bson(&finished_ts).unwrap(),
             }
         };
-        let collection = self
+        let collection: Collection<ActionHistoryDocument> = self
             .client
             .database(&self.db)
             .collection(COLLECTION_ACTIONS_HISTORY);

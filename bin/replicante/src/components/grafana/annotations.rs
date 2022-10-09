@@ -6,8 +6,8 @@ use actix_web::Responder;
 use chrono::DateTime;
 use chrono::Utc;
 use failure::ResultExt;
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde::Deserialize;
+use serde::Serialize;
 use serde_json::json;
 
 use replicante_models_core::events::action::ActionEvent;
@@ -28,7 +28,7 @@ use crate::Interfaces;
 use crate::Result;
 
 pub struct Annotations {
-    data: AnnotationData,
+    data: web::Data<AnnotationData>,
 }
 
 impl Annotations {
@@ -36,12 +36,13 @@ impl Annotations {
         let data = AnnotationData {
             store: interfaces.stores.view.clone(),
         };
+        let data = web::Data::new(data);
         Annotations { data }
     }
 
     pub fn resource(&self) -> impl HttpServiceFactory {
         web::resource("/annotations")
-            .data(self.data.clone())
+            .app_data(self.data.clone())
             .route(web::post().to(responder))
     }
 

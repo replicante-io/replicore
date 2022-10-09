@@ -19,7 +19,7 @@ use crate::ErrorKind;
 use crate::Result;
 
 pub struct List {
-    data: ListData,
+    data: web::Data<ListData>,
     logger: Logger,
     tracer: Arc<opentracingrust::Tracer>,
 }
@@ -30,7 +30,7 @@ impl List {
             store: interfaces.stores.primary.clone(),
         };
         List {
-            data,
+            data: web::Data::new(data),
             logger: logger.clone(),
             tracer: interfaces.tracing.tracer(),
         }
@@ -42,7 +42,7 @@ impl List {
         let tracer =
             TracingMiddleware::with_name(logger, tracer, "/discoverysettings/{namespace}/list");
         web::resource("/list")
-            .data(self.data.clone())
+            .app_data(self.data.clone())
             .wrap(tracer)
             .route(web::get().to(responder))
     }

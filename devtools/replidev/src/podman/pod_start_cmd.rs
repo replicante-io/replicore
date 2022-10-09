@@ -166,7 +166,7 @@ where
         if let Some(delay) = container.start_delay {
             println!("--> Waiting {}s for {} to start", delay, con_name);
             let delay = std::time::Duration::from_secs(delay);
-            tokio::time::delay_for(delay).await;
+            tokio::time::sleep(delay).await;
         }
     }
     Ok(())

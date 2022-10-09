@@ -39,6 +39,6 @@ pub fn configure(
 }
 
 fn metrics(registry: Registry) -> Resource {
-    let metrics = MetricsExporter::factory(registry);
+    let metrics = MetricsExporter::with_registry(registry);
     web::resource("/metrics").route(web::get().to(metrics))
 }

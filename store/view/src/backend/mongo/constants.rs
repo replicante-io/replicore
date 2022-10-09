@@ -1,7 +1,7 @@
 use std::collections::HashSet;
 
-use bson::doc;
 use lazy_static::lazy_static;
+use mongodb::bson::doc;
 
 pub const COLLECTION_ACTIONS: &str = "actions";
 pub const COLLECTION_ACTIONS_HISTORY: &str = "actions_history";

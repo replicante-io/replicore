@@ -284,7 +284,7 @@ impl Backoff {
         if min == max {
             return min;
         }
-        rand::thread_rng().gen_range(min, max)
+        rand::thread_rng().gen_range(min..max)
     }
 
     fn max_delay(&self) -> Duration {

@@ -12,14 +12,13 @@ license = "MIT"
 
 
 [dependencies]
-bson = "^1.1.0" # bound by mongodb crate
 failure = "^0.1.5"
 lazy_static = "^1.0.0"
 opentracingrust = "^0.4.0"
-prometheus = "^0.9.0"
-serde = "^1.0.34"
-serde_derive = "^1.0.34"
-serde_json = "^1.0.39"
+prometheus = "^0.13"
+semver = { version = "^1.0", features = ["serde"]}
+serde = { version = "^1.0", features = ["derive"] }
+serde_json = "^1.0"
 slog = "^2.2.0"
 
 replicante_models_api = { path = "../../common/models/api" }
@@ -30,8 +29,4 @@ replicante_util_tracing = { path = "../../common/util/tracing" }
 [dependencies.mongodb]
 default-features = false
 features = ["sync"]
-version = "^1.1.0"
-
-[dependencies.semver]
-features = ["serde"]
-version = "^0.11.0"
+version = "^2.0"

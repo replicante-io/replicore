@@ -1,20 +1,20 @@
 use anyhow::Result;
+use clap::Parser;
 use slog::debug;
 use slog::error;
-use structopt::StructOpt;
-
-use replicante_models_core::api::validate::ErrorsCollection;
 
 mod apiclient;
 mod commands;
 mod context;
+mod errors;
 mod logging;
 mod utils;
 
 // Re-export errors so main can provide more accurate messages.
 pub use apiclient::ApiNotFound;
-pub use context::ContextNotFound;
 pub use context::ScopeError;
+pub use errors::ContextNotFound;
+pub use errors::InvalidApply;
 
 use commands::Command;
 use context::ContextOpt;
@@ -29,44 +29,25 @@ const VERSION: &str = concat!(
     "]",
 );
 
-/// Apply attempted on an invalid object.
-#[derive(thiserror::Error, Debug)]
-#[error("Apply attempted on an invalid object")]
-pub struct InvalidApply {
-    errors: replicante_models_core::api::validate::ErrorsCollection,
-}
-
-impl InvalidApply {
-    pub fn new(errors: ErrorsCollection) -> InvalidApply {
-        InvalidApply { errors }
-    }
-}
-
-impl std::ops::Deref for InvalidApply {
-    type Target = [replicante_models_core::api::validate::Error];
-    fn deref(&self) -> &Self::Target {
-        self.errors.deref()
-    }
-}
-
 /// Replicante Core command line client.
-#[derive(Debug, StructOpt)]
-#[structopt(version = VERSION)]
-pub struct Opt {
-    #[structopt(subcommand)]
+#[derive(Debug, Parser)]
+#[command(long_about = None)]
+#[command(version = VERSION)]
+pub struct Cli {
+    #[command(subcommand)]
     pub command: Command,
 
-    #[structopt(flatten)]
+    #[command(flatten)]
     pub context: ContextOpt,
 
-    #[structopt(flatten)]
+    #[command(flatten)]
     pub log: LogOpt,
 }
 
 pub fn run() -> Result<i32> {
     // Parse args and initialise logging.
-    let opt = Opt::from_args();
-    let logger = logging::configure(&opt.log)?;
+    let cli = Cli::parse();
+    let logger = logging::configure(&cli.log)?;
     debug!(
         logger,
         "replictl starting";
@@ -76,13 +57,12 @@ pub fn run() -> Result<i32> {
     );
 
     // Set up a tokio runtime.
-    let mut runtime = tokio::runtime::Builder::new()
+    let runtime = tokio::runtime::Builder::new_multi_thread()
         .enable_all()
         .thread_name("replictl-tokio-worker")
-        .threaded_scheduler()
         .build()
         .expect("tokio runtime initialisation failed");
-    let result = runtime.block_on(commands::execute(&logger, &opt));
+    let result = runtime.block_on(commands::execute(&logger, &cli));
     // Once done, ensure the runtime shuts down in a timely manner.
     // Note: this only effects blocking tasks and not futures.
     runtime.shutdown_timeout(std::time::Duration::from_millis(100));
@@ -94,4 +74,15 @@ pub fn run() -> Result<i32> {
         debug!(logger, "replicli exiting successfully");
     }
     result
+}
+
+#[cfg(test)]
+mod tests {
+    use clap::CommandFactory;
+
+    #[test]
+    fn clap_integrity_check() {
+        let command = crate::Cli::command();
+        command.debug_assert();
+    }
 }

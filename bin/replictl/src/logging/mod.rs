@@ -1,21 +1,31 @@
 use anyhow::Result;
+use clap::Args;
+use clap::ValueEnum;
 use slog::Logger;
-use structopt::clap::arg_enum;
-use structopt::StructOpt;
 
 use crate::utils::resolve_home;
 
 mod logger;
 
-arg_enum! {
-    /// Enumerate valid log verbosity levels.
-    #[derive(Clone, Debug)]
-    enum LogLevel {
-        Critical,
-        Error,
-        Warning,
-        Info,
-        Debug,
+/// Enumerate valid log verbosity levels.
+#[derive(Clone, Debug, ValueEnum)]
+enum LogLevel {
+    Critical,
+    Error,
+    Warning,
+    Info,
+    Debug,
+}
+
+impl std::fmt::Display for LogLevel {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        match self {
+            Self::Critical => write!(f, "critical"),
+            Self::Error => write!(f, "error"),
+            Self::Warning => write!(f, "warning"),
+            Self::Info => write!(f, "info"),
+            Self::Debug => write!(f, "debug"),
+        }
     }
 }
 
@@ -32,16 +42,16 @@ impl From<LogLevel> for slog::Level {
 }
 
 /// Logging-related options.
-#[derive(StructOpt, Debug)]
+#[derive(Args, Debug)]
 pub struct LogOpt {
     /// If provided, logs will be emitted to this file.
-    #[structopt(long = "log-file", name = "log-file", global = true)]
+    #[arg(long = "log-file", name = "log-file", global = true)]
     file: Option<String>,
 
     /// Verbosity level for the log file.
-    #[structopt(
-        long = "log-level", case_insensitive = true, global = true,
-        default_value = "info", possible_values = &LogLevel::variants()
+    #[arg(
+        long = "log-level", global = true,
+        default_value_t = LogLevel::Info,
     )]
     level: LogLevel,
 }

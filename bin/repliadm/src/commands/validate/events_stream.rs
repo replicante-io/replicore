@@ -1,6 +1,5 @@
-use clap::App;
 use clap::ArgMatches;
-use clap::SubCommand;
+use clap::Command;
 use failure::ResultExt;
 use slog::info;
 use slog::warn;
@@ -19,11 +18,11 @@ use crate::ErrorKind;
 use crate::Interfaces;
 use crate::Result;
 
-pub fn command() -> App<'static, 'static> {
-    SubCommand::with_name(COMMAND).about("Validate messages on the events stream")
+pub fn command() -> Command {
+    Command::new(COMMAND).about("Validate messages on the events stream")
 }
 
-pub fn run<'a>(args: &ArgMatches<'a>, interfaces: &Interfaces) -> Result<Outcomes> {
+pub fn run(args: &ArgMatches, interfaces: &Interfaces) -> Result<Outcomes> {
     let logger = interfaces.logger();
     info!(logger, "Checking events stream");
 

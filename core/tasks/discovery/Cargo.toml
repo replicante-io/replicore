@@ -13,9 +13,9 @@ license = "MIT"
 
 [dependencies]
 failure = "^0.1.5"
-lazy_static = "^1.0.0"
+lazy_static = "^1.0"
 opentracingrust = "^0.4.0"
-prometheus = "^0.9.0"
+prometheus = "^0.13.0"
 slog = "^2.2.0"
 
 replicante_cluster_discovery = { path = "../../../cluster/discovery" }

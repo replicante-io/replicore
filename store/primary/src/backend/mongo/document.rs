@@ -1,9 +1,9 @@
 use std::collections::HashMap;
 use std::time::Duration;
 
-use bson::DateTime;
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use mongodb::bson::DateTime;
+use serde::Deserialize;
+use serde::Serialize;
 
 use replicante_models_core::actions::node::Action;
 use replicante_models_core::actions::node::ActionRequester;
@@ -79,14 +79,14 @@ impl From<ActionDocument> for Action {
             action_id,
             args,
             cluster_id: action.cluster_id,
-            created_ts: action.created_ts.0,
-            finished_ts: action.finished_ts.map(|ts| ts.0),
+            created_ts: action.created_ts.to_chrono(),
+            finished_ts: action.finished_ts.map(DateTime::to_chrono),
             headers: action.headers,
             kind: action.kind,
             node_id: action.node_id,
             requester: action.requester,
             schedule_attempt: action.schedule_attempt,
-            scheduled_ts: action.scheduled_ts.map(|ts| ts.0),
+            scheduled_ts: action.scheduled_ts.map(DateTime::to_chrono),
             state: action.state,
             state_payload,
         }
@@ -166,10 +166,10 @@ impl From<NodeActionSummaryDocument> for NodeActionSummary {
             action_id,
             cluster_id: action.cluster_id,
             node_id: action.node_id,
-            created_ts: action.created_ts.0,
-            finished_ts: action.finished_ts.map(|ts| ts.0),
+            created_ts: action.created_ts.to_chrono(),
+            finished_ts: action.finished_ts.map(DateTime::to_chrono),
             kind: action.kind,
-            scheduled_ts: action.scheduled_ts.map(|ts| ts.0),
+            scheduled_ts: action.scheduled_ts.map(DateTime::to_chrono),
             state: action.state,
         }
     }
@@ -243,11 +243,11 @@ impl From<OrchestratorActionDocument> for OrchestratorAction {
             action_id,
             args,
             cluster_id: action.cluster_id,
-            created_ts: action.created_ts.0,
-            finished_ts: action.finished_ts.map(|ts| ts.0),
+            created_ts: action.created_ts.to_chrono(),
+            finished_ts: action.finished_ts.map(DateTime::to_chrono),
             headers: action.headers,
             kind: action.kind,
-            scheduled_ts: action.scheduled_ts.map(|ts| ts.0),
+            scheduled_ts: action.scheduled_ts.map(DateTime::to_chrono),
             state: action.state,
             state_payload,
             state_payload_error,
@@ -276,8 +276,8 @@ impl From<OrchestratorActionSummaryDocument> for OrchestratorActionSummary {
         OrchestratorActionSummary {
             action_id,
             cluster_id: action.cluster_id,
-            created_ts: action.created_ts.0,
-            finished_ts: action.finished_ts.map(|ts| ts.0),
+            created_ts: action.created_ts.to_chrono(),
+            finished_ts: action.finished_ts.map(DateTime::to_chrono),
             kind: action.kind,
             state: action.state,
         }

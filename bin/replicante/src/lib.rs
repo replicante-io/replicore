@@ -1,10 +1,9 @@
-use clap::App;
-use clap::Arg;
+use clap::Parser;
 use failure::ResultExt;
 use prometheus::Registry;
-use sentry::integrations::failure::capture_fail;
-use sentry::internals::ClientInitGuard;
-use sentry::internals::IntoDsn;
+use sentry::integrations::anyhow::capture_anyhow;
+use sentry::ClientInitGuard;
+use sentry::IntoDsn;
 use slog::debug;
 use slog::info;
 use slog::warn;
@@ -38,6 +37,17 @@ pub const VERSION: &str = concat!(
     env!("GIT_BUILD_TAINT"),
     "]",
 );
+
+/// Replicante Core datastore orchestration control plane.
+#[derive(Debug, Parser)]
+#[command(long_about = None)]
+#[command(version = VERSION)]
+pub struct Cli {
+    /// Specifies the configuration file to use.
+    #[arg(short = 'c', long = "config", value_name = "FILE")]
+    #[arg(default_value = "replicante.yaml")]
+    config: String,
+}
 
 /// Initialised interfaces and components and waits for the system to exit.
 ///
@@ -114,16 +124,14 @@ pub fn initialise_sentry(config: Option<SentryConfig>, logger: &Logger) -> Resul
         .dsn
         .into_dsn()
         .with_context(|_| ErrorKind::InterfaceInit("sentry"))?;
-    let client = sentry::init(sentry::ClientOptions {
+    let options = sentry::ClientOptions {
         attach_stacktrace: true,
         dsn,
-        in_app_include: vec!["replicante"],
+        in_app_include: vec!["replicante", "replicore", "replisdk"],
         release: Some(RELEASE.into()),
         ..Default::default()
-    });
-    if client.is_enabled() {
-        sentry::integrations::panic::register_panic_handler();
-    }
+    };
+    let client = sentry::init(options);
     Ok(client)
 }
 
@@ -146,25 +154,7 @@ pub fn register_crates_metrics(logger: &Logger, registry: &Registry) {
 /// Once the configuration is loaded control is passed to `initialise_and_run`.
 pub fn run() -> Result<bool> {
     // Initialise and parse command line arguments.
-    let version = format!(
-        "{} [{}; {}]",
-        env!("CARGO_PKG_VERSION"),
-        env!("GIT_BUILD_HASH"),
-        env!("GIT_BUILD_TAINT")
-    );
-    let cli_args = App::new("Replicante Core")
-        .version(version.as_ref())
-        .about(env!("CARGO_PKG_DESCRIPTION"))
-        .arg(
-            Arg::with_name("config")
-                .short("c")
-                .long("config")
-                .value_name("FILE")
-                .default_value("replicante.yaml")
-                .help("Specifies the configuration file to use")
-                .takes_value(true),
-        )
-        .get_matches();
+    let args = Cli::parse();
 
     // Log initialisation start message.
     let logger_opts = replicante_logging::Opts::new(env!("GIT_BUILD_HASH").into());
@@ -178,7 +168,7 @@ pub fn run() -> Result<bool> {
     );
 
     // Load configuration.
-    let config_location = cli_args.value_of("config").unwrap();
+    let config_location = &args.config;
     info!(logger, "Loading configuration ..."; "config" => config_location);
     let config = Config::from_file(config_location).with_context(|_| ErrorKind::ConfigLoad)?;
     let config = config.transform();
@@ -192,7 +182,9 @@ pub fn run() -> Result<bool> {
     // Initialise sentry as soon as possible.
     let _sentry = initialise_sentry(config.sentry.clone(), &logger)?;
     let result = initialise_and_run(config, logger.clone()).map_err(|error| {
-        capture_fail(&error);
+        // TODO: Fix error capturing after failure crate is removed.
+        let hack = anyhow::anyhow!(error.to_string());
+        capture_anyhow(&hack);
         error
     });
     let error = match &result {

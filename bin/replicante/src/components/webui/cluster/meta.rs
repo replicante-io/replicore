@@ -17,7 +17,7 @@ use crate::Interfaces;
 use crate::Result;
 
 pub struct Meta {
-    data: MetaData,
+    data: web::Data<MetaData>,
     logger: Logger,
     tracer: Arc<opentracingrust::Tracer>,
 }
@@ -28,7 +28,7 @@ impl Meta {
             store: interfaces.stores.primary.clone(),
         };
         Meta {
-            data,
+            data: web::Data::new(data),
             logger: interfaces.logger.clone(),
             tracer: interfaces.tracing.tracer(),
         }
@@ -39,7 +39,7 @@ impl Meta {
         let tracer = Arc::clone(&self.tracer);
         let tracer = TracingMiddleware::with_name(logger, tracer, "/cluster/{cluster_id}/meta");
         web::resource("/meta")
-            .data(self.data.clone())
+            .app_data(self.data.clone())
             .wrap(tracer)
             .route(web::get().to(responder))
     }

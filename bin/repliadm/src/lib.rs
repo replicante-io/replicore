@@ -1,7 +1,7 @@
-use clap::value_t;
-use clap::App;
 use clap::Arg;
+use clap::ArgAction;
 use clap::ArgMatches;
+use clap::Command;
 use slog::debug;
 use slog::error;
 
@@ -32,44 +32,45 @@ const VERSION: &str = concat!(
     "]",
 );
 
-/// Process command line arcuments and run the given command.
+/// Process command line arguments and run the given command.
 pub fn run() -> Result<()> {
     // Initialise clap CLI interface.
-    let args = App::new(CLI_NAME)
+    let args = Command::new(CLI_NAME)
         .version(VERSION)
         .about(env!("CARGO_PKG_DESCRIPTION"))
         .arg(
-            Arg::with_name("config")
-                .short("c")
+            Arg::new("config")
+                .short('c')
                 .long("config")
                 .value_name("FILE")
                 .default_value("replicante.yaml")
-                .takes_value(true)
+                .num_args(1)
                 .global(true)
                 .help("Specifies the configuration file to use"),
         )
         .arg(
-            Arg::with_name("log-level")
+            Arg::new("log-level")
                 .long("log-level")
                 .value_name("LEVEL")
-                .takes_value(true)
-                .possible_values(&LogLevel::variants())
-                .case_insensitive(true)
+                .num_args(1)
+                .value_parser(clap::value_parser!(LogLevel))
+                .ignore_case(true)
                 .global(true)
                 .help("Specifies the logging verbosity"),
         )
         .arg(
-            Arg::with_name("no-progress")
+            Arg::new("no-progress")
                 .long("no-progress")
+                .action(ArgAction::SetTrue)
                 .global(true)
                 .help("Do not show progress bars"),
         )
         .arg(
-            Arg::with_name("progress-chunk")
+            Arg::new("progress-chunk")
                 .long("progress-chunk")
                 .value_name("CHUNK")
                 .default_value("500")
-                .takes_value(true)
+                .num_args(1)
                 .global(true)
                 .help("Specifies how frequently to show progress messages"),
         )
@@ -79,7 +80,10 @@ pub fn run() -> Result<()> {
         .get_matches();
 
     // Initialise logging.
-    let log_level = value_t!(args, "log-level", LogLevel).unwrap_or_default();
+    let log_level = args
+        .get_one::<LogLevel>("log-level")
+        .cloned()
+        .unwrap_or_default();
     let logger = logging::configure(log_level);
     debug!(logger, "repliadm starting"; "git-taint" => env!("GIT_BUILD_TAINT"));
 

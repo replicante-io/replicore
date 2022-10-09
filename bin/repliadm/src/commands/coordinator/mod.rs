@@ -1,6 +1,5 @@
-use clap::App;
 use clap::ArgMatches;
-use clap::SubCommand;
+use clap::Command;
 
 use crate::ErrorKind;
 use crate::Interfaces;
@@ -15,8 +14,8 @@ mod step_down_election;
 
 pub const COMMAND: &str = "coordinator";
 
-pub fn command() -> App<'static, 'static> {
-    SubCommand::with_name(COMMAND)
+pub fn command() -> Command {
+    Command::new(COMMAND)
         .about("Inspect and manage the coordination service")
         .subcommand(election_info::command())
         .subcommand(election_list::command())
@@ -26,7 +25,7 @@ pub fn command() -> App<'static, 'static> {
         .subcommand(step_down_election::command())
 }
 
-pub fn run<'a>(args: &ArgMatches<'a>, interfaces: &Interfaces) -> Result<()> {
+pub fn run(args: &ArgMatches, interfaces: &Interfaces) -> Result<()> {
     let command = args.subcommand_matches(COMMAND).unwrap();
     let command = command.subcommand_name();
 

@@ -59,7 +59,7 @@ pub fn configure(logger: &Logger, interfaces: &mut Interfaces) -> impl Fn(&mut A
         store: interfaces.stores.primary.clone(),
     };
     let apply = Apply {
-        data: apply,
+        data: web::Data::new(apply),
         tracer: interfaces.tracing.tracer(),
     };
     move |conf| {
@@ -71,7 +71,7 @@ pub fn configure(logger: &Logger, interfaces: &mut Interfaces) -> impl Fn(&mut A
 
 /// Endpoint handling all requests for system changes (apply requests).
 pub struct Apply {
-    data: ApplyData,
+    data: web::Data<ApplyData>,
     tracer: Arc<opentracingrust::Tracer>,
 }
 
@@ -80,7 +80,7 @@ impl Apply {
         let logger = self.data.logger.clone();
         let tracer = Arc::clone(&self.tracer);
         web::resource("/apply")
-            .data(self.data.clone())
+            .app_data(self.data.clone())
             .wrap(TracingMiddleware::new(logger, tracer))
             .route(web::post().to(responder))
     }

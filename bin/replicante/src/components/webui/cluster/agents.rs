@@ -7,8 +7,8 @@ use actix_web::HttpRequest;
 use actix_web::HttpResponse;
 use actix_web::Responder;
 use failure::ResultExt;
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde::Deserialize;
+use serde::Serialize;
 use slog::Logger;
 
 use replicante_models_core::agent::Agent;
@@ -23,7 +23,7 @@ use crate::Interfaces;
 use crate::Result;
 
 pub struct Agents {
-    data: AgentsData,
+    data: web::Data<AgentsData>,
     logger: Logger,
     tracer: Arc<opentracingrust::Tracer>,
 }
@@ -34,7 +34,7 @@ impl Agents {
             store: interfaces.stores.primary.clone(),
         };
         Agents {
-            data,
+            data: web::Data::new(data),
             logger: interfaces.logger.clone(),
             tracer: interfaces.tracing.tracer(),
         }
@@ -45,7 +45,7 @@ impl Agents {
         let tracer = Arc::clone(&self.tracer);
         let tracer = TracingMiddleware::with_name(logger, tracer, "/cluster/{cluster_id}/agents");
         web::resource("/agents")
-            .data(self.data.clone())
+            .app_data(self.data.clone())
             .wrap(tracer)
             .route(web::get().to(responder))
     }

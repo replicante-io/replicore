@@ -1,23 +1,3 @@
-extern crate crossbeam_channel;
-extern crate failure;
-extern crate failure_derive;
-extern crate humthreads;
-extern crate lazy_static;
-extern crate opentracingrust;
-extern crate prometheus;
-extern crate serde;
-extern crate serde_derive;
-extern crate serde_json;
-extern crate sha2;
-extern crate slog;
-extern crate zookeeper;
-
-extern crate replicante_models_api;
-extern crate replicante_service_healthcheck;
-extern crate replicante_util_failure;
-extern crate replicante_util_rndid;
-extern crate replicante_util_tracing;
-
 pub mod admin;
 
 mod backend;

@@ -4,14 +4,14 @@ use dialoguer::Select;
 use slog::Logger;
 
 use crate::context::ContextStore;
-use crate::Opt;
+use crate::Cli;
 
 const INTERACT_ERROR: &str = "error while interacting with the user";
 
 /// Execute the command.
-pub async fn execute(logger: &Logger, opt: &Opt) -> Result<i32> {
-    let mut store = ContextStore::load(logger, opt).await?;
-    let active_name = store.active_context_name(opt);
+pub async fn execute(logger: &Logger, cli: &Cli) -> Result<i32> {
+    let mut store = ContextStore::load(logger, cli).await?;
+    let active_name = store.active_context_name(cli);
     let mut contexts: Vec<_> = store.iter().map(|(name, _)| name.to_string()).collect();
     contexts.sort();
     let default = contexts
@@ -39,6 +39,6 @@ pub async fn execute(logger: &Logger, opt: &Opt) -> Result<i32> {
 
     // Update the active context name and persistthe store to disk.
     store.set_active_context_name(name);
-    store.save(logger, opt).await?;
+    store.save(logger, cli).await?;
     Ok(0)
 }

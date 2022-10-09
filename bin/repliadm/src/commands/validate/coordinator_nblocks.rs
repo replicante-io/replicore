@@ -1,6 +1,5 @@
-use clap::App;
 use clap::ArgMatches;
-use clap::SubCommand;
+use clap::Command;
 use slog::info;
 
 use replicante_util_failure::format_fail;
@@ -13,11 +12,11 @@ use crate::utils::coordinator_admin;
 use crate::Interfaces;
 use crate::Result;
 
-pub fn command() -> App<'static, 'static> {
-    SubCommand::with_name(COMMAND).about("Validate coordinator non-blocking locks")
+pub fn command() -> Command {
+    Command::new(COMMAND).about("Validate coordinator non-blocking locks")
 }
 
-pub fn run<'a>(args: &ArgMatches<'a>, interfaces: &Interfaces) -> Result<Outcomes> {
+pub fn run(args: &ArgMatches, interfaces: &Interfaces) -> Result<Outcomes> {
     let logger = interfaces.logger();
     info!(logger, "Checking held non-blocking locks");
 

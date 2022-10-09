@@ -1,6 +1,5 @@
 use std::sync::Mutex;
 
-use clap::arg_enum;
 use slog::o;
 use slog::Drain;
 use slog::FnValue;
@@ -32,16 +31,14 @@ impl<D: Drain> Drain for LevelFilter<D> {
     }
 }
 
-arg_enum! {
-    /// Enumerate valid log verbosity levels.
-    #[derive(Clone, Eq, PartialEq, Hash, Debug)]
-    pub enum LogLevel {
-        Critical,
-        Error,
-        Warning,
-        Info,
-        Debug,
-    }
+/// Enumerate valid log verbosity levels.
+#[derive(clap::ValueEnum, Clone, Eq, PartialEq, Hash, Debug)]
+pub enum LogLevel {
+    Critical,
+    Error,
+    Warning,
+    Info,
+    Debug,
 }
 
 impl Default for LogLevel {

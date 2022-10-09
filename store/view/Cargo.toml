@@ -18,30 +18,22 @@ with_test_support = []
 [dependencies]
 chrono = "^0.4.6"
 failure = "^0.1.5"
-lazy_static = "^1.0.0"
+lazy_static = "^1.0"
 opentracingrust = "^0.4.0"
-regex = "^1.0.0"
-serde = "^1.0.34"
-serde_derive = "^1.0.34"
-serde_json = "^1.0.39"
-slog = "^2.2.0"
+regex = "^1.0"
+serde = { version = "^1.0", features = ["derive"] }
+serde_json = "^1.0"
+slog = "^2.2"
 
 replicante_externals_mongodb = { path = "../../externals/mongodb" }
 replicante_models_core = { path = "../../models/core" }
 replicante_service_healthcheck = { path = "../../service/healthcheck" }
 
-[dependencies.bson]
-# u2i is needed to encode serde_json::Value types.
-# It will probably lead to bugs and BSON endocing/decoding should instead support it.
-features = ["u2i"]
-# Bound by mongodb crate
-version = "^1.1.0"
-
 [dependencies.mongodb]
 default-features = false
-features = ["sync"]
-version = "^1.1.0"
+features = ["bson-chrono-0_4", "sync"]
+version = "^2.0"
 
 [dependencies.uuid]
 features = ["serde", "v4"]
-version = "^0.8.0"
+version = "^1.0"

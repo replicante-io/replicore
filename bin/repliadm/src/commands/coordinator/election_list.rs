@@ -1,6 +1,5 @@
-use clap::App;
 use clap::ArgMatches;
-use clap::SubCommand;
+use clap::Command;
 use failure::ResultExt;
 
 pub const COMMAND: &str = "election-list";
@@ -10,11 +9,11 @@ use crate::ErrorKind;
 use crate::Interfaces;
 use crate::Result;
 
-pub fn command() -> App<'static, 'static> {
-    SubCommand::with_name(COMMAND).about("List all registered elections")
+pub fn command() -> Command {
+    Command::new(COMMAND).about("List all registered elections")
 }
 
-pub fn run<'a>(args: &ArgMatches<'a>, interfaces: &Interfaces) -> Result<()> {
+pub fn run(args: &ArgMatches, interfaces: &Interfaces) -> Result<()> {
     let logger = interfaces.logger();
     let admin = coordinator_admin(args, logger.clone())?;
     println!("==> Available elections:");

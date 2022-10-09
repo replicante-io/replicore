@@ -18,7 +18,7 @@ use crate::ErrorKind;
 use crate::Result;
 
 pub struct SyntheticView {
-    data: SyntheticViewData,
+    data: web::Data<SyntheticViewData>,
     tracer: Arc<opentracingrust::Tracer>,
 }
 
@@ -29,7 +29,7 @@ impl SyntheticView {
             store: interfaces.stores.primary.clone(),
         };
         SyntheticView {
-            data,
+            data: web::Data::new(data),
             tracer: interfaces.tracing.tracer(),
         }
     }
@@ -40,7 +40,7 @@ impl SyntheticView {
         let tracer =
             TracingMiddleware::with_name(logger, tracer, "/cluster/{cluster_id}/synthetic_view");
         web::resource("/synthetic_view")
-            .data(self.data.clone())
+            .app_data(self.data.clone())
             .wrap(tracer)
             .route(web::get().to(responder))
     }

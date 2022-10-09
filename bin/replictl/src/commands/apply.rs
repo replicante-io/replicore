@@ -2,11 +2,11 @@ use std::fs::File;
 
 use anyhow::Context;
 use anyhow::Result;
+use clap::Args;
 use serde_json::Value;
 use slog::debug;
 use slog::info;
 use slog::Logger;
-use structopt::StructOpt;
 
 use replicante_models_core::api::apply::ApplyObject;
 use replicante_models_core::api::apply::SCOPE_ATTRS;
@@ -14,26 +14,25 @@ use replicante_models_core::api::apply::SCOPE_ATTRS;
 use crate::apiclient::RepliClient;
 use crate::context::ContextStore;
 
-// Additional apply CLI options.
-// NOTE: this is not a docstring because StructOpt then uses it as the actions help.
-#[derive(Debug, StructOpt)]
+/// Additional apply CLI options.
+#[derive(Args, Debug)]
 pub struct Opt {
     /// Path to a YAML file to apply or - to read from stdin.
-    #[structopt(short, long)]
+    #[arg(short, long)]
     pub file: String,
 }
 
 /// Execute the selected command.
-pub async fn execute(logger: &Logger, opt: &crate::Opt, apply_opt: &Opt) -> Result<i32> {
+pub async fn execute(logger: &Logger, cli: &crate::Cli, apply_opt: &Opt) -> Result<i32> {
     // Load and validate the object to apply.
     let object = from_yaml(logger, apply_opt).await?;
     let mut object = ApplyObject::from_raw(object).map_err(crate::InvalidApply::new)?;
 
     // Apply scope overrides as needed.
-    let context = ContextStore::active_context(logger, opt).await?;
-    let ns = context.namespace(&opt.context).ok();
-    let cluster = context.cluster(&opt.context).ok();
-    let node = context.node(&opt.context).ok();
+    let context = ContextStore::active_context(logger, cli).await?;
+    let ns = context.namespace(&cli.context).ok();
+    let cluster = context.cluster(&cli.context).ok();
+    let node = context.node(&cli.context).ok();
     let scopes = SCOPE_ATTRS.iter().zip(vec![ns, cluster, node]);
     for (scope, value) in scopes {
         let value = match value {

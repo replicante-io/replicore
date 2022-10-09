@@ -15,9 +15,9 @@ use tokio::io::AsyncWriteExt;
 use tokio::io::ErrorKind;
 
 use super::Context;
-use super::ContextNotFound;
 use crate::utils::resolve_home;
-use crate::Opt;
+use crate::Cli;
+use crate::ContextNotFound;
 
 const DEFAULT_STORE_PATH: &str = "~/.config/replictl/contexts";
 
@@ -35,17 +35,17 @@ pub struct ContextStore {
 
 impl ContextStore {
     /// Load the context store and return the active context, if it exists.
-    pub async fn active_context(logger: &Logger, opt: &Opt) -> Result<Context> {
-        let store = ContextStore::load(logger, opt).await?;
-        let name = store.active_context_name(opt);
+    pub async fn active_context(logger: &Logger, cli: &Cli) -> Result<Context> {
+        let store = ContextStore::load(logger, cli).await?;
+        let name = store.active_context_name(cli);
         store
             .get(&name)
             .ok_or_else(|| anyhow::anyhow!(ContextNotFound::for_name(name)))
     }
 
     /// Figure out the name of the active context name.
-    pub fn active_context_name(&self, opt: &Opt) -> String {
-        opt.context
+    pub fn active_context_name(&self, cli: &Cli) -> String {
+        cli.context
             .name
             .as_deref()
             .or(self.active.as_deref())
@@ -59,7 +59,8 @@ impl ContextStore {
     }
 
     /// Load the contexts store from disk.
-    pub async fn load(logger: &Logger, _opt: &Opt) -> Result<ContextStore> {
+    // NOTE: the &Cli args is to add ContextStore options (location) in the future.
+    pub async fn load(logger: &Logger, _: &Cli) -> Result<ContextStore> {
         // Async load the store file into a buffer.
         let path = resolve_home(DEFAULT_STORE_PATH)?;
         debug!(logger, "Loading contexts store from disk"; "path" => &path);
@@ -100,13 +101,15 @@ impl ContextStore {
     /// Write the context store to disk.
     ///
     /// If the path containing the credentials file does not exist it will be created.
-    pub async fn save(&self, logger: &Logger, _opt: &Opt) -> Result<()> {
+    // NOTE: the &Cli args is to add ContextStore options (location) in the future.
+    pub async fn save(&self, logger: &Logger, _: &Cli) -> Result<()> {
         let path = resolve_home(DEFAULT_STORE_PATH)?;
         debug!(logger, "Persisting contexts store from disk"; "path" => &path);
         ensure_store_path(logger, &path).await?;
 
         // Encode the store to a buffer so it can be written to disk asynchronously.
-        let buffer = serde_yaml::to_vec(self)
+        let mut buffer = Vec::new();
+        serde_yaml::to_writer(&mut buffer, self)
             .with_context(|| format!("unable to YAML encode contexts store to {}", &path))?;
         let mut file = OpenOptions::new()
             .create(true)

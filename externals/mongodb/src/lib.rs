@@ -1,5 +1,5 @@
-use bson::doc;
 use failure::ResultExt;
+use mongodb::bson::doc;
 use mongodb::sync::Client;
 
 use replicante_models_core::admin::Version;

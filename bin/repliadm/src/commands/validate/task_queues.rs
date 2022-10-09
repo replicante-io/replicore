@@ -1,6 +1,5 @@
-use clap::App;
 use clap::ArgMatches;
-use clap::SubCommand;
+use clap::Command;
 use failure::ResultExt;
 use slog::info;
 
@@ -55,11 +54,11 @@ macro_rules! scan_queue {
     };
 }
 
-pub fn command() -> App<'static, 'static> {
-    SubCommand::with_name(COMMAND).about("Validate tasks waiting to be processed or re-tried")
+pub fn command() -> Command {
+    Command::new(COMMAND).about("Validate tasks waiting to be processed or re-tried")
 }
 
-pub fn run<'a>(args: &ArgMatches<'a>, interfaces: &Interfaces) -> Result<Outcomes> {
+pub fn run(args: &ArgMatches, interfaces: &Interfaces) -> Result<Outcomes> {
     let config = load_config(args)?;
     let logger = interfaces.logger();
     let tasks: TasksAdmin<ReplicanteQueues> = TasksAdmin::new(logger.clone(), config.tasks)

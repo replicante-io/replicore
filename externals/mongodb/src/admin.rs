@@ -3,6 +3,7 @@ use std::collections::HashSet;
 use std::hash::BuildHasher;
 
 use failure::ResultExt;
+use mongodb::results::CollectionType;
 use mongodb::sync::Client;
 use mongodb::sync::Database;
 
@@ -36,24 +37,15 @@ fn collections(db: Database) -> Result<HashMap<String, CollectionInfo>> {
     let mut collections = HashMap::new();
     for collection in cursor {
         let collection = collection.with_context(|_| ErrorKind::ListCollectionsCursor)?;
-        let name = collection
-            .get_str("name")
-            .expect("Unable to determine collection name")
-            .into();
-        let kind = collection
-            .get_str("type")
-            .expect("Unable to determine collecton type")
-            .into();
-        let capped = collection
-            .get_document("options")
-            .expect("Unable to get collection options")
-            .get_bool("capped")
-            .unwrap_or(false);
-        let read_only = collection
-            .get_document("info")
-            .expect("Unable to get collection info")
-            .get_bool("readOnly")
-            .expect("Unable to determine if collection is read only");
+        let name = collection.name;
+        let kind = match collection.collection_type {
+            CollectionType::Collection => "collection",
+            CollectionType::View => "view",
+            _ => "<unknown type>",
+        }
+        .into();
+        let capped = collection.options.capped.unwrap_or(false);
+        let read_only = collection.info.read_only;
         collections.insert(
             name,
             CollectionInfo {

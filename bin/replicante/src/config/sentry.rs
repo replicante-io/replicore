@@ -1,31 +1,12 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
-
-/// Sentry API response capture filter.
-#[derive(Clone, Eq, PartialEq, Hash, Debug, Serialize, Deserialize)]
-pub enum SentryCaptureApi {
-    #[serde(rename = "no")]
-    No,
-
-    #[serde(rename = "client")]
-    Client,
-
-    #[serde(rename = "server")]
-    Server,
-}
-
-impl Default for SentryCaptureApi {
-    fn default() -> SentryCaptureApi {
-        SentryCaptureApi::Server
-    }
-}
+use serde::Deserialize;
+use serde::Serialize;
 
 /// Sentry integration configuration.
 #[derive(Clone, Eq, PartialEq, Hash, Debug, Serialize, Deserialize)]
 pub struct SentryConfig {
     /// Sentry API response capture filter.
     #[serde(default)]
-    pub capture_api_errors: SentryCaptureApi,
+    pub capture_api_errors: bool,
 
     /// The DSN to use to configure sentry.
     pub dsn: String,

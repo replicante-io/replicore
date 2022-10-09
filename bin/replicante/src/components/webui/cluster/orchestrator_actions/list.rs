@@ -8,8 +8,8 @@ use actix_web::Responder;
 use chrono::DateTime;
 use chrono::Utc;
 use failure::ResultExt;
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde::Deserialize;
+use serde::Serialize;
 use slog::Logger;
 
 use replicante_models_core::actions::orchestrator::OrchestratorAction;
@@ -23,7 +23,7 @@ use crate::Interfaces;
 use crate::Result;
 
 pub struct OrchestratorActions {
-    data: OrchestratorActionsData,
+    data: web::Data<OrchestratorActionsData>,
     logger: Logger,
     tracer: Arc<opentracingrust::Tracer>,
 }
@@ -34,7 +34,7 @@ impl OrchestratorActions {
             store: interfaces.stores.view.clone(),
         };
         OrchestratorActions {
-            data,
+            data: web::Data::new(data),
             logger: interfaces.logger.clone(),
             tracer: interfaces.tracing.tracer(),
         }
@@ -46,7 +46,7 @@ impl OrchestratorActions {
         let tracer =
             TracingMiddleware::with_name(logger, tracer, "/cluster/{cluster}/orchestrator-actions");
         web::resource("/orchestrator-actions")
-            .data(self.data.clone())
+            .app_data(self.data.clone())
             .wrap(tracer)
             .route(web::post().to(responder))
     }

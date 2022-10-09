@@ -1,8 +1,8 @@
 use std::sync::Arc;
 
-use bson::doc;
 use failure::Fail;
 use failure::ResultExt;
+use mongodb::bson::doc;
 use mongodb::options::FindOptions;
 use mongodb::sync::Client;
 use opentracingrust::SpanContext;

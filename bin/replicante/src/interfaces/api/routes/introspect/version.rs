@@ -22,8 +22,8 @@ async fn version() -> impl Responder {
 
 #[cfg(test)]
 mod tests {
+    use actix_web::test::call_and_read_body_json;
     use actix_web::test::init_service;
-    use actix_web::test::read_response_json;
     use actix_web::test::TestRequest;
     use actix_web::App;
 
@@ -35,7 +35,7 @@ mod tests {
         let mut app = init_service(app).await;
 
         let req = TestRequest::get().uri("/version").to_request();
-        let res: Version = read_response_json(&mut app, req).await;
+        let res: Version = call_and_read_body_json(&mut app, req).await;
         assert_eq!(res, *super::REPLICANTE_VERSION);
     }
 }
