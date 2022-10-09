@@ -19,6 +19,5 @@ for_version() {
 }
 
 for_version "stable"
-for_version "1.59.0"
-# TODO: re-enable nightly after updating actix-web.
-#for_version "nightly"
+for_version "1.60.0"
+for_version "nightly"

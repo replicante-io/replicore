@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## [Unreleased]
 ### Changed
 - **BREAKING**: Configuration `sentry_capture_api` is now an on/off boolean.
+- **BREAKING**: Updated minimum rust version to 1.60.0.
 - Capture only server-side errors in Sentry.
 - Update dependencies.
 
