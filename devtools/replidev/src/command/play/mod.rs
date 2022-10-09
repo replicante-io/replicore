@@ -1,5 +1,6 @@
 use anyhow::Result;
-use structopt::StructOpt;
+use clap::Args;
+use clap::Subcommand;
 
 use crate::conf::Conf;
 use crate::error::InvalidProject;
@@ -15,118 +16,118 @@ mod replicore;
 mod server;
 
 /// Manage Replicante Playground nodes.
-#[derive(Debug, StructOpt)]
+#[derive(Debug, Subcommand)]
 pub enum Opt {
     /// Delete persistent data for all nodes in clusters.
-    #[structopt(name = "cluster-clean")]
+    #[command(name = "cluster-clean")]
     ClusterClean(CleanClusterOpt),
 
     /// Stop all playground nodes for clusters.
-    #[structopt(name = "cluster-stop")]
+    #[command(name = "cluster-stop")]
     ClusterStop(StopClusterOpt),
 
     /// Delete persistent data a specific node.
-    #[structopt(name = "node-clean")]
+    #[command(name = "node-clean")]
     NodeClean(CleanNodeOpt),
 
     /// Delete persistend data for all nodes.
-    #[structopt(name = "node-clean-all")]
+    #[command(name = "node-clean-all")]
     NodeCleanAll(CleanCommonOpt),
 
     /// List all playground nodes.
-    #[structopt(name = "node-list")]
+    #[command(name = "node-list")]
     NodeList,
 
     /// Start a new playground node.
-    #[structopt(name = "node-start")]
+    #[command(name = "node-start")]
     NodeStart(StartNodeOpt),
 
     /// Stop a playground node.
-    #[structopt(name = "node-stop")]
+    #[command(name = "node-stop")]
     NodeStop(StopNodeOpt),
 
     /// Clean the playground Replicante Core stack persistent data.
-    #[structopt(name = "replicore-clean")]
+    #[command(name = "replicore-clean")]
     ReplicoreClean(CleanCommonOpt),
 
     /// Start the playground Replicante Core stack.
-    #[structopt(name = "replicore-start")]
+    #[command(name = "replicore-start")]
     ReplicoreStart,
 
     /// Stop the playground Replicante Core stack.
-    #[structopt(name = "replicore-stop")]
+    #[command(name = "replicore-stop")]
     ReplicoreStop,
 
     /// Run the playground HTTP server (to simulate integrations for Replicante Core).
-    #[structopt(name = "server")]
+    #[command(name = "server")]
     Server,
 }
 
-#[derive(Debug, StructOpt)]
+#[derive(Args, Debug)]
 pub struct CleanClusterOpt {
     /// List of clusters to clean up.
-    #[structopt(name = "CLUSTER", required = true)]
+    #[arg(name = "CLUSTER", required = true)]
     pub clusters: Vec<String>,
 
-    #[structopt(flatten)]
+    #[command(flatten)]
     pub common: CleanCommonOpt,
 }
 
-#[derive(Debug, StructOpt)]
+#[derive(Args, Debug)]
 pub struct CleanCommonOpt {
     /// Confirm deleting the data.
-    #[structopt(long)]
+    #[arg(long)]
     pub confirm: bool,
 }
 
-#[derive(Debug, StructOpt)]
+#[derive(Args, Debug)]
 pub struct CleanNodeOpt {
     /// Cluster for the node to clean up.
-    #[structopt(name = "CLUSTER", required = true)]
+    #[arg(name = "CLUSTER", required = true)]
     pub cluster: String,
 
     /// List of nodes to clean up.
-    #[structopt(name = "NODE", required = true)]
+    #[arg(name = "NODE", required = true)]
     pub nodes: Vec<String>,
 
-    #[structopt(flatten)]
+    #[command(flatten)]
     pub common: CleanCommonOpt,
 }
 
-#[derive(Debug, StructOpt)]
+#[derive(Args, Debug)]
 pub struct StartNodeOpt {
     /// ID of the cluster to place the node into.
-    #[structopt(name = "cluster-id", long)]
+    #[arg(name = "cluster-id", long)]
     pub cluster_id: Option<String>,
 
     /// Name to use for the new node.
-    #[structopt(name = "node-name", long)]
+    #[arg(name = "node-name", long)]
     pub node_name: Option<String>,
 
     /// Store node to start.
-    #[structopt(name = "STORE", required = true)]
+    #[arg(name = "STORE", required = true)]
     pub store: String,
 
     /// Add JSON files as extra variables passed to the command line.
-    #[structopt(name = "var-file", long)]
+    #[arg(name = "var-file", long)]
     pub var_files: Vec<String>,
 
     /// Add extra variables passed to the command line.
-    #[structopt(name = "var", long)]
+    #[arg(name = "var", long)]
     pub vars: Vec<String>,
 }
 
-#[derive(Debug, StructOpt)]
+#[derive(Args, Debug)]
 pub struct StopClusterOpt {
     /// List of clusters to stop.
-    #[structopt(name = "CLUSTER", required = true)]
+    #[arg(name = "CLUSTER", required = true)]
     pub clusters: Vec<String>,
 }
 
-#[derive(Debug, StructOpt)]
+#[derive(Args, Debug)]
 pub struct StopNodeOpt {
     /// List of nodes to stop.
-    #[structopt(name = "NODE", required = true)]
+    #[arg(name = "NODE", required = true)]
     pub nodes: Vec<String>,
 }
 

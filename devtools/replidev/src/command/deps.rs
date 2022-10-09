@@ -1,10 +1,11 @@
 use std::collections::BTreeMap;
 use std::fs::File;
 
+use clap::Args;
+use clap::Subcommand;
 use failure::ResultExt;
 use prettytable::row;
 use serde::Deserialize;
-use structopt::StructOpt;
 
 use crate::conf::Conf;
 use crate::error::InvalidProject;
@@ -16,47 +17,47 @@ use crate::Result;
 const PODMAN_DEF_PATH: &str = "devtools/deps/podman";
 
 /// Manage Replicante Core dependencies.
-#[derive(Debug, StructOpt)]
+#[derive(Debug, Subcommand)]
 pub enum Opt {
     /// Delete ALL data store by the given dependencies pods.
-    #[structopt(name = "clean")]
+    #[command(name = "clean")]
     Clean(CleanOpt),
 
     /// Run the initialise command of each container in the given dependencies pods.
-    #[structopt(name = "initialise", alias = "init")]
+    #[command(name = "initialise", alias = "init")]
     Initialise(PodOpt),
 
     /// List running and available dependencies pods.
-    #[structopt(name = "list")]
+    #[command(name = "list")]
     List,
 
     /// Stop and start supported dependencies pods.
-    #[structopt(name = "restart")]
+    #[command(name = "restart")]
     Restart(PodOpt),
 
     /// Start supported dependencies pods.
-    #[structopt(name = "start")]
+    #[command(name = "start")]
     Start(PodOpt),
 
     /// Stop running dependencies pods.
-    #[structopt(name = "stop")]
+    #[command(name = "stop")]
     Stop(PodOpt),
 }
 
-#[derive(Debug, StructOpt)]
+#[derive(Args, Debug)]
 pub struct CleanOpt {
     /// Confirm deleting the data.
-    #[structopt(long)]
+    #[arg(long)]
     pub confirm: bool,
 
-    #[structopt(flatten)]
+    #[command(flatten)]
     pub pod_opt: PodOpt,
 }
 
-#[derive(Debug, StructOpt)]
+#[derive(Args, Debug)]
 pub struct PodOpt {
     /// List of pods to start.
-    #[structopt(name = "POD", required = true)]
+    #[arg(name = "POD", required = true)]
     pods: Vec<String>,
 }
 

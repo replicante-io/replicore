@@ -1,17 +1,17 @@
 use anyhow::Context;
 use anyhow::Result;
-use structopt::StructOpt;
+use clap::Args;
 use tokio::process::Command;
 
 use crate::conf::Conf;
 
-#[derive(Debug, StructOpt)]
+#[derive(Args, Debug)]
 pub struct Opt {
     /// The cargo command to run.
     pub command: String,
 
     /// Arguments to the cargo command to run.
-    #[structopt(last = true)]
+    #[arg(last = true)]
     pub arguments: Vec<String>,
 }
 

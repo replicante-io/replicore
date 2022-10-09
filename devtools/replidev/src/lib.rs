@@ -1,4 +1,5 @@
-use structopt::StructOpt;
+use clap::Parser;
+use clap::Subcommand;
 
 pub mod error;
 
@@ -13,41 +14,60 @@ pub use error::Error;
 pub use error::ErrorKind;
 pub use error::Result;
 
-#[derive(Debug, StructOpt)]
-#[structopt(name = "replidev", about = "Replicante Development Tool")]
+pub const VERSION: &str = concat!(
+    env!("CARGO_PKG_VERSION"),
+    " [",
+    env!("GIT_BUILD_HASH"),
+    "; ",
+    env!("GIT_BUILD_TAINT"),
+    "]",
+);
+
+/// Replicante Project Development Tool.
+#[derive(Debug, Parser)]
+#[command(long_about = None)]
+#[command(version = VERSION)]
+struct Cli {
+    /// Development command to execute.
+    #[command(subcommand)]
+    command: Opt,
+}
+
+/// Supported replidev commands
+#[derive(Debug, Subcommand)]
 enum Opt {
     /// Run the given cargo command in all workspaces.
-    #[structopt(name = "cargo")]
+    #[command(name = "cargo")]
     Cargo(command::cargo::Opt),
 
     /// Configuration related commands.
-    #[structopt(name = "conf")]
+    #[command(subcommand, name = "conf")]
     Configuration(command::conf::Opt),
 
     /// Run curl, adding client certificates when projects have them.
-    #[structopt(name = "curl")]
+    #[command(name = "curl")]
     Curl(command::curl::Opt),
 
     /// Manage Replicante Core dependencies.
-    #[structopt(name = "deps")]
+    #[command(subcommand, name = "deps")]
     Dependencies(command::deps::Opt),
 
     /// Generate an HTTPS CA with client and server certificates.
-    #[structopt(name = "gen-certs")]
+    #[command(name = "gen-certs")]
     GenCerts(command::certs::Opt),
 
     /// Manage Replicante Playgrounds nodes.
-    #[structopt(name = "play")]
+    #[command(subcommand, name = "play")]
     Play(command::play::Opt),
 
     /// Mange Replicante projects release tasks.
-    #[structopt(name = "release")]
+    #[command(subcommand, name = "release")]
     Release(command::release::Opt),
 }
 
 pub fn run() -> anyhow::Result<i32> {
     // Parse CLI & conf.
-    let args = Opt::from_args();
+    let args = Cli::parse();
     let conf = conf::Conf::from_file()?;
 
     // Set up tokio runtime for all futures.
@@ -63,7 +83,7 @@ pub fn run() -> anyhow::Result<i32> {
 
     // Run all commands inside the tokio runtime.
     let result = runtime.block_on(async {
-        match args {
+        match args.command {
             Opt::Cargo(cargo) => command::cargo::run(cargo, &conf).await,
             Opt::Configuration(cfg) => command::conf::run(cfg, conf).await,
             Opt::Curl(cfg) => command::curl::run(cfg, conf).await,
@@ -78,4 +98,15 @@ pub fn run() -> anyhow::Result<i32> {
     // Note: this only effects blocking tasks and not futures.
     runtime.shutdown_timeout(std::time::Duration::from_millis(100));
     result
+}
+
+#[cfg(test)]
+mod tests {
+    use clap::CommandFactory;
+
+    #[test]
+    fn clap_integrity_check() {
+        let command = crate::Cli::command();
+        command.debug_assert();
+    }
 }

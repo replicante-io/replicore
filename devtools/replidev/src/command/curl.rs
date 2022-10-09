@@ -1,16 +1,16 @@
 use std::path::Path;
 
 use anyhow::Context;
-use structopt::StructOpt;
+use clap::Args;
 use tokio::process::Command;
 
 use crate::conf::Conf;
 
 /// Curl related options.
-#[derive(Debug, StructOpt)]
+#[derive(Args, Debug)]
 pub struct Opt {
     /// Arguments passed to curl.
-    #[structopt(name = "ARG")]
+    #[arg(value_name = "ARG")]
     arguments: Vec<String>,
 }
 

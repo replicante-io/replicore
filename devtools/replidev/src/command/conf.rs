@@ -1,13 +1,13 @@
 use anyhow::Result;
-use structopt::StructOpt;
+use clap::Subcommand;
 
 use crate::conf::Conf;
 
 /// Configuration related commands.
-#[derive(Debug, StructOpt)]
+#[derive(Debug, Subcommand)]
 pub enum Opt {
     /// Show the configured or detected local IP address.
-    #[structopt(name = "ip")]
+    #[command(name = "ip")]
     ShowIp,
 }
 

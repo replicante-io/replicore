@@ -5,17 +5,17 @@ use std::os::unix::fs::PermissionsExt;
 
 use anyhow::Context;
 use anyhow::Result;
-use structopt::StructOpt;
+use clap::Args;
 use tokio::process::Command;
 
 use crate::conf::Conf;
 use crate::error::InvalidProject;
 
 /// Configuration related commands.
-#[derive(Debug, StructOpt)]
+#[derive(Args, Debug)]
 pub struct Opt {
     /// Regenerate certificates even if they exist.
-    #[structopt(name = "regen", long)]
+    #[arg(name = "regen", long)]
     regenerate: bool,
 }
 

@@ -26,6 +26,7 @@ path = "src/lib.rs"
 [dependencies]
 actix-web = "^4.0"
 anyhow = "^1.0"
+clap = { version = "^4.0", features = ["derive"] }
 chrono = "^0.4"
 dialoguer = "^0.10"
 failure = "^0.1.5"
@@ -41,8 +42,6 @@ semver = "^1.0"
 serde = "^1.0"
 serde_json = "^1.0"
 serde_yaml = "^0.9"
-# TODO: replace with clap v4
-structopt = "^0.3"
 thiserror = "^1.0"
 toml = "^0.5"
 
