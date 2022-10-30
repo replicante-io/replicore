@@ -2,6 +2,7 @@ use std::collections::HashMap;
 use std::sync::Arc;
 use std::sync::Mutex;
 
+use replisdk::platform::models::ClusterDiscovery;
 use uuid::Uuid;
 
 use replicante_models_core::actions::node::Action;
@@ -10,7 +11,6 @@ use replicante_models_core::agent::Agent;
 use replicante_models_core::agent::AgentInfo;
 use replicante_models_core::agent::Node;
 use replicante_models_core::agent::Shard;
-use replicante_models_core::cluster::discovery::ClusterDiscovery;
 use replicante_models_core::cluster::ClusterMeta;
 use replicante_models_core::events::Event;
 

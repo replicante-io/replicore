@@ -668,9 +668,9 @@ dependencies = [
 
 [[package]]
 name = "clap"
-version = "4.0.11"
+version = "4.0.15"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4ed45cc2c62a3eff523e718d8576ba762c83a3146151093283ac62ae11933a73"
+checksum = "6bf8832993da70a4c6d13c581f4463c2bdda27b9bf1c5498dc4365543abe6d6f"
 dependencies = [
  "atty",
  "bitflags",
@@ -683,9 +683,9 @@ dependencies = [
 
 [[package]]
 name = "clap_derive"
-version = "4.0.10"
+version = "4.0.13"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "db342ce9fda24fb191e2ed4e102055a4d381c1086a06630174cd8da8d5d917ce"
+checksum = "c42f169caba89a7d512b5418b09864543eeb4d497416c917d7137863bd2076ad"
 dependencies = [
  "heck",
  "proc-macro-error",
@@ -881,9 +881,9 @@ dependencies = [
 
 [[package]]
 name = "cxx"
-version = "1.0.78"
+version = "1.0.79"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "19f39818dcfc97d45b03953c1292efc4e80954e1583c4aa770bac1383e2310a4"
+checksum = "3f83d0ebf42c6eafb8d7c52f7e5f2d3003b89c7aa4fd2b79229209459a849af8"
 dependencies = [
  "cc",
  "cxxbridge-flags",
@@ -893,9 +893,9 @@ dependencies = [
 
 [[package]]
 name = "cxx-build"
-version = "1.0.78"
+version = "1.0.79"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3e580d70777c116df50c390d1211993f62d40302881e54d4b79727acb83d0199"
+checksum = "07d050484b55975889284352b0ffc2ecbda25c0c55978017c132b29ba0818a86"
 dependencies = [
  "cc",
  "codespan-reporting",
@@ -908,15 +908,15 @@ dependencies = [
 
 [[package]]
 name = "cxxbridge-flags"
-version = "1.0.78"
+version = "1.0.79"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "56a46460b88d1cec95112c8c363f0e2c39afdb237f60583b0b36343bf627ea9c"
+checksum = "99d2199b00553eda8012dfec8d3b1c75fce747cf27c169a270b3b99e3448ab78"
 
 [[package]]
 name = "cxxbridge-macro"
-version = "1.0.78"
+version = "1.0.79"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "747b608fecf06b0d72d440f27acc99288207324b793be2c17991839f3d4995ea"
+checksum = "dcb67a6de1f602736dd7eaead0080cf3435df806c61b24b13328db128c58868f"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -1616,9 +1616,9 @@ dependencies = [
 
 [[package]]
 name = "iana-time-zone-haiku"
-version = "0.1.0"
+version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fde6edd6cef363e9359ed3c98ba64590ba9eecba2293eb5a723ab32aee8926aa"
+checksum = "0703ae284fc167426161c2e3f1da3ea71d94b21bedbcc9494e92b28e334e3dca"
 dependencies = [
  "cxx",
  "cxx-build",
@@ -1786,9 +1786,9 @@ checksum = "830d08ce1d1d941e6b30645f1a0eb5643013d835ce3779a5fc208261dbe10f55"
 
 [[package]]
 name = "libc"
-version = "0.2.134"
+version = "0.2.135"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "329c933548736bc49fd575ee68c89e8be4d260064184389a5b77517cddd99ffb"
+checksum = "68783febc7782c6c5cb401fbda4de5a9898be1762314da0bb2c10ced61f18b0c"
 
 [[package]]
 name = "libgit2-sys"
@@ -2476,9 +2476,9 @@ dependencies = [
 
 [[package]]
 name = "proc-macro2"
-version = "1.0.46"
+version = "1.0.47"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "94e2ef8dbfc347b10c094890f778ee2e36ca9bb4262e86dc99cd217e35f3470b"
+checksum = "5ea3d908b0e36316caf9e9e2c4625cdde190a7e6f440d794667ed17a1855e725"
 dependencies = [
  "unicode-ident",
 ]
@@ -2697,7 +2697,7 @@ dependencies = [
 
 [[package]]
 name = "repliadm"
-version = "0.7.2"
+version = "0.8.0"
 dependencies = [
  "clap",
  "failure",
@@ -2728,7 +2728,7 @@ dependencies = [
 
 [[package]]
 name = "replicante"
-version = "0.7.2"
+version = "0.8.0"
 dependencies = [
  "actix-rt",
  "actix-web",
@@ -2815,6 +2815,7 @@ dependencies = [
  "lazy_static",
  "prometheus",
  "replicante_models_core",
+ "replisdk",
  "reqwest 0.11.12",
  "serde",
  "serde_derive",
@@ -2894,6 +2895,7 @@ dependencies = [
  "chrono",
  "lazy_static",
  "replicante_models_agent",
+ "replisdk",
  "semver 1.0.14",
  "serde",
  "serde_json",
@@ -2971,6 +2973,7 @@ dependencies = [
  "replicante_service_healthcheck",
  "replicante_util_tracing",
  "replicore_cluster_view",
+ "replisdk",
  "serde",
  "serde_json",
  "slog",
@@ -3028,6 +3031,7 @@ dependencies = [
  "replicante_models_core",
  "replicante_service_healthcheck",
  "replicante_stream",
+ "replisdk",
  "serde_json",
  "slog",
 ]
@@ -3142,6 +3146,7 @@ dependencies = [
  "replicore_cluster_view",
  "replicore_iface_orchestrator_action",
  "replicore_util_errors",
+ "replisdk",
  "serde_json",
  "slog",
  "thiserror",
@@ -3156,6 +3161,7 @@ dependencies = [
  "chrono",
  "replicante_models_agent",
  "replicante_models_core",
+ "replisdk",
  "serde",
  "serde_json",
  "thiserror",
@@ -3267,6 +3273,7 @@ dependencies = [
  "replicante_util_failure",
  "replicante_util_tracing",
  "replicore_models_tasks",
+ "replisdk",
  "slog",
 ]
 
@@ -3305,7 +3312,7 @@ dependencies = [
 
 [[package]]
 name = "replictl"
-version = "0.7.2"
+version = "0.8.0"
 dependencies = [
  "anyhow",
  "clap",
@@ -3324,6 +3331,22 @@ dependencies = [
  "tokio 1.21.2",
  "uuid 1.2.1",
 ]
+
+[[package]]
+name = "replisdk"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b1cb78a7ec973c71ccc786d52d58905f83e70a887a4ba7f71bf76aac9cbacb05"
+dependencies = [
+ "replisdk-proc",
+ "serde",
+]
+
+[[package]]
+name = "replisdk-proc"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4dd481dbfc2db3837dcb35c36f352ceb97704484dd8d2b01fe77d0f0d44b8450"
 
 [[package]]
 name = "reqwest"
@@ -3756,9 +3779,9 @@ dependencies = [
 
 [[package]]
 name = "serde_json"
-version = "1.0.85"
+version = "1.0.86"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e55a28e3aaef9d5ce0506d0a14dbba8054ddc7e499ef522dd8b26859ec9d4a44"
+checksum = "41feea4228a6f1cd09ec7a3593a682276702cd67b5273544757dae23c096f074"
 dependencies = [
  "indexmap",
  "itoa 1.0.4",

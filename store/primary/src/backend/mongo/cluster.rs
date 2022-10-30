@@ -5,9 +5,9 @@ use mongodb::bson::doc;
 use mongodb::sync::Client;
 use opentracingrust::SpanContext;
 use opentracingrust::Tracer;
+use replisdk::platform::models::ClusterDiscovery;
 
 use replicante_externals_mongodb::operations::find_one;
-use replicante_models_core::cluster::discovery::ClusterDiscovery;
 use replicante_models_core::cluster::ClusterSettings;
 
 use super::super::ClusterInterface;

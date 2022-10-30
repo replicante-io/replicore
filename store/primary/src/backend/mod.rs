@@ -4,6 +4,7 @@ use std::sync::Arc;
 
 use opentracingrust::SpanContext;
 use opentracingrust::Tracer;
+use replisdk::platform::models::ClusterDiscovery;
 use slog::Logger;
 
 use replicante_externals_mongodb::admin::ValidationResult;
@@ -18,7 +19,6 @@ use replicante_models_core::agent::Node;
 use replicante_models_core::agent::Shard;
 use replicante_models_core::api::node_action::NodeActionSummary;
 use replicante_models_core::api::orchestrator_action::OrchestratorActionSummary;
-use replicante_models_core::cluster::discovery::ClusterDiscovery;
 use replicante_models_core::cluster::discovery::DiscoverySettings;
 use replicante_models_core::cluster::ClusterMeta;
 use replicante_models_core::cluster::ClusterSettings;

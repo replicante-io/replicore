@@ -21,6 +21,7 @@ failure = "^0.1.5"
 failure_derive = "^0.1.5"
 lazy_static = "^1.0.0"
 prometheus = "^0.13.0"
+replisdk = { version = "^0.1", features = ["platform-models"] }
 reqwest = { version = "^0.11", features = ["blocking", "json", "rustls-tls"] }
 serde = "^1.0.34"
 serde_derive = "^1.0.34"

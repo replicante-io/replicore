@@ -1,5 +1,7 @@
 use std::str::FromStr;
 
+use replisdk::platform::models::ClusterDiscovery;
+
 use replicante_models_agent::info::ShardRole;
 use replicante_models_core::actions::node::ActionState;
 use replicante_models_core::actions::node::ActionSyncSummary;
@@ -10,7 +12,6 @@ use replicante_models_core::agent::AgentInfo;
 use replicante_models_core::agent::AgentStatus;
 use replicante_models_core::agent::Node;
 use replicante_models_core::agent::Shard;
-use replicante_models_core::cluster::discovery::ClusterDiscovery;
 use replicante_models_core::cluster::ClusterSettings;
 
 /// Fixtures for a fictional MongoDB cluster.
@@ -84,7 +85,10 @@ pub mod cluster_mongodb {
     }
 
     pub fn discovery() -> ClusterDiscovery {
-        ClusterDiscovery::new(CLUSTER_ID, vec![])
+        ClusterDiscovery {
+            cluster_id: CLUSTER_ID.into(),
+            nodes: vec![],
+        }
     }
 
     pub fn green_node() -> Node {

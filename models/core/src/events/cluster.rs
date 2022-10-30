@@ -1,10 +1,11 @@
 use serde::Deserialize;
 use serde::Serialize;
 
+use replisdk::platform::models::ClusterDiscovery;
+
 use super::Event;
 use super::EventBuilder;
 use super::Payload;
-use crate::cluster::discovery::ClusterDiscovery;
 use crate::cluster::ClusterSettings;
 use crate::cluster::OrchestrateReport;
 use crate::scope::EntityId;
@@ -115,16 +116,35 @@ impl ClusterEventBuilder {
 
 #[cfg(test)]
 mod tests {
+    use replisdk::platform::models::ClusterDiscovery;
+    use replisdk::platform::models::ClusterDiscoveryNode;
+
     use super::ClusterChanged;
     use super::ClusterEvent;
     use super::Event;
     use super::Payload;
-    use crate::cluster::discovery::ClusterDiscovery;
+
+    fn mock_discovery() -> ClusterDiscovery {
+        ClusterDiscovery {
+            cluster_id: "test".into(),
+            nodes: vec![],
+        }
+    }
+
+    fn mock_discovery_with_node() -> ClusterDiscovery {
+        ClusterDiscovery {
+            cluster_id: "test".into(),
+            nodes: vec![ClusterDiscoveryNode {
+                agent_address: "http://agent:1234".into(),
+                node_id: "test-1".into(),
+            }],
+        }
+    }
 
     #[test]
     fn changed() {
-        let after = ClusterDiscovery::new("test", vec!["http://agent:1234".into()]);
-        let before = ClusterDiscovery::new("test", vec![]);
+        let after = mock_discovery_with_node();
+        let before = mock_discovery();
         let event = Event::builder()
             .cluster()
             .changed(before.clone(), after.clone());
@@ -138,7 +158,7 @@ mod tests {
 
     #[test]
     fn new_cluster() {
-        let discovery = ClusterDiscovery::new("test", vec![]);
+        let discovery = mock_discovery();
         let event = Event::builder().cluster().new_cluster(discovery.clone());
         let expected = Payload::Cluster(ClusterEvent::New(discovery));
         assert_eq!(event.payload, expected);

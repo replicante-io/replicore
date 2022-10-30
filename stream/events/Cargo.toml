@@ -27,4 +27,6 @@ replicante_stream = { path = "../stream" }
 
 
 [dev-dependencies]
+replisdk = { version = "^0.1", features = ["platform-models"] }
+
 replicante_stream = { path = "../stream", features = ["with_test_support"] }

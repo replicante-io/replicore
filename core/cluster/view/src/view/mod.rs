@@ -4,6 +4,7 @@ use std::ops::Deref;
 use std::rc::Rc;
 
 use anyhow::Result;
+use replisdk::platform::models::ClusterDiscovery;
 use serde::ser::SerializeStruct;
 
 use replicante_models_core::actions::node::ActionSyncSummary;
@@ -13,7 +14,6 @@ use replicante_models_core::agent::AgentInfo;
 use replicante_models_core::agent::Node;
 use replicante_models_core::agent::Shard;
 use replicante_models_core::agent::ShardRole;
-use replicante_models_core::cluster::discovery::ClusterDiscovery;
 use replicante_models_core::cluster::ClusterSettings;
 
 use crate::ManyPrimariesFound;

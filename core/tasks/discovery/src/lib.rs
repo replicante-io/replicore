@@ -1,14 +1,14 @@
-//! Implmentation of the cluster records discovery process.
+//! Implementation of the cluster records discovery process.
 use std::sync::Arc;
 
 use failure::ResultExt;
 use opentracingrust::Span;
 use opentracingrust::Tracer;
+use replisdk::platform::models::ClusterDiscovery;
 use slog::debug;
 use slog::warn;
 use slog::Logger;
 
-use replicante_models_core::cluster::discovery::ClusterDiscovery;
 use replicante_models_core::cluster::ClusterSettings;
 use replicante_models_core::events::Event;
 use replicante_service_tasks::TaskHandler;

@@ -1,4 +1,5 @@
 use opentracingrust::SpanContext;
+use replisdk::platform::models::ClusterDiscovery as ClusterDiscoveryModel;
 
 use replicante_models_core::actions::node::Action as ActionModel;
 use replicante_models_core::actions::orchestrator::OrchestratorAction as OrchestratorActionModel;
@@ -6,7 +7,6 @@ use replicante_models_core::agent::Agent as AgentModel;
 use replicante_models_core::agent::AgentInfo as AgentInfoModel;
 use replicante_models_core::agent::Node as NodeModel;
 use replicante_models_core::agent::Shard as ShardModel;
-use replicante_models_core::cluster::discovery::ClusterDiscovery as ClusterDiscoveryModel;
 use replicante_models_core::cluster::discovery::DiscoverySettings;
 use replicante_models_core::cluster::ClusterSettings;
 

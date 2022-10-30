@@ -103,26 +103,43 @@ pub async fn list_nodes(conf: &Conf) -> Result<Vec<PodInfo>> {
 /// Information about a node pod.
 #[derive(Debug)]
 pub struct PodInfo {
+    /// Cluster ID the pod belongs to.
     pub cluster: String,
+
+    /// ID of the pod.
     pub id: String,
+
+    /// Node ID.
     pub node: String,
+
+    /// Port the agent process is listening on.
     pub port_agent: Option<String>,
+
+    /// Port the datastore is listening for clients on.
     pub port_client: Option<String>,
+
+    /// Port the datastore is listening for other nodes on.
     pub port_store: String,
+
+    /// Status of the pod.
     pub status: String,
 }
 
 #[derive(Debug, Deserialize)]
 struct PodRawInfo {
+    /// ID of the pod.
     #[serde(rename = "Id")]
     id: String,
 
+    /// Name of the pod.
     #[serde(rename = "Name")]
     name: String,
 
+    /// Labels attached to the pod.
     #[serde(rename = "Labels")]
     labels: BTreeMap<String, String>,
 
+    /// State of the pod.
     #[serde(rename = "State")]
     state: String,
 }
