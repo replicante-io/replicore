@@ -1,4 +1,6 @@
-use replicante_models_core::cluster::discovery::ClusterDiscovery;
+use replisdk::platform::models::ClusterDiscovery;
+use replisdk::platform::models::ClusterDiscoveryNode;
+
 use replicante_models_core::cluster::ClusterSettings;
 use replicante_models_core::cluster::OrchestrateReportBuilder;
 use replicante_models_core::cluster::SchedChoice;
@@ -36,15 +38,27 @@ where
     ClusterFill: FnMut(&mut ClusterViewBuilder, &Store),
 {
     // Create the cluster view.
-    let discovery = ClusterDiscovery::new(
-        CLUSTER_ID,
-        vec![
-            "node0".to_string(),
-            "node1".to_string(),
-            "node2".to_string(),
-            "node3".to_string(),
+    let discovery = ClusterDiscovery {
+        cluster_id: CLUSTER_ID.into(),
+        nodes: vec![
+            ClusterDiscoveryNode {
+                agent_address: "node0".into(),
+                node_id: "node-0".into(),
+            },
+            ClusterDiscoveryNode {
+                agent_address: "node1".into(),
+                node_id: "node-1".into(),
+            },
+            ClusterDiscoveryNode {
+                agent_address: "node2".into(),
+                node_id: "node-2".into(),
+            },
+            ClusterDiscoveryNode {
+                agent_address: "node3".into(),
+                node_id: "node-3".into(),
+            },
         ],
-    );
+    };
     let settings = ClusterSettings::synthetic(NAMESPACE, CLUSTER_ID);
     let mut cluster_view = ClusterView::builder(settings.clone(), discovery.clone())
         .expect("cluster view build should start");

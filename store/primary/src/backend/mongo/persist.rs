@@ -9,6 +9,7 @@ use mongodb::sync::Client;
 use mongodb::sync::Collection;
 use opentracingrust::SpanContext;
 use opentracingrust::Tracer;
+use replisdk::platform::models::ClusterDiscovery as ClusterDiscoveryModel;
 
 use replicante_externals_mongodb::operations::replace_one;
 use replicante_externals_mongodb::operations::update_one;
@@ -18,7 +19,6 @@ use replicante_models_core::agent::Agent as AgentModel;
 use replicante_models_core::agent::AgentInfo as AgentInfoModel;
 use replicante_models_core::agent::Node as NodeModel;
 use replicante_models_core::agent::Shard as ShardModel;
-use replicante_models_core::cluster::discovery::ClusterDiscovery as ClusterDiscoveryModel;
 use replicante_models_core::cluster::discovery::DiscoverySettings as DiscoverySettingsModel;
 use replicante_models_core::cluster::ClusterSettings as ClusterSettingsModel;
 

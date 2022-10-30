@@ -19,11 +19,8 @@ pub fn aggregate(
 ) -> Result<()> {
     let cluster_view = &extra.new_cluster_view;
     let cluster_id = cluster_view.cluster_id.clone();
-    let cluster_display_name = cluster_view
-        .discovery
-        .display_name
-        .clone()
-        .unwrap_or_else(|| cluster_id.clone());
+    // TODO(remove-display-name): Remove display name logic once attribute moves to ClusterSettings.
+    let cluster_display_name = cluster_id.clone();
 
     let mut meta = ClusterMeta::new(cluster_id, cluster_display_name);
     meta.nodes = cluster_view.nodes.len() as i32;

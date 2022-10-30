@@ -2,6 +2,7 @@ use std::sync::Arc;
 use std::sync::Mutex;
 
 use opentracingrust::SpanContext;
+use replisdk::platform::models::ClusterDiscovery;
 
 use replicante_models_core::actions::node::Action;
 use replicante_models_core::actions::node::ActionSyncSummary;
@@ -11,7 +12,6 @@ use replicante_models_core::agent::AgentInfo;
 use replicante_models_core::agent::Node;
 use replicante_models_core::agent::Shard;
 use replicante_models_core::api::node_action::NodeActionSummary;
-use replicante_models_core::cluster::discovery::ClusterDiscovery;
 use replicante_models_core::cluster::discovery::DiscoverySettings;
 use replicante_models_core::cluster::ClusterMeta;
 use replicante_models_core::cluster::ClusterSettings;

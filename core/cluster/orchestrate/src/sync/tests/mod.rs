@@ -1,3 +1,5 @@
+use replisdk::platform::models::ClusterDiscoveryNode;
+
 mod actions;
 mod fixtures;
 mod info;
@@ -26,7 +28,11 @@ fn lock_lost_exits_early() {
         .release(None)
         .expect("fake lock to be released");
 
-    let result = super::sync_node(&data, &mut data_mut, "node");
+    let node = ClusterDiscoveryNode {
+        agent_address: "node".into(),
+        node_id: "node-test".into(),
+    };
+    let result = super::sync_node(&data, &mut data_mut, &node);
     match result {
         Ok(()) => panic!("node sync should fail"),
         Err(error) if !error.is::<OperationError>() => panic!("unexpected error from node sync"),

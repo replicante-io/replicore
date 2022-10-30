@@ -1,6 +1,6 @@
 use opentracingrust::SpanContext;
+use replisdk::platform::models::ClusterDiscovery;
 
-use replicante_models_core::cluster::discovery::ClusterDiscovery;
 use replicante_models_core::cluster::ClusterSettings;
 
 use crate::backend::ClusterImpl;

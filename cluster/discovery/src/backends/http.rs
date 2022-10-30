@@ -3,6 +3,7 @@ use std::io::Read;
 use std::time::Duration;
 
 use failure::ResultExt;
+use replisdk::platform::models::ClusterDiscovery;
 use reqwest::blocking::Client;
 use reqwest::header::HeaderMap;
 use reqwest::header::HeaderName;
@@ -12,7 +13,6 @@ use serde_derive::Serialize;
 use serde_json::Map;
 use serde_json::Value;
 
-use replicante_models_core::cluster::discovery::ClusterDiscovery;
 use replicante_models_core::cluster::discovery::HttpDiscovery;
 use replicante_models_core::cluster::discovery::HttpRequestMethod;
 

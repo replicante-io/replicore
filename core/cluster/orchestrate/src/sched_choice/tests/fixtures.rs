@@ -1,6 +1,7 @@
 use std::str::FromStr;
 
 use anyhow::Result;
+use replisdk::platform::models::ClusterDiscovery;
 
 use replicante_models_core::actions::node::ActionState;
 use replicante_models_core::actions::node::ActionSyncSummary;
@@ -8,7 +9,6 @@ use replicante_models_core::actions::orchestrator::OrchestratorAction as OARecor
 use replicante_models_core::actions::orchestrator::OrchestratorActionScheduleMode;
 use replicante_models_core::actions::orchestrator::OrchestratorActionState;
 use replicante_models_core::actions::orchestrator::OrchestratorActionSyncSummary;
-use replicante_models_core::cluster::discovery::ClusterDiscovery;
 use replicante_models_core::cluster::ClusterSettings;
 use replicore_cluster_view::ClusterView;
 use replicore_cluster_view::ClusterViewBuilder;
@@ -88,7 +88,10 @@ pub fn node_action_running() -> ActionSyncSummary {
 }
 
 pub fn start_view_builder() -> ClusterViewBuilder {
-    let discovery = ClusterDiscovery::new(CLUSTER_ID, vec![]);
+    let discovery = ClusterDiscovery {
+        cluster_id: CLUSTER_ID.into(),
+        nodes: vec![],
+    };
     let settings = ClusterSettings::synthetic(NAMESPACE, CLUSTER_ID);
     ClusterView::builder(settings, discovery).expect("cluster view build should start")
 }

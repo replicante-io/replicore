@@ -93,9 +93,9 @@ impl Deref for Stream {
 mod tests {
     use std::collections::HashMap;
 
+    use replisdk::platform::models::ClusterDiscovery;
     use serde_json::json;
 
-    use replicante_models_core::cluster::discovery::ClusterDiscovery;
     use replicante_models_core::events::DeserializeResult;
     use replicante_models_core::events::Event;
     use replicante_stream::test_support::mock_message;
@@ -104,7 +104,10 @@ mod tests {
 
     #[test]
     fn event_code_ok() {
-        let cluster = ClusterDiscovery::new("test", vec![]);
+        let cluster = ClusterDiscovery {
+            cluster_id: "test".into(),
+            nodes: vec![],
+        };
         let event = Event::builder().cluster().new_cluster(cluster);
         let message = mock_message("stream", "group", "id", HashMap::new(), event).unwrap();
         match Stream::deserialize_event(&message) {

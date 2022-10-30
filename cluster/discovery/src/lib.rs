@@ -1,4 +1,5 @@
-use replicante_models_core::cluster::discovery::ClusterDiscovery;
+use replisdk::platform::models::ClusterDiscovery;
+
 use replicante_models_core::cluster::discovery::DiscoveryBackend;
 use replicante_models_core::cluster::discovery::DiscoverySettings;
 

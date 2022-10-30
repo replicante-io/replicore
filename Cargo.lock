@@ -2815,6 +2815,7 @@ dependencies = [
  "lazy_static",
  "prometheus",
  "replicante_models_core",
+ "replisdk",
  "reqwest 0.11.12",
  "serde",
  "serde_derive",
@@ -2894,6 +2895,7 @@ dependencies = [
  "chrono",
  "lazy_static",
  "replicante_models_agent",
+ "replisdk",
  "semver 1.0.14",
  "serde",
  "serde_json",
@@ -2971,6 +2973,7 @@ dependencies = [
  "replicante_service_healthcheck",
  "replicante_util_tracing",
  "replicore_cluster_view",
+ "replisdk",
  "serde",
  "serde_json",
  "slog",
@@ -3028,6 +3031,7 @@ dependencies = [
  "replicante_models_core",
  "replicante_service_healthcheck",
  "replicante_stream",
+ "replisdk",
  "serde_json",
  "slog",
 ]
@@ -3142,6 +3146,7 @@ dependencies = [
  "replicore_cluster_view",
  "replicore_iface_orchestrator_action",
  "replicore_util_errors",
+ "replisdk",
  "serde_json",
  "slog",
  "thiserror",
@@ -3156,6 +3161,7 @@ dependencies = [
  "chrono",
  "replicante_models_agent",
  "replicante_models_core",
+ "replisdk",
  "serde",
  "serde_json",
  "thiserror",
@@ -3267,6 +3273,7 @@ dependencies = [
  "replicante_util_failure",
  "replicante_util_tracing",
  "replicore_models_tasks",
+ "replisdk",
  "slog",
 ]
 
@@ -3324,6 +3331,22 @@ dependencies = [
  "tokio 1.21.2",
  "uuid 1.2.1",
 ]
+
+[[package]]
+name = "replisdk"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b1cb78a7ec973c71ccc786d52d58905f83e70a887a4ba7f71bf76aac9cbacb05"
+dependencies = [
+ "replisdk-proc",
+ "serde",
+]
+
+[[package]]
+name = "replisdk-proc"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4dd481dbfc2db3837dcb35c36f352ceb97704484dd8d2b01fe77d0f0d44b8450"
 
 [[package]]
 name = "reqwest"

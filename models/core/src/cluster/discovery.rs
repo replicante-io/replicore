@@ -7,39 +7,6 @@ use serde::Serialize;
 use serde_json::Map;
 use serde_json::Value;
 
-/// Cluster description returned by the descovery system.
-///
-/// # Cluster membership
-///
-/// This model descibes the expected cluster members fully.
-/// The list of nodes is used to determine if nodes are down and
-/// when they are added and removed from the cluster.
-///
-///
-/// # Cluster configuration (future plan)
-///
-/// Any configuration option that replicante should apply to the cluster is defined in this model.
-#[derive(Clone, Eq, PartialEq, Hash, Debug, Serialize, Deserialize)]
-pub struct ClusterDiscovery {
-    pub cluster_id: String,
-    #[serde(default)]
-    pub display_name: Option<String>,
-    pub nodes: Vec<String>,
-}
-
-impl ClusterDiscovery {
-    pub fn new<S>(cluster_id: S, nodes: Vec<String>) -> ClusterDiscovery
-    where
-        S: Into<String>,
-    {
-        ClusterDiscovery {
-            cluster_id: cluster_id.into(),
-            display_name: None,
-            nodes,
-        }
-    }
-}
-
 /// Select one of the supported discovery backends.
 #[derive(Clone, Eq, PartialEq, Hash, Debug, Serialize, Deserialize)]
 #[serde(tag = "backend")]
@@ -168,27 +135,4 @@ pub struct HttpTlsConfig {
     /// Optional path to an HTTP client TLS certificate.
     #[serde(default)]
     pub client_cert: Option<String>,
-}
-
-#[cfg(test)]
-mod tests {
-    use serde_json;
-
-    use super::ClusterDiscovery;
-
-    #[test]
-    fn from_json() {
-        let payload = r#"{"cluster_id":"test","nodes":["a","b"]}"#;
-        let cluster: ClusterDiscovery = serde_json::from_str(&payload).unwrap();
-        let expected = ClusterDiscovery::new("test", vec!["a".into(), "b".into()]);
-        assert_eq!(cluster, expected);
-    }
-
-    #[test]
-    fn to_json() {
-        let cluster = ClusterDiscovery::new("test", vec!["a".into(), "b".into()]);
-        let payload = serde_json::to_string(&cluster).unwrap();
-        let expected = r#"{"cluster_id":"test","display_name":null,"nodes":["a","b"]}"#;
-        assert_eq!(payload, expected);
-    }
 }

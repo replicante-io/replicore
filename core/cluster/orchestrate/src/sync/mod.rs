@@ -3,6 +3,7 @@ use std::sync::Arc;
 use anyhow::Context;
 use anyhow::Result;
 use opentracingrust::Log;
+use replisdk::platform::models::ClusterDiscoveryNode;
 use slog::info;
 use slog::warn;
 
@@ -43,7 +44,7 @@ pub fn sync_cluster(data: &ClusterOrchestrate, data_mut: &mut ClusterOrchestrate
         let result = result.orchestration_failed()?;
         if let Err(error) = result {
             data_mut.report.node_failed();
-            // TODO(dependency-updates): resume capturing in sentry as debug event.
+            // TODO(fail-to-anyhow): resume capturing in sentry as debug event.
             //let mut event = sentry::integrations::failure::event_from_fail(&error);
             //event.level = sentry::Level::Debug;
             //sentry::capture_event(event);
@@ -52,7 +53,7 @@ pub fn sync_cluster(data: &ClusterOrchestrate, data_mut: &mut ClusterOrchestrate
                 "Node-only error during sync for cluster orchestration";
                 "namespace" => &data.cluster_view.namespace,
                 "cluster_id" => &data.cluster_view.cluster_id,
-                "agent_id" => &node,
+                "node_id" => &node.node_id,
                 "error_detail" => ?error,
             );
             if let Some(span) = data_mut.span.as_mut() {
@@ -68,9 +69,10 @@ pub fn sync_cluster(data: &ClusterOrchestrate, data_mut: &mut ClusterOrchestrate
 pub fn sync_node(
     data: &ClusterOrchestrate,
     data_mut: &mut ClusterOrchestrateMut,
-    node_id: &str,
+    node: &ClusterDiscoveryNode,
 ) -> Result<()> {
     // Exit early if lock was lost.
+    let node_id = &node.node_id;
     if !data.lock.inspect() {
         if let Some(span) = data_mut.span.as_mut() {
             span.log(Log::new().log("abandoned", "lock lost"));

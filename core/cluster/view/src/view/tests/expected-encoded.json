@@ -9,7 +9,6 @@
   },
   "discovery": {
     "cluster_id": "colours",
-    "display_name": null,
     "nodes": []
   },
   "actions_unfinished_by_node": {
