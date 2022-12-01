@@ -3,64 +3,32 @@ use std::collections::HashMap;
 
 use actix_web::get;
 use actix_web::web::Data;
-use actix_web::App;
 use actix_web::HttpResponse;
-use actix_web::HttpServer;
 use actix_web::Responder;
-use failure::ResultExt;
 use replisdk::platform::models::ClusterDiscovery;
 use replisdk::platform::models::ClusterDiscoveryNode;
 
 use replicante_util_failure::format_fail;
 
+use crate::platform::node_list;
 use crate::Conf;
-use crate::ErrorKind;
-use crate::Result;
 
 /// Actix Web data object attached to the /discover handler.
-struct DiscoverData {
+pub struct DiscoverData {
     pub agents_address: String,
-    pub conf: Conf,
 }
 
 impl DiscoverData {
     pub fn from_conf(conf: &Conf) -> DiscoverData {
         let agents_address = conf.resolve_play_server_agents_address();
-        let conf = conf.clone();
-        DiscoverData {
-            agents_address,
-            conf,
-        }
+        DiscoverData { agents_address }
     }
 }
 
-pub async fn run(conf: Conf) -> Result<i32> {
-    let bind = conf.play_server_bind.clone();
-    let server = HttpServer::new(move || {
-        App::new()
-            .app_data(Data::new(DiscoverData::from_conf(&conf)))
-            .service(index)
-            .service(discover)
-    })
-    .bind(&bind)
-    .with_context(|_| ErrorKind::io("http server failed to bind"))?
-    .run();
-    println!("--> Server listening at http://{}", bind);
-    server
-        .await
-        .with_context(|_| ErrorKind::io("http server failed to run"))?;
-    Ok(0)
-}
-
-#[get("/")]
-async fn index() -> impl Responder {
-    "Server running :-D".to_string()
-}
-
 #[get("/discover")]
-async fn discover(data: Data<DiscoverData>) -> impl Responder {
+pub async fn discover(data: Data<DiscoverData>, conf: Data<Conf>) -> impl Responder {
     // List all running nodes.
-    let nodes = super::node_list::list_nodes(&data.conf).await;
+    let nodes = node_list::list_nodes(&conf).await;
     let nodes = match nodes {
         Ok(nodes) => nodes,
         Err(error) => {

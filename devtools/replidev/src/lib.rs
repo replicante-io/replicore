@@ -5,6 +5,7 @@ pub mod error;
 
 mod command;
 mod conf;
+mod platform;
 mod podman;
 mod settings;
 

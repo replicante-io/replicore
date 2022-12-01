@@ -21,6 +21,7 @@ use crate::Result;
 ///   * `PODMAN_HOSTNAME`: takes the value of $HOSTNAME where replidev is running.
 ///
 /// Additional custom variables can be added with `Variables::set`.
+#[derive(Debug)]
 pub struct Variables {
     engine: Handlebars<'static>,
     vars: Map<String, Value>,
