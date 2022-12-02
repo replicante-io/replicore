@@ -14,6 +14,7 @@ use replicante_models_core::events::action::ActionEvent;
 use replicante_models_core::events::agent::AgentEvent;
 use replicante_models_core::events::cluster::ClusterEvent;
 use replicante_models_core::events::discovery_settings::DiscoverySettingsEvent;
+use replicante_models_core::events::namespace::NamespaceEvent;
 use replicante_models_core::events::node::NodeEvent;
 use replicante_models_core::events::shard::ShardEvent;
 use replicante_models_core::events::Event;
@@ -119,6 +120,14 @@ impl Annotations {
                 // TODO: for when #[non_exhaustive] is usable
                 //_ => event.code().to_string(),
             },
+            Payload::Namespace(namespace) => match namespace {
+                NamespaceEvent::Apply(namespace) => format!(
+                    "A Namespace object named {} was applied",
+                    &namespace.ns_id,
+                ),
+                // TODO: for when #[non_exhaustive] is usable
+                //_ => event.code().to_string(),
+            },
             Payload::Node(node) => match node {
                 NodeEvent::Changed(change) => {
                     format!("Details about datastore node {} changed", &change.node_id)
@@ -179,6 +188,11 @@ impl Annotations {
             Payload::DiscoverySettings(settings) => match settings {
                 DiscoverySettingsEvent::Apply(_) => "DiscoverySettings applied".into(),
                 DiscoverySettingsEvent::Delete(_) => "DiscoverySettings deleted".into(),
+                // TODO: for when #[non_exhaustive] is usable
+                //_ => event.code().to_string(),
+            },
+            Payload::Namespace(namespace) => match namespace {
+                NamespaceEvent::Apply(_) => "Namespace applied".into(),
                 // TODO: for when #[non_exhaustive] is usable
                 //_ => event.code().to_string(),
             },

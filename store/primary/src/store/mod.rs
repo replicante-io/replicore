@@ -24,6 +24,8 @@ pub mod cluster;
 pub mod discovery_settings;
 pub mod global_search;
 pub mod legacy;
+pub mod namespace;
+pub mod namespaces;
 pub mod node;
 pub mod nodes;
 pub mod orchestrator_action;
@@ -40,6 +42,8 @@ use self::cluster::Cluster;
 use self::discovery_settings::DiscoverySettings;
 use self::global_search::GlobalSearch;
 use self::legacy::Legacy;
+use self::namespace::Namespace;
+use self::namespaces::Namespaces;
 use self::node::Node;
 use self::nodes::Nodes;
 use self::orchestrator_action::OrchestratorAction;
@@ -151,6 +155,21 @@ impl Store {
     pub fn legacy(&self) -> Legacy {
         let legacy = self.store.legacy();
         Legacy::new(legacy)
+    }
+
+    /// Operate on all namespaces in the cluster.
+    pub fn namespace(&self, namespace_id: String) -> Namespace {
+        let namespace = self.store.namespace();
+        let attrs = self::namespace::NamespaceAttributes {
+            ns_id: namespace_id,
+        };
+        Namespace::new(namespace, attrs)
+    }
+
+    /// Operate on all namespaces on the RepliCore instance.
+    pub fn namespaces(&self) -> Namespaces {
+        let namespaces = self.store.namespaces();
+        Namespaces::new(namespaces)
     }
 
     /// Operate on the node identified by the provided cluster_id and node_id.

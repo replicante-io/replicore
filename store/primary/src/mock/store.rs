@@ -15,6 +15,7 @@ use replicante_models_core::api::node_action::NodeActionSummary;
 use replicante_models_core::cluster::discovery::DiscoverySettings;
 use replicante_models_core::cluster::ClusterMeta;
 use replicante_models_core::cluster::ClusterSettings;
+use replicante_models_core::scope::Namespace;
 
 use super::MockState;
 use crate::backend::ActionImpl;
@@ -28,6 +29,8 @@ use crate::backend::DiscoverySettingsImpl;
 use crate::backend::GlobalSearchImpl;
 use crate::backend::LegacyImpl;
 use crate::backend::LegacyInterface;
+use crate::backend::NamespaceImpl;
+use crate::backend::NamespacesImpl;
 use crate::backend::NodeImpl;
 use crate::backend::NodesImpl;
 use crate::backend::OrchestratorActionImpl;
@@ -91,6 +94,14 @@ impl StoreInterface for StoreMock {
             state: Arc::clone(&self.state),
         };
         LegacyImpl::new(legacy)
+    }
+
+    fn namespace(&self) -> NamespaceImpl {
+        panic!("TODO: StoreMock::namespace");
+    }
+
+    fn namespaces(&self) -> NamespacesImpl {
+        panic!("TODO: StoreMock::namespaces");
     }
 
     fn node(&self) -> NodeImpl {
@@ -315,6 +326,10 @@ impl PersistInterface for Persist {
         _: Option<SpanContext>,
     ) -> Result<()> {
         panic!("TODO: MockStore::Persist::discovery_settings")
+    }
+
+    fn namespace(&self, _namespace: Namespace, _: Option<SpanContext>) -> Result<()> {
+        panic!("TODO: MockStore::Persist::namespace")
     }
 
     fn next_cluster_orchestrate(

@@ -21,6 +21,8 @@ use super::DataImpl;
 use super::DiscoverySettingsImpl;
 use super::GlobalSearchImpl;
 use super::LegacyImpl;
+use super::NamespaceImpl;
+use super::NamespacesImpl;
 use super::NodeImpl;
 use super::NodesImpl;
 use super::OrchestratorActionImpl;
@@ -45,6 +47,8 @@ mod discovery_settings;
 mod document;
 mod global_search;
 mod legacy;
+mod namespace;
+mod namespaces;
 mod node;
 mod nodes;
 mod orchestrator_action;
@@ -184,6 +188,24 @@ impl StoreInterface for Store {
         let legacy =
             self::legacy::Legacy::new(self.client.clone(), self.db.clone(), self.tracer.clone());
         LegacyImpl::new(legacy)
+    }
+
+    fn namespace(&self) -> NamespaceImpl {
+        let namespace = self::namespace::Namespace::new(
+            self.client.clone(),
+            self.db.clone(),
+            self.tracer.clone(),
+        );
+        NamespaceImpl::new(namespace)
+    }
+
+    fn namespaces(&self) -> NamespacesImpl {
+        let namespaces = self::namespaces::Namespaces::new(
+            self.client.clone(),
+            self.db.clone(),
+            self.tracer.clone(),
+        );
+        NamespacesImpl::new(namespaces)
     }
 
     fn node(&self) -> NodeImpl {

@@ -10,6 +10,7 @@ pub const COLLECTION_CLUSTER_META: &str = "clusters_meta";
 pub const COLLECTION_CLUSTER_SETTINGS: &str = "cluster_settings";
 pub const COLLECTION_DISCOVERIES: &str = "discoveries";
 pub const COLLECTION_DISCOVERY_SETTINGS: &str = "discovery_settings";
+pub const COLLECTION_NAMESPACES: &str = "namespaces";
 pub const COLLECTION_NODES: &str = "nodes";
 pub const COLLECTION_SHARDS: &str = "shards";
 

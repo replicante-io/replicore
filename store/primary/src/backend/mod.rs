@@ -22,6 +22,7 @@ use replicante_models_core::api::orchestrator_action::OrchestratorActionSummary;
 use replicante_models_core::cluster::discovery::DiscoverySettings;
 use replicante_models_core::cluster::ClusterMeta;
 use replicante_models_core::cluster::ClusterSettings;
+use replicante_models_core::scope::Namespace;
 use replicante_service_healthcheck::HealthChecks;
 
 use crate::store::action::ActionAttributes;
@@ -30,6 +31,7 @@ use crate::store::agent::AgentAttributes;
 use crate::store::agents::AgentsAttributes;
 use crate::store::cluster::ClusterAttributes;
 use crate::store::discovery_settings::DiscoverySettingsAttributes;
+use crate::store::namespace::NamespaceAttributes;
 use crate::store::node::NodeAttributes;
 use crate::store::nodes::NodesAttributes;
 use crate::store::orchestrator_action::OrchestratorActionAttributes;
@@ -174,6 +176,8 @@ arc_interface! {
         fn discovery_settings(&self) -> DiscoverySettingsImpl;
         fn global_search(&self) -> GlobalSearchImpl;
         fn legacy(&self) -> LegacyImpl;
+        fn namespace(&self) -> NamespaceImpl;
+        fn namespaces(&self) -> NamespacesImpl;
         fn node(&self) -> NodeImpl;
         fn nodes(&self) -> NodesImpl;
         fn orchestrator_action(&self) -> OrchestratorActionImpl;
@@ -379,6 +383,38 @@ box_interface! {
 }
 
 box_interface! {
+    /// Dynamic dispatch namespace operations to a backend-specific implementation.
+    struct NamespaceImpl,
+
+    /// Definition of supported operations on namespace.
+    ///
+    /// See `store::namespace::Namespace` for descriptions of methods.
+    trait NamespaceInterface,
+
+    interface {
+        fn get(
+            &self,
+            attrs: &NamespaceAttributes,
+            span: Option<SpanContext>,
+        ) -> Result<Option<Namespace>>;
+    }
+}
+
+box_interface! {
+    /// Dynamic dispatch namespaces operations to a backend-specific implementation.
+    struct NamespacesImpl,
+
+    /// Definition of supported operations on namespaces.
+    ///
+    /// See `store::namespaces::Namespaces` for descriptions of methods.
+    trait NamespacesInterface,
+
+    interface {
+        fn iter(&self, span: Option<SpanContext>) -> Result<Cursor<Namespace>>;
+    }
+}
+
+box_interface! {
     /// Dynamic dispatch node operations to a backend-specific implementation.
     struct NodeImpl,
 
@@ -475,6 +511,7 @@ box_interface! {
             settings: DiscoverySettings,
             span: Option<SpanContext>,
         ) -> Result<()>;
+        fn namespace(&self, namespace: Namespace, span: Option<SpanContext>) -> Result<()>;
         fn next_cluster_orchestrate(
             &self,
             settings: ClusterSettings,

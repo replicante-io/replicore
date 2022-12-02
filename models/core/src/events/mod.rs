@@ -7,6 +7,7 @@ pub mod action;
 pub mod agent;
 pub mod cluster;
 pub mod discovery_settings;
+pub mod namespace;
 pub mod node;
 pub mod shard;
 
@@ -63,6 +64,7 @@ impl Event {
             Payload::Agent(event) => event.code(),
             Payload::Cluster(event) => event.code(),
             Payload::DiscoverySettings(event) => event.code(),
+            Payload::Namespace(event) => event.code(),
             Payload::Node(event) => event.code(),
             Payload::Shard(event) => event.code(),
             #[cfg(test)]
@@ -77,6 +79,7 @@ impl Event {
             Payload::Agent(event) => event.entity_id(),
             Payload::Cluster(event) => event.entity_id(),
             Payload::DiscoverySettings(event) => event.entity_id(),
+            Payload::Namespace(event) => event.entity_id(),
             Payload::Node(event) => event.entity_id(),
             Payload::Shard(event) => event.entity_id(),
             #[cfg(test)]
@@ -115,6 +118,11 @@ impl EventBuilder {
     /// Build discovery settings events.
     pub fn discovery_settings(self) -> self::discovery_settings::DiscoverySettingsEventBuilder {
         self::discovery_settings::DiscoverySettingsEventBuilder { builder: self }
+    }
+
+    /// Build namespace events.
+    pub fn namespace(self) -> self::namespace::NamespaceEventBuilder {
+        self::namespace::NamespaceEventBuilder { builder: self }
     }
 
     /// Build node events.
@@ -184,6 +192,10 @@ pub enum Payload {
 
     #[serde(rename = "DISCOVERY_SETTINGS")]
     DiscoverySettings(self::discovery_settings::DiscoverySettingsEvent),
+
+    /// Namespace related events.
+    #[serde(rename = "NAMESPACE")]
+    Namespace(self::namespace::NamespaceEvent),
 
     /// Node related events.
     #[serde(rename = "NODE")]

@@ -9,6 +9,7 @@ use replicante_models_core::agent::Node as NodeModel;
 use replicante_models_core::agent::Shard as ShardModel;
 use replicante_models_core::cluster::discovery::DiscoverySettings;
 use replicante_models_core::cluster::ClusterSettings;
+use replicante_models_core::scope::Namespace;
 
 use crate::backend::PersistImpl;
 use crate::Result;
@@ -69,6 +70,14 @@ impl Persist {
         S: Into<Option<SpanContext>>,
     {
         self.persist.discovery_settings(settings, span.into())
+    }
+
+    /// Create or update a Namespace object.
+    pub fn namespace<S>(&self, namespace: Namespace, span: S) -> Result<()>
+    where
+        S: Into<Option<SpanContext>>,
+    {
+        self.persist.namespace(namespace, span.into())
     }
 
     /// Update the next_orchestrate of a ClusterSettings record.
