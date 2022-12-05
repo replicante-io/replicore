@@ -12,6 +12,7 @@ pub const COLLECTION_DISCOVERIES: &str = "discoveries";
 pub const COLLECTION_DISCOVERY_SETTINGS: &str = "discovery_settings";
 pub const COLLECTION_NAMESPACES: &str = "namespaces";
 pub const COLLECTION_NODES: &str = "nodes";
+pub const COLLECTION_PLATFORMS: &str = "platforms";
 pub const COLLECTION_SHARDS: &str = "shards";
 
 pub const TOP_CLUSTERS_LIMIT: u32 = 10;
@@ -33,6 +34,7 @@ lazy_static! {
         set.insert(COLLECTION_DISCOVERIES);
         set.insert(COLLECTION_DISCOVERY_SETTINGS);
         set.insert(COLLECTION_NODES);
+        set.insert(COLLECTION_PLATFORMS);
         set.insert(COLLECTION_SHARDS);
         set
     };

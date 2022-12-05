@@ -9,6 +9,7 @@ use mongodb::sync::Client;
 use mongodb::sync::Collection;
 use opentracingrust::SpanContext;
 use opentracingrust::Tracer;
+use replisdk::core::models::platform::Platform;
 use replisdk::platform::models::ClusterDiscovery as ClusterDiscoveryModel;
 
 use replicante_externals_mongodb::operations::replace_one;
@@ -33,6 +34,7 @@ use super::constants::COLLECTION_DISCOVERIES;
 use super::constants::COLLECTION_DISCOVERY_SETTINGS;
 use super::constants::COLLECTION_NAMESPACES;
 use super::constants::COLLECTION_NODES;
+use super::constants::COLLECTION_PLATFORMS;
 use super::constants::COLLECTION_SHARDS;
 use super::document::ActionDocument;
 use super::document::ClusterSettingsDocument;
@@ -272,6 +274,22 @@ impl PersistInterface for Persist {
         let document = match document {
             Bson::Document(document) => document,
             _ => panic!("OrchestratorAction failed to encode as BSON document"),
+        };
+        replace_one(collection, filter, document, span, self.tracer.as_deref())
+            .with_context(|_| ErrorKind::MongoDBOperation)?;
+        Ok(())
+    }
+
+    fn platform(&self, platform: Platform, span: Option<SpanContext>) -> Result<()> {
+        let filter = doc! {
+            "ns_id": &platform.ns_id,
+            "name": &platform.name,
+        };
+        let collection = self.client.database(&self.db).collection(COLLECTION_PLATFORMS);
+        let document = bson::to_bson(&platform).with_context(|_| ErrorKind::MongoDBBsonEncode)?;
+        let document = match document {
+            Bson::Document(document) => document,
+            _ => panic!("Platform failed to encode as BSON document"),
         };
         replace_one(collection, filter, document, span, self.tracer.as_deref())
             .with_context(|_| ErrorKind::MongoDBOperation)?;

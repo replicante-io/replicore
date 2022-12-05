@@ -95,6 +95,10 @@ replicore_task_discovery = { path = "../../core/tasks/discovery" }
 replicore_task_orchestrator = { path = "../../core/tasks/orchestrator" }
 replicore_util_errors = { path = "../../core/util/errors" }
 
+[dependencies.replisdk]
+features = ["replicore-models"]
+version = "^0.1"
+
 
 [build-dependencies]
 git2 = "^0.15.0"

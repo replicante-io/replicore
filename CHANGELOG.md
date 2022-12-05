@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## [Unreleased]
 ### Added
 - Store `Namespace` objects in the primary store.
+- Store `Platform` objects in the primary store.
 
 ### Changed
 - **BREAKING**: Configuration `sentry_capture_api` is now an on/off boolean.

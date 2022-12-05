@@ -2,6 +2,7 @@ use std::sync::Arc;
 use std::sync::Mutex;
 
 use opentracingrust::SpanContext;
+use replisdk::core::models::platform::Platform;
 use replisdk::platform::models::ClusterDiscovery;
 
 use replicante_models_core::actions::node::Action;
@@ -370,6 +371,10 @@ impl PersistInterface for Persist {
             .orchestrator_actions
             .insert(key, action);
         Ok(())
+    }
+
+    fn platform(&self, _platform: Platform, _: Option<SpanContext>) -> Result<()> {
+        panic!("TODO: MockStore::Persist::platform")
     }
 
     fn shard(&self, shard: Shard, _: Option<SpanContext>) -> Result<()> {

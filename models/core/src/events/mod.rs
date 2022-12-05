@@ -9,6 +9,7 @@ pub mod cluster;
 pub mod discovery_settings;
 pub mod namespace;
 pub mod node;
+pub mod platform;
 pub mod shard;
 
 use crate::scope::EntityId;
@@ -66,6 +67,7 @@ impl Event {
             Payload::DiscoverySettings(event) => event.code(),
             Payload::Namespace(event) => event.code(),
             Payload::Node(event) => event.code(),
+            Payload::Platform(event) => event.code(),
             Payload::Shard(event) => event.code(),
             #[cfg(test)]
             Payload::Test(event) => event.code(),
@@ -81,6 +83,7 @@ impl Event {
             Payload::DiscoverySettings(event) => event.entity_id(),
             Payload::Namespace(event) => event.entity_id(),
             Payload::Node(event) => event.entity_id(),
+            Payload::Platform(event) => event.entity_id(),
             Payload::Shard(event) => event.entity_id(),
             #[cfg(test)]
             Payload::Test(event) => event.entity_id(),
@@ -128,6 +131,11 @@ impl EventBuilder {
     /// Build node events.
     pub fn node(self) -> self::node::NodeEventBuilder {
         self::node::NodeEventBuilder { builder: self }
+    }
+
+    /// Build platform events.
+    pub fn platform(self) -> self::platform::PlatformEventBuilder {
+        self::platform::PlatformEventBuilder { builder: self }
     }
 
     /// Build shard events.
@@ -201,6 +209,10 @@ pub enum Payload {
     #[serde(rename = "NODE")]
     Node(self::node::NodeEvent),
 
+    /// Platform related events.
+    #[serde(rename = "PLATFORM")]
+    Platform(self::platform::PlatformEvent),
+
     /// Shard related events.
     #[serde(rename = "SHARD")]
     Shard(self::shard::ShardEvent),
@@ -258,7 +270,7 @@ mod tests {
     fn flatten_as_expected() {
         let event = Event {
             payload: Payload::Test(TestEvent::New(1)),
-            timestamp: Utc.ymd(2014, 7, 8).and_hms_micro(9, 10, 11, 12000),
+            timestamp: Utc.datetime_from_str("2014-07-08T09:10:11.012", "%FT%T%.3f").unwrap(),
         };
         let actual = serde_json::to_string(&event).unwrap();
         let expected = concat!(
@@ -294,7 +306,7 @@ mod tests {
         };
         let expected = Event {
             payload: Payload::Test(TestEvent::New(1)),
-            timestamp: Utc.ymd(2014, 7, 8).and_hms_micro(9, 10, 11, 12000),
+            timestamp: Utc.datetime_from_str("2014-07-08T09:10:11.012", "%FT%T%.3f").unwrap(),
         };
         assert_eq!(actual, expected);
     }

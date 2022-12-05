@@ -16,6 +16,7 @@ use replicante_models_core::events::cluster::ClusterEvent;
 use replicante_models_core::events::discovery_settings::DiscoverySettingsEvent;
 use replicante_models_core::events::namespace::NamespaceEvent;
 use replicante_models_core::events::node::NodeEvent;
+use replicante_models_core::events::platform::PlatformEvent;
 use replicante_models_core::events::shard::ShardEvent;
 use replicante_models_core::events::Event;
 use replicante_models_core::events::Payload;
@@ -141,6 +142,14 @@ impl Annotations {
                 // TODO: for when #[non_exhaustive] is usable
                 //_ => event.code().to_string(),
             },
+            Payload::Platform(platform) => match platform {
+                PlatformEvent::Apply(platform) => format!(
+                    "A Platform object named {} was applied in namespace {}",
+                    &platform.name, &platform.ns_id,
+                ),
+                // TODO: for when #[non_exhaustive] is usable
+                //_ => event.code().to_string(),
+            },
             Payload::Shard(shard) => match shard {
                 ShardEvent::AllocationChanged(change) => format!(
                     "Status of shard {} on node {} have changed",
@@ -201,6 +210,11 @@ impl Annotations {
                 NodeEvent::Down(_) => "Datastore node is down".into(),
                 NodeEvent::New(_) => "New datastore node detected".into(),
                 NodeEvent::Up(_) => "Datastore node is up".into(),
+                // TODO: for when #[non_exhaustive] is usable
+                //_ => event.code().to_string(),
+            },
+            Payload::Platform(platform) => match platform {
+                PlatformEvent::Apply(_) => "Platform applied".into(),
                 // TODO: for when #[non_exhaustive] is usable
                 //_ => event.code().to_string(),
             },

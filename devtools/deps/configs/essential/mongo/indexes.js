@@ -11,7 +11,9 @@ db.cluster_settings.createIndex({cluster_id: 1}, {unique: true});
 db.clusters_meta.createIndex({cluster_id: 1}, {unique: true});
 db.discoveries.createIndex({cluster_id: 1}, {unique: true});
 db.discovery_settings.createIndex({namespace: 1, name: 1}, {unique: true});
+db.namespaces.createIndex({ns_id: 1}, {unique: true});
 db.nodes.createIndex({cluster_id: 1, node_id: 1}, {unique: true});
+db.platforms.createIndex({ns_id: 1, name: 1}, {unique: true});
 db.shards.createIndex({cluster_id: 1, shard_id: 1, node_id: 1}, {unique: true});
 
 //   Indexes for performance reasons.

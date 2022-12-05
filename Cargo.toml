@@ -16,3 +16,6 @@ members = [
   "stream/*",
 ]
 resolver = "2"
+
+[patch.crates-io]
+replisdk = { path = "../replisdk-rust" }

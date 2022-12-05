@@ -1,0 +1,11 @@
+apiVersion: replicante.io/v0
+kind: Platform
+metadata:
+  namespace: default
+  name: playground
+spec:
+  active: true
+  discovery:
+    interval: 30
+  http:
+    base_url: 'http://localhost:9876/'

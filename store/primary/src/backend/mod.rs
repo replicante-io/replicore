@@ -4,6 +4,7 @@ use std::sync::Arc;
 
 use opentracingrust::SpanContext;
 use opentracingrust::Tracer;
+use replisdk::core::models::platform::Platform;
 use replisdk::platform::models::ClusterDiscovery;
 use slog::Logger;
 
@@ -528,6 +529,7 @@ box_interface! {
             action: OrchestratorAction,
             span: Option<SpanContext>,
         ) -> Result<()>;
+        fn platform(&self, platform: Platform, span: Option<SpanContext>) -> Result<()>;
         fn shard(&self, shard: Shard, span: Option<SpanContext>) -> Result<()>;
     }
 }

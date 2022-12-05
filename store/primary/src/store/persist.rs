@@ -1,4 +1,5 @@
 use opentracingrust::SpanContext;
+use replisdk::core::models::platform::Platform;
 use replisdk::platform::models::ClusterDiscovery as ClusterDiscoveryModel;
 
 use replicante_models_core::actions::node::Action as ActionModel;
@@ -114,6 +115,14 @@ impl Persist {
         S: Into<Option<SpanContext>>,
     {
         self.persist.orchestrator_action(action, span.into())
+    }
+
+    /// Create or update a [`Platform`] object.
+    pub fn platform<S>(&self, platform: Platform, span: S) -> Result<()>
+    where
+        S: Into<Option<SpanContext>>,
+    {
+        self.persist.platform(platform, span.into())
     }
 
     /// Create or update a Shard record.
