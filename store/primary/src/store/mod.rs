@@ -31,6 +31,8 @@ pub mod nodes;
 pub mod orchestrator_action;
 pub mod orchestrator_actions;
 pub mod persist;
+pub mod platform;
+pub mod platforms;
 pub mod shard;
 pub mod shards;
 
@@ -49,6 +51,8 @@ use self::nodes::Nodes;
 use self::orchestrator_action::OrchestratorAction;
 use self::orchestrator_actions::OrchestratorActions;
 use self::persist::Persist;
+use self::platform::Platform;
+use self::platforms::Platforms;
 use self::shard::Shard;
 use self::shards::Shards;
 
@@ -213,6 +217,32 @@ impl Store {
     pub fn persist(&self) -> Persist {
         let persist = self.store.persist();
         Persist::new(persist)
+    }
+
+    /// Operate on the `Platform` identified by the provided namespace and platform IDs.
+    pub fn platform<S1, S2>(&self, ns_id: S1, platform_id: S2) -> Platform
+    where
+        S1: Into<String>,
+        S2: Into<String>,
+    {
+        let platform = self.store.platform();
+        let attrs = self::platform::PlatformAttributes {
+            ns_id: ns_id.into(),
+            platform_id: platform_id.into(),
+        };
+        Platform::new(platform, attrs)
+    }
+
+    /// Operate on all `Platform`s in the given namespace.
+    pub fn platforms<S1>(&self, ns_id: S1) -> Platforms
+    where
+        S1: Into<String>,
+    {
+        let platforms = self.store.platforms();
+        let attrs = self::platforms::PlatformsAttributes {
+            ns_id: ns_id.into(),
+        };
+        Platforms::new(platforms, attrs)
     }
 
     /// Operate on the shard identified by the provided cluster_id, node_id, shard_id.

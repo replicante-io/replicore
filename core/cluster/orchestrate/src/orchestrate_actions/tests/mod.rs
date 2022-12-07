@@ -46,7 +46,7 @@ fn get_events(data: &crate::ClusterOrchestrate) -> Vec<Event> {
                 .expect("events stream to have valid messages");
             message.async_ack().expect("message to be acked");
             event.timestamp = chrono::DateTime::from_utc(
-                chrono::NaiveDateTime::from_timestamp(0, 0),
+                chrono::NaiveDateTime::from_timestamp_opt(0, 0).unwrap(),
                 chrono::Utc,
             );
             event
@@ -100,8 +100,10 @@ fn fail_action_on_handler_error() {
         let mut event = Event::builder()
             .action()
             .orchestrator_action_finished(action);
-        event.timestamp =
-            chrono::DateTime::from_utc(chrono::NaiveDateTime::from_timestamp(0, 0), chrono::Utc);
+        event.timestamp = chrono::DateTime::from_utc(
+            chrono::NaiveDateTime::from_timestamp_opt(0, 0).unwrap(),
+            chrono::Utc,
+        );
         event
     };
     assert_eq!(events, vec![expected]);
@@ -178,8 +180,10 @@ fn fail_action_on_handler_not_found() {
         let mut event = Event::builder()
             .action()
             .orchestrator_action_finished(action);
-        event.timestamp =
-            chrono::DateTime::from_utc(chrono::NaiveDateTime::from_timestamp(0, 0), chrono::Utc);
+        event.timestamp = chrono::DateTime::from_utc(
+            chrono::NaiveDateTime::from_timestamp_opt(0, 0).unwrap(),
+            chrono::Utc,
+        );
         event
     };
     assert_eq!(events, vec![expected]);
@@ -212,8 +216,10 @@ fn final_states_finish_actions() {
         let mut event = Event::builder()
             .action()
             .orchestrator_action_finished(action);
-        event.timestamp =
-            chrono::DateTime::from_utc(chrono::NaiveDateTime::from_timestamp(0, 0), chrono::Utc);
+        event.timestamp = chrono::DateTime::from_utc(
+            chrono::NaiveDateTime::from_timestamp_opt(0, 0).unwrap(),
+            chrono::Utc,
+        );
         event
     };
     let expected_uuid5 = {
@@ -221,8 +227,10 @@ fn final_states_finish_actions() {
         let mut event = Event::builder()
             .action()
             .orchestrator_action_finished(action);
-        event.timestamp =
-            chrono::DateTime::from_utc(chrono::NaiveDateTime::from_timestamp(0, 0), chrono::Utc);
+        event.timestamp = chrono::DateTime::from_utc(
+            chrono::NaiveDateTime::from_timestamp_opt(0, 0).unwrap(),
+            chrono::Utc,
+        );
         event
     };
     assert_eq!(events, vec![expected_uuid3, expected_uuid5]);

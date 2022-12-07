@@ -37,6 +37,8 @@ use crate::store::node::NodeAttributes;
 use crate::store::nodes::NodesAttributes;
 use crate::store::orchestrator_action::OrchestratorActionAttributes;
 use crate::store::orchestrator_actions::OrchestratorActionsAttributes;
+use crate::store::platform::PlatformAttributes;
+use crate::store::platforms::PlatformsAttributes;
 use crate::store::shard::ShardAttributes;
 use crate::store::shards::ShardsAttributes;
 use crate::Config;
@@ -184,6 +186,8 @@ arc_interface! {
         fn orchestrator_action(&self) -> OrchestratorActionImpl;
         fn orchestrator_actions(&self) -> OrchestratorActionsImpl;
         fn persist(&self) -> PersistImpl;
+        fn platform(&self) -> PlatformImpl;
+        fn platforms(&self) -> PlatformsImpl;
         fn shard(&self) -> ShardImpl;
         fn shards(&self) -> ShardsImpl;
     }
@@ -531,6 +535,42 @@ box_interface! {
         ) -> Result<()>;
         fn platform(&self, platform: Platform, span: Option<SpanContext>) -> Result<()>;
         fn shard(&self, shard: Shard, span: Option<SpanContext>) -> Result<()>;
+    }
+}
+
+box_interface! {
+    /// Dynamic dispatch platform operations to a backend-specific implementation.
+    struct PlatformImpl,
+
+    /// Definition of supported operations on a platform.
+    ///
+    /// See `store::platform::Platform` for descriptions of methods.
+    trait PlatformInterface,
+
+    interface {
+        fn get(
+            &self,
+            attrs: &PlatformAttributes,
+            span: Option<SpanContext>,
+        ) -> Result<Option<Platform>>;
+    }
+}
+
+box_interface! {
+    /// Dynamic dispatch platforms operations to a backend-specific implementation.
+    struct PlatformsImpl,
+
+    /// Definition of supported operations on all platforms.
+    ///
+    /// See `store::platforms::Platforms` for descriptions of methods.
+    trait PlatformsInterface,
+
+    interface {
+        fn iter(
+            &self,
+            attrs: &PlatformsAttributes,
+            span: Option<SpanContext>,
+        ) -> Result<Cursor<Platform>>;
     }
 }
 

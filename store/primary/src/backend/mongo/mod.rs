@@ -28,6 +28,8 @@ use super::NodesImpl;
 use super::OrchestratorActionImpl;
 use super::OrchestratorActionsImpl;
 use super::PersistImpl;
+use super::PlatformImpl;
+use super::PlatformsImpl;
 use super::ShardImpl;
 use super::ShardsImpl;
 use super::StoreInterface;
@@ -54,6 +56,8 @@ mod nodes;
 mod orchestrator_action;
 mod orchestrator_actions;
 mod persist;
+mod platform;
+mod platforms;
 mod shard;
 mod shards;
 mod validate;
@@ -241,6 +245,24 @@ impl StoreInterface for Store {
         let persist =
             self::persist::Persist::new(self.client.clone(), self.db.clone(), self.tracer.clone());
         PersistImpl::new(persist)
+    }
+
+    fn platform(&self) -> super::PlatformImpl {
+        let platform = self::platform::Platform::new(
+            self.client.clone(),
+            self.db.clone(),
+            self.tracer.clone(),
+        );
+        PlatformImpl::new(platform)
+    }
+
+    fn platforms(&self) -> super::PlatformsImpl {
+        let platforms = self::platforms::Platforms::new(
+            self.client.clone(),
+            self.db.clone(),
+            self.tracer.clone(),
+        );
+        PlatformsImpl::new(platforms)
     }
 
     fn shard(&self) -> ShardImpl {

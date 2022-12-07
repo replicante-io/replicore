@@ -39,6 +39,8 @@ use crate::backend::OrchestratorActionInterface;
 use crate::backend::OrchestratorActionsImpl;
 use crate::backend::PersistImpl;
 use crate::backend::PersistInterface;
+use crate::backend::PlatformImpl;
+use crate::backend::PlatformsImpl;
 use crate::backend::ShardImpl;
 use crate::backend::ShardsImpl;
 use crate::backend::StoreImpl;
@@ -129,6 +131,14 @@ impl StoreInterface for StoreMock {
             state: Arc::clone(&self.state),
         };
         PersistImpl::new(persist)
+    }
+
+    fn platform(&self) -> PlatformImpl {
+        panic!("TODO: StoreMock::platform");
+    }
+
+    fn platforms(&self) -> PlatformsImpl {
+        panic!("TODO: StoreMock::platforms");
     }
 
     fn shard(&self) -> ShardImpl {
