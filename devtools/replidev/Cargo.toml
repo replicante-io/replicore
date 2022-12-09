@@ -58,8 +58,8 @@ version = "^1.0"
 git2 = "^0.15.0"
 
 
-#[patch.crates-io]
-#replisdk = { path = "../../../replisdk-rust" }
+[patch.crates-io]
+replisdk = { path = "../../../replisdk-rust" }
 
 
 [workspace]

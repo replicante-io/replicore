@@ -42,7 +42,10 @@ impl PlatformInterface for Platform {
             "ns_id": &attrs.ns_id,
             "name": &attrs.platform_id,
         };
-        let collection = self.client.database(&self.db).collection(COLLECTION_PLATFORMS);
+        let collection = self
+            .client
+            .database(&self.db)
+            .collection(COLLECTION_PLATFORMS);
         let document = find_one(collection, filter, span, self.tracer.as_deref())
             .with_context(|_| ErrorKind::MongoDBOperation)?;
         Ok(document)

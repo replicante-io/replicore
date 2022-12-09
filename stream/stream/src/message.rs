@@ -85,6 +85,7 @@ where
     }
 
     /// Inject the stored span context, if any, into the headers.
+    #[allow(clippy::result_large_err)]
     pub(crate) fn trace_inject(&mut self, tracer: Option<&Arc<Tracer>>) -> OTResult<()> {
         if let (Some(tracer), Some(context)) = (tracer, self.span_context.take()) {
             let mut headers = HashMap::new();
@@ -196,6 +197,7 @@ where
     ///
     /// The extracted span context can be used by consumers to
     /// trace the larger flows across processes/systems.
+    #[allow(clippy::result_large_err)]
     pub fn trace(&self, tracer: &Tracer) -> OTResult<Option<SpanContext>> {
         let format = ExtractFormat::HttpHeaders(Box::new(&self.headers));
         tracer.extract(format)

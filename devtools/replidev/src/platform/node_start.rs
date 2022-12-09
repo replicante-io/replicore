@@ -44,9 +44,10 @@ pub struct StartNodeSpec<'a> {
 pub async fn start_node(spec: StartNodeSpec<'_>, conf: &Conf) -> Result<()> {
     // Load node definition.
     let definition = format!("stores/{}/node.yaml", spec.store);
-    let definition = File::open(definition).with_context(|_| ErrorKind::pod_not_found(spec.store))?;
-    let pod: Pod = serde_yaml::from_reader(definition)
-        .with_context(|_| ErrorKind::invalid_pod(spec.store))?;
+    let definition =
+        File::open(definition).with_context(|_| ErrorKind::pod_not_found(spec.store))?;
+    let pod: Pod =
+        serde_yaml::from_reader(definition).with_context(|_| ErrorKind::invalid_pod(spec.store))?;
 
     // Inject cluster & pod name annotations.
     let labels = {
@@ -55,10 +56,7 @@ pub async fn start_node(spec: StartNodeSpec<'_>, conf: &Conf) -> Result<()> {
             "io.replicante.dev/play/cluster".to_string(),
             spec.cluster_id.to_string(),
         );
-        labels.insert(
-            "io.replicante.dev/project".to_string(),
-            spec.project,
-        );
+        labels.insert("io.replicante.dev/project".to_string(), spec.project);
         labels
     };
 

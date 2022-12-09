@@ -13,10 +13,7 @@ use crate::settings::paths::PlayPod;
 use crate::Conf;
 
 #[post("/deprovision")]
-pub async fn deprovision(
-    spec: Json<NodeDeprovisionRequest>,
-    conf: Data<Conf>,
-) -> impl Responder {
+pub async fn deprovision(spec: Json<NodeDeprovisionRequest>, conf: Data<Conf>) -> impl Responder {
     // Stop the node pod.
     if let Err(error) = crate::podman::pod_stop(&conf, &spec.node_id).await {
         let formatted_error = format_fail(&error);

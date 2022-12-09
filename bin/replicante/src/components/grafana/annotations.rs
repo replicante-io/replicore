@@ -122,10 +122,9 @@ impl Annotations {
                 //_ => event.code().to_string(),
             },
             Payload::Namespace(namespace) => match namespace {
-                NamespaceEvent::Apply(namespace) => format!(
-                    "A Namespace object named {} was applied",
-                    &namespace.ns_id,
-                ),
+                NamespaceEvent::Apply(namespace) => {
+                    format!("A Namespace object named {} was applied", &namespace.ns_id)
+                }
                 // TODO: for when #[non_exhaustive] is usable
                 //_ => event.code().to_string(),
             },

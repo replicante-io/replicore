@@ -15,11 +15,9 @@ pub fn configure(logger: &Logger, interfaces: &mut Interfaces) -> impl Fn(&mut A
     let list = self::list::List::new(logger, interfaces);
     move |conf| {
         APIRoot::UnstableCoreApi.and_then(&conf.context.flags, |root| {
-            let scope = actix_web::web::scope("/platforms/{namespace}")
-                .service(list.resource());
+            let scope = actix_web::web::scope("/platforms/{namespace}").service(list.resource());
             conf.scoped_service(root.prefix(), scope);
-            let scope = actix_web::web::scope("/platform/{namespace}")
-                .service(get.resource());
+            let scope = actix_web::web::scope("/platform/{namespace}").service(get.resource());
             conf.scoped_service(root.prefix(), scope);
         });
     }

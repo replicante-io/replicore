@@ -71,6 +71,7 @@ impl<Q: TaskQueue> TaskRequest<Q> {
     ///
     /// Tasks handlers can then extract the span context to provide a full
     /// trace of the larger task across processes/systems.
+    #[allow(clippy::result_large_err)]
     pub fn trace(&mut self, context: &SpanContext, tracer: &Tracer) -> OTResult<()> {
         let mut headers = HashMap::new();
         let format = InjectFormat::HttpHeaders(Box::new(&mut headers));

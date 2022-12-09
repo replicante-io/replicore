@@ -71,11 +71,12 @@ pub fn replicante_io_v0(args: ApplierArgs) -> Result<Value> {
     }
 
     // Persist the namespace to the store and emit relevant events.
-    let namespace = Namespace { ns_id, https_transport };
+    let namespace = Namespace {
+        ns_id,
+        https_transport,
+    };
     let span = args.span.map(|span| span.context().clone());
-    let event = Event::builder()
-        .namespace()
-        .apply(namespace.clone());
+    let event = Event::builder().namespace().apply(namespace.clone());
     let code = event.code();
     let stream_key = event.entity_id().partition_key();
     let event = EmitMessage::with(stream_key, event)

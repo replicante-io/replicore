@@ -45,15 +45,11 @@ pub fn find(object: &ApplyObject) -> Option<Applier> {
         (APIV_REPLI_V0, KIND_DISCOVERY_SETTING) => {
             Some(Box::new(discovery_settings::replicante_io_v0))
         }
-        (APIV_REPLI_V0, KIND_NAMESPACE) => {
-            Some(Box::new(namespace::replicante_io_v0))
-        }
+        (APIV_REPLI_V0, KIND_NAMESPACE) => Some(Box::new(namespace::replicante_io_v0)),
         (APIV_REPLI_V0, KIND_ORCHESTRATOR_ACTION) => {
             Some(Box::new(orchestrator_action::replicante_io_v0))
         }
-        (APIV_REPLI_V0, KIND_PLATFORM) => {
-            Some(Box::new(platform::replicante_io_v0))
-        }
+        (APIV_REPLI_V0, KIND_PLATFORM) => Some(Box::new(platform::replicante_io_v0)),
         _ => None,
     }
 }

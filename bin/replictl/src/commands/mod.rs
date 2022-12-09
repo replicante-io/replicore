@@ -7,6 +7,8 @@ mod apply;
 mod cluster;
 mod context;
 mod discovery_settings;
+mod namespace;
+mod platform;
 
 use crate::Cli;
 
@@ -31,6 +33,14 @@ pub enum Command {
     /// Show and manage DiscoverySettings objects.
     #[command(subcommand)]
     DiscoverySettings(discovery_settings::Opt),
+
+    /// Query and manage Namespace objects.
+    #[command(subcommand)]
+    Namespace(namespace::Opt),
+
+    /// Query and manage Platform objects.
+    #[command(subcommand)]
+    Platform(platform::Opt),
 }
 
 /// Execute the selected command.
@@ -41,5 +51,7 @@ pub async fn execute(logger: &Logger, cli: &Cli) -> Result<i32> {
         Command::Cluster(opt) => cluster::execute(logger, cli, opt).await,
         Command::Context(opt) => context::execute(logger, cli, opt).await,
         Command::DiscoverySettings(opt) => discovery_settings::execute(logger, cli, opt).await,
+        Command::Namespace(opt) => namespace::execute(logger, cli, opt).await,
+        Command::Platform(opt) => platform::execute(logger, cli, opt).await,
     }
 }

@@ -37,6 +37,10 @@ thiserror = "^1.0"
 replicante_models_core = { path = "../../models/core" }
 replicante_util_failure = { path = "../../common/util/failure" }
 
+[dependencies.replisdk]
+features = ["replicore-models"]
+version = "^0.1"
+
 [dependencies.reqwest]
 # Use rustls-tls to access PEM files as Identity objects.
 features = ["json", "rustls-tls"]

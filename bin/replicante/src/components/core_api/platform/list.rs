@@ -37,8 +37,7 @@ impl List {
     pub fn resource(&self) -> impl HttpServiceFactory {
         let logger = self.logger.clone();
         let tracer = Arc::clone(&self.tracer);
-        let tracer =
-            TracingMiddleware::with_name(logger, tracer, "/platforms/{namespace}");
+        let tracer = TracingMiddleware::with_name(logger, tracer, "/platforms/{namespace}");
         web::resource("")
             .app_data(self.data.clone())
             .wrap(tracer)

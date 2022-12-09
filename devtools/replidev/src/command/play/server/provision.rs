@@ -13,10 +13,7 @@ use crate::platform::node_start;
 use crate::Conf;
 
 #[post("/provision")]
-pub async fn provision(
-    spec: Json<NodeProvisionRequest>,
-    conf: Data<Conf>,
-) -> impl Responder {
+pub async fn provision(spec: Json<NodeProvisionRequest>, conf: Data<Conf>) -> impl Responder {
     // Check what node to provision.
     let node_group = match spec.cluster.nodes.get(&spec.provision.node_group_id) {
         Some(node_group) => node_group,
@@ -35,7 +32,10 @@ pub async fn provision(
     let cluster_id = &spec.cluster.cluster_id;
     let node_id = node_start::random_node_id(8);
     let store = &spec.cluster.store;
-    let store_version = node_group.store_version.as_ref().unwrap_or(&spec.cluster.store_version);
+    let store_version = node_group
+        .store_version
+        .as_ref()
+        .unwrap_or(&spec.cluster.store_version);
 
     // Prepare the node template environment.
     let paths = crate::settings::paths::PlayPod::new(store, cluster_id, &node_id);

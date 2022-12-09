@@ -189,7 +189,10 @@ impl PersistInterface for Persist {
         let filter = doc! {
             "ns_id": &namespace.ns_id,
         };
-        let collection = self.client.database(&self.db).collection(COLLECTION_NAMESPACES);
+        let collection = self
+            .client
+            .database(&self.db)
+            .collection(COLLECTION_NAMESPACES);
         let document = bson::to_bson(&namespace).with_context(|_| ErrorKind::MongoDBBsonEncode)?;
         let document = match document {
             Bson::Document(document) => document,
@@ -285,7 +288,10 @@ impl PersistInterface for Persist {
             "ns_id": &platform.ns_id,
             "name": &platform.name,
         };
-        let collection = self.client.database(&self.db).collection(COLLECTION_PLATFORMS);
+        let collection = self
+            .client
+            .database(&self.db)
+            .collection(COLLECTION_PLATFORMS);
         let document = bson::to_bson(&platform).with_context(|_| ErrorKind::MongoDBBsonEncode)?;
         let document = match document {
             Bson::Document(document) => document,

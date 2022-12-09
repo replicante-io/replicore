@@ -5,7 +5,10 @@ use crate::Result;
 use super::StartNodeOpt;
 
 pub async fn run(args: &StartNodeOpt, conf: &Conf) -> Result<i32> {
-    let node_id: String = args.node_name.clone().unwrap_or_else(|| node_start::random_node_id(8));
+    let node_id: String = args
+        .node_name
+        .clone()
+        .unwrap_or_else(|| node_start::random_node_id(8));
     let cluster_id = args
         .cluster_id
         .as_deref()

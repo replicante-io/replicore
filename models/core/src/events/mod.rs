@@ -270,7 +270,9 @@ mod tests {
     fn flatten_as_expected() {
         let event = Event {
             payload: Payload::Test(TestEvent::New(1)),
-            timestamp: Utc.datetime_from_str("2014-07-08T09:10:11.012", "%FT%T%.3f").unwrap(),
+            timestamp: Utc
+                .datetime_from_str("2014-07-08T09:10:11.012", "%FT%T%.3f")
+                .unwrap(),
         };
         let actual = serde_json::to_string(&event).unwrap();
         let expected = concat!(
@@ -306,7 +308,9 @@ mod tests {
         };
         let expected = Event {
             payload: Payload::Test(TestEvent::New(1)),
-            timestamp: Utc.datetime_from_str("2014-07-08T09:10:11.012", "%FT%T%.3f").unwrap(),
+            timestamp: Utc
+                .datetime_from_str("2014-07-08T09:10:11.012", "%FT%T%.3f")
+                .unwrap(),
         };
         assert_eq!(actual, expected);
     }

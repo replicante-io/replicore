@@ -36,7 +36,10 @@ impl Namespaces {
 impl NamespacesInterface for Namespaces {
     fn iter(&self, span: Option<SpanContext>) -> Result<Cursor<Namespace>> {
         let filter = doc! {};
-        let collection = self.client.database(&self.db).collection(COLLECTION_NAMESPACES);
+        let collection = self
+            .client
+            .database(&self.db)
+            .collection(COLLECTION_NAMESPACES);
         let cursor = find(collection, filter, span, self.tracer.as_deref())
             .with_context(|_| ErrorKind::MongoDBOperation)?
             .map(|item| item.map_err(|error| error.context(ErrorKind::MongoDBCursor).into()));

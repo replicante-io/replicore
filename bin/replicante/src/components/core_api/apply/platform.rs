@@ -41,8 +41,7 @@ pub fn replicante_io_v0(args: ApplierArgs) -> Result<Value> {
             "A Platform object must have a spec definition",
         ),
         Some(spec) => {
-            let spec: std::result::Result<PlatformSpec, _> =
-                serde_json::from_value(spec.clone());
+            let spec: std::result::Result<PlatformSpec, _> = serde_json::from_value(spec.clone());
             if let Err(error) = spec {
                 errors.collect(
                     "InvalidAttribute",
@@ -78,11 +77,9 @@ pub fn replicante_io_v0(args: ApplierArgs) -> Result<Value> {
         serde_json::from_value(spec).expect("validation should have caught this");
 
     // Persist the platform object to the store and emit relevant events.
-    let platform = spec.to_platform(ns_id, name);
+    let platform = spec.into_platform(ns_id, name);
     let span = args.span.map(|span| span.context().clone());
-    let event = Event::builder()
-        .platform()
-        .apply(platform.clone());
+    let event = Event::builder().platform().apply(platform.clone());
     let code = event.code();
     let stream_key = event.entity_id().partition_key();
     let event = EmitMessage::with(stream_key, event)
@@ -124,7 +121,7 @@ impl PlatformSpec {
     }
 
     /// Convert the apply specification into a full [`Platform`] definition.
-    fn to_platform(self, ns_id: String, name: String) -> Platform {
+    fn into_platform(self, ns_id: String, name: String) -> Platform {
         Platform {
             ns_id,
             name,

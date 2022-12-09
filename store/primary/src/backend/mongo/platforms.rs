@@ -41,7 +41,10 @@ impl PlatformsInterface for Platforms {
         span: Option<SpanContext>,
     ) -> Result<Cursor<PlatformModel>> {
         let filter = doc! {"ns_id": &attrs.ns_id};
-        let collection = self.client.database(&self.db).collection(COLLECTION_PLATFORMS);
+        let collection = self
+            .client
+            .database(&self.db)
+            .collection(COLLECTION_PLATFORMS);
         let cursor = find(collection, filter, span, self.tracer.as_deref())
             .with_context(|_| ErrorKind::MongoDBOperation)?
             .map(|item| item.map_err(|error| error.context(ErrorKind::MongoDBCursor).into()));
