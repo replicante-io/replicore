@@ -1,0 +1,19 @@
+apiVersion: replicante.io/v0
+kind: ClusterSettings
+spec:
+  namespace: default
+  cluster_id: declared-mongo-rs
+
+  active: true
+  platform:
+    # Default to current.
+    #namespace: default
+    platform_id: playground
+  
+  declaration:
+    store: mongo/rs
+    store_version: 3.4
+    nodes:
+      default:
+        desired_count: 3
+        node_class: play.mode
