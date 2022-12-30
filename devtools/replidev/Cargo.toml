@@ -36,7 +36,7 @@ handlebars = "^4.0"
 ignore = "^0.4"
 lazy_static = "^1.4"
 pnet_datalink = "^0.31"
-prettytable-rs = "^0.9"
+prettytable-rs = "^0.10"
 rand = "^0.8"
 replisdk = { version = "^0.1", features = ["platform-models"] }
 semver = "^1.0"
