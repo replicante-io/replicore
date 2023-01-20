@@ -56,4 +56,4 @@ replicante_util_rndid = { path = "../../common/util/rndid" }
 replicore_models_tasks = { path = "../../models/tasks" }
 
 [build-dependencies]
-git2 = "^0.15.0"
+git2 = "^0.16.1"
