@@ -16,7 +16,6 @@ failure = "^0.1.5"
 lazy_static = "^1.0"
 opentracingrust = "^0.4.0"
 prometheus = "^0.13.0"
-replisdk = { version = "^0.1", features = ["platform-models"] }
 slog = "^2.2.0"
 
 replicante_cluster_discovery = { path = "../../../cluster/discovery" }
@@ -28,3 +27,10 @@ replicante_util_failure = { path = "../../../common/util/failure" }
 replicante_util_tracing = { path = "../../../common/util/tracing" }
 
 replicore_models_tasks = { path = "../../../models/tasks" }
+
+[dependencies.replisdk]
+features = [
+  "replicore-models",
+  "platform-models",
+]
+version = "^0.1"

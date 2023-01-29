@@ -3250,6 +3250,7 @@ dependencies = [
  "replicante_util_tracing",
  "replicante_util_upkeep",
  "replicore_models_tasks",
+ "replisdk",
  "serde",
  "slog",
 ]
@@ -3315,6 +3316,7 @@ dependencies = [
  "failure",
  "replicante_models_core",
  "replicante_service_tasks",
+ "replisdk",
  "serde",
  "serde_derive",
  "serde_json",

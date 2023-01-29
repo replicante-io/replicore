@@ -359,6 +359,14 @@ impl PersistInterface for Persist {
         panic!("TODO: MockStore::Persist::next_discovery_run")
     }
 
+    fn next_platform_discovery_run(
+        &self,
+        _platform: &Platform,
+        _: Option<SpanContext>,
+    ) -> Result<()> {
+        panic!("TODO: MockStore::Persist::next_platform_discovery_run")
+    }
+
     fn node(&self, node: Node, _: Option<SpanContext>) -> Result<()> {
         let key = (node.cluster_id.clone(), node.node_id.clone());
         self.state

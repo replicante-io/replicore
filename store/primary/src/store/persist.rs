@@ -101,6 +101,17 @@ impl Persist {
         self.persist.next_discovery_run(settings, span.into())
     }
 
+    /// Update the next_discovery_run of a Platform record.
+    ///
+    /// The new value is based on the current time + `platform.discovery.interval`.
+    pub fn next_platform_discovery_run<S>(&self, platform: &Platform, span: S) -> Result<()>
+    where
+        S: Into<Option<SpanContext>>,
+    {
+        self.persist
+            .next_platform_discovery_run(platform, span.into())
+    }
+
     /// Create or update a Node record.
     pub fn node<S>(&self, node: NodeModel, span: S) -> Result<()>
     where

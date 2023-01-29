@@ -69,11 +69,11 @@ impl Discovery {
         let term = self.term;
         let (shutdown_sender, shutdown_receiver) = LoopingElectionOpts::shutdown_channel();
 
-        debug!(self.logger, "Starting DiscoverySettings scheduler thread");
+        debug!(self.logger, "Starting cluster discovery scheduler thread");
         let thread = ThreadBuilder::new("r:c:discovery")
             .full_name("replicore:component:discovery")
             .spawn(move |scope| {
-                scope.activity("initialising DiscoverySettings scheduler election");
+                scope.activity("initialising cluster discovery scheduler election");
                 let election = coordinator.election("discovery");
                 let looper = self::election::DiscoveryElection::new(logic, logger.clone(), scope);
                 let opts = LoopingElectionOpts::new(election, looper)

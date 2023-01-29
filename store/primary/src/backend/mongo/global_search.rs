@@ -11,12 +11,15 @@ use opentracingrust::Tracer;
 use replicante_externals_mongodb::operations::find;
 use replicante_models_core::cluster::discovery::DiscoverySettings;
 use replicante_models_core::cluster::ClusterSettings;
+use replisdk::core::models::platform::Platform;
 
 use super::super::GlobalSearchInterface;
 use super::constants::COLLECTION_CLUSTER_SETTINGS;
 use super::constants::COLLECTION_DISCOVERY_SETTINGS;
+use super::constants::COLLECTION_PLATFORMS;
 use super::document::ClusterSettingsDocument;
 use super::document::DiscoverySettingsDocument;
+use super::document::PlatformDocument;
 use crate::Cursor;
 use crate::ErrorKind;
 use crate::Result;
@@ -77,6 +80,25 @@ impl GlobalSearchInterface for GlobalSearch {
             .with_context(|_| ErrorKind::MongoDBOperation)?
             .map(|item| item.map_err(|error| error.context(ErrorKind::MongoDBCursor).into()))
             .map(|result: Result<DiscoverySettingsDocument>| result.map(DiscoverySettings::from));
+        Ok(Cursor::new(cursor))
+    }
+
+    fn platform_discoveries(&self, span: Option<SpanContext>) -> Result<Cursor<Platform>> {
+        let filter = doc! {"$and": [
+            {"active": true},
+            {"$or": [
+                {"next_discovery_run": null},
+                {"next_discovery_run": {"$lte": Utc::now()}},
+            ]},
+        ]};
+        let collection = self
+            .client
+            .database(&self.db)
+            .collection(COLLECTION_PLATFORMS);
+        let cursor = find(collection, filter, span, self.tracer.as_deref())
+            .with_context(|_| ErrorKind::MongoDBOperation)?
+            .map(|item| item.map_err(|error| error.context(ErrorKind::MongoDBCursor).into()))
+            .map(|result: Result<PlatformDocument>| result.map(Platform::from));
         Ok(Cursor::new(cursor))
     }
 }

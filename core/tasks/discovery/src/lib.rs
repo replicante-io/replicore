@@ -4,11 +4,13 @@ use std::sync::Arc;
 use failure::ResultExt;
 use opentracingrust::Span;
 use opentracingrust::Tracer;
+use replisdk::core::models::platform::Platform;
 use replisdk::platform::models::ClusterDiscovery;
 use slog::debug;
 use slog::warn;
 use slog::Logger;
 
+use replicante_models_core::cluster::discovery::DiscoverySettings;
 use replicante_models_core::cluster::ClusterSettings;
 use replicante_models_core::events::Event;
 use replicante_service_tasks::TaskHandler;
@@ -60,25 +62,36 @@ impl DiscoverClusters {
     fn handle_task(&self, task: &Task, span: &mut Span) -> Result<()> {
         let payload: DiscoverClustersPayload =
             task.deserialize().context(ErrorKind::DeserializePayload)?;
-        span.tag("discovery.namespace", payload.settings.namespace.clone());
-        span.tag("discovery.name", payload.settings.name.clone());
-        span.tag("discovery.enabled", payload.settings.enabled);
+        if let Some(settings) = payload.settings {
+            return self.handle_discovery(settings, span);
+        }
+        if let Some(platform) = payload.platform {
+            return self.handle_platform(platform, span);
+        }
+        Ok(())
+    }
+
+    /// Process a legacy `DiscoverySettings` request.
+    fn handle_discovery(&self, settings: DiscoverySettings, span: &mut Span) -> Result<()> {
+        span.tag("discovery.namespace", settings.namespace.clone());
+        span.tag("discovery.name", settings.name.clone());
+        span.tag("discovery.enabled", settings.enabled);
 
         // Disabled discoveries should not make it to tasks but just in case they do skip them.
-        if !payload.settings.enabled {
+        if !settings.enabled {
             DISCOVER_DISABLED_COUNT.inc();
             warn!(
                 self.logger,
                 "Skipping discovering clusters from disabled DiscoverySettings";
-                "namespace" => payload.settings.namespace,
-                "name" => payload.settings.name,
+                "namespace" => settings.namespace,
+                "name" => settings.name,
             );
             return Ok(());
         }
 
-        let name = payload.settings.name.clone();
-        let namespace = payload.settings.namespace.clone();
-        let discoveries = replicante_cluster_discovery::discover(payload.settings);
+        let name = settings.name.clone();
+        let namespace = settings.namespace.clone();
+        let discoveries = replicante_cluster_discovery::discover(settings);
         for record in discoveries {
             let record = record.with_context(|_| ErrorKind::fetch_cluster(&namespace, &name))?;
             debug!(
@@ -92,6 +105,42 @@ impl DiscoverClusters {
         Ok(())
     }
 
+    /// Process cluster discovery from a `Platform` record.
+    fn handle_platform(&self, platform: Platform, span: &mut Span) -> Result<()> {
+        span.tag("platform.namespace", platform.ns_id.clone());
+        span.tag("platform.name", platform.name.clone());
+        span.tag("platform.active", platform.active);
+
+        // Inactive platforms should not make it to tasks but just in case they do skip them.
+        if !platform.active {
+            DISCOVER_DISABLED_COUNT.inc();
+            warn!(
+                self.logger,
+                "Skipping discovering clusters from inactive platform Platform";
+                "namespace" => platform.ns_id,
+                "name" => platform.name,
+            );
+            return Ok(());
+        }
+
+        let namespace = platform.ns_id.clone();
+        let name = platform.name.clone();
+        let discoveries = replicante_cluster_discovery::discover_platform(platform)
+            .with_context(|_| ErrorKind::fetch_cluster(&namespace, &name))?;
+        for record in discoveries {
+            let record = record.with_context(|_| ErrorKind::fetch_cluster(&namespace, &name))?;
+            debug!(
+                self.logger,
+                "Processing discovery record";
+                "namespace" => &namespace,
+                "name" => &record.cluster_id,
+            );
+            self.handle_record(&namespace, record, span)?;
+        }
+        Ok(())
+    }
+
+    /// Update or create individual `ClusterDiscovery` records.
     fn handle_record(
         &self,
         namespace: &str,
@@ -164,7 +213,7 @@ impl DiscoverClusters {
 impl TaskHandler<ReplicanteQueues> for DiscoverClusters {
     fn handle(&self, task: Task) {
         let mut span = self.tracer.span("task.discover_clusters").auto_finish();
-        // If the task is carring a tracing context set it as the parent span.
+        // If the task is carrying a tracing context set it as the parent span.
         match task.trace(&self.tracer) {
             Ok(Some(parent)) => span.follows(parent),
             Ok(None) => (),

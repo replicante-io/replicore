@@ -149,7 +149,7 @@ impl Store {
         DiscoverySettings::new(discovery_settings, attrs)
     }
 
-    /// Search for specific records across the entrie system (no namespaces, clusters, ...).
+    /// Search for specific records across the entire system (all namespaces, clusters, ...).
     pub fn global_search(&self) -> GlobalSearch {
         let search = self.store.global_search();
         GlobalSearch::new(search)

@@ -27,3 +27,7 @@ replicante_service_tasks = { path = "../../service/tasks" }
 [dependencies.chrono]
 features = ["serde"]
 version = "^0.4.0"
+
+[dependencies.replisdk]
+features = ["replicore-models"]
+version = "^0.1"

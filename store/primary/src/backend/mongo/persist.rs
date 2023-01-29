@@ -40,6 +40,7 @@ use super::document::ActionDocument;
 use super::document::ClusterSettingsDocument;
 use super::document::DiscoverySettingsDocument;
 use super::document::OrchestratorActionDocument;
+use super::document::PlatformDocument;
 use crate::ErrorKind;
 use crate::Result;
 
@@ -238,6 +239,26 @@ impl PersistInterface for Persist {
             .client
             .database(&self.db)
             .collection(COLLECTION_DISCOVERY_SETTINGS);
+        update_one(collection, filter, update, span, self.tracer.as_deref())
+            .with_context(|_| ErrorKind::MongoDBOperation)?;
+        Ok(())
+    }
+
+    fn next_platform_discovery_run(
+        &self,
+        platform: &Platform,
+        span: Option<SpanContext>,
+    ) -> Result<()> {
+        let filter = doc! {
+            "ns_id": &platform.ns_id,
+            "name": &platform.name,
+        };
+        let next_run = Utc::now() + chrono::Duration::seconds(platform.discovery.interval);
+        let update = doc! {"$set": {"next_discovery_run": next_run}};
+        let collection: Collection<PlatformDocument> = self
+            .client
+            .database(&self.db)
+            .collection(COLLECTION_PLATFORMS);
         update_one(collection, filter, update, span, self.tracer.as_deref())
             .with_context(|_| ErrorKind::MongoDBOperation)?;
         Ok(())

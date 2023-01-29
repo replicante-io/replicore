@@ -31,3 +31,7 @@ replicante_util_tracing = { path = "../../../common/util/tracing" }
 replicante_util_upkeep = { path = "../../../common/util/upkeep" }
 
 replicore_models_tasks = { path = "../../../models/tasks" }
+
+[dependencies.replisdk]
+features = ["replicore-models"]
+version = "^0.1"

@@ -358,6 +358,10 @@ box_interface! {
             &self,
             span: Option<SpanContext>,
         ) -> Result<Cursor<DiscoverySettings>>;
+        fn platform_discoveries(
+            &self,
+            span: Option<SpanContext>,
+        ) -> Result<Cursor<Platform>>;
     }
 }
 
@@ -525,6 +529,11 @@ box_interface! {
         fn next_discovery_run(
             &self,
             settings: DiscoverySettings,
+            span: Option<SpanContext>,
+        ) -> Result<()>;
+        fn next_platform_discovery_run(
+            &self,
+            platform: &Platform,
             span: Option<SpanContext>,
         ) -> Result<()>;
         fn node(&self, node: Node, span: Option<SpanContext>) -> Result<()>;
