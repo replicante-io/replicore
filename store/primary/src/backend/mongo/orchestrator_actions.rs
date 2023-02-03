@@ -1,6 +1,5 @@
 use std::sync::Arc;
 
-use failure::Fail;
 use failure::ResultExt;
 use mongodb::bson::doc;
 use mongodb::options::FindOptions;
@@ -15,6 +14,7 @@ use replicante_models_core::api::orchestrator_action::OrchestratorActionSummary;
 use super::super::OrchestratorActionsInterface;
 use super::constants::COLLECTION_ACTIONS_ORCHESTRATOR;
 use super::document::OrchestratorActionSummaryDocument;
+use super::document::OrchestratorActionSyncSummaryDocument;
 use crate::store::orchestrator_actions::OrchestratorActionsAttributes;
 use crate::Cursor;
 use crate::ErrorKind;
@@ -93,8 +93,12 @@ impl OrchestratorActionsInterface for OrchestratorActions {
             .database(&self.db)
             .collection(COLLECTION_ACTIONS_ORCHESTRATOR);
         let cursor = find_with_options(collection, filter, options, span, self.tracer.as_deref())
-            .with_context(|_| ErrorKind::MongoDBOperation)?
-            .map(|item| item.map_err(|error| error.context(ErrorKind::MongoDBCursor).into()));
+            .with_context(|_| ErrorKind::MongoDBOperation)?;
+        let cursor = cursor.map(|document| {
+            let document: OrchestratorActionSyncSummaryDocument =
+                document.with_context(|_| ErrorKind::MongoDBCursor)?;
+            Ok(OrchestratorActionSyncSummary::from(document))
+        });
         Ok(Cursor::new(cursor))
     }
 }

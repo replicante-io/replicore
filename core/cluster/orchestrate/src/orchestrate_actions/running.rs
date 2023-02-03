@@ -1,6 +1,7 @@
 use anyhow::Result;
 use uuid::Uuid;
 
+use replicante_store_primary::store::Store;
 use replicore_iface_orchestrator_action::OrchestratorActionRegistry;
 
 use super::utils::fail_action;
@@ -12,6 +13,7 @@ pub fn continue_action(
     data: &ClusterOrchestrate,
     data_mut: &mut ClusterOrchestrateMut,
     action_id: Uuid,
+    store: &Store,
 ) -> Result<()> {
     // Get the action and the action implementation handler and metadata.
     let action_record = super::utils::get_orchestrator_action(data, data_mut, action_id)?;
@@ -31,6 +33,6 @@ pub fn continue_action(
     };
 
     // Call shared start/progress action logic.
-    super::progress::run_action(data, data_mut, action_record, action)?;
+    super::progress::run_action(data, data_mut, action_record, action, store)?;
     Ok(())
 }

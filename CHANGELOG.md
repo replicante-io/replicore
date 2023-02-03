@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 ### Added
+- Introduce `platform.replicante.io/node.provision` action.
 - Store `Namespace` objects in the primary store.
 - Store `Platform` objects in the primary store.
 

@@ -5,6 +5,7 @@ use uuid::Uuid;
 
 use replicante_models_core::actions::orchestrator::OrchestratorActionScheduleMode;
 use replicante_models_core::actions::orchestrator::OrchestratorActionState;
+use replicante_store_primary::store::Store;
 use replicore_iface_orchestrator_action::OrchestratorActionRegistry;
 
 use crate::ClusterOrchestrate;
@@ -16,6 +17,7 @@ pub fn start_action(
     data_mut: &mut ClusterOrchestrateMut,
     action_id: Uuid,
     exclusive_by_mode: &mut HashSet<OrchestratorActionScheduleMode>,
+    store: &Store,
 ) -> Result<()> {
     // Get the action and the action implementation handler and metadata.
     let action_record = super::utils::get_orchestrator_action(data, data_mut, action_id)?;
@@ -57,7 +59,7 @@ pub fn start_action(
     }
 
     // Call shared start/progress action logic.
-    let state_after = super::progress::run_action(data, data_mut, action_record, action)?;
+    let state_after = super::progress::run_action(data, data_mut, action_record, action, store)?;
 
     // If the action is still PendingSchedule it is poorly implemented. Fail it.
     if matches!(state_after, OrchestratorActionState::PendingSchedule) {

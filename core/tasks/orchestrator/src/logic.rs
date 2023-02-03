@@ -95,7 +95,7 @@ impl Logic {
         )
         .map_err(replicore_util_errors::AnyWrap::from)
         .with_context(|_| ErrorKind::orchestrate(&namespace, &cluster_id))?;
-        replicore_cluster_orchestrate::orchestrate(&data, data_mut)
+        replicore_cluster_orchestrate::orchestrate(&data, data_mut, &self.store)
             .map_err(replicore_util_errors::AnyWrap::from)
             .with_context(|_| ErrorKind::orchestrate(namespace, cluster_id))?;
         Ok(())

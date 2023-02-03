@@ -2825,6 +2825,7 @@ dependencies = [
  "replicante_util_upkeep",
  "replicore_action_debug",
  "replicore_action_http",
+ "replicore_action_platform",
  "replicore_cluster_orchestrate",
  "replicore_component_discovery_scheduler",
  "replicore_component_orchestrator_scheduler",
@@ -3189,6 +3190,22 @@ dependencies = [
 ]
 
 [[package]]
+name = "replicore_action_platform"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "failure",
+ "replicante_models_core",
+ "replicante_store_primary",
+ "replicore_iface_orchestrator_action",
+ "replisdk",
+ "reqwest 0.11.13",
+ "serde",
+ "serde_json",
+ "thiserror",
+]
+
+[[package]]
 name = "replicore_cluster_orchestrate"
 version = "0.1.0"
 dependencies = [
@@ -3303,6 +3320,7 @@ dependencies = [
  "anyhow",
  "lazy_static",
  "replicante_models_core",
+ "replicante_store_primary",
  "serde",
  "serde_json",
  "thiserror",

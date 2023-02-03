@@ -23,3 +23,4 @@ serde_json = "^1.0"
 thiserror = "^1.0.30"
 
 replicante_models_core = { path = "../../../models/core" }
+replicante_store_primary = { path = "../../../store/primary" }

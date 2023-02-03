@@ -78,7 +78,8 @@ fn fail_action_on_handler_error() {
     let (data, mut data_mut, fixture) =
         self::fixtures::cluster(&mut report, self::fixtures::cluster_fill_running_fail);
 
-    super::orchestrate(&data, &mut data_mut).expect("cluster to orchestrate");
+    super::orchestrate(&data, &mut data_mut, &fixture.mock_store.store())
+        .expect("cluster to orchestrate");
 
     // Check actions have progressed.
     let action = get_action(&fixture, *self::fixtures::UUID3);
@@ -130,7 +131,8 @@ fn fail_action_on_handler_error_with_context() {
         .expect("expect action to be in the store")
         .args = serde_json::json!({ "wrapped": true });
 
-    super::orchestrate(&data, &mut data_mut).expect("cluster to orchestrate");
+    super::orchestrate(&data, &mut data_mut, &fixture.mock_store.store())
+        .expect("cluster to orchestrate");
 
     // Check actions have progressed.
     let action = get_action(&fixture, *self::fixtures::UUID3);
@@ -155,7 +157,8 @@ fn fail_action_on_handler_not_found() {
     let (data, mut data_mut, fixture) =
         self::fixtures::cluster(&mut report, self::fixtures::cluster_fill_running_missing);
 
-    super::orchestrate(&data, &mut data_mut).expect("cluster to orchestrate");
+    super::orchestrate(&data, &mut data_mut, &fixture.mock_store.store())
+        .expect("cluster to orchestrate");
 
     // Check actions have progressed.
     let action = get_action(&fixture, *self::fixtures::UUID4);
@@ -198,7 +201,8 @@ fn final_states_finish_actions() {
             self::fixtures::cluster_fill_running_success(cluster_view, store, registry);
         });
 
-    super::orchestrate(&data, &mut data_mut).expect("cluster to orchestrate");
+    super::orchestrate(&data, &mut data_mut, &fixture.mock_store.store())
+        .expect("cluster to orchestrate");
 
     // Check actions have progressed.
     let action = get_action(&fixture, *self::fixtures::UUID3);
@@ -242,7 +246,8 @@ fn progress_all_running_actions() {
     let (data, mut data_mut, fixture) =
         self::fixtures::cluster(&mut report, self::fixtures::cluster_fill_running_counts);
 
-    super::orchestrate(&data, &mut data_mut).expect("cluster to orchestrate");
+    super::orchestrate(&data, &mut data_mut, &fixture.mock_store.store())
+        .expect("cluster to orchestrate");
 
     // Check actions have progressed.
     let (state, count_index) = get_action_state_and_count_index(&fixture, *self::fixtures::UUID1);
@@ -285,7 +290,8 @@ fn start_pending_actions() {
     let (data, mut data_mut, fixture) =
         self::fixtures::cluster(&mut report, self::fixtures::cluster_fill_pending_actions);
 
-    super::orchestrate(&data, &mut data_mut).expect("cluster to orchestrate");
+    super::orchestrate(&data, &mut data_mut, &fixture.mock_store.store())
+        .expect("cluster to orchestrate");
 
     // Check actions have progressed.
     let (state, count_index) = get_action_state_and_count_index(&fixture, *self::fixtures::UUID6);
@@ -334,7 +340,8 @@ fn timeout_action_default_for_kind() {
         chrono::Utc::now() - chrono::Duration::weeks(1),
     );
 
-    super::orchestrate(&data, &mut data_mut).expect("cluster to orchestrate");
+    super::orchestrate(&data, &mut data_mut, &fixture.mock_store.store())
+        .expect("cluster to orchestrate");
 
     // Check the long-running action failed with timeout.
     let action = get_action(&fixture, *self::fixtures::UUID1);
@@ -384,7 +391,8 @@ fn timeout_action_from_override() {
         .expect("expect action to be in the store")
         .timeout = std::time::Duration::from_secs(60 * 10).into();
 
-    super::orchestrate(&data, &mut data_mut).expect("cluster to orchestrate");
+    super::orchestrate(&data, &mut data_mut, &fixture.mock_store.store())
+        .expect("cluster to orchestrate");
 
     // Check the long-running action failed with timeout.
     let action = get_action(&fixture, *self::fixtures::UUID1);

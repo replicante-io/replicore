@@ -10,6 +10,7 @@ use replicante_models_core::actions::node::ActionRequester;
 use replicante_models_core::actions::node::ActionState;
 use replicante_models_core::actions::orchestrator::OrchestratorAction;
 use replicante_models_core::actions::orchestrator::OrchestratorActionState;
+use replicante_models_core::actions::orchestrator::OrchestratorActionSyncSummary;
 use replicante_models_core::api::node_action::NodeActionSummary;
 use replicante_models_core::api::orchestrator_action::OrchestratorActionSummary;
 use replicante_models_core::cluster::discovery::DiscoverySettings;
@@ -279,6 +280,30 @@ impl From<OrchestratorActionSummaryDocument> for OrchestratorActionSummary {
             cluster_id: action.cluster_id,
             created_ts: action.created_ts.to_chrono(),
             finished_ts: action.finished_ts.map(DateTime::to_chrono),
+            kind: action.kind,
+            state: action.state,
+        }
+    }
+}
+
+/// Wrap an `OrchestratorActionSyncSummary` to deal with MongoDB specific types.
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
+pub struct OrchestratorActionSyncSummaryDocument {
+    pub cluster_id: String,
+    pub action_id: String,
+    pub kind: String,
+    pub state: OrchestratorActionState,
+}
+
+impl From<OrchestratorActionSyncSummaryDocument> for OrchestratorActionSyncSummary {
+    fn from(action: OrchestratorActionSyncSummaryDocument) -> OrchestratorActionSyncSummary {
+        let action_id = action
+            .action_id
+            .parse()
+            .expect("Action ID not converted to UUID");
+        OrchestratorActionSyncSummary {
+            action_id,
+            cluster_id: action.cluster_id,
             kind: action.kind,
             state: action.state,
         }

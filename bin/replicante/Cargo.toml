@@ -28,11 +28,13 @@ path = "src/lib.rs"
 default = [
   "action-debug",
   "action-http",
+  "action-platform",
 ]
 
 # Built-in orchestrator actions to include.
 action-debug = ["replicore_action_debug"]
 action-http = ["replicore_action_http"]
+action-platform = ["replicore_action_platform"]
 
 # Additional introspection and debugging features.
 journald = ["replicante_logging/journald"]
@@ -84,6 +86,7 @@ replicante_util_upkeep = { path = "../../common/util/upkeep" }
 
 replicore_action_debug = { path = "../../core/orchestrator_action/debug", optional = true }
 replicore_action_http = { path = "../../core/orchestrator_action/http", optional = true }
+replicore_action_platform = { path = "../../core/orchestrator_action/platform", optional = true }
 
 replicore_cluster_orchestrate = { path = "../../core/cluster/orchestrate" }
 replicore_component_discovery_scheduler = { path = "../../core/components/discovery_scheduler" }

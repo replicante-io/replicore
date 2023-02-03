@@ -117,7 +117,11 @@ pub fn init_data<'cycle>(
 ///
 /// Docs on what the cluster orchestration steps are documented in the devnotes:
 /// <https://www.replicante.io/docs/devnotes/main/notes/orchestration/>
-pub fn orchestrate(data: &ClusterOrchestrate, mut data_mut: ClusterOrchestrateMut) -> Result<()> {
+pub fn orchestrate(
+    data: &ClusterOrchestrate,
+    mut data_mut: ClusterOrchestrateMut,
+    store: &Store,
+) -> Result<()> {
     debug!(
         data.logger,
         "Starting cluster orchestrate cycle";
@@ -136,7 +140,7 @@ pub fn orchestrate(data: &ClusterOrchestrate, mut data_mut: ClusterOrchestrateMu
 
     // 2. Progress and schedule orchestration actions.
     let timer = self::metrics::ORCHESTRATE_ACTIONS_DURATION.start_timer();
-    self::orchestrate_actions::orchestrate(data, &mut data_mut).map_err(|error| {
+    self::orchestrate_actions::orchestrate(data, &mut data_mut, store).map_err(|error| {
         self::metrics::ORCHESTRATE_ACTIONS_ERRORS_COUNT.inc();
         // TODO(open-telemetry): Proper error tagging on span.
         error

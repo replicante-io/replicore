@@ -177,7 +177,7 @@ fn find_host_port(taken: &HashSet<usize>) -> usize {
         if taken.contains(port) {
             return false;
         }
-        TcpListener::bind(format!("127.0.0.1:{}", port)).is_ok()
+        TcpListener::bind(format!("0.0.0.0:{}", port)).is_ok()
     });
     port.expect("unable to find a usable host port")
 }
