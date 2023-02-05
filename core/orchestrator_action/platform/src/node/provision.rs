@@ -55,6 +55,14 @@ impl OrchestratorAction for Provision {
         // Decode arguments to the action.
         let args: ProvisionArgs = serde_json::from_value(record.args.clone())?;
 
+        // Reject actions provisioning nodes for other clusters
+        if record.cluster_id == args.request.cluster.cluster_id {
+            anyhow::bail!(crate::errors::Arguments::invalid_cluster_scope(
+                &record.cluster_id,
+                args.request.cluster.cluster_id,
+            ));
+        }
+
         // Lookup the Platform instance to provision nodes with.
         let ns_id = args.platform_ref.namespace.unwrap_or_else(|| "default".into());
         let platform_id = args.platform_ref.name;
