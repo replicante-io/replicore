@@ -26,6 +26,7 @@ path = "src/lib.rs"
 [dependencies]
 actix-web = "^4.0"
 anyhow = "^1.0"
+async-trait = "^0.1"
 clap = { version = "^4.0", features = ["derive"] }
 chrono = "^0.4"
 dialoguer = "^0.10"
@@ -38,16 +39,26 @@ lazy_static = "^1.4"
 pnet_datalink = "^0.31"
 prettytable-rs = "^0.9"
 rand = "^0.8"
-replisdk = { version = "^0.1", features = ["platform-models"] }
 semver = "^1.0"
 serde = "^1.0"
 serde_json = "^1.0"
 serde_yaml = "^0.9"
+slog = "^2.7"
+slog-term = "^2.9"
 thiserror = "^1.0"
 toml = "^0.5"
 
 replicante_models_core = { path = "../../models/core" }
 replicante_util_failure = { path = "../../common/util/failure" }
+
+[dependencies.replisdk]
+features = [
+  "platform-framework",
+  "platform-framework_actix",
+  "platform-models",
+  "utils-actix_error",
+]
+version = "^0.1"
 
 [dependencies.tokio]
 features = ["full"]
