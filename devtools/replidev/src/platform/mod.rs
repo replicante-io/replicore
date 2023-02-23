@@ -1,5 +1,4 @@
 use anyhow::Result;
-use failure::Fail;
 use replisdk::platform::framework::IPlatform;
 use replisdk::platform::models::ClusterDiscoveryResponse;
 use replisdk::platform::models::NodeDeprovisionRequest;
@@ -14,6 +13,7 @@ pub mod node_start;
 
 mod discover;
 mod provision;
+mod templates;
 
 /// Manage data store nodes using podman and Replicante's playground templates.
 pub struct Platform {
@@ -43,18 +43,12 @@ impl IPlatform for Platform {
         // Stop the node pod.
         crate::podman::pod_stop(&self.conf, &request.node_id)
             .await
-            .map_err(|error| error.compat())
-            .map_err(anyhow::Error::from)
             .map_err(replisdk::utils::actix::error::Error::from)?;
 
         // Once the pod node is stopped its data can be deleted.
         let paths = PlayPod::new("<deprovision>", &request.cluster_id, &request.node_id);
         let data = paths.data();
-        crate::podman::unshare(&self.conf, vec!["rm", "-r", data])
-            .await
-            .map_err(|error| error.compat())
-            .map_err(anyhow::Error::from)
-            .map_err(replisdk::utils::actix::error::Error::from)?;
+        crate::podman::unshare(&self.conf, vec!["rm", "-r", data]).await?;
         Ok(())
     }
 

@@ -1,12 +1,12 @@
 use std::collections::BTreeMap;
 use std::io::BufRead;
 
-use failure::ResultExt;
+use anyhow::Context;
+use anyhow::Result;
 use serde::Deserialize;
 
+use crate::podman::Error;
 use crate::Conf;
-use crate::ErrorKind;
-use crate::Result;
 
 /// Fetch all node pods and their information.
 pub async fn list_nodes(conf: &Conf) -> Result<Vec<PodInfo>> {
@@ -28,7 +28,7 @@ pub async fn list_nodes(conf: &Conf) -> Result<Vec<PodInfo>> {
         let pod_id = pod_id.expect("unable to read podman ps output");
         let pod = crate::podman::pod_inspect(conf, &pod_id).await?;
         let pod: PodRawInfo = serde_json::from_slice(&pod)
-            .with_context(|_| ErrorKind::response_decode("podman inspect"))?;
+            .with_context(|| Error::pod_not_valid(pod_id))?;
         let cluster = pod
             .labels
             .get("io.replicante.dev/play/cluster")

@@ -2,7 +2,6 @@ use std::collections::hash_map::Entry;
 use std::collections::HashMap;
 
 use anyhow::Result;
-use failure::Fail;
 use replisdk::platform::models::ClusterDiscovery;
 use replisdk::platform::models::ClusterDiscoveryNode;
 use replisdk::platform::models::ClusterDiscoveryResponse;
@@ -14,8 +13,6 @@ pub async fn discover(platform: &Platform) -> Result<ClusterDiscoveryResponse> {
     // List all running nodes.
     let nodes = super::node_list::list_nodes(&platform.conf)
         .await
-        .map_err(|error| error.compat())
-        .map_err(anyhow::Error::from)
         .map_err(replisdk::utils::actix::error::Error::from)?;
 
     // Format nodes into cluster discover records.
