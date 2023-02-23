@@ -1,6 +1,6 @@
 [package]
 name = "replidev"
-version = "0.2.0"
+version = "0.3.0"
 authors = ["Stefano Pogliani <stefano@spogliani.net>"]
 edition = "2018"
 build = "../../build.rs"
@@ -27,14 +27,14 @@ path = "src/lib.rs"
 actix-web = "^4.0"
 anyhow = "^1.0"
 async-trait = "^0.1"
-clap = { version = "^4.0", features = ["derive"] }
 chrono = "^0.4"
+clap = { version = "^4.0", features = ["derive"] }
 dialoguer = "^0.10"
-failure = "^0.1.5"
 git2 = "^0.15"
 glob = "^0.3"
 handlebars = "^4.0"
 ignore = "^0.4"
+json-patch = "^0.3"
 lazy_static = "^1.4"
 pnet_datalink = "^0.31"
 prettytable-rs = "^0.9"
@@ -45,11 +45,11 @@ serde_json = "^1.0"
 serde_yaml = "^0.9"
 slog = "^2.7"
 slog-term = "^2.9"
+tera = "^1.0"
 thiserror = "^1.0"
 toml = "^0.5"
 
 replicante_models_core = { path = "../../models/core" }
-replicante_util_failure = { path = "../../common/util/failure" }
 
 [dependencies.replisdk]
 features = [
@@ -57,6 +57,12 @@ features = [
   "platform-framework_actix",
   "platform-models",
   "utils-actix_error",
+]
+version = "^0.1"
+
+[dependencies.replisdk-experimental]
+features = [
+  "platform-templates",
 ]
 version = "^0.1"
 
@@ -71,6 +77,7 @@ git2 = "^0.15.0"
 
 [patch.crates-io]
 replisdk = { path = "../../../replisdk-rust" }
+replisdk-experimental = { path = "../../../replisdk-rust/experimental" }
 
 
 [workspace]

@@ -11,10 +11,6 @@ mod settings;
 
 use conf::Conf;
 
-pub use error::Error;
-pub use error::ErrorKind;
-pub use error::Result;
-
 pub const VERSION: &str = concat!(
     env!("CARGO_PKG_VERSION"),
     " [",

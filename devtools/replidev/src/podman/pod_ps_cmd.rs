@@ -1,9 +1,9 @@
-use failure::ResultExt;
+use anyhow::Context;
+use anyhow::Result;
 use tokio::process::Command;
 
 use crate::Conf;
-use crate::ErrorKind;
-use crate::Result;
+use crate::podman::Error;
 
 /// Start a pod matching the given definition.
 pub async fn pod_ps<'a, F>(conf: &Conf, format: F, filters: Vec<&str>) -> Result<Vec<u8>>
@@ -25,10 +25,10 @@ where
     let output = podman
         .output()
         .await
-        .with_context(|_| ErrorKind::podman_exec("pod ps"))?;
+        .context(Error::ExecFailed)?;
     if !output.status.success() {
-        let error = ErrorKind::podman_failed("pod ps");
-        return Err(error.into());
+        let error = Error::CommandFailed(output.status.code().unwrap_or(-1));
+        anyhow::bail!(error);
     }
     Ok(output.stdout)
 }

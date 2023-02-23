@@ -1,5 +1,3 @@
-use replicante_util_failure::format_fail;
-
 fn main() {
     let result = replidev::run();
     let error = match result {
@@ -20,13 +18,6 @@ fn main() {
                 }
             }
         }
-        std::process::exit(1);
-    }
-
-    // Fallback to failure errors while we migrate to anyhow.
-    if let Some(error) = error.downcast_ref::<replidev::Error>() {
-        let message = format_fail(error);
-        eprintln!("{}", message);
         std::process::exit(1);
     }
 

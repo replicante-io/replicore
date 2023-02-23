@@ -2,12 +2,21 @@ use actix_web::get;
 use actix_web::App;
 use actix_web::HttpServer;
 use actix_web::Responder;
-use failure::ResultExt;
+use anyhow::Context;
+use anyhow::Result;
 use slog::Drain;
 
 use crate::Conf;
-use crate::ErrorKind;
-use crate::Result;
+
+/// HTTP Server errors.
+#[derive(Debug, thiserror::Error)]
+pub enum ServerError {
+    #[error("unable to bind HTTP server")]
+    Bind,
+
+    #[error("HTTP server failed")]
+    Failed,
+}
 
 /// Run the playground server.
 pub async fn run(conf: Conf) -> Result<i32> {
@@ -28,14 +37,14 @@ pub async fn run(conf: Conf) -> Result<i32> {
             .service(platform)
     })
     .bind(&bind)
-    .with_context(|_| ErrorKind::io("http server failed to bind"))?
+    .context(ServerError::Bind)?
     .run();
 
     // Wait for the server to exit.
     println!("--> Server listening at http://{}", bind);
     server
         .await
-        .with_context(|_| ErrorKind::io("http server failed to run"))?;
+        .context(ServerError::Failed)?;
     Ok(0)
 }
 

@@ -1,8 +1,8 @@
+use anyhow::Result;
 use prettytable::row;
 
 use crate::platform::node_list::list_nodes;
 use crate::Conf;
-use crate::Result;
 
 /// List running node pods.
 ///

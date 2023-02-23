@@ -1,9 +1,9 @@
-use failure::ResultExt;
+use anyhow::Context;
+use anyhow::Result;
 use tokio::process::Command;
 
 use crate::Conf;
-use crate::ErrorKind;
-use crate::Result;
+use crate::podman::Error;
 
 /// Execute a command in a container.
 pub async fn exec(conf: &Conf, name: &str, command: Vec<String>) -> Result<()> {
@@ -14,10 +14,10 @@ pub async fn exec(conf: &Conf, name: &str, command: Vec<String>) -> Result<()> {
         .args(command)
         .status()
         .await
-        .with_context(|_| ErrorKind::podman_exec("exec"))?;
+        .context(Error::ExecFailed)?;
     if !status.success() {
-        let error = ErrorKind::podman_failed("exec");
-        return Err(error.into());
+        let error = Error::CommandFailed(status.code().unwrap_or(-1));
+        anyhow::bail!(error);
     }
     Ok(())
 }

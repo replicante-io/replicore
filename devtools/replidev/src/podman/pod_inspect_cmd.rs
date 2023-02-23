@@ -1,9 +1,9 @@
-use failure::ResultExt;
+use anyhow::Context;
+use anyhow::Result;
 use tokio::process::Command;
 
+use crate::podman::Error;
 use crate::Conf;
-use crate::ErrorKind;
-use crate::Result;
 
 /// Return the output of inspecting a pod.
 pub async fn pod_inspect(conf: &Conf, pod_id: &str) -> Result<Vec<u8>> {
@@ -16,9 +16,9 @@ pub async fn pod_inspect(conf: &Conf, pod_id: &str) -> Result<Vec<u8>> {
     let output = podman
         .output()
         .await
-        .with_context(|_| ErrorKind::podman_exec("pod inspect"))?;
+        .context(Error::ExecFailed)?;
     if !output.status.success() {
-        let error = ErrorKind::podman_failed("pod inspect");
+        let error = Error::CommandFailed(output.status.code().unwrap_or(-1));
         return Err(error.into());
     }
     Ok(output.stdout)

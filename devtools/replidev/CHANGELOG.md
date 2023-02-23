@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Changed
 - **BREAKING**: Migrate `ClusterDiscovery` to `replisdk` provided model.
+- Moving playground templates to Tera.
 - Update dependencies.
 
 ## 0.2.0 - 2022-09-13

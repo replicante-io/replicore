@@ -1,13 +1,13 @@
 use std::collections::BTreeMap;
 use std::fs::File;
 
-use failure::ResultExt;
+use anyhow::Context;
+use anyhow::Result;
 
 use crate::conf::Conf;
+use crate::podman::Error;
 use crate::podman::Pod;
 use crate::settings::paths::Paths;
-use crate::ErrorKind;
-use crate::Result;
 
 use super::CleanCommonOpt;
 
@@ -32,9 +32,9 @@ pub async fn clean(args: &CleanCommonOpt, conf: &Conf) -> Result<i32> {
 pub async fn start(conf: &Conf) -> Result<i32> {
     // Load node definition.
     let def =
-        File::open(REPLICORE_STACK_FILE).with_context(|_| ErrorKind::pod_not_found("replicore"))?;
+        File::open(REPLICORE_STACK_FILE).with_context(|| Error::pod_not_found("replicore"))?;
     let pod: Pod =
-        serde_yaml::from_reader(def).with_context(|_| ErrorKind::invalid_pod("replicore"))?;
+        serde_yaml::from_reader(def).with_context(|| Error::pod_not_valid("replicore"))?;
 
     // Inject cluster & pod name annotations.
     let labels = {
@@ -48,7 +48,7 @@ pub async fn start(conf: &Conf) -> Result<i32> {
 
     // Prepare the stack template environment.
     let paths = crate::settings::paths::PlayReplicore::new();
-    let variables = crate::settings::Variables::new(conf, paths)?;
+    let variables = crate::settings::Variables::new(conf, paths);
 
     // Start the stack pod and run optional initialisation commands.
     crate::podman::pod_start(conf, pod.clone(), REPLICORE_STACK_NAME, labels, variables).await?;

@@ -4,6 +4,7 @@ use serde::Deserialize;
 
 mod build_cmd;
 mod copy_cmd;
+mod error;
 mod exec_cmd;
 mod pod_inspect_cmd;
 mod pod_ps_cmd;
@@ -17,6 +18,7 @@ mod unshare_cmd;
 
 pub use build_cmd::build;
 pub use copy_cmd::copy;
+pub use error::Error;
 pub use exec_cmd::exec;
 pub use pod_inspect_cmd::pod_inspect;
 pub use pod_ps_cmd::pod_ps;

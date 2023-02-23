@@ -1,6 +1,7 @@
 use std::fs::File;
 
-use failure::ResultExt;
+use anyhow::Context;
+use anyhow::Result;
 use handlebars::Handlebars;
 use serde_json::Map;
 use serde_json::Value;
@@ -8,9 +9,42 @@ use serde_json::Value;
 use crate::podman::PodPort;
 use crate::settings::Paths;
 use crate::Conf;
-use crate::Error;
-use crate::ErrorKind;
-use crate::Result;
+
+/// Errors related to variables management.
+#[derive(Debug, thiserror::Error)]
+pub enum VariablesError {
+    #[error("could not render variables into string")]
+    Render,
+
+    #[error("unable to parse variable from command line, got: {0}")]
+    // (cli_value,)
+    VarCliParse(String),
+
+    #[error("unable to decode variables file '{0}'")]
+    // (file_path,)
+    VarFileDecode(String),
+
+    #[error("unable to read variables file '{0}'")]
+    // (file_path,)
+    VarFileRead(String),
+}
+
+impl VariablesError {
+    /// Unable to parse variable from command line.
+    pub fn var_cli_parse<N: Into<String>>(name: N) -> Self {
+        Self::VarCliParse(name.into())
+    }
+
+    /// Unable to decode variables file.
+    pub fn var_file_decode<P: Into<String>>(path: P) -> Self {
+        Self::VarFileDecode(path.into())
+    }
+
+    /// Unable to read variables file.
+    pub fn var_file_read<P: Into<String>>(path: P) -> Self {
+        Self::VarFileRead(path.into())
+    }
+}
 
 /// Variables available for substitution in pod definitions.
 ///
@@ -28,7 +62,7 @@ pub struct Variables {
 }
 
 impl Variables {
-    pub fn new<P: Paths>(conf: &Conf, paths: P) -> Result<Variables> {
+    pub fn new<P: Paths>(conf: &Conf, paths: P) -> Variables {
         let mut vars = Map::new();
         vars.insert("CONF_ROOT".to_string(), paths.configs().into());
         vars.insert("DATA_ROOT".to_string(), paths.data().into());
@@ -41,16 +75,15 @@ impl Variables {
         }
         vars.insert("extra".to_string(), Map::new().into());
         let engine = Handlebars::new();
-        let vars = Variables { engine, vars };
-        Ok(vars)
+        Variables { engine, vars }
     }
 
     /// Inject supported variables in the value.
     pub fn inject(&self, source: &str) -> Result<String> {
         self.engine
             .render_template(source, &self.vars)
-            .with_context(|_| ErrorKind::template_render())
-            .map_err(Error::from)
+            .context(VariablesError::Render)
+            .map_err(anyhow::Error::from)
     }
 
     /// Add a custom variable with the given value.
@@ -70,7 +103,7 @@ impl Variables {
     /// Add JSON files as extra variables passed to the command line.
     ///
     /// These variables must be provided as string in the form NAME=PATH.
-    /// The content of the JSON file is then accessbile as `{{ extra.$NAME }}`.
+    /// The content of the JSON file is then accessible as `{{ extra.$NAME }}`.
     pub fn set_cli_var_files(&mut self, files: &[String]) -> Result<&mut Self> {
         for var in files {
             let mut parts = var.splitn(2, '=');
@@ -80,13 +113,14 @@ impl Variables {
             let file = match parts.next() {
                 Some(value) => value,
                 None => {
-                    let error = ErrorKind::invalid_cli_var(name, "unable to extract value");
-                    return Err(error.into());
+                    //let error = ErrorKind::invalid_cli_var(name, "unable to extract value");
+                    let error = VariablesError::var_cli_parse(name);
+                    anyhow::bail!(error);
                 }
             };
-            let data = File::open(file).with_context(|_| ErrorKind::fs_not_allowed(file))?;
+            let data = File::open(file).with_context(|| VariablesError::var_file_read(file))?;
             let data = serde_json::from_reader(data)
-                .with_context(|_| ErrorKind::invalid_cli_var_file(file))?;
+                .with_context(|| VariablesError::var_file_decode(file))?;
             self.vars
                 .get_mut("extra")
                 .expect("Variables instance is missing the 'extra' object")
@@ -100,7 +134,7 @@ impl Variables {
     /// Add extra variables passed to the command line.
     ///
     /// These variables must be provided as string in the form NAME=VALUE.
-    /// The `$VALUE` of the variable is then accessbile as `{{ extra.$NAME }}`.
+    /// The `$VALUE` of the variable is then accessible as `{{ extra.$NAME }}`.
     pub fn set_cli_vars(&mut self, vars: &[String]) -> Result<&mut Self> {
         for var in vars {
             let mut parts = var.splitn(2, '=');
@@ -110,8 +144,8 @@ impl Variables {
             let value = match parts.next() {
                 Some(value) => value,
                 None => {
-                    let error = ErrorKind::invalid_cli_var(name, "unable to extract value");
-                    return Err(error.into());
+                    let error = VariablesError::var_cli_parse(name);
+                    anyhow::bail!(error);
                 }
             };
             self.vars
@@ -142,5 +176,10 @@ impl Variables {
             }
         }
         self
+    }
+
+    /// Clone the variables defined into a JSON value.
+    pub fn to_json(&self) -> serde_json::Value {
+        self.vars.clone().into()
     }
 }

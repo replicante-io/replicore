@@ -1,6 +1,7 @@
+use anyhow::Result;
+
 use crate::conf::Conf;
 use crate::settings::paths::Paths;
-use crate::Result;
 
 use super::CleanNodeOpt;
 

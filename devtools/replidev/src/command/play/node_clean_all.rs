@@ -1,5 +1,6 @@
+use anyhow::Result;
+
 use crate::Conf;
-use crate::Result;
 
 use super::CleanCommonOpt;
 

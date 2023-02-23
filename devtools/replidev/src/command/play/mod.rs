@@ -136,7 +136,7 @@ pub async fn run(args: Opt, conf: Conf) -> Result<i32> {
     if !conf.project.allow_play() {
         anyhow::bail!(InvalidProject::new(conf.project, "play"));
     }
-    let result = match args {
+    match args {
         Opt::ClusterClean(clean) => cluster_clean::run(&clean, &conf).await,
         Opt::ClusterStop(stop) => cluster_stop::run(&stop, &conf).await,
         Opt::NodeClean(clean) => node_clean::run(&clean, &conf).await,
@@ -148,6 +148,5 @@ pub async fn run(args: Opt, conf: Conf) -> Result<i32> {
         Opt::ReplicoreStart => replicore::start(&conf).await,
         Opt::ReplicoreStop => replicore::stop(&conf).await,
         Opt::Server => server::run(conf).await,
-    };
-    result.map_err(crate::error::wrap_for_anyhow)
+    }
 }
