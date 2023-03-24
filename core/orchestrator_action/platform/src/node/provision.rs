@@ -56,7 +56,7 @@ impl OrchestratorAction for Provision {
         let args: ProvisionArgs = serde_json::from_value(record.args.clone())?;
 
         // Reject actions provisioning nodes for other clusters
-        if record.cluster_id == args.request.cluster.cluster_id {
+        if record.cluster_id != args.request.cluster.cluster_id {
             anyhow::bail!(crate::errors::Arguments::invalid_cluster_scope(
                 &record.cluster_id,
                 args.request.cluster.cluster_id,
@@ -148,8 +148,14 @@ fn platform_provision_http(
     let response = client
         .post(url)
         .json(&request)
-        .send()?
-        .error_for_status()?
-        .json()?;
-    Ok(response)
+        .send()?;
+    match response.error_for_status_ref() {
+        Ok(_) => Ok(response.json()?),
+        Err(error) => {
+            let body = response.text()?;
+            let details = anyhow::anyhow!(body)
+                .context(error);
+            anyhow::bail!(details);
+        }
+    }
 }

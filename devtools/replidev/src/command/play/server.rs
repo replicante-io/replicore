@@ -4,6 +4,7 @@ use actix_web::HttpServer;
 use actix_web::Responder;
 use anyhow::Context;
 use anyhow::Result;
+use replisdk_experimental::platform::templates::TemplateLookup;
 use slog::Drain;
 
 use crate::Conf;
@@ -26,13 +27,18 @@ pub async fn run(conf: Conf) -> Result<i32> {
     let drain = std::sync::Mutex::new(drain).fuse();
     let logger = slog::Logger::root(drain, slog::o!());
 
+    // Load the templates manifest.
+    let factory = crate::platform::TemplateLoader::default();
+    let templates = TemplateLookup::load_file(factory, "stores/manifest.yaml").await?;
+    let templates = actix_web::web::Data::new(templates);
+
     // Set up the ActixWeb server to run the Platform service.
     let bind = conf.play_server_bind.clone();
     let server = HttpServer::new(move || {
         let platform = crate::platform::Platform::from_conf(conf.clone());
         let platform = replisdk::platform::framework::into_actix_service(platform, logger.clone());
-
         App::new()
+            .app_data(templates.clone())
             .service(index)
             .service(platform)
     })

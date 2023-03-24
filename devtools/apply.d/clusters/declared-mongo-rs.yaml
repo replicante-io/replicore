@@ -12,7 +12,7 @@ spec:
   
   declaration:
     store: mongo/rs
-    store_version: 3.4
+    store_version: '4.2.0'
     nodes:
       default:
         desired_count: 3

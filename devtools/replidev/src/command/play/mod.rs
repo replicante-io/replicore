@@ -104,9 +104,13 @@ pub struct StartNodeOpt {
     #[arg(name = "node-name", long)]
     pub node_name: Option<String>,
 
-    /// Store node to start.
+    /// Store software to start the node with.
     #[arg(name = "STORE", required = true)]
     pub store: String,
+
+    /// Version of the store software to start the node with.
+    #[arg(name = "STORE_VERSION", required = true)]
+    pub store_version: String,
 
     /// Add JSON files as extra variables passed to the command line.
     #[arg(name = "var-file", long)]
