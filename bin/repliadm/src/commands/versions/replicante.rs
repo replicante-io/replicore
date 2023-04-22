@@ -51,7 +51,7 @@ fn api_version(cluster: &str) -> Result<Version> {
         .build()
         .with_context(|_| ErrorKind::HttpClient)?;
     let version = client
-        .get(&url)
+        .get(url)
         .send()
         .with_context(|_| ErrorKind::ReplicanteRequest(ENDPOINT_VERSION))?
         .json()

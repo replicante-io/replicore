@@ -2,8 +2,8 @@ use anyhow::Context;
 use anyhow::Result;
 use tokio::process::Command;
 
-use crate::Conf;
 use crate::podman::Error;
+use crate::Conf;
 
 /// Execute a command in podman unshare environment (enter the user ns but not others).
 pub async fn unshare(conf: &Conf, command: Vec<&str>) -> Result<()> {

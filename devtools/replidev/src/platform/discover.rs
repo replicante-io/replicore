@@ -40,6 +40,6 @@ pub async fn discover(platform: &Platform) -> Result<ClusterDiscoveryResponse> {
         };
     }
     Ok(ClusterDiscoveryResponse {
-        clusters: clusters.into_iter().map(|(_, cluster)| cluster).collect(),
+        clusters: clusters.into_values().collect(),
     })
 }

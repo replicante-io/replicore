@@ -39,10 +39,10 @@ pub trait OrchestratorAction: Send + Sync {
     ///
     /// As a guide, the suggestion is to use a `RwLock` combined with an `AtomicBool`:
     ///
-    /// * The implementation will check initialisation with the `AtomicBool`.
-    /// * If the `AtomicBool` is false:
-    ///   * The `RwLock` is acquired for write and the store cloned. 
-    ///   * The `AtomicBool` is set to true to avoid further requests for a write lock.
+    /// - The implementation will check initialisation with the `AtomicBool`.
+    /// - If the `AtomicBool` is false:
+    ///   - The `RwLock` is acquired for write and the store cloned.
+    ///   - The `AtomicBool` is set to true to avoid further requests for a write lock.
     ///
     /// The store instance is the accessed by requesting a read lock and expected always present.
     fn set_store(&self, _store: &Store) {}

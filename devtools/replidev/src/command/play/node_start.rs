@@ -24,7 +24,7 @@ pub async fn run(args: &StartNodeOpt, conf: &Conf) -> Result<i32> {
         json_patch::merge(&mut attributes, &data);
     }
     for var_file in &args.var_files {
-        let data = File::open(&var_file)?;
+        let data = File::open(var_file)?;
         let data = serde_json::from_reader(data)?;
         json_patch::merge(&mut attributes, &data);
     }

@@ -2,8 +2,8 @@ use anyhow::Context;
 use anyhow::Result;
 use tokio::process::Command;
 
-use crate::Conf;
 use crate::podman::Error;
+use crate::Conf;
 
 /// Execute a command in a container.
 pub async fn exec(conf: &Conf, name: &str, command: Vec<String>) -> Result<()> {

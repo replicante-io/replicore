@@ -35,7 +35,10 @@ pub struct Platform {
 impl Platform {
     pub fn from_conf(conf: crate::Conf) -> Platform {
         let agents_address = conf.resolve_play_server_agents_address();
-        Platform { agents_address, conf }
+        Platform {
+            agents_address,
+            conf,
+        }
     }
 }
 

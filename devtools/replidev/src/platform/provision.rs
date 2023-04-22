@@ -38,10 +38,14 @@ pub async fn provision(
         store: request.cluster.store.clone(),
         store_version,
     };
-    let template = context.templates.lookup(&template_context).await?.ok_or_else(|| {
-        let error = anyhow::anyhow!("node template not found");
-        Error::with_status(actix_web::http::StatusCode::NOT_FOUND, error)
-    })?;
+    let template = context
+        .templates
+        .lookup(&template_context)
+        .await?
+        .ok_or_else(|| {
+            let error = anyhow::anyhow!("node template not found");
+            Error::with_status(actix_web::http::StatusCode::NOT_FOUND, error)
+        })?;
     let pod = template.render(template_context)?;
 
     // Create the node pod.
@@ -52,7 +56,9 @@ pub async fn provision(
         project: platform.conf.project.to_string(),
         store: &request.cluster.store,
     };
-    super::node_start::start_node(node_start_spec, &platform.conf).await.map_err(Error::from)?;
+    super::node_start::start_node(node_start_spec, &platform.conf)
+        .await
+        .map_err(Error::from)?;
 
     // Return the provisioning results.
     Ok(NodeProvisionResponse {

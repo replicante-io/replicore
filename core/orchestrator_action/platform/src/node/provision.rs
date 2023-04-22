@@ -20,7 +20,6 @@ use replicore_iface_orchestrator_action::registry_entry_factory;
 use replicore_iface_orchestrator_action::OrchestratorAction;
 use replicore_iface_orchestrator_action::ProgressChanges;
 
-
 /// A simple action that return the arguments it was called for as output.
 #[derive(Default)]
 pub struct Provision {
@@ -40,8 +39,7 @@ registry_entry_factory! {
 impl Provision {
     /// Access the Store instance tracked by this action handler.
     fn get_store(&self) -> Store {
-        self
-            .store
+        self.store
             .read()
             .expect("platform.replicante.io/node.provision store lock poisoned")
             .as_ref()
@@ -64,7 +62,10 @@ impl OrchestratorAction for Provision {
         }
 
         // Lookup the Platform instance to provision nodes with.
-        let ns_id = args.platform_ref.namespace.unwrap_or_else(|| "default".into());
+        let ns_id = args
+            .platform_ref
+            .namespace
+            .unwrap_or_else(|| "default".into());
         let platform_id = args.platform_ref.name;
         let store = self.get_store();
         let platform = store
@@ -145,16 +146,12 @@ fn platform_provision_http(
 
     let client = client.build()?;
     let url = reqwest::Url::parse(&transport.base_url)?.join("/provision")?;
-    let response = client
-        .post(url)
-        .json(&request)
-        .send()?;
+    let response = client.post(url).json(&request).send()?;
     match response.error_for_status_ref() {
         Ok(_) => Ok(response.json()?),
         Err(error) => {
             let body = response.text()?;
-            let details = anyhow::anyhow!(body)
-                .context(error);
+            let details = anyhow::anyhow!(body).context(error);
             anyhow::bail!(details);
         }
     }

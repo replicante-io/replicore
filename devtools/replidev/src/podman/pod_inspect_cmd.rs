@@ -13,10 +13,7 @@ pub async fn pod_inspect(conf: &Conf, pod_id: &str) -> Result<Vec<u8>> {
         .arg("pod")
         .arg("inspect")
         .arg(pod_id);
-    let output = podman
-        .output()
-        .await
-        .context(Error::ExecFailed)?;
+    let output = podman.output().await.context(Error::ExecFailed)?;
     if !output.status.success() {
         let error = Error::CommandFailed(output.status.code().unwrap_or(-1));
         return Err(error.into());

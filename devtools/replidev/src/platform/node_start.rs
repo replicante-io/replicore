@@ -45,7 +45,7 @@ pub async fn start_node(spec: StartNodeSpec<'_>, conf: &Conf) -> Result<()> {
 
     // Define variables needed for pod_start to work.
     // These are different to provisioning attributes which are Platform specific.
-    let paths = crate::settings::paths::PlayPod::new(spec.store, spec.cluster_id, &spec.node_id);
+    let paths = crate::settings::paths::PlayPod::new(spec.store, spec.cluster_id, spec.node_id);
     let variables = crate::settings::Variables::new(conf, paths);
 
     // Start the pod.

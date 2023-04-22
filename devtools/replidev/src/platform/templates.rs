@@ -18,7 +18,9 @@ impl TemplateFactory for TemplateLoader {
             None => "node.yaml".to_string(),
             Some(main) if main.is_string() => main.as_str().unwrap().to_string(),
             Some(_) => {
-                anyhow::bail!(anyhow::anyhow!("the main template for the node must be a string"))
+                anyhow::bail!(anyhow::anyhow!(
+                    "the main template for the node must be a string"
+                ))
             }
         };
         Ok(TeraTemplate { main, tera })

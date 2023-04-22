@@ -75,8 +75,8 @@ fn initialise_and_run(config: Config, logger: Logger) -> Result<bool> {
         .with_context(|_| ErrorKind::InterfaceInit("orchestrator actions registry"))?;
     #[cfg(feature = "action-platform")]
     replicore_action_platform::register(&mut builder)
-            .map_err(replicore_util_errors::AnyWrap::from)
-            .with_context(|_| ErrorKind::InterfaceInit("orchestrator actions registry"))?;
+        .map_err(replicore_util_errors::AnyWrap::from)
+        .with_context(|_| ErrorKind::InterfaceInit("orchestrator actions registry"))?;
 
     builder.build_as_current();
 

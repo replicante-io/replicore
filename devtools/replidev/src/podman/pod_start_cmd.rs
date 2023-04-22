@@ -7,8 +7,8 @@ use anyhow::Result;
 use tokio::process::Command;
 
 use super::Pod;
-use crate::settings::Variables;
 use crate::podman::Error;
+use crate::settings::Variables;
 use crate::Conf;
 
 /// Start a pod matching the given definition.
@@ -51,8 +51,7 @@ where
 
     // Ensure PODMAN_HOSTNAME resolves to slirp4netns virtual router IP.
     if conf.podman_hostname_as_internal {
-        let hostname =
-            std::env::var("HOSTNAME").context(Error::InvalidHostnameVar)?;
+        let hostname = std::env::var("HOSTNAME").context(Error::InvalidHostnameVar)?;
         podman.arg("--add-host").arg(format!(
             "{}:{}",
             hostname, conf.podman_network_virtual_router_ip
@@ -83,10 +82,7 @@ where
     for (key, value) in labels {
         podman.arg("--label").arg(format!("{}={}", key, value));
     }
-    let status = podman
-        .status()
-        .await
-        .context(Error::ExecFailed)?;
+    let status = podman.status().await.context(Error::ExecFailed)?;
     if !status.success() {
         let error = Error::CommandFailed(status.code().unwrap_or(-1));
         anyhow::bail!(error);
@@ -136,8 +132,7 @@ where
         }
         for (mount, source) in bind_sources {
             if !std::path::Path::new(&source).exists() {
-                std::fs::create_dir_all(&source)
-                    .with_context(|| Error::io_error(&source))?;
+                std::fs::create_dir_all(&source).with_context(|| Error::io_error(&source))?;
             }
             if let Some(uid) = mount.uid {
                 crate::podman::unshare(conf, vec!["chown", &uid.to_string(), &source]).await?;
@@ -153,10 +148,7 @@ where
         }
 
         // Run the container.
-        let status = podman
-            .status()
-            .await
-            .context(Error::ExecFailed)?;
+        let status = podman.status().await.context(Error::ExecFailed)?;
         if !status.success() {
             let error = Error::CommandFailed(status.code().unwrap_or(-1));
             anyhow::bail!(error);

@@ -48,9 +48,7 @@ pub async fn run(conf: Conf) -> Result<i32> {
 
     // Wait for the server to exit.
     println!("--> Server listening at http://{}", bind);
-    server
-        .await
-        .context(ServerError::Failed)?;
+    server.await.context(ServerError::Failed)?;
     Ok(0)
 }
 

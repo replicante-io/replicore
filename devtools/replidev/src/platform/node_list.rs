@@ -27,8 +27,8 @@ pub async fn list_nodes(conf: &Conf) -> Result<Vec<PodInfo>> {
     for pod_id in pod_ids.lines() {
         let pod_id = pod_id.expect("unable to read podman ps output");
         let pod = crate::podman::pod_inspect(conf, &pod_id).await?;
-        let pod: PodRawInfo = serde_json::from_slice(&pod)
-            .with_context(|| Error::pod_not_valid(pod_id))?;
+        let pod: PodRawInfo =
+            serde_json::from_slice(&pod).with_context(|| Error::pod_not_valid(pod_id))?;
         let cluster = pod
             .labels
             .get("io.replicante.dev/play/cluster")

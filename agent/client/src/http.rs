@@ -58,7 +58,7 @@ pub struct HttpClient {
 impl Client for HttpClient {
     fn action_info(&self, id: &Uuid, span: Option<SpanContext>) -> Result<ActionInfoResponse> {
         let endpoint = self.endpoint(format!("/api/unstable/actions/info/{}", id));
-        let request = self.client.get(&endpoint);
+        let request = self.client.get(endpoint);
         let span = match (self.tracer.as_ref(), span) {
             (Some(tracer), Some(parent)) => {
                 let options = StartOptions::default().child_of(parent);
@@ -79,7 +79,7 @@ impl Client for HttpClient {
 
     fn actions_finished(&self, span: Option<SpanContext>) -> Result<Vec<ActionListItem>> {
         let endpoint = self.endpoint("/api/unstable/actions/finished");
-        let request = self.client.get(&endpoint);
+        let request = self.client.get(endpoint);
         let span = match (self.tracer.as_ref(), span) {
             (Some(tracer), Some(parent)) => {
                 let options = StartOptions::default().child_of(parent);
@@ -99,7 +99,7 @@ impl Client for HttpClient {
 
     fn actions_queue(&self, span: Option<SpanContext>) -> Result<Vec<ActionListItem>> {
         let endpoint = self.endpoint("/api/unstable/actions/queue");
-        let request = self.client.get(&endpoint);
+        let request = self.client.get(endpoint);
         let span = match (self.tracer.as_ref(), span) {
             (Some(tracer), Some(parent)) => {
                 let options = StartOptions::default().child_of(parent);
@@ -119,7 +119,7 @@ impl Client for HttpClient {
 
     fn agent_info(&self, span: Option<SpanContext>) -> Result<AgentInfo> {
         let endpoint = self.endpoint("/api/unstable/info/agent");
-        let request = self.client.get(&endpoint);
+        let request = self.client.get(endpoint);
         let span = match (self.tracer.as_ref(), span) {
             (Some(tracer), Some(parent)) => {
                 let options = StartOptions::default().child_of(parent);
@@ -139,7 +139,7 @@ impl Client for HttpClient {
 
     fn datastore_info(&self, span: Option<SpanContext>) -> Result<DatastoreInfo> {
         let endpoint = self.endpoint("/api/unstable/info/datastore");
-        let request = self.client.get(&endpoint);
+        let request = self.client.get(endpoint);
         let span = match (self.tracer.as_ref(), span) {
             (Some(tracer), Some(parent)) => {
                 let options = StartOptions::default().child_of(parent);
@@ -163,7 +163,7 @@ impl Client for HttpClient {
 
     fn shards(&self, span: Option<SpanContext>) -> Result<Shards> {
         let endpoint = self.endpoint("/api/unstable/shards");
-        let request = self.client.get(&endpoint);
+        let request = self.client.get(endpoint);
         let span = match (self.tracer.as_ref(), span) {
             (Some(tracer), Some(parent)) => {
                 let options = StartOptions::default().child_of(parent);
@@ -203,7 +203,7 @@ impl Client for HttpClient {
                 (name, value)
             })
             .collect();
-        let request = self.client.post(&endpoint).json(&payload).headers(headers);
+        let request = self.client.post(endpoint).json(&payload).headers(headers);
         let span = match (self.tracer.as_ref(), span) {
             (Some(tracer), Some(parent)) => {
                 let options = StartOptions::default().child_of(parent);

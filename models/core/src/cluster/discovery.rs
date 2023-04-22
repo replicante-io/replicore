@@ -110,19 +110,14 @@ impl HttpDiscovery {
 /// HTTP Method to use when sending requests.
 ///
 /// This impacts the use of pagination and body, which are only possible with POST requests.
-#[derive(Clone, Eq, PartialEq, Hash, Debug, Serialize, Deserialize)]
+#[derive(Clone, Default, Eq, PartialEq, Hash, Debug, Serialize, Deserialize)]
 pub enum HttpRequestMethod {
     #[serde(rename = "GET")]
     Get,
 
+    #[default]
     #[serde(rename = "POST")]
     Post,
-}
-
-impl Default for HttpRequestMethod {
-    fn default() -> HttpRequestMethod {
-        HttpRequestMethod::Post
-    }
 }
 
 /// TLS configuration used to connect to the remote server.
