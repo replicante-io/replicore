@@ -76,8 +76,12 @@ git2 = "^0.15.0"
 
 
 [patch.crates-io]
-replisdk = { path = "../../../replisdk-rust" }
-replisdk-experimental = { path = "../../../replisdk-rust/experimental" }
+# Patch the SDK against a local path for cooperative development.
+#replisdk = { path = "../../../replisdk-rust" }
+#replisdk-experimental = { path = "../../../replisdk-rust/experimental" }
+# Patch the SDK against a git commit for incremental merges between releases.
+replisdk = { git = "https://github.com/replicante-io/replisdk-rust.git", rev = "25c1464" }
+replisdk-experimental = { git = "https://github.com/replicante-io/replisdk-rust.git", rev = "25c1464" }
 
 
 [workspace]
