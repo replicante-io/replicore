@@ -1,6 +1,5 @@
-use std::fs::File;
-
-use failure::ResultExt;
+use anyhow::Context;
+use anyhow::Result;
 use handlebars::Handlebars;
 use serde_json::Map;
 use serde_json::Value;
@@ -8,9 +7,13 @@ use serde_json::Value;
 use crate::podman::PodPort;
 use crate::settings::Paths;
 use crate::Conf;
-use crate::Error;
-use crate::ErrorKind;
-use crate::Result;
+
+/// Errors related to variables management.
+#[derive(Debug, thiserror::Error)]
+pub enum VariablesError {
+    #[error("could not render variables into string")]
+    Render,
+}
 
 /// Variables available for substitution in pod definitions.
 ///
@@ -21,13 +24,14 @@ use crate::Result;
 ///   * `PODMAN_HOSTNAME`: takes the value of $HOSTNAME where replidev is running.
 ///
 /// Additional custom variables can be added with `Variables::set`.
+#[derive(Debug)]
 pub struct Variables {
     engine: Handlebars<'static>,
     vars: Map<String, Value>,
 }
 
 impl Variables {
-    pub fn new<P: Paths>(conf: &Conf, paths: P) -> Result<Variables> {
+    pub fn new<P: Paths>(conf: &Conf, paths: P) -> Variables {
         let mut vars = Map::new();
         vars.insert("CONF_ROOT".to_string(), paths.configs().into());
         vars.insert("DATA_ROOT".to_string(), paths.data().into());
@@ -40,16 +44,15 @@ impl Variables {
         }
         vars.insert("extra".to_string(), Map::new().into());
         let engine = Handlebars::new();
-        let vars = Variables { engine, vars };
-        Ok(vars)
+        Variables { engine, vars }
     }
 
     /// Inject supported variables in the value.
     pub fn inject(&self, source: &str) -> Result<String> {
         self.engine
             .render_template(source, &self.vars)
-            .with_context(|_| ErrorKind::template_render())
-            .map_err(Error::from)
+            .context(VariablesError::Render)
+            .map_err(anyhow::Error::from)
     }
 
     /// Add a custom variable with the given value.
@@ -64,63 +67,6 @@ impl Variables {
         }
         self.vars.insert(name, value.into());
         self
-    }
-
-    /// Add JSON files as extra variables passed to the command line.
-    ///
-    /// These variables must be provided as string in the form NAME=PATH.
-    /// The content of the JSON file is then accessbile as `{{ extra.$NAME }}`.
-    pub fn set_cli_var_files(&mut self, files: &[String]) -> Result<&mut Self> {
-        for var in files {
-            let mut parts = var.splitn(2, '=');
-            let name = parts
-                .next()
-                .expect("splitn must return at least the first item");
-            let file = match parts.next() {
-                Some(value) => value,
-                None => {
-                    let error = ErrorKind::invalid_cli_var(name, "unable to extract value");
-                    return Err(error.into());
-                }
-            };
-            let data = File::open(file).with_context(|_| ErrorKind::fs_not_allowed(file))?;
-            let data = serde_json::from_reader(data)
-                .with_context(|_| ErrorKind::invalid_cli_var_file(file))?;
-            self.vars
-                .get_mut("extra")
-                .expect("Variables instance is missing the 'extra' object")
-                .as_object_mut()
-                .expect("Variables instance has non-object 'extra'")
-                .insert(name.to_string(), data);
-        }
-        Ok(self)
-    }
-
-    /// Add extra variables passed to the command line.
-    ///
-    /// These variables must be provided as string in the form NAME=VALUE.
-    /// The `$VALUE` of the variable is then accessbile as `{{ extra.$NAME }}`.
-    pub fn set_cli_vars(&mut self, vars: &[String]) -> Result<&mut Self> {
-        for var in vars {
-            let mut parts = var.splitn(2, '=');
-            let name = parts
-                .next()
-                .expect("splitn must return at least the first item");
-            let value = match parts.next() {
-                Some(value) => value,
-                None => {
-                    let error = ErrorKind::invalid_cli_var(name, "unable to extract value");
-                    return Err(error.into());
-                }
-            };
-            self.vars
-                .get_mut("extra")
-                .expect("Variables instance is missing the 'extra' object")
-                .as_object_mut()
-                .expect("Variables instance has non-object 'extra'")
-                .insert(name.to_string(), value.into());
-        }
-        Ok(self)
     }
 
     /// Add a variable for the POD/NODE name.

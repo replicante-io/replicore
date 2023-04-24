@@ -2,8 +2,9 @@ use serde::Deserialize;
 use serde::Serialize;
 
 /// Control the Kafka acknowledgement level for published messages.
-#[derive(Clone, Eq, PartialEq, Hash, Debug, Serialize, Deserialize)]
+#[derive(Clone, Default, Eq, PartialEq, Hash, Debug, Serialize, Deserialize)]
 pub enum AckLevel {
+    #[default]
     #[serde(rename = "all")]
     All,
 
@@ -22,12 +23,6 @@ impl AckLevel {
             AckLevel::LeaderOnly => "1",
             AckLevel::NoAck => "0",
         }
-    }
-}
-
-impl Default for AckLevel {
-    fn default() -> AckLevel {
-        AckLevel::All
     }
 }
 

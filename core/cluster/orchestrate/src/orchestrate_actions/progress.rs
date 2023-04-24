@@ -4,6 +4,7 @@ use anyhow::Result;
 use replicante_models_core::actions::orchestrator::OrchestratorAction;
 use replicante_models_core::actions::orchestrator::OrchestratorActionState;
 use replicante_models_core::events::Event;
+use replicante_store_primary::store::Store;
 use replicore_iface_orchestrator_action::OrchestratorActionRegistryEntry;
 
 use super::utils::emit_event;
@@ -18,10 +19,12 @@ pub fn run_action(
     data_mut: &mut ClusterOrchestrateMut,
     action_record: OrchestratorAction,
     action: &OrchestratorActionRegistryEntry,
+    store: &Store,
 ) -> Result<OrchestratorActionState> {
     let span_context = data_mut.span.as_ref().map(|span| span.context().clone());
 
     // Progress the action and handle errors.
+    action.handler.set_store(store);
     let updates = match action.handler.progress(&action_record) {
         Err(error) => {
             fail_action(data, data_mut, action_record, error)?;

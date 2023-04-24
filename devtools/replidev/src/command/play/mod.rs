@@ -104,9 +104,13 @@ pub struct StartNodeOpt {
     #[arg(name = "node-name", long)]
     pub node_name: Option<String>,
 
-    /// Store node to start.
+    /// Store software to start the node with.
     #[arg(name = "STORE", required = true)]
     pub store: String,
+
+    /// Version of the store software to start the node with.
+    #[arg(name = "STORE_VERSION", required = true)]
+    pub store_version: String,
 
     /// Add JSON files as extra variables passed to the command line.
     #[arg(name = "var-file", long)]
@@ -136,7 +140,7 @@ pub async fn run(args: Opt, conf: Conf) -> Result<i32> {
     if !conf.project.allow_play() {
         anyhow::bail!(InvalidProject::new(conf.project, "play"));
     }
-    let result = match args {
+    match args {
         Opt::ClusterClean(clean) => cluster_clean::run(&clean, &conf).await,
         Opt::ClusterStop(stop) => cluster_stop::run(&stop, &conf).await,
         Opt::NodeClean(clean) => node_clean::run(&clean, &conf).await,
@@ -148,6 +152,5 @@ pub async fn run(args: Opt, conf: Conf) -> Result<i32> {
         Opt::ReplicoreStart => replicore::start(&conf).await,
         Opt::ReplicoreStop => replicore::stop(&conf).await,
         Opt::Server => server::run(conf).await,
-    };
-    result.map_err(crate::error::wrap_for_anyhow)
+    }
 }

@@ -9,6 +9,7 @@ use mongodb::sync::Client;
 use mongodb::sync::Collection;
 use opentracingrust::SpanContext;
 use opentracingrust::Tracer;
+use replisdk::core::models::platform::Platform;
 use replisdk::platform::models::ClusterDiscovery as ClusterDiscoveryModel;
 
 use replicante_externals_mongodb::operations::replace_one;
@@ -21,6 +22,7 @@ use replicante_models_core::agent::Node as NodeModel;
 use replicante_models_core::agent::Shard as ShardModel;
 use replicante_models_core::cluster::discovery::DiscoverySettings as DiscoverySettingsModel;
 use replicante_models_core::cluster::ClusterSettings as ClusterSettingsModel;
+use replicante_models_core::scope::Namespace as NamespaceModel;
 
 use super::super::PersistInterface;
 use super::constants::COLLECTION_ACTIONS;
@@ -30,12 +32,15 @@ use super::constants::COLLECTION_AGENTS_INFO;
 use super::constants::COLLECTION_CLUSTER_SETTINGS;
 use super::constants::COLLECTION_DISCOVERIES;
 use super::constants::COLLECTION_DISCOVERY_SETTINGS;
+use super::constants::COLLECTION_NAMESPACES;
 use super::constants::COLLECTION_NODES;
+use super::constants::COLLECTION_PLATFORMS;
 use super::constants::COLLECTION_SHARDS;
 use super::document::ActionDocument;
 use super::document::ClusterSettingsDocument;
 use super::document::DiscoverySettingsDocument;
 use super::document::OrchestratorActionDocument;
+use super::document::PlatformDocument;
 use crate::ErrorKind;
 use crate::Result;
 
@@ -181,6 +186,24 @@ impl PersistInterface for Persist {
         Ok(())
     }
 
+    fn namespace(&self, namespace: NamespaceModel, span: Option<SpanContext>) -> Result<()> {
+        let filter = doc! {
+            "ns_id": &namespace.ns_id,
+        };
+        let collection = self
+            .client
+            .database(&self.db)
+            .collection(COLLECTION_NAMESPACES);
+        let document = bson::to_bson(&namespace).with_context(|_| ErrorKind::MongoDBBsonEncode)?;
+        let document = match document {
+            Bson::Document(document) => document,
+            _ => panic!("Namespace failed to encode as BSON document"),
+        };
+        replace_one(collection, filter, document, span, self.tracer.as_deref())
+            .with_context(|_| ErrorKind::MongoDBOperation)?;
+        Ok(())
+    }
+
     fn next_cluster_orchestrate(
         &self,
         settings: ClusterSettingsModel,
@@ -221,6 +244,26 @@ impl PersistInterface for Persist {
         Ok(())
     }
 
+    fn next_platform_discovery_run(
+        &self,
+        platform: &Platform,
+        span: Option<SpanContext>,
+    ) -> Result<()> {
+        let filter = doc! {
+            "ns_id": &platform.ns_id,
+            "name": &platform.name,
+        };
+        let next_run = Utc::now() + chrono::Duration::seconds(platform.discovery.interval);
+        let update = doc! {"$set": {"next_discovery_run": next_run}};
+        let collection: Collection<PlatformDocument> = self
+            .client
+            .database(&self.db)
+            .collection(COLLECTION_PLATFORMS);
+        update_one(collection, filter, update, span, self.tracer.as_deref())
+            .with_context(|_| ErrorKind::MongoDBOperation)?;
+        Ok(())
+    }
+
     fn node(&self, node: NodeModel, span: Option<SpanContext>) -> Result<()> {
         let filter = doc! {
             "cluster_id": &node.cluster_id,
@@ -255,6 +298,25 @@ impl PersistInterface for Persist {
         let document = match document {
             Bson::Document(document) => document,
             _ => panic!("OrchestratorAction failed to encode as BSON document"),
+        };
+        replace_one(collection, filter, document, span, self.tracer.as_deref())
+            .with_context(|_| ErrorKind::MongoDBOperation)?;
+        Ok(())
+    }
+
+    fn platform(&self, platform: Platform, span: Option<SpanContext>) -> Result<()> {
+        let filter = doc! {
+            "ns_id": &platform.ns_id,
+            "name": &platform.name,
+        };
+        let collection = self
+            .client
+            .database(&self.db)
+            .collection(COLLECTION_PLATFORMS);
+        let document = bson::to_bson(&platform).with_context(|_| ErrorKind::MongoDBBsonEncode)?;
+        let document = match document {
+            Bson::Document(document) => document,
+            _ => panic!("Platform failed to encode as BSON document"),
         };
         replace_one(collection, filter, document, span, self.tracer.as_deref())
             .with_context(|_| ErrorKind::MongoDBOperation)?;

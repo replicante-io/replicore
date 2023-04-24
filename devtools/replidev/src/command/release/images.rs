@@ -193,7 +193,6 @@ async fn extract_directory(conf: &Conf, path: &str, target_name: Option<String>)
         ],
     )
     .await
-    .map_err(failure::Fail::compat)
     .with_context(|| format!("Failed to archive {}", path))?;
 
     // Copy the archive out of the extractor container.

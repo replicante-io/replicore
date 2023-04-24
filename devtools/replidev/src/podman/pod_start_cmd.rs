@@ -2,14 +2,14 @@ use std::collections::BTreeMap;
 use std::collections::HashSet;
 use std::net::TcpListener;
 
-use failure::ResultExt;
+use anyhow::Context;
+use anyhow::Result;
 use tokio::process::Command;
 
 use super::Pod;
+use crate::podman::Error;
 use crate::settings::Variables;
 use crate::Conf;
-use crate::ErrorKind;
-use crate::Result;
 
 /// Start a pod matching the given definition.
 pub async fn pod_start<S>(
@@ -51,8 +51,7 @@ where
 
     // Ensure PODMAN_HOSTNAME resolves to slirp4netns virtual router IP.
     if conf.podman_hostname_as_internal {
-        let hostname =
-            std::env::var("HOSTNAME").with_context(|_| ErrorKind::invalid_hostname_var())?;
+        let hostname = std::env::var("HOSTNAME").context(Error::InvalidHostnameVar)?;
         podman.arg("--add-host").arg(format!(
             "{}:{}",
             hostname, conf.podman_network_virtual_router_ip
@@ -83,13 +82,10 @@ where
     for (key, value) in labels {
         podman.arg("--label").arg(format!("{}={}", key, value));
     }
-    let status = podman
-        .status()
-        .await
-        .with_context(|_| ErrorKind::podman_exec("pod create"))?;
+    let status = podman.status().await.context(Error::ExecFailed)?;
     if !status.success() {
-        let error = ErrorKind::podman_failed("pod create");
-        return Err(error.into());
+        let error = Error::CommandFailed(status.code().unwrap_or(-1));
+        anyhow::bail!(error);
     }
 
     // Start containers in the given order, the first container will also start the pod.
@@ -136,8 +132,7 @@ where
         }
         for (mount, source) in bind_sources {
             if !std::path::Path::new(&source).exists() {
-                std::fs::create_dir_all(&source)
-                    .with_context(|_| ErrorKind::fs_not_allowed(&source))?;
+                std::fs::create_dir_all(&source).with_context(|| Error::io_error(&source))?;
             }
             if let Some(uid) = mount.uid {
                 crate::podman::unshare(conf, vec!["chown", &uid.to_string(), &source]).await?;
@@ -153,13 +148,10 @@ where
         }
 
         // Run the container.
-        let status = podman
-            .status()
-            .await
-            .with_context(|_| ErrorKind::podman_exec("run"))?;
+        let status = podman.status().await.context(Error::ExecFailed)?;
         if !status.success() {
-            let error = ErrorKind::podman_failed("run");
-            return Err(error.into());
+            let error = Error::CommandFailed(status.code().unwrap_or(-1));
+            anyhow::bail!(error);
         }
 
         // If the container has a start delay wait a bit.
@@ -177,7 +169,7 @@ fn find_host_port(taken: &HashSet<usize>) -> usize {
         if taken.contains(port) {
             return false;
         }
-        TcpListener::bind(format!("127.0.0.1:{}", port)).is_ok()
+        TcpListener::bind(format!("0.0.0.0:{}", port)).is_ok()
     });
     port.expect("unable to find a usable host port")
 }

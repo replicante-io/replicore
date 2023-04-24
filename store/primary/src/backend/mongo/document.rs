@@ -10,10 +10,12 @@ use replicante_models_core::actions::node::ActionRequester;
 use replicante_models_core::actions::node::ActionState;
 use replicante_models_core::actions::orchestrator::OrchestratorAction;
 use replicante_models_core::actions::orchestrator::OrchestratorActionState;
+use replicante_models_core::actions::orchestrator::OrchestratorActionSyncSummary;
 use replicante_models_core::api::node_action::NodeActionSummary;
 use replicante_models_core::api::orchestrator_action::OrchestratorActionSummary;
 use replicante_models_core::cluster::discovery::DiscoverySettings;
 use replicante_models_core::cluster::ClusterSettings;
+use replisdk::core::models::platform::Platform;
 
 /// Wrap an `Action` with store only fields and MongoDB specific types.
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
@@ -281,5 +283,54 @@ impl From<OrchestratorActionSummaryDocument> for OrchestratorActionSummary {
             kind: action.kind,
             state: action.state,
         }
+    }
+}
+
+/// Wrap an `OrchestratorActionSyncSummary` to deal with MongoDB specific types.
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
+pub struct OrchestratorActionSyncSummaryDocument {
+    pub cluster_id: String,
+    pub action_id: String,
+    pub kind: String,
+    pub state: OrchestratorActionState,
+}
+
+impl From<OrchestratorActionSyncSummaryDocument> for OrchestratorActionSyncSummary {
+    fn from(action: OrchestratorActionSyncSummaryDocument) -> OrchestratorActionSyncSummary {
+        let action_id = action
+            .action_id
+            .parse()
+            .expect("Action ID not converted to UUID");
+        OrchestratorActionSyncSummary {
+            action_id,
+            cluster_id: action.cluster_id,
+            kind: action.kind,
+            state: action.state,
+        }
+    }
+}
+
+/// Wraps a `Platform` with store only fields.
+#[derive(Clone, Eq, PartialEq, Debug, Serialize, Deserialize)]
+pub struct PlatformDocument {
+    #[serde(flatten)]
+    pub platform: Platform,
+
+    /// Timestamp for the next expected discovery run.
+    pub next_discovery_run: Option<DateTime>,
+}
+
+impl From<Platform> for PlatformDocument {
+    fn from(platform: Platform) -> PlatformDocument {
+        PlatformDocument {
+            platform,
+            next_discovery_run: None,
+        }
+    }
+}
+
+impl From<PlatformDocument> for Platform {
+    fn from(document: PlatformDocument) -> Platform {
+        document.platform
     }
 }

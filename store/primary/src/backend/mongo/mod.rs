@@ -21,11 +21,15 @@ use super::DataImpl;
 use super::DiscoverySettingsImpl;
 use super::GlobalSearchImpl;
 use super::LegacyImpl;
+use super::NamespaceImpl;
+use super::NamespacesImpl;
 use super::NodeImpl;
 use super::NodesImpl;
 use super::OrchestratorActionImpl;
 use super::OrchestratorActionsImpl;
 use super::PersistImpl;
+use super::PlatformImpl;
+use super::PlatformsImpl;
 use super::ShardImpl;
 use super::ShardsImpl;
 use super::StoreInterface;
@@ -45,11 +49,15 @@ mod discovery_settings;
 mod document;
 mod global_search;
 mod legacy;
+mod namespace;
+mod namespaces;
 mod node;
 mod nodes;
 mod orchestrator_action;
 mod orchestrator_actions;
 mod persist;
+mod platform;
+mod platforms;
 mod shard;
 mod shards;
 mod validate;
@@ -186,6 +194,24 @@ impl StoreInterface for Store {
         LegacyImpl::new(legacy)
     }
 
+    fn namespace(&self) -> NamespaceImpl {
+        let namespace = self::namespace::Namespace::new(
+            self.client.clone(),
+            self.db.clone(),
+            self.tracer.clone(),
+        );
+        NamespaceImpl::new(namespace)
+    }
+
+    fn namespaces(&self) -> NamespacesImpl {
+        let namespaces = self::namespaces::Namespaces::new(
+            self.client.clone(),
+            self.db.clone(),
+            self.tracer.clone(),
+        );
+        NamespacesImpl::new(namespaces)
+    }
+
     fn node(&self) -> NodeImpl {
         let node = self::node::Node::new(self.client.clone(), self.db.clone(), self.tracer.clone());
         NodeImpl::new(node)
@@ -219,6 +245,24 @@ impl StoreInterface for Store {
         let persist =
             self::persist::Persist::new(self.client.clone(), self.db.clone(), self.tracer.clone());
         PersistImpl::new(persist)
+    }
+
+    fn platform(&self) -> super::PlatformImpl {
+        let platform = self::platform::Platform::new(
+            self.client.clone(),
+            self.db.clone(),
+            self.tracer.clone(),
+        );
+        PlatformImpl::new(platform)
+    }
+
+    fn platforms(&self) -> super::PlatformsImpl {
+        let platforms = self::platforms::Platforms::new(
+            self.client.clone(),
+            self.db.clone(),
+            self.tracer.clone(),
+        );
+        PlatformsImpl::new(platforms)
     }
 
     fn shard(&self) -> ShardImpl {

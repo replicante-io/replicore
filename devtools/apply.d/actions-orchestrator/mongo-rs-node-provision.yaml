@@ -1,0 +1,26 @@
+apiVersion: replicante.io/v0
+kind: OrchestratorAction
+
+metadata:
+  namespace: default
+  cluster: manual-mongo-rs
+  approval: granted
+
+spec:
+  action: platform.replicante.io/node.provision
+  args:
+    platform_ref:
+      namespace: ~
+      name: playground
+
+    cluster:
+      cluster_id: manual-mongo-rs
+      store: mongo/rs
+      store_version: '4.2.0'
+      nodes:
+        default:
+          desired_count: 3
+          node_class: play.mode
+
+    provision:
+      node_group_id: default

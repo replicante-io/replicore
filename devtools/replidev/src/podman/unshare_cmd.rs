@@ -1,9 +1,9 @@
-use failure::ResultExt;
+use anyhow::Context;
+use anyhow::Result;
 use tokio::process::Command;
 
+use crate::podman::Error;
 use crate::Conf;
-use crate::ErrorKind;
-use crate::Result;
 
 /// Execute a command in podman unshare environment (enter the user ns but not others).
 pub async fn unshare(conf: &Conf, command: Vec<&str>) -> Result<()> {
@@ -12,10 +12,10 @@ pub async fn unshare(conf: &Conf, command: Vec<&str>) -> Result<()> {
         .args(command)
         .status()
         .await
-        .with_context(|_| ErrorKind::podman_exec("unshare"))?;
+        .context(Error::ExecFailed)?;
     if !status.success() {
-        let error = ErrorKind::podman_failed("unshare");
-        return Err(error.into());
+        let error = Error::CommandFailed(status.code().unwrap_or(-1));
+        anyhow::bail!(error);
     }
     Ok(())
 }

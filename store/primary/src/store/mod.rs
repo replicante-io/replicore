@@ -24,11 +24,15 @@ pub mod cluster;
 pub mod discovery_settings;
 pub mod global_search;
 pub mod legacy;
+pub mod namespace;
+pub mod namespaces;
 pub mod node;
 pub mod nodes;
 pub mod orchestrator_action;
 pub mod orchestrator_actions;
 pub mod persist;
+pub mod platform;
+pub mod platforms;
 pub mod shard;
 pub mod shards;
 
@@ -40,11 +44,15 @@ use self::cluster::Cluster;
 use self::discovery_settings::DiscoverySettings;
 use self::global_search::GlobalSearch;
 use self::legacy::Legacy;
+use self::namespace::Namespace;
+use self::namespaces::Namespaces;
 use self::node::Node;
 use self::nodes::Nodes;
 use self::orchestrator_action::OrchestratorAction;
 use self::orchestrator_actions::OrchestratorActions;
 use self::persist::Persist;
+use self::platform::Platform;
+use self::platforms::Platforms;
 use self::shard::Shard;
 use self::shards::Shards;
 
@@ -141,7 +149,7 @@ impl Store {
         DiscoverySettings::new(discovery_settings, attrs)
     }
 
-    /// Search for specific records across the entrie system (no namespaces, clusters, ...).
+    /// Search for specific records across the entire system (all namespaces, clusters, ...).
     pub fn global_search(&self) -> GlobalSearch {
         let search = self.store.global_search();
         GlobalSearch::new(search)
@@ -151,6 +159,21 @@ impl Store {
     pub fn legacy(&self) -> Legacy {
         let legacy = self.store.legacy();
         Legacy::new(legacy)
+    }
+
+    /// Operate on all namespaces in the cluster.
+    pub fn namespace(&self, namespace_id: String) -> Namespace {
+        let namespace = self.store.namespace();
+        let attrs = self::namespace::NamespaceAttributes {
+            ns_id: namespace_id,
+        };
+        Namespace::new(namespace, attrs)
+    }
+
+    /// Operate on all namespaces on the RepliCore instance.
+    pub fn namespaces(&self) -> Namespaces {
+        let namespaces = self.store.namespaces();
+        Namespaces::new(namespaces)
     }
 
     /// Operate on the node identified by the provided cluster_id and node_id.
@@ -194,6 +217,32 @@ impl Store {
     pub fn persist(&self) -> Persist {
         let persist = self.store.persist();
         Persist::new(persist)
+    }
+
+    /// Operate on the `Platform` identified by the provided namespace and platform IDs.
+    pub fn platform<S1, S2>(&self, ns_id: S1, platform_id: S2) -> Platform
+    where
+        S1: Into<String>,
+        S2: Into<String>,
+    {
+        let platform = self.store.platform();
+        let attrs = self::platform::PlatformAttributes {
+            ns_id: ns_id.into(),
+            platform_id: platform_id.into(),
+        };
+        Platform::new(platform, attrs)
+    }
+
+    /// Operate on all `Platform`s in the given namespace.
+    pub fn platforms<S1>(&self, ns_id: S1) -> Platforms
+    where
+        S1: Into<String>,
+    {
+        let platforms = self.store.platforms();
+        let attrs = self::platforms::PlatformsAttributes {
+            ns_id: ns_id.into(),
+        };
+        Platforms::new(platforms, attrs)
     }
 
     /// Operate on the shard identified by the provided cluster_id, node_id, shard_id.

@@ -63,6 +63,9 @@ pub enum ErrorKind {
 
     #[fail(display = "HTTP request failed")]
     HttpRequest,
+
+    #[fail(display = "Invalid HTTP URL for platform")]
+    HttpUrlInvalid,
 }
 
 impl ErrorKind {
@@ -73,6 +76,7 @@ impl ErrorKind {
             ErrorKind::HttpHeaderName(_) => "HttpHeaderName",
             ErrorKind::HttpHeaderValue(_) => "HttpHeaderValue",
             ErrorKind::HttpRequest => "HttpRequest",
+            ErrorKind::HttpUrlInvalid => "HttpUrlInvalid",
         };
         Some(name)
     }

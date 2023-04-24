@@ -1,5 +1,6 @@
 use anyhow::Context as _;
 use anyhow::Result;
+use replisdk::core::models::platform::Platform;
 use slog::debug;
 use slog::Logger;
 use uuid::Uuid;
@@ -11,6 +12,7 @@ use replicante_models_core::api::node_action::NodeActionSummary;
 use replicante_models_core::api::orchestrator_action::OrchestratorActionSummariesResponse;
 use replicante_models_core::api::orchestrator_action::OrchestratorActionSummary;
 use replicante_models_core::api::validate::ErrorsCollection;
+use replicante_models_core::scope::Namespace;
 
 use crate::context::Context;
 
@@ -29,6 +31,11 @@ const ENDPOINT_CLUSTER_ORCHESTRATE: &str = "orchestrate";
 const ENDPOINT_DISCOVERY_SETTINGS: &str = "/api/unstable/core/discoverysettings";
 const ENDPOINT_DISCOVERY_SETTINGS_DELETE: &str = "delete";
 const ENDPOINT_DISCOVERY_SETTINGS_LIST: &str = "list";
+
+const ENDPOINT_NAMESPACE: &str = "/api/unstable/core/namespace";
+const ENDPOINT_NAMESPACE_LIST: &str = "list";
+
+const ENDPOINT_PLATFORM: &str = "/api/unstable/core/platform";
 
 /// Replicante Core API client.
 pub struct RepliClient {
@@ -257,11 +264,75 @@ impl RepliClient {
         Ok(())
     }
 
+    /// Query a `Namespace` object.
+    pub async fn namespace_get(&self, ns_id: &str) -> Result<Namespace> {
+        let uri = format!("{}/{}", ENDPOINT_NAMESPACE, ns_id);
+        let request = self.client.get(&uri);
+        let response = self
+            .client
+            .send(request)
+            .await
+            .context("Failed to query Namespace object")?;
+        response.check_status()?;
+        let response = response
+            .body_as::<Namespace>()
+            .context("Failed to decode Namespace response")?;
+        Ok(response)
+    }
+
+    /// List all `Namespace`s in the cluster.
+    pub async fn namespace_list(&self) -> Result<Vec<Namespace>> {
+        let uri = format!("{}s/{}", ENDPOINT_NAMESPACE, ENDPOINT_NAMESPACE_LIST);
+        let request = self.client.get(&uri);
+        let response = self
+            .client
+            .send(request)
+            .await
+            .context("Failed to list Namespace objects")?;
+        response.check_status()?;
+        let response = response
+            .body_as::<Vec<Namespace>>()
+            .context("Failed to decode Namespace list response")?;
+        Ok(response)
+    }
+
     /// Instantiate a new Replicante API client with the given session.
     pub async fn new(logger: &Logger, context: Context) -> Result<RepliClient> {
         let client = http::HttpClient::new(logger, &context).await?;
         let logger = logger.clone();
         Ok(RepliClient { client, logger })
+    }
+
+    /// Query a `Platform` object.
+    pub async fn platform_get(&self, ns_id: &str, platform: &str) -> Result<Platform> {
+        let uri = format!("{}/{}/{}", ENDPOINT_PLATFORM, ns_id, platform);
+        let request = self.client.get(&uri);
+        let response = self
+            .client
+            .send(request)
+            .await
+            .context("Failed to query Platform object")?;
+        response.check_status()?;
+        let response = response
+            .body_as::<Platform>()
+            .context("Failed to decode Platform response")?;
+        Ok(response)
+    }
+
+    /// List all `Platform`s in the namespace.
+    pub async fn platform_list(&self, ns_id: &str) -> Result<Vec<Platform>> {
+        let uri = format!("{}s/{}", ENDPOINT_PLATFORM, ns_id);
+        let request = self.client.get(&uri);
+        let response = self
+            .client
+            .send(request)
+            .await
+            .context("Failed to list Platform objects")?;
+        response.check_status()?;
+        let response = response
+            .body_as::<Vec<Platform>>()
+            .context("Failed to decode Platform list response")?;
+        Ok(response)
     }
 }
 

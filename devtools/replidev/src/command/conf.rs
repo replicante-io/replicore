@@ -19,9 +19,7 @@ pub async fn run(args: Opt, conf: Conf) -> Result<i32> {
 }
 
 fn show_ip(conf: &Conf) -> Result<i32> {
-    let ip = conf
-        .podman_host_ip()
-        .map_err(crate::error::wrap_for_anyhow)?;
+    let ip = conf.podman_host_ip()?;
     println!("IP detected for the podman host: {}", ip);
     Ok(0)
 }

@@ -117,7 +117,7 @@ impl Conf {
     ///
     /// If an IP address is not provided in the configuration an attempt to
     /// auto-detect a non-local IPv4 address is made.
-    pub fn podman_host_ip(&self) -> crate::error::Result<String> {
+    pub fn podman_host_ip(&self) -> Result<String> {
         // Use configure IP if possible.
         if let Some(ip) = &self.podman_host_ip {
             return Ok(ip.clone());
@@ -150,9 +150,7 @@ impl Conf {
         }
 
         // Could not find a non-loopback IP address.
-        let error = crate::error::ErrorKind::ip_not_detected();
-        Err(error.into())
-        //anyhow::bail!("Could not find a non-loopback IP address");
+        anyhow::bail!("Could not find a non-loopback IP address");
     }
 
     /// Lookup the play_server_agents_address from the environment of the configuration.

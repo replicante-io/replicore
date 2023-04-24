@@ -1,9 +1,9 @@
-use failure::ResultExt;
+use anyhow::Context;
+use anyhow::Result;
 use tokio::process::Command;
 
+use crate::podman::Error;
 use crate::Conf;
-use crate::ErrorKind;
-use crate::Result;
 
 /// Stop AND REMOVE a pod matching the given name.
 pub async fn pod_stop<S>(conf: &Conf, name: S) -> Result<()>
@@ -18,9 +18,9 @@ where
         .arg(name.to_string())
         .status()
         .await
-        .with_context(|_| ErrorKind::podman_exec("pod stop"))?;
+        .context(Error::ExecFailed)?;
     if !status.success() {
-        let error = ErrorKind::podman_failed("pod stop");
+        let error = Error::CommandFailed(status.code().unwrap_or(-1));
         return Err(error.into());
     }
 
@@ -32,9 +32,9 @@ where
         .arg(name.to_string())
         .status()
         .await
-        .with_context(|_| ErrorKind::podman_exec("pod rm"))?;
+        .context(Error::ExecFailed)?;
     if !status.success() {
-        let error = ErrorKind::podman_failed("pod rm");
+        let error = Error::CommandFailed(status.code().unwrap_or(-1));
         return Err(error.into());
     }
     Ok(())

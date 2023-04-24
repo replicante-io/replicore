@@ -106,7 +106,6 @@ pub async fn run(args: Opt, conf: Conf) -> Result<i32> {
     println!("--> Generating Server certificates");
     let ip = conf
         .podman_host_ip()
-        .map_err(crate::error::wrap_for_anyhow)
         .context("Unable to detect local IP for certificate alternative names")?;
     let status = Command::new(easyrsa)
         .envs(env.iter())

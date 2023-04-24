@@ -1,5 +1,7 @@
 use opentracingrust::SpanContext;
 
+use replisdk::core::models::platform::Platform;
+
 use replicante_models_core::cluster::discovery::DiscoverySettings;
 use replicante_models_core::cluster::ClusterSettings;
 
@@ -30,5 +32,13 @@ impl GlobalSearch {
         S: Into<Option<SpanContext>>,
     {
         self.search.discoveries_to_run(span.into())
+    }
+
+    /// Iterate over `Platform`s waiting for discovery runs.
+    pub fn platform_discoveries<S>(&self, span: S) -> Result<Cursor<Platform>>
+    where
+        S: Into<Option<SpanContext>>,
+    {
+        self.search.platform_discoveries(span.into())
     }
 }

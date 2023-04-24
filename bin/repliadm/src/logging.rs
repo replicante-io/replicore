@@ -32,25 +32,15 @@ impl<D: Drain> Drain for LevelFilter<D> {
 }
 
 /// Enumerate valid log verbosity levels.
-#[derive(clap::ValueEnum, Clone, Eq, PartialEq, Hash, Debug)]
+#[derive(clap::ValueEnum, Clone, Default, Eq, PartialEq, Hash, Debug)]
 pub enum LogLevel {
     Critical,
     Error,
     Warning,
+    #[cfg_attr(debug_assertions, default)]
     Info,
+    #[cfg_attr(not(debug_assertions), default)]
     Debug,
-}
-
-impl Default for LogLevel {
-    #[cfg(debug_assertions)]
-    fn default() -> LogLevel {
-        LogLevel::Debug
-    }
-
-    #[cfg(not(debug_assertions))]
-    fn default() -> LogLevel {
-        LogLevel::Info
-    }
 }
 
 impl From<LogLevel> for ::slog::Level {

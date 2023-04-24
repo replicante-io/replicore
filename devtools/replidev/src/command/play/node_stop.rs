@@ -1,5 +1,6 @@
+use anyhow::Result;
+
 use crate::conf::Conf;
-use crate::Result;
 
 use super::StopNodeOpt;
 

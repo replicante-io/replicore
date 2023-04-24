@@ -28,7 +28,9 @@ mod agent_action;
 mod appliers;
 mod discovery_settings;
 mod metrics;
+mod namespace;
 mod orchestrator_action;
+mod platform;
 mod validate;
 
 pub use metrics::register_metrics;

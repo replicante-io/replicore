@@ -37,11 +37,7 @@ pub fn aggregate(
     }
 
     // List all kinds of nodes.
-    let kinds: HashSet<&String> = cluster_view
-        .nodes
-        .iter()
-        .map(|(_, node)| &node.kind)
-        .collect();
+    let kinds: HashSet<&String> = cluster_view.nodes.values().map(|node| &node.kind).collect();
     meta.kinds = kinds.into_iter().cloned().collect();
 
     // Check shard primaries.

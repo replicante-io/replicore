@@ -4,6 +4,7 @@ use anyhow::Result;
 use opentracingrust::Log;
 
 use replicante_models_core::actions::orchestrator::OrchestratorActionState;
+use replicante_store_primary::store::Store;
 
 mod pending;
 mod progress;
@@ -17,7 +18,11 @@ use crate::ClusterOrchestrate;
 use crate::ClusterOrchestrateMut;
 
 /// Progress and execute orchestration actions.
-pub fn orchestrate(data: &ClusterOrchestrate, data_mut: &mut ClusterOrchestrateMut) -> Result<()> {
+pub fn orchestrate(
+    data: &ClusterOrchestrate,
+    data_mut: &mut ClusterOrchestrateMut,
+    store: &Store,
+) -> Result<()> {
     if let Some(span) = data_mut.span.as_mut() {
         span.log(Log::new().log("stage", "orchestrate"));
     }
@@ -27,11 +32,15 @@ pub fn orchestrate(data: &ClusterOrchestrate, data_mut: &mut ClusterOrchestrateM
 
     for info in &data.cluster_view.actions_unfinished_orchestrator {
         match info.state {
-            OrchestratorActionState::PendingSchedule => {
-                self::pending::start_action(data, data_mut, info.action_id, &mut exclusive_by_mode)?
-            }
+            OrchestratorActionState::PendingSchedule => self::pending::start_action(
+                data,
+                data_mut,
+                info.action_id,
+                &mut exclusive_by_mode,
+                store,
+            )?,
             OrchestratorActionState::Running => {
-                self::running::continue_action(data, data_mut, info.action_id)?
+                self::running::continue_action(data, data_mut, info.action_id, store)?
             }
             _ => (),
         };

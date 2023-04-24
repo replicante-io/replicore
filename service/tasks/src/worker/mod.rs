@@ -70,6 +70,7 @@ impl<Q: TaskQueue> Task<Q> {
     ///
     /// The extracted span context can be used by handlers to
     /// trace the larger task across processes/systems.
+    #[allow(clippy::result_large_err)]
     pub fn trace(&self, tracer: &Tracer) -> OTResult<Option<SpanContext>> {
         let format = ExtractFormat::HttpHeaders(Box::new(&self.headers));
         tracer.extract(format)

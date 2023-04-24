@@ -1,18 +1,18 @@
 use std::collections::BTreeMap;
 use std::fs::File;
 
+use anyhow::Context;
+use anyhow::Result;
 use clap::Args;
 use clap::Subcommand;
-use failure::ResultExt;
 use prettytable::row;
 use serde::Deserialize;
 
 use crate::conf::Conf;
 use crate::error::InvalidProject;
+use crate::podman::Error;
 use crate::podman::Pod;
 use crate::settings::paths::Paths;
-use crate::ErrorKind;
-use crate::Result;
 
 const PODMAN_DEF_PATH: &str = "devtools/deps/podman";
 
@@ -68,19 +68,18 @@ struct PodPsStatus {
 }
 
 /// Manage Replicante Core dependencies.
-pub async fn run(args: Opt, conf: Conf) -> anyhow::Result<i32> {
+pub async fn run(args: Opt, conf: Conf) -> Result<i32> {
     if !conf.project.allow_deps() {
         anyhow::bail!(InvalidProject::new(conf.project, "deps"));
     }
-    let result = match args {
+    match args {
         Opt::Clean(args) => clean(&args, &conf).await,
         Opt::Initialise(args) => initialise(&args, &conf).await,
         Opt::List => list(&conf).await,
         Opt::Restart(args) => restart(&args, &conf).await,
         Opt::Start(args) => start(&args, &conf).await,
         Opt::Stop(args) => stop(&args, &conf).await,
-    };
-    result.map_err(crate::error::wrap_for_anyhow)
+    }
 }
 
 async fn clean(args: &CleanOpt, conf: &Conf) -> Result<i32> {
@@ -147,14 +146,13 @@ async fn list(conf: &Conf) -> Result<i32> {
 
     // Find available replideps definitions.
     let mut available = Vec::new();
-    let dir = std::fs::read_dir(PODMAN_DEF_PATH)
-        .with_context(|_| ErrorKind::fs_error("failed to list available pods"))?;
+    let dir = std::fs::read_dir(PODMAN_DEF_PATH).context(Error::DependenciesList)?;
     for file in dir {
-        let file = file.with_context(|_| ErrorKind::fs_error("failed to list available pods"))?;
+        let file = file.context(Error::DependenciesList)?;
         let name = file
             .file_name()
             .into_string()
-            .map_err(|_| ErrorKind::fs_error("failed to decode file name"))?;
+            .map_err(|_| Error::FsNotUnicode)?;
         if !name.ends_with(".yaml") {
             continue;
         }
@@ -194,8 +192,8 @@ async fn list(conf: &Conf) -> Result<i32> {
 /// Helper function to load and decode a pod definition file.
 fn pod_definition(name: &str) -> Result<Pod> {
     let definition = format!("{}/{}.yaml", PODMAN_DEF_PATH, name);
-    let pod = File::open(definition).with_context(|_| ErrorKind::pod_not_found(name))?;
-    let pod = serde_yaml::from_reader(pod).with_context(|_| ErrorKind::invalid_pod(name))?;
+    let pod = File::open(definition).with_context(|| Error::pod_not_found(name))?;
+    let pod = serde_yaml::from_reader(pod).with_context(|| Error::pod_not_valid(name))?;
     Ok(pod)
 }
 
@@ -208,7 +206,7 @@ async fn start(args: &PodOpt, conf: &Conf) -> Result<i32> {
     for pod_name in &args.pods {
         let pod = pod_definition(pod_name)?;
         let paths = crate::settings::paths::DepsPod::new(pod_name);
-        let variables = crate::settings::Variables::new(conf, paths)?;
+        let variables = crate::settings::Variables::new(conf, paths);
         let labels = {
             let mut labels = BTreeMap::new();
             labels.insert(

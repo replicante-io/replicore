@@ -4,6 +4,7 @@ use std::sync::Arc;
 
 use opentracingrust::SpanContext;
 use opentracingrust::Tracer;
+use replisdk::core::models::platform::Platform;
 use replisdk::platform::models::ClusterDiscovery;
 use slog::Logger;
 
@@ -22,6 +23,7 @@ use replicante_models_core::api::orchestrator_action::OrchestratorActionSummary;
 use replicante_models_core::cluster::discovery::DiscoverySettings;
 use replicante_models_core::cluster::ClusterMeta;
 use replicante_models_core::cluster::ClusterSettings;
+use replicante_models_core::scope::Namespace;
 use replicante_service_healthcheck::HealthChecks;
 
 use crate::store::action::ActionAttributes;
@@ -30,10 +32,13 @@ use crate::store::agent::AgentAttributes;
 use crate::store::agents::AgentsAttributes;
 use crate::store::cluster::ClusterAttributes;
 use crate::store::discovery_settings::DiscoverySettingsAttributes;
+use crate::store::namespace::NamespaceAttributes;
 use crate::store::node::NodeAttributes;
 use crate::store::nodes::NodesAttributes;
 use crate::store::orchestrator_action::OrchestratorActionAttributes;
 use crate::store::orchestrator_actions::OrchestratorActionsAttributes;
+use crate::store::platform::PlatformAttributes;
+use crate::store::platforms::PlatformsAttributes;
 use crate::store::shard::ShardAttributes;
 use crate::store::shards::ShardsAttributes;
 use crate::Config;
@@ -174,11 +179,15 @@ arc_interface! {
         fn discovery_settings(&self) -> DiscoverySettingsImpl;
         fn global_search(&self) -> GlobalSearchImpl;
         fn legacy(&self) -> LegacyImpl;
+        fn namespace(&self) -> NamespaceImpl;
+        fn namespaces(&self) -> NamespacesImpl;
         fn node(&self) -> NodeImpl;
         fn nodes(&self) -> NodesImpl;
         fn orchestrator_action(&self) -> OrchestratorActionImpl;
         fn orchestrator_actions(&self) -> OrchestratorActionsImpl;
         fn persist(&self) -> PersistImpl;
+        fn platform(&self) -> PlatformImpl;
+        fn platforms(&self) -> PlatformsImpl;
         fn shard(&self) -> ShardImpl;
         fn shards(&self) -> ShardsImpl;
     }
@@ -349,6 +358,10 @@ box_interface! {
             &self,
             span: Option<SpanContext>,
         ) -> Result<Cursor<DiscoverySettings>>;
+        fn platform_discoveries(
+            &self,
+            span: Option<SpanContext>,
+        ) -> Result<Cursor<Platform>>;
     }
 }
 
@@ -375,6 +388,38 @@ box_interface! {
         ) -> Result<Cursor<ClusterMeta>>;
         fn persist_cluster_meta(&self, meta: ClusterMeta, span: Option<SpanContext>) -> Result<()>;
         fn top_clusters(&self, span: Option<SpanContext>) -> Result<Cursor<ClusterMeta>>;
+    }
+}
+
+box_interface! {
+    /// Dynamic dispatch namespace operations to a backend-specific implementation.
+    struct NamespaceImpl,
+
+    /// Definition of supported operations on namespace.
+    ///
+    /// See `store::namespace::Namespace` for descriptions of methods.
+    trait NamespaceInterface,
+
+    interface {
+        fn get(
+            &self,
+            attrs: &NamespaceAttributes,
+            span: Option<SpanContext>,
+        ) -> Result<Option<Namespace>>;
+    }
+}
+
+box_interface! {
+    /// Dynamic dispatch namespaces operations to a backend-specific implementation.
+    struct NamespacesImpl,
+
+    /// Definition of supported operations on namespaces.
+    ///
+    /// See `store::namespaces::Namespaces` for descriptions of methods.
+    trait NamespacesInterface,
+
+    interface {
+        fn iter(&self, span: Option<SpanContext>) -> Result<Cursor<Namespace>>;
     }
 }
 
@@ -475,6 +520,7 @@ box_interface! {
             settings: DiscoverySettings,
             span: Option<SpanContext>,
         ) -> Result<()>;
+        fn namespace(&self, namespace: Namespace, span: Option<SpanContext>) -> Result<()>;
         fn next_cluster_orchestrate(
             &self,
             settings: ClusterSettings,
@@ -485,13 +531,55 @@ box_interface! {
             settings: DiscoverySettings,
             span: Option<SpanContext>,
         ) -> Result<()>;
+        fn next_platform_discovery_run(
+            &self,
+            platform: &Platform,
+            span: Option<SpanContext>,
+        ) -> Result<()>;
         fn node(&self, node: Node, span: Option<SpanContext>) -> Result<()>;
         fn orchestrator_action(
             &self,
             action: OrchestratorAction,
             span: Option<SpanContext>,
         ) -> Result<()>;
+        fn platform(&self, platform: Platform, span: Option<SpanContext>) -> Result<()>;
         fn shard(&self, shard: Shard, span: Option<SpanContext>) -> Result<()>;
+    }
+}
+
+box_interface! {
+    /// Dynamic dispatch platform operations to a backend-specific implementation.
+    struct PlatformImpl,
+
+    /// Definition of supported operations on a platform.
+    ///
+    /// See `store::platform::Platform` for descriptions of methods.
+    trait PlatformInterface,
+
+    interface {
+        fn get(
+            &self,
+            attrs: &PlatformAttributes,
+            span: Option<SpanContext>,
+        ) -> Result<Option<Platform>>;
+    }
+}
+
+box_interface! {
+    /// Dynamic dispatch platforms operations to a backend-specific implementation.
+    struct PlatformsImpl,
+
+    /// Definition of supported operations on all platforms.
+    ///
+    /// See `store::platforms::Platforms` for descriptions of methods.
+    trait PlatformsInterface,
+
+    interface {
+        fn iter(
+            &self,
+            attrs: &PlatformsAttributes,
+            span: Option<SpanContext>,
+        ) -> Result<Cursor<Platform>>;
     }
 }
 

@@ -1,6 +1,6 @@
 [package]
 name = "replidev"
-version = "0.2.0"
+version = "0.3.0"
 authors = ["Stefano Pogliani <stefano@spogliani.net>"]
 edition = "2018"
 build = "../../build.rs"
@@ -26,28 +26,45 @@ path = "src/lib.rs"
 [dependencies]
 actix-web = "^4.0"
 anyhow = "^1.0"
-clap = { version = "^4.0", features = ["derive"] }
+async-trait = "^0.1"
 chrono = "^0.4"
+clap = { version = "^4.0", features = ["derive"] }
 dialoguer = "^0.10"
-failure = "^0.1.5"
 git2 = "^0.15"
 glob = "^0.3"
 handlebars = "^4.0"
 ignore = "^0.4"
+json-patch = "^0.3"
 lazy_static = "^1.4"
 pnet_datalink = "^0.31"
-prettytable-rs = "^0.9"
+prettytable-rs = "^0.10"
 rand = "^0.8"
-replisdk = { version = "^0.1", features = ["platform-models"] }
 semver = "^1.0"
 serde = "^1.0"
 serde_json = "^1.0"
 serde_yaml = "^0.9"
+slog = "^2.7"
+slog-term = "^2.9"
+tera = "^1.0"
 thiserror = "^1.0"
 toml = "^0.5"
 
 replicante_models_core = { path = "../../models/core" }
-replicante_util_failure = { path = "../../common/util/failure" }
+
+[dependencies.replisdk]
+features = [
+  "platform-framework",
+  "platform-framework_actix",
+  "platform-models",
+  "utils-actix_error",
+]
+version = "^0.1"
+
+[dependencies.replisdk-experimental]
+features = [
+  "platform-templates",
+]
+version = "^0.1"
 
 [dependencies.tokio]
 features = ["full"]
@@ -56,6 +73,15 @@ version = "^1.0"
 
 [build-dependencies]
 git2 = "^0.15.0"
+
+
+[patch.crates-io]
+# Patch the SDK against a local path for cooperative development.
+#replisdk = { path = "../../../replisdk-rust" }
+#replisdk-experimental = { path = "../../../replisdk-rust/experimental" }
+# Patch the SDK against a git commit for incremental merges between releases.
+replisdk = { git = "https://github.com/replicante-io/replisdk-rust.git", rev = "25c1464" }
+replisdk-experimental = { git = "https://github.com/replicante-io/replisdk-rust.git", rev = "25c1464" }
 
 
 [workspace]

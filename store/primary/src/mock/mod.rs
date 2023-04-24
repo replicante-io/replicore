@@ -28,7 +28,7 @@ pub struct Mock {
 impl Mock {
     /// Return an `Admin` "view" into the mock.
     pub fn admin(&self) -> Admin {
-        panic!("mocking primary store admin interface not yet supportd");
+        panic!("mocking primary store admin interface not yet supported");
     }
 
     /// Return a `Store` "view" into the mock.

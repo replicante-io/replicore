@@ -14,7 +14,9 @@ use replicante_models_core::events::action::ActionEvent;
 use replicante_models_core::events::agent::AgentEvent;
 use replicante_models_core::events::cluster::ClusterEvent;
 use replicante_models_core::events::discovery_settings::DiscoverySettingsEvent;
+use replicante_models_core::events::namespace::NamespaceEvent;
 use replicante_models_core::events::node::NodeEvent;
+use replicante_models_core::events::platform::PlatformEvent;
 use replicante_models_core::events::shard::ShardEvent;
 use replicante_models_core::events::Event;
 use replicante_models_core::events::Payload;
@@ -119,6 +121,13 @@ impl Annotations {
                 // TODO: for when #[non_exhaustive] is usable
                 //_ => event.code().to_string(),
             },
+            Payload::Namespace(namespace) => match namespace {
+                NamespaceEvent::Apply(namespace) => {
+                    format!("A Namespace object named {} was applied", &namespace.ns_id)
+                }
+                // TODO: for when #[non_exhaustive] is usable
+                //_ => event.code().to_string(),
+            },
             Payload::Node(node) => match node {
                 NodeEvent::Changed(change) => {
                     format!("Details about datastore node {} changed", &change.node_id)
@@ -129,6 +138,14 @@ impl Annotations {
                 ),
                 NodeEvent::New(_) => "A new datastore node was detected".into(),
                 NodeEvent::Up(change) => format!("Datastore node {} is now up", &change.host),
+                // TODO: for when #[non_exhaustive] is usable
+                //_ => event.code().to_string(),
+            },
+            Payload::Platform(platform) => match platform {
+                PlatformEvent::Apply(platform) => format!(
+                    "A Platform object named {} was applied in namespace {}",
+                    &platform.name, &platform.ns_id,
+                ),
                 // TODO: for when #[non_exhaustive] is usable
                 //_ => event.code().to_string(),
             },
@@ -182,11 +199,21 @@ impl Annotations {
                 // TODO: for when #[non_exhaustive] is usable
                 //_ => event.code().to_string(),
             },
+            Payload::Namespace(namespace) => match namespace {
+                NamespaceEvent::Apply(_) => "Namespace applied".into(),
+                // TODO: for when #[non_exhaustive] is usable
+                //_ => event.code().to_string(),
+            },
             Payload::Node(node) => match node {
                 NodeEvent::Changed(_) => "Datastore node details changed".into(),
                 NodeEvent::Down(_) => "Datastore node is down".into(),
                 NodeEvent::New(_) => "New datastore node detected".into(),
                 NodeEvent::Up(_) => "Datastore node is up".into(),
+                // TODO: for when #[non_exhaustive] is usable
+                //_ => event.code().to_string(),
+            },
+            Payload::Platform(platform) => match platform {
+                PlatformEvent::Apply(_) => "Platform applied".into(),
                 // TODO: for when #[non_exhaustive] is usable
                 //_ => event.code().to_string(),
             },

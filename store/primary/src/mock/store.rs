@@ -2,6 +2,7 @@ use std::sync::Arc;
 use std::sync::Mutex;
 
 use opentracingrust::SpanContext;
+use replisdk::core::models::platform::Platform;
 use replisdk::platform::models::ClusterDiscovery;
 
 use replicante_models_core::actions::node::Action;
@@ -15,6 +16,7 @@ use replicante_models_core::api::node_action::NodeActionSummary;
 use replicante_models_core::cluster::discovery::DiscoverySettings;
 use replicante_models_core::cluster::ClusterMeta;
 use replicante_models_core::cluster::ClusterSettings;
+use replicante_models_core::scope::Namespace;
 
 use super::MockState;
 use crate::backend::ActionImpl;
@@ -28,6 +30,8 @@ use crate::backend::DiscoverySettingsImpl;
 use crate::backend::GlobalSearchImpl;
 use crate::backend::LegacyImpl;
 use crate::backend::LegacyInterface;
+use crate::backend::NamespaceImpl;
+use crate::backend::NamespacesImpl;
 use crate::backend::NodeImpl;
 use crate::backend::NodesImpl;
 use crate::backend::OrchestratorActionImpl;
@@ -35,6 +39,8 @@ use crate::backend::OrchestratorActionInterface;
 use crate::backend::OrchestratorActionsImpl;
 use crate::backend::PersistImpl;
 use crate::backend::PersistInterface;
+use crate::backend::PlatformImpl;
+use crate::backend::PlatformsImpl;
 use crate::backend::ShardImpl;
 use crate::backend::ShardsImpl;
 use crate::backend::StoreImpl;
@@ -93,6 +99,14 @@ impl StoreInterface for StoreMock {
         LegacyImpl::new(legacy)
     }
 
+    fn namespace(&self) -> NamespaceImpl {
+        panic!("TODO: StoreMock::namespace");
+    }
+
+    fn namespaces(&self) -> NamespacesImpl {
+        panic!("TODO: StoreMock::namespaces");
+    }
+
     fn node(&self) -> NodeImpl {
         panic!("TODO: StoreMock::node");
     }
@@ -117,6 +131,14 @@ impl StoreInterface for StoreMock {
             state: Arc::clone(&self.state),
         };
         PersistImpl::new(persist)
+    }
+
+    fn platform(&self) -> PlatformImpl {
+        panic!("TODO: StoreMock::platform");
+    }
+
+    fn platforms(&self) -> PlatformsImpl {
+        panic!("TODO: StoreMock::platforms");
     }
 
     fn shard(&self) -> ShardImpl {
@@ -317,6 +339,10 @@ impl PersistInterface for Persist {
         panic!("TODO: MockStore::Persist::discovery_settings")
     }
 
+    fn namespace(&self, _namespace: Namespace, _: Option<SpanContext>) -> Result<()> {
+        panic!("TODO: MockStore::Persist::namespace")
+    }
+
     fn next_cluster_orchestrate(
         &self,
         _settings: ClusterSettings,
@@ -331,6 +357,14 @@ impl PersistInterface for Persist {
         _: Option<SpanContext>,
     ) -> Result<()> {
         panic!("TODO: MockStore::Persist::next_discovery_run")
+    }
+
+    fn next_platform_discovery_run(
+        &self,
+        _platform: &Platform,
+        _: Option<SpanContext>,
+    ) -> Result<()> {
+        panic!("TODO: MockStore::Persist::next_platform_discovery_run")
     }
 
     fn node(&self, node: Node, _: Option<SpanContext>) -> Result<()> {
@@ -355,6 +389,10 @@ impl PersistInterface for Persist {
             .orchestrator_actions
             .insert(key, action);
         Ok(())
+    }
+
+    fn platform(&self, _platform: Platform, _: Option<SpanContext>) -> Result<()> {
+        panic!("TODO: MockStore::Persist::platform")
     }
 
     fn shard(&self, shard: Shard, _: Option<SpanContext>) -> Result<()> {

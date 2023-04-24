@@ -225,11 +225,11 @@ coordinator:
     timeout: 10
 
 
-# The section below is for DiscoverySettings scheduling configuration.
+# The section below is for cluster discovery scheduling configuration.
 #
 # Discovery is the way the clusters that should be managed are found.
 discovery:
-  # Interval (in seconds) to wait between checks for pending DiscoverySettings to schedule.
+  # Interval (in seconds) to wait between checks for pending cluster discoveries to schedule.
   interval: 15
 
   # Number of cycles before this node will re-run an election, 0 to disable re-runs.
