@@ -37,7 +37,7 @@ pub fn run(args: &ArgMatches, interfaces: &Interfaces) -> Result<()> {
          (give it a minute for the coordinator to detect the process as dead)"
     );
     println!("==> If you do need to force-release don't forget to also report it as a bug:");
-    println!("==>   https://github.com/replicante-io/replicante/issues");
+    println!("==>   https://github.com/replicante-io/replicore/issues");
     println!("==> *** DANGER ***");
     if !command.get_flag("take-responsibility") {
         return Err(ErrorKind::TakeResponsibility.into());

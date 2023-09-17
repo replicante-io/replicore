@@ -38,5 +38,5 @@ Until catatonit is packaged with podman you can use this work around:
 For more information, the following links may be useful:
 
   * [Official website](https://www.replicante.io/)
-  * [GitHub repo](https://github.com/replicante-io/replicante)
+  * [GitHub repo](https://github.com/replicante-io/replicore)
   * [Full documentation](https://www.replicante.io/docs/)
