@@ -7,15 +7,18 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 ### Added
+- Command `replicore server` to run a control plane server instance.
+- Command `replicore sync` to run dependencies sync (initialise or migrate).
 - Introduce `platform.replicante.io/node.provision` action.
-- Store `Namespace` objects in the primary store.
-- Store `Platform` objects in the primary store.
+- Store `Namespace` objects in the store.
+- Store `Platform` objects in the store.
 
 ### Changed
-- **BREAKING**: Configuration `sentry_capture_api` is now an on/off boolean.
-- **BREAKING**: Migrate `ClusterDiscovery` to `replisdk` provided model.
+- **BREAKING**: Migrate to `replisdk` for shared code.
+- **BREAKING**: Refactor configuration file structure and options (see the example config).
+- **BREAKING**: Renamed `replicante` binary to `replicore`.
 - **BREAKING**: Updated minimum rust version to 1.60.0.
-- Capture only server-side errors in Sentry.
+- Capture only server-side errors in Sentry for API endpoints.
 - Update dependencies.
 
 ## [0.7.2] - 2022-09-25

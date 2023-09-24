@@ -1,0 +1,42 @@
+[package]
+name = "replicore"
+version = "0.8.0"
+build = "../../build.rs"
+
+edition = "2021"
+rust-version = "1.70"
+
+description = "Replicante Core is a Control Plane for distributed store orchestration"
+documentation = "https://www.replicante.io/docs"
+homepage = "https://www.replicante.io/"
+repository = "https://github.com/replicante-io/replicore"
+readme = "../../README.md"
+keywords = ["automation", "datastore", "operations"]
+license = "MIT"
+
+[[bin]]
+name = "replicore"
+path = "src/main.rs"
+
+[lib]
+name = "replicore"
+path = "src/lib.rs"
+
+[dependencies]
+actix-web = "^4.0"
+anyhow = "^1.0"
+clap = { version = "^4.3", features = ["derive"] }
+prometheus = "^0.13"
+slog = "^2.7"
+tokio = "^1.0"
+
+replisdk = { version = "^0.1", features = [
+  "runtime-actix_builder",
+  "runtime-shutdown",
+  "runtime-shutdown_actix",
+  "runtime-telemetry",
+] }
+replicore-conf = { path = "../../core/conf" }
+
+[build-dependencies]
+git2 = "^0.15.0"

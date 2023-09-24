@@ -1,0 +1,4 @@
+telemetry:
+  logs:
+    level: debug
+    mode: terminal

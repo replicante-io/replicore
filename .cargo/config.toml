@@ -1,0 +1,3 @@
+[env]
+# Set the default HTTP server bind address the SDK should use for core.
+REPLISDK_ACITX_DEFAULT_BIND = "localhost:16016"

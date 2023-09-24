@@ -1,0 +1,17 @@
+[package]
+name = "replicore-context"
+version = "0.1.0"
+
+edition = "2021"
+rust-version = "1.70"
+
+description = "RepliCore operation specific context"
+homepage = "https://www.replicante.io/"
+license = "MIT"
+
+[features]
+# Enable utilities for unit testing.
+test-fixture = []
+
+[dependencies]
+slog = "^2.7"

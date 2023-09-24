@@ -1,0 +1,17 @@
+[package]
+name = "replicore-conf"
+version = "0.1.0"
+authors = ["Stefano Pogliani <stefano@spogliani.net>"]
+edition = "2021"
+
+description = "Replicante Core logic to orchestate a cluster"
+homepage = "https://www.replicante.io/"
+license = "MIT"
+
+[dependencies]
+anyhow = "^1.0"
+serde = { version = "^1.0", features = ["derive"] }
+serde_yaml = "^0.9"
+thiserror = "^1.0"
+
+replisdk = { version = "^0.1", features = ["runtime-tokio_conf"] }

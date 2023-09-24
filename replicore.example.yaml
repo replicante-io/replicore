@@ -1,0 +1,194 @@
+# HTTP Server configuration.
+http:
+  # Sets the maximum number of pending connections.
+  backlog: ~
+
+  # Resolves socket address(es) and binds server to created listener(s).
+  bind: "localhost:16016"
+
+  # Maximum time in milliseconds allowed for clients to send all request headers.
+  #
+  # If a client takes longer to transmit all request headers the request is failed.
+  #
+  # A value of zero disables the timeout.
+  client_request_timeout: ~
+
+  # Server preference for how long to keep connections alive when idle.
+  #
+  # A value of zero disables keep alive and connections will be
+  # closed immediately after the response is sent.
+  keep_alive: ~
+
+  # Format of server access logs.
+  #
+  # Rules for the format string are defined at
+  # <https://docs.rs/actix-web/latest/actix_web/middleware/struct.Logger.html#format>.
+  log_format: ~
+
+  # Maximum number of concurrent connections for each server worker.
+  #
+  # This option is available for both TLS and non-TLS modes due to the greatly
+  # different CPU requirements.
+  #
+  # Once the limit is reach listening sockets will stop accepting connections
+  # until currently open connections are closed.
+  max_connections: ~
+
+  # Maximum number of concurrent TLS connections for each server worker.
+  #
+  # This option is available for both TLS and non-TLS modes due to the greatly
+  # different CPU requirements.
+  #
+  # Once the limit is reach listening sockets will stop accepting connections
+  # until currently open connections are closed.
+  max_connections_tls: ~
+
+  # Time in seconds workers are given to complete requests in progress when a shutdown
+  # signal is received.
+  shutdown_timeout: ~
+
+  # Configure the server to run with TLS encryption.
+  tls: ~
+  #  # Path to a PEM bundle of Certificate Authorities to verify client certificates with.
+  #  #
+  #  # When this option is set, clients MUST provide a certificate that is valid.
+  #  client_ca_bundle: ~
+  #
+  #  # Enable TLS for the server.
+  #  enabled: true
+  #
+  #  # Maximum time in milliseconds a TLS handshake must complete in.
+  #  #
+  #  # If the handshake does not complete in time the connection is closed.
+  #  handshake_timeout: ~
+  #
+  #  # Path to the PEM encoded server private certificate file.
+  #  #
+  #  # REQUIRED when the TLS block is not empty.
+  #  server_private_cert: /path/to/cert.pem
+  #
+  #  # Path to the PEM encoded server private key file.
+  #  #
+  #  # REQUIRED when the TLS block is not empty.
+  #  server_private_key: /path/to/key.pem
+
+  # Number of workers handling HTTP requests.
+  #
+  # Defaults to the number of CPUs available.
+  workers: ~
+
+# Configuration of the tokio runtime for the process.
+#
+# These options configure the handling of synchronous and asynchronous tasks.
+# These are low level code execution patters and you should be familiar with the concept of
+# asynchronous programming before making changes.
+#
+# For an introduction to async in Rust you can refer to
+# <https://rust-lang.github.io/async-book/01_getting_started/02_why_async.html>.
+runtime:
+  # Allowed time, in seconds, for running operations to complete once process shutdown begins.
+  shutdown_grace_sec: 120
+
+  # Maximum number of threads processing blocking tasks.
+  #
+  # Blocking tasks take over a thread until they complete, even during wait times such as IO.
+  # To prevent blocking tasks from preventing non-blocking tasks from executing they get
+  # a dedicated pool of threads to execute on.
+  #
+  # This option sets the maximum number of threads that can run blocking tasks.
+  # If all threads are busy, new blocking tasks will be queued until threads are available.
+  sync_workers: ~
+
+  # Time in second to keep blocking task threads alive waiting for more tasks.
+  sync_workers_keep_alive: ~
+
+  # Number of threads processing non-blocking tasks.
+  #
+  # As tasks keep a thread busy only when they can progress a small number of threads
+  # can handle a large number of non-block tasks.
+  #
+  # This number is best kept small and defaults to the number of CPU cores on the system.
+  workers: ~
+
+# Telemetry configuration for the process.
+telemetry:
+  # Logging configuration for the process.
+  logs:
+    # Emit log events asynchronously.
+    #
+    # Asynchronous logging can improve performance for but can result
+    # in some events loss if the process exists abruptly.
+    async: true
+
+    # Only emit log event with this level or grater.
+    #
+    # Valid options are: CRITICAL, ERROR, WARNING, INFO, DEBUG, TRACE
+    # or their lower case versions.
+    # Depending on how applications are compiled DEBUG and TRACE logs may
+    # not be emitted regardless of what this is set to.
+    level: info
+
+    # Set log levels that apply to specific modules only.
+    #
+    # Valid options are the same as the level field.
+    levels:
+      # For example you can disable request info logs for HTTP requests only.
+      "actix_web::middleware::logger": warning
+
+    # Select how logs are emitted by the process.
+    #
+    # Valid options are:
+    # - JSON: Format logs as a stream of JSON encoded lines to standard out.
+    # - TERMINAL: Display logs onto a terminal, with optional colour support.
+    mode: json
+
+  # OpenTelemetry configuration for the process.
+  otel:
+    # Enable export of data using the OpenTelemetry protocol.
+    enabled: false
+
+    # GRPC endpoint of the OpenTelemetry agent to send data to.
+    endpoint: ~
+
+    # Trace sampling configuration.
+    sampling:
+      # Follow the sampling decision of the parent span, if any exists.
+      follow_parent: true
+
+      # The sampling rule for traces without a parent span.
+      #
+      # Valid options are: ALWAYS, NEVER, RATIO
+      # or their lower case versions.
+      #
+      # For RATIO mode specify the ratio between 0.0 and 1.0 using an object: {ration: 0.6}.
+      mode: ALWAYS
+
+    # Timeout in seconds when communicating with the OpenTelemetry agent.
+    timeout_sec: ~
+
+  # Prometheus metrics configuration.
+  prom_metrics:
+    # Additional labels to attach to all metrics.
+    labels: {}
+
+    # Enable collection of process-level metrics (linux only).
+    process_metrics: true
+
+  # Sentry error reporting configuration.
+  sentry:
+    # Sentry DSN (Data Source Name) to send events to.
+    #
+    # If not set, the environment variable SENTRY_DSN is used.
+    dsn: ~
+
+    # Enable sentry integration.
+    #
+    # Once this option is set to true a DSN must also be specified
+    # either above or in SENTRY_DSN for the integration to work.
+    enabled: false
+
+    # The ratio of generated events that are submitted to Sentry (between 0.0 and 1.0).
+    sample_ratio: 1.0
+
+    # Maximum delay in seconds to process shutdown to flush pending events to Sentry.
+    shutdown_timeout: 2

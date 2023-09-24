@@ -1,24 +1,32 @@
 [workspace]
 members = [
-  "agent/*",
-  "bin/*",
-  "cluster/*",
-  "core/cluster/*",
-  "core/components/*",
-  "core/interface/*",
-  "core/orchestrator_action/*",
-  "core/tasks/*",
-  "core/util/*",
-  "externals/*",
-  "models/*",
-  "service/*",
-  "store/*",
-  "stream/*",
+  # New Async subcrates
+  "bin/replicore",
+  "core/conf",
+  "core/context",
+  "core/injector",
+
+  # Legacy sync subcrates
+  #"agent/*",
+  #"bin/*",
+  #"cluster/*",
+  #"core/cluster/*",
+  #"core/components/*",
+  #"core/conf",
+  #"core/interface/*",
+  #"core/orchestrator_action/*",
+  #"core/tasks/*",
+  #"core/util/*",
+  #"externals/*",
+  #"models/*",
+  #"service/*",
+  #"store/*",
+  #"stream/*",
 ]
 resolver = "2"
 
 [patch.crates-io]
 # Patch the SDK against a local path for cooperative development.
-#replisdk = { path = "../replisdk-rust" }
+replisdk = { path = "../replisdk-rust" }
 # Patch the SDK against a git commit for incremental merges between releases.
-replisdk = { git = "https://github.com/replicante-io/replisdk-rust.git", rev = "25c1464" }
+#replisdk = { git = "https://github.com/replicante-io/replisdk-rust.git", rev = "420ad96" }

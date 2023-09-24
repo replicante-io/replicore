@@ -31,7 +31,7 @@ where
         .filter(|port| port.host != 0)
         .map(|port| port.host)
         .collect();
-    for mut port in &mut pod.ports {
+    for port in &mut pod.ports {
         if port.host != 0 {
             continue;
         }
