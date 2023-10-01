@@ -1,13 +1,8 @@
 //! Process initialisation builder for aspects to initialise for all commands.
 use std::time::Duration;
 
-//use actix_web::web::ServiceConfig;
-use actix_web::HttpServer;
 use anyhow::Result;
 
-use replisdk::runtime::actix_web::AppConfigurer;
-use replisdk::runtime::actix_web::AppFactory;
-use replisdk::runtime::actix_web::ServerConfig;
 use replisdk::runtime::shutdown::ShutdownManager;
 use replisdk::runtime::shutdown::ShutdownManagerBuilder;
 use replisdk::runtime::telemetry;
@@ -16,61 +11,31 @@ use replisdk::runtime::telemetry::TelemetryConfig;
 use replisdk::runtime::telemetry::TelemetryOptions;
 
 use replicore_conf::Conf;
+use replicore_context::Context;
 
-/// Prefix for request metrics names.
-const REQUEST_METRICS_PREFIX: &str = "replicore";
-
-/// Builder pattern to configure and start an ActixWeb Server.
-#[derive(Clone)]
-pub struct ActixServer {
-    app: AppConfigurer,
-    conf: ServerConfig,
-    metrics: prometheus::Registry,
-}
-
-impl ActixServer {
-    /// Create an ActixWeb Server configuration builder.
-    pub fn new(conf: ServerConfig, metrics: prometheus::Registry) -> Self {
-        ActixServer {
-            app: Default::default(),
-            conf,
-            metrics,
-        }
-    }
-
-    /// Convert the builder into an [`HttpServer`](actix_web::HttpServer) and run it.
-    pub fn run(self) -> Result<actix_web::dev::Server> {
-        let factory = AppFactory::configure(self.app, self.conf.clone())
-            .metrics(REQUEST_METRICS_PREFIX, self.metrics)
-            .done();
-        let server = HttpServer::new(move || {
-            let app = factory.initialise();
-            // TODO: context configuration once replicore has it.
-            factory.finalise(app)
-        });
-        let server = self.conf.apply(server)?;
-        Ok(server.run())
-    }
-
-    ///// Add a server configuration closure to be applied when the server is started.
-    //pub fn with_config<F>(&mut self, config: F) -> &mut Self
-    //where
-    //    F: Fn(&mut ServiceConfig) + Send + Sync + 'static,
-    //{
-    //    self.app.with_config(config);
-    //    self
-    //}
-}
+use super::actix::ActixServer;
+use super::backends::Backends;
 
 /// Process builder to initialise all RepliCore commands.
 pub struct GenericInit {
     pub api: ActixServer,
+    pub backends: Backends,
     pub conf: Conf,
     pub shutdown: ShutdownManagerBuilder<()>,
     pub telemetry: Telemetry,
 }
 
 impl GenericInit {
+    /// Register all supported backends for all process dependencies.
+    ///
+    /// Supported dependencies can be tuned at compile time using crate features.
+    pub fn add_default_backends(&mut self) -> &mut Self {
+        #[cfg(feature = "replicore-events-sqlite")]
+        self.backends
+            .register_events("sqlite", replicore_events_sqlite::emit::SQLiteFactory);
+        self
+    }
+
     /// Build a server from the loaded configuration.
     pub async fn configure(conf: Conf) -> Result<Self> {
         let telemetry = telemetry(conf.telemetry.clone()).await?;
@@ -78,6 +43,7 @@ impl GenericInit {
         let shutdown = shutdown_manager(telemetry.logger.clone(), &conf);
         let server = Self {
             api,
+            backends: Default::default(),
             conf,
             shutdown,
             telemetry,
@@ -85,15 +51,31 @@ impl GenericInit {
         Ok(server)
     }
 
+    /// Register metrics for all selected backends.
+    pub fn register_metrics(&self) -> Result<&Self> {
+        self.backends
+            .events(&self.conf.events.backend)?
+            .register_metrics(&self.telemetry.metrics)?;
+        Ok(self)
+    }
+
     // Configure and run the API server.
-    pub fn run_server(mut self) -> Result<Self> {
-        slog::debug!(self.telemetry.logger, "Starting API server");
-        let server = self.api.clone().run()?;
-        self.shutdown = self.shutdown.watch_actix(server, ());
+    pub fn run_server(&mut self, context: &Context) -> Result<&mut Self> {
+        slog::debug!(context.logger, "Starting API server");
+        let server = self.api.clone().run(context.clone())?;
+        self.shutdown.watch_actix(server, ());
         slog::info!(
-            self.telemetry.logger, "API server listening for connection";
+            context.logger, "API server listening for connection";
             "address" => &self.conf.http.bind,
         );
+        Ok(self)
+    }
+
+    /// Validate the loaded configuration objects for the selected backends.
+    pub fn validate_backends_conf(&self, context: &Context) -> Result<&Self> {
+        self.backends
+            .events(&self.conf.events.backend)?
+            .conf_check(context, &self.conf.events.options)?;
         Ok(self)
     }
 
@@ -111,9 +93,12 @@ impl GenericInit {
 /// Initialise process shutdown manager.
 pub fn shutdown_manager(logger: slog::Logger, conf: &Conf) -> ShutdownManagerBuilder<()> {
     let grace = Duration::from_secs(conf.runtime.shutdown_grace_sec);
-    ShutdownManager::builder()
+    let mut shutdown = ShutdownManager::builder();
+    shutdown
         .logger(logger)
         .graceful_shutdown_timeout(grace)
+        .watch_signal_with_default();
+    shutdown
 }
 
 /// Initialise process telemetry.

@@ -4,8 +4,8 @@ use clap::Parser;
 
 use replicore_conf::Conf;
 
-mod cmd;
-mod init;
+pub mod cmd;
+pub mod init;
 
 pub use self::cmd::Cli;
 

@@ -7,6 +7,6 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## Unreleased
 ### Added
-- ActixWeb middleware to attach contexts to requests.
-- Container for RepliCore operation scoped values.
-- Track operation scoped logger in `Context`s.
+- Events Steaming Platform interface to emit audit and change events.
+- Model of an `Event` object.
+- Utilities to unit test `Events` clients.

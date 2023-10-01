@@ -8,5 +8,9 @@ use crate::init::Sync;
 
 /// Synchronise (initialise or migrate) stateful dependences so the server can run.
 pub async fn run(_cli: Cli, conf: Conf) -> Result<()> {
-    Sync::configure(conf).await?.run().await
+    Sync::configure(conf)
+        .await?
+        .add_default_backends()
+        .run()
+        .await
 }

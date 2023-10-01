@@ -21,6 +21,8 @@ slog = "^2.7"
 
 replicore-conf = { path = "../conf" }
 replicore-context = { path = "../context" }
+replicore-events = { path = "../events" }
 
 [dev-dependencies]
 replicore-context = { path = "../context", features = ["test-fixture"] }
+replicore-events = { path = "../events", features = ["test-fixture"] }

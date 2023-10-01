@@ -12,9 +12,22 @@
 //! For the root context this is the process-wide logger with no additional attributes.
 //! But for individual operations a derived context can be provided with a [`Logger`] decorated
 //! with the operation trace ID or other request attributes.
+use std::future::Ready;
+
+use actix_web::dev::Payload;
+use actix_web::Error;
+use actix_web::FromRequest;
+use actix_web::HttpMessage;
+use actix_web::HttpRequest;
+use opentelemetry_api::trace::TraceContextExt;
+use opentelemetry_api::trace::TraceId;
+use opentelemetry_api::Context as OtelContext;
+
 use slog::Logger;
 use slog::OwnedKV;
 use slog::SendSyncRefUnwindSafeKV;
+
+pub mod middleware;
 
 /// The [`Context`] is a general purpose container to carry scoped values around.
 ///
@@ -48,6 +61,20 @@ impl Context {
     }
 }
 
+impl FromRequest for Context {
+    type Error = Error;
+    type Future = Ready<std::result::Result<Self, Self::Error>>;
+
+    fn from_request(request: &HttpRequest, _: &mut Payload) -> Self::Future {
+        let context = request
+            .extensions()
+            .get::<Context>()
+            .expect("request has no context to extract")
+            .clone();
+        std::future::ready(Ok(context))
+    }
+}
+
 /// A builder for root and derived contexts.
 pub struct ContextBuilder {
     logger: Logger,
@@ -58,6 +85,21 @@ impl ContextBuilder {
     pub fn build(self) -> Context {
         Context {
             logger: self.logger,
+        }
+    }
+
+    /// Decorate the [`Context`]'s logger with the trace ID of the current OpenTelemetry span.
+    ///
+    /// [`Context`]: super::Context
+    pub fn log_trace(self) -> Self {
+        let context = OtelContext::current();
+        let span = context.span();
+        let trace_id = span.span_context().trace_id();
+        if trace_id == TraceId::INVALID {
+            self
+        } else {
+            let trace_id = trace_id.to_string();
+            self.log_values(slog::o!("trace_id" => trace_id))
         }
     }
 
@@ -82,6 +124,10 @@ impl Context {
 
 #[cfg(test)]
 mod tests {
+    use actix_web::test::TestRequest;
+    use actix_web::FromRequest;
+    use actix_web::HttpMessage;
+
     use super::Context;
 
     #[test]
@@ -106,5 +152,13 @@ mod tests {
             format!("{:?}", parent.logger.list()),
             format!("{:?}", context.logger.list()),
         );
+    }
+
+    #[actix_web::test]
+    async fn extract_context() {
+        let context = Context::fixture();
+        let request = TestRequest::get().to_http_request();
+        request.extensions_mut().insert(context);
+        Context::extract(&request).await.unwrap();
     }
 }

@@ -14,5 +14,8 @@ target/
 devtools/deps/data
 devtools/deps/pki
 devtools/replicante.conf.d/
+
 replicante.yaml
 replidev.local.yaml
+
+replicore.sqlite

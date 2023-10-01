@@ -8,5 +8,9 @@ use crate::init::Server;
 
 /// Run the Replicante Core control plane server.
 pub async fn run(_cli: Cli, conf: Conf) -> Result<()> {
-    Server::configure(conf).await?.run().await
+    Server::configure(conf)
+        .await?
+        .add_default_backends()
+        .run()
+        .await
 }

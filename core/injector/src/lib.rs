@@ -5,6 +5,7 @@ use once_cell::sync::Lazy;
 
 use replicore_conf::Conf;
 use replicore_context::Context;
+use replicore_events::emit::Events;
 
 /// Singleton instance of the Process Globals container.
 static GLOBAL_INJECTOR: Lazy<RwLock<Option<Injector>>> = Lazy::new(|| RwLock::new(None));
@@ -15,8 +16,11 @@ pub struct Injector {
     /// Process global configuration.
     pub conf: Conf,
 
-    /// TODO
+    /// Process global context to derive scoped contexts from.
     pub context: Context,
+
+    /// Interface to emit system events.
+    pub events: Events,
 }
 
 impl Injector {
@@ -61,17 +65,30 @@ impl Injector {
 }
 
 #[cfg(any(test, feature = "test-fixture"))]
+pub struct InjectorFixture {
+    pub injector: Injector,
+    pub events: replicore_events::emit::EventsFixture,
+}
+
+#[cfg(any(test, feature = "test-fixture"))]
 impl Injector {
     /// [`Injector`] instance to be used with unit tests.
-    pub fn fixture() -> Injector {
+    pub fn fixture() -> InjectorFixture {
+        let events = replicore_events::emit::EventsFixture::new();
         let conf = Conf {
+            events: replicore_conf::BackendConf {
+                backend: "unittest".into(),
+                options: Default::default(),
+            },
             http: Default::default(),
             runtime: Default::default(),
             telemetry: Default::default(),
         };
-        Injector {
+        let injector = Injector {
             conf,
             context: Context::fixture(),
-        }
+            events: Events::from(events.backend()),
+        };
+        InjectorFixture { injector, events }
     }
 }

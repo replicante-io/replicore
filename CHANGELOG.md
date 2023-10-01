@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Command `replicore server` to run a control plane server instance.
 - Command `replicore sync` to run dependencies sync (initialise or migrate).
 - Introduce `platform.replicante.io/node.provision` action.
+- Single Process Events Streaming Backend (supported by SQLite).
 - Store `Namespace` objects in the store.
 - Store `Platform` objects in the store.
 
@@ -18,8 +19,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - **BREAKING**: Refactor configuration file structure and options (see the example config).
 - **BREAKING**: Renamed `replicante` binary to `replicore`.
 - **BREAKING**: Updated minimum rust version to 1.60.0.
+- **INTERNAL**: Reimplement Events Streaming Platform interface.
 - Capture only server-side errors in Sentry for API endpoints.
-- Update dependencies.
+- Update crate dependencies.
 
 ## [0.7.2] - 2022-09-25
 ### Changed

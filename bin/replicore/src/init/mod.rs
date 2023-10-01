@@ -1,4 +1,6 @@
 //! Initialisation logic for Replicante Core processes.
+mod actix;
+mod backends;
 mod generic;
 mod server;
 mod sync;

@@ -14,4 +14,6 @@ license = "MIT"
 test-fixture = []
 
 [dependencies]
+actix-web = "^4.0"
+opentelemetry_api = "^0.20"
 slog = "^2.7"

@@ -22,12 +22,18 @@ path = "src/main.rs"
 name = "replicore"
 path = "src/lib.rs"
 
+[features]
+default = [
+  "replicore-events-sqlite",
+]
+
 [dependencies]
 actix-web = "^4.0"
 anyhow = "^1.0"
 clap = { version = "^4.3", features = ["derive"] }
 prometheus = "^0.13"
 slog = "^2.7"
+thiserror = "^1.0"
 tokio = "^1.0"
 
 replisdk = { version = "^0.1", features = [
@@ -36,7 +42,14 @@ replisdk = { version = "^0.1", features = [
   "runtime-shutdown_actix",
   "runtime-telemetry",
 ] }
+
 replicore-conf = { path = "../../core/conf" }
+replicore-context = { path = "../../core/context" }
+replicore-events = { path = "../../core/events" }
+replicore-injector ={ path = "../../core/injector" }
+
+# Supported interface backend implementations for compile time customisation.
+replicore-events-sqlite = { path = "../../core/events/sqlite", optional = true }
 
 [build-dependencies]
 git2 = "^0.15.0"

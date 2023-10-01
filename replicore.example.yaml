@@ -1,3 +1,31 @@
+# Events Streaming Platform service configuration.
+events:
+  # Events Streaming Platform implementation for the RepliCore control plane to use.
+  #
+  # Available implementations can be enabled and disabled at compile time so the exact
+  # list of options may vary but the following implementations are included by default:
+  #
+  # - sqlite: store events into a locally persisted SQLite database.
+  #   NO SUPPORT FOR HIGH AVAILABLE CLUSTERS.
+  #   ONLY SUITABLE FOR SMALL CLUSTERS.
+  backend: REQUIRED
+
+  # Implementation specific options are provided as additional attributes here.
+  # === For SQLite backend ===
+  # Path to the SQLite DB file.
+  #path: store.sqlite
+  #
+  # Events retention and history clean up rules.
+  #retention:
+  #  # Number of days to keep events in the DB for.
+  #  age: 30
+  #
+  #  # Maximum number of expired events to delete in a single history clean loop.
+  #  clean_batch: 500
+  #
+  #  # Minutes to wait between each run of the history clean loop.
+  #  clean_delay: 1
+
 # HTTP Server configuration.
 http:
   # Sets the maximum number of pending connections.

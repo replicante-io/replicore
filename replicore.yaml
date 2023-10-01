@@ -1,3 +1,7 @@
+events:
+  backend: sqlite
+  path: replicore.sqlite
+
 telemetry:
   logs:
     level: debug

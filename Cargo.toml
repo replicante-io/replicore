@@ -5,6 +5,8 @@ members = [
   "core/conf",
   "core/context",
   "core/injector",
+  "core/events",
+  "core/events/sqlite",
 
   # Legacy sync subcrates
   #"agent/*",
