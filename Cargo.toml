@@ -1,12 +1,20 @@
 [workspace]
 members = [
-  # New Async subcrates
+  # Binary creates providing final packages.
   "bin/replicore",
+
+  # Interface crates defining services.
+  "core/auth",
+  "core/events",
+
+  # Interface implementation crates.
+  "core/auth/insecure",
+  "core/events/sqlite",
+
+  # Control Plane implementation crates.
   "core/conf",
   "core/context",
   "core/injector",
-  "core/events",
-  "core/events/sqlite",
 
   # Legacy sync subcrates
   #"agent/*",
@@ -29,6 +37,6 @@ resolver = "2"
 
 [patch.crates-io]
 # Patch the SDK against a local path for cooperative development.
-replisdk = { path = "../replisdk-rust" }
+#replisdk = { path = "../replisdk-rust" }
 # Patch the SDK against a git commit for incremental merges between releases.
-#replisdk = { git = "https://github.com/replicante-io/replisdk-rust.git", rev = "420ad96" }
+replisdk = { git = "https://github.com/replicante-io/replisdk-rust.git", rev = "a3cb6d8" }

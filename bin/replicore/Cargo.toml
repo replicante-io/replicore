@@ -30,7 +30,9 @@ default = [
 [dependencies]
 actix-web = "^4.0"
 anyhow = "^1.0"
+async-trait = "^0.1"
 clap = { version = "^4.3", features = ["derive"] }
+futures-util = "^0.3"
 prometheus = "^0.13"
 slog = "^2.7"
 thiserror = "^1.0"
@@ -43,13 +45,20 @@ replisdk = { version = "^0.1", features = [
   "runtime-telemetry",
 ] }
 
+replicore-auth = { path = "../../core/auth" }
 replicore-conf = { path = "../../core/conf" }
 replicore-context = { path = "../../core/context" }
 replicore-events = { path = "../../core/events" }
-replicore-injector ={ path = "../../core/injector" }
+replicore-injector = { path = "../../core/injector" }
 
 # Supported interface backend implementations for compile time customisation.
+replicore-auth-insecure = { path = "../../core/auth/insecure" }
 replicore-events-sqlite = { path = "../../core/events/sqlite", optional = true }
+
+[dev-dependencies]
+replicore-auth-insecure = { path = "../../core/auth/insecure" }
+replicore-context = { path = "../../core/context", features = ["test-fixture"] }
+replicore-injector = { path = "../../core/injector", features = ["test-fixture"] }
 
 [build-dependencies]
 git2 = "^0.15.0"

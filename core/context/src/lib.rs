@@ -22,18 +22,24 @@ use actix_web::HttpRequest;
 use opentelemetry_api::trace::TraceContextExt;
 use opentelemetry_api::trace::TraceId;
 use opentelemetry_api::Context as OtelContext;
-
 use slog::Logger;
 use slog::OwnedKV;
 use slog::SendSyncRefUnwindSafeKV;
 
-pub mod middleware;
+use replisdk::core::models::auth::Action;
+use replisdk::core::models::auth::AuthContext;
+use replisdk::core::models::auth::Resource;
 
 /// The [`Context`] is a general purpose container to carry scoped values around.
 ///
 /// Refer to the [crate level docs](crate) for details.
 #[derive(Clone, Debug)]
 pub struct Context {
+    /// Result of the authentication process for the current request.
+    ///
+    /// The initial value of `None` indicates no authentication process was performed on.
+    pub auth: Option<AuthContext>,
+
     /// Logger with contextual attributes attached to it.
     pub logger: Logger,
 }
@@ -42,6 +48,7 @@ impl Context {
     /// Derive a new [`Context`] by making changes to the current one.
     pub fn derive(&self) -> ContextBuilder {
         ContextBuilder {
+            auth: self.auth.clone(),
             logger: self.logger.clone(),
         }
     }
@@ -57,7 +64,7 @@ impl Context {
 
     /// Initialise a new root context with no values attached.
     pub fn root(logger: Logger) -> ContextBuilder {
-        ContextBuilder { logger }
+        ContextBuilder { auth: None, logger }
     }
 }
 
@@ -77,13 +84,65 @@ impl FromRequest for Context {
 
 /// A builder for root and derived contexts.
 pub struct ContextBuilder {
+    auth: Option<AuthContext>,
     logger: Logger,
 }
 
 impl ContextBuilder {
+    /// Mark the context to be created as authenticated by as specified.
+    pub fn authenticated(mut self, auth: AuthContext) -> Self {
+        self.auth = Some(auth);
+        self
+    }
+
+    /// Update the authentication information with a new action.
+    ///
+    /// This is helpful when processing the request requires the multiple actions or sub-actions
+    /// which all need to be authorised during processing.
+    ///
+    /// ## Panics
+    ///
+    /// This method panics if the context was not [`authenticated`](ContextBuilder::authenticated).
+    /// Doing so ensures that attempts to change the action are not ignored by
+    /// incorrect ordering of operations.
+    pub fn authenticated_action(mut self, action: Action) -> Self {
+        if self.auth.is_none() {
+            panic!(
+                "ContextBuilder::authenticated_action called before ContextBuilder::authenticated"
+            )
+        }
+        if let Some(auth) = self.auth.as_mut() {
+            auth.action = action;
+        }
+        self
+    }
+
+    /// Update the authentication information with a new resource.
+    ///
+    /// This is helpful when processing the request requires the multiple resources or
+    /// sub-resources which all need to be authorised during processing.
+    ///
+    /// ## Panics
+    ///
+    /// This method panics if the context was not [`authenticated`](ContextBuilder::authenticated).
+    /// Doing so ensures that attempts to change the resource are not ignored by
+    /// incorrect ordering of operations.
+    pub fn authenticated_resource(mut self, resource: Resource) -> Self {
+        if self.auth.is_none() {
+            panic!(
+                "ContextBuilder::authenticated_resource called before ContextBuilder::authenticated"
+            )
+        }
+        if let Some(auth) = self.auth.as_mut() {
+            auth.resource = resource;
+        }
+        self
+    }
+
     /// Finalise the build process and return a new [`Context`].
     pub fn build(self) -> Context {
         Context {
+            auth: self.auth,
             logger: self.logger,
         }
     }
@@ -118,7 +177,7 @@ impl Context {
     /// Create an empty context useful for test.
     pub fn fixture() -> Context {
         let logger = Logger::root(slog::Discard, slog::o!());
-        Context { logger }
+        Context { auth: None, logger }
     }
 }
 
@@ -128,7 +187,63 @@ mod tests {
     use actix_web::FromRequest;
     use actix_web::HttpMessage;
 
+    use replisdk::core::models::auth::Action;
+    use replisdk::core::models::auth::AuthContext;
+    use replisdk::core::models::auth::Entity;
+    use replisdk::core::models::auth::Resource;
+
     use super::Context;
+
+    fn fixture_auth() -> AuthContext {
+        AuthContext {
+            action: Action::define("test", "derive"),
+            entity: Entity::Anonymous,
+            impersonate: None,
+            resource: Resource {
+                kind: "test/resource".to_string(),
+                metadata: Default::default(),
+                resource_id: "rid".to_string(),
+            },
+        }
+    }
+
+    #[test]
+    fn derive_authenticated() {
+        let root = Context::fixture();
+        let auth = fixture_auth();
+        let context = root.derive().authenticated(auth.clone()).build();
+        assert_eq!(context.auth, Some(auth));
+    }
+
+    #[test]
+    fn derive_authenticated_action() {
+        let root = Context::fixture();
+        let auth = fixture_auth();
+        let context = root
+            .derive()
+            .authenticated(auth.clone())
+            .authenticated_action(Action::define("test", "override"))
+            .build();
+        let auth = context.auth.unwrap();
+        assert_eq!(auth.action.as_ref(), "test:override");
+    }
+
+    #[test]
+    fn derive_authenticated_resource() {
+        let root = Context::fixture();
+        let auth = fixture_auth();
+        let context = root
+            .derive()
+            .authenticated(auth.clone())
+            .authenticated_resource(Resource {
+                kind: "test/resource".to_string(),
+                metadata: Default::default(),
+                resource_id: "override".to_string(),
+            })
+            .build();
+        let auth = context.auth.unwrap();
+        assert_eq!(auth.resource.resource_id, "override");
+    }
 
     #[test]
     fn derive_log_attributes() {

@@ -82,6 +82,8 @@ pub use self::fixture::{EventsFixture, EventsFixtureBackend};
 
 #[cfg(any(test, feature = "test-fixture"))]
 mod fixture {
+    use std::time::Duration;
+
     use anyhow::Result;
     use tokio::sync::broadcast;
     use tokio::sync::broadcast::Receiver;
@@ -139,10 +141,22 @@ mod fixture {
             Ok(event)
         }
 
+        /// Fetch the next [`Event`] emitted onto the audit stream, with a timeout.
+        pub async fn pop_audit_timeout(&mut self, timeout: Duration) -> Result<Event> {
+            let event = tokio::time::timeout(timeout, self.pop_audit()).await?;
+            event
+        }
+
         /// Fetch the next [`Event`] emitted onto the change stream.
         pub async fn pop_change(&mut self) -> Result<Event> {
             let event = self.changes.recv().await?;
             Ok(event)
+        }
+
+        /// Fetch the next [`Event`] emitted onto the change stream, with a timeout.
+        pub async fn pop_change_timeout(&mut self, timeout: Duration) -> Result<Event> {
+            let event = tokio::time::timeout(timeout, self.pop_change()).await?;
+            event
         }
     }
 

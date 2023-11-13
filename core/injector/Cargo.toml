@@ -12,6 +12,7 @@ license = "MIT"
 [features]
 # Enable utilities for unit testing.
 test-fixture = [
+  "replicore-auth-insecure",
   "replicore-context/test-fixture",
 ]
 
@@ -19,10 +20,14 @@ test-fixture = [
 once_cell = "^1.0"
 slog = "^2.7"
 
+replicore-auth = { path = "../auth" }
 replicore-conf = { path = "../conf" }
 replicore-context = { path = "../context" }
 replicore-events = { path = "../events" }
 
+replicore-auth-insecure = { path = "../auth/insecure", optional = true }
+
 [dev-dependencies]
+replicore-auth-insecure = { path = "../auth/insecure" }
 replicore-context = { path = "../context", features = ["test-fixture"] }
 replicore-events = { path = "../events", features = ["test-fixture"] }

@@ -42,6 +42,23 @@ impl Event {
             .context(Error::PayloadDecode)
             .map_err(anyhow::Error::from)
     }
+
+    /// Initialise a new [`Event`] with code and payload.
+    pub fn new_with_payload<C, P>(code: C, payload: P) -> Result<Event>
+    where
+        C: Into<String>,
+        P: Serialize,
+    {
+        let code = code.into();
+        let payload = serde_json::to_value(payload)?;
+        let event = Event {
+            code,
+            metadata: Default::default(),
+            payload,
+            time: OffsetDateTime::now_utc(),
+        };
+        Ok(event)
+    }
 }
 
 #[cfg(test)]

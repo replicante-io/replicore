@@ -1,0 +1,36 @@
+[package]
+name = "replicore-auth"
+version = "0.1.0"
+
+edition = "2021"
+rust-version = "1.70"
+
+description = "RepliCore Authentication and Authorisation interfaces"
+homepage = "https://www.replicante.io/"
+license = "MIT"
+
+[features]
+default = ["actix-web"]
+
+[dependencies]
+actix-web = { version = "^4.0", optional = true }
+anyhow = "^1.0"
+async-trait = "^0.1"
+opentelemetry_api = "^0.20"
+prometheus = "^0.13"
+serde = { version = "^1.0", features = ["derive"] }
+serde_json = "^1.0"
+slog = "^2.7"
+thiserror = "^1.0"
+
+replisdk = { version = "^0.1", features = ["replicore-models", "utils-error_slog"] }
+
+replicore-context = { path = "../context" }
+replicore-events = { path = "../events" }
+
+[dev-dependencies]
+tokio = { version = "^1.0", features = ["macros", "rt"] }
+serde_test = "^1.0"
+
+replicore-context = { path = "../context", features = ["test-fixture"] }
+replicore-events = { path = "../events", features = ["test-fixture"] }

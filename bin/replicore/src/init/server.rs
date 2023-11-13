@@ -8,6 +8,7 @@ use replicore_events::emit::EventsBackendFactory;
 use replicore_events::emit::EventsBackendFactoryArgs;
 use replicore_injector::Injector;
 
+use super::actix::ActixServerRunArgs;
 use super::backends::Backends;
 use super::generic::GenericInit;
 
@@ -62,9 +63,18 @@ impl Server {
         // Initialise dependencies and global injector.
         let injector = injector(&context, &self.generic.conf, &self.generic.backends).await?;
         Injector::set_global(injector);
+        // Fetch the injector back out to ensure it is set correctly for the process.
+        let injector = Injector::global();
 
         // Start execution of all process components.
-        self.generic.run_server(&context)?;
+        self.generic.run_server(
+            &context,
+            ActixServerRunArgs {
+                authenticator: injector.authenticator,
+                authoriser: injector.authoriser,
+                context: injector.context,
+            },
+        )?;
         // TODO: Add other components
 
         // Run until user-requested exit or process error.
@@ -86,8 +96,17 @@ pub async fn injector(context: &Context, conf: &Conf, backends: &Backends) -> Re
         })
         .await?;
 
+    // Auth* is not currently configurable and just in place for the future.
+    let authenticator = replicore_auth_insecure::Anonymous.into();
+    let authoriser = replicore_auth::access::Authoriser::wrap(
+        replicore_auth_insecure::Unrestricted,
+        events.clone(),
+    );
+
     // Combine then into an Injector object.
     let injector = Injector {
+        authenticator,
+        authoriser,
         conf,
         context: context.clone(),
         events,

@@ -4,8 +4,13 @@ use clap::Parser;
 
 use replicore_conf::Conf;
 
+// Modules exposed to binaries for process composition/customisation.
 pub mod cmd;
 pub mod init;
+
+// Modules available internally to the core platform.
+mod api;
+mod backends;
 
 pub use self::cmd::Cli;
 

@@ -7,6 +7,7 @@ use replicore_context::ContextBuilder;
 use replicore_events::emit::EventsBackendFactory;
 use replicore_events::emit::EventsBackendFactorySyncArgs;
 
+use super::actix::ActixServerRunArgs;
 use super::backends::Backends;
 use super::generic::GenericInit;
 
@@ -57,7 +58,17 @@ impl Sync {
         self.generic
             .validate_backends_conf(&context)?
             .register_metrics()?;
-        self.generic.run_server(&context)?;
+        self.generic.run_server(
+            &context,
+            ActixServerRunArgs {
+                authenticator: replicore_auth_insecure::Anonymous.into(),
+                authoriser: replicore_auth::access::Authoriser::wrap(
+                    replicore_auth_insecure::Unrestricted,
+                    crate::backends::EventsNull.into(),
+                ),
+                context: context.clone(),
+            },
+        )?;
 
         // Sync dependencies in a dedicated task and auto-exit when done.
         let args = SyncArgs {

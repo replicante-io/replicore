@@ -3,6 +3,8 @@ use std::sync::RwLock;
 
 use once_cell::sync::Lazy;
 
+use replicore_auth::access::Authoriser;
+use replicore_auth::identity::Authenticator;
 use replicore_conf::Conf;
 use replicore_context::Context;
 use replicore_events::emit::Events;
@@ -13,6 +15,12 @@ static GLOBAL_INJECTOR: Lazy<RwLock<Option<Injector>>> = Lazy::new(|| RwLock::ne
 /// Container for all process global dependencies to be injected in other components.
 #[derive(Clone)]
 pub struct Injector {
+    /// Interface to determine the identity attached to requests being made.
+    pub authenticator: Authenticator,
+
+    /// Interface to verify permissions an entity has to perform an action on a resource.
+    pub authoriser: Authoriser,
+
     /// Process global configuration.
     pub conf: Conf,
 
@@ -75,6 +83,10 @@ impl Injector {
     /// [`Injector`] instance to be used with unit tests.
     pub fn fixture() -> InjectorFixture {
         let events = replicore_events::emit::EventsFixture::new();
+        let authoriser = Authoriser::wrap(
+            replicore_auth_insecure::Unrestricted,
+            events.backend().into(),
+        );
         let conf = Conf {
             events: replicore_conf::BackendConf {
                 backend: "unittest".into(),
@@ -85,9 +97,11 @@ impl Injector {
             telemetry: Default::default(),
         };
         let injector = Injector {
+            authenticator: replicore_auth_insecure::Anonymous.into(),
+            authoriser,
             conf,
             context: Context::fixture(),
-            events: Events::from(events.backend()),
+            events: events.backend().into(),
         };
         InjectorFixture { injector, events }
     }

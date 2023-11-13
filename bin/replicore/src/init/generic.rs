@@ -14,6 +14,7 @@ use replicore_conf::Conf;
 use replicore_context::Context;
 
 use super::actix::ActixServer;
+use super::actix::ActixServerRunArgs;
 use super::backends::Backends;
 
 /// Process builder to initialise all RepliCore commands.
@@ -60,9 +61,13 @@ impl GenericInit {
     }
 
     // Configure and run the API server.
-    pub fn run_server(&mut self, context: &Context) -> Result<&mut Self> {
+    pub fn run_server(
+        &mut self,
+        context: &Context,
+        server_args: ActixServerRunArgs,
+    ) -> Result<&mut Self> {
         slog::debug!(context.logger, "Starting API server");
-        let server = self.api.clone().run(context.clone())?;
+        let server = self.api.clone().run(server_args)?;
         self.shutdown.watch_actix(server, ());
         slog::info!(
             context.logger, "API server listening for connection";
