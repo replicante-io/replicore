@@ -4,7 +4,7 @@ use std::collections::HashMap;
 use std::sync::Arc;
 
 use anyhow::Result;
-use replicore_events::emit::EventsBackendFactory;
+use replicore_events::emit::EventsFactory;
 
 /// Error looking for a specific backend implementation.
 #[derive(Debug, thiserror::Error)]
@@ -26,12 +26,12 @@ impl BackendNotFound {
 #[derive(Clone, Default)]
 pub struct Backends {
     // Supported Events Platform backends.
-    events: HashMap<String, Arc<dyn EventsBackendFactory>>,
+    events: HashMap<String, Arc<dyn EventsFactory>>,
 }
 
 impl Backends {
-    /// Lookup an [`EventsBackendFactory`] by ID.
-    pub fn events(&self, id: &str) -> Result<&dyn EventsBackendFactory> {
+    /// Lookup an [`EventsFactory`] by ID.
+    pub fn events(&self, id: &str) -> Result<&dyn EventsFactory> {
         let factory = self
             .events
             .get(id)
@@ -46,7 +46,7 @@ impl Backends {
     /// This method panics if the identifier of the new Events Platform backend is already in use.
     pub fn register_events<B, S>(&mut self, id: S, backend: B) -> &mut Self
     where
-        B: EventsBackendFactory + 'static,
+        B: EventsFactory + 'static,
         S: Into<String>,
     {
         match self.events.entry(id.into()) {

@@ -4,8 +4,8 @@ use anyhow::Result;
 use replicore_conf::Conf;
 use replicore_context::Context;
 use replicore_context::ContextBuilder;
-use replicore_events::emit::EventsBackendFactory;
-use replicore_events::emit::EventsBackendFactorySyncArgs;
+use replicore_events::emit::EventsFactory;
+use replicore_events::emit::EventsFactorySyncArgs;
 
 use super::actix::ActixServerRunArgs;
 use super::backends::Backends;
@@ -44,7 +44,7 @@ impl Sync {
     /// This method panics if the identifier of the new Events Platform backend is already in use.
     pub fn events_backend<B, S>(mut self, id: S, backend: B) -> Self
     where
-        B: EventsBackendFactory + 'static,
+        B: EventsFactory + 'static,
         S: Into<String>,
     {
         self.generic.backends.register_events(id, backend);
@@ -102,7 +102,7 @@ async fn synchronise_dependencies(context: &Context, args: SyncArgs) -> Result<(
 
 async fn sync_events(context: &Context, args: &SyncArgs) -> Result<()> {
     slog::debug!(context.logger, "Synchronising events backend");
-    let eargs = EventsBackendFactorySyncArgs {
+    let eargs = EventsFactorySyncArgs {
         conf: &args.conf.events.options,
         context,
     };

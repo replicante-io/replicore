@@ -4,8 +4,8 @@ use anyhow::Result;
 use replicore_conf::Conf;
 use replicore_context::Context;
 use replicore_context::ContextBuilder;
-use replicore_events::emit::EventsBackendFactory;
-use replicore_events::emit::EventsBackendFactoryArgs;
+use replicore_events::emit::EventsFactory;
+use replicore_events::emit::EventsFactoryArgs;
 use replicore_injector::Injector;
 
 use super::actix::ActixServerRunArgs;
@@ -45,7 +45,7 @@ impl Server {
     /// This method panics if the identifier of the new Events Platform backend is already in use.
     pub fn events_backend<B, S>(mut self, id: S, backend: B) -> Self
     where
-        B: EventsBackendFactory + 'static,
+        B: EventsFactory + 'static,
         S: Into<String>,
     {
         self.generic.backends.register_events(id, backend);
@@ -90,7 +90,7 @@ pub async fn injector(context: &Context, conf: &Conf, backends: &Backends) -> Re
 
     // Initialise all dependencies.
     let events = events
-        .events(EventsBackendFactoryArgs {
+        .events(EventsFactoryArgs {
             conf: &conf.events.options,
             context,
         })

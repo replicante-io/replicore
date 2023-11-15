@@ -5,9 +5,9 @@ use serde_json::Value as Json;
 
 use replicore_context::Context;
 use replicore_events::emit::Events;
-use replicore_events::emit::EventsBackendFactory;
-use replicore_events::emit::EventsBackendFactoryArgs;
-use replicore_events::emit::EventsBackendFactorySyncArgs;
+use replicore_events::emit::EventsFactory;
+use replicore_events::emit::EventsFactoryArgs;
+use replicore_events::emit::EventsFactorySyncArgs;
 
 use super::events::SQLiteEvents;
 use crate::Conf;
@@ -21,7 +21,7 @@ pub struct ConfError;
 pub struct SQLiteFactory;
 
 #[async_trait::async_trait]
-impl EventsBackendFactory for SQLiteFactory {
+impl EventsFactory for SQLiteFactory {
     fn conf_check(&self, _context: &Context, conf: &Json) -> Result<()> {
         serde_json::from_value::<Conf>(conf.clone()).context(ConfError)?;
         Ok(())
@@ -31,13 +31,13 @@ impl EventsBackendFactory for SQLiteFactory {
         crate::telemetry::register_metrics(registry)
     }
 
-    async fn events<'a>(&self, args: EventsBackendFactoryArgs<'a>) -> Result<Events> {
+    async fn events<'a>(&self, args: EventsFactoryArgs<'a>) -> Result<Events> {
         let conf: Conf = serde_json::from_value(args.conf.clone()).unwrap();
         let events = SQLiteEvents::new(args.context, &conf).await?;
         Ok(Events::from(events))
     }
 
-    async fn sync<'a>(&self, args: EventsBackendFactorySyncArgs<'a>) -> Result<()> {
+    async fn sync<'a>(&self, args: EventsFactorySyncArgs<'a>) -> Result<()> {
         // Create the SQLite client.
         let conf: Conf = serde_json::from_value(args.conf.clone()).unwrap();
         let client = crate::client::create(args.context, &conf.path).await?;

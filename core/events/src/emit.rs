@@ -45,7 +45,7 @@ pub trait EventsBackend: Send + Sync {
 
 /// Initialisation logic for the event streaming platform and the client to access it.
 #[async_trait::async_trait]
-pub trait EventsBackendFactory: Send + Sync {
+pub trait EventsFactory: Send + Sync {
     /// Validate the user provided configuration for the backend.
     fn conf_check(&self, context: &Context, conf: &Json) -> Result<()>;
 
@@ -53,14 +53,14 @@ pub trait EventsBackendFactory: Send + Sync {
     fn register_metrics(&self, registry: &prometheus::Registry) -> Result<()>;
 
     /// Instantiate an [`Events`] object to emit events to the streaming platform.
-    async fn events<'a>(&self, args: EventsBackendFactoryArgs<'a>) -> Result<Events>;
+    async fn events<'a>(&self, args: EventsFactoryArgs<'a>) -> Result<Events>;
 
     /// Synchronise (initialise of migrate) the streaming platform to handle RepliCore [`Event`]s.
-    async fn sync<'a>(&self, args: EventsBackendFactorySyncArgs<'a>) -> Result<()>;
+    async fn sync<'a>(&self, args: EventsFactorySyncArgs<'a>) -> Result<()>;
 }
 
-/// Arguments passed to the [`EventsBackendFactory`] client initialisation method.
-pub struct EventsBackendFactoryArgs<'a> {
+/// Arguments passed to the [`EventsFactory`] client initialisation method.
+pub struct EventsFactoryArgs<'a> {
     /// The configuration block for the backend to initialise.
     pub conf: &'a Json,
 
@@ -68,8 +68,8 @@ pub struct EventsBackendFactoryArgs<'a> {
     pub context: &'a Context,
 }
 
-/// Arguments passed to the [`EventsBackendFactory`] client synchronisation method.
-pub struct EventsBackendFactorySyncArgs<'a> {
+/// Arguments passed to the [`EventsFactory`] client synchronisation method.
+pub struct EventsFactorySyncArgs<'a> {
     /// The configuration block for the backend to Synchronise.
     pub conf: &'a Json,
 
