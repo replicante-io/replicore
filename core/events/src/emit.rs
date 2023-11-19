@@ -55,7 +55,7 @@ pub trait EventsFactory: Send + Sync {
     /// Instantiate an [`Events`] object to emit events to the streaming platform.
     async fn events<'a>(&self, args: EventsFactoryArgs<'a>) -> Result<Events>;
 
-    /// Synchronise (initialise of migrate) the streaming platform to handle RepliCore [`Event`]s.
+    /// Synchronise (initialise or migrate) the streaming platform to handle RepliCore [`Event`]s.
     async fn sync<'a>(&self, args: EventsFactorySyncArgs<'a>) -> Result<()>;
 }
 
@@ -70,7 +70,7 @@ pub struct EventsFactoryArgs<'a> {
 
 /// Arguments passed to the [`EventsFactory`] client synchronisation method.
 pub struct EventsFactorySyncArgs<'a> {
-    /// The configuration block for the backend to Synchronise.
+    /// The configuration block for the backend to synchronise.
     pub conf: &'a Json,
 
     /// Container for operation scoped values.

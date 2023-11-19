@@ -5,6 +5,7 @@ use std::sync::Arc;
 
 use anyhow::Result;
 use replicore_events::emit::EventsFactory;
+use replicore_store::StoreFactory;
 
 /// Error looking for a specific backend implementation.
 #[derive(Debug, thiserror::Error)]
@@ -13,12 +14,22 @@ pub enum BackendNotFound {
     #[error("events backend '{0}' not recognised")]
     // (id,)
     Events(String),
+
+    /// Persistent Store backend not recognised.
+    #[error("persistent store backend '{0}' not recognised")]
+    // (id,)
+    Store(String),
 }
 
 impl BackendNotFound {
     /// Events backend not recognised.
     pub fn events(id: &str) -> Self {
         Self::Events(id.to_string())
+    }
+
+    /// Persistent Store backend not recognised.
+    pub fn store(id: &str) -> Self {
+        Self::Store(id.to_string())
     }
 }
 
@@ -27,6 +38,9 @@ impl BackendNotFound {
 pub struct Backends {
     // Supported Events Platform backends.
     events: HashMap<String, Arc<dyn EventsFactory>>,
+
+    /// Supported Persistent Store backends.
+    stores: HashMap<String, Arc<dyn StoreFactory>>,
 }
 
 impl Backends {
@@ -59,5 +73,36 @@ impl Backends {
             Entry::Vacant(entry) => entry.insert(Arc::new(backend)),
         };
         self
+    }
+
+    /// Register a new factory for a Persistent Store implementation.
+    ///
+    /// # Panics
+    ///
+    /// This method panics if the identifier of the new Persistent Store backend is already in use.
+    pub fn register_store<B, S>(&mut self, id: S, backend: B) -> &mut Self
+    where
+        B: StoreFactory + 'static,
+        S: Into<String>,
+    {
+        match self.stores.entry(id.into()) {
+            Entry::Occupied(entry) => {
+                panic!(
+                    "a StoreBackend with id '{}' is already registered",
+                    entry.key()
+                )
+            }
+            Entry::Vacant(entry) => entry.insert(Arc::new(backend)),
+        };
+        self
+    }
+
+    /// Lookup a [`StoreFactory`] by ID.
+    pub fn store(&self, id: &str) -> Result<&dyn StoreFactory> {
+        let factory = self
+            .stores
+            .get(id)
+            .ok_or_else(|| BackendNotFound::store(id))?;
+        Ok(factory.as_ref())
     }
 }

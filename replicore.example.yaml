@@ -138,6 +138,23 @@ runtime:
   # This number is best kept small and defaults to the number of CPU cores on the system.
   workers: ~
 
+# Persistent Store service configuration.
+store:
+  # Persistent Store implementation for the RepliCore control plane to use.
+  #
+  # Available implementations can be enabled and disabled at compile time so the exact
+  # list of options may vary but the following implementations are included by default:
+  #
+  # - sqlite: store information into a locally persisted SQLite database.
+  #   NO SUPPORT FOR HIGH AVAILABLE CLUSTERS.
+  #   ONLY SUITABLE FOR SMALL CLUSTERS.
+  backend: REQUIRED
+
+  # Implementation specific options are provided as additional attributes here.
+  # === For SQLite backend ===
+  # Path to the SQLite DB file.
+  #path: store.sqlite
+
 # Telemetry configuration for the process.
 telemetry:
   # Logging configuration for the process.

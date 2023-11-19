@@ -1,11 +1,11 @@
 [package]
-name = "replicore-events-sqlite"
+name = "replicore-store-sqlite"
 version = "0.1.0"
 
 edition = "2021"
 rust-version = "1.70"
 
-description = "RepliCore events backed by an SQLite DB"
+description = "RepliCore persistent store backed by an SQLite DB"
 homepage = "https://www.replicante.io/"
 license = "MIT"
 
@@ -21,12 +21,19 @@ slog = "^2.0"
 refinery = { version = "^0.8", features = ["rusqlite"] }
 rusqlite = { version = "^0.29", features = ["bundled"] }
 thiserror = "^1.0"
-
-# Changes needed to support custom errors have not been published yet so point directly to repo.
-#tokio-rusqlite = { version = "^0.4", optional = true }
-tokio-rusqlite = { git = "https://github.com/programatik29/tokio-rusqlite.git", rev = "ee94a85" }
+tokio-rusqlite = "^0.4"
 
 replicore-context = { path = "../../context" }
-replicore-events = { path = "../" }
+replicore-store = { path = "../" }
 
-replisdk = { version = "^0.1", features = ["utils-encoding", "utils-metrics", "utils-trace"] }
+replisdk = { version = "^0.1", features = [
+  "replicore-models",
+  "utils-encoding",
+  "utils-metrics",
+  "utils-trace",
+] }
+
+[dev-dependencies]
+tokio = { version = "^1.0", features = ["macros", "rt"] }
+
+replicore-context = { path = "../../context", features = ["test-fixture"] }

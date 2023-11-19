@@ -27,16 +27,6 @@ pub struct GenericInit {
 }
 
 impl GenericInit {
-    /// Register all supported backends for all process dependencies.
-    ///
-    /// Supported dependencies can be tuned at compile time using crate features.
-    pub fn add_default_backends(&mut self) -> &mut Self {
-        #[cfg(feature = "replicore-events-sqlite")]
-        self.backends
-            .register_events("sqlite", replicore_events_sqlite::emit::SQLiteFactory);
-        self
-    }
-
     /// Build a server from the loaded configuration.
     pub async fn configure(conf: Conf) -> Result<Self> {
         let telemetry = telemetry(conf.telemetry.clone()).await?;
@@ -50,6 +40,17 @@ impl GenericInit {
             telemetry,
         };
         Ok(server)
+    }
+
+    /// Register all supported backends for all process dependencies.
+    ///
+    /// Supported dependencies can be tuned at compile time using crate features.
+    pub fn register_default_backends(&mut self) -> &mut Self {
+        #[cfg(feature = "replicore-events-sqlite")]
+        self.backends
+            .register_events("sqlite", replicore_events_sqlite::emit::SQLiteFactory)
+            .register_store("sqlite", replicore_store_sqlite::SQLiteFactory);
+        self
     }
 
     /// Register metrics for all selected backends.

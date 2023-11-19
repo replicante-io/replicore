@@ -10,7 +10,7 @@ use crate::init::Sync;
 pub async fn run(_cli: Cli, conf: Conf) -> Result<()> {
     Sync::configure(conf)
         .await?
-        .add_default_backends()
+        .register_default_backends()
         .run()
         .await
 }

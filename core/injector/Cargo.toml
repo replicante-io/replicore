@@ -14,6 +14,7 @@ license = "MIT"
 test-fixture = [
   "replicore-auth-insecure",
   "replicore-context/test-fixture",
+  "replicore-store/test-fixture",
 ]
 
 [dependencies]
@@ -24,6 +25,7 @@ replicore-auth = { path = "../auth" }
 replicore-conf = { path = "../conf" }
 replicore-context = { path = "../context" }
 replicore-events = { path = "../events" }
+replicore-store = { path = "../store" }
 
 replicore-auth-insecure = { path = "../auth/insecure", optional = true }
 

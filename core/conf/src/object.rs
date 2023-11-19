@@ -21,6 +21,9 @@ pub struct Conf {
     #[serde(default)]
     pub runtime: RuntimeConf,
 
+    /// Persistent Store service configuration.
+    pub store: BackendConf,
+
     /// Telemetry configuration for the process.
     #[serde(default)]
     pub telemetry: TelemetryConfig,

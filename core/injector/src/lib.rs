@@ -8,6 +8,7 @@ use replicore_auth::identity::Authenticator;
 use replicore_conf::Conf;
 use replicore_context::Context;
 use replicore_events::emit::Events;
+use replicore_store::Store;
 
 /// Singleton instance of the Process Globals container.
 static GLOBAL_INJECTOR: Lazy<RwLock<Option<Injector>>> = Lazy::new(|| RwLock::new(None));
@@ -29,6 +30,9 @@ pub struct Injector {
 
     /// Interface to emit system events.
     pub events: Events,
+
+    /// Interface to persist state.
+    pub store: Store,
 }
 
 impl Injector {
@@ -94,6 +98,10 @@ impl Injector {
             },
             http: Default::default(),
             runtime: Default::default(),
+            store: replicore_conf::BackendConf {
+                backend: "unittest".into(),
+                options: Default::default(),
+            },
             telemetry: Default::default(),
         };
         let injector = Injector {
@@ -102,6 +110,7 @@ impl Injector {
             conf,
             context: Context::fixture(),
             events: events.backend().into(),
+            store: Store::fixture(),
         };
         InjectorFixture { injector, events }
     }

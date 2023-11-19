@@ -6,10 +6,12 @@ members = [
   # Interface crates defining services.
   "core/auth",
   "core/events",
+  "core/store",
 
   # Interface implementation crates.
   "core/auth/insecure",
   "core/events/sqlite",
+  "core/store/sqlite",
 
   # Control Plane implementation crates.
   "core/conf",
@@ -37,6 +39,6 @@ resolver = "2"
 
 [patch.crates-io]
 # Patch the SDK against a local path for cooperative development.
-#replisdk = { path = "../replisdk-rust" }
+replisdk = { path = "../replisdk-rust" }
 # Patch the SDK against a git commit for incremental merges between releases.
-replisdk = { git = "https://github.com/replicante-io/replisdk-rust.git", rev = "a3cb6d8" }
+#replisdk = { git = "https://github.com/replicante-io/replisdk-rust.git", rev = "a3cb6d8" }

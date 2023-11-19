@@ -24,7 +24,13 @@ path = "src/lib.rs"
 
 [features]
 default = [
+  "sqlite-impls",
+]
+
+# Include SQLite implementations for the Control Plane dependencies.
+sqlite-impls = [
   "replicore-events-sqlite",
+  "replicore-store-sqlite",
 ]
 
 [dependencies]
@@ -50,10 +56,12 @@ replicore-conf = { path = "../../core/conf" }
 replicore-context = { path = "../../core/context" }
 replicore-events = { path = "../../core/events" }
 replicore-injector = { path = "../../core/injector" }
+replicore-store = { path = "../../core/store" }
 
 # Supported interface backend implementations for compile time customisation.
 replicore-auth-insecure = { path = "../../core/auth/insecure" }
 replicore-events-sqlite = { path = "../../core/events/sqlite", optional = true }
+replicore-store-sqlite = { path = "../../core/store/sqlite", optional = true }
 
 [dev-dependencies]
 replicore-auth-insecure = { path = "../../core/auth/insecure" }

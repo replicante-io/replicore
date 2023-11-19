@@ -10,5 +10,5 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Added
 
-- Delete, lookup and persist namespaces.
-- Persistent Store interface and operations structure.
+- Initial SQLite store implementation.
+- SQLite store initialisation.

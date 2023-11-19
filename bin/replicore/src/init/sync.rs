@@ -6,6 +6,8 @@ use replicore_context::Context;
 use replicore_context::ContextBuilder;
 use replicore_events::emit::EventsFactory;
 use replicore_events::emit::EventsFactorySyncArgs;
+use replicore_store::StoreFactory;
+use replicore_store::StoreFactorySyncArgs;
 
 use super::actix::ActixServerRunArgs;
 use super::backends::Backends;
@@ -24,8 +26,8 @@ impl Sync {
     /// Register all supported backends for all process dependencies.
     ///
     /// Supported dependencies can be tuned at compile time using crate features.
-    pub fn add_default_backends(mut self) -> Self {
-        self.generic.add_default_backends();
+    pub fn register_default_backends(mut self) -> Self {
+        self.generic.register_default_backends();
         self
     }
 
@@ -42,12 +44,26 @@ impl Sync {
     /// # Panics
     ///
     /// This method panics if the identifier of the new Events Platform backend is already in use.
-    pub fn events_backend<B, S>(mut self, id: S, backend: B) -> Self
+    pub fn register_events<B, S>(mut self, id: S, backend: B) -> Self
     where
         B: EventsFactory + 'static,
         S: Into<String>,
     {
         self.generic.backends.register_events(id, backend);
+        self
+    }
+
+    /// Register a new factory for a Persistent Store implementation.
+    ///
+    /// # Panics
+    ///
+    /// This method panics if the identifier of the new Persistent Store backend is already in use.
+    pub fn register_store<B, S>(mut self, id: S, backend: B) -> Self
+    where
+        B: StoreFactory + 'static,
+        S: Into<String>,
+    {
+        self.generic.backends.register_store(id, backend);
         self
     }
 
@@ -95,19 +111,31 @@ async fn synchronise_dependencies(context: &Context, args: SyncArgs) -> Result<(
     slog::info!(context.logger, "Synchronising dependences");
     // TODO: Synchronise election service.
     sync_events(context, &args).await?;
-    // TODO: Synchronise persistence store.
+    sync_store(context, &args).await?;
     // TODO: Synchronise task submission queues.
     Ok(())
 }
 
 async fn sync_events(context: &Context, args: &SyncArgs) -> Result<()> {
     slog::debug!(context.logger, "Synchronising events backend");
-    let eargs = EventsFactorySyncArgs {
+    let sync_args = EventsFactorySyncArgs {
         conf: &args.conf.events.options,
         context,
     };
     args.backends
         .events(&args.conf.events.backend)?
-        .sync(eargs)
+        .sync(sync_args)
+        .await
+}
+
+async fn sync_store(context: &Context, args: &SyncArgs) -> Result<()> {
+    slog::debug!(context.logger, "Synchronising persistent store backend");
+    let sync_args = StoreFactorySyncArgs {
+        conf: &args.conf.store.options,
+        context,
+    };
+    args.backends
+        .store(&args.conf.store.backend)?
+        .sync(sync_args)
         .await
 }

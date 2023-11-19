@@ -7,6 +7,8 @@ use replicore_context::ContextBuilder;
 use replicore_events::emit::EventsFactory;
 use replicore_events::emit::EventsFactoryArgs;
 use replicore_injector::Injector;
+use replicore_store::StoreFactory;
+use replicore_store::StoreFactoryArgs;
 
 use super::actix::ActixServerRunArgs;
 use super::backends::Backends;
@@ -22,14 +24,6 @@ pub struct Server {
 }
 
 impl Server {
-    /// Register all supported backends for all process dependencies.
-    ///
-    /// Supported dependencies can be tuned at compile time using crate features.
-    pub fn add_default_backends(mut self) -> Self {
-        self.generic.add_default_backends();
-        self
-    }
-
     /// Build a server from the loaded configuration.
     pub async fn configure(conf: Conf) -> Result<Self> {
         let generic = GenericInit::configure(conf).await?;
@@ -43,12 +37,34 @@ impl Server {
     /// # Panics
     ///
     /// This method panics if the identifier of the new Events Platform backend is already in use.
-    pub fn events_backend<B, S>(mut self, id: S, backend: B) -> Self
+    pub fn register_events<B, S>(mut self, id: S, backend: B) -> Self
     where
         B: EventsFactory + 'static,
         S: Into<String>,
     {
         self.generic.backends.register_events(id, backend);
+        self
+    }
+
+    /// Register a new factory for a Persistent Store implementation.
+    ///
+    /// # Panics
+    ///
+    /// This method panics if the identifier of the new Persistent Store backend is already in use.
+    pub fn register_store<B, S>(mut self, id: S, backend: B) -> Self
+    where
+        B: StoreFactory + 'static,
+        S: Into<String>,
+    {
+        self.generic.backends.register_store(id, backend);
+        self
+    }
+
+    /// Register all supported backends for all process dependencies.
+    ///
+    /// Supported dependencies can be tuned at compile time using crate features.
+    pub fn register_default_backends(mut self) -> Self {
+        self.generic.register_default_backends();
         self
     }
 
@@ -87,11 +103,18 @@ pub async fn injector(context: &Context, conf: &Conf, backends: &Backends) -> Re
     // Grab all dependencies factories.
     let conf = conf.clone();
     let events = backends.events(&conf.events.backend)?;
+    let store = backends.store(&conf.store.backend)?;
 
     // Initialise all dependencies.
     let events = events
         .events(EventsFactoryArgs {
             conf: &conf.events.options,
+            context,
+        })
+        .await?;
+    let store = store
+        .store(StoreFactoryArgs {
+            conf: &conf.store.options,
             context,
         })
         .await?;
@@ -110,6 +133,7 @@ pub async fn injector(context: &Context, conf: &Conf, backends: &Backends) -> Re
         conf,
         context: context.clone(),
         events,
+        store,
     };
     Ok(injector)
 }
