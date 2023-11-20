@@ -1,5 +1,6 @@
 //! Persistent store operations on Namespaces.
 use anyhow::Result;
+use futures::StreamExt;
 use opentelemetry_api::trace::FutureExt;
 use tokio_rusqlite::Connection;
 
@@ -10,10 +11,17 @@ use replisdk::utils::trace::TraceFutureStdErrExt;
 use replicore_context::Context;
 use replicore_store::delete::DeleteNamespace;
 use replicore_store::query::LookupNamespace;
+use replicore_store::query::StringStream;
 
 const DELETE_SQL: &str = r#"
 DELETE FROM store_namespace
 WHERE id = ?1;
+"#;
+
+const LIST_IDS_SQL: &str = r#"
+SELECT id
+FROM store_namespace
+ORDER BY id ASC
 "#;
 
 const LOOKUP_SQL: &str = r#"
@@ -47,7 +55,30 @@ pub async fn delete(_: &Context, connection: &Connection, ns: DeleteNamespace) -
     Ok(())
 }
 
-// TODO: list
+/// Return a list of known [`Namespace`] IDs.
+pub async fn list(_: &Context, connection: &Connection) -> Result<StringStream> {
+    let (err_count, _timer) = crate::telemetry::observe_op("namespace.listIds");
+    let trace = crate::telemetry::trace_op("namespace.listIds");
+    let ids = connection
+        .call(move |connection| {
+            let mut statement = connection.prepare_cached(LIST_IDS_SQL)?;
+            let mut rows = statement.query([])?;
+
+            let mut ids = Vec::new();
+            while let Some(row) = rows.next()? {
+                let id: String = row.get("id")?;
+                ids.push(id);
+            }
+            Ok(ids)
+        })
+        .count_on_err(err_count)
+        .trace_on_err_with_status()
+        .with_context(trace)
+        .await?;
+
+    let ids = futures::stream::iter(ids).map(Ok).boxed();
+    Ok(ids)
+}
 
 /// Lookup a namespace from the store, if one is available.
 pub async fn lookup(
@@ -104,11 +135,13 @@ pub async fn persist(_: &Context, connection: &Connection, ns: Namespace) -> Res
 
 #[cfg(test)]
 mod tests {
+    use futures::TryStreamExt;
+
     use super::LookupNamespace;
     use super::Namespace;
 
     #[tokio::test]
-    async fn operations() {
+    async fn delete_get_persist() {
         let context = replicore_context::Context::fixture();
         let store = crate::statements::tests::store().await;
         let ns = Namespace { id: "test".into() };
@@ -142,5 +175,49 @@ mod tests {
         assert_eq!(record.is_none(), true);
     }
 
-    // TODO: test listing
+    #[tokio::test]
+    async fn list() {
+        let context = replicore_context::Context::fixture();
+        let store = crate::statements::tests::store().await;
+
+        // Fill the store with a few namespaces.
+        store
+            .persist(
+                &context,
+                Namespace {
+                    id: "test-1".into(),
+                },
+            )
+            .await
+            .unwrap();
+        store
+            .persist(
+                &context,
+                Namespace {
+                    id: "test-2".into(),
+                },
+            )
+            .await
+            .unwrap();
+        store
+            .persist(
+                &context,
+                Namespace {
+                    id: "test-3".into(),
+                },
+            )
+            .await
+            .unwrap();
+
+        // Grab the list of IDs and check them.
+        let op = replicore_store::query::ListNamespaceIds;
+        let mut result = store.query(&context, op).await.unwrap();
+
+        let mut ids = Vec::new();
+        while let Some(id) = result.try_next().await.unwrap() {
+            ids.push(id);
+        }
+
+        assert_eq!(ids, ["test-1", "test-2", "test-3"]);
+    }
 }

@@ -5,6 +5,7 @@ use std::sync::Mutex;
 use std::sync::MutexGuard;
 
 use anyhow::Result;
+use futures::StreamExt;
 
 use replisdk::core::models::namespace::Namespace;
 
@@ -56,6 +57,11 @@ impl StoreBackend for StoreFixture {
     async fn query(&self, _: &Context, op: QueryOps) -> Result<QueryResponses> {
         let store = self.access();
         match op {
+            QueryOps::ListNamespaceIds => {
+                let ids: Vec<String> = store.namespaces.keys().cloned().collect();
+                let ids = futures::stream::iter(ids).map(Ok).boxed();
+                Ok(QueryResponses::StringStream(ids))
+            }
             QueryOps::Namespace(ns) => {
                 let ns = store.namespaces.get(&ns.id).cloned();
                 Ok(QueryResponses::Namespace(ns))

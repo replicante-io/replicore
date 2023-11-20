@@ -38,6 +38,10 @@ impl StoreBackend for SQLiteStore {
 
     async fn query(&self, context: &Context, op: QueryOps) -> Result<QueryResponses> {
         match op {
+            QueryOps::ListNamespaceIds => {
+                let list = self::namespace::list(context, &self.connection).await?;
+                Ok(QueryResponses::StringStream(list))
+            }
             QueryOps::Namespace(ns) => {
                 let ns = self::namespace::lookup(context, &self.connection, ns).await?;
                 Ok(QueryResponses::Namespace(ns))

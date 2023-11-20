@@ -1996,6 +1996,7 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "async-trait",
+ "futures",
  "prometheus",
  "replicore-context",
  "replisdk",
@@ -2009,6 +2010,7 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "async-trait",
+ "futures",
  "once_cell",
  "opentelemetry_api",
  "prometheus",

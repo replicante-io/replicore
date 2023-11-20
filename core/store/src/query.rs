@@ -1,4 +1,7 @@
 //! RepliCore Control Plane persistent store operations to query records.
+use anyhow::Result;
+use futures::Stream;
+
 use replisdk::core::models::namespace::Namespace;
 
 use self::seal::SealQueryOp;
@@ -11,17 +14,30 @@ pub trait QueryOp: Into<QueryOps> + SealQueryOp {
 
 /// List of all query operations the persistent store must implement.
 pub enum QueryOps {
+    /// List the IDs of all known namespaces, sorted alphabetically.
+    ListNamespaceIds,
+
     /// Query a namespace by Namespace ID.
     Namespace(LookupNamespace),
 }
 
 /// List of all responses from query operations.
 pub enum QueryResponses {
-    /// Return a namespace, if one was found matching the query.
+    /// Return a [`Namespace`], if one was found matching the query.
     Namespace(Option<Namespace>),
+
+    /// Return a [`Stream`] (async iterator) of strings (useful for IDs).
+    StringStream(StringStream),
 }
 
+// --- Operations return types -- //
+/// Alias for a heap-allocated [`Stream`] of strings (useful for IDs).
+pub type StringStream = std::pin::Pin<Box<dyn Stream<Item = Result<String>>>>;
+
 // --- High level query operations --- //
+/// List the IDs of all known namespaces, sorted alphabetically.
+pub struct ListNamespaceIds;
+
 /// Lookup a [`Namespace`] record by ID.
 #[derive(Clone, Debug)]
 pub struct LookupNamespace {
@@ -61,10 +77,20 @@ mod seal {
 }
 
 // --- Implement QueryOp and super traits on types for transparent operations --- //
+impl SealQueryOp for ListNamespaceIds {}
+impl QueryOp for ListNamespaceIds {
+    type Response = StringStream;
+}
+impl From<ListNamespaceIds> for QueryOps {
+    fn from(_: ListNamespaceIds) -> Self {
+        QueryOps::ListNamespaceIds
+    }
+}
+
+impl SealQueryOp for LookupNamespace {}
 impl QueryOp for LookupNamespace {
     type Response = Option<Namespace>;
 }
-impl SealQueryOp for LookupNamespace {}
 impl From<LookupNamespace> for QueryOps {
     fn from(value: LookupNamespace) -> Self {
         QueryOps::Namespace(value)
@@ -76,7 +102,15 @@ impl From<QueryResponses> for Option<Namespace> {
     fn from(value: QueryResponses) -> Self {
         match value {
             QueryResponses::Namespace(namespace) => namespace,
-            //_ => panic!(TODO),
+            _ => panic!("unexpected result type for the given query operation"),
+        }
+    }
+}
+impl From<QueryResponses> for StringStream {
+    fn from(value: QueryResponses) -> Self {
+        match value {
+            QueryResponses::StringStream(stream) => stream,
+            _ => panic!("unexpected result type for the given query operation"),
         }
     }
 }
