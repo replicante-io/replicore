@@ -12,6 +12,7 @@ use replicore_store::query::QueryResponses;
 use replicore_store::StoreBackend;
 
 mod namespace;
+mod platform;
 
 /// implementation of the [`StoreBackend`] interface using SQLite.
 pub struct SQLiteStore {
@@ -33,6 +34,9 @@ impl StoreBackend for SQLiteStore {
             DeleteOps::Namespace(ns) => self::namespace::delete(context, &self.connection, ns)
                 .await
                 .map(|_| DeleteResponses::Success),
+            DeleteOps::Platform(pl) => self::platform::delete(context, &self.connection, pl)
+                .await
+                .map(|_| DeleteResponses::Success),
         }
     }
 
@@ -42,9 +46,17 @@ impl StoreBackend for SQLiteStore {
                 let list = self::namespace::list(context, &self.connection).await?;
                 Ok(QueryResponses::StringStream(list))
             }
+            QueryOps::ListPlatformIds(ns) => {
+                let list = self::platform::list(context, &self.connection, ns).await?;
+                Ok(QueryResponses::StringStream(list))
+            }
             QueryOps::Namespace(ns) => {
                 let ns = self::namespace::lookup(context, &self.connection, ns).await?;
                 Ok(QueryResponses::Namespace(ns))
+            }
+            QueryOps::Platform(pl) => {
+                let pl = self::platform::lookup(context, &self.connection, pl).await?;
+                Ok(QueryResponses::Platform(pl))
             }
         }
     }
@@ -52,6 +64,9 @@ impl StoreBackend for SQLiteStore {
     async fn persist(&self, context: &Context, op: PersistOps) -> Result<PersistResponses> {
         match op {
             PersistOps::Namespace(ns) => self::namespace::persist(context, &self.connection, ns)
+                .await
+                .map(|_| PersistResponses::Success),
+            PersistOps::Platform(pl) => self::platform::persist(context, &self.connection, pl)
                 .await
                 .map(|_| PersistResponses::Success),
         }

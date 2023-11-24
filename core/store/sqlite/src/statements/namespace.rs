@@ -21,23 +21,22 @@ WHERE id = ?1;
 const LIST_IDS_SQL: &str = r#"
 SELECT id
 FROM store_namespace
-ORDER BY id ASC
+ORDER BY id ASC;
 "#;
 
 const LOOKUP_SQL: &str = r#"
-SELECT namespace
+SELECT id
 FROM store_namespace
 WHERE id = ?1;
 "#;
 
 const PERSIST_SQL: &str = r#"
-INSERT INTO store_namespace (namespace, id)
-VALUES (?1, ?2);
+INSERT INTO store_namespace (id)
+VALUES (?1);
 ON CONFLICT(id)
 DO UPDATE SET
-    namespace=?1,
-;
-"#;
+    id=?1,
+;"#;
 
 /// Delete a namespace from the store, ignoring missing namespaces.
 pub async fn delete(_: &Context, connection: &Connection, ns: DeleteNamespace) -> Result<()> {
@@ -45,7 +44,7 @@ pub async fn delete(_: &Context, connection: &Connection, ns: DeleteNamespace) -
     let trace = crate::telemetry::trace_op("namespace.delete");
     connection
         .call(move |connection| {
-            connection.execute(DELETE_SQL, rusqlite::params![ns.id])?;
+            connection.execute(DELETE_SQL, rusqlite::params![ns.0.id])?;
             Ok(())
         })
         .count_on_err(err_count)
@@ -88,15 +87,15 @@ pub async fn lookup(
 ) -> Result<Option<Namespace>> {
     let (err_count, timer) = crate::telemetry::observe_op("namespace.lookup");
     let trace = crate::telemetry::trace_op("namespace.lookup");
-    let namespace = connection
+    let id = connection
         .call(move |connection| {
             let mut statement = connection.prepare_cached(LOOKUP_SQL)?;
-            let mut rows = statement.query([ns.id])?;
+            let mut rows = statement.query([ns.0.id])?;
             let row = match rows.next()? {
                 None => None,
                 Some(row) => {
-                    let namespace: String = row.get("namespace")?;
-                    Some(namespace)
+                    let id: String = row.get("id")?;
+                    Some(id)
                 }
             };
             Ok(row)
@@ -107,10 +106,10 @@ pub async fn lookup(
         .await?;
 
     drop(timer);
-    match namespace {
+    match id {
         None => Ok(None),
-        Some(namespace) => {
-            let ns = replisdk::utils::encoding::decode_serde(&namespace)?;
+        Some(id) => {
+            let ns = Namespace { id };
             Ok(Some(ns))
         }
     }
@@ -118,12 +117,11 @@ pub async fn lookup(
 
 /// Persist a new or updated record into the store.
 pub async fn persist(_: &Context, connection: &Connection, ns: Namespace) -> Result<()> {
-    let record = replisdk::utils::encoding::encode_serde(&ns)?;
     let (err_count, _timer) = crate::telemetry::observe_op("namespace.persist");
     let trace = crate::telemetry::trace_op("namespace.persist");
     connection
         .call(move |connection| {
-            connection.execute(PERSIST_SQL, rusqlite::params![record, &ns.id])?;
+            connection.execute(PERSIST_SQL, rusqlite::params![ns.id])?;
             Ok(())
         })
         .count_on_err(err_count)
@@ -137,6 +135,8 @@ pub async fn persist(_: &Context, connection: &Connection, ns: Namespace) -> Res
 mod tests {
     use futures::TryStreamExt;
 
+    use replicore_store::ids::NamespaceID;
+
     use super::LookupNamespace;
     use super::Namespace;
 
@@ -145,13 +145,14 @@ mod tests {
         let context = replicore_context::Context::fixture();
         let store = crate::statements::tests::store().await;
         let ns = Namespace { id: "test".into() };
-        let lookup = LookupNamespace { id: "test".into() };
+        let lookup = NamespaceID { id: "test".into() };
+        let lookup = LookupNamespace(lookup);
 
         // Check lookup without record.
         let record = store
             .query(&context, lookup.clone())
             .await
-            .expect("store lookup to pass");
+            .expect("store lookup failed");
         assert_eq!(record.is_none(), true);
 
         // Check deleting without record.
@@ -162,16 +163,16 @@ mod tests {
         let record = store
             .query(&context, lookup.clone())
             .await
-            .expect("store lookup to pass")
+            .expect("store lookup failed")
             .expect("ns record not in store");
         assert_eq!(record.id, "test");
 
         // Check deleting a record.
         store.delete(&context, &ns).await.unwrap();
         let record = store
-            .query(&context, lookup.clone())
+            .query(&context, lookup)
             .await
-            .expect("store lookup to pass");
+            .expect("store lookup failed");
         assert_eq!(record.is_none(), true);
     }
 

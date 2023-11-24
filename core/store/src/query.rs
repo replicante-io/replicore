@@ -3,8 +3,11 @@ use anyhow::Result;
 use futures::Stream;
 
 use replisdk::core::models::namespace::Namespace;
+use replisdk::core::models::platform::Platform;
 
 use self::seal::SealQueryOp;
+use crate::ids::NamespaceID;
+use crate::ids::NamespacedResourceID;
 
 /// Internal trait to enable query operations on the persistent store.
 pub trait QueryOp: Into<QueryOps> + SealQueryOp {
@@ -17,14 +20,23 @@ pub enum QueryOps {
     /// List the IDs of all known namespaces, sorted alphabetically.
     ListNamespaceIds,
 
+    /// List the Ids of all known platforms in the namespace, sorted alphabetically.
+    ListPlatformIds(NamespaceID),
+
     /// Query a namespace by Namespace ID.
     Namespace(LookupNamespace),
+
+    /// Query a platform by Namespace ID and Resource Name.
+    Platform(NamespacedResourceID),
 }
 
 /// List of all responses from query operations.
 pub enum QueryResponses {
     /// Return a [`Namespace`], if one was found matching the query.
     Namespace(Option<Namespace>),
+
+    /// Return a [`Platform`], if one was found matching the query.
+    Platform(Option<Platform>),
 
     /// Return a [`Stream`] (async iterator) of strings (useful for IDs).
     StringStream(StringStream),
@@ -38,34 +50,42 @@ pub type StringStream = std::pin::Pin<Box<dyn Stream<Item = Result<String>>>>;
 /// List the IDs of all known namespaces, sorted alphabetically.
 pub struct ListNamespaceIds;
 
+/// List the IDs of all known platforms in a namespace, sorted alphabetically.
+pub struct ListPlatformIds(pub NamespaceID);
+
 /// Lookup a [`Namespace`] record by ID.
 #[derive(Clone, Debug)]
-pub struct LookupNamespace {
-    // Identifier of the [`Namespace`] record to lookup.
-    pub id: String,
-}
-impl From<Namespace> for LookupNamespace {
-    fn from(value: Namespace) -> Self {
-        LookupNamespace { id: value.id }
-    }
-}
+pub struct LookupNamespace(pub NamespaceID);
 impl From<&Namespace> for LookupNamespace {
     fn from(value: &Namespace) -> Self {
-        LookupNamespace {
-            id: value.id.clone(),
-        }
+        let id = value.id.clone();
+        let value = NamespaceID { id };
+        LookupNamespace(value)
     }
 }
 impl From<String> for LookupNamespace {
     fn from(value: String) -> Self {
-        LookupNamespace { id: value }
+        let value = NamespaceID { id: value };
+        LookupNamespace(value)
     }
 }
 impl From<&str> for LookupNamespace {
     fn from(value: &str) -> Self {
-        LookupNamespace {
-            id: value.to_string(),
-        }
+        let id = value.to_string();
+        let value = NamespaceID { id };
+        LookupNamespace(value)
+    }
+}
+
+/// Lookup a [`Platform`] record by ID.
+#[derive(Clone, Debug)]
+pub struct LookupPlatform(pub NamespacedResourceID);
+impl From<&Platform> for LookupPlatform {
+    fn from(value: &Platform) -> Self {
+        let name = value.name.clone();
+        let ns_id = value.ns_id.clone();
+        let value = NamespacedResourceID { name, ns_id };
+        LookupPlatform(value)
     }
 }
 
@@ -87,6 +107,16 @@ impl From<ListNamespaceIds> for QueryOps {
     }
 }
 
+impl SealQueryOp for ListPlatformIds {}
+impl QueryOp for ListPlatformIds {
+    type Response = StringStream;
+}
+impl From<ListPlatformIds> for QueryOps {
+    fn from(value: ListPlatformIds) -> Self {
+        QueryOps::ListPlatformIds(value.0)
+    }
+}
+
 impl SealQueryOp for LookupNamespace {}
 impl QueryOp for LookupNamespace {
     type Response = Option<Namespace>;
@@ -97,11 +127,29 @@ impl From<LookupNamespace> for QueryOps {
     }
 }
 
+impl SealQueryOp for LookupPlatform {}
+impl QueryOp for LookupPlatform {
+    type Response = Option<Platform>;
+}
+impl From<LookupPlatform> for QueryOps {
+    fn from(value: LookupPlatform) -> Self {
+        QueryOps::Platform(value.0)
+    }
+}
+
 // --- Implement QueryResponses conversions on return types for transparent operations --- //
 impl From<QueryResponses> for Option<Namespace> {
     fn from(value: QueryResponses) -> Self {
         match value {
             QueryResponses::Namespace(namespace) => namespace,
+            _ => panic!("unexpected result type for the given query operation"),
+        }
+    }
+}
+impl From<QueryResponses> for Option<Platform> {
+    fn from(value: QueryResponses) -> Self {
+        match value {
+            QueryResponses::Platform(platform) => platform,
             _ => panic!("unexpected result type for the given query operation"),
         }
     }

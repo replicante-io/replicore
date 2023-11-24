@@ -3,6 +3,7 @@ use replisdk::core::models::namespace::Namespace;
 
 use replicore_context::Context;
 
+use crate::ids::NamespaceID;
 use crate::query::LookupNamespace;
 use crate::Store;
 
@@ -20,7 +21,8 @@ async fn check_delete_interface() {
 #[tokio::test]
 async fn check_query_interface() {
     let context = Context::fixture();
-    let lookup = LookupNamespace { id: "test".into() };
+    let lookup = NamespaceID { id: "test".into() };
+    let lookup = LookupNamespace(lookup);
     let store = Store::fixture();
     store
         .query(&context, lookup)

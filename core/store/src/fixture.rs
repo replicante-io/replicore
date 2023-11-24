@@ -8,6 +8,7 @@ use anyhow::Result;
 use futures::StreamExt;
 
 use replisdk::core::models::namespace::Namespace;
+use replisdk::core::models::platform::Platform;
 
 use replicore_context::Context;
 
@@ -49,7 +50,13 @@ impl StoreBackend for StoreFixture {
     async fn delete(&self, _: &Context, op: DeleteOps) -> Result<DeleteResponses> {
         let mut store = self.access();
         match op {
-            DeleteOps::Namespace(ns) => store.namespaces.remove(&ns.id),
+            DeleteOps::Namespace(ns) => {
+                store.namespaces.remove(&ns.0.id);
+            }
+            DeleteOps::Platform(pl) => {
+                let key = (pl.0.ns_id.clone(), pl.0.name.clone());
+                store.platforms.remove(&key);
+            }
         };
         Ok(DeleteResponses::Success)
     }
@@ -62,9 +69,24 @@ impl StoreBackend for StoreFixture {
                 let ids = futures::stream::iter(ids).map(Ok).boxed();
                 Ok(QueryResponses::StringStream(ids))
             }
+            QueryOps::ListPlatformIds(query) => {
+                let mut ids = Vec::new();
+                for (ns, id) in store.platforms.keys() {
+                    if ns == query.id.as_str() {
+                        ids.push(id.to_string());
+                    }
+                }
+                let ids = futures::stream::iter(ids).map(Ok).boxed();
+                Ok(QueryResponses::StringStream(ids))
+            }
             QueryOps::Namespace(ns) => {
-                let ns = store.namespaces.get(&ns.id).cloned();
+                let ns = store.namespaces.get(&ns.0.id).cloned();
                 Ok(QueryResponses::Namespace(ns))
+            }
+            QueryOps::Platform(query) => {
+                let key = (query.ns_id, query.name);
+                let platform = store.platforms.get(&key).cloned();
+                Ok(QueryResponses::Platform(platform))
             }
         }
     }
@@ -72,7 +94,13 @@ impl StoreBackend for StoreFixture {
     async fn persist(&self, _: &Context, op: PersistOps) -> Result<PersistResponses> {
         let mut store = self.access();
         match op {
-            PersistOps::Namespace(ns) => store.namespaces.insert(ns.id.clone(), ns),
+            PersistOps::Namespace(ns) => {
+                store.namespaces.insert(ns.id.clone(), ns);
+            }
+            PersistOps::Platform(platform) => {
+                let key = (platform.ns_id.clone(), platform.name.clone());
+                store.platforms.insert(key, platform);
+            }
         };
         Ok(PersistResponses::Success)
     }
@@ -82,4 +110,5 @@ impl StoreBackend for StoreFixture {
 #[derive(Default)]
 struct StoreFixtureState {
     namespaces: HashMap<String, Namespace>,
+    platforms: HashMap<(String, String), Platform>,
 }

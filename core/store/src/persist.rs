@@ -1,5 +1,6 @@
 //! RepliCore Control Plane persistent store operations to persist records.
 use replisdk::core::models::namespace::Namespace;
+use replisdk::core::models::platform::Platform;
 
 use self::seal::SealPersistOp;
 
@@ -13,6 +14,9 @@ pub trait PersistOp: Into<PersistOps> + SealPersistOp {
 pub enum PersistOps {
     /// Persist a namespace record.
     Namespace(Namespace),
+
+    /// Persist a namespace record.
+    Platform(Platform),
 }
 
 /// List of all responses from persist operations.
@@ -39,6 +43,16 @@ impl SealPersistOp for Namespace {}
 impl From<Namespace> for PersistOps {
     fn from(value: Namespace) -> Self {
         PersistOps::Namespace(value)
+    }
+}
+
+impl PersistOp for Platform {
+    type Response = ();
+}
+impl SealPersistOp for Platform {}
+impl From<Platform> for PersistOps {
+    fn from(value: Platform) -> Self {
+        PersistOps::Platform(value)
     }
 }
 

@@ -44,6 +44,7 @@ use serde_json::Value as Json;
 use replicore_context::Context;
 
 pub mod delete;
+pub mod ids;
 pub mod persist;
 pub mod query;
 
