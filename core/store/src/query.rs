@@ -2,6 +2,7 @@
 use anyhow::Result;
 use futures::Stream;
 
+use replisdk::core::models::cluster::ClusterSpec;
 use replisdk::core::models::namespace::Namespace;
 use replisdk::core::models::platform::Platform;
 
@@ -17,6 +18,12 @@ pub trait QueryOp: Into<QueryOps> + SealQueryOp {
 
 /// List of all query operations the persistent store must implement.
 pub enum QueryOps {
+    /// Query a cluster specification by Namespace ID and Resource Name.
+    ClusterSpec(NamespacedResourceID),
+
+    /// List the Ids of all known cluster specs in the namespace, sorted alphabetically.
+    ListClusterSpecIds(NamespaceID),
+
     /// List the IDs of all known namespaces, sorted alphabetically.
     ListNamespaceIds,
 
@@ -32,6 +39,9 @@ pub enum QueryOps {
 
 /// List of all responses from query operations.
 pub enum QueryResponses {
+    /// Return a [`ClusterSpec`], if one was found matching the query.
+    ClusterSpec(Option<ClusterSpec>),
+
     /// Return a [`Namespace`], if one was found matching the query.
     Namespace(Option<Namespace>),
 
@@ -47,11 +57,18 @@ pub enum QueryResponses {
 pub type StringStream = std::pin::Pin<Box<dyn Stream<Item = Result<String>>>>;
 
 // --- High level query operations --- //
+/// List the IDs of all known cluster specs in a namespace, sorted alphabetically.
+pub struct ListClusterSpecIds(pub NamespaceID);
+
 /// List the IDs of all known namespaces, sorted alphabetically.
 pub struct ListNamespaceIds;
 
 /// List the IDs of all known platforms in a namespace, sorted alphabetically.
 pub struct ListPlatformIds(pub NamespaceID);
+
+/// Lookup a [`ClusterSpec`] namespace and record by ID.
+#[derive(Clone, Debug)]
+pub struct LookupClusterSpec(pub NamespacedResourceID);
 
 /// Lookup a [`Namespace`] record by ID.
 #[derive(Clone, Debug)]
@@ -97,6 +114,16 @@ mod seal {
 }
 
 // --- Implement QueryOp and super traits on types for transparent operations --- //
+impl SealQueryOp for ListClusterSpecIds {}
+impl QueryOp for ListClusterSpecIds {
+    type Response = StringStream;
+}
+impl From<ListClusterSpecIds> for QueryOps {
+    fn from(value: ListClusterSpecIds) -> Self {
+        QueryOps::ListClusterSpecIds(value.0)
+    }
+}
+
 impl SealQueryOp for ListNamespaceIds {}
 impl QueryOp for ListNamespaceIds {
     type Response = StringStream;
@@ -114,6 +141,16 @@ impl QueryOp for ListPlatformIds {
 impl From<ListPlatformIds> for QueryOps {
     fn from(value: ListPlatformIds) -> Self {
         QueryOps::ListPlatformIds(value.0)
+    }
+}
+
+impl SealQueryOp for LookupClusterSpec {}
+impl QueryOp for LookupClusterSpec {
+    type Response = Option<ClusterSpec>;
+}
+impl From<LookupClusterSpec> for QueryOps {
+    fn from(value: LookupClusterSpec) -> Self {
+        QueryOps::ClusterSpec(value.0)
     }
 }
 
@@ -138,6 +175,14 @@ impl From<LookupPlatform> for QueryOps {
 }
 
 // --- Implement QueryResponses conversions on return types for transparent operations --- //
+impl From<QueryResponses> for Option<ClusterSpec> {
+    fn from(value: QueryResponses) -> Self {
+        match value {
+            QueryResponses::ClusterSpec(spec) => spec,
+            _ => panic!("unexpected result type for the given query operation"),
+        }
+    }
+}
 impl From<QueryResponses> for Option<Namespace> {
     fn from(value: QueryResponses) -> Self {
         match value {

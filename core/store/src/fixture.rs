@@ -7,6 +7,7 @@ use std::sync::MutexGuard;
 use anyhow::Result;
 use futures::StreamExt;
 
+use replisdk::core::models::cluster::ClusterSpec;
 use replisdk::core::models::namespace::Namespace;
 use replisdk::core::models::platform::Platform;
 
@@ -50,11 +51,15 @@ impl StoreBackend for StoreFixture {
     async fn delete(&self, _: &Context, op: DeleteOps) -> Result<DeleteResponses> {
         let mut store = self.access();
         match op {
+            DeleteOps::ClusterSpec(cluster) => {
+                let key = (cluster.0.ns_id, cluster.0.name);
+                store.cluster_specs.remove(&key);
+            }
             DeleteOps::Namespace(ns) => {
                 store.namespaces.remove(&ns.0.id);
             }
             DeleteOps::Platform(pl) => {
-                let key = (pl.0.ns_id.clone(), pl.0.name.clone());
+                let key = (pl.0.ns_id, pl.0.name);
                 store.platforms.remove(&key);
             }
         };
@@ -64,6 +69,21 @@ impl StoreBackend for StoreFixture {
     async fn query(&self, _: &Context, op: QueryOps) -> Result<QueryResponses> {
         let store = self.access();
         match op {
+            QueryOps::ClusterSpec(cluster) => {
+                let key = (cluster.ns_id, cluster.name);
+                let spec = store.cluster_specs.get(&key).cloned();
+                Ok(QueryResponses::ClusterSpec(spec))
+            }
+            QueryOps::ListClusterSpecIds(query) => {
+                let mut ids = Vec::new();
+                for (ns, id) in store.cluster_specs.keys() {
+                    if ns == query.id.as_str() {
+                        ids.push(id.to_string());
+                    }
+                }
+                let ids = futures::stream::iter(ids).map(Ok).boxed();
+                Ok(QueryResponses::StringStream(ids))
+            }
             QueryOps::ListNamespaceIds => {
                 let ids: Vec<String> = store.namespaces.keys().cloned().collect();
                 let ids = futures::stream::iter(ids).map(Ok).boxed();
@@ -94,6 +114,10 @@ impl StoreBackend for StoreFixture {
     async fn persist(&self, _: &Context, op: PersistOps) -> Result<PersistResponses> {
         let mut store = self.access();
         match op {
+            PersistOps::ClusterSpec(spec) => {
+                let key = (spec.ns_id.clone(), spec.cluster_id.clone());
+                store.cluster_specs.insert(key, spec);
+            }
             PersistOps::Namespace(ns) => {
                 store.namespaces.insert(ns.id.clone(), ns);
             }
@@ -109,6 +133,7 @@ impl StoreBackend for StoreFixture {
 /// Container for the shared state.
 #[derive(Default)]
 struct StoreFixtureState {
+    cluster_specs: HashMap<(String, String), ClusterSpec>,
     namespaces: HashMap<String, Namespace>,
     platforms: HashMap<(String, String), Platform>,
 }

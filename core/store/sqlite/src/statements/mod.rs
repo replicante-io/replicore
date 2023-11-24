@@ -11,6 +11,7 @@ use replicore_store::query::QueryOps;
 use replicore_store::query::QueryResponses;
 use replicore_store::StoreBackend;
 
+mod cluster_spec;
 mod namespace;
 mod platform;
 
@@ -31,6 +32,11 @@ impl SQLiteStore {
 impl StoreBackend for SQLiteStore {
     async fn delete(&self, context: &Context, op: DeleteOps) -> Result<DeleteResponses> {
         match op {
+            DeleteOps::ClusterSpec(cluster) => {
+                self::cluster_spec::delete(context, &self.connection, cluster)
+                    .await
+                    .map(|_| DeleteResponses::Success)
+            }
             DeleteOps::Namespace(ns) => self::namespace::delete(context, &self.connection, ns)
                 .await
                 .map(|_| DeleteResponses::Success),
@@ -42,6 +48,14 @@ impl StoreBackend for SQLiteStore {
 
     async fn query(&self, context: &Context, op: QueryOps) -> Result<QueryResponses> {
         match op {
+            QueryOps::ClusterSpec(spec) => {
+                let spec = self::cluster_spec::lookup(context, &self.connection, spec).await?;
+                Ok(QueryResponses::ClusterSpec(spec))
+            }
+            QueryOps::ListClusterSpecIds(ns) => {
+                let list = self::cluster_spec::list(context, &self.connection, ns).await?;
+                Ok(QueryResponses::StringStream(list))
+            }
             QueryOps::ListNamespaceIds => {
                 let list = self::namespace::list(context, &self.connection).await?;
                 Ok(QueryResponses::StringStream(list))
@@ -63,6 +77,11 @@ impl StoreBackend for SQLiteStore {
 
     async fn persist(&self, context: &Context, op: PersistOps) -> Result<PersistResponses> {
         match op {
+            PersistOps::ClusterSpec(spec) => {
+                self::cluster_spec::persist(context, &self.connection, spec)
+                    .await
+                    .map(|_| PersistResponses::Success)
+            }
             PersistOps::Namespace(ns) => self::namespace::persist(context, &self.connection, ns)
                 .await
                 .map(|_| PersistResponses::Success),

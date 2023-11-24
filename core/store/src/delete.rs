@@ -1,4 +1,5 @@
 //! RepliCore Control Plane persistent store operations to delete records.
+use replisdk::core::models::cluster::ClusterSpec;
 use replisdk::core::models::namespace::Namespace;
 use replisdk::core::models::platform::Platform;
 
@@ -14,6 +15,9 @@ pub trait DeleteOp: Into<DeleteOps> + SealDeleteOp {
 
 /// List of all delete operations the persistent store must implement.
 pub enum DeleteOps {
+    /// Delete a cluster specification by Namespace and Name.
+    ClusterSpec(DeleteClusterSpec),
+
     /// Delete a namespace by Namespace ID.
     Namespace(DeleteNamespace),
 
@@ -28,6 +32,18 @@ pub enum DeleteResponses {
 }
 
 // --- High level delete operations --- //
+/// Request deletion of a [`ClusterSpec`] record.
+pub struct DeleteClusterSpec(pub NamespacedResourceID);
+impl From<&ClusterSpec> for DeleteClusterSpec {
+    fn from(value: &ClusterSpec) -> Self {
+        let value = NamespacedResourceID {
+            name: value.cluster_id.clone(),
+            ns_id: value.ns_id.clone(),
+        };
+        DeleteClusterSpec(value)
+    }
+}
+
 /// Request deletion of a [`Namespace`] record.
 pub struct DeleteNamespace(pub NamespaceID);
 impl From<&Namespace> for DeleteNamespace {
@@ -71,6 +87,26 @@ mod seal {
 }
 
 // --- Implement DeleteOp and super traits on types for transparent operations --- //
+impl DeleteOp for DeleteClusterSpec {
+    type Response = ();
+}
+impl SealDeleteOp for DeleteClusterSpec {}
+impl From<DeleteClusterSpec> for DeleteOps {
+    fn from(value: DeleteClusterSpec) -> Self {
+        DeleteOps::ClusterSpec(value)
+    }
+}
+impl DeleteOp for &ClusterSpec {
+    type Response = ();
+}
+impl SealDeleteOp for &ClusterSpec {}
+impl From<&ClusterSpec> for DeleteOps {
+    fn from(value: &ClusterSpec) -> Self {
+        let value = DeleteClusterSpec::from(value);
+        DeleteOps::ClusterSpec(value)
+    }
+}
+
 impl DeleteOp for DeleteNamespace {
     type Response = ();
 }
