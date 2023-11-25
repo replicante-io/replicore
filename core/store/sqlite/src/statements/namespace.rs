@@ -25,17 +25,17 @@ ORDER BY id ASC;
 "#;
 
 const LOOKUP_SQL: &str = r#"
-SELECT id
+SELECT namespace
 FROM store_namespace
 WHERE id = ?1;
 "#;
 
 const PERSIST_SQL: &str = r#"
-INSERT INTO store_namespace (id)
-VALUES (?1);
+INSERT INTO store_namespace (id, namespace)
+VALUES (?1, ?2);
 ON CONFLICT(id)
 DO UPDATE SET
-    id=?1,
+    namespace=?2,
 ;"#;
 
 /// Delete a namespace from the store, ignoring missing namespaces.
@@ -87,15 +87,15 @@ pub async fn lookup(
 ) -> Result<Option<Namespace>> {
     let (err_count, timer) = crate::telemetry::observe_op("namespace.lookup");
     let trace = crate::telemetry::trace_op("namespace.lookup");
-    let id = connection
+    let namespace = connection
         .call(move |connection| {
             let mut statement = connection.prepare_cached(LOOKUP_SQL)?;
             let mut rows = statement.query([ns.0.id])?;
             let row = match rows.next()? {
                 None => None,
                 Some(row) => {
-                    let id: String = row.get("id")?;
-                    Some(id)
+                    let namespace: String = row.get("namespace")?;
+                    Some(namespace)
                 }
             };
             Ok(row)
@@ -106,10 +106,10 @@ pub async fn lookup(
         .await?;
 
     drop(timer);
-    match id {
+    match namespace {
         None => Ok(None),
-        Some(id) => {
-            let ns = Namespace { id };
+        Some(namespace) => {
+            let ns = replisdk::utils::encoding::decode_serde(&namespace)?;
             Ok(Some(ns))
         }
     }
@@ -117,11 +117,12 @@ pub async fn lookup(
 
 /// Persist a new or updated record into the store.
 pub async fn persist(_: &Context, connection: &Connection, ns: Namespace) -> Result<()> {
+    let record = replisdk::utils::encoding::encode_serde(&ns)?;
     let (err_count, _timer) = crate::telemetry::observe_op("namespace.persist");
     let trace = crate::telemetry::trace_op("namespace.persist");
     connection
         .call(move |connection| {
-            connection.execute(PERSIST_SQL, rusqlite::params![ns.id])?;
+            connection.execute(PERSIST_SQL, rusqlite::params![ns.id, record])?;
             Ok(())
         })
         .count_on_err(err_count)
@@ -135,16 +136,26 @@ pub async fn persist(_: &Context, connection: &Connection, ns: Namespace) -> Res
 mod tests {
     use futures::TryStreamExt;
 
+    use replisdk::core::models::namespace::NamespaceStatus;
+
     use replicore_store::ids::NamespaceID;
 
     use super::LookupNamespace;
     use super::Namespace;
 
+    fn mock_namespace(id: &str) -> Namespace {
+        Namespace {
+            id: id.into(),
+            tls: Default::default(),
+            status: NamespaceStatus::Active,
+        }
+    }
+
     #[tokio::test]
     async fn delete_get_persist() {
         let context = replicore_context::Context::fixture();
         let store = crate::statements::tests::store().await;
-        let ns = Namespace { id: "test".into() };
+        let ns = mock_namespace("test");
         let lookup = NamespaceID { id: "test".into() };
         let lookup = LookupNamespace(lookup);
 
@@ -183,30 +194,15 @@ mod tests {
 
         // Fill the store with a few namespaces.
         store
-            .persist(
-                &context,
-                Namespace {
-                    id: "test-1".into(),
-                },
-            )
+            .persist(&context, mock_namespace("test-1"))
             .await
             .unwrap();
         store
-            .persist(
-                &context,
-                Namespace {
-                    id: "test-2".into(),
-                },
-            )
+            .persist(&context, mock_namespace("test-2"))
             .await
             .unwrap();
         store
-            .persist(
-                &context,
-                Namespace {
-                    id: "test-3".into(),
-                },
-            )
+            .persist(&context, mock_namespace("test-3"))
             .await
             .unwrap();
 

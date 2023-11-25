@@ -1,5 +1,6 @@
 //! Unit test to ensure Store interface type conversions work nicely.
 use replisdk::core::models::namespace::Namespace;
+use replisdk::core::models::namespace::NamespaceStatus;
 
 use replicore_context::Context;
 
@@ -7,10 +8,18 @@ use crate::ids::NamespaceID;
 use crate::query::LookupNamespace;
 use crate::Store;
 
+fn mock_namespace() -> Namespace {
+    Namespace {
+        id: "test".into(),
+        tls: Default::default(),
+        status: NamespaceStatus::Active,
+    }
+}
+
 #[tokio::test]
 async fn check_delete_interface() {
     let context = Context::fixture();
-    let namespace = Namespace { id: "test".into() };
+    let namespace = mock_namespace();
     let store = Store::fixture();
     store
         .delete(&context, &namespace)
@@ -33,7 +42,7 @@ async fn check_query_interface() {
 #[tokio::test]
 async fn check_persist_interface() {
     let context = Context::fixture();
-    let namespace = Namespace { id: "test".into() };
+    let namespace = mock_namespace();
     let store = Store::fixture();
     store
         .persist(&context, namespace)

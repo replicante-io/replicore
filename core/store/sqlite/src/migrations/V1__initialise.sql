@@ -12,8 +12,14 @@ CREATE TABLE IF NOT EXISTS store_cluster_spec(
 );
 
 CREATE TABLE IF NOT EXISTS store_namespace(
-  -- Identifier of the namespace.
-  id TEXT PRIMARY KEY NOT NULL
+  -- namespace object as a JSON blob.
+  namespace TEXT NOT NULL,
+
+  -- Manually managed normalised columns for indexes (where virtual columns can't be used).
+  id TEXT PRIMARY KEY NOT NULL,
+
+  -- Virtual columns to index events on.
+  status TEXT NOT NULL AS (json_extract(namespace, '$.status'))
 );
 
 CREATE TABLE IF NOT EXISTS store_platform(
