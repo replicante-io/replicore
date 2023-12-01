@@ -38,10 +38,10 @@ WHERE
 
 const PERSIST_SQL: &str = r#"
 INSERT INTO store_platform (ns_id, name, platform)
-VALUES (?1, ?2, ?3);
+VALUES (?1, ?2, ?3)
 ON CONFLICT(ns_id, name)
 DO UPDATE SET
-    platform=?3,
+    platform=?3
 ;"#;
 
 /// Delete a platform from the store, ignoring missing platforms.

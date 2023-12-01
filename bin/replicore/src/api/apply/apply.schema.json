@@ -1,0 +1,17 @@
+{
+  "title": "Replicore Apply Object",
+  "description": "Replicante Control Plane Apply API payload",
+  "type": "object",
+  "properties": {
+    "apiVersion": {
+      "type": "string"
+    },
+    "kind": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "apiVersion",
+    "kind"
+  ]
+}

@@ -38,10 +38,10 @@ WHERE
 
 const PERSIST_SQL: &str = r#"
 INSERT INTO store_cluster_spec (ns_id, cluster_id, cluster_spec)
-VALUES (?1, ?2, ?3);
+VALUES (?1, ?2, ?3)
 ON CONFLICT(ns_id, cluster_id)
 DO UPDATE SET
-    cluster_spec=?3,
+    cluster_spec=?3
 ;"#;
 
 /// Delete a cluster specification from the store, ignoring missing clusters.

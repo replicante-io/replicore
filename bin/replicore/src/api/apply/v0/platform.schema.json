@@ -1,0 +1,34 @@
+{
+  "title": "Platform Apply Object",
+  "description": "RepliCore's Platform Apply API payload",
+  "type": "object",
+  "properties": {
+    "spec": {
+      "type": "object",
+      "properties": {
+        "ns_id": { "type": "string" },
+        "name": { "type": "string" },
+        "active": { "type": "boolean" },
+        "discovery": {
+          "type": "object",
+          "properties": {
+            "interval": { "type": "integer" }
+          }
+        },
+        "http": {
+          "type": "object",
+          "properties": {
+            "base_url": { "type": "string" },
+            "tls_ca_bundle": { "type": ["null", "string"] },
+            "tls_insecure_skip_verify": { "type": "boolean" }
+          },
+          "required": ["base_url"]
+        }
+      },
+      "required": ["ns_id", "name"]
+    }
+  },
+  "required": [
+    "spec"
+  ]
+}

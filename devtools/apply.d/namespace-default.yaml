@@ -1,10 +1,6 @@
 apiVersion: replicante.io/v0
 kind: Namespace
-
-metadata:
-  name: default
-
 spec:
-  https_transport:
+  id: default
+  tls:
     ca_bundle: ~
-    client_key_id: ~

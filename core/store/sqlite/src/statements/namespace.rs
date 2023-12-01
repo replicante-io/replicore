@@ -32,10 +32,10 @@ WHERE id = ?1;
 
 const PERSIST_SQL: &str = r#"
 INSERT INTO store_namespace (id, namespace)
-VALUES (?1, ?2);
+VALUES (?1, ?2)
 ON CONFLICT(id)
 DO UPDATE SET
-    namespace=?2,
+    namespace=?2
 ;"#;
 
 /// Delete a namespace from the store, ignoring missing namespaces.

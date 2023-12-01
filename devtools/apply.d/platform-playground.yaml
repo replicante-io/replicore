@@ -1,9 +1,8 @@
 apiVersion: replicante.io/v0
 kind: Platform
-metadata:
-  namespace: default
-  name: playground
 spec:
+  ns_id: default
+  name: playground
   active: true
   discovery:
     interval: 30

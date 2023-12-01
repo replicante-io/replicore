@@ -1,0 +1,30 @@
+{
+  "title": "Namespace Apply Object",
+  "description": "RepliCore's Namespace Apply API payload",
+  "type": "object",
+  "properties": {
+    "spec": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "tls": {
+          "type": "object",
+          "properties": {
+            "ca_bundle": {
+              "type": ["null", "string"]
+            }
+          }
+        },
+        "status": {
+          "type": "string"
+        }
+      },
+      "required": ["id"]
+    }
+  },
+  "required": [
+    "spec"
+  ]
+}

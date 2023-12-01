@@ -96,6 +96,15 @@ impl Server {
         // Run until user-requested exit or process error.
         self.generic.wait().await
     }
+
+    /// Add an HTTP server configuration closure to be applied when the server is started.
+    pub fn with_http_config<F>(mut self, config: F) -> Self
+    where
+        F: Fn(&mut actix_web::web::ServiceConfig) + Send + Sync + 'static,
+    {
+        self.generic.api.with_config(config);
+        self
+    }
 }
 
 /// Initialise all backends and collected them into an [`Injector`] object.
