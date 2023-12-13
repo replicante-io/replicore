@@ -1,6 +1,6 @@
 use anyhow::Result;
 
-/// Resovle an optional leading `~/` to the current user's HOME path.
+/// Resolve an optional leading `~/` to the current user's HOME path.
 pub fn resolve_home(path: &str) -> Result<String> {
     if path.starts_with("~/") {
         let home = home_dir()?;
@@ -18,8 +18,24 @@ pub fn resolve_home(path: &str) -> Result<String> {
 /// Other OS are not currently supported.
 fn home_dir() -> Result<String> {
     match std::env::var("HOME") {
-        Err(std::env::VarError::NotPresent) => anyhow::bail!("unable to resolve a path $HOME"),
+        Err(std::env::VarError::NotPresent) => anyhow::bail!("unable to lookup the $HOME path"),
         Err(std::env::VarError::NotUnicode(_)) => anyhow::bail!("unable to UTF-8 decode $HOME"),
         Ok(path) => Ok(path),
+    }
+}
+
+/// Report on the set status of an optional value (set vs not set).
+pub fn set_or_not<T>(value: &Option<T>) -> &'static str {
+    match value.is_some() {
+        true => "Set",
+        false => "Not Set",
+    }
+}
+
+/// Report an optional value, or indicate if it is not set.
+pub fn value_or_not_set<T: ToString>(value: &Option<T>) -> String {
+    match value {
+        Some(value) => value.to_string(),
+        None => String::from("Not Set"),
     }
 }

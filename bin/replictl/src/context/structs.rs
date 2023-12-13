@@ -2,7 +2,8 @@ use anyhow::Result;
 use serde::Deserialize;
 use serde::Serialize;
 
-use super::ContextOpt;
+use crate::context::ContextOpt;
+use crate::errors::InvalidScope;
 
 /// Information needed to access the Replicante API.
 #[derive(Clone, Eq, PartialEq, Hash, Debug, Serialize, Deserialize)]
@@ -36,7 +37,7 @@ impl Context {
         opt.cluster
             .clone()
             .or_else(|| self.scope.cluster.clone())
-            .ok_or_else(|| ScopeError::NoCluster.into())
+            .ok_or_else(|| InvalidScope::ClusterNotSelected.into())
     }
 
     /// Get the selected namespace or fail.
@@ -44,7 +45,7 @@ impl Context {
         opt.namespace
             .clone()
             .or_else(|| self.scope.namespace.clone())
-            .ok_or_else(|| ScopeError::NoNamespace.into())
+            .ok_or_else(|| InvalidScope::NamespaceNotSelected.into())
     }
 
     /// Get the selected node or fail.
@@ -52,7 +53,7 @@ impl Context {
         opt.node
             .clone()
             .or_else(|| self.scope.node.clone())
-            .ok_or_else(|| ScopeError::NoNode.into())
+            .ok_or_else(|| InvalidScope::NodeNotSelected.into())
     }
 }
 
@@ -70,17 +71,4 @@ pub struct Scope {
     /// The node to operate on, if none was explicitly set.
     #[serde(default)]
     pub node: Option<String>,
-}
-
-/// Errors attempting to access scopes.
-#[derive(thiserror::Error, Debug)]
-pub enum ScopeError {
-    #[error("A cluster must be selected.\nTry adding --cluster or replictl context change")]
-    NoCluster,
-
-    #[error("A namespace must be selected.\nTry adding --namespace or replictl context change")]
-    NoNamespace,
-
-    #[error("A node must be selected.\nTry adding --node or replictl context change")]
-    NoNode,
 }

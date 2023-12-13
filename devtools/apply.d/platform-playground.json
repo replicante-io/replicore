@@ -1,0 +1,15 @@
+{
+  "apiVersion": "replicante.io/v0",
+  "kind": "Platform",
+  "spec": {
+    "ns_id": "default",
+    "name": "playground",
+    "active": true,
+    "discovery": {
+      "interval": 30
+    },
+    "http": {
+      "base_url": "http://localhost:9876/"
+    }
+  }
+}

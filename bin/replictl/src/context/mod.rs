@@ -7,11 +7,10 @@ pub use store::ContextStore;
 pub use structs::Connection;
 pub use structs::Context;
 pub use structs::Scope;
-pub use structs::ScopeError;
 
 const DEFAULT_CONTEXT: &str = "default";
 
-/// Context-related CLI options.
+/// Context-related CLI options usable by any command.
 #[derive(Args, Debug)]
 pub struct ContextOpt {
     /// Override the cluster ID to operate on.

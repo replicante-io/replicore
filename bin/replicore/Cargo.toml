@@ -73,4 +73,4 @@ replicore-context = { path = "../../core/context", features = ["test-fixture"] }
 replicore-injector = { path = "../../core/injector", features = ["test-fixture"] }
 
 [build-dependencies]
-git2 = "^0.15.0"
+git2 = "^0.18.0"

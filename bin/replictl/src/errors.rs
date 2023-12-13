@@ -1,8 +1,8 @@
-use replicante_models_core::api::validate::ErrorsCollection;
+//! CLI process errors occurring during command execution.
 
 /// Error indicating a context does not exist.
 #[derive(thiserror::Error, Debug)]
-#[error("A context named '{context}' was not found")]
+#[error("The context named '{context}' was not found")]
 pub struct ContextNotFound {
     context: String,
 }
@@ -23,22 +23,24 @@ impl ContextNotFound {
     }
 }
 
-/// Apply attempted on an invalid object.
+/// Errors attempting to access scopes.
 #[derive(thiserror::Error, Debug)]
-#[error("Apply attempted on an invalid object")]
-pub struct InvalidApply {
-    errors: replicante_models_core::api::validate::ErrorsCollection,
-}
+pub enum InvalidScope {
+    #[error(
+        "A cluster must be selected.
+Try adding --cluster or set one with 'replictl context change'"
+    )]
+    ClusterNotSelected,
 
-impl InvalidApply {
-    pub fn new(errors: ErrorsCollection) -> InvalidApply {
-        InvalidApply { errors }
-    }
-}
+    #[error(
+        "A namespace must be selected.
+Try adding --namespace or set one with 'replictl context change'"
+    )]
+    NamespaceNotSelected,
 
-impl std::ops::Deref for InvalidApply {
-    type Target = [replicante_models_core::api::validate::Error];
-    fn deref(&self) -> &Self::Target {
-        self.errors.deref()
-    }
+    #[error(
+        "A node must be selected.
+Try adding --node or set one with 'replictl context change'"
+    )]
+    NodeNotSelected,
 }

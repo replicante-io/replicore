@@ -106,7 +106,7 @@ impl From<&Platform> for LookupPlatform {
     }
 }
 
-// --- Create internal implementation details follow --- //
+// --- Internal implementation details follow --- //
 /// Private module to seal implementation details.
 mod seal {
     /// Super-trait to seal the [`QueryOp`](super::QueryOp) trait.

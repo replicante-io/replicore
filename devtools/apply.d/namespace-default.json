@@ -1,0 +1,10 @@
+{
+  "apiVersion": "replicante.io/v0",
+  "kind": "Namespace",
+  "spec": {
+    "id": "default",
+    "tls": {
+      "ca_bundle": null
+    }
+  }
+}

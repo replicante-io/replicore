@@ -2,6 +2,7 @@
 members = [
   # Binary creates providing final packages.
   "bin/replicore",
+  "bin/replictl",
 
   # Interface crates defining services.
   "core/auth",
