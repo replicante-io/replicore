@@ -16,7 +16,7 @@ async fn main() {
 
     // Provide best possible help for known errors or fallback to default defaulted format.
     format_known_errors(&error);
-    eprintln!("Replicante Core process failed: {:?}", error);
+    eprintln!("RepliCTL failed: {:?}", error);
     std::process::exit(1);
 }
 
@@ -48,15 +48,5 @@ fn format_known_errors(error: &anyhow::Error) {
 //        eprintln!("  * The request was operating on a resource that does not exist (example: a missing cluster)");
 //        eprintln!("  * The current session may have expired or be otherwise not valid (please login again)");
 //        eprintln!("  * The version of Replicante Core does not support the request (try to keep replictl to the same version as your running clusters)");
-//        std::process::exit(1);
-//    }
-//    if let Some(errors) = error.downcast_ref::<replictl::InvalidApply>() {
-//        eprintln!("Unable to apply the proveded object:");
-//        for error in errors.iter() {
-//            eprintln!(
-//                "  -> {} [attribute={}; code={}]",
-//                error.message, error.attribute, error.code
-//            );
-//        }
 //        std::process::exit(1);
 //    }

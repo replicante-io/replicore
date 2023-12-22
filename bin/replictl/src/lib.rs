@@ -2,6 +2,8 @@
 use anyhow::Result;
 use clap::Parser;
 
+use replicore_client::Client;
+
 mod cmd;
 mod context;
 mod formatter;
@@ -13,12 +15,21 @@ pub mod errors;
 use self::cmd::Cli;
 use self::globals::Globals;
 
+/// Initialise an API client to interact with the control plane.
+fn client(context: &self::context::Context) -> Result<Client> {
+    let options = replicore_client::ClientOptions::url(&context.connection.url).client();
+    // TODO: implement TLS config options when supported.
+    let client = Client::with(options)?;
+    Ok(client)
+}
+
 /// Initialise the replictl process and invoke a command implementation.
 pub async fn run() -> Result<i32> {
     let cli = Cli::parse();
     let globals = Globals::initialise(cli).await;
 
     match &globals.cli.command {
+        cmd::Command::Apply(cmd) => cmd::apply::run(&globals, cmd).await,
         cmd::Command::Context(cmd) => cmd::context::run(&globals, cmd).await,
     }
 }

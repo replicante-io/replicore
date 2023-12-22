@@ -1,27 +1,33 @@
 <!-- markdownlint-disable MD022 MD024 MD032 -->
 # Changelog
+
 All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
 ### Added
+
 - Command `replicore server` to run a control plane server instance.
 - Command `replicore sync` to run dependencies sync (initialise or migrate).
 - Introduce `platform.replicante.io/node.provision` action.
 - Single Process Events Streaming Backend (supported by SQLite).
+- Single Process Store Backend (supported by SQLite).
 - Store `Namespace` objects in the store.
 - Store `Platform` objects in the store.
 
 ### Changed
+
 - **BREAKING**: Migrate to `replisdk` for shared code.
 - **BREAKING**: Refactor configuration file structure and options (see the example config).
 - **BREAKING**: Renamed `replicante` binary to `replicore`.
 - **BREAKING**: Updated minimum rust version to 1.60.0.
 - **INTERNAL**: Reimplement Events Streaming Platform interface.
+- **INTERNAL**: Reimplement persistent store interface.
 - Capture only server-side errors in Sentry for API endpoints.
-- Update crate dependencies.
+- Update dependencies.
 
 ## [0.7.2] - 2022-09-25
 ### Changed
@@ -172,7 +178,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Standardise logging across core and agents.
 
 ## [0.2.0] - 2019-02-20
+
 ### Added
+
 - Add scan method to events stream interface.
 - Async tasks and workers framework.
 - Configurable Agent API calls timeout.
@@ -196,6 +204,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - ROADMAP.md to document "nearby" versions and their "aim".
 
 ### Changed
+
 - **BREAKING**: Flatten encoded events structure (`data`, `event`, `timeout` are all root attributes).
 - **BREAKING**: Rename `*Recover` events.
 - **BREAKING**: Rename `DatastoreDown` to `NodeDown`.
@@ -214,11 +223,14 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Start move to the `failure` crate.
 
 ### Fixed
+
 - Better handle HTTP errors returned by agents.
 - Fix persistence and querying of discoveries.
 
 ## 0.1.0 - 2018-06-28
+
 ### Added
+
 - API interface.
 - Agent client crate.
 - Command line control tool (replictl).

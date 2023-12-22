@@ -2,6 +2,7 @@
 use clap::Parser;
 use clap::Subcommand;
 
+pub mod apply;
 pub mod context;
 
 use crate::context::ContextOpt;
@@ -38,6 +39,9 @@ pub struct Cli {
 /// Select the `replictl` command to run.
 #[derive(Debug, Subcommand)]
 pub enum Command {
+    /// Apply objects declarations to the Control Plane.
+    Apply(apply::ApplyCli),
+
     /// Manage configuration of RepliCore servers to access.
     Context(context::ContextCli),
 }

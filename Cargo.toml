@@ -19,6 +19,9 @@ members = [
   "core/context",
   "core/injector",
 
+  # Client implementations crates.
+  "client/core",
+
   # Legacy sync subcrates
   #"agent/*",
   #"bin/*",
