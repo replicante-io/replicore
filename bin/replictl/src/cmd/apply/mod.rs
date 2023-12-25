@@ -70,7 +70,8 @@ async fn process_directories(files: Vec<String>, recurse: bool) -> Result<Vec<St
             glob_for_extension(&mut expanded, &entry, JSON_GLOB, recurse)?;
         }
         Ok(expanded)
-    }).await??;
+    })
+    .await??;
     Ok(expanded)
 }
 

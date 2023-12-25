@@ -52,7 +52,7 @@ async fn apply(
     // Unwrapping is safe because object passed validation at this point.
     let kind = object.get("kind").unwrap().as_str().unwrap().to_lowercase();
     let api_version = object.get("apiVersion").unwrap().as_str().unwrap();
-    if api_version == self::v0::API_VERSION && self::v0::knows(&kind) {
+    if api_version == self::v0::constants::API_VERSION && self::v0::knows(&kind) {
         return self::v0::apply(args).await;
     }
 
