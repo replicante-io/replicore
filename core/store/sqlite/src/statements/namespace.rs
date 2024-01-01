@@ -4,22 +4,24 @@ use futures::StreamExt;
 use opentelemetry_api::trace::FutureExt;
 use tokio_rusqlite::Connection;
 
+use replisdk::core::models::api::NamespaceEntry;
 use replisdk::core::models::namespace::Namespace;
+use replisdk::core::models::namespace::NamespaceStatus;
 use replisdk::utils::metrics::CountFutureErrExt;
 use replisdk::utils::trace::TraceFutureStdErrExt;
 
 use replicore_context::Context;
 use replicore_store::delete::DeleteNamespace;
 use replicore_store::query::LookupNamespace;
-use replicore_store::query::StringStream;
+use replicore_store::query::NamespaceEntryStream;
 
 const DELETE_SQL: &str = r#"
 DELETE FROM store_namespace
 WHERE id = ?1;
 "#;
 
-const LIST_IDS_SQL: &str = r#"
-SELECT id
+const LIST_SQL: &str = r#"
+SELECT id, status
 FROM store_namespace
 ORDER BY id ASC;
 "#;
@@ -55,28 +57,36 @@ pub async fn delete(_: &Context, connection: &Connection, ns: DeleteNamespace) -
 }
 
 /// Return a list of known [`Namespace`] IDs.
-pub async fn list(_: &Context, connection: &Connection) -> Result<StringStream> {
-    let (err_count, _timer) = crate::telemetry::observe_op("namespace.listIds");
+pub async fn list(_: &Context, connection: &Connection) -> Result<NamespaceEntryStream> {
+    let (err_count, timer) = crate::telemetry::observe_op("namespace.listIds");
     let trace = crate::telemetry::trace_op("namespace.listIds");
-    let ids = connection
+    let items = connection
         .call(move |connection| {
-            let mut statement = connection.prepare_cached(LIST_IDS_SQL)?;
+            let mut statement = connection.prepare_cached(LIST_SQL)?;
             let mut rows = statement.query([])?;
 
-            let mut ids = Vec::new();
+            let mut items = Vec::new();
             while let Some(row) = rows.next()? {
                 let id: String = row.get("id")?;
-                ids.push(id);
+                let status: String = row.get("status")?;
+                items.push((id, status));
             }
-            Ok(ids)
+            Ok(items)
         })
         .count_on_err(err_count)
         .trace_on_err_with_status()
         .with_context(trace)
         .await?;
 
-    let ids = futures::stream::iter(ids).map(Ok).boxed();
-    Ok(ids)
+    drop(timer);
+    let items = futures::stream::iter(items)
+        .map(|(id, status)| {
+            let status = NamespaceStatus::try_from(status)?;
+            let item = NamespaceEntry { id, status };
+            Ok(item)
+        })
+        .boxed();
+    Ok(items)
 }
 
 /// Lookup a namespace from the store, if one is available.
@@ -207,12 +217,12 @@ mod tests {
             .unwrap();
 
         // Grab the list of IDs and check them.
-        let op = replicore_store::query::ListNamespaceIds;
+        let op = replicore_store::query::ListNamespaces;
         let mut result = store.query(&context, op).await.unwrap();
 
         let mut ids = Vec::new();
-        while let Some(id) = result.try_next().await.unwrap() {
-            ids.push(id);
+        while let Some(item) = result.try_next().await.unwrap() {
+            ids.push(item.id);
         }
 
         assert_eq!(ids, ["test-1", "test-2", "test-3"]);

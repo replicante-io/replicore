@@ -45,19 +45,12 @@ tokio = { version = "^1.0", features = [
 
 replicore_client = { path = "../../client/core" }
 
+replisdk = { version = "^0.1", features = ["replicore-models"] }
+
 #slog-json = "^2.3"
 
 #replicante_models_core = { path = "../../models/core" }
 #replicante_util_failure = { path = "../../common/util/failure" }
-
-#[dependencies.replisdk]
-#features = ["replicore-models"]
-#version = "^0.1"
-
-#[dependencies.reqwest]
-## Use rustls-tls to access PEM files as Identity objects.
-#features = ["json", "rustls-tls"]
-#version = "^0.11"
 
 #[dependencies.uuid]
 #features = ["serde", "v4"]

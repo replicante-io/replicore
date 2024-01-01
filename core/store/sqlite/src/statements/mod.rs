@@ -56,9 +56,9 @@ impl StoreBackend for SQLiteStore {
                 let list = self::cluster_spec::list(context, &self.connection, ns).await?;
                 Ok(QueryResponses::StringStream(list))
             }
-            QueryOps::ListNamespaceIds => {
+            QueryOps::ListNamespaces => {
                 let list = self::namespace::list(context, &self.connection).await?;
-                Ok(QueryResponses::StringStream(list))
+                Ok(QueryResponses::NamespaceEntries(list))
             }
             QueryOps::ListPlatformIds(ns) => {
                 let list = self::platform::list(context, &self.connection, ns).await?;

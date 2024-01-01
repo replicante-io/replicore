@@ -2,6 +2,7 @@
 use anyhow::Result;
 use futures::Stream;
 
+use replisdk::core::models::api::NamespaceEntry;
 use replisdk::core::models::cluster::ClusterSpec;
 use replisdk::core::models::namespace::Namespace;
 use replisdk::core::models::platform::Platform;
@@ -24,8 +25,8 @@ pub enum QueryOps {
     /// List the Ids of all known cluster specs in the namespace, sorted alphabetically.
     ListClusterSpecIds(NamespaceID),
 
-    /// List the IDs of all known namespaces, sorted alphabetically.
-    ListNamespaceIds,
+    /// List summary information of all known namespaces, sorted alphabetically.
+    ListNamespaces,
 
     /// List the Ids of all known platforms in the namespace, sorted alphabetically.
     ListPlatformIds(NamespaceID),
@@ -45,6 +46,9 @@ pub enum QueryResponses {
     /// Return a [`Namespace`], if one was found matching the query.
     Namespace(Option<Namespace>),
 
+    /// Return a [`Stream`] of [`NamespaceEntry`] objects.
+    NamespaceEntries(NamespaceEntryStream),
+
     /// Return a [`Platform`], if one was found matching the query.
     Platform(Option<Platform>),
 
@@ -56,12 +60,15 @@ pub enum QueryResponses {
 /// Alias for a heap-allocated [`Stream`] of strings (useful for IDs).
 pub type StringStream = std::pin::Pin<Box<dyn Stream<Item = Result<String>>>>;
 
+/// Alias for a heap-allocated [`Stream`] of namespace summaries.
+pub type NamespaceEntryStream = std::pin::Pin<Box<dyn Stream<Item = Result<NamespaceEntry>>>>;
+
 // --- High level query operations --- //
 /// List the IDs of all known cluster specs in a namespace, sorted alphabetically.
 pub struct ListClusterSpecIds(pub NamespaceID);
 
-/// List the IDs of all known namespaces, sorted alphabetically.
-pub struct ListNamespaceIds;
+/// List summary information of all known namespaces, sorted alphabetically.
+pub struct ListNamespaces;
 
 /// List the IDs of all known platforms in a namespace, sorted alphabetically.
 pub struct ListPlatformIds(pub NamespaceID);
@@ -124,13 +131,13 @@ impl From<ListClusterSpecIds> for QueryOps {
     }
 }
 
-impl SealQueryOp for ListNamespaceIds {}
-impl QueryOp for ListNamespaceIds {
-    type Response = StringStream;
+impl SealQueryOp for ListNamespaces {}
+impl QueryOp for ListNamespaces {
+    type Response = NamespaceEntryStream;
 }
-impl From<ListNamespaceIds> for QueryOps {
-    fn from(_: ListNamespaceIds) -> Self {
-        QueryOps::ListNamespaceIds
+impl From<ListNamespaces> for QueryOps {
+    fn from(_: ListNamespaces) -> Self {
+        QueryOps::ListNamespaces
     }
 }
 
@@ -187,6 +194,14 @@ impl From<QueryResponses> for Option<Namespace> {
     fn from(value: QueryResponses) -> Self {
         match value {
             QueryResponses::Namespace(namespace) => namespace,
+            _ => panic!("unexpected result type for the given query operation"),
+        }
+    }
+}
+impl From<QueryResponses> for NamespaceEntryStream {
+    fn from(value: QueryResponses) -> Self {
+        match value {
+            QueryResponses::NamespaceEntries(stream) => stream,
             _ => panic!("unexpected result type for the given query operation"),
         }
     }

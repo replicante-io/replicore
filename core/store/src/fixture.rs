@@ -7,6 +7,7 @@ use std::sync::MutexGuard;
 use anyhow::Result;
 use futures::StreamExt;
 
+use replisdk::core::models::api::NamespaceEntry;
 use replisdk::core::models::cluster::ClusterSpec;
 use replisdk::core::models::namespace::Namespace;
 use replisdk::core::models::platform::Platform;
@@ -84,10 +85,18 @@ impl StoreBackend for StoreFixture {
                 let ids = futures::stream::iter(ids).map(Ok).boxed();
                 Ok(QueryResponses::StringStream(ids))
             }
-            QueryOps::ListNamespaceIds => {
-                let ids: Vec<String> = store.namespaces.keys().cloned().collect();
-                let ids = futures::stream::iter(ids).map(Ok).boxed();
-                Ok(QueryResponses::StringStream(ids))
+            QueryOps::ListNamespaces => {
+                let items: Vec<_> = store
+                    .namespaces
+                    .iter()
+                    .map(|(_, ns)| {
+                        let id = ns.id.clone();
+                        let status = ns.status.clone();
+                        NamespaceEntry { id, status }
+                    })
+                    .collect();
+                let items = futures::stream::iter(items).map(Ok).boxed();
+                Ok(QueryResponses::NamespaceEntries(items))
             }
             QueryOps::ListPlatformIds(query) => {
                 let mut ids = Vec::new();

@@ -4,6 +4,8 @@ use actix_web::web::Path;
 use actix_web::HttpResponse;
 use futures_util::TryStreamExt;
 
+use replisdk::core::models::api::NamespaceEntry;
+use replisdk::core::models::api::NamespaceList;
 use replisdk::core::models::namespace::NamespaceStatus;
 
 use replicore_context::Context;
@@ -69,9 +71,10 @@ pub async fn get(
 /// List the IDs of all namespaces on the control plane.
 #[actix_web::get("/list/replicante.io/v0/namespace")]
 pub async fn list(context: Context, injector: Data<Injector>) -> Result<HttpResponse, Error> {
-    let query = replicore_store::query::ListNamespaceIds;
-    let ids = injector.store.query(&context, query).await?;
-    let ids: Vec<String> = ids.try_collect().await?;
-    let response = serde_json::json!({"items": ids});
+    let query = replicore_store::query::ListNamespaces;
+    let items = injector.store.query(&context, query).await?;
+    let items: Vec<NamespaceEntry> = items.try_collect().await?;
+    let response = NamespaceList { items };
+    let response = serde_json::json!(response);
     Ok(HttpResponse::Ok().json(response))
 }

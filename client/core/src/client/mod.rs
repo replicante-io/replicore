@@ -3,6 +3,8 @@ use anyhow::Result;
 use reqwest::Client as ReqwestClient;
 
 mod apply;
+mod list;
+mod namespace;
 
 use crate::ClientOptions;
 

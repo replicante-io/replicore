@@ -6,7 +6,6 @@ mod structs;
 pub use store::ContextStore;
 pub use structs::Connection;
 pub use structs::Context;
-pub use structs::Scope;
 
 const DEFAULT_CONTEXT: &str = "default";
 

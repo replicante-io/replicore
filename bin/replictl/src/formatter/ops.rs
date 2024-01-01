@@ -1,7 +1,8 @@
 //! Operations offered by a `replictl` formatter interface.
-use crate::context::Context;
+use replisdk::core::models::namespace::Namespace;
 
 use self::sealed::SealFormatOp;
+use crate::context::Context;
 
 /// Internal trait to support ergonomic formatting operations.
 pub trait FormatOp: Into<Ops> + SealFormatOp {
@@ -16,6 +17,12 @@ pub enum Ops {
 
     /// Request a formatter to emit [`Context`] lists.
     ContextList,
+
+    /// Request a strategy to format `NamespaceEntry` lists.
+    NamespaceList,
+
+    /// Format information about a [`Namespace`].
+    Namespace(Namespace),
 }
 
 /// All known responses from format operations.
@@ -23,23 +30,39 @@ pub enum Responses {
     /// Return a object to format a list of [`Context`]s.
     ContextList(Box<dyn super::ContextList>),
 
+    /// Return a object to format a list of `NamespaceEntry`s.
+    NamespaceList(Box<dyn super::NamespaceList>),
+
     /// The formatting operation was successful.
     Success,
 }
 
-impl<L> From<L> for Responses
-where
-    L: super::ContextList + 'static,
-{
-    fn from(value: L) -> Self {
+impl Responses {
+    /// Wrap a [`ContextList`](super::ContextList) returned by the formatter.
+    pub fn contexts<L>(value: L) -> Self
+    where
+        L: super::ContextList + 'static,
+    {
         let value = Box::new(value);
         Self::ContextList(value)
+    }
+
+    /// Wrap a [`NamespaceList`](super::NamespaceList) returned by the formatter.
+    pub fn namespaces<L>(value: L) -> Self
+    where
+        L: super::NamespaceList + 'static,
+    {
+        let value = Box::new(value);
+        Self::NamespaceList(value)
     }
 }
 
 // --- Operation & return types -- //
 /// Request a formatter to emit [`Context`] lists.
 pub struct ContextListOp;
+
+/// Request a formatter to emit `NamespaceEntry` lists.
+pub struct NamespaceListOp;
 
 /// Private module to seal implementation details.
 mod sealed {
@@ -68,11 +91,39 @@ impl FormatOp for ContextListOp {
     type Response = Box<dyn super::ContextList>;
 }
 
+impl SealFormatOp for Namespace {}
+impl From<Namespace> for Ops {
+    fn from(value: Namespace) -> Self {
+        Self::Namespace(value)
+    }
+}
+impl FormatOp for Namespace {
+    type Response = ();
+}
+
+impl SealFormatOp for NamespaceListOp {}
+impl From<NamespaceListOp> for Ops {
+    fn from(_: NamespaceListOp) -> Self {
+        Self::NamespaceList
+    }
+}
+impl FormatOp for NamespaceListOp {
+    type Response = Box<dyn super::NamespaceList>;
+}
+
 // --- Implement Responses conversions on return types for transparent operations --- //
 impl From<Responses> for Box<dyn super::ContextList> {
     fn from(value: Responses) -> Self {
         match value {
             Responses::ContextList(value) => value,
+            _ => panic!("unexpected response type for formatter operation"),
+        }
+    }
+}
+impl From<Responses> for Box<dyn super::NamespaceList> {
+    fn from(value: Responses) -> Self {
+        match value {
+            Responses::NamespaceList(value) => value,
             _ => panic!("unexpected response type for formatter operation"),
         }
     }

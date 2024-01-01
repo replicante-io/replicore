@@ -5,6 +5,7 @@ use super::FormatterStrategy;
 use crate::globals::Globals;
 
 mod context;
+mod namespace;
 
 /// Format output for easy consumption by people interacting with `replictl`.
 pub struct HumanFormatter;
@@ -16,7 +17,12 @@ impl FormatterStrategy for HumanFormatter {
                 self::context::show(&context);
                 Responses::Success
             }
-            Ops::ContextList => Responses::from(self::context::ContextList::new()),
+            Ops::ContextList => Responses::contexts(self::context::ContextList::new()),
+            Ops::Namespace(namespace) => {
+                self::namespace::show(&namespace);
+                Responses::Success
+            }
+            Ops::NamespaceList => Responses::namespaces(self::namespace::NamespaceList::new()),
         }
     }
 }

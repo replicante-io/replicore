@@ -9,6 +9,8 @@ use anyhow::Result;
 use clap::Args;
 use clap::ValueEnum;
 
+use replisdk::core::models::api::NamespaceEntry;
+
 //mod json;
 mod human;
 
@@ -73,6 +75,15 @@ impl Formatter {
 pub trait FormatterStrategy {
     /// Execute the requested formatting operation.
     fn format(&self, globals: &Globals, op: self::ops::Ops) -> self::ops::Responses;
+}
+
+/// Present a list of [`NamespaceEntry`]s to the user.
+pub trait NamespaceList {
+    /// Append a new namespace entry into the list being formatted.
+    fn append(&mut self, entry: &NamespaceEntry) -> Result<()>;
+
+    /// Handle the now complete list of namespace entries and emit it to standard output.
+    fn finish(&mut self) -> Result<()>;
 }
 
 /// Instantiate a formatter based on CLI configuration.

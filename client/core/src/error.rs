@@ -33,6 +33,41 @@ impl std::fmt::Display for ApiValidationError {
     }
 }
 
+/// The server returned an empty API response.
+#[derive(Debug, thiserror::Error)]
+#[error("the server returned an empty API response")]
+pub struct EmptyResponse;
+
+/// The resource is not available, or access to it is restricted.
+#[derive(Debug, thiserror::Error)]
+#[error("the resource is not available, or access to it is restricted")]
+pub struct ResourceNotFound;
+
+/// Error refers to resource with ID.
+#[derive(Debug, thiserror::Error)]
+#[error("error refers to {resource} '{id}'")]
+pub struct ResourceIdentifier {
+    /// Identifier of a resource the error refers to.
+    pub id: String,
+
+    /// Type of resource the error refers to.
+    pub resource: String,
+}
+
+impl ResourceIdentifier {
+    /// Resource identifier context for the given resource type and id.
+    pub fn reference<S1, S2>(resource: S1, id: S2) -> Self
+    where
+        S1: Into<String>,
+        S2: Into<String>,
+    {
+        ResourceIdentifier {
+            id: id.into(),
+            resource: resource.into(),
+        }
+    }
+}
+
 /// Invalid API response received.
 #[derive(Debug, thiserror::Error)]
 #[error("invalid API response received: {response}")]
@@ -47,6 +82,11 @@ where
 {
     let code = response.status();
     let text = response.text().await?;
+
+    // Expect 404 errors to not have a response body.
+    if matches!(code, reqwest::StatusCode::NOT_FOUND) {
+        anyhow::bail!(ResourceNotFound);
+    }
 
     // On error, attempt to decode a JSON object and convert into appropriate errors.
     if code.is_client_error() || code.is_server_error() {

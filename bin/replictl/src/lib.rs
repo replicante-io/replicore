@@ -31,6 +31,7 @@ pub async fn run() -> Result<i32> {
     match &globals.cli.command {
         cmd::Command::Apply(cmd) => cmd::apply::run(&globals, cmd).await,
         cmd::Command::Context(cmd) => cmd::context::run(&globals, cmd).await,
+        cmd::Command::Namespace(cmd) => cmd::namespace::run(&globals, cmd).await,
     }
 }
 

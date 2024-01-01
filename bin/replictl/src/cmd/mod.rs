@@ -4,6 +4,7 @@ use clap::Subcommand;
 
 pub mod apply;
 pub mod context;
+pub mod namespace;
 
 use crate::context::ContextOpt;
 use crate::formatter::FormatOpts;
@@ -44,6 +45,10 @@ pub enum Command {
 
     /// Manage configuration of RepliCore servers to access.
     Context(context::ContextCli),
+
+    /// Inspect, delete or manipulate namespaces.
+    #[command(alias = "ns")]
+    Namespace(namespace::NamespaceCli),
 }
 
 #[cfg(test)]
