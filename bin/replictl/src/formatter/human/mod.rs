@@ -6,6 +6,7 @@ use crate::globals::Globals;
 
 mod context;
 mod namespace;
+mod platform;
 
 /// Format output for easy consumption by people interacting with `replictl`.
 pub struct HumanFormatter;
@@ -23,6 +24,11 @@ impl FormatterStrategy for HumanFormatter {
                 Responses::Success
             }
             Ops::NamespaceList => Responses::namespaces(self::namespace::NamespaceList::new()),
+            Ops::Platform(platform) => {
+                self::platform::show(&platform);
+                Responses::Success
+            }
+            Ops::PlatformList => Responses::platforms(self::platform::PlatformList::new()),
         }
     }
 }

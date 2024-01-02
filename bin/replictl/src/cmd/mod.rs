@@ -5,6 +5,7 @@ use clap::Subcommand;
 pub mod apply;
 pub mod context;
 pub mod namespace;
+pub mod platform;
 
 use crate::context::ContextOpt;
 use crate::formatter::FormatOpts;
@@ -49,6 +50,9 @@ pub enum Command {
     /// Inspect, delete or manipulate namespaces.
     #[command(alias = "ns")]
     Namespace(namespace::NamespaceCli),
+
+    /// Inspect, delete or manipulate platforms.
+    Platform(platform::PlatformCli),
 }
 
 #[cfg(test)]

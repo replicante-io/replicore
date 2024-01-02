@@ -8,6 +8,7 @@ use anyhow::Result;
 use futures::StreamExt;
 
 use replisdk::core::models::api::NamespaceEntry;
+use replisdk::core::models::api::PlatformEntry;
 use replisdk::core::models::cluster::ClusterSpec;
 use replisdk::core::models::namespace::Namespace;
 use replisdk::core::models::platform::Platform;
@@ -98,15 +99,19 @@ impl StoreBackend for StoreFixture {
                 let items = futures::stream::iter(items).map(Ok).boxed();
                 Ok(QueryResponses::NamespaceEntries(items))
             }
-            QueryOps::ListPlatformIds(query) => {
-                let mut ids = Vec::new();
-                for (ns, id) in store.platforms.keys() {
+            QueryOps::ListPlatforms(query) => {
+                let mut items = Vec::new();
+                for ((ns, _), platform) in store.platforms.iter() {
                     if ns == query.id.as_str() {
-                        ids.push(id.to_string());
+                        let item = PlatformEntry {
+                            active: platform.active,
+                            name: platform.name.clone(),
+                        };
+                        items.push(item);
                     }
                 }
-                let ids = futures::stream::iter(ids).map(Ok).boxed();
-                Ok(QueryResponses::StringStream(ids))
+                let items = futures::stream::iter(items).map(Ok).boxed();
+                Ok(QueryResponses::PlatformEntries(items))
             }
             QueryOps::Namespace(ns) => {
                 let ns = store.namespaces.get(&ns.0.id).cloned();

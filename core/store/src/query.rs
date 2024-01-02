@@ -3,6 +3,7 @@ use anyhow::Result;
 use futures::Stream;
 
 use replisdk::core::models::api::NamespaceEntry;
+use replisdk::core::models::api::PlatformEntry;
 use replisdk::core::models::cluster::ClusterSpec;
 use replisdk::core::models::namespace::Namespace;
 use replisdk::core::models::platform::Platform;
@@ -28,8 +29,8 @@ pub enum QueryOps {
     /// List summary information of all known namespaces, sorted alphabetically.
     ListNamespaces,
 
-    /// List the Ids of all known platforms in the namespace, sorted alphabetically.
-    ListPlatformIds(NamespaceID),
+    /// List summary information about known platforms in the namespace, sorted alphabetically.
+    ListPlatforms(NamespaceID),
 
     /// Query a namespace by Namespace ID.
     Namespace(LookupNamespace),
@@ -52,6 +53,9 @@ pub enum QueryResponses {
     /// Return a [`Platform`], if one was found matching the query.
     Platform(Option<Platform>),
 
+    /// Return a [`Stream`] of [`PlatformEntry`] objects.
+    PlatformEntries(PlatformEntryStream),
+
     /// Return a [`Stream`] (async iterator) of strings (useful for IDs).
     StringStream(StringStream),
 }
@@ -63,6 +67,9 @@ pub type StringStream = std::pin::Pin<Box<dyn Stream<Item = Result<String>>>>;
 /// Alias for a heap-allocated [`Stream`] of namespace summaries.
 pub type NamespaceEntryStream = std::pin::Pin<Box<dyn Stream<Item = Result<NamespaceEntry>>>>;
 
+/// Alias for a heap-allocated [`Stream`] of platform summaries.
+pub type PlatformEntryStream = std::pin::Pin<Box<dyn Stream<Item = Result<PlatformEntry>>>>;
+
 // --- High level query operations --- //
 /// List the IDs of all known cluster specs in a namespace, sorted alphabetically.
 pub struct ListClusterSpecIds(pub NamespaceID);
@@ -70,8 +77,8 @@ pub struct ListClusterSpecIds(pub NamespaceID);
 /// List summary information of all known namespaces, sorted alphabetically.
 pub struct ListNamespaces;
 
-/// List the IDs of all known platforms in a namespace, sorted alphabetically.
-pub struct ListPlatformIds(pub NamespaceID);
+/// List summary information about known platforms in the namespace, sorted alphabetically.
+pub struct ListPlatforms(pub NamespaceID);
 
 /// Lookup a [`ClusterSpec`] namespace and record by ID.
 #[derive(Clone, Debug)]
@@ -141,13 +148,13 @@ impl From<ListNamespaces> for QueryOps {
     }
 }
 
-impl SealQueryOp for ListPlatformIds {}
-impl QueryOp for ListPlatformIds {
-    type Response = StringStream;
+impl SealQueryOp for ListPlatforms {}
+impl QueryOp for ListPlatforms {
+    type Response = PlatformEntryStream;
 }
-impl From<ListPlatformIds> for QueryOps {
-    fn from(value: ListPlatformIds) -> Self {
-        QueryOps::ListPlatformIds(value.0)
+impl From<ListPlatforms> for QueryOps {
+    fn from(value: ListPlatforms) -> Self {
+        QueryOps::ListPlatforms(value.0)
     }
 }
 
@@ -210,6 +217,14 @@ impl From<QueryResponses> for Option<Platform> {
     fn from(value: QueryResponses) -> Self {
         match value {
             QueryResponses::Platform(platform) => platform,
+            _ => panic!("unexpected result type for the given query operation"),
+        }
+    }
+}
+impl From<QueryResponses> for PlatformEntryStream {
+    fn from(value: QueryResponses) -> Self {
+        match value {
+            QueryResponses::PlatformEntries(stream) => stream,
             _ => panic!("unexpected result type for the given query operation"),
         }
     }

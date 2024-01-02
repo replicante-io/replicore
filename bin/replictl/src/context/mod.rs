@@ -18,7 +18,7 @@ pub struct ContextOpt {
 
     /// Use the specified context for all operations.
     #[arg(long = "context", global = true, env = "RCTL_CONTEXT")]
-    pub name: Option<String>,
+    pub context: Option<String>,
 
     /// Override the namespace to operate on.
     #[arg(short, long, global = true, env = "RCTL_NAMESPACE")]

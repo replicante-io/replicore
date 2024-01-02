@@ -60,9 +60,9 @@ impl StoreBackend for SQLiteStore {
                 let list = self::namespace::list(context, &self.connection).await?;
                 Ok(QueryResponses::NamespaceEntries(list))
             }
-            QueryOps::ListPlatformIds(ns) => {
+            QueryOps::ListPlatforms(ns) => {
                 let list = self::platform::list(context, &self.connection, ns).await?;
-                Ok(QueryResponses::StringStream(list))
+                Ok(QueryResponses::PlatformEntries(list))
             }
             QueryOps::Namespace(ns) => {
                 let ns = self::namespace::lookup(context, &self.connection, ns).await?;

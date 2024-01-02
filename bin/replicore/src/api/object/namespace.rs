@@ -23,7 +23,7 @@ pub async fn delete(
     path: Path<String>,
 ) -> Result<HttpResponse, Error> {
     // Find the namespace, succeeding if it does not exist.
-    let query = replicore_store::query::LookupNamespace::from(path.as_str());
+    let query = replicore_store::query::LookupNamespace::from(path.into_inner());
     let namespace = injector.store.query(&context, query).await?;
     let namespace = match namespace {
         None => return Ok(crate::api::done()),
@@ -60,7 +60,7 @@ pub async fn get(
     injector: Data<Injector>,
     path: Path<String>,
 ) -> Result<HttpResponse, Error> {
-    let query = replicore_store::query::LookupNamespace::from(path.as_str());
+    let query = replicore_store::query::LookupNamespace::from(path.into_inner());
     let namespace = injector.store.query(&context, query).await?;
     match namespace {
         None => Ok(crate::api::not_found()),
@@ -68,7 +68,7 @@ pub async fn get(
     }
 }
 
-/// List the IDs of all namespaces on the control plane.
+/// List information about all namespaces on the control plane.
 #[actix_web::get("/list/replicante.io/v0/namespace")]
 pub async fn list(context: Context, injector: Data<Injector>) -> Result<HttpResponse, Error> {
     let query = replicore_store::query::ListNamespaces;

@@ -1,5 +1,6 @@
 //! Operations offered by a `replictl` formatter interface.
 use replisdk::core::models::namespace::Namespace;
+use replisdk::core::models::platform::Platform;
 
 use self::sealed::SealFormatOp;
 use crate::context::Context;
@@ -23,6 +24,12 @@ pub enum Ops {
 
     /// Format information about a [`Namespace`].
     Namespace(Namespace),
+
+    /// Request a strategy to format `PlatformEntry` lists.
+    PlatformList,
+
+    /// Format information about a [`Platform`].
+    Platform(Platform),
 }
 
 /// All known responses from format operations.
@@ -32,6 +39,9 @@ pub enum Responses {
 
     /// Return a object to format a list of `NamespaceEntry`s.
     NamespaceList(Box<dyn super::NamespaceList>),
+
+    /// Return a object to format a list of `PlatformEntry`s.
+    PlatformList(Box<dyn super::PlatformList>),
 
     /// The formatting operation was successful.
     Success,
@@ -55,6 +65,15 @@ impl Responses {
         let value = Box::new(value);
         Self::NamespaceList(value)
     }
+
+    /// Wrap a [`PlatformList`](super::PlatformList) returned by the formatter.
+    pub fn platforms<L>(value: L) -> Self
+    where
+        L: super::PlatformList + 'static,
+    {
+        let value = Box::new(value);
+        Self::PlatformList(value)
+    }
 }
 
 // --- Operation & return types -- //
@@ -63,6 +82,9 @@ pub struct ContextListOp;
 
 /// Request a formatter to emit `NamespaceEntry` lists.
 pub struct NamespaceListOp;
+
+/// Request a formatter to emit `PlatformEntry` lists.
+pub struct PlatformListOp;
 
 /// Private module to seal implementation details.
 mod sealed {
@@ -111,6 +133,26 @@ impl FormatOp for NamespaceListOp {
     type Response = Box<dyn super::NamespaceList>;
 }
 
+impl SealFormatOp for Platform {}
+impl From<Platform> for Ops {
+    fn from(value: Platform) -> Self {
+        Self::Platform(value)
+    }
+}
+impl FormatOp for Platform {
+    type Response = ();
+}
+
+impl SealFormatOp for PlatformListOp {}
+impl From<PlatformListOp> for Ops {
+    fn from(_: PlatformListOp) -> Self {
+        Self::PlatformList
+    }
+}
+impl FormatOp for PlatformListOp {
+    type Response = Box<dyn super::PlatformList>;
+}
+
 // --- Implement Responses conversions on return types for transparent operations --- //
 impl From<Responses> for Box<dyn super::ContextList> {
     fn from(value: Responses) -> Self {
@@ -124,6 +166,14 @@ impl From<Responses> for Box<dyn super::NamespaceList> {
     fn from(value: Responses) -> Self {
         match value {
             Responses::NamespaceList(value) => value,
+            _ => panic!("unexpected response type for formatter operation"),
+        }
+    }
+}
+impl From<Responses> for Box<dyn super::PlatformList> {
+    fn from(value: Responses) -> Self {
+        match value {
+            Responses::PlatformList(value) => value,
             _ => panic!("unexpected response type for formatter operation"),
         }
     }

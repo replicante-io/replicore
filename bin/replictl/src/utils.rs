@@ -32,6 +32,14 @@ pub fn set_or_not<T>(value: &Option<T>) -> &'static str {
     }
 }
 
+/// Format a boolean as a yes or no text.
+pub fn yes_or_no(value: bool) -> &'static str {
+    match value {
+        true => "Yes",
+        false => "No",
+    }
+}
+
 /// Report an optional value, or indicate if it is not set.
 pub fn value_or_not_set<T: ToString>(value: &Option<T>) -> String {
     match value {

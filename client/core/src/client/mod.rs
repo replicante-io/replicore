@@ -5,6 +5,7 @@ use reqwest::Client as ReqwestClient;
 mod apply;
 mod list;
 mod namespace;
+mod platform;
 
 use crate::ClientOptions;
 

@@ -30,7 +30,8 @@ CREATE TABLE IF NOT EXISTS store_platform(
   ns_id TEXT NOT NULL,
   name TEXT NOT NULL,
 
-  -- TODO: virtual columns for indexes.
+  -- Virtual columns form index and optimised queries.
+  active BOOLEAN NOT NULL AS (json_extract(platform, '$.active')),
 
   -- Table constraints
   PRIMARY KEY(ns_id, name)

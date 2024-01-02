@@ -24,7 +24,7 @@ pub enum NamespaceCmd {
     /// Lookup details for a namespace.
     Get,
 
-    /// List namespaces on the cluster.
+    /// List namespaces on the control plane.
     List,
 }
 

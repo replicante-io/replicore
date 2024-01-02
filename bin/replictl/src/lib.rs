@@ -32,6 +32,7 @@ pub async fn run() -> Result<i32> {
         cmd::Command::Apply(cmd) => cmd::apply::run(&globals, cmd).await,
         cmd::Command::Context(cmd) => cmd::context::run(&globals, cmd).await,
         cmd::Command::Namespace(cmd) => cmd::namespace::run(&globals, cmd).await,
+        cmd::Command::Platform(cmd) => cmd::platform::run(&globals, cmd).await,
     }
 }
 

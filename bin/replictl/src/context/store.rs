@@ -43,7 +43,7 @@ impl ContextStore {
         globals
             .cli
             .context
-            .name
+            .context
             .as_deref()
             .or(self.active.as_deref())
             .unwrap_or(super::DEFAULT_CONTEXT)

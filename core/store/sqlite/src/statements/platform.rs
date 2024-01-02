@@ -4,6 +4,7 @@ use futures::StreamExt;
 use opentelemetry_api::trace::FutureExt;
 use tokio_rusqlite::Connection;
 
+use replisdk::core::models::api::PlatformEntry;
 use replisdk::core::models::platform::Platform;
 use replisdk::utils::metrics::CountFutureErrExt;
 use replisdk::utils::trace::TraceFutureStdErrExt;
@@ -12,7 +13,7 @@ use replicore_context::Context;
 use replicore_store::delete::DeletePlatform;
 use replicore_store::ids::NamespaceID;
 use replicore_store::ids::NamespacedResourceID;
-use replicore_store::query::StringStream;
+use replicore_store::query::PlatformEntryStream;
 
 const DELETE_SQL: &str = r#"
 DELETE FROM store_platform
@@ -21,8 +22,8 @@ WHERE
     AND name = ?2
 ;"#;
 
-const LIST_IDS_SQL: &str = r#"
-SELECT name
+const LIST_SQL: &str = r#"
+SELECT name, active
 FROM store_platform
 WHERE ns_id = ?1
 ORDER BY name ASC;
@@ -64,28 +65,34 @@ pub async fn delete(_: &Context, connection: &Connection, platform: DeletePlatfo
 }
 
 /// Return a list of known [`Platform`] IDs in the given namespace.
-pub async fn list(_: &Context, connection: &Connection, ns: NamespaceID) -> Result<StringStream> {
+pub async fn list(
+    _: &Context,
+    connection: &Connection,
+    ns: NamespaceID,
+) -> Result<PlatformEntryStream> {
     let (err_count, _timer) = crate::telemetry::observe_op("platform.listIds");
     let trace = crate::telemetry::trace_op("platform.listIds");
-    let names = connection
+    let items = connection
         .call(move |connection| {
-            let mut statement = connection.prepare_cached(LIST_IDS_SQL)?;
+            let mut statement = connection.prepare_cached(LIST_SQL)?;
             let mut rows = statement.query([ns.id])?;
 
-            let mut names = Vec::new();
+            let mut items = Vec::new();
             while let Some(row) = rows.next()? {
+                let active: bool = row.get("active")?;
                 let name: String = row.get("name")?;
-                names.push(name);
+                let item = PlatformEntry { active, name };
+                items.push(item);
             }
-            Ok(names)
+            Ok(items)
         })
         .count_on_err(err_count)
         .trace_on_err_with_status()
         .with_context(trace)
         .await?;
 
-    let names = futures::stream::iter(names).map(Ok).boxed();
-    Ok(names)
+    let items = futures::stream::iter(items).map(Ok).boxed();
+    Ok(items)
 }
 
 /// Lookup a platform from the store, if one is available.
@@ -233,12 +240,12 @@ mod tests {
 
         // Grab the list of IDs and check them.
         let ns = NamespaceID { id: "test".into() };
-        let op = replicore_store::query::ListPlatformIds(ns);
+        let op = replicore_store::query::ListPlatforms(ns);
         let mut result = store.query(&context, op).await.unwrap();
 
         let mut ids = Vec::new();
-        while let Some(id) = result.try_next().await.unwrap() {
-            ids.push(id);
+        while let Some(item) = result.try_next().await.unwrap() {
+            ids.push(item.name);
         }
 
         assert_eq!(ids, ["node-1", "node-2", "node-3"]);

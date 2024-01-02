@@ -10,6 +10,7 @@ use clap::Args;
 use clap::ValueEnum;
 
 use replisdk::core::models::api::NamespaceEntry;
+use replisdk::core::models::api::PlatformEntry;
 
 //mod json;
 mod human;
@@ -83,6 +84,15 @@ pub trait NamespaceList {
     fn append(&mut self, entry: &NamespaceEntry) -> Result<()>;
 
     /// Handle the now complete list of namespace entries and emit it to standard output.
+    fn finish(&mut self) -> Result<()>;
+}
+
+/// Present a list of [`PlatformEntry`]s to the user.
+pub trait PlatformList {
+    /// Append a new platform entry into the list being formatted.
+    fn append(&mut self, entry: &PlatformEntry) -> Result<()>;
+
+    /// Handle the now complete list of platform entries and emit it to standard output.
     fn finish(&mut self) -> Result<()>;
 }
 
