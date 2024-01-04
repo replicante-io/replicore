@@ -7,6 +7,9 @@ CREATE TABLE IF NOT EXISTS store_cluster_spec(
   ns_id TEXT NOT NULL,
   cluster_id TEXT NOT NULL,
 
+  -- Virtual columns form index and optimised queries.
+  active BOOLEAN NOT NULL AS (json_extract(cluster_spec, '$.active')),
+
   -- Table constraints
   PRIMARY KEY(ns_id, cluster_id)
 );

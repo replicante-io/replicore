@@ -12,7 +12,7 @@ use replicore_context::Context;
 use replicore_store::delete::DeleteClusterSpec;
 use replicore_store::ids::NamespaceID;
 use replicore_store::ids::NamespacedResourceID;
-use replicore_store::query::StringStream;
+use replicore_store::query::ClusterSpecEntryStream;
 
 const DELETE_SQL: &str = r#"
 DELETE FROM store_cluster_spec
@@ -21,8 +21,8 @@ WHERE
     AND cluster_id = ?2
 ;"#;
 
-const LIST_IDS_SQL: &str = r#"
-SELECT cluster_id
+const LIST_SQL: &str = r#"
+SELECT cluster_spec
 FROM store_cluster_spec
 WHERE ns_id = ?1
 ORDER BY cluster_id ASC;
@@ -68,28 +68,37 @@ pub async fn delete(
 }
 
 /// Return a list of known [`ClusterSpec`] IDs in the given namespace.
-pub async fn list(_: &Context, connection: &Connection, ns: NamespaceID) -> Result<StringStream> {
+pub async fn list(
+    _: &Context,
+    connection: &Connection,
+    ns: NamespaceID,
+) -> Result<ClusterSpecEntryStream> {
     let (err_count, _timer) = crate::telemetry::observe_op("clusterSpec.listIds");
     let trace = crate::telemetry::trace_op("clusterSpec.listIds");
-    let cluster_ids = connection
+    let cluster_specs = connection
         .call(move |connection| {
-            let mut statement = connection.prepare_cached(LIST_IDS_SQL)?;
+            let mut statement = connection.prepare_cached(LIST_SQL)?;
             let mut rows = statement.query([ns.id])?;
 
-            let mut cluster_ids = Vec::new();
+            let mut cluster_specs = Vec::new();
             while let Some(row) = rows.next()? {
-                let cluster_id: String = row.get("cluster_id")?;
-                cluster_ids.push(cluster_id);
+                let cluster_spec: String = row.get("cluster_spec")?;
+                cluster_specs.push(cluster_spec);
             }
-            Ok(cluster_ids)
+            Ok(cluster_specs)
         })
         .count_on_err(err_count)
         .trace_on_err_with_status()
         .with_context(trace)
         .await?;
 
-    let cluster_ids = futures::stream::iter(cluster_ids).map(Ok).boxed();
-    Ok(cluster_ids)
+    let cluster_specs = futures::stream::iter(cluster_specs)
+        .map(|cluster_spec| {
+            let cluster_spec = replisdk::utils::encoding::decode_serde(&cluster_spec)?;
+            Ok(cluster_spec)
+        })
+        .boxed();
+    Ok(cluster_specs)
 }
 
 /// Lookup a platform from the store, if one is available.
@@ -224,12 +233,12 @@ mod tests {
 
         // Grab the list of IDs and check them.
         let ns = NamespaceID { id: "test".into() };
-        let op = replicore_store::query::ListClusterSpecIds(ns);
+        let op = replicore_store::query::ListClusterSpecs(ns);
         let mut result = store.query(&context, op).await.unwrap();
 
         let mut ids = Vec::new();
-        while let Some(id) = result.try_next().await.unwrap() {
-            ids.push(id);
+        while let Some(item) = result.try_next().await.unwrap() {
+            ids.push(item.cluster_id);
         }
 
         assert_eq!(ids, ["cluster-1", "cluster-2", "cluster-3"]);

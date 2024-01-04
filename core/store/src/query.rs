@@ -2,6 +2,7 @@
 use anyhow::Result;
 use futures::Stream;
 
+use replisdk::core::models::api::ClusterSpecEntry;
 use replisdk::core::models::api::NamespaceEntry;
 use replisdk::core::models::api::PlatformEntry;
 use replisdk::core::models::cluster::ClusterSpec;
@@ -23,8 +24,8 @@ pub enum QueryOps {
     /// Query a cluster specification by Namespace ID and Resource Name.
     ClusterSpec(NamespacedResourceID),
 
-    /// List the Ids of all known cluster specs in the namespace, sorted alphabetically.
-    ListClusterSpecIds(NamespaceID),
+    /// List the summary information of all cluster specs in a namespace, sorted alphabetically.
+    ListClusterSpecs(NamespaceID),
 
     /// List summary information of all known namespaces, sorted alphabetically.
     ListNamespaces,
@@ -43,6 +44,9 @@ pub enum QueryOps {
 pub enum QueryResponses {
     /// Return a [`ClusterSpec`], if one was found matching the query.
     ClusterSpec(Option<ClusterSpec>),
+
+    /// Return a [`Stream`] of [`ClusterSpecEntry`] objects.
+    ClusterSpecEntries(ClusterSpecEntryStream),
 
     /// Return a [`Namespace`], if one was found matching the query.
     Namespace(Option<Namespace>),
@@ -64,6 +68,9 @@ pub enum QueryResponses {
 /// Alias for a heap-allocated [`Stream`] of strings (useful for IDs).
 pub type StringStream = std::pin::Pin<Box<dyn Stream<Item = Result<String>>>>;
 
+/// Alias for a heap-allocated [`Stream`] of cluster spec summaries.
+pub type ClusterSpecEntryStream = std::pin::Pin<Box<dyn Stream<Item = Result<ClusterSpecEntry>>>>;
+
 /// Alias for a heap-allocated [`Stream`] of namespace summaries.
 pub type NamespaceEntryStream = std::pin::Pin<Box<dyn Stream<Item = Result<NamespaceEntry>>>>;
 
@@ -71,8 +78,8 @@ pub type NamespaceEntryStream = std::pin::Pin<Box<dyn Stream<Item = Result<Names
 pub type PlatformEntryStream = std::pin::Pin<Box<dyn Stream<Item = Result<PlatformEntry>>>>;
 
 // --- High level query operations --- //
-/// List the IDs of all known cluster specs in a namespace, sorted alphabetically.
-pub struct ListClusterSpecIds(pub NamespaceID);
+/// List the summary information of all cluster specs in a namespace, sorted alphabetically.
+pub struct ListClusterSpecs(pub NamespaceID);
 
 /// List summary information of all known namespaces, sorted alphabetically.
 pub struct ListNamespaces;
@@ -128,13 +135,13 @@ mod seal {
 }
 
 // --- Implement QueryOp and super traits on types for transparent operations --- //
-impl SealQueryOp for ListClusterSpecIds {}
-impl QueryOp for ListClusterSpecIds {
-    type Response = StringStream;
+impl SealQueryOp for ListClusterSpecs {}
+impl QueryOp for ListClusterSpecs {
+    type Response = ClusterSpecEntryStream;
 }
-impl From<ListClusterSpecIds> for QueryOps {
-    fn from(value: ListClusterSpecIds) -> Self {
-        QueryOps::ListClusterSpecIds(value.0)
+impl From<ListClusterSpecs> for QueryOps {
+    fn from(value: ListClusterSpecs) -> Self {
+        QueryOps::ListClusterSpecs(value.0)
     }
 }
 
@@ -193,6 +200,14 @@ impl From<QueryResponses> for Option<ClusterSpec> {
     fn from(value: QueryResponses) -> Self {
         match value {
             QueryResponses::ClusterSpec(spec) => spec,
+            _ => panic!("unexpected result type for the given query operation"),
+        }
+    }
+}
+impl From<QueryResponses> for ClusterSpecEntryStream {
+    fn from(value: QueryResponses) -> Self {
+        match value {
+            QueryResponses::ClusterSpecEntries(stream) => stream,
             _ => panic!("unexpected result type for the given query operation"),
         }
     }

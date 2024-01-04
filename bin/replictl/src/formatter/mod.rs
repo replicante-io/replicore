@@ -9,6 +9,7 @@ use anyhow::Result;
 use clap::Args;
 use clap::ValueEnum;
 
+use replisdk::core::models::api::ClusterSpecEntry;
 use replisdk::core::models::api::NamespaceEntry;
 use replisdk::core::models::api::PlatformEntry;
 
@@ -19,6 +20,15 @@ pub mod ops;
 
 use crate::context::Context;
 use crate::globals::Globals;
+
+/// Present a list of [`ClusterSpecEntry`]s to the user.
+pub trait ClusterSpecList {
+    /// Append a new cluster specification entry into the list being formatted.
+    fn append(&mut self, entry: &ClusterSpecEntry) -> Result<()>;
+
+    /// Handle the now complete list of cluster spec entries and emit it to standard output.
+    fn finish(&mut self) -> Result<()>;
+}
 
 /// Present a list of [`Context`]s to the user.
 pub trait ContextList {

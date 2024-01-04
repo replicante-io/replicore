@@ -30,13 +30,13 @@ pub async fn run() -> Result<i32> {
 
     match &globals.cli.command {
         cmd::Command::Apply(cmd) => cmd::apply::run(&globals, cmd).await,
+        cmd::Command::Cluster(cmd) => cmd::cluster_spec::run(&globals, cmd).await,
         cmd::Command::Context(cmd) => cmd::context::run(&globals, cmd).await,
         cmd::Command::Namespace(cmd) => cmd::namespace::run(&globals, cmd).await,
         cmd::Command::Platform(cmd) => cmd::platform::run(&globals, cmd).await,
     }
 }
 
-//mod apiclient;
 //mod errors;
 //mod logging;
 

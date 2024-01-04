@@ -3,6 +3,7 @@ use anyhow::Result;
 use reqwest::Client as ReqwestClient;
 
 mod apply;
+mod cluster_spec;
 mod list;
 mod namespace;
 mod platform;

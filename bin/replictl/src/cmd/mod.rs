@@ -3,6 +3,7 @@ use clap::Parser;
 use clap::Subcommand;
 
 pub mod apply;
+pub mod cluster_spec;
 pub mod context;
 pub mod namespace;
 pub mod platform;
@@ -43,6 +44,10 @@ pub struct Cli {
 pub enum Command {
     /// Apply objects declarations to the Control Plane.
     Apply(apply::ApplyCli),
+
+    /// Inspect, delete or manipulate cluster specifications.
+    #[command(alias = "clusterspec")]
+    Cluster(cluster_spec::ClusterSpecCli),
 
     /// Manage configuration of RepliCore servers to access.
     Context(context::ContextCli),

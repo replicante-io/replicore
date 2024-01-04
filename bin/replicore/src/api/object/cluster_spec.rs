@@ -1,21 +1,21 @@
-//! API endpoints for handling `Platform` objects.
+//! API endpoints for handling `ClusterSpec` objects.
 use actix_web::web::Data;
 use actix_web::web::Path;
 use actix_web::HttpResponse;
 use futures_util::TryStreamExt;
 
-use replisdk::core::models::api::PlatformEntry;
-use replisdk::core::models::api::PlatformList;
+use replisdk::core::models::api::ClusterSpecEntry;
+use replisdk::core::models::api::ClusterSpecList;
 
 use replicore_context::Context;
 use replicore_events::Event;
 use replicore_injector::Injector;
 
-use crate::api::constants::PLATFORM_DELETED;
+use crate::api::constants::CLUSTER_SPEC_DELETED;
 use crate::api::Error;
 
-/// Delete a `Platform` object from a namespace.
-#[actix_web::delete("/object/replicante.io/v0/platform/{namespace}/{name}")]
+/// Delete a ClusterSpec object from a namespace.
+#[actix_web::delete("/object/replicante.io/v0/clusterspec/{namespace}/{name}")]
 pub async fn delete(
     context: Context,
     injector: Data<Injector>,
@@ -23,15 +23,15 @@ pub async fn delete(
 ) -> Result<HttpResponse, Error> {
     let (ns_id, name) = path.into_inner();
     let id = replicore_store::ids::NamespacedResourceID { ns_id, name };
-    let event = Event::new_with_payload(PLATFORM_DELETED, &id)?;
-    let op = replicore_store::delete::DeletePlatform(id);
+    let event = Event::new_with_payload(CLUSTER_SPEC_DELETED, &id)?;
+    let op = replicore_store::delete::DeleteClusterSpec(id);
     injector.events.change(&context, event).await?;
     injector.store.delete(&context, op).await?;
     Ok(crate::api::done())
 }
 
-/// Get a `Platform` object by namespace and name.
-#[actix_web::get("/object/replicante.io/v0/platform/{namespace}/{name}")]
+/// Get a [`Platform`] object by namespace and name.
+#[actix_web::get("/object/replicante.io/v0/clusterspec/{namespace}/{name}")]
 pub async fn get(
     context: Context,
     injector: Data<Injector>,
@@ -39,16 +39,16 @@ pub async fn get(
 ) -> Result<HttpResponse, Error> {
     let (ns_id, name) = path.into_inner();
     let id = replicore_store::ids::NamespacedResourceID { ns_id, name };
-    let query = replicore_store::query::LookupPlatform(id);
-    let platform = injector.store.query(&context, query).await?;
-    match platform {
+    let query = replicore_store::query::LookupClusterSpec(id);
+    let cluster_spec = injector.store.query(&context, query).await?;
+    match cluster_spec {
         None => Ok(crate::api::not_found()),
-        Some(platform) => Ok(HttpResponse::Ok().json(platform)),
+        Some(cluster_spec) => Ok(HttpResponse::Ok().json(cluster_spec)),
     }
 }
 
-/// List information about `Platform`s configured in a namespace.
-#[actix_web::get("/list/replicante.io/v0/platform/{namespace}")]
+/// List information about `ClusterSpec`s stored in a namespace.
+#[actix_web::get("/list/replicante.io/v0/clusterspec/{namespace}")]
 pub async fn list(
     context: Context,
     injector: Data<Injector>,
@@ -57,10 +57,10 @@ pub async fn list(
     let ns_id = replicore_store::ids::NamespaceID {
         id: path.into_inner(),
     };
-    let query = replicore_store::query::ListPlatforms(ns_id);
+    let query = replicore_store::query::ListClusterSpecs(ns_id);
     let items = injector.store.query(&context, query).await?;
-    let items: Vec<PlatformEntry> = items.try_collect().await?;
-    let response = PlatformList { items };
+    let items: Vec<ClusterSpecEntry> = items.try_collect().await?;
+    let response = ClusterSpecList { items };
     let response = serde_json::json!(response);
     Ok(HttpResponse::Ok().json(response))
 }

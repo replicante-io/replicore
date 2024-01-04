@@ -2276,6 +2276,7 @@ dependencies = [
  "prometheus",
  "replicore-context",
  "replisdk",
+ "serde",
  "serde_json",
  "tokio",
 ]

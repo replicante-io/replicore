@@ -1,4 +1,5 @@
 //! Operations offered by a `replictl` formatter interface.
+use replisdk::core::models::cluster::ClusterSpec;
 use replisdk::core::models::namespace::Namespace;
 use replisdk::core::models::platform::Platform;
 
@@ -13,6 +14,12 @@ pub trait FormatOp: Into<Ops> + SealFormatOp {
 
 /// All known operations that must be implemented by formatters.
 pub enum Ops {
+    /// Format information about a [`ClusterSpec`].
+    ClusterSpec(ClusterSpec),
+
+    /// Request a strategy to format `ClusterSpecEntry` lists.
+    ClusterSpecList,
+
     /// Format information about a [`Context`].
     Context(Context),
 
@@ -34,6 +41,9 @@ pub enum Ops {
 
 /// All known responses from format operations.
 pub enum Responses {
+    /// Return a object to format a list of `ClusterSpecEntry`s.
+    ClusterSpecList(Box<dyn super::ClusterSpecList>),
+
     /// Return a object to format a list of [`Context`]s.
     ContextList(Box<dyn super::ContextList>),
 
@@ -48,6 +58,15 @@ pub enum Responses {
 }
 
 impl Responses {
+    /// Wrap a [`ClusterSpecList`](super::ClusterSpecList) returned by the formatter.
+    pub fn cluster_specs<L>(value: L) -> Self
+    where
+        L: super::ClusterSpecList + 'static,
+    {
+        let value = Box::new(value);
+        Self::ClusterSpecList(value)
+    }
+
     /// Wrap a [`ContextList`](super::ContextList) returned by the formatter.
     pub fn contexts<L>(value: L) -> Self
     where
@@ -77,6 +96,9 @@ impl Responses {
 }
 
 // --- Operation & return types -- //
+/// Request a formatter to emit `ClusterSpecEntry` lists.
+pub struct ClusterSpecListOp;
+
 /// Request a formatter to emit [`Context`] lists.
 pub struct ContextListOp;
 
@@ -93,6 +115,26 @@ mod sealed {
 }
 
 // --- Implement FormatOp and other traits on types for transparent operations --- //
+impl SealFormatOp for ClusterSpec {}
+impl From<ClusterSpec> for Ops {
+    fn from(value: ClusterSpec) -> Self {
+        Self::ClusterSpec(value)
+    }
+}
+impl FormatOp for ClusterSpec {
+    type Response = ();
+}
+
+impl SealFormatOp for ClusterSpecListOp {}
+impl From<ClusterSpecListOp> for Ops {
+    fn from(_: ClusterSpecListOp) -> Self {
+        Self::ClusterSpecList
+    }
+}
+impl FormatOp for ClusterSpecListOp {
+    type Response = Box<dyn super::ClusterSpecList>;
+}
+
 impl SealFormatOp for Context {}
 impl From<Context> for Ops {
     fn from(value: Context) -> Self {
@@ -154,6 +196,14 @@ impl FormatOp for PlatformListOp {
 }
 
 // --- Implement Responses conversions on return types for transparent operations --- //
+impl From<Responses> for Box<dyn super::ClusterSpecList> {
+    fn from(value: Responses) -> Self {
+        match value {
+            Responses::ClusterSpecList(value) => value,
+            _ => panic!("unexpected response type for formatter operation"),
+        }
+    }
+}
 impl From<Responses> for Box<dyn super::ContextList> {
     fn from(value: Responses) -> Self {
         match value {

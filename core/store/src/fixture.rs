@@ -7,6 +7,7 @@ use std::sync::MutexGuard;
 use anyhow::Result;
 use futures::StreamExt;
 
+use replisdk::core::models::api::ClusterSpecEntry;
 use replisdk::core::models::api::NamespaceEntry;
 use replisdk::core::models::api::PlatformEntry;
 use replisdk::core::models::cluster::ClusterSpec;
@@ -76,15 +77,20 @@ impl StoreBackend for StoreFixture {
                 let spec = store.cluster_specs.get(&key).cloned();
                 Ok(QueryResponses::ClusterSpec(spec))
             }
-            QueryOps::ListClusterSpecIds(query) => {
-                let mut ids = Vec::new();
-                for (ns, id) in store.cluster_specs.keys() {
-                    if ns == query.id.as_str() {
-                        ids.push(id.to_string());
+            QueryOps::ListClusterSpecs(query) => {
+                let mut items = Vec::new();
+                for ((ns, _), spec) in store.cluster_specs.iter() {
+                    if ns != query.id.as_str() {
+                        continue;
                     }
+                    let item = ClusterSpecEntry {
+                        active: spec.active,
+                        cluster_id: spec.cluster_id.clone(),
+                    };
+                    items.push(item);
                 }
-                let ids = futures::stream::iter(ids).map(Ok).boxed();
-                Ok(QueryResponses::StringStream(ids))
+                let items = futures::stream::iter(items).map(Ok).boxed();
+                Ok(QueryResponses::ClusterSpecEntries(items))
             }
             QueryOps::ListNamespaces => {
                 let items: Vec<_> = store
@@ -102,13 +108,14 @@ impl StoreBackend for StoreFixture {
             QueryOps::ListPlatforms(query) => {
                 let mut items = Vec::new();
                 for ((ns, _), platform) in store.platforms.iter() {
-                    if ns == query.id.as_str() {
-                        let item = PlatformEntry {
-                            active: platform.active,
-                            name: platform.name.clone(),
-                        };
-                        items.push(item);
+                    if ns != query.id.as_str() {
+                        continue;
                     }
+                    let item = PlatformEntry {
+                        active: platform.active,
+                        name: platform.name.clone(),
+                    };
+                    items.push(item);
                 }
                 let items = futures::stream::iter(items).map(Ok).boxed();
                 Ok(QueryResponses::PlatformEntries(items))
