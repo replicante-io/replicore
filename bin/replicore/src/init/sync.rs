@@ -8,6 +8,8 @@ use replicore_events::emit::EventsFactory;
 use replicore_events::emit::EventsFactorySyncArgs;
 use replicore_store::StoreFactory;
 use replicore_store::StoreFactorySyncArgs;
+use replicore_tasks::factory::TasksFactory;
+use replicore_tasks::factory::TasksFactorySyncArgs;
 
 use super::actix::ActixServerRunArgs;
 use super::backends::Backends;
@@ -67,6 +69,20 @@ impl Sync {
         self
     }
 
+    /// Register a new factory for a Background Tasks queue implementation.
+    ///
+    /// # Panics
+    ///
+    /// This method panics if the identifier of the new Background Tasks backend is already in use.
+    pub fn register_tasks<B, S>(mut self, id: S, backend: B) -> Self
+    where
+        B: TasksFactory + 'static,
+        S: Into<String>,
+    {
+        self.generic.backends.register_tasks(id, backend);
+        self
+    }
+
     /// Finalise process initialisation and run the RepliCore server.
     pub async fn run(mut self) -> Result<()> {
         // Prepare for late process initialisation.
@@ -112,7 +128,7 @@ async fn synchronise_dependencies(context: &Context, args: SyncArgs) -> Result<(
     // TODO: Synchronise election service.
     sync_events(context, &args).await?;
     sync_store(context, &args).await?;
-    // TODO: Synchronise task submission queues.
+    sync_tasks(context, &args).await?;
     Ok(())
 }
 
@@ -136,6 +152,18 @@ async fn sync_store(context: &Context, args: &SyncArgs) -> Result<()> {
     };
     args.backends
         .store(&args.conf.store.backend)?
+        .sync(sync_args)
+        .await
+}
+
+async fn sync_tasks(context: &Context, args: &SyncArgs) -> Result<()> {
+    slog::debug!(context.logger, "Synchronising background tasks backend");
+    let sync_args = TasksFactorySyncArgs {
+        conf: &args.conf.store.options,
+        context,
+    };
+    args.backends
+        .tasks(&args.conf.tasks.service.backend)?
         .sync(sync_args)
         .await
 }

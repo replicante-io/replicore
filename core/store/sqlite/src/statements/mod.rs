@@ -15,7 +15,7 @@ mod cluster_spec;
 mod namespace;
 mod platform;
 
-/// implementation of the [`StoreBackend`] interface using SQLite.
+/// Implementation of the [`StoreBackend`] interface using SQLite.
 pub struct SQLiteStore {
     /// Connection to the SQLite DB persisting data.
     connection: Connection,

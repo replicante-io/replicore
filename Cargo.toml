@@ -8,11 +8,13 @@ members = [
   "core/auth",
   "core/events",
   "core/store",
+  "core/tasks",
 
   # Interface implementation crates.
   "core/auth/insecure",
   "core/events/sqlite",
   "core/store/sqlite",
+  "core-impl/tasks/sqlite",
 
   # Control Plane implementation crates.
   "core/conf",

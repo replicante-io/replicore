@@ -6,6 +6,11 @@ store:
   backend: sqlite
   path: replicore.sqlite
 
+tasks:
+  service:
+    backend: sqlite
+    path: replicore.sqlite
+
 telemetry:
   logs:
     level: debug

@@ -9,6 +9,7 @@ use replicore_events::emit::EventsFactoryArgs;
 use replicore_injector::Injector;
 use replicore_store::StoreFactory;
 use replicore_store::StoreFactoryArgs;
+use replicore_tasks::factory::TasksFactory;
 
 use super::actix::ActixServerRunArgs;
 use super::backends::Backends;
@@ -30,6 +31,14 @@ impl Server {
         let context = Context::root(generic.telemetry.logger.clone());
         let server = Self { context, generic };
         Ok(server)
+    }
+
+    /// Register all supported backends for all process dependencies.
+    ///
+    /// Supported dependencies can be tuned at compile time using crate features.
+    pub fn register_default_backends(mut self) -> Self {
+        self.generic.register_default_backends();
+        self
     }
 
     /// Register a new factory for an Events Platform implementation.
@@ -60,11 +69,17 @@ impl Server {
         self
     }
 
-    /// Register all supported backends for all process dependencies.
+    /// Register a new factory for a Background Tasks queue implementation.
     ///
-    /// Supported dependencies can be tuned at compile time using crate features.
-    pub fn register_default_backends(mut self) -> Self {
-        self.generic.register_default_backends();
+    /// # Panics
+    ///
+    /// This method panics if the identifier of the new Background Tasks backend is already in use.
+    pub fn register_tasks<B, S>(mut self, id: S, backend: B) -> Self
+    where
+        B: TasksFactory + 'static,
+        S: Into<String>,
+    {
+        self.generic.backends.register_tasks(id, backend);
         self
     }
 
@@ -91,6 +106,7 @@ impl Server {
                 context: injector.context,
             },
         )?;
+        // TODO: Tasks executor.
         // TODO: Add other components
 
         // Run until user-requested exit or process error.
@@ -127,6 +143,7 @@ pub async fn injector(context: &Context, conf: &Conf, backends: &Backends) -> Re
             context,
         })
         .await?;
+    // TODO: Tasks submitter.
 
     // Auth* is not currently configurable and just in place for the future.
     let authenticator = replicore_auth_insecure::Anonymous.into();

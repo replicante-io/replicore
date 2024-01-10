@@ -49,7 +49,8 @@ impl GenericInit {
         #[cfg(feature = "replicore-events-sqlite")]
         self.backends
             .register_events("sqlite", replicore_events_sqlite::emit::SQLiteFactory)
-            .register_store("sqlite", replicore_store_sqlite::SQLiteFactory);
+            .register_store("sqlite", replicore_store_sqlite::SQLiteFactory)
+            .register_tasks("sqlite", replicore_tasks_sqlite::SQLiteFactory);
         self
     }
 
@@ -57,6 +58,12 @@ impl GenericInit {
     pub fn register_metrics(&self) -> Result<&Self> {
         self.backends
             .events(&self.conf.events.backend)?
+            .register_metrics(&self.telemetry.metrics)?;
+        self.backends
+            .store(&self.conf.store.backend)?
+            .register_metrics(&self.telemetry.metrics)?;
+        self.backends
+            .tasks(&self.conf.tasks.service.backend)?
             .register_metrics(&self.telemetry.metrics)?;
         Ok(self)
     }
@@ -82,6 +89,12 @@ impl GenericInit {
         self.backends
             .events(&self.conf.events.backend)?
             .conf_check(context, &self.conf.events.options)?;
+        self.backends
+            .store(&self.conf.store.backend)?
+            .conf_check(context, &self.conf.store.options)?;
+        self.backends
+            .tasks(&self.conf.tasks.service.backend)?
+            .conf_check(context, &self.conf.tasks.service.options)?;
         Ok(self)
     }
 

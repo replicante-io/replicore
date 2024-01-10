@@ -27,6 +27,7 @@ replicore-conf = { path = "../conf" }
 replicore-context = { path = "../context" }
 replicore-events = { path = "../events" }
 replicore-store = { path = "../store" }
+replicore-tasks = { path = "../tasks" }
 
 replicore-auth-insecure = { path = "../auth/insecure", optional = true }
 

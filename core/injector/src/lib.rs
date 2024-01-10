@@ -102,6 +102,13 @@ impl Injector {
                 backend: "unittest".into(),
                 options: Default::default(),
             },
+            tasks: replicore_conf::TasksConf {
+                service: replicore_conf::BackendConf {
+                    backend: "unittest".into(),
+                    options: Default::default(),
+                },
+                executor: Default::default(),
+            },
             telemetry: Default::default(),
         };
         let injector = Injector {

@@ -6,6 +6,7 @@ use std::sync::Arc;
 use anyhow::Result;
 use replicore_events::emit::EventsFactory;
 use replicore_store::StoreFactory;
+use replicore_tasks::factory::TasksFactory;
 
 /// Error looking for a specific backend implementation.
 #[derive(Debug, thiserror::Error)]
@@ -19,6 +20,11 @@ pub enum BackendNotFound {
     #[error("persistent store backend '{0}' not recognised")]
     // (id,)
     Store(String),
+
+    /// Background Tasks backend not recognised.
+    #[error("background tasks backend '{0}' not recognised")]
+    // (id,)
+    Tasks(String),
 }
 
 impl BackendNotFound {
@@ -31,6 +37,11 @@ impl BackendNotFound {
     pub fn store(id: &str) -> Self {
         Self::Store(id.to_string())
     }
+
+    /// Background Tasks backend not recognised.
+    pub fn tasks(id: &str) -> Self {
+        Self::Tasks(id.to_string())
+    }
 }
 
 /// Registers of backend factories for implementations supported by the process/build.
@@ -41,6 +52,9 @@ pub struct Backends {
 
     /// Supported Persistent Store backends.
     stores: HashMap<String, Arc<dyn StoreFactory>>,
+
+    /// Supported Background Tasks backends.
+    tasks: HashMap<String, Arc<dyn TasksFactory>>,
 }
 
 impl Backends {
@@ -97,12 +111,43 @@ impl Backends {
         self
     }
 
+    /// Register a new factory for a Background Tasks queue implementation.
+    ///
+    /// # Panics
+    ///
+    /// This method panics if the identifier of the new Background Tasks backend is already in use.
+    pub fn register_tasks<B, S>(&mut self, id: S, backend: B) -> &mut Self
+    where
+        B: TasksFactory + 'static,
+        S: Into<String>,
+    {
+        match self.tasks.entry(id.into()) {
+            Entry::Occupied(entry) => {
+                panic!(
+                    "a TasksBackend with id '{}' is already registered",
+                    entry.key()
+                )
+            }
+            Entry::Vacant(entry) => entry.insert(Arc::new(backend)),
+        };
+        self
+    }
+
     /// Lookup a [`StoreFactory`] by ID.
     pub fn store(&self, id: &str) -> Result<&dyn StoreFactory> {
         let factory = self
             .stores
             .get(id)
             .ok_or_else(|| BackendNotFound::store(id))?;
+        Ok(factory.as_ref())
+    }
+
+    /// Lookup a [`TasksFactory`] by ID.
+    pub fn tasks(&self, id: &str) -> Result<&dyn TasksFactory> {
+        let factory = self
+            .tasks
+            .get(id)
+            .ok_or_else(|| BackendNotFound::tasks(id))?;
         Ok(factory.as_ref())
     }
 }

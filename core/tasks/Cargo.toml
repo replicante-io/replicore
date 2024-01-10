@@ -1,0 +1,33 @@
+[package]
+name = "replicore-tasks"
+version = "0.1.0"
+
+edition = "2021"
+rust-version = "1.70"
+
+description = "RepliCore asyncronous tasks scheduling and execution interfaces"
+homepage = "https://www.replicante.io/"
+license = "MIT"
+
+[features]
+# Enable utilities for unit testing.
+test-fixture = []
+
+[dependencies]
+anyhow = "^1.0"
+async-trait = "^0.1"
+futures = "^0.3"
+once_cell = "^1.0"
+prometheus = "^0.13"
+serde = { version = "^1.0", features = ["derive"] }
+serde_json = "^1.0"
+slog = "^2.0"
+thiserror = "^1.0"
+tokio = { version = "^1.0" , features = ["sync", "macros"] }
+
+replicore-context = { path = "../context" }
+
+replisdk = { version = "^0.1", features = ["utils-error_slog"] }
+
+[dev-dependencies]
+replicore-context = { path = "../context", features = ["test-fixture"] }

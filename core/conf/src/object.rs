@@ -5,6 +5,8 @@ use serde::Serialize;
 use replisdk::runtime::actix_web::ServerConfig;
 use replisdk::runtime::telemetry::TelemetryConfig;
 
+use replicore_tasks::conf::TasksExecutorConf;
+
 use super::RuntimeConf;
 
 /// Global configuration for the Replicante Core process.
@@ -24,6 +26,9 @@ pub struct Conf {
     /// Persistent Store service configuration.
     pub store: BackendConf,
 
+    /// Configuration for background tasks execution and backend service.
+    pub tasks: TasksConf,
+
     /// Telemetry configuration for the process.
     #[serde(default)]
     pub telemetry: TelemetryConfig,
@@ -38,4 +43,15 @@ pub struct BackendConf {
     /// Backend specific configuration options.
     #[serde(default, flatten)]
     pub options: serde_json::Value,
+}
+
+/// Configuration for background tasks execution and backend service.
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct TasksConf {
+    /// Background Tasks service configuration.
+    pub service: BackendConf,
+
+    /// Background tasks executor configuration.
+    #[serde(default)]
+    pub executor: TasksExecutorConf,
 }

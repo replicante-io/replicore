@@ -155,6 +155,52 @@ store:
   # Path to the SQLite DB file.
   #path: store.sqlite
 
+# Configuration for background tasks execution and backend service.
+tasks:
+  # Tasks executor backoff configuration in case of errors interacting with the Message Queue.
+  backoff:
+    # Maximum time, in seconds, to wait before retrying after errors from the Message Queue.
+    max_delay: 30
+
+    # Maximum number of retries before errors from the Message Queue cause process failure.
+    max_retries: 10
+
+    # Backoff multiplier every time a subsequent error is returned by the Message Queue.
+    multiplier: 2
+
+    # Initial delay, in milliseconds, to wait before the first retry.
+    start_delay: 200
+
+  # Maximum number of tasks to execute concurrently.
+  concurrent_tasks: 16  # Actual defaults varies based on available parallelism on the system.
+
+  # Filter queues from which tasks should be processed.
+  filters:
+    # Ignore subscriptions to any task queue listed here.
+    ignore: []
+
+    # If not empty, restrict subscriptions to only queues listed here.
+    #
+    # If the list is empty all queues can be subscribed to.
+    process: []
+
+  # Background Tasks service configuration.
+  service:
+    # Background Tasks implementation for the RepliCore control plane to use.
+    #
+    # Available implementations can be enabled and disabled at compile time so the exact
+    # list of options may vary but the following implementations are included by default:
+    #
+    # - sqlite: store tasks into a locally persisted SQLite database.
+    #   NO SUPPORT FOR HIGH AVAILABLE CLUSTERS.
+    #   ONLY SUITABLE FOR SMALL CLUSTERS.
+    backend: REQUIRED
+
+    # Implementation specific options are provided as additional attributes here.
+    # === For SQLite backend ===
+    # Path to the SQLite DB file.
+    #path: store.sqlite
+
 # Telemetry configuration for the process.
 telemetry:
   # Logging configuration for the process.
