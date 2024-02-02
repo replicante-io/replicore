@@ -9,6 +9,7 @@ use replicore_conf::Conf;
 use replicore_context::Context;
 use replicore_events::emit::Events;
 use replicore_store::Store;
+use replicore_tasks::submit::Tasks;
 
 /// Singleton instance of the Process Globals container.
 static GLOBAL_INJECTOR: Lazy<RwLock<Option<Injector>>> = Lazy::new(|| RwLock::new(None));
@@ -33,6 +34,9 @@ pub struct Injector {
 
     /// Interface to persist state.
     pub store: Store,
+
+    /// Interface to submit background tasks execution.
+    pub tasks: Tasks,
 }
 
 impl Injector {
@@ -118,6 +122,7 @@ impl Injector {
             context: Context::fixture(),
             events: events.backend().into(),
             store: Store::fixture(),
+            tasks: Tasks::fixture().backend().into(),
         };
         InjectorFixture { injector, events }
     }

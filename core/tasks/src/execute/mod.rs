@@ -2,6 +2,7 @@
 use std::sync::Arc;
 
 use anyhow::Result;
+use serde::de::DeserializeOwned;
 use serde_json::Value;
 
 use replicore_context::Context;
@@ -10,6 +11,7 @@ mod backoff;
 mod executor;
 
 pub use self::executor::TasksExecutor;
+pub use self::executor::TasksExecutorBuilder;
 
 #[cfg(any(test, feature = "test-fixture"))]
 mod fixture;
@@ -36,6 +38,17 @@ pub struct ReceivedTask {
 
     /// Queue the task was received from.
     pub queue: &'static Queue,
+}
+
+impl ReceivedTask {
+    /// Decode task payload into a structured item.
+    pub fn decode<T>(&self) -> Result<T>
+    where
+        T: DeserializeOwned,
+    {
+        let payload = serde_json::from_value(self.payload.clone())?;
+        Ok(payload)
+    }
 }
 
 /// Notify the backing queue platform of updates to tasks.

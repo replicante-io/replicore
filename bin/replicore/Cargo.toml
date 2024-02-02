@@ -64,6 +64,9 @@ replicore-injector = { path = "../../core/injector" }
 replicore-store = { path = "../../core/store" }
 replicore-tasks = { path = "../../core/tasks" }
 
+# Control Plane logic implementations.
+replicore-task-discovery = { path = "../../core-logic/task/discovery" }
+
 # Supported interface backend implementations for compile time customisation.
 replicore-auth-insecure = { path = "../../core/auth/insecure" }
 replicore-events-sqlite = { path = "../../core/events/sqlite", optional = true }

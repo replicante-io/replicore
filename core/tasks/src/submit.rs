@@ -43,9 +43,17 @@ impl Tasks {
     /// Submit a task onto its queue.
     pub async fn submit<T>(&self, context: &Context, task: T) -> Result<()>
     where
-        T: Into<TaskSubmission>,
+        T: TryInto<TaskSubmission>,
+        T::Error: Into<anyhow::Error>,
     {
-        self.0.submit(context, task.into()).await
+        let task = task.try_into().map_err(Into::into)?;
+        self.0.submit(context, task).await
+    }
+
+    /// Initialise a new tasks backend fixture for unit tests.
+    #[cfg(feature = "test-fixture")]
+    pub fn fixture() -> TasksFixture {
+        TasksFixture::new()
     }
 }
 

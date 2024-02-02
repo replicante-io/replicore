@@ -1,5 +1,4 @@
 //! How to define queues and their configuration.
-use std::collections::HashMap;
 use std::time::Duration;
 
 use serde::Deserialize;
@@ -19,30 +18,6 @@ pub struct Queue {
 
     /// Amount of time a delivered task wait before redelivery attempts.
     pub retry_timeout: Duration,
-}
-
-/// Collection of [`Queue`] definitions known to the Control Plane process.
-///
-/// The collection is useful to various areas of the system:
-///
-/// - Control Plane dependencies sync: knows queues to create and how to configure them.
-/// - Tasks executor: knows which queues to monitor for task execution.
-pub struct QueueCatalogue {
-    /// Map of queue IDs to [`Queue`] definition.
-    queues: HashMap<&'static str, &'static Queue>,
-}
-
-impl QueueCatalogue {
-    /// Lookup a [`Queue`] configuration from the catalogue.
-    pub fn lookup(&self, name: &str) -> Option<&'static Queue> {
-        self.queues.get(name).copied()
-    }
-
-    /// Register a new [`Queue`] in the catalogue so the Control Plane knows how to handle it.
-    pub fn register(&mut self, queue: &'static Queue) -> &mut Self {
-        self.queues.insert(&queue.queue, queue);
-        self
-    }
 }
 
 /// Tasks executor backoff configuration in case of errors interacting with the Message Queue.

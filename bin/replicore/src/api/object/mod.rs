@@ -15,6 +15,7 @@ pub fn configure(config: &mut ServiceConfig) {
         .service(self::namespace::get)
         .service(self::namespace::list)
         .service(self::platform::delete)
+        .service(self::platform::discover)
         .service(self::platform::get)
         .service(self::platform::list);
 }

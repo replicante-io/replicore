@@ -10,6 +10,7 @@ use crate::init::Server;
 pub async fn run(_cli: Cli, conf: Conf) -> Result<()> {
     Server::configure(conf)
         .await?
+        .register_core_tasks()
         .register_default_backends()
         .with_http_config(crate::api::configure)
         .run()

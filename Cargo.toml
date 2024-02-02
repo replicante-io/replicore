@@ -20,6 +20,7 @@ members = [
   "core/conf",
   "core/context",
   "core/injector",
+  "core-logic/task/discovery",
 
   # Client implementations crates.
   "client/core",

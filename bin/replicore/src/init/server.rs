@@ -1,7 +1,10 @@
 //! RepliCore Control Plane Server initialisation as a builder.
 use anyhow::Result;
 
+use replisdk::runtime::shutdown::ShutdownManagerBuilder;
+
 use replicore_conf::Conf;
+use replicore_conf::TasksConf;
 use replicore_context::Context;
 use replicore_context::ContextBuilder;
 use replicore_events::emit::EventsFactory;
@@ -9,7 +12,9 @@ use replicore_events::emit::EventsFactoryArgs;
 use replicore_injector::Injector;
 use replicore_store::StoreFactory;
 use replicore_store::StoreFactoryArgs;
+use replicore_tasks::execute::TasksExecutorBuilder;
 use replicore_tasks::factory::TasksFactory;
+use replicore_tasks::factory::TasksFactoryArgs;
 
 use super::actix::ActixServerRunArgs;
 use super::backends::Backends;
@@ -22,6 +27,9 @@ pub struct Server {
 
     /// Process initialisation logic common to all RepliCore commands.
     generic: GenericInit,
+
+    /// Partial configuration of the background tasks executor component.
+    tasks: TasksExecutorBuilder,
 }
 
 impl Server {
@@ -29,8 +37,18 @@ impl Server {
     pub async fn configure(conf: Conf) -> Result<Self> {
         let generic = GenericInit::configure(conf).await?;
         let context = Context::root(generic.telemetry.logger.clone());
-        let server = Self { context, generic };
+        let tasks = TasksExecutorBuilder::new(generic.conf.tasks.executor.clone());
+        let server = Self { context, generic, tasks };
         Ok(server)
+    }
+
+    /// Register all task queues required by the control plane to operate.
+    pub fn register_core_tasks(mut self) -> Self {
+        self.tasks.subscribe(
+            &replicore_task_discovery::DISCOVERY_QUEUE,
+            replicore_task_discovery::Callback,
+        );
+        self
     }
 
     /// Register all supported backends for all process dependencies.
@@ -106,7 +124,13 @@ impl Server {
                 context: injector.context,
             },
         )?;
-        // TODO: Tasks executor.
+        tasks_executor(
+            context.derive(),
+            &self.generic.conf.tasks,
+            &self.generic.backends,
+            &mut self.generic.shutdown,
+            self.tasks,
+        ).await?;
         // TODO: Add other components
 
         // Run until user-requested exit or process error.
@@ -129,6 +153,7 @@ pub async fn injector(context: &Context, conf: &Conf, backends: &Backends) -> Re
     let conf = conf.clone();
     let events = backends.events(&conf.events.backend)?;
     let store = backends.store(&conf.store.backend)?;
+    let tasks = backends.tasks(&conf.tasks.service.backend)?;
 
     // Initialise all dependencies.
     let events = events
@@ -143,7 +168,12 @@ pub async fn injector(context: &Context, conf: &Conf, backends: &Backends) -> Re
             context,
         })
         .await?;
-    // TODO: Tasks submitter.
+    let tasks = tasks
+        .submit(TasksFactoryArgs {
+            conf: &conf.tasks.service.options,
+            context,
+        })
+        .await?;
 
     // Auth* is not currently configurable and just in place for the future.
     let authenticator = replicore_auth_insecure::Anonymous.into();
@@ -160,6 +190,38 @@ pub async fn injector(context: &Context, conf: &Conf, backends: &Backends) -> Re
         context: context.clone(),
         events,
         store,
+        tasks,
     };
     Ok(injector)
+}
+
+/// Configure and start the background task executor component.
+pub async fn tasks_executor(
+    context: ContextBuilder,
+    conf: &TasksConf,
+    backends: &Backends,
+    shutdown: &mut ShutdownManagerBuilder<()>,
+    builder: TasksExecutorBuilder,
+) -> Result<()> {
+    // Customise the root context for the tasks executor.
+    let context = context
+        .log_values(slog::o!("component" => "tasks"))
+        .build();
+
+    // Initialise task polling and acknowledging backend.
+    let tasks = backends.tasks(&conf.service.backend)?;
+    let (source, ack) = tasks.consume(TasksFactoryArgs {
+        conf: &conf.service.options,
+        context: &context,
+    }).await?;
+
+    // Finalise the partially configure executor and subscribe to queues.
+    let mut executor = builder.build(&context, source, ack).await?;
+
+    // Execute tasks in the background until shutdown.
+    let exit = shutdown.shutdown_notification();
+    shutdown.watch_tokio(tokio::spawn(async move {
+        executor.execute(&context, exit).await
+    }));
+    Ok(())
 }

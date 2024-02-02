@@ -4,6 +4,7 @@ use serde_json::Value as Json;
 
 use replicore_context::Context;
 
+use crate::conf::Queue;
 use crate::execute::TaskAck;
 use crate::execute::TaskSource;
 use crate::submit::Tasks;
@@ -43,4 +44,7 @@ pub struct TasksFactorySyncArgs<'a> {
 
     /// Container for operation scoped values.
     pub context: &'a Context,
+
+    /// All queues known to the process to be configured with the backend.
+    pub queues: &'a Vec<&'static Queue>,
 }

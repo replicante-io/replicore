@@ -30,6 +30,19 @@ pub async fn delete(
     Ok(crate::api::done())
 }
 
+/// Submit a platform discovery task for background execution.
+#[actix_web::get("/object/replicante.io/v0/platform/{namespace}/{name}/discover")]
+pub async fn discover(
+    context: Context,
+    injector: Data<Injector>,
+    path: Path<(String, String)>,
+) -> Result<HttpResponse, Error> {
+    let (ns_id, name) = path.into_inner();
+    let task = replicore_task_discovery::DiscoverPlatform { ns_id, name };
+    injector.tasks.submit(&context, task).await?;
+    Ok(crate::api::done())
+}
+
 /// Get a `Platform` object by namespace and name.
 #[actix_web::get("/object/replicante.io/v0/platform/{namespace}/{name}")]
 pub async fn get(

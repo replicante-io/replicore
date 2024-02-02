@@ -16,6 +16,7 @@ test-fixture = [
   "replicore-context/test-fixture",
   "replicore-events/test-fixture",
   "replicore-store/test-fixture",
+  "replicore-tasks/test-fixture",
 ]
 
 [dependencies]
@@ -35,3 +36,4 @@ replicore-auth-insecure = { path = "../auth/insecure", optional = true }
 replicore-auth-insecure = { path = "../auth/insecure" }
 replicore-context = { path = "../context", features = ["test-fixture"] }
 replicore-events = { path = "../events", features = ["test-fixture"] }
+replicore-tasks = { path = "../tasks", features = ["test-fixture"] }

@@ -2148,6 +2148,7 @@ dependencies = [
  "replicore-injector",
  "replicore-store",
  "replicore-store-sqlite",
+ "replicore-task-discovery",
  "replicore-tasks",
  "replicore-tasks-sqlite",
  "replisdk",
@@ -2300,6 +2301,19 @@ dependencies = [
  "thiserror",
  "tokio",
  "tokio-rusqlite 0.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
+name = "replicore-task-discovery"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "async-trait",
+ "once_cell",
+ "replicore-context",
+ "replicore-tasks",
+ "serde",
+ "slog",
 ]
 
 [[package]]

@@ -131,24 +131,8 @@ impl TasksExecutor {
     where
         C: TaskCallback + 'static,
     {
-        // Skip subscription if filters tell us to ignore the queue.
-        let filters = &self.conf.filters;
-        if filters.ignore.contains(&queue.queue) {
-            return Ok(());
-        }
-        if !filters.process.is_empty() && !filters.process.contains(&queue.queue) {
-            return Ok(());
-        }
-
-        // Fail if the queue is already subscribed.
-        if self.callbacks.contains_key(&queue.queue) {
-            anyhow::bail!(crate::error::AlreadySubscribed::new(&queue.queue));
-        }
-
-        // Register the queue handler and subscribe to tasks.
         let callback = Arc::new(callback);
-        self.callbacks.insert(queue.queue.clone(), callback);
-        self.source.subscribe(context, queue).await
+        self.subscribe_arc(context, queue, callback).await
     }
 
     /// Implement the fetch, dispatch, join loop for queue processing.
@@ -255,5 +239,76 @@ impl TasksExecutor {
             }
         });
         self.pool.push(join);
+    }
+
+    /// Register a callback to execute tasks received on the corresponding queue.
+    async fn subscribe_arc(
+        &mut self,
+        context: &Context,
+        queue: &'static Queue,
+        callback: Arc<dyn TaskCallback>,
+    ) -> Result<()> {
+        // Skip subscription if filters tell us to ignore the queue.
+        let filters = &self.conf.filters;
+        if filters.ignore.contains(&queue.queue) {
+            return Ok(());
+        }
+        if !filters.process.is_empty() && !filters.process.contains(&queue.queue) {
+            return Ok(());
+        }
+
+        // Fail if the queue is already subscribed.
+        if self.callbacks.contains_key(&queue.queue) {
+            anyhow::bail!(crate::error::AlreadySubscribed::new(&queue.queue));
+        }
+
+        // Register the queue handler and subscribe to tasks.
+        slog::info!(
+            context.logger,
+            "Subscribed to queue '{}' for task execution", queue.queue;
+            "queue" => &queue.queue
+        );
+        self.callbacks.insert(queue.queue.clone(), callback);
+        self.source.subscribe(context, queue).await
+    }
+}
+
+/// Incrementally build a [`TasksExecutor`] instance.
+pub struct TasksExecutorBuilder {
+    callbacks: Vec<(&'static Queue, Arc<dyn TaskCallback>)>,
+    conf: TasksExecutorConf,
+}
+
+impl TasksExecutorBuilder {
+    /// Initialise incremental configuration for a [`TasksExecutor`].
+    pub fn new(conf: TasksExecutorConf) -> TasksExecutorBuilder {
+        TasksExecutorBuilder {
+            callbacks: Default::default(),
+            conf,
+        }
+    }
+
+    /// Complete this configuration with a [`TaskSourceBackend`] and return a [`TasksExecutor`].
+    pub async fn build(
+        self,
+        context: &Context,
+        source: TaskSource,
+        ack: TaskAck,
+    ) -> Result<TasksExecutor> {
+        let mut tasks = TasksExecutor::new(source, ack, self.conf);
+        for (queue, callback) in self.callbacks.into_iter() {
+            tasks.subscribe_arc(context, queue, callback).await?;
+        }
+        Ok(tasks)
+    }
+
+    /// Register a callback to execute tasks received on the corresponding queue.
+    pub fn subscribe<C>(&mut self, queue: &'static Queue, callback: C)
+    where
+        C: TaskCallback + 'static,
+    {
+        let callback: Arc<dyn TaskCallback> = Arc::new(callback);
+        let info = (queue, callback);
+        self.callbacks.push(info);
     }
 }

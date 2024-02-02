@@ -8,6 +8,7 @@ use replicore_events::emit::EventsFactory;
 use replicore_events::emit::EventsFactorySyncArgs;
 use replicore_store::StoreFactory;
 use replicore_store::StoreFactorySyncArgs;
+use replicore_tasks::conf::Queue;
 use replicore_tasks::factory::TasksFactory;
 use replicore_tasks::factory::TasksFactorySyncArgs;
 
@@ -22,23 +23,36 @@ pub struct Sync {
 
     /// Process initialisation logic common to all RepliCore commands.
     generic: GenericInit,
+
+    /// All queues known to the process to be configured with the backend.
+    task_queues: Vec<&'static Queue>,
 }
 
 impl Sync {
+    /// Build a server from the loaded configuration.
+    pub async fn configure(conf: Conf) -> Result<Self> {
+        let generic = GenericInit::configure(conf).await?;
+        let context = Context::root(generic.telemetry.logger.clone());
+        let sync = Self {
+            context,
+            generic,
+            task_queues: Default::default(),
+        };
+        Ok(sync)
+    }
+
+    /// Register all task queues required by the control plane to operate.
+    pub fn register_core_tasks(mut self) -> Self {
+        self.task_queues.push(&replicore_task_discovery::DISCOVERY_QUEUE);
+        self
+    }
+
     /// Register all supported backends for all process dependencies.
     ///
     /// Supported dependencies can be tuned at compile time using crate features.
     pub fn register_default_backends(mut self) -> Self {
         self.generic.register_default_backends();
         self
-    }
-
-    /// Build a server from the loaded configuration.
-    pub async fn configure(conf: Conf) -> Result<Self> {
-        let generic = GenericInit::configure(conf).await?;
-        let context = Context::root(generic.telemetry.logger.clone());
-        let sync = Self { context, generic };
-        Ok(sync)
     }
 
     /// Register a new factory for an Events Platform implementation.
@@ -106,6 +120,7 @@ impl Sync {
         let args = SyncArgs {
             backends: self.generic.backends.clone(),
             conf: self.generic.conf.clone(),
+            queues: self.task_queues,
         };
         self.generic.shutdown.watch_tokio(tokio::spawn(async move {
             synchronise_dependencies(&context, args).await
@@ -120,6 +135,7 @@ impl Sync {
 struct SyncArgs {
     backends: Backends,
     conf: Conf,
+    queues: Vec<&'static Queue>,
 }
 
 /// Entrypoint to dependences synchronisation.
@@ -161,6 +177,7 @@ async fn sync_tasks(context: &Context, args: &SyncArgs) -> Result<()> {
     let sync_args = TasksFactorySyncArgs {
         conf: &args.conf.store.options,
         context,
+        queues: &args.queues,
     };
     args.backends
         .tasks(&args.conf.tasks.service.backend)?
