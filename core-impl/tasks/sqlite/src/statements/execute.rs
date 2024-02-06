@@ -3,6 +3,7 @@ use std::collections::HashMap;
 
 use anyhow::Result;
 use opentelemetry_api::trace::FutureExt;
+use opentelemetry_api::Context as OTelContext;
 use tokio_rusqlite::Connection;
 
 use replisdk::utils::metrics::CountFutureErrExt;
@@ -34,7 +35,9 @@ WHERE task_id IN (
 RETURNING
     task_id,
     queue_id,
-    payload
+    payload,
+    run_as,
+    trace
 ;"#;
 
 /// SQL extracted task object return from SQLite connection calls.
@@ -43,6 +46,8 @@ pub struct SQLReceivedTask {
     task_id: String,
     queue_id: String,
     payload: String,
+    run_as: Option<String>,
+    trace: Option<String>,
 }
 
 pub async fn done(_: &Context, connection: &Connection, task: &ReceivedTask) -> Result<()> {
@@ -89,6 +94,8 @@ pub async fn next(
                 task_id: row.get::<&str, i64>("task_id")?.to_string(),
                 queue_id: row.get("queue_id")?,
                 payload: row.get("payload")?,
+                run_as: row.get("run_as")?,
+                trace: row.get("trace")?,
             };
             Ok(Some(task))
         })
@@ -106,12 +113,25 @@ pub async fn next(
         .get(&task.queue_id)
         .expect("received task on unsubscribed queue");
     let payload = replisdk::utils::encoding::decode_serde(&task.payload)?;
+    let run_as = replisdk::utils::encoding::decode_serde_option(&task.run_as)?;
+    let trace = task.trace.map(decode_trace).transpose()?;
     let received = ReceivedTask {
         id: task.task_id,
         payload,
         queue,
+        run_as,
+        trace,
     };
     Ok(Some(received))
+}
+
+/// Extract an OpenTelemetry context from the encoded task data.
+fn decode_trace(trace: String) -> Result<OTelContext> {
+    let trace: HashMap<String, String> = replisdk::utils::encoding::decode_serde(&trace)?;
+    let context = opentelemetry_api::global::get_text_map_propagator(|propagator| {
+        propagator.extract(&trace)
+    });
+    Ok(context)
 }
 
 #[cfg(test)]

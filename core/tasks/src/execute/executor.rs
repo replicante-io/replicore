@@ -7,6 +7,15 @@ use std::sync::Arc;
 use anyhow::Result;
 use futures::stream::FuturesUnordered;
 use futures::stream::StreamExt;
+use opentelemetry_api::trace::FutureExt;
+use opentelemetry_api::trace::TraceContextExt;
+use opentelemetry_api::trace::Tracer;
+use opentelemetry_api::Context as OTelContext;
+
+use replisdk::core::models::auth::Action;
+use replisdk::core::models::auth::AuthContext;
+use replisdk::core::models::auth::Resource;
+use replisdk::utils::trace::TraceFutureErrExt;
 
 use replicore_context::Context;
 
@@ -204,22 +213,43 @@ impl TasksExecutor {
     }
 
     /// Dispatch execution of a received task and handle context and acknowledgment.
-    async fn execute_task(&self, context: &Context, task: ReceivedTask) {
+    async fn execute_task(&self, context: &Context, mut task: ReceivedTask) {
         // Find the callback to handle the received task.
         let handler = self
             .callbacks
             .get(&task.queue.queue)
-            .expect("received message for a queue we are not subscribed to");
+            .expect("received message for a queue we are not subscribed to")
+            .clone();
 
-        // Clone contextual variables so the task can be executed in the background.
-        // TODO: include task ID into context logger.
-        // TODO: derive context to include task id in logs & set auth task.
-        let context = context.clone();
-        let handler = handler.clone();
+        // Derive an updated context to propagate task specific information.
+        let mut context = context
+            .derive()
+            .log_values(slog::o!("task_id" => task.id.clone()));
+        if let Some(run_as) = task.run_as.take() {
+            let auth = AuthContext {
+                action: Action::define("task", "execute"),
+                entity: run_as.entity,
+                impersonate: run_as.impersonate,
+                resource: Resource {
+                    kind: String::from("Task"),
+                    metadata: Default::default(),
+                    resource_id: task.id.clone(),
+                },
+            };
+            context = context.authenticated(auth);
+        }
+        let context = context.build();
+
+        // Extract available tracing context and create a new span for the task to execute as.
+        let otel_parent = task.trace.take().unwrap_or_else(OTelContext::current);
+        let mut span = crate::telemetry::TRACER.span_builder("task.execute");
+        span.span_kind = Some(opentelemetry_api::trace::SpanKind::Consumer);
+        let span = crate::telemetry::TRACER.build_with_context(span, &otel_parent);
+        let otel_context = otel_parent.with_span(span);
 
         // Execute the task in parallel with other activities.
         let ack_backend = self.ack.clone();
-        let join = tokio::spawn(async move {
+        let work = async move {
             let ack_backend = ack_backend;
             let result = handler.execute(&context, &task).await;
             match result {
@@ -237,7 +267,11 @@ impl TasksExecutor {
                     Ok(())
                 }
             }
-        });
+        };
+        let work = work
+            .trace_on_err_with_status()
+            .with_context(otel_context);
+        let join = tokio::spawn(work);
         self.pool.push(join);
     }
 

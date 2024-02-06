@@ -42,7 +42,7 @@ pub static OPS_ERR: Lazy<CounterVec> = Lazy::new(|| {
     .expect("failed to initialise OPS_ERR counter")
 });
 
-/// Open Telemetry tracer for the SQLite events backend.
+/// Open Telemetry tracer for the SQLite tasks backend.
 pub static TRACER: Lazy<BoxedTracer> = Lazy::new(|| {
     opentelemetry_api::global::tracer_provider().versioned_tracer(
         env!("CARGO_PKG_NAME"),

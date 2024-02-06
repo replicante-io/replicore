@@ -2,8 +2,11 @@
 use std::sync::Arc;
 
 use anyhow::Result;
+use opentelemetry_api::Context as OTelContext;
 use serde::de::DeserializeOwned;
 use serde_json::Value;
+
+use replisdk::utils::metrics::CountFutureErrExt;
 
 use replicore_context::Context;
 
@@ -24,12 +27,11 @@ pub use self::fixture::{
 mod tests;
 
 use crate::conf::Queue;
+use crate::conf::RunTaskAs;
 
 /// Information about a received task that needs executing.
 #[derive(Clone, Debug)]
 pub struct ReceivedTask {
-    // TODO: AuthContext
-    // TODO: OTel Context
     /// ID of the received task (as determined by the queuing backend).
     pub id: String,
 
@@ -38,6 +40,12 @@ pub struct ReceivedTask {
 
     /// Queue the task was received from.
     pub queue: &'static Queue,
+
+    /// Entity to use for authentication and authorisation when the task actually executes.
+    pub run_as: Option<RunTaskAs>,
+
+    /// OpenTelemetry context for trace data propagation.
+    pub trace: Option<OTelContext>,
 }
 
 impl ReceivedTask {
@@ -91,7 +99,12 @@ pub struct TaskSource(Box<dyn TaskSourceBackend>);
 impl TaskSource {
     /// Fetch the next task available for processing.
     pub async fn next(&mut self, context: &Context) -> Result<ReceivedTask> {
-        self.0.next(context).await
+        let err_count = crate::telemetry::RECEIVE_ERR.clone();
+        crate::telemetry::RECEIVE_COUNT.inc();
+        self.0
+            .next(context)
+            .count_on_err(err_count)
+            .await
     }
 
     /// Configure the backend to subscribe to tasks submitted to a [`Queue`].

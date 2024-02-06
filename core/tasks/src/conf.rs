@@ -4,6 +4,10 @@ use std::time::Duration;
 use serde::Deserialize;
 use serde::Serialize;
 
+use replisdk::core::models::auth::AuthContext;
+use replisdk::core::models::auth::Entity;
+use replisdk::core::models::auth::ImpersonateEntity;
+
 /// Definition of a task queue and its properties (such as retry logic).
 ///
 /// Different queues are used to organise and group tasks to be executed and simplify
@@ -18,6 +22,25 @@ pub struct Queue {
 
     /// Amount of time a delivered task wait before redelivery attempts.
     pub retry_timeout: Duration,
+}
+
+/// Entity to use for authentication and authorisation when the task actually executes.
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, serde::Deserialize)]
+pub struct RunTaskAs {
+    /// The entity (user or system) requesting and executing the task.
+    pub entity: Entity,
+
+    /// The entity to impersonate when processing the task.
+    pub impersonate: Option<ImpersonateEntity>,
+}
+
+impl From<&AuthContext> for RunTaskAs {
+    fn from(value: &AuthContext) -> Self {
+        RunTaskAs {
+            entity: value.entity.clone(),
+            impersonate: value.impersonate.clone(),
+        }
+    }
 }
 
 /// Tasks executor backoff configuration in case of errors interacting with the Message Queue.

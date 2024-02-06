@@ -54,8 +54,12 @@ impl GenericInit {
         self
     }
 
-    /// Register metrics for all selected backends.
+    /// Register metrics for core crates and all selected backends.
     pub fn register_metrics(&self) -> Result<&Self> {
+        // Required core crates.
+        replicore_tasks::register_metrics(&self.telemetry.metrics)?;
+
+        // Selected backends.
         self.backends
             .events(&self.conf.events.backend)?
             .register_metrics(&self.telemetry.metrics)?;

@@ -1,11 +1,13 @@
 -- Store task payload as JSON encoded text and metadata along side it..
 -- This is unlike other SQLite store implementations because tasks don't have a natural
--- struct that encapsulates all their attributes.
+-- structure that encapsulates all their attributes.
 CREATE TABLE IF NOT EXISTS tasks_queue(
   -- Manually managed columns for task persisting.
   task_id INTEGER PRIMARY KEY AUTOINCREMENT,
   queue_id TEXT NOT NULL,
   payload TEXT NOT NULL,
+  run_as TEXT DEFAULT NULL,
+  trace TEXT DEFAULT NULL,
 
   -- Columns to track retry metadata 
   --  Tasks start with a number of reties and are dropped when retries reach -1.

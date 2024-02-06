@@ -2,23 +2,31 @@
 use std::sync::Arc;
 
 use anyhow::Result;
+use opentelemetry_api::Context as OTelContext;
 use serde::Serialize;
 use serde_json::Value;
+
+use replisdk::utils::metrics::CountFutureErrExt;
 
 use replicore_context::Context;
 
 use crate::conf::Queue;
+use crate::conf::RunTaskAs;
 
 /// Information about a task to submit for async execution.
 #[derive(Clone, Debug)]
 pub struct TaskSubmission {
-    // TODO: AuthContext
-    // TODO: OTel Context
     /// Payload submitted as part of this task.
     pub payload: Value,
 
     /// Queue the task is submitted to.
     pub queue: &'static Queue,
+
+    /// Entity to use for authentication and authorisation when the task actually executes.
+    pub run_as: Option<RunTaskAs>,
+
+    /// OpenTelemetry context for trace data propagation.
+    pub trace: Option<OTelContext>,
 }
 
 impl TaskSubmission {
@@ -30,6 +38,8 @@ impl TaskSubmission {
         let task = TaskSubmission {
             payload: serde_json::to_value(payload)?,
             queue,
+            run_as: None,
+            trace: None,
         };
         Ok(task)
     }
@@ -46,8 +56,23 @@ impl Tasks {
         T: TryInto<TaskSubmission>,
         T::Error: Into<anyhow::Error>,
     {
-        let task = task.try_into().map_err(Into::into)?;
-        self.0.submit(context, task).await
+        // Attach default contexts to propagate to tasks.
+        let mut task = task.try_into().map_err(Into::into)?;
+        if task.run_as.is_none() {
+            task.run_as = context.auth.as_ref().map(RunTaskAs::from);
+        }
+        if task.trace.is_none() {
+            task.trace = Some(OTelContext::current());
+        }
+
+        // Submit task while tracking telemetry.
+        let queue_id = task.queue.queue.clone();
+        let err_count = crate::telemetry::SUBMIT_ERR.with_label_values(&[&queue_id]);
+        crate::telemetry::SUBMIT_COUNT.with_label_values(&[&queue_id]).inc();
+        self.0
+            .submit(context, task)
+            .count_on_err(err_count)
+            .await
     }
 
     /// Initialise a new tasks backend fixture for unit tests.

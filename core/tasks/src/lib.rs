@@ -12,3 +12,6 @@ pub mod error;
 pub mod execute;
 pub mod factory;
 pub mod submit;
+
+mod telemetry;
+pub use self::telemetry::register_metrics;

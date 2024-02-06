@@ -126,6 +126,8 @@ async fn acknowledge_fail_permanent() {
         id: "test".into(),
         payload: serde_json::Value::Null,
         queue: &TEST_QUEUE,
+        run_as: None,
+        trace: None,
     };
     fixtures.tasks.submit(task).await.unwrap();
     executor
@@ -148,6 +150,8 @@ async fn acknowledge_fail_retry() {
         id: "test".into(),
         payload: serde_json::Value::Null,
         queue: &TEST_QUEUE,
+        run_as: None,
+        trace: None,
     };
     fixtures.tasks.submit(task).await.unwrap();
     executor
@@ -170,6 +174,8 @@ async fn acknowledge_success() {
         id: "test".into(),
         payload: serde_json::Value::Null,
         queue: &TEST_QUEUE,
+        run_as: None,
+        trace: None,
     };
     fixtures.tasks.submit(task).await.unwrap();
     executor
@@ -192,12 +198,16 @@ async fn cancel_task_on_exit() {
         id: "long".into(),
         payload: serde_json::json!(200u64),
         queue: &TEST_QUEUE,
+        run_as: None,
+        trace: None,
     };
     fixtures.tasks.submit(task).await.unwrap();
     let task = ReceivedTask {
         id: "short".into(),
         payload: serde_json::json!(50u64),
         queue: &TEST_QUEUE,
+        run_as: None,
+        trace: None,
     };
     fixtures.tasks.submit(task).await.unwrap();
 
@@ -222,12 +232,16 @@ async fn cancel_task_on_error() {
         id: "error".into(),
         payload: serde_json::Value::Null,
         queue: &TEST_FETCH_FAILURE,
+        run_as: None,
+        trace: None,
     };
     fixtures.tasks.submit(task).await.unwrap();
     let task = ReceivedTask {
         id: "short".into(),
         payload: serde_json::json!(50u64),
         queue: &TEST_QUEUE,
+        run_as: None,
+        trace: None,
     };
     fixtures.tasks.submit(task).await.unwrap();
 
@@ -255,11 +269,15 @@ async fn dispatch_task() {
         id: "test".into(),
         payload: serde_json::Value::Null,
         queue: &TEST_QUEUE,
+        run_as: None,
+        trace: None,
     };
     let task_alternate = ReceivedTask {
         id: "test".into(),
         payload: serde_json::Value::Null,
         queue: &TEST_QUEUE_ALTERNATE,
+        run_as: None,
+        trace: None,
     };
     fixtures.tasks.submit(task.clone()).await.unwrap();
     fixtures.tasks.submit(task).await.unwrap();
@@ -288,6 +306,8 @@ async fn panic_propagates() {
         id: "test".into(),
         payload: serde_json::Value::Null,
         queue: &TEST_QUEUE,
+        run_as: None,
+        trace: None,
     };
     fixtures.tasks.submit(task).await.unwrap();
     executor
@@ -321,11 +341,15 @@ async fn subscriptions_are_filtered() {
         id: "test".into(),
         payload: serde_json::Value::Null,
         queue: &TEST_QUEUE,
+        run_as: None,
+        trace: None,
     };
     let task_alternate = ReceivedTask {
         id: "filtered".into(),
         payload: serde_json::Value::Null,
         queue: &TEST_QUEUE_ALTERNATE,
+        run_as: None,
+        trace: None,
     };
     fixtures.tasks.submit(task).await.unwrap();
     fixtures.tasks.submit(task_alternate).await.unwrap();

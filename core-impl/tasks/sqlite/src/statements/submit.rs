@@ -10,12 +10,23 @@ use replicore_context::Context;
 use replicore_tasks::submit::TaskSubmission;
 
 const SUBMIT_SQL: &str = r#"
-INSERT INTO tasks_queue (queue_id, payload, retries, retry_delay)
-VALUES (?1, ?2, ?3, ?4);
+INSERT INTO tasks_queue (queue_id, payload, run_as, trace, retries, retry_delay)
+VALUES (?1, ?2, ?3, ?4, ?5, ?6);
 "#;
 
 pub async fn submit(_: &Context, connection: &Connection, task: TaskSubmission) -> Result<()> {
     let payload = replisdk::utils::encoding::encode_serde(&task.payload)?;
+    let run_as = replisdk::utils::encoding::encode_serde_option(&task.run_as)?;
+    let trace_context = task
+        .trace
+        .map(|trace| {
+            opentelemetry_api::global::get_text_map_propagator(|propagator| {
+                let mut buffer = std::collections::HashMap::new();
+                propagator.inject_context(&trace, &mut buffer);
+                serde_json::to_string(&buffer)
+            })
+        })
+        .transpose()?;
     let queue_id = &task.queue.queue;
     let retries = task.queue.retry_count;
     let retry_delay = task.queue.retry_timeout.as_secs();
@@ -25,7 +36,7 @@ pub async fn submit(_: &Context, connection: &Connection, task: TaskSubmission) 
         .call(move |connection| {
             connection.execute(
                 SUBMIT_SQL,
-                rusqlite::params![queue_id, payload, retries, retry_delay],
+                rusqlite::params![queue_id, payload, run_as, trace_context, retries, retry_delay],
             )?;
             Ok(())
         })

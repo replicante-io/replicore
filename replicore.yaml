@@ -15,3 +15,5 @@ telemetry:
   logs:
     level: debug
     mode: terminal
+  #otel:
+  #  enabled: true
