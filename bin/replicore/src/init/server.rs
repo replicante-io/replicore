@@ -48,6 +48,10 @@ impl Server {
             &replicore_task_discovery::DISCOVERY_QUEUE,
             replicore_task_discovery::Callback,
         );
+        self.tasks.subscribe(
+            &replicore_task_orchestrate::ORCHESTRATE_QUEUE,
+            replicore_task_orchestrate::Callback,
+        );
         self
     }
 

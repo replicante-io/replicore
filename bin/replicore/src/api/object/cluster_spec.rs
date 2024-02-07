@@ -64,3 +64,16 @@ pub async fn list(
     let response = serde_json::json!(response);
     Ok(HttpResponse::Ok().json(response))
 }
+
+/// Submit a cluster orchestration task for background execution.
+#[actix_web::get("/object/replicante.io/v0/clusterspec/{namespace}/{name}/orchestrate")]
+pub async fn orchestrate(
+    context: Context,
+    injector: Data<Injector>,
+    path: Path<(String, String)>,
+) -> Result<HttpResponse, Error> {
+    let (ns_id, cluster_id) = path.into_inner();
+    let task = replicore_task_orchestrate::OrchestrateCluster::new(ns_id, cluster_id);
+    injector.tasks.submit(&context, task).await?;
+    Ok(crate::api::done())
+}

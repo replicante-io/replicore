@@ -2154,6 +2154,7 @@ dependencies = [
  "replicore-store",
  "replicore-store-sqlite",
  "replicore-task-discovery",
+ "replicore-task-orchestrate",
  "replicore-tasks",
  "replicore-tasks-sqlite",
  "replisdk",
@@ -2310,6 +2311,19 @@ dependencies = [
 
 [[package]]
 name = "replicore-task-discovery"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "async-trait",
+ "once_cell",
+ "replicore-context",
+ "replicore-tasks",
+ "serde",
+ "slog",
+]
+
+[[package]]
+name = "replicore-task-orchestrate"
 version = "0.1.0"
 dependencies = [
  "anyhow",

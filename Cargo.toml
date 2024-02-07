@@ -21,6 +21,7 @@ members = [
   "core/context",
   "core/injector",
   "core-logic/task/discovery",
+  "core-logic/task/orchestrate",
 
   # Client implementations crates.
   "client/core",
