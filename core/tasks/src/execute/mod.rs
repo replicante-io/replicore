@@ -101,10 +101,7 @@ impl TaskSource {
     pub async fn next(&mut self, context: &Context) -> Result<ReceivedTask> {
         let err_count = crate::telemetry::RECEIVE_ERR.clone();
         crate::telemetry::RECEIVE_COUNT.inc();
-        self.0
-            .next(context)
-            .count_on_err(err_count)
-            .await
+        self.0.next(context).count_on_err(err_count).await
     }
 
     /// Configure the backend to subscribe to tasks submitted to a [`Queue`].

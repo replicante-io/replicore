@@ -128,9 +128,8 @@ pub async fn next(
 /// Extract an OpenTelemetry context from the encoded task data.
 fn decode_trace(trace: String) -> Result<OTelContext> {
     let trace: HashMap<String, String> = replisdk::utils::encoding::decode_serde(&trace)?;
-    let context = opentelemetry_api::global::get_text_map_propagator(|propagator| {
-        propagator.extract(&trace)
-    });
+    let context =
+        opentelemetry_api::global::get_text_map_propagator(|propagator| propagator.extract(&trace));
     Ok(context)
 }
 

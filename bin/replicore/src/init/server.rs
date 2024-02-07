@@ -38,7 +38,11 @@ impl Server {
         let generic = GenericInit::configure(conf).await?;
         let context = Context::root(generic.telemetry.logger.clone());
         let tasks = TasksExecutorBuilder::new(generic.conf.tasks.executor.clone());
-        let server = Self { context, generic, tasks };
+        let server = Self {
+            context,
+            generic,
+            tasks,
+        };
         Ok(server)
     }
 
@@ -134,7 +138,8 @@ impl Server {
             &self.generic.backends,
             &mut self.generic.shutdown,
             self.tasks,
-        ).await?;
+        )
+        .await?;
         // TODO: Add other components
 
         // Run until user-requested exit or process error.
@@ -208,16 +213,16 @@ pub async fn tasks_executor(
     builder: TasksExecutorBuilder,
 ) -> Result<()> {
     // Customise the root context for the tasks executor.
-    let context = context
-        .log_values(slog::o!("component" => "tasks"))
-        .build();
+    let context = context.log_values(slog::o!("component" => "tasks")).build();
 
     // Initialise task polling and acknowledging backend.
     let tasks = backends.tasks(&conf.service.backend)?;
-    let (source, ack) = tasks.consume(TasksFactoryArgs {
-        conf: &conf.service.options,
-        context: &context,
-    }).await?;
+    let (source, ack) = tasks
+        .consume(TasksFactoryArgs {
+            conf: &conf.service.options,
+            context: &context,
+        })
+        .await?;
 
     // Finalise the partially configure executor and subscribe to queues.
     let mut executor = builder.build(&context, source, ack).await?;

@@ -268,9 +268,7 @@ impl TasksExecutor {
                 }
             }
         };
-        let work = work
-            .trace_on_err_with_status()
-            .with_context(otel_context);
+        let work = work.trace_on_err_with_status().with_context(otel_context);
         let join = tokio::spawn(work);
         self.pool.push(join);
     }

@@ -2,8 +2,8 @@
 use anyhow::Result;
 
 use replicore_context::Context;
-use replicore_tasks::execute::TaskCallback;
 use replicore_tasks::execute::ReceivedTask;
+use replicore_tasks::execute::TaskCallback;
 
 use super::DiscoverPlatform;
 

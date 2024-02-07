@@ -68,11 +68,10 @@ impl Tasks {
         // Submit task while tracking telemetry.
         let queue_id = task.queue.queue.clone();
         let err_count = crate::telemetry::SUBMIT_ERR.with_label_values(&[&queue_id]);
-        crate::telemetry::SUBMIT_COUNT.with_label_values(&[&queue_id]).inc();
-        self.0
-            .submit(context, task)
-            .count_on_err(err_count)
-            .await
+        crate::telemetry::SUBMIT_COUNT
+            .with_label_values(&[&queue_id])
+            .inc();
+        self.0.submit(context, task).count_on_err(err_count).await
     }
 
     /// Initialise a new tasks backend fixture for unit tests.

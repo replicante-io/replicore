@@ -36,7 +36,14 @@ pub async fn submit(_: &Context, connection: &Connection, task: TaskSubmission) 
         .call(move |connection| {
             connection.execute(
                 SUBMIT_SQL,
-                rusqlite::params![queue_id, payload, run_as, trace_context, retries, retry_delay],
+                rusqlite::params![
+                    queue_id,
+                    payload,
+                    run_as,
+                    trace_context,
+                    retries,
+                    retry_delay
+                ],
             )?;
             Ok(())
         })

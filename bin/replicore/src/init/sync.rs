@@ -43,8 +43,9 @@ impl Sync {
 
     /// Register all task queues required by the control plane to operate.
     pub fn register_core_tasks(mut self) -> Self {
-        self.task_queues.push(&replicore_task_discovery::DISCOVERY_QUEUE);
-        self.task_queues.push(&replicore_task_orchestrate::ORCHESTRATE_QUEUE);
+        let queues = &mut self.task_queues;
+        queues.push(&replicore_task_discovery::DISCOVERY_QUEUE);
+        queues.push(&replicore_task_orchestrate::ORCHESTRATE_QUEUE);
         self
     }
 
