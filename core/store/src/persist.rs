@@ -1,4 +1,5 @@
 //! RepliCore Control Plane persistent store operations to persist records.
+use replisdk::core::models::cluster::ClusterDiscovery;
 use replisdk::core::models::cluster::ClusterSpec;
 use replisdk::core::models::namespace::Namespace;
 use replisdk::core::models::platform::Platform;
@@ -13,6 +14,9 @@ pub trait PersistOp: Into<PersistOps> + SealPersistOp {
 
 /// List of all persist operations the persistent store must implement.
 pub enum PersistOps {
+    /// Persist a cluster discovery record.
+    ClusterDiscovery(ClusterDiscovery),
+
     /// Persist a cluster specification record.
     ClusterSpec(ClusterSpec),
 
@@ -40,6 +44,16 @@ mod seal {
 }
 
 // --- Implement PersistOp and super traits on types for transparent operations --- //
+impl PersistOp for ClusterDiscovery {
+    type Response = ();
+}
+impl SealPersistOp for ClusterDiscovery {}
+impl From<ClusterDiscovery> for PersistOps {
+    fn from(value: ClusterDiscovery) -> Self {
+        PersistOps::ClusterDiscovery(value)
+    }
+}
+
 impl PersistOp for ClusterSpec {
     type Response = ();
 }

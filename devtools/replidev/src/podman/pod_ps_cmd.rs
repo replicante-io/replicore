@@ -18,9 +18,8 @@ where
     if let Some(format) = format.into() {
         podman.arg("--format").arg(format);
     }
-    if !filters.is_empty() {
-        let filters = filters.join(",");
-        podman.arg("--filter").arg(filters);
+    for filter in filters {
+        podman.arg("--filter").arg(filter);
     }
     let output = podman.output().await.context(Error::ExecFailed)?;
     if !output.status.success() {

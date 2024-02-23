@@ -9,6 +9,7 @@ pub mod platform;
 pub fn configure(config: &mut ServiceConfig) {
     config
         .service(self::cluster_spec::delete)
+        .service(self::cluster_spec::discovery)
         .service(self::cluster_spec::get)
         .service(self::cluster_spec::list)
         .service(self::cluster_spec::orchestrate)

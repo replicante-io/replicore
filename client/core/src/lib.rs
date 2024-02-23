@@ -1,5 +1,4 @@
 //! Async client library to interact with the Replicante Control Plane API.
-
 mod client;
 mod config;
 

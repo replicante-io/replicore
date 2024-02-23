@@ -25,6 +25,8 @@ members = [
 
   # Client implementations crates.
   "client/core",
+  "client/platform",
+  "client/platform/http",
 
   # Legacy sync subcrates
   #"agent/*",

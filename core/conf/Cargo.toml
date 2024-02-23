@@ -15,6 +15,10 @@ serde_json = "^1.0"
 serde_yaml = "^0.9"
 thiserror = "^1.0"
 
-replisdk = { version = "^0.1", features = ["runtime-tokio_conf"] }
+replisdk = { version = "^0.1", features = [
+  "runtime-actix_builder",
+  "runtime-shutdown",
+  "runtime-tokio_conf",
+] }
 
 replicore-tasks = { path = "../tasks" }

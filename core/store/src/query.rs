@@ -5,6 +5,7 @@ use futures::Stream;
 use replisdk::core::models::api::ClusterSpecEntry;
 use replisdk::core::models::api::NamespaceEntry;
 use replisdk::core::models::api::PlatformEntry;
+use replisdk::core::models::cluster::ClusterDiscovery;
 use replisdk::core::models::cluster::ClusterSpec;
 use replisdk::core::models::namespace::Namespace;
 use replisdk::core::models::platform::Platform;
@@ -21,6 +22,9 @@ pub trait QueryOp: Into<QueryOps> + SealQueryOp {
 
 /// List of all query operations the persistent store must implement.
 pub enum QueryOps {
+    /// Query a cluster discovery record by Namespace and Cluster ID.
+    ClusterDiscovery(NamespacedResourceID),
+
     /// Query a cluster specification by Namespace ID and Resource Name.
     ClusterSpec(NamespacedResourceID),
 
@@ -42,6 +46,9 @@ pub enum QueryOps {
 
 /// List of all responses from query operations.
 pub enum QueryResponses {
+    /// Return a [`ClusterDiscovery`], if one was found matching the query.
+    ClusterDiscovery(Option<ClusterDiscovery>),
+
     /// Return a [`ClusterSpec`], if one was found matching the query.
     ClusterSpec(Option<ClusterSpec>),
 
@@ -87,9 +94,43 @@ pub struct ListNamespaces;
 /// List summary information about known platforms in the namespace, sorted alphabetically.
 pub struct ListPlatforms(pub NamespaceID);
 
-/// Lookup a [`ClusterSpec`] namespace and record by ID.
+/// Lookup a [`ClusterDiscovery`] namespace and cluster by ID.
+#[derive(Clone, Debug)]
+pub struct LookupClusterDiscovery(pub NamespacedResourceID);
+
+impl LookupClusterDiscovery {
+    /// Lookup a cluster discovery by namespace ID and platform name.
+    pub fn by<S1, S2>(ns_id: S1, name: S2) -> LookupClusterDiscovery
+    where
+        S1: Into<String>,
+        S2: Into<String>,
+    {
+        let id = NamespacedResourceID {
+            name: name.into(),
+            ns_id: ns_id.into(),
+        };
+        LookupClusterDiscovery(id)
+    }
+}
+
+/// Lookup a [`ClusterSpec`] namespace and cluster by ID.
 #[derive(Clone, Debug)]
 pub struct LookupClusterSpec(pub NamespacedResourceID);
+
+impl LookupClusterSpec {
+    /// Lookup a ClusterSpec by namespace ID and platform name.
+    pub fn by<S1, S2>(ns_id: S1, name: S2) -> LookupClusterSpec
+    where
+        S1: Into<String>,
+        S2: Into<String>,
+    {
+        let id = NamespacedResourceID {
+            name: name.into(),
+            ns_id: ns_id.into(),
+        };
+        LookupClusterSpec(id)
+    }
+}
 
 /// Lookup a [`Namespace`] record by ID.
 #[derive(Clone, Debug)]
@@ -124,6 +165,21 @@ impl From<&Platform> for LookupPlatform {
         let ns_id = value.ns_id.clone();
         let value = NamespacedResourceID { name, ns_id };
         LookupPlatform(value)
+    }
+}
+
+impl LookupPlatform {
+    /// Lookup a platform by namespace ID and platform name.
+    pub fn by<S1, S2>(ns_id: S1, name: S2) -> LookupPlatform
+    where
+        S1: Into<String>,
+        S2: Into<String>,
+    {
+        let id = NamespacedResourceID {
+            name: name.into(),
+            ns_id: ns_id.into(),
+        };
+        LookupPlatform(id)
     }
 }
 
@@ -165,6 +221,29 @@ impl From<ListPlatforms> for QueryOps {
     }
 }
 
+impl SealQueryOp for LookupClusterDiscovery {}
+impl QueryOp for LookupClusterDiscovery {
+    type Response = Option<ClusterDiscovery>;
+}
+impl From<LookupClusterDiscovery> for QueryOps {
+    fn from(value: LookupClusterDiscovery) -> Self {
+        QueryOps::ClusterDiscovery(value.0)
+    }
+}
+impl SealQueryOp for &ClusterDiscovery {}
+impl QueryOp for &ClusterDiscovery {
+    type Response = Option<ClusterDiscovery>;
+}
+impl From<&ClusterDiscovery> for QueryOps {
+    fn from(value: &ClusterDiscovery) -> Self {
+        let id = NamespacedResourceID {
+            ns_id: value.ns_id.clone(),
+            name: value.cluster_id.clone(),
+        };
+        QueryOps::ClusterDiscovery(id)
+    }
+}
+
 impl SealQueryOp for LookupClusterSpec {}
 impl QueryOp for LookupClusterSpec {
     type Response = Option<ClusterSpec>;
@@ -196,6 +275,14 @@ impl From<LookupPlatform> for QueryOps {
 }
 
 // --- Implement QueryResponses conversions on return types for transparent operations --- //
+impl From<QueryResponses> for Option<ClusterDiscovery> {
+    fn from(value: QueryResponses) -> Self {
+        match value {
+            QueryResponses::ClusterDiscovery(disc) => disc,
+            _ => panic!("unexpected result type for the given query operation"),
+        }
+    }
+}
 impl From<QueryResponses> for Option<ClusterSpec> {
     fn from(value: QueryResponses) -> Self {
         match value {

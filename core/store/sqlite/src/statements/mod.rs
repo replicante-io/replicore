@@ -11,6 +11,7 @@ use replicore_store::query::QueryOps;
 use replicore_store::query::QueryResponses;
 use replicore_store::StoreBackend;
 
+mod cluster_discovery;
 mod cluster_spec;
 mod namespace;
 mod platform;
@@ -48,6 +49,10 @@ impl StoreBackend for SQLiteStore {
 
     async fn query(&self, context: &Context, op: QueryOps) -> Result<QueryResponses> {
         match op {
+            QueryOps::ClusterDiscovery(disc) => {
+                let disc = self::cluster_discovery::lookup(context, &self.connection, disc).await?;
+                Ok(QueryResponses::ClusterDiscovery(disc))
+            }
             QueryOps::ClusterSpec(spec) => {
                 let spec = self::cluster_spec::lookup(context, &self.connection, spec).await?;
                 Ok(QueryResponses::ClusterSpec(spec))
@@ -77,6 +82,11 @@ impl StoreBackend for SQLiteStore {
 
     async fn persist(&self, context: &Context, op: PersistOps) -> Result<PersistResponses> {
         match op {
+            PersistOps::ClusterDiscovery(disc) => {
+                self::cluster_discovery::persist(context, &self.connection, disc)
+                    .await
+                    .map(|_| PersistResponses::Success)
+            }
             PersistOps::ClusterSpec(spec) => {
                 self::cluster_spec::persist(context, &self.connection, spec)
                     .await

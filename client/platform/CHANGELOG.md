@@ -7,7 +7,5 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## Unreleased
 ### Added
-- Apply manifests to servers.
-- Delete, Get, List cluster specification records.
-- Delete, Get, List namespace records.
-- Delete, Get, List platform records.
+- Client interface to Replicante Platform API servers.
+- Mock client implementation for unit tests.

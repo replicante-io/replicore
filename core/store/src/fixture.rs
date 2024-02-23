@@ -10,6 +10,7 @@ use futures::StreamExt;
 use replisdk::core::models::api::ClusterSpecEntry;
 use replisdk::core::models::api::NamespaceEntry;
 use replisdk::core::models::api::PlatformEntry;
+use replisdk::core::models::cluster::ClusterDiscovery;
 use replisdk::core::models::cluster::ClusterSpec;
 use replisdk::core::models::namespace::Namespace;
 use replisdk::core::models::platform::Platform;
@@ -72,6 +73,11 @@ impl StoreBackend for StoreFixture {
     async fn query(&self, _: &Context, op: QueryOps) -> Result<QueryResponses> {
         let store = self.access();
         match op {
+            QueryOps::ClusterDiscovery(cluster) => {
+                let key = (cluster.ns_id, cluster.name);
+                let discovery = store.cluster_discoveries.get(&key).cloned();
+                Ok(QueryResponses::ClusterDiscovery(discovery))
+            }
             QueryOps::ClusterSpec(cluster) => {
                 let key = (cluster.ns_id, cluster.name);
                 let spec = store.cluster_specs.get(&key).cloned();
@@ -135,6 +141,10 @@ impl StoreBackend for StoreFixture {
     async fn persist(&self, _: &Context, op: PersistOps) -> Result<PersistResponses> {
         let mut store = self.access();
         match op {
+            PersistOps::ClusterDiscovery(disc) => {
+                let key = (disc.ns_id.clone(), disc.cluster_id.clone());
+                store.cluster_discoveries.insert(key, disc);
+            }
             PersistOps::ClusterSpec(spec) => {
                 let key = (spec.ns_id.clone(), spec.cluster_id.clone());
                 store.cluster_specs.insert(key, spec);
@@ -154,6 +164,7 @@ impl StoreBackend for StoreFixture {
 /// Container for the shared state.
 #[derive(Default)]
 struct StoreFixtureState {
+    cluster_discoveries: HashMap<(String, String), ClusterDiscovery>,
     cluster_specs: HashMap<(String, String), ClusterSpec>,
     namespaces: HashMap<String, Namespace>,
     platforms: HashMap<(String, String), Platform>,

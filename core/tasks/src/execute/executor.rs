@@ -305,9 +305,12 @@ impl TasksExecutor {
     }
 }
 
+/// Type of one-off functions for late initialisation of [`TaskCallback`]s.
+type LateTaskCallback = Box<dyn FnOnce() -> Arc<dyn TaskCallback>>;
+
 /// Incrementally build a [`TasksExecutor`] instance.
 pub struct TasksExecutorBuilder {
-    callbacks: Vec<(&'static Queue, Arc<dyn TaskCallback>)>,
+    callbacks: Vec<(&'static Queue, LateTaskCallback)>,
     conf: TasksExecutorConf,
 }
 
@@ -329,17 +332,29 @@ impl TasksExecutorBuilder {
     ) -> Result<TasksExecutor> {
         let mut tasks = TasksExecutor::new(source, ack, self.conf);
         for (queue, callback) in self.callbacks.into_iter() {
-            tasks.subscribe_arc(context, queue, callback).await?;
+            tasks.subscribe_arc(context, queue, callback()).await?;
         }
         Ok(tasks)
     }
 
-    /// Register a callback to execute tasks received on the corresponding queue.
+    /// Handle tasks received on a queue with the given callback.
     pub fn subscribe<C>(&mut self, queue: &'static Queue, callback: C)
     where
         C: TaskCallback + 'static,
     {
-        let callback: Arc<dyn TaskCallback> = Arc::new(callback);
+        self.subscribe_late(queue, || callback);
+    }
+
+    /// Handle tasks received on a queue with the given, late initialised, callback.
+    pub fn subscribe_late<C, F>(&mut self, queue: &'static Queue, callback: F)
+    where
+        F: FnOnce() -> C + 'static,
+        C: TaskCallback + 'static,
+    {
+        let callback: LateTaskCallback = Box::new(|| {
+            let callback = callback();
+            Arc::new(callback)
+        });
         let info = (queue, callback);
         self.callbacks.push(info);
     }

@@ -43,7 +43,7 @@ tokio = { version = "^1.0", features = [
   "rt-multi-thread",
 ] }
 
-replicore_client = { path = "../../client/core" }
+replicore-client = { path = "../../client/core" }
 
 replisdk = { version = "^0.1", features = ["replicore-models"] }
 

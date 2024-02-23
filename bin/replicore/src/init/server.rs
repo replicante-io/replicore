@@ -48,9 +48,9 @@ impl Server {
 
     /// Register all task queues required by the control plane to operate.
     pub fn register_core_tasks(mut self) -> Self {
-        self.tasks.subscribe(
+        self.tasks.subscribe_late(
             &replicore_task_discovery::DISCOVERY_QUEUE,
-            replicore_task_discovery::Callback,
+            replicore_task_discovery::Callback::default,
         );
         self.tasks.subscribe(
             &replicore_task_orchestrate::ORCHESTRATE_QUEUE,

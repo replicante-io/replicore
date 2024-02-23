@@ -30,7 +30,24 @@ pub async fn delete(
     Ok(crate::api::done())
 }
 
-/// Get a [`Platform`] object by namespace and name.
+/// Get a ClusterDiscovery object by namespace and name.
+#[actix_web::get("/object/replicante.io/v0/clusterspec/{namespace}/{name}/discovery")]
+pub async fn discovery(
+    context: Context,
+    injector: Data<Injector>,
+    path: Path<(String, String)>,
+) -> Result<HttpResponse, Error> {
+    let (ns_id, name) = path.into_inner();
+    let id = replicore_store::ids::NamespacedResourceID { ns_id, name };
+    let query = replicore_store::query::LookupClusterDiscovery(id);
+    let cluster_disc = injector.store.query(&context, query).await?;
+    match cluster_disc {
+        None => Ok(crate::api::not_found()),
+        Some(cluster_disc) => Ok(HttpResponse::Ok().json(cluster_disc)),
+    }
+}
+
+/// Get a ClusterSpec object by namespace and name.
 #[actix_web::get("/object/replicante.io/v0/clusterspec/{namespace}/{name}")]
 pub async fn get(
     context: Context,
