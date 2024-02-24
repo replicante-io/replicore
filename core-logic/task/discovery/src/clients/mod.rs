@@ -5,7 +5,7 @@ use anyhow::Result;
 
 use replisdk::core::models::platform::Platform;
 use replisdk::core::models::platform::PlatformTransport;
-use replisdk::core::models::platform::PlatformTransportHttp;
+use replisdk::core::models::platform::PlatformTransportUrl;
 
 use replicore_context::Context;
 use repliplatform_client::Client;
@@ -24,7 +24,7 @@ impl Clients {
     /// Initialise a client to interact with a [`Platform`].
     pub async fn factory(&self, context: &Context, platform: &Platform) -> Result<Client> {
         match &platform.transport {
-            PlatformTransport::Http(transport) => {
+            PlatformTransport::Url(transport) => {
                 self.url_factory(context, platform, transport).await
             }
         }
@@ -35,7 +35,7 @@ impl Clients {
         &self,
         context: &Context,
         platform: &Platform,
-        transport: &PlatformTransportHttp,
+        transport: &PlatformTransportUrl,
     ) -> Result<Client> {
         let (schema, _) = match transport.base_url.split_once(':') {
             Some(parts) => parts,
@@ -81,5 +81,5 @@ impl Clients {
 #[async_trait::async_trait]
 pub trait UrlClientFactory: Send + Sync {
     /// Initialise a new [`Platform`] client.
-    async fn init(&self, context: &Context, transport: &PlatformTransportHttp) -> Result<Client>;
+    async fn init(&self, context: &Context, transport: &PlatformTransportUrl) -> Result<Client>;
 }

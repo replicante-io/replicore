@@ -4,7 +4,7 @@ use anyhow::Result;
 use replisdk::core::models::api::PlatformEntry;
 use replisdk::core::models::platform::Platform;
 use replisdk::core::models::platform::PlatformTransport;
-use replisdk::core::models::platform::PlatformTransportHttp;
+use replisdk::core::models::platform::PlatformTransportUrl;
 
 /// Format a list of [`PlatformEntry`] objects into a table.
 #[derive(Default)]
@@ -48,14 +48,14 @@ pub fn show(platform: &Platform) {
     println!();
     println!("Transport configuration:");
     match &platform.transport {
-        PlatformTransport::Http(transport) => show_transport_http(transport),
+        PlatformTransport::Url(transport) => show_transport_url(transport),
     };
 }
 
-fn show_transport_http(transport: &PlatformTransportHttp) {
+fn show_transport_url(transport: &PlatformTransportUrl) {
     let ca_bundle = crate::utils::set_or_not(&transport.tls_ca_bundle);
     let skip_verify = crate::utils::yes_or_no(transport.tls_insecure_skip_verify);
-    println!("  Mode: http");
+    println!("  Mode: url");
     println!("  Platform URL: {}", transport.base_url);
     println!("  Certificate Authorities Bundle: {}", ca_bundle);
     println!(

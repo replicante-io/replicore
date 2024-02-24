@@ -156,7 +156,7 @@ mod tests {
     use futures::TryStreamExt;
 
     use replisdk::core::models::platform::PlatformTransport;
-    use replisdk::core::models::platform::PlatformTransportHttp;
+    use replisdk::core::models::platform::PlatformTransportUrl;
 
     use replicore_store::ids::NamespaceID;
     use replicore_store::ids::NamespacedResourceID;
@@ -171,7 +171,7 @@ mod tests {
             ns_id: "test".into(),
             active: true,
             discovery: Default::default(),
-            transport: PlatformTransport::Http(PlatformTransportHttp {
+            transport: PlatformTransport::Url(PlatformTransportUrl {
                 base_url: format!("https://{}.test", name),
                 tls_ca_bundle: None,
                 tls_insecure_skip_verify: false,

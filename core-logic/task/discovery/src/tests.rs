@@ -8,7 +8,7 @@ use replisdk::core::models::namespace::Namespace;
 use replisdk::core::models::namespace::NamespaceStatus;
 use replisdk::core::models::platform::Platform;
 use replisdk::core::models::platform::PlatformTransport;
-use replisdk::core::models::platform::PlatformTransportHttp;
+use replisdk::core::models::platform::PlatformTransportUrl;
 use replisdk::platform::models::ClusterDiscoveryNode;
 
 use replicore_context::Context;
@@ -30,7 +30,7 @@ struct UnittestClientFactory;
 
 #[async_trait::async_trait]
 impl crate::clients::UrlClientFactory for UnittestClientFactory {
-    async fn init(&self, _: &Context, _: &PlatformTransportHttp) -> Result<Client> {
+    async fn init(&self, _: &Context, _: &PlatformTransportUrl) -> Result<Client> {
         let client = repliplatform_client::fixture::Client::default();
         client.append_node("cluster1", "node1");
         client.append_node("cluster1", "node2");
@@ -75,7 +75,7 @@ async fn fixed_db(injector: &Injector) {
         name: "test".into(),
         active: false,
         discovery: Default::default(),
-        transport: PlatformTransport::Http(PlatformTransportHttp {
+        transport: PlatformTransport::Url(PlatformTransportUrl {
             base_url: "http://localhost:1234".into(),
             tls_ca_bundle: None,
             tls_insecure_skip_verify: false,
@@ -91,7 +91,7 @@ async fn fixed_db(injector: &Injector) {
         name: "unit".into(),
         active: true,
         discovery: Default::default(),
-        transport: PlatformTransport::Http(PlatformTransportHttp {
+        transport: PlatformTransport::Url(PlatformTransportUrl {
             base_url: "unittest://localhost:1234".into(),
             tls_ca_bundle: None,
             tls_insecure_skip_verify: false,
