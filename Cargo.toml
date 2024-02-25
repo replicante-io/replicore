@@ -14,7 +14,7 @@ members = [
   "core/auth/insecure",
   "core/events/sqlite",
   "core/store/sqlite",
-  "core-impl/tasks/sqlite",
+  "core/tasks/sqlite",
 
   # Control Plane implementation crates.
   "core/conf",

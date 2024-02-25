@@ -72,7 +72,7 @@ replicore-task-orchestrate = { path = "../../core-logic/task/orchestrate" }
 replicore-auth-insecure = { path = "../../core/auth/insecure" }
 replicore-events-sqlite = { path = "../../core/events/sqlite", optional = true }
 replicore-store-sqlite = { path = "../../core/store/sqlite", optional = true }
-replicore-tasks-sqlite = { path = "../../core-impl/tasks/sqlite", optional = true }
+replicore-tasks-sqlite = { path = "../../core/tasks/sqlite", optional = true }
 
 [dev-dependencies]
 replicore-auth-insecure = { path = "../../core/auth/insecure" }
