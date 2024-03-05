@@ -6,5 +6,5 @@ spec:
   active: true
   discovery:
     interval: 30
-  http:
+  url:
     base_url: 'http://localhost:9876/'

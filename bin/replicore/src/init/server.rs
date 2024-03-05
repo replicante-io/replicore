@@ -52,9 +52,9 @@ impl Server {
             &replicore_task_discovery::DISCOVERY_QUEUE,
             replicore_task_discovery::Callback::default,
         );
-        self.tasks.subscribe(
+        self.tasks.subscribe_late(
             &replicore_task_orchestrate::ORCHESTRATE_QUEUE,
-            replicore_task_orchestrate::Callback,
+            replicore_task_orchestrate::Callback::default,
         );
         self
     }
@@ -195,6 +195,7 @@ pub async fn injector(context: &Context, conf: &Conf, backends: &Backends) -> Re
     let injector = Injector {
         authenticator,
         authoriser,
+        clients: replicore_injector::Clients::default(),
         conf,
         context: context.clone(),
         events,

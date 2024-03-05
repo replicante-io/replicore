@@ -12,6 +12,8 @@ use replisdk::core::models::platform::PlatformTransportUrl;
 use replisdk::platform::models::ClusterDiscoveryNode;
 
 use replicore_context::Context;
+use replicore_errors::NamespaceNotActive;
+use replicore_errors::NamespaceNotFound;
 use replicore_injector::Injector;
 use replicore_injector::InjectorFixture;
 use replicore_store::query::LookupClusterDiscovery;
@@ -19,8 +21,6 @@ use repliplatform_client::Client;
 
 use super::discover::discover;
 use crate::callback::Callback;
-use crate::errors::NamespaceNotActive;
-use crate::errors::NamespaceNotFound;
 use crate::errors::PlatformNotActive;
 use crate::errors::PlatformNotFound;
 use crate::DiscoverPlatform;
@@ -29,7 +29,7 @@ use crate::DiscoverPlatform;
 struct UnittestClientFactory;
 
 #[async_trait::async_trait]
-impl crate::clients::UrlClientFactory for UnittestClientFactory {
+impl replicore_clients_platform::UrlFactory for UnittestClientFactory {
     async fn init(&self, _: &Context, _: &PlatformTransportUrl) -> Result<Client> {
         let client = repliplatform_client::fixture::Client::default();
         client.append_node("cluster1", "node1");
@@ -42,12 +42,12 @@ impl crate::clients::UrlClientFactory for UnittestClientFactory {
 
 /// Initialise a clients factory with unit test clients.
 async fn fixed_callback() -> (Callback, InjectorFixture) {
-    let mut clients = crate::clients::Clients::default();
+    let mut clients = replicore_clients_platform::PlatformClients::empty();
     clients.with_url_factory("unittest", UnittestClientFactory);
-    let injector_fixture = Injector::fixture();
+    let mut injector_fixture = Injector::fixture();
+    injector_fixture.injector.clients.platform = clients;
     fixed_db(&injector_fixture.injector).await;
     let callback = Callback {
-        clients,
         injector: injector_fixture.injector.clone(),
     };
     (callback, injector_fixture)

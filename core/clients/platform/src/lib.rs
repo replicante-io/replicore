@@ -1,5 +1,6 @@
-//! Factory for Platform clients used during discovery tasks.
+//! Registry and factories to initialise Platform API clients on demand.
 use std::collections::HashMap;
+use std::sync::Arc;
 
 use anyhow::Result;
 
@@ -10,17 +11,28 @@ use replisdk::core::models::platform::PlatformTransportUrl;
 use replicore_context::Context;
 use repliplatform_client::Client;
 
-mod http;
+mod url;
 
-pub use self::http::HttpClientFactory;
+pub mod errors;
+pub use self::url::HttpClientFactory;
+pub use self::url::UrlFactory;
 
-/// Registry of [`Platform`] client factories.
-#[derive(Default)]
-pub struct Clients {
-    url_schemas: HashMap<String, Box<dyn UrlClientFactory>>,
+use self::url::ArcedUrlFactory;
+
+/// Registry of Platform API client factories.
+#[derive(Clone)]
+pub struct PlatformClients {
+    url_schemas: HashMap<String, ArcedUrlFactory>,
 }
 
-impl Clients {
+impl PlatformClients {
+    /// Create a [`PlatformClients`] registry with no factories configured.
+    pub fn empty() -> PlatformClients {
+        PlatformClients {
+            url_schemas: Default::default(),
+        }
+    }
+
     /// Initialise a client to interact with a [`Platform`].
     pub async fn factory(&self, context: &Context, platform: &Platform) -> Result<Client> {
         match &platform.transport {
@@ -30,6 +42,20 @@ impl Clients {
         }
     }
 
+    /// Register a URL client factory for a schema.
+    pub fn with_url_factory<F, S>(&mut self, schema: S, factory: F) -> &mut Self
+    where
+        S: Into<String>,
+        F: UrlFactory + 'static,
+    {
+        let schema = schema.into();
+        let factory = Arc::new(factory);
+        self.url_schemas.insert(schema, factory);
+        self
+    }
+}
+
+impl PlatformClients {
     /// Initialise a client to connect using a supported URL schema.
     async fn url_factory(
         &self,
@@ -40,7 +66,7 @@ impl Clients {
         let (schema, _) = match transport.base_url.split_once(':') {
             Some(parts) => parts,
             None => {
-                let error = crate::errors::UrlClientNoSchema {
+                let error = self::errors::UrlClientNoSchema {
                     ns_id: platform.ns_id.clone(),
                     name: platform.name.clone(),
                 };
@@ -50,7 +76,7 @@ impl Clients {
         let factory = match self.url_schemas.get(schema) {
             Some(factory) => factory,
             None => {
-                let error = crate::errors::UrlClientUnknownSchema {
+                let error = self::errors::UrlClientUnknownSchema {
                     ns_id: platform.ns_id.clone(),
                     name: platform.name.clone(),
                     schema: schema.to_string(),
@@ -62,24 +88,12 @@ impl Clients {
     }
 }
 
-impl Clients {
-    /// Register a URL client factory for a schema.
-    #[allow(dead_code)]
-    pub fn with_url_factory<F, S>(&mut self, schema: S, factory: F) -> &mut Self
-    where
-        S: Into<String>,
-        F: UrlClientFactory + 'static,
-    {
-        let schema = schema.into();
-        let factory = Box::new(factory);
-        self.url_schemas.insert(schema, factory);
-        self
+impl Default for PlatformClients {
+    fn default() -> Self {
+        let mut registry = PlatformClients::empty();
+        registry
+            .with_url_factory("http", self::url::HttpClientFactory)
+            .with_url_factory("https", self::url::HttpClientFactory);
+        registry
     }
-}
-
-/// Async function to initialise [`Platform`] clients on demand.
-#[async_trait::async_trait]
-pub trait UrlClientFactory: Send + Sync {
-    /// Initialise a new [`Platform`] client.
-    async fn init(&self, context: &Context, transport: &PlatformTransportUrl) -> Result<Client>;
 }

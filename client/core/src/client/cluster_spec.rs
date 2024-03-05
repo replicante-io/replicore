@@ -59,4 +59,20 @@ impl<'a> ClusterSpecClient<'a> {
         let response = response.ok_or(EmptyResponse)?;
         Ok(response)
     }
+
+    /// Schedule a background orchestration task for a [`ClusterSpec`].
+    pub async fn orchestrate(&'a self) -> Result<()> {
+        let url = format!(
+            "{}api/v0/object/replicante.io/v0/clusterspec/{}/{}/orchestrate",
+            self.inner.base, self.ns_id, self.name,
+        );
+        let response = self.inner.client.get(url).send().await?;
+        crate::error::inspect::<serde_json::Value>(response)
+            .await
+            .with_context(|| {
+                let id = format!("{}.{}", self.ns_id, self.name);
+                ResourceIdentifier::reference("clusterspec", id)
+            })?;
+        Ok(())
+    }
 }

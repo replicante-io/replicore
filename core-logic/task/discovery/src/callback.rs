@@ -6,24 +6,17 @@ use replicore_injector::Injector;
 use replicore_tasks::execute::ReceivedTask;
 use replicore_tasks::execute::TaskCallback;
 
-use crate::clients::Clients;
 use crate::DiscoverPlatform;
 
 /// Callback to execute platform discovery tasks.
 pub struct Callback {
-    pub(crate) clients: Clients,
     pub(crate) injector: Injector,
 }
 
 impl Default for Callback {
     fn default() -> Self {
-        let mut clients = Clients::default();
-        clients
-            .with_url_factory("http", crate::clients::HttpClientFactory)
-            .with_url_factory("https", crate::clients::HttpClientFactory);
-
         let injector = Injector::global();
-        Self { clients, injector }
+        Self { injector }
     }
 }
 

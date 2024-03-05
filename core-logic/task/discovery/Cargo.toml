@@ -20,17 +20,16 @@ thiserror = "^1.0"
 replisdk = { version = "^0.1", features = ["replicore-models"] }
 
 replicore-context = { path = "../../../core/context" }
+replicore-errors = { path = "../../../core/errors"}
 replicore-events = { path = "../../../core/events" }
 replicore-injector = { path = "../../../core/injector" }
 replicore-store = { path = "../../../core/store" }
 replicore-tasks = { path = "../../../core/tasks" }
-repliplatform-client = { path = "../../../client/platform" }
-
-repliplatform-client-http = { path = "../../../client/platform/http" }
 
 [dev-dependencies]
 serde_json = "^1.0"
 tokio = { version = "^1.0", features = ["macros"] }
 
+replicore-clients-platform = { path = "../../../core/clients/platform" }
 replicore-injector = { path = "../../../core/injector", features = ["test-fixture"] }
 repliplatform-client = { path = "../../../client/platform", features = ["test-fixture"] }

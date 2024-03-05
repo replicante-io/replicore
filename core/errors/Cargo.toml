@@ -1,0 +1,14 @@
+[package]
+name = "replicore-errors"
+version = "0.1.0"
+
+edition = "2021"
+rust-version = "1.70"
+
+description = "Common errors from and for RepliCore implementation"
+homepage = "https://www.replicante.io/"
+license = "MIT"
+
+[dependencies]
+anyhow = "^1.0"
+thiserror = "^1.0"

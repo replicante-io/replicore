@@ -1,0 +1,20 @@
+[package]
+name = "replicore-cluster-view"
+version = "0.1.0"
+
+edition = "2021"
+rust-version = "1.70"
+
+description = "RepliCore task to monitor and orchestrate clusters"
+homepage = "https://www.replicante.io/"
+license = "MIT"
+
+[dependencies]
+anyhow = "^1.0"
+serde = { version = "^1.0", features = ["derive"] }
+thiserror = "^1.0"
+
+replisdk = { version = "^0.1", features = ["replicore-models"] }
+
+replicore-context = { path = "../../context" }
+replicore-store = { path = "../../store" }

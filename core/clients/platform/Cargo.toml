@@ -1,0 +1,22 @@
+[package]
+name = "replicore-clients-platform"
+version = "0.1.0"
+
+edition = "2021"
+rust-version = "1.70"
+
+description = "Registry of Platform API clients factories"
+homepage = "https://www.replicante.io/"
+license = "MIT"
+
+[dependencies]
+anyhow = "^1.0"
+async-trait = "^0.1"
+thiserror = "^1.0"
+
+replisdk = { version = "^0.1", features = ["replicore-models"] }
+
+replicore-context = { path = "../../../core/context" }
+repliplatform-client = { path = "../../../client/platform" }
+
+repliplatform-client-http = { path = "../../../client/platform/http" }

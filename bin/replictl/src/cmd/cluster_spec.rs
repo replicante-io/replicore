@@ -33,6 +33,9 @@ pub enum ClusterSpecCmd {
 
     /// List cluster specifications on the control plane.
     List,
+
+    /// Schedule a cluster orchestration task to execute in the background.
+    Orchestrate(ClusterSpecOpts),
 }
 
 /// Execute the selected `replictl platform` command.
@@ -41,6 +44,7 @@ pub async fn run(globals: &Globals, cmd: &ClusterSpecCli) -> Result<i32> {
         ClusterSpecCmd::Delete(cmd) => delete(globals, cmd).await,
         ClusterSpecCmd::Get(cmd) => get(globals, cmd).await,
         ClusterSpecCmd::List => list(globals).await,
+        ClusterSpecCmd::Orchestrate(cmd) => orchestrate(globals, cmd).await,
     }
 }
 
@@ -81,5 +85,17 @@ async fn list(globals: &Globals) -> Result<i32> {
     }
 
     formatter.finish()?;
+    Ok(0)
+}
+
+async fn orchestrate(globals: &Globals, cmd: &ClusterSpecOpts) -> Result<i32> {
+    let context = ContextStore::active(globals).await?;
+    let client = crate::client(&context)?;
+
+    let ns_id = context.namespace(&globals.cli.context)?;
+    let name = &cmd.name;
+    client.clusterspec(&ns_id, name).orchestrate().await?;
+
+    println!("Orchestration of cluster '{name}' in namespace '{ns_id}' scheduled");
     Ok(0)
 }

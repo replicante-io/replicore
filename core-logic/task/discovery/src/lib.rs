@@ -7,7 +7,6 @@ use replicore_tasks::conf::Queue;
 use replicore_tasks::submit::TaskSubmission;
 
 mod callback;
-mod clients;
 mod discover;
 mod errors;
 

@@ -5,6 +5,8 @@ use replisdk::core::models::cluster::ClusterDiscovery;
 use replisdk::core::models::cluster::ClusterSpec;
 
 use replicore_context::Context;
+use replicore_errors::NamespaceNotActive;
+use replicore_errors::NamespaceNotFound;
 use replicore_events::Event;
 use replicore_injector::Injector;
 use replicore_store::query::LookupClusterSpec;
@@ -12,14 +14,11 @@ use replicore_store::query::LookupNamespace;
 use replicore_store::query::LookupPlatform;
 
 use crate::callback::Callback;
-use crate::errors::NamespaceNotActive;
-use crate::errors::NamespaceNotFound;
 use crate::errors::PlatformNotActive;
 use crate::errors::PlatformNotFound;
 use crate::DiscoverPlatform;
 
 /// Process platform discovery requests.
-//pub async fn discover(args: CallbackArgs<'_>) -> Result<()> {
 pub async fn discover(
     context: &Context,
     callback: &Callback,
@@ -46,7 +45,12 @@ pub async fn discover(
     }
 
     // Initialise a platform API client.
-    let client = callback.clients.factory(context, &platform).await?;
+    let client = callback
+        .injector
+        .clients
+        .platform
+        .factory(context, &platform)
+        .await?;
     let response = client.discover().await?;
     for cluster in response.clusters {
         let cluster = ClusterDiscovery {

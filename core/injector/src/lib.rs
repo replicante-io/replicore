@@ -11,6 +11,10 @@ use replicore_events::emit::Events;
 use replicore_store::Store;
 use replicore_tasks::submit::Tasks;
 
+mod clients;
+
+pub use self::clients::Clients;
+
 /// Singleton instance of the Process Globals container.
 static GLOBAL_INJECTOR: Lazy<RwLock<Option<Injector>>> = Lazy::new(|| RwLock::new(None));
 
@@ -22,6 +26,9 @@ pub struct Injector {
 
     /// Interface to verify permissions an entity has to perform an action on a resource.
     pub authoriser: Authoriser,
+
+    /// API client factories for the control plane to interact with managed resources.
+    pub clients: Clients,
 
     /// Process global configuration.
     pub conf: Conf,
@@ -118,6 +125,7 @@ impl Injector {
         let injector = Injector {
             authenticator: replicore_auth_insecure::Anonymous.into(),
             authoriser,
+            clients: Clients::empty(),
             conf,
             context: Context::fixture(),
             events: events.backend().into(),

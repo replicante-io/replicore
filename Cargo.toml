@@ -17,8 +17,10 @@ members = [
   "core/tasks/sqlite",
 
   # Control Plane implementation crates.
+  "core/cluster/view",
   "core/conf",
   "core/context",
+  "core/errors",
   "core/injector",
   "core-logic/task/discovery",
   "core-logic/task/orchestrate",
@@ -27,23 +29,7 @@ members = [
   "client/core",
   "client/platform",
   "client/platform/http",
-
-  # Legacy sync subcrates
-  #"agent/*",
-  #"bin/*",
-  #"cluster/*",
-  #"core/cluster/*",
-  #"core/components/*",
-  #"core/conf",
-  #"core/interface/*",
-  #"core/orchestrator_action/*",
-  #"core/tasks/*",
-  #"core/util/*",
-  #"externals/*",
-  #"models/*",
-  #"service/*",
-  #"store/*",
-  #"stream/*",
+  "core/clients/platform",
 ]
 resolver = "2"
 

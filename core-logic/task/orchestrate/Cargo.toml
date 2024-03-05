@@ -5,7 +5,7 @@ version = "0.1.0"
 edition = "2021"
 rust-version = "1.70"
 
-description = "RepliCore task to discover clusters on known platforms"
+description = "RepliCore task to monitor and orchestrate clusters"
 homepage = "https://www.replicante.io/"
 license = "MIT"
 
@@ -15,6 +15,13 @@ async-trait = "^0.1"
 once_cell = "^1.0"
 serde = { version = "^1.0", features = ["derive"] }
 slog = "^2.0"
+time = { version = "^0.3", features = ["formatting", "parsing", "serde"] }
 
+replisdk = { version = "^0.1", features = ["replicore-models"] }
+
+replicore-cluster-view = { path = "../../../core/cluster/view" }
 replicore-context = { path = "../../../core/context"}
+replicore-errors = { path = "../../../core/errors"}
+replicore-injector = { path = "../../../core/injector" }
+replicore-store = { path = "../../../core/store" }
 replicore-tasks = { path = "../../../core/tasks" }
