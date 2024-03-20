@@ -34,6 +34,14 @@ pub async fn list_nodes(conf: &Conf) -> Result<Vec<PodInfo>> {
             .get("io.replicante.dev/play/cluster")
             .expect("playground pod without cluster can't be returned here")
             .to_string();
+        let node_class = pod
+            .labels
+            .get("io.replicante.dev/play/class")
+            .cloned();
+        let node_group = pod
+            .labels
+            .get("io.replicante.dev/play/group")
+            .cloned();
         let port_agent = pod.labels.get("io.replicante.dev/port/agent").cloned();
         let port_client = pod.labels.get("io.replicante.dev/port/client").cloned();
         let port_store = pod
@@ -45,6 +53,8 @@ pub async fn list_nodes(conf: &Conf) -> Result<Vec<PodInfo>> {
             cluster,
             id: pod.id,
             node: pod.name,
+            node_class,
+            node_group,
             port_agent,
             port_client,
             port_store,
@@ -67,6 +77,12 @@ pub struct PodInfo {
 
     /// Node ID.
     pub node: String,
+
+    /// Node class, if set by node provisioning.
+    pub node_class: Option<String>,
+
+    /// Node group, for nodes provisioned using the Platform API.
+    pub node_group: Option<String>,
 
     /// Port the agent process is listening on.
     pub port_agent: Option<String>,

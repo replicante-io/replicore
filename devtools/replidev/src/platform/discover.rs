@@ -8,6 +8,8 @@ use replisdk::platform::models::ClusterDiscoveryResponse;
 
 use super::Platform;
 
+const DEFAULT_NODE_CLASS: &str = "play.node";
+
 /// Discover nodes running in podman and group them as clusters.
 pub async fn discover(platform: &Platform) -> Result<ClusterDiscoveryResponse> {
     // List all running nodes.
@@ -26,7 +28,9 @@ pub async fn discover(platform: &Platform) -> Result<ClusterDiscoveryResponse> {
         };
         let node = ClusterDiscoveryNode {
             agent_address,
+            node_class: node_pod.node_class.unwrap_or_else(|| DEFAULT_NODE_CLASS.to_string()),
             node_id,
+            node_group: node_pod.node_group,
         };
         match clusters.entry(cluster_id) {
             Entry::Occupied(mut entry) => entry.get_mut().nodes.push(node),

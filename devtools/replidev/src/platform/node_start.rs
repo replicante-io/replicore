@@ -14,8 +14,14 @@ pub struct StartNodeSpec<'a> {
     /// ID of the cluster to create the node in.
     pub cluster_id: &'a str,
 
+    /// Node class, if set by node provisioning.
+    pub node_class: Option<&'a str>,
+
     /// ID of the node being created.
     pub node_id: &'a str,
+
+    /// Node group, for nodes provisioned using the Platform API.
+    pub node_group: Option<&'a str>,
 
     /// Pod definition to start the node with.
     pub pod: crate::podman::Pod,
@@ -40,6 +46,12 @@ pub async fn start_node(spec: StartNodeSpec<'_>, conf: &Conf) -> Result<()> {
             spec.cluster_id.into(),
         );
         labels.insert("io.replicante.dev/project".to_string(), spec.project);
+        if let Some(node_class) = spec.node_class {
+            labels.insert("io.replicante.dev/play/class".to_string(), node_class.to_string());
+        }
+        if let Some(node_group) = spec.node_group {
+            labels.insert("io.replicante.dev/play/group".to_string(), node_group.to_string());
+        }
         labels
     };
 

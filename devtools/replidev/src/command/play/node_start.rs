@@ -55,7 +55,9 @@ pub async fn run(args: &StartNodeOpt, conf: &Conf) -> Result<i32> {
         .unwrap_or_else(|| node_start::random_node_id(8));
     let start_node_spec = node_start::StartNodeSpec {
         cluster_id: &cluster_id,
+        node_class: None,
         node_id: &node_id,
+        node_group: None,
         pod,
         project: conf.project.to_string(),
         store: &args.store,

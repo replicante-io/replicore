@@ -51,7 +51,9 @@ pub async fn provision(
     // Create the node pod.
     let node_start_spec = super::node_start::StartNodeSpec {
         cluster_id: &request.cluster.cluster_id,
+        node_class: Some(&node_group.node_class),
         node_id: &node_id,
+        node_group: Some(&request.provision.node_group_id),
         pod,
         project: platform.conf.project.to_string(),
         store: &request.cluster.store,
