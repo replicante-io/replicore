@@ -23,6 +23,7 @@ serde_json = "^1.0"
 
 replisdk = { version = "^0.1", features = ["replicore-models"] }
 
+replicore-cluster-models = { path = "../cluster/models" }
 replicore-context = { path = "../context" }
 
 [dev-dependencies]

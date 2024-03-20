@@ -3,6 +3,8 @@ use replisdk::core::models::cluster::ClusterSpec;
 use replisdk::core::models::namespace::Namespace;
 use replisdk::core::models::platform::Platform;
 
+use replicore_cluster_models::ConvergeState;
+
 use self::seal::SealDeleteOp;
 use crate::ids::NamespaceID;
 use crate::ids::NamespacedResourceID;
@@ -15,6 +17,9 @@ pub trait DeleteOp: Into<DeleteOps> + SealDeleteOp {
 
 /// List of all delete operations the persistent store must implement.
 pub enum DeleteOps {
+    /// Delete a cluster convergence state by Namespace and Name.
+    ClusterConvergeState(DeleteClusterConvergeState),
+
     /// Delete a cluster specification by Namespace and Name.
     ClusterSpec(DeleteClusterSpec),
 
@@ -32,6 +37,18 @@ pub enum DeleteResponses {
 }
 
 // --- High level delete operations --- //
+/// Request deletion of a [`ConvergeState`] record.
+pub struct DeleteClusterConvergeState(pub NamespacedResourceID);
+impl From<&ConvergeState> for DeleteClusterConvergeState {
+    fn from(value: &ConvergeState) -> Self {
+        let value = NamespacedResourceID {
+            name: value.cluster_id.clone(),
+            ns_id: value.ns_id.clone(),
+        };
+        DeleteClusterConvergeState(value)
+    }
+}
+
 /// Request deletion of a [`ClusterSpec`] record.
 pub struct DeleteClusterSpec(pub NamespacedResourceID);
 impl From<&ClusterSpec> for DeleteClusterSpec {
@@ -87,6 +104,16 @@ mod seal {
 }
 
 // --- Implement DeleteOp and super traits on types for transparent operations --- //
+impl DeleteOp for DeleteClusterConvergeState {
+    type Response = ();
+}
+impl SealDeleteOp for DeleteClusterConvergeState {}
+impl From<DeleteClusterConvergeState> for DeleteOps {
+    fn from(value: DeleteClusterConvergeState) -> Self {
+        DeleteOps::ClusterConvergeState(value)
+    }
+}
+
 impl DeleteOp for DeleteClusterSpec {
     type Response = ();
 }

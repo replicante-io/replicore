@@ -10,6 +10,8 @@ use replisdk::core::models::cluster::ClusterSpec;
 use replisdk::core::models::namespace::Namespace;
 use replisdk::core::models::platform::Platform;
 
+use replicore_cluster_models::ConvergeState;
+
 use self::seal::SealQueryOp;
 use crate::ids::NamespaceID;
 use crate::ids::NamespacedResourceID;
@@ -22,6 +24,9 @@ pub trait QueryOp: Into<QueryOps> + SealQueryOp {
 
 /// List of all query operations the persistent store must implement.
 pub enum QueryOps {
+    /// Query a cluster convergence state record by Namespace and Cluster ID.
+    ClusterConvergeState(NamespacedResourceID),
+
     /// Query a cluster discovery record by Namespace and Cluster ID.
     ClusterDiscovery(NamespacedResourceID),
 
@@ -46,6 +51,9 @@ pub enum QueryOps {
 
 /// List of all responses from query operations.
 pub enum QueryResponses {
+    /// Return a [`ConvergeState`], if one was found matching the query.
+    ClusterConvergeState(Option<ConvergeState>),
+
     /// Return a [`ClusterDiscovery`], if one was found matching the query.
     ClusterDiscovery(Option<ClusterDiscovery>),
 
@@ -94,7 +102,32 @@ pub struct ListNamespaces;
 /// List summary information about known platforms in the namespace, sorted alphabetically.
 pub struct ListPlatforms(pub NamespaceID);
 
-/// Lookup a [`ClusterDiscovery`] namespace and cluster by ID.
+/// Lookup a [`ConvergeState`] by namespace and cluster by ID.
+#[derive(Clone, Debug)]
+pub struct LookupConvergeState(pub NamespacedResourceID);
+
+impl LookupConvergeState {
+    /// Lookup a cluster converge state by namespace ID and platform name.
+    pub fn by<S1, S2>(ns_id: S1, name: S2) -> LookupConvergeState
+    where
+        S1: Into<String>,
+        S2: Into<String>,
+    {
+        let id = NamespacedResourceID {
+            name: name.into(),
+            ns_id: ns_id.into(),
+        };
+        LookupConvergeState(id)
+    }
+}
+
+impl From<&ClusterSpec> for LookupConvergeState {
+    fn from(value: &ClusterSpec) -> Self {
+        LookupConvergeState::by(&value.ns_id, &value.cluster_id)
+    }
+}
+
+/// Lookup a [`ClusterDiscovery`] by namespace and cluster by ID.
 #[derive(Clone, Debug)]
 pub struct LookupClusterDiscovery(pub NamespacedResourceID);
 
@@ -221,6 +254,16 @@ impl From<ListPlatforms> for QueryOps {
     }
 }
 
+impl SealQueryOp for LookupConvergeState {}
+impl QueryOp for LookupConvergeState {
+    type Response = Option<ConvergeState>;
+}
+impl From<LookupConvergeState> for QueryOps {
+    fn from(value: LookupConvergeState) -> Self {
+        QueryOps::ClusterConvergeState(value.0)
+    }
+}
+
 impl SealQueryOp for LookupClusterDiscovery {}
 impl QueryOp for LookupClusterDiscovery {
     type Response = Option<ClusterDiscovery>;
@@ -275,6 +318,14 @@ impl From<LookupPlatform> for QueryOps {
 }
 
 // --- Implement QueryResponses conversions on return types for transparent operations --- //
+impl From<QueryResponses> for Option<ConvergeState> {
+    fn from(value: QueryResponses) -> Self {
+        match value {
+            QueryResponses::ClusterConvergeState(state) => state,
+            _ => panic!("unexpected result type for the given query operation"),
+        }
+    }
+}
 impl From<QueryResponses> for Option<ClusterDiscovery> {
     fn from(value: QueryResponses) -> Self {
         match value {

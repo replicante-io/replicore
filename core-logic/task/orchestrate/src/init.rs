@@ -1,11 +1,11 @@
 //! Cluster orchestration initialisation steps.
 use anyhow::Result;
-use serde::Deserialize;
-use serde::Serialize;
 
 use replisdk::core::models::namespace::Namespace;
 use replisdk::core::models::namespace::NamespaceStatus;
 
+use replicore_cluster_models::OrchestrateMode;
+use replicore_cluster_models::OrchestrateReport;
 use replicore_cluster_view::ClusterView;
 use replicore_context::Context;
 use replicore_errors::ClusterNotActive;
@@ -16,7 +16,6 @@ use replicore_injector::Injector;
 use replicore_store::query::LookupClusterSpec;
 use replicore_store::query::LookupNamespace;
 
-use crate::report::OrchestrateReport;
 use crate::OrchestrateCluster;
 
 /// Initial data for cluster orchestration.
@@ -88,20 +87,4 @@ impl InitData {
         };
         Ok(data)
     }
-}
-
-/// Cluster orchestration mode to use for the task.
-#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
-pub enum OrchestrateMode {
-    /// The cluster is deleting or deleted.
-    #[serde(rename = "delete")]
-    Delete,
-
-    /// The cluster is observed but not managed.
-    #[serde(rename = "observe")]
-    Observe,
-
-    /// The cluster is both observed and managed.
-    #[serde(rename = "sync")]
-    Sync,
 }

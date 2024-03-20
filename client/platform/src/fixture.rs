@@ -28,11 +28,25 @@ impl Client {
         S1: Into<String>,
         S2: Into<String>,
     {
+        self.append_node_with_group(cluster, node, None)
+    }
+
+    /// Append a node to a cluster so it can be discovered.
+    ///
+    /// Clusters are auto-created the first node is created.
+    pub fn append_node_with_group<G, S1, S2>(&self, cluster: S1, node: S2, group: G)
+    where
+        G: Into<Option<String>>,
+        S1: Into<String>,
+        S2: Into<String>,
+    {
         let cluster = cluster.into();
         let node = node.into();
         let node = ClusterDiscoveryNode {
             agent_address: format!("unittest://{}", node),
+            node_class: "unit".into(),
             node_id: node.clone(),
+            node_group: group.into().map(Into::into)
         };
         self.state
             .lock()
@@ -93,7 +107,11 @@ impl super::IPlatform for Client {
             })
             .collect();
         for node in &node_ids {
-            self.append_node(&request.cluster.cluster_id, node);
+            self.append_node_with_group(
+                &request.cluster.cluster_id,
+                node,
+                request.provision.node_group_id.clone(),
+            );
         }
         let response = NodeProvisionResponse {
             count,

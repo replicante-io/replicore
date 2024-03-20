@@ -4,6 +4,8 @@ use replisdk::core::models::cluster::ClusterSpec;
 use replisdk::core::models::namespace::Namespace;
 use replisdk::core::models::platform::Platform;
 
+use replicore_cluster_models::ConvergeState;
+
 use self::seal::SealPersistOp;
 
 /// Internal trait to enable persist operations on the persistent store.
@@ -14,6 +16,9 @@ pub trait PersistOp: Into<PersistOps> + SealPersistOp {
 
 /// List of all persist operations the persistent store must implement.
 pub enum PersistOps {
+    /// Persist a cluster convergence state.
+    ClusterConvergeState(ConvergeState),
+
     /// Persist a cluster discovery record.
     ClusterDiscovery(ClusterDiscovery),
 
@@ -44,6 +49,16 @@ mod seal {
 }
 
 // --- Implement PersistOp and super traits on types for transparent operations --- //
+impl PersistOp for ConvergeState {
+    type Response = ();
+}
+impl SealPersistOp for ConvergeState {}
+impl From<ConvergeState> for PersistOps {
+    fn from(value: ConvergeState) -> Self {
+        PersistOps::ClusterConvergeState(value)
+    }
+}
+
 impl PersistOp for ClusterDiscovery {
     type Response = ();
 }

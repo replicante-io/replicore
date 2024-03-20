@@ -37,6 +37,7 @@ impl TaskCallback for Callback {
         // TODO: Process orchestrator actions.
 
         // Process convergence steps.
+        let data = crate::converge::ConvergeData::convert(context, data).await?;
         crate::converge::run(context, &data).await?;
 
         // TODO: Emit the report event.

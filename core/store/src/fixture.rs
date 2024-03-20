@@ -15,6 +15,7 @@ use replisdk::core::models::cluster::ClusterSpec;
 use replisdk::core::models::namespace::Namespace;
 use replisdk::core::models::platform::Platform;
 
+use replicore_cluster_models::ConvergeState;
 use replicore_context::Context;
 
 use super::DeleteOps;
@@ -55,6 +56,10 @@ impl StoreBackend for StoreFixture {
     async fn delete(&self, _: &Context, op: DeleteOps) -> Result<DeleteResponses> {
         let mut store = self.access();
         match op {
+            DeleteOps::ClusterConvergeState(cluster) => {
+                let key = (cluster.0.ns_id, cluster.0.name);
+                store.cluster_converge_states.remove(&key);
+            }
             DeleteOps::ClusterSpec(cluster) => {
                 let key = (cluster.0.ns_id, cluster.0.name);
                 store.cluster_specs.remove(&key);
@@ -73,6 +78,11 @@ impl StoreBackend for StoreFixture {
     async fn query(&self, _: &Context, op: QueryOps) -> Result<QueryResponses> {
         let store = self.access();
         match op {
+            QueryOps::ClusterConvergeState(cluster) => {
+                let key = (cluster.ns_id, cluster.name);
+                let state = store.cluster_converge_states.get(&key).cloned();
+                Ok(QueryResponses::ClusterConvergeState(state))
+            }
             QueryOps::ClusterDiscovery(cluster) => {
                 let key = (cluster.ns_id, cluster.name);
                 let discovery = store.cluster_discoveries.get(&key).cloned();
@@ -141,6 +151,10 @@ impl StoreBackend for StoreFixture {
     async fn persist(&self, _: &Context, op: PersistOps) -> Result<PersistResponses> {
         let mut store = self.access();
         match op {
+            PersistOps::ClusterConvergeState(state) => {
+                let key = (state.ns_id.clone(), state.cluster_id.clone());
+                store.cluster_converge_states.insert(key, state);
+            }
             PersistOps::ClusterDiscovery(disc) => {
                 let key = (disc.ns_id.clone(), disc.cluster_id.clone());
                 store.cluster_discoveries.insert(key, disc);
@@ -164,6 +178,7 @@ impl StoreBackend for StoreFixture {
 /// Container for the shared state.
 #[derive(Default)]
 struct StoreFixtureState {
+    cluster_converge_states: HashMap<(String, String), ConvergeState>,
     cluster_discoveries: HashMap<(String, String), ClusterDiscovery>,
     cluster_specs: HashMap<(String, String), ClusterSpec>,
     namespaces: HashMap<String, Namespace>,

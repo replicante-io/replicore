@@ -11,6 +11,7 @@ use replicore_store::query::QueryOps;
 use replicore_store::query::QueryResponses;
 use replicore_store::StoreBackend;
 
+mod cluster_converge_state;
 mod cluster_discovery;
 mod cluster_spec;
 mod namespace;
@@ -33,6 +34,11 @@ impl SQLiteStore {
 impl StoreBackend for SQLiteStore {
     async fn delete(&self, context: &Context, op: DeleteOps) -> Result<DeleteResponses> {
         match op {
+            DeleteOps::ClusterConvergeState(cluster) => {
+                self::cluster_converge_state::delete(context, &self.connection, cluster)
+                    .await
+                    .map(|_| DeleteResponses::Success)
+            }
             DeleteOps::ClusterSpec(cluster) => {
                 self::cluster_spec::delete(context, &self.connection, cluster)
                     .await
@@ -49,6 +55,11 @@ impl StoreBackend for SQLiteStore {
 
     async fn query(&self, context: &Context, op: QueryOps) -> Result<QueryResponses> {
         match op {
+            QueryOps::ClusterConvergeState(cluster) => {
+                let state =
+                    self::cluster_converge_state::lookup(context, &self.connection, cluster).await?;
+                Ok(QueryResponses::ClusterConvergeState(state))
+            }
             QueryOps::ClusterDiscovery(disc) => {
                 let disc = self::cluster_discovery::lookup(context, &self.connection, disc).await?;
                 Ok(QueryResponses::ClusterDiscovery(disc))
@@ -82,6 +93,11 @@ impl StoreBackend for SQLiteStore {
 
     async fn persist(&self, context: &Context, op: PersistOps) -> Result<PersistResponses> {
         match op {
+            PersistOps::ClusterConvergeState(state) => {
+                self::cluster_converge_state::persist(context, &self.connection, state)
+                    .await
+                    .map(|_| PersistResponses::Success)
+            }
             PersistOps::ClusterDiscovery(disc) => {
                 self::cluster_discovery::persist(context, &self.connection, disc)
                     .await

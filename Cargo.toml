@@ -17,6 +17,7 @@ members = [
   "core/tasks/sqlite",
 
   # Control Plane implementation crates.
+  "core/cluster/models",
   "core/cluster/view",
   "core/conf",
   "core/context",

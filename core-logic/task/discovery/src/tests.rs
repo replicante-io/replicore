@@ -109,7 +109,9 @@ async fn fixed_db(injector: &Injector) {
         cluster_id: "cluster2".into(),
         nodes: vec![ClusterDiscoveryNode {
             node_id: "node5".into(),
+            node_class: "unit".into(),
             agent_address: "unittest://node5".into(),
+            node_group: None,
         }],
     };
     injector
@@ -227,13 +229,19 @@ fn assert_event(code: &str, payload: Value) {
                 "cluster_id": "cluster1",
                 "nodes": [{
                     "agent_address": "unittest://node1",
+                    "node_class": "unit",
                     "node_id": "node1",
+                    "node_group": null,
                 }, {
                     "agent_address": "unittest://node2",
+                    "node_class": "unit",
                     "node_id": "node2",
+                    "node_group": null,
                 }, {
                     "agent_address": "unittest://node3",
+                    "node_class": "unit",
                     "node_id": "node3",
+                    "node_group": null,
                 }]
             })
         ),
@@ -245,7 +253,9 @@ fn assert_event(code: &str, payload: Value) {
                     "ns_id": "default",
                     "cluster_id": cluster_id,
                     "active": true,
+                    "declaration": null,
                     "interval": 60,
+                    "platform": null,
                 })
             );
         }
@@ -257,7 +267,9 @@ fn assert_event(code: &str, payload: Value) {
                     "cluster_id": "cluster2",
                     "nodes": [{
                         "agent_address": "unittest://node4",
+                        "node_class": "unit",
                         "node_id": "node4",
+                        "node_group": null,
                     }]
                 },
                 "before": {
@@ -265,7 +277,9 @@ fn assert_event(code: &str, payload: Value) {
                     "cluster_id": "cluster2",
                     "nodes": [{
                         "agent_address": "unittest://node5",
+                        "node_class": "unit",
                         "node_id": "node5",
+                        "node_group": null,
                     }]
                 }
             })

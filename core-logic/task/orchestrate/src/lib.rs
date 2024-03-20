@@ -9,7 +9,6 @@ use replicore_tasks::submit::TaskSubmission;
 mod callback;
 mod converge;
 mod init;
-mod report;
 
 pub use self::callback::Callback;
 

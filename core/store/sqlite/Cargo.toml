@@ -24,6 +24,7 @@ rusqlite = { version = "^0.29", features = ["bundled"] }
 thiserror = "^1.0"
 tokio-rusqlite = "^0.4"
 
+replicore-cluster-models = { path = "../../cluster/models" }
 replicore-context = { path = "../../context" }
 replicore-store = { path = "../" }
 

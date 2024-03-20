@@ -2210,6 +2210,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "replicore-cluster-models"
+version = "0.1.0"
+dependencies = [
+ "serde",
+ "time",
+]
+
+[[package]]
 name = "replicore-cluster-view"
 version = "0.1.0"
 dependencies = [
@@ -2312,6 +2320,7 @@ dependencies = [
  "async-trait",
  "futures",
  "prometheus",
+ "replicore-cluster-models",
  "replicore-context",
  "replisdk",
  "serde",
@@ -2330,6 +2339,7 @@ dependencies = [
  "opentelemetry_api",
  "prometheus",
  "refinery",
+ "replicore-cluster-models",
  "replicore-context",
  "replicore-store",
  "replisdk",
@@ -2372,6 +2382,7 @@ dependencies = [
  "anyhow",
  "async-trait",
  "once_cell",
+ "replicore-cluster-models",
  "replicore-cluster-view",
  "replicore-context",
  "replicore-errors",
