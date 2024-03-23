@@ -15,6 +15,7 @@ mod cluster_converge_state;
 mod cluster_discovery;
 mod cluster_spec;
 mod namespace;
+mod oaction;
 mod platform;
 
 /// Implementation of the [`StoreBackend`] interface using SQLite.
@@ -44,12 +45,16 @@ impl StoreBackend for SQLiteStore {
                     .await
                     .map(|_| DeleteResponses::Success)
             }
-            DeleteOps::Namespace(ns) => self::namespace::delete(context, &self.connection, ns)
-                .await
-                .map(|_| DeleteResponses::Success),
-            DeleteOps::Platform(pl) => self::platform::delete(context, &self.connection, pl)
-                .await
-                .map(|_| DeleteResponses::Success),
+            DeleteOps::Namespace(ns) => {
+                self::namespace::delete(context, &self.connection, ns)
+                    .await
+                    .map(|_| DeleteResponses::Success)
+            }
+            DeleteOps::Platform(pl) => {
+                self::platform::delete(context, &self.connection, pl)
+                    .await
+                    .map(|_| DeleteResponses::Success)
+            }
         }
     }
 
@@ -76,6 +81,10 @@ impl StoreBackend for SQLiteStore {
                 let list = self::namespace::list(context, &self.connection).await?;
                 Ok(QueryResponses::NamespaceEntries(list))
             }
+            QueryOps::ListOActions(query) => {
+                let list = self::oaction::list(context, &self.connection, query).await?;
+                Ok(QueryResponses::OActionEntries(list))
+            }
             QueryOps::ListPlatforms(ns) => {
                 let list = self::platform::list(context, &self.connection, ns).await?;
                 Ok(QueryResponses::PlatformEntries(list))
@@ -83,6 +92,10 @@ impl StoreBackend for SQLiteStore {
             QueryOps::Namespace(ns) => {
                 let ns = self::namespace::lookup(context, &self.connection, ns).await?;
                 Ok(QueryResponses::Namespace(ns))
+            }
+            QueryOps::OAction(query) => {
+                let oa = self::oaction::lookup(context, &self.connection, query).await?;
+                Ok(QueryResponses::OAction(oa))
             }
             QueryOps::Platform(pl) => {
                 let pl = self::platform::lookup(context, &self.connection, pl).await?;
@@ -108,12 +121,21 @@ impl StoreBackend for SQLiteStore {
                     .await
                     .map(|_| PersistResponses::Success)
             }
-            PersistOps::Namespace(ns) => self::namespace::persist(context, &self.connection, ns)
-                .await
-                .map(|_| PersistResponses::Success),
-            PersistOps::Platform(pl) => self::platform::persist(context, &self.connection, pl)
-                .await
-                .map(|_| PersistResponses::Success),
+            PersistOps::Namespace(ns) => {
+                self::namespace::persist(context, &self.connection, ns)
+                    .await
+                    .map(|_| PersistResponses::Success)
+            }
+            PersistOps::OAction(oaction) => {
+                self::oaction::persist(context, &self.connection, oaction)
+                    .await
+                    .map(|_| PersistResponses::Success)
+            }
+            PersistOps::Platform(pl) => {
+                self::platform::persist(context, &self.connection, pl)
+                    .await
+                    .map(|_| PersistResponses::Success)
+            }
         }
     }
 }

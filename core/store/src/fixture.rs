@@ -6,13 +6,16 @@ use std::sync::MutexGuard;
 
 use anyhow::Result;
 use futures::StreamExt;
+use uuid::Uuid;
 
 use replisdk::core::models::api::ClusterSpecEntry;
 use replisdk::core::models::api::NamespaceEntry;
+use replisdk::core::models::api::OActionEntry;
 use replisdk::core::models::api::PlatformEntry;
 use replisdk::core::models::cluster::ClusterDiscovery;
 use replisdk::core::models::cluster::ClusterSpec;
 use replisdk::core::models::namespace::Namespace;
+use replisdk::core::models::oaction::OAction;
 use replisdk::core::models::platform::Platform;
 
 use replicore_cluster_models::ConvergeState;
@@ -100,8 +103,9 @@ impl StoreBackend for StoreFixture {
                         continue;
                     }
                     let item = ClusterSpecEntry {
-                        active: spec.active,
+                        ns_id: ns.clone(),
                         cluster_id: spec.cluster_id.clone(),
+                        active: spec.active,
                     };
                     items.push(item);
                 }
@@ -121,6 +125,32 @@ impl StoreBackend for StoreFixture {
                 let items = futures::stream::iter(items).map(Ok).boxed();
                 Ok(QueryResponses::NamespaceEntries(items))
             }
+            QueryOps::ListOActions(query) => {
+                let mut items = Vec::new();
+                for (_, action) in store.oactions.iter() {
+                    if query.ns_id != action.ns_id {
+                        continue;
+                    }
+                    if query.cluster_id != action.cluster_id {
+                        continue;
+                    }
+                    if action.state.is_final() && !query.include_finished {
+                        continue;
+                    }
+                    let item = OActionEntry {
+                        ns_id: action.ns_id.clone(),
+                        cluster_id: action.cluster_id.clone(),
+                        action_id: action.action_id,
+                        created_ts: action.created_ts,
+                        finished_ts: action.finished_ts,
+                        kind: action.kind.clone(),
+                        state: action.state,
+                    };
+                    items.push(item);
+                }
+                let items = futures::stream::iter(items).map(Ok).boxed();
+                Ok(QueryResponses::OActionEntries(items))
+            }
             QueryOps::ListPlatforms(query) => {
                 let mut items = Vec::new();
                 for ((ns, _), platform) in store.platforms.iter() {
@@ -139,6 +169,11 @@ impl StoreBackend for StoreFixture {
             QueryOps::Namespace(ns) => {
                 let ns = store.namespaces.get(&ns.0.id).cloned();
                 Ok(QueryResponses::Namespace(ns))
+            }
+            QueryOps::OAction(query) => {
+                let key = (query.0.ns_id, query.0.cluster_id, query.0.action_id);
+                let oaction = store.oactions.get(&key).cloned();
+                Ok(QueryResponses::OAction(oaction))
             }
             QueryOps::Platform(query) => {
                 let key = (query.ns_id, query.name);
@@ -166,6 +201,10 @@ impl StoreBackend for StoreFixture {
             PersistOps::Namespace(ns) => {
                 store.namespaces.insert(ns.id.clone(), ns);
             }
+            PersistOps::OAction(oaction) => {
+                let key = (oaction.ns_id.clone(), oaction.cluster_id.clone(), oaction.action_id);
+                store.oactions.insert(key, oaction);
+            }
             PersistOps::Platform(platform) => {
                 let key = (platform.ns_id.clone(), platform.name.clone());
                 store.platforms.insert(key, platform);
@@ -182,5 +221,6 @@ struct StoreFixtureState {
     cluster_discoveries: HashMap<(String, String), ClusterDiscovery>,
     cluster_specs: HashMap<(String, String), ClusterSpec>,
     namespaces: HashMap<String, Namespace>,
+    oactions: HashMap<(String, String, Uuid), OAction>,
     platforms: HashMap<(String, String), Platform>,
 }
