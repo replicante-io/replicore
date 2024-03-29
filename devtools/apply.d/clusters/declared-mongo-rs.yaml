@@ -3,8 +3,8 @@ kind: ClusterSpec
 spec:
   ns_id: default
   cluster_id: declared-mongo-rs
-
   active: true
+
   platform:
     # Default to current.
     #namespace: default

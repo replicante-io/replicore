@@ -1,9 +1,0 @@
-apiVersion: replicante.io/v0
-kind: OrchestratorAction
-
-metadata:
-  namespace: default
-  cluster: mongo-rs
-
-spec:
-  action: core.replicante.io/debug.fail

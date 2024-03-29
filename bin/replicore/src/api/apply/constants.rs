@@ -6,5 +6,8 @@ pub const APPLY_CLUSTER_SPEC: &str = "CLUSTER_SPEC_APPLY";
 /// Event code emitted when a Namespace is applied (create or update).
 pub const APPLY_NAMESPACE: &str = "NAMESPACE_APPLY";
 
+/// Event code emitted when an Orchestrator Action is applied (created).
+pub const APPLY_OACTION: &str = "OACTION_APPLY";
+
 /// Event code emitted when a Platform is applied (create or update).
 pub const APPLY_PLATFORM: &str = "PLATFORM_APPLY";

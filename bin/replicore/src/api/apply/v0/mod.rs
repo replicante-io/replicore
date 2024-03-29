@@ -5,6 +5,7 @@ use once_cell::sync::Lazy;
 
 pub mod constants;
 
+mod action;
 mod cluster;
 mod namespace;
 mod platform;
@@ -25,6 +26,7 @@ macro_rules! schema {
 
 schema!(CLUSTER_SPEC_SCHEMA, "cluster-spec.schema.json");
 schema!(NAMESPACE_SCHEMA, "namespace.schema.json");
+schema!(OACTION_SCHEMA, "oaction.schema.json");
 schema!(PLATFORM_SCHEMA, "platform.schema.json");
 
 /// Apply the object based on its kind.
@@ -34,6 +36,7 @@ pub async fn apply(args: ApplyArgs<'_>) -> Result<HttpResponse, crate::api::Erro
     match kind.as_str() {
         constants::KIND_CLUSTER_SPEC => self::cluster::cluster_spec(args).await,
         constants::KIND_NAMESPACE => self::namespace::namespace(args).await,
+        constants::KIND_OACTION => self::action::oaction(args).await,
         constants::KIND_PLATFORM => self::platform::platform(args).await,
         _ => panic!("the v0::knows should catch unsupported kinds"),
     }
@@ -43,6 +46,7 @@ pub async fn apply(args: ApplyArgs<'_>) -> Result<HttpResponse, crate::api::Erro
 pub fn knows(kind: &str) -> bool {
     kind == constants::KIND_CLUSTER_SPEC
         || kind == constants::KIND_NAMESPACE
+        || kind == constants::KIND_OACTION
         || kind == constants::KIND_PLATFORM
 }
 

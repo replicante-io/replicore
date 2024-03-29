@@ -1,0 +1,6 @@
+apiVersion: replicante.io/v0
+kind: ClusterSpec
+spec:
+  ns_id: default
+  cluster_id: mongo-rs
+  active: true

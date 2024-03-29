@@ -1,13 +1,10 @@
 apiVersion: replicante.io/v0
-kind: OrchestratorAction
-
-metadata:
-  namespace: default
-  cluster: manual-mongo-rs
-  approval: granted
-
+kind: OAction
+approved: true
 spec:
-  action: platform.replicante.io/node.provision
+  ns_id: default
+  cluster_id: manual-mongo-rs
+  kind: platform.replicante.io/node.provision
   args:
     platform_ref:
       namespace: ~
