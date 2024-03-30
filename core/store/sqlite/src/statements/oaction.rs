@@ -69,7 +69,11 @@ pub async fn list(
     let trace = crate::telemetry::trace_op("oaction.listEntries");
     let items = connection
         .call(move |connection| {
-            let sql = if query.include_finished { LIST_ALL_SQL } else { LIST_UNFINISHED_SQL };
+            let sql = if query.include_finished {
+                LIST_ALL_SQL
+            } else {
+                LIST_UNFINISHED_SQL
+            };
             let mut statement = connection.prepare_cached(sql)?;
             let mut rows = statement.query([query.ns_id, query.cluster_id])?;
 
@@ -106,11 +110,7 @@ pub async fn lookup(
     let oaction = connection
         .call(move |connection| {
             let mut statement = connection.prepare_cached(LOOKUP_SQL)?;
-            let mut rows = statement.query([
-                query.0.ns_id,
-                query.0.cluster_id,
-                action_id,
-            ])?;
+            let mut rows = statement.query([query.0.ns_id, query.0.cluster_id, action_id])?;
             let row = match rows.next()? {
                 None => None,
                 Some(row) => {
@@ -147,14 +147,17 @@ pub async fn persist(_: &Context, connection: &Connection, oaction: OAction) -> 
     let trace = crate::telemetry::trace_op("oaction.persist");
     connection
         .call(move |connection| {
-            connection.execute(PERSIST_SQL, rusqlite::params![
-                oaction.ns_id,
-                oaction.cluster_id,
-                oaction.action_id.to_string(),
-                created_ts,
-                finished_ts,
-                record,
-            ])?;
+            connection.execute(
+                PERSIST_SQL,
+                rusqlite::params![
+                    oaction.ns_id,
+                    oaction.cluster_id,
+                    oaction.action_id.to_string(),
+                    created_ts,
+                    finished_ts,
+                    record,
+                ],
+            )?;
             Ok(())
         })
         .count_on_err(err_count)

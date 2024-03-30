@@ -45,16 +45,12 @@ impl StoreBackend for SQLiteStore {
                     .await
                     .map(|_| DeleteResponses::Success)
             }
-            DeleteOps::Namespace(ns) => {
-                self::namespace::delete(context, &self.connection, ns)
-                    .await
-                    .map(|_| DeleteResponses::Success)
-            }
-            DeleteOps::Platform(pl) => {
-                self::platform::delete(context, &self.connection, pl)
-                    .await
-                    .map(|_| DeleteResponses::Success)
-            }
+            DeleteOps::Namespace(ns) => self::namespace::delete(context, &self.connection, ns)
+                .await
+                .map(|_| DeleteResponses::Success),
+            DeleteOps::Platform(pl) => self::platform::delete(context, &self.connection, pl)
+                .await
+                .map(|_| DeleteResponses::Success),
         }
     }
 
@@ -62,7 +58,8 @@ impl StoreBackend for SQLiteStore {
         match op {
             QueryOps::ClusterConvergeState(cluster) => {
                 let state =
-                    self::cluster_converge_state::lookup(context, &self.connection, cluster).await?;
+                    self::cluster_converge_state::lookup(context, &self.connection, cluster)
+                        .await?;
                 Ok(QueryResponses::ClusterConvergeState(state))
             }
             QueryOps::ClusterDiscovery(disc) => {
@@ -121,21 +118,17 @@ impl StoreBackend for SQLiteStore {
                     .await
                     .map(|_| PersistResponses::Success)
             }
-            PersistOps::Namespace(ns) => {
-                self::namespace::persist(context, &self.connection, ns)
-                    .await
-                    .map(|_| PersistResponses::Success)
-            }
+            PersistOps::Namespace(ns) => self::namespace::persist(context, &self.connection, ns)
+                .await
+                .map(|_| PersistResponses::Success),
             PersistOps::OAction(oaction) => {
                 self::oaction::persist(context, &self.connection, oaction)
                     .await
                     .map(|_| PersistResponses::Success)
             }
-            PersistOps::Platform(pl) => {
-                self::platform::persist(context, &self.connection, pl)
-                    .await
-                    .map(|_| PersistResponses::Success)
-            }
+            PersistOps::Platform(pl) => self::platform::persist(context, &self.connection, pl)
+                .await
+                .map(|_| PersistResponses::Success),
         }
     }
 }

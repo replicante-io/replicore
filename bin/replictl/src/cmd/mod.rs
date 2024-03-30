@@ -6,6 +6,7 @@ pub mod apply;
 pub mod cluster_spec;
 pub mod context;
 pub mod namespace;
+pub mod oaction;
 pub mod platform;
 
 use crate::context::ContextOpt;
@@ -55,6 +56,10 @@ pub enum Command {
     /// Inspect, delete or manipulate namespaces.
     #[command(alias = "ns")]
     Namespace(namespace::NamespaceCli),
+
+    /// Inspect or manipulate orchestrator actions for a cluster.
+    #[command(alias = "oa")]
+    OAction(oaction::OActionCli),
 
     /// Inspect, delete or manipulate platforms.
     Platform(platform::PlatformCli),

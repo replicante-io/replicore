@@ -46,7 +46,7 @@ impl Client {
             agent_address: format!("unittest://{}", node),
             node_class: "unit".into(),
             node_id: node.clone(),
-            node_group: group.into().map(Into::into)
+            node_group: group.into().map(Into::into),
         };
         self.state
             .lock()

@@ -11,6 +11,7 @@ use clap::ValueEnum;
 
 use replisdk::core::models::api::ClusterSpecEntry;
 use replisdk::core::models::api::NamespaceEntry;
+use replisdk::core::models::api::OActionEntry;
 use replisdk::core::models::api::PlatformEntry;
 
 //mod json;
@@ -94,6 +95,15 @@ pub trait NamespaceList {
     fn append(&mut self, entry: &NamespaceEntry) -> Result<()>;
 
     /// Handle the now complete list of namespace entries and emit it to standard output.
+    fn finish(&mut self) -> Result<()>;
+}
+
+/// Present a list of [`OActionEntry`]s to the user.
+pub trait OActionList {
+    /// Append a new orchestrator action entry into the list being formatted.
+    fn append(&mut self, entry: &OActionEntry) -> Result<()>;
+
+    /// Handle the now complete list of orchestrator action entries and emit it to standard output.
     fn finish(&mut self) -> Result<()>;
 }
 

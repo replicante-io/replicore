@@ -8,8 +8,8 @@ use replisdk::utils::trace::TraceFutureStdErrExt;
 
 use replicore_cluster_models::ConvergeState;
 use replicore_context::Context;
-use replicore_store::ids::NamespacedResourceID;
 use replicore_store::delete::DeleteClusterConvergeState;
+use replicore_store::ids::NamespacedResourceID;
 
 const DELETE_SQL: &str = r#"
 DELETE FROM store_cluster_converge_state
@@ -94,11 +94,7 @@ pub async fn lookup(
 }
 
 /// Persist a new or updated [`ConvergeState`]` into the store.
-pub async fn persist(
-    _: &Context,
-    connection: &Connection,
-    cluster: ConvergeState,
-) -> Result<()> {
+pub async fn persist(_: &Context, connection: &Connection, cluster: ConvergeState) -> Result<()> {
     let record = replisdk::utils::encoding::encode_serde(&cluster)?;
     let (err_count, _timer) = crate::telemetry::observe_op("clusterConvergeState.persist");
     let trace = crate::telemetry::trace_op("clusterConvergeState.persist");

@@ -5,6 +5,8 @@ use replisdk::core::models::api::ClusterSpecEntry;
 use replisdk::core::models::api::ClusterSpecList;
 use replisdk::core::models::api::NamespaceEntry;
 use replisdk::core::models::api::NamespaceList;
+use replisdk::core::models::api::OActionEntry;
+use replisdk::core::models::api::OActionList;
 use replisdk::core::models::api::PlatformEntry;
 use replisdk::core::models::api::PlatformList;
 
@@ -52,6 +54,28 @@ impl<'a> ListClient<'a> {
             .send()
             .await?;
         let response = crate::error::inspect::<NamespaceList>(response).await?;
+        let response = response.ok_or(EmptyResponse)?;
+        Ok(response.items)
+    }
+
+    /// List orchestrator actions for a cluster.
+    pub async fn oactions(
+        &'a self,
+        namespace: &str,
+        cluster: &str,
+        all: bool,
+    ) -> Result<Vec<OActionEntry>> {
+        let response = self
+            .inner
+            .client
+            .get(format!(
+                "{}api/v0/list/replicante.io/v0/oaction/{}/{}",
+                self.inner.base, namespace, cluster,
+            ))
+            .query(&[("all", all)])
+            .send()
+            .await?;
+        let response = crate::error::inspect::<OActionList>(response).await?;
         let response = response.ok_or(EmptyResponse)?;
         Ok(response.items)
     }

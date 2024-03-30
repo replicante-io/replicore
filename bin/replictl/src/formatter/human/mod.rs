@@ -7,6 +7,7 @@ use crate::globals::Globals;
 mod cluster_spec;
 mod context;
 mod namespace;
+mod oaction;
 mod platform;
 
 /// Format output for easy consumption by people interacting with `replictl`.
@@ -32,6 +33,11 @@ impl FormatterStrategy for HumanFormatter {
                 Responses::Success
             }
             Ops::NamespaceList => Responses::namespaces(self::namespace::NamespaceList::new()),
+            Ops::OAction(action) => match self::oaction::show(&action) {
+                Err(error) => Responses::Err(error),
+                Ok(()) => Responses::Success,
+            },
+            Ops::OActionList => Responses::oactions(self::oaction::OActionList::new()),
             Ops::Platform(platform) => {
                 self::platform::show(&platform);
                 Responses::Success

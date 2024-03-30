@@ -6,6 +6,7 @@ mod apply;
 mod cluster_spec;
 mod list;
 mod namespace;
+mod oaction;
 mod platform;
 
 use crate::ClientOptions;

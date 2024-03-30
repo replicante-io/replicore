@@ -1,6 +1,10 @@
 //! Operations offered by a `replictl` formatter interface.
+use anyhow::Error;
+use anyhow::Result;
+
 use replisdk::core::models::cluster::ClusterSpec;
 use replisdk::core::models::namespace::Namespace;
+use replisdk::core::models::oaction::OAction;
 use replisdk::core::models::platform::Platform;
 
 use self::sealed::SealFormatOp;
@@ -32,6 +36,12 @@ pub enum Ops {
     /// Format information about a [`Namespace`].
     Namespace(Namespace),
 
+    /// Format information about an [`OAction`].
+    OAction(OAction),
+
+    /// Request a strategy to format `OActionEntry` lists.
+    OActionList,
+
     /// Request a strategy to format `PlatformEntry` lists.
     PlatformList,
 
@@ -47,8 +57,14 @@ pub enum Responses {
     /// Return a object to format a list of [`Context`]s.
     ContextList(Box<dyn super::ContextList>),
 
+    /// Return an error back to the caller.
+    Err(Error),
+
     /// Return a object to format a list of `NamespaceEntry`s.
     NamespaceList(Box<dyn super::NamespaceList>),
+
+    /// Return a object to format a list of `OActionEntry`s.
+    OActionList(Box<dyn super::OActionList>),
 
     /// Return a object to format a list of `PlatformEntry`s.
     PlatformList(Box<dyn super::PlatformList>),
@@ -85,6 +101,15 @@ impl Responses {
         Self::NamespaceList(value)
     }
 
+    /// Wrap an [`OActionList`](super::OActionList) returned by the formatter.
+    pub fn oactions<L>(value: L) -> Self
+    where
+        L: super::OActionList + 'static,
+    {
+        let value = Box::new(value);
+        Self::OActionList(value)
+    }
+
     /// Wrap a [`PlatformList`](super::PlatformList) returned by the formatter.
     pub fn platforms<L>(value: L) -> Self
     where
@@ -104,6 +129,9 @@ pub struct ContextListOp;
 
 /// Request a formatter to emit `NamespaceEntry` lists.
 pub struct NamespaceListOp;
+
+/// Request a formatter to emit `OActionEntry` lists.
+pub struct OActionListOp;
 
 /// Request a formatter to emit `PlatformEntry` lists.
 pub struct PlatformListOp;
@@ -175,6 +203,26 @@ impl FormatOp for NamespaceListOp {
     type Response = Box<dyn super::NamespaceList>;
 }
 
+impl SealFormatOp for OAction {}
+impl From<OAction> for Ops {
+    fn from(value: OAction) -> Self {
+        Self::OAction(value)
+    }
+}
+impl FormatOp for OAction {
+    type Response = Result<()>;
+}
+
+impl SealFormatOp for OActionListOp {}
+impl From<OActionListOp> for Ops {
+    fn from(_: OActionListOp) -> Self {
+        Self::OActionList
+    }
+}
+impl FormatOp for OActionListOp {
+    type Response = Box<dyn super::OActionList>;
+}
+
 impl SealFormatOp for Platform {}
 impl From<Platform> for Ops {
     fn from(value: Platform) -> Self {
@@ -220,10 +268,27 @@ impl From<Responses> for Box<dyn super::NamespaceList> {
         }
     }
 }
+impl From<Responses> for Box<dyn super::OActionList> {
+    fn from(value: Responses) -> Self {
+        match value {
+            Responses::OActionList(value) => value,
+            _ => panic!("unexpected response type for formatter operation"),
+        }
+    }
+}
 impl From<Responses> for Box<dyn super::PlatformList> {
     fn from(value: Responses) -> Self {
         match value {
             Responses::PlatformList(value) => value,
+            _ => panic!("unexpected response type for formatter operation"),
+        }
+    }
+}
+impl From<Responses> for Result<()> {
+    fn from(value: Responses) -> Self {
+        match value {
+            Responses::Err(error) => Err(error),
+            Responses::Success => Ok(()),
             _ => panic!("unexpected response type for formatter operation"),
         }
     }

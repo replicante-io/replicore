@@ -42,7 +42,12 @@ impl ConvergeData {
     /// Convert a [`InitData`] container into a [`ConvergeData`] container.
     pub async fn convert(context: &Context, value: InitData) -> Result<Self> {
         let op = replicore_store::query::LookupConvergeState::from(&value.cluster_current.spec);
-        let state = value.injector.store.query(context, op).await?.unwrap_or_default();
+        let state = value
+            .injector
+            .store
+            .query(context, op)
+            .await?
+            .unwrap_or_default();
         let data = ConvergeData {
             cluster_current: value.cluster_current,
             injector: value.injector,

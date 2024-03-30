@@ -16,7 +16,7 @@ pub struct ClusterSpecClient<'a> {
 }
 
 impl Client {
-    /// Namespace operations.
+    /// ClusterSpec operations.
     pub fn clusterspec<'a>(&'a self, ns_id: &'a str, name: &'a str) -> ClusterSpecClient<'a> {
         ClusterSpecClient {
             inner: self,

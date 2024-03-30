@@ -202,7 +202,11 @@ impl StoreBackend for StoreFixture {
                 store.namespaces.insert(ns.id.clone(), ns);
             }
             PersistOps::OAction(oaction) => {
-                let key = (oaction.ns_id.clone(), oaction.cluster_id.clone(), oaction.action_id);
+                let key = (
+                    oaction.ns_id.clone(),
+                    oaction.cluster_id.clone(),
+                    oaction.action_id,
+                );
                 store.oactions.insert(key, oaction);
             }
             PersistOps::Platform(platform) => {

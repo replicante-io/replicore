@@ -39,7 +39,7 @@ impl ConvergeStep for NodeScaleUp {
         if let Some(grace) = state.graces.get(SCALE_UP_GRACE_ID) {
             // TODO: scale up grace should be configurable.
             let grace_lap = Duration::from_secs(5 * 60);
-            if *grace + grace_lap > time::OffsetDateTime::now_utc()  {
+            if *grace + grace_lap > time::OffsetDateTime::now_utc() {
                 return Ok(());
             }
         }

@@ -36,10 +36,8 @@ pub async fn oaction(args: ApplyArgs<'_>) -> Result<HttpResponse, crate::api::Er
             let source = anyhow::anyhow!(
                 "OAction '{action_id}' already exists for cluster '{ns_id}.{cluster_id}'"
             );
-            let error = crate::api::Error::with_status(
-                actix_web::http::StatusCode::BAD_REQUEST,
-                source,
-            );
+            let error =
+                crate::api::Error::with_status(actix_web::http::StatusCode::BAD_REQUEST, source);
             return Err(error);
         }
     }
