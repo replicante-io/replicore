@@ -3,7 +3,7 @@ name = "replicore-tasks-sqlite"
 version = "0.1.0"
 
 edition = "2021"
-rust-version = "1.70"
+rust-version = "1.75"
 
 description = "RepliCore asyncronous tasks scheduling and execution interfaces"
 homepage = "https://www.replicante.io/"

@@ -3,7 +3,7 @@ name = "replicore-cluster-models"
 version = "0.1.0"
 
 edition = "2021"
-rust-version = "1.70"
+rust-version = "1.75"
 
 description = "Control Plane models for cluster related operations"
 homepage = "https://www.replicante.io/"

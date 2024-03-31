@@ -4,7 +4,7 @@ version = "0.8.0"
 build = "../../build.rs"
 
 edition = "2021"
-rust-version = "1.70"
+rust-version = "1.75"
 
 description = "Replicante Core is a Control Plane for distributed store orchestration"
 documentation = "https://www.replicante.io/docs"

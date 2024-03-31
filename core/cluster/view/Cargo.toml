@@ -3,7 +3,7 @@ name = "replicore-cluster-view"
 version = "0.1.0"
 
 edition = "2021"
-rust-version = "1.70"
+rust-version = "1.75"
 
 description = "Estimated view of a full cluster built on collected data"
 homepage = "https://www.replicante.io/"

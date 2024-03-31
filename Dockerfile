@@ -1,7 +1,7 @@
 #########################
 # Build replicante core #
 #########################
-ARG RUST_VERSION=1.60.0
+ARG RUST_VERSION=1.75.0
 FROM rust:$RUST_VERSION as builder
 
 # Add packages needed to build core.
@@ -17,7 +17,7 @@ RUN cargo build --manifest-path /code/Cargo.toml --release --locked
 #####################################
 # Package core into a smaller image #
 #####################################
-FROM debian:bullseye-slim
+FROM debian:bookworm-slim
 
 # Create a replicante user to avoid using root.
 ARG REPLI_GID=1616

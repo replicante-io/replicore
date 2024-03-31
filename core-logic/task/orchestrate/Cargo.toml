@@ -3,7 +3,7 @@ name = "replicore-task-orchestrate"
 version = "0.1.0"
 
 edition = "2021"
-rust-version = "1.70"
+rust-version = "1.75"
 
 description = "RepliCore task to monitor and orchestrate clusters"
 homepage = "https://www.replicante.io/"
