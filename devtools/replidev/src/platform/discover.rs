@@ -28,7 +28,9 @@ pub async fn discover(platform: &Platform) -> Result<ClusterDiscoveryResponse> {
         };
         let node = ClusterDiscoveryNode {
             agent_address,
-            node_class: node_pod.node_class.unwrap_or_else(|| DEFAULT_NODE_CLASS.to_string()),
+            node_class: node_pod
+                .node_class
+                .unwrap_or_else(|| DEFAULT_NODE_CLASS.to_string()),
             node_id,
             node_group: node_pod.node_group,
         };

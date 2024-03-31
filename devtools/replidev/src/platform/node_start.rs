@@ -47,10 +47,16 @@ pub async fn start_node(spec: StartNodeSpec<'_>, conf: &Conf) -> Result<()> {
         );
         labels.insert("io.replicante.dev/project".to_string(), spec.project);
         if let Some(node_class) = spec.node_class {
-            labels.insert("io.replicante.dev/play/class".to_string(), node_class.to_string());
+            labels.insert(
+                "io.replicante.dev/play/class".to_string(),
+                node_class.to_string(),
+            );
         }
         if let Some(node_group) = spec.node_group {
-            labels.insert("io.replicante.dev/play/group".to_string(), node_group.to_string());
+            labels.insert(
+                "io.replicante.dev/play/group".to_string(),
+                node_group.to_string(),
+            );
         }
         labels
     };
