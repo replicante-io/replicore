@@ -2138,6 +2138,7 @@ dependencies = [
  "replicore-events",
  "replicore-events-sqlite",
  "replicore-injector",
+ "replicore-sdk",
  "replicore-store",
  "replicore-store-sqlite",
  "replicore-task-discovery",
@@ -2316,6 +2317,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "replicore-sdk"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "replicore-context",
+ "replicore-events",
+ "replicore-injector",
+ "replicore-store",
+ "replisdk",
+ "thiserror",
+ "time",
+ "uuid",
+]
+
+[[package]]
 name = "replicore-store"
 version = "0.1.0"
 dependencies = [
@@ -2391,10 +2407,12 @@ dependencies = [
  "replicore-context",
  "replicore-errors",
  "replicore-injector",
+ "replicore-sdk",
  "replicore-store",
  "replicore-tasks",
  "replisdk",
  "serde",
+ "serde_json",
  "slog",
  "time",
 ]

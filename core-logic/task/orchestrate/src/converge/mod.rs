@@ -11,6 +11,7 @@ use replicore_cluster_view::ClusterView;
 use replicore_context::Context;
 use replicore_injector::Injector;
 
+mod constants;
 mod node_scale_up;
 mod step;
 

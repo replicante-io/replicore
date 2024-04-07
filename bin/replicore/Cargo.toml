@@ -63,6 +63,7 @@ replicore-conf = { path = "../../core/conf" }
 replicore-context = { path = "../../core/context" }
 replicore-events = { path = "../../core/events" }
 replicore-injector = { path = "../../core/injector" }
+replicore-sdk = { path = "../../core/sdk" }
 replicore-store = { path = "../../core/store" }
 replicore-tasks = { path = "../../core/tasks" }
 

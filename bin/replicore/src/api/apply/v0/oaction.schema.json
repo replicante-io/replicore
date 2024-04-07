@@ -3,10 +3,6 @@
   "description": "RepliCore's OAction Apply API payload",
   "type": "object",
   "properties": {
-    "approved": {
-      "description": "Indicate if an action is pre-approved or not. If unset a server specific default is used",
-      "type": "boolean"
-    },
     "spec": {
       "type": "object",
       "properties": {
@@ -14,6 +10,13 @@
         "cluster_id": { "type": "string" },
         "action_id": { "type": "string" },
         "args": { "type": "object" },
+        "approval": {
+          "type": "string",
+          "enum": [
+            "granted",
+            "required"
+          ]
+        },
         "kind": { "type": "string" },
         "metadata": {
           "type": "object",

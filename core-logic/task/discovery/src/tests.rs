@@ -253,7 +253,12 @@ fn assert_event(code: &str, payload: Value) {
                     "ns_id": "default",
                     "cluster_id": cluster_id,
                     "active": true,
-                    "declaration": null,
+                    "declaration": {
+                        "active": true,
+                        "approval": "granted",
+                        "definition": null,
+                        "grace_up": 5,
+                    },
                     "interval": 60,
                     "platform": null,
                 })

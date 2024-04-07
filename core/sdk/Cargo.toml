@@ -1,0 +1,25 @@
+[package]
+name = "replicore-sdk"
+version = "0.1.0"
+
+edition = "2021"
+rust-version = "1.75"
+
+description = "Control Plane reusable business logic in an SDK style crate"
+homepage = "https://www.replicante.io/"
+license = "MIT"
+
+[dependencies]
+anyhow = "^1.0"
+time = { version = "^0.3", features = ["formatting", "parsing", "serde"] }
+thiserror = "^1.0"
+uuid = { version = "^1.4", features = ["serde", "v4"] }
+
+replisdk = { version = "^0.1", features = [
+  "replicore-models",
+] }
+
+replicore-context = { path = "../context" }
+replicore-events = { path = "../events" }
+replicore-injector = { path = "../injector" }
+replicore-store = { path = "../store" }

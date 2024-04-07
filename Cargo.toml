@@ -23,6 +23,7 @@ members = [
   "core/context",
   "core/errors",
   "core/injector",
+  "core/sdk",
   "core-logic/task/discovery",
   "core-logic/task/orchestrate",
 
