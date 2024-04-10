@@ -1,11 +1,11 @@
 //! Format `OAction` relate objects.
 use anyhow::Result;
-use time::format_description::FormatItem;
+use time::format_description::BorrowedFormatItem;
 
 use replisdk::core::models::api::OActionEntry;
 use replisdk::core::models::oaction::OAction;
 
-const TIME_FORMAT: &[FormatItem<'static>] = time::macros::format_description!(
+const TIME_FORMAT: &[BorrowedFormatItem<'static>] = time::macros::format_description!(
     "[year]-[month]-[day] [hour]:[minute]:[second][offset_hour sign:mandatory]:[offset_minute]"
 );
 

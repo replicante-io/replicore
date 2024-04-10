@@ -2,6 +2,7 @@
 use std::sync::Arc;
 
 use anyhow::Result;
+use futures_util::stream::TryStreamExt;
 
 use replisdk::core::models::cluster::ClusterDiscovery;
 use replisdk::core::models::cluster::ClusterSpec;
@@ -9,9 +10,11 @@ use replisdk::core::models::oaction::OAction;
 
 use replicore_context::Context;
 use replicore_store::query::LookupClusterDiscovery;
+use replicore_store::query::UnfinishedOAction;
 use replicore_store::Store;
 
 mod builder;
+mod serialise;
 
 pub mod errors;
 pub use self::builder::ClusterViewBuilder;
@@ -50,7 +53,11 @@ impl ClusterView {
         }
 
         // Load orchestrator action information.
-        // TODO: load unfinished orchestrator actions.
+        let actions = UnfinishedOAction::for_cluster(builder.ns_id(), builder.cluster_id());
+        let mut actions = store.query(context, actions).await?;
+        while let Some(action) = actions.try_next().await? {
+            builder.oaction(action)?;
+        }
 
         Ok(builder)
     }

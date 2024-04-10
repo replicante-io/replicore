@@ -75,8 +75,12 @@ impl ClusterViewBuilder {
     /// Include an unfinished orchestrator action into the view.
     pub fn oaction(&mut self, oaction: OAction) -> Result<&mut Self> {
         check_cluster!(self, oaction);
-        if !oaction.state.is_final() {
-            // TODO: error
+        if oaction.state.is_final() {
+            anyhow::bail!(crate::errors::FinishedOAction {
+                ns_id: oaction.ns_id,
+                cluster_id: oaction.cluster_id,
+                action_id: oaction.action_id,
+            })
         }
 
         let oaction = Arc::new(oaction);

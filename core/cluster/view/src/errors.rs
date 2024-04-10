@@ -1,4 +1,5 @@
 //! Errors building a cross-node cluster view.
+use uuid::Uuid;
 
 /// Attaching information for cluster to a different cluster's view.
 #[derive(Debug, thiserror::Error)]
@@ -15,4 +16,18 @@ pub struct ClusterNotMatch {
 
     // Namespace ID of the view under construction.
     pub expect_ns: String,
+}
+
+/// Can't add finished action to view for cluster.
+#[derive(Debug, thiserror::Error)]
+#[error("can't add finished orchestrator action '{action_id}' to view for cluster '{ns_id}.{cluster_id}'")]
+pub struct FinishedOAction {
+    // Namespace ID the cluster is in.
+    pub ns_id: String,
+
+    // ID of the cluster the view is for.
+    pub cluster_id: String,
+
+    // ID of the finished orchestrator action being added.
+    pub action_id: Uuid,
 }

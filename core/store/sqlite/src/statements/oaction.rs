@@ -10,9 +10,11 @@ use replisdk::utils::metrics::CountFutureErrExt;
 use replisdk::utils::trace::TraceFutureStdErrExt;
 
 use replicore_context::Context;
+use replicore_store::ids::NamespacedResourceID;
 use replicore_store::query::ListOActions;
 use replicore_store::query::LookupOAction;
 use replicore_store::query::OActionEntryStream;
+use replicore_store::query::OActionStream;
 
 const LIST_ALL_SQL: &str = r#"
 SELECT oaction
@@ -165,4 +167,38 @@ pub async fn persist(_: &Context, connection: &Connection, oaction: OAction) -> 
         .with_context(trace)
         .await?;
     Ok(())
+}
+
+/// Iterate over unfinished orchestrator actions.
+pub async fn unfinished(
+    _: &Context,
+    connection: &Connection,
+    query: NamespacedResourceID,
+) -> Result<OActionStream> {
+    let (err_count, _timer) = crate::telemetry::observe_op("oaction.unfinished");
+    let trace = crate::telemetry::trace_op("oaction.unfinished");
+    let items = connection
+        .call(move |connection| {
+            let mut statement = connection.prepare_cached(LIST_UNFINISHED_SQL)?;
+            let mut rows = statement.query([query.ns_id, query.name])?;
+
+            let mut items = Vec::new();
+            while let Some(row) = rows.next()? {
+                let item: String = row.get("oaction")?;
+                items.push(item);
+            }
+            Ok(items)
+        })
+        .count_on_err(err_count)
+        .trace_on_err_with_status()
+        .with_context(trace)
+        .await?;
+
+    let items = futures::stream::iter(items)
+        .map(|oaction| {
+            let oaction = encoding::decode_serde(&oaction)?;
+            Ok(oaction)
+        })
+        .boxed();
+    Ok(items)
 }

@@ -50,7 +50,7 @@ CREATE TABLE IF NOT EXISTS store_namespace(
 );
 
 CREATE TABLE IF NOT EXISTS store_oaction(
-  -- orchestrator action object as a JSON blob.
+  -- Orchestrator action object as a JSON blob.
   oaction TEXT NOT NULL,
 
   -- Manually managed normalised columns for indexes (where virtual columns can't be used).

@@ -7,6 +7,7 @@ use futures_util::TryStreamExt;
 use replisdk::core::models::api::ClusterSpecEntry;
 use replisdk::core::models::api::ClusterSpecList;
 
+use replicore_cluster_view::ClusterView;
 use replicore_context::Context;
 use replicore_events::Event;
 use replicore_injector::Injector;
@@ -93,4 +94,22 @@ pub async fn orchestrate(
     let task = replicore_task_orchestrate::OrchestrateCluster::new(ns_id, cluster_id);
     injector.tasks.submit(&context, task).await?;
     Ok(crate::api::done())
+}
+
+/// Get a [`ClusterView`] by cluster namespace and name.
+#[actix_web::get("/object/replicante.io/v0/clusterspec/{namespace}/{name}/view")]
+pub async fn view(
+    context: Context,
+    injector: Data<Injector>,
+    path: Path<(String, String)>,
+) -> Result<HttpResponse, Error> {
+    let (ns_id, name) = path.into_inner();
+    let id = replicore_store::ids::NamespacedResourceID { ns_id, name };
+    let query = replicore_store::query::LookupClusterSpec(id);
+    let spec = match injector.store.query(&context, query).await? {
+        None => return Ok(crate::api::not_found()),
+        Some(spec) => spec,
+    };
+    let view = ClusterView::load(&context, &injector.store, spec).await?.finish();
+    Ok(HttpResponse::Ok().json(view))
 }

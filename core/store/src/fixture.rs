@@ -180,6 +180,20 @@ impl StoreBackend for StoreFixture {
                 let platform = store.platforms.get(&key).cloned();
                 Ok(QueryResponses::Platform(platform))
             }
+            QueryOps::UnfinishedOAction(cluster) => {
+                let actions: Vec<_> = store
+                    .oactions
+                    .iter()
+                    .filter(|(_, action)| {
+                        action.ns_id == cluster.ns_id
+                            && action.cluster_id == cluster.name
+                            && !action.state.is_final()
+                    })
+                    .map(|(_, action)| action.clone())
+                    .collect();
+                let actions = futures::stream::iter(actions).map(Ok).boxed();
+                Ok(QueryResponses::OActions(actions))
+            }
         }
     }
 

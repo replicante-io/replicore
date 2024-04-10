@@ -59,6 +59,7 @@ replisdk = { version = "^0.1", features = [
 ] }
 
 replicore-auth = { path = "../../core/auth" }
+replicore-cluster-view = { path = "../../core/cluster/view" }
 replicore-conf = { path = "../../core/conf" }
 replicore-context = { path = "../../core/context" }
 replicore-events = { path = "../../core/events" }

@@ -57,6 +57,9 @@ pub enum QueryOps {
 
     /// Query a platform by Namespace ID and Resource Name.
     Platform(NamespacedResourceID),
+
+    /// Iterate over all unfinished orchestrator actions for a cluster.
+    UnfinishedOAction(NamespacedResourceID),
 }
 
 /// List of all responses from query operations.
@@ -82,6 +85,9 @@ pub enum QueryResponses {
     /// Return an [`OAction`], if one was found matching the query.
     OAction(Option<OAction>),
 
+    /// Return a [`Stream`] of [`OAction`] objects.
+    OActions(OActionStream),
+
     /// Return a [`Stream`] of [`OActionEntry`] objects.
     OActionEntries(OActionEntryStream),
 
@@ -101,6 +107,9 @@ pub type ClusterSpecEntryStream = std::pin::Pin<Box<dyn Stream<Item = Result<Clu
 
 /// Alias for a heap-allocated [`Stream`] of namespace summaries.
 pub type NamespaceEntryStream = std::pin::Pin<Box<dyn Stream<Item = Result<NamespaceEntry>>>>;
+
+/// Alias for a heap-allocated [`Stream`] of orchestrator actions.
+pub type OActionStream = std::pin::Pin<Box<dyn Stream<Item = Result<OAction>> + Send>>;
 
 /// Alias for a heap-allocated [`Stream`] of orchestrator action summaries.
 pub type OActionEntryStream = std::pin::Pin<Box<dyn Stream<Item = Result<OActionEntry>>>>;
@@ -256,6 +265,25 @@ impl LookupPlatform {
             ns_id: ns_id.into(),
         };
         LookupPlatform(id)
+    }
+}
+
+/// Iterate over all unfinished orchestrator actions for a cluster.
+#[derive(Clone, Debug)]
+pub struct UnfinishedOAction(pub NamespacedResourceID);
+
+impl UnfinishedOAction {
+    /// Lookup a platform by namespace ID and platform name.
+    pub fn for_cluster<S1, S2>(ns_id: S1, cluster_id: S2) -> UnfinishedOAction
+    where
+        S1: Into<String>,
+        S2: Into<String>,
+    {
+        let id = NamespacedResourceID {
+            name: cluster_id.into(),
+            ns_id: ns_id.into(),
+        };
+        UnfinishedOAction(id)
     }
 }
 
@@ -419,6 +447,16 @@ impl ListOActions {
     }
 }
 
+impl SealQueryOp for UnfinishedOAction {}
+impl QueryOp for UnfinishedOAction {
+    type Response = OActionStream;
+}
+impl From<UnfinishedOAction> for QueryOps {
+    fn from(value: UnfinishedOAction) -> Self {
+        QueryOps::UnfinishedOAction(value.0)
+    }
+}
+
 // --- Implement QueryResponses conversions on return types for transparent operations --- //
 impl From<QueryResponses> for Option<ConvergeState> {
     fn from(value: QueryResponses) -> Self {
@@ -472,6 +510,14 @@ impl From<QueryResponses> for Option<OAction> {
     fn from(value: QueryResponses) -> Self {
         match value {
             QueryResponses::OAction(oaction) => oaction,
+            _ => panic!("unexpected result type for the given query operation"),
+        }
+    }
+}
+impl From<QueryResponses> for OActionStream {
+    fn from(value: QueryResponses) -> Self {
+        match value {
+            QueryResponses::OActions(stream) => stream,
             _ => panic!("unexpected result type for the given query operation"),
         }
     }
