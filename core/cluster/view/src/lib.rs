@@ -61,4 +61,11 @@ impl ClusterView {
 
         Ok(builder)
     }
+
+    /// Create a [`ClusterViewBuilder`] initialised with basic information from this view.
+    pub fn new_build(&self) -> Result<ClusterViewBuilder> {
+        let mut cluster_new = Self::builder(self.spec.clone());
+        cluster_new.discovery(self.discovery.clone())?;
+        Ok(cluster_new)
+    }
 }

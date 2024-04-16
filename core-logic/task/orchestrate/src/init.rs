@@ -32,7 +32,9 @@ impl std::fmt::Debug for InitData {
         f.debug_struct("InitData")
             .field("cluster_current", &self.cluster_current)
             .field("injector", &"Injector { ... }")
+            .field("mode", &self.mode)
             .field("ns", &self.ns)
+            .field("report", &self.report)
             .finish()
     }
 }

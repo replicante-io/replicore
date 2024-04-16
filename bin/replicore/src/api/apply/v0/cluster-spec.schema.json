@@ -8,8 +8,17 @@
       "properties": {
         "ns_id": { "type": "string" },
         "cluster_id": { "type": "string" },
-        "enabled": { "type": "boolean" },
-        "interval": { "type": "integer" }
+        "active": { "type": "boolean" },
+        "interval": { "type": "integer" },
+        "declaration": {
+          "type": "object",
+          "properties": {
+            "active": { "type": "boolean" },
+            "approval": { "type": "string" },
+            "grace_up": { "type": "number" },
+            "definition": { "type": "object" }
+          }
+        }
       },
       "required": ["ns_id", "cluster_id"]
     }

@@ -1,6 +1,7 @@
 //! Callback invoked when cluster orchestration task need to be executed.
 use anyhow::Result;
 
+use replicore_cluster_view::ClusterView;
 use replicore_context::Context;
 use replicore_injector::Injector;
 use replicore_tasks::execute::ReceivedTask;
@@ -32,9 +33,13 @@ impl TaskCallback for Callback {
 
         // Initialise orchestration task.
         let data = crate::init::InitData::load(context, self.injector.clone(), request).await?;
+        let mut cluster_new = data.cluster_current.new_build()?;
 
         // TODO: Sync cluster nodes and build current cluster view.
-        // TODO: Process orchestrator actions.
+
+        // Process orchestrator actions.
+        crate::oaction::progress(context, &data, &mut cluster_new).await?;
+        // TODO: schedule new
 
         // Process convergence steps.
         let data = crate::converge::ConvergeData::convert(context, data).await?;

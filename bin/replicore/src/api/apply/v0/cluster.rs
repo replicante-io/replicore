@@ -38,6 +38,26 @@ pub async fn cluster_spec(args: ApplyArgs<'_>) -> Result<HttpResponse, crate::ap
     let spec = args.object.get("spec").unwrap().clone();
     let cluster: ClusterSpec = decode(spec)?;
 
+    // Ensure the declarative options are valid.
+    if let Some(declaration) = &cluster.declaration.definition {
+        if declaration.cluster_id != cluster.cluster_id {
+            let source = anyhow::anyhow!(
+                "ClusterSpec.declaration.definition.cluster_id does not match ClusterSpec.cluster_id"
+            );
+            return Err(
+                crate::api::Error::with_status(actix_web::http::StatusCode::BAD_REQUEST, source)
+            )
+        }
+    }
+    if cluster.declaration.definition.is_some() && cluster.platform.is_none() {
+        let source = anyhow::anyhow!(
+            "ClusterSpec.platform MUST be set when ClusterSpec.declaration.definition is set"
+        );
+        return Err(
+            crate::api::Error::with_status(actix_web::http::StatusCode::BAD_REQUEST, source)
+        )
+    }
+
     // Check the namespace exists before appling the object.
     super::namespace::check(&args, &cluster.ns_id).await?;
 

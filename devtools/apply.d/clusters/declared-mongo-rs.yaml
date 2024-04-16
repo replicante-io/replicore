@@ -8,12 +8,14 @@ spec:
   platform:
     # Default to current.
     #namespace: default
-    platform_id: playground
+    name: playground
   
   declaration:
-    store: mongo/rs
-    store_version: '4.2.0'
-    nodes:
-      default:
-        desired_count: 3
-        node_class: play.mode
+    definition:
+      cluster_id: declared-mongo-rs
+      store: mongo/rs
+      store_version: '4.2.0'
+      nodes:
+        default:
+          desired_count: 3
+          node_class: play.mode

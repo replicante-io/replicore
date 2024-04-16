@@ -102,6 +102,11 @@ impl ConvergeStep for NodeScaleUp {
             })
             .collect();
         if partial_groups.is_empty() {
+            slog::debug!(
+                context.logger, "Skip node scale up since all groups are at desired count";
+                "ns_id" => &data.ns.id,
+                "cluster_id" => &data.cluster_current.spec.cluster_id,
+            );
             return Ok(());
         }
 
@@ -123,7 +128,13 @@ impl ConvergeStep for NodeScaleUp {
             timeout: None,
         };
         let sdk = replicore_sdk::CoreSDK::from_injector(data.injector.clone());
-        sdk.oaction_create(context, node_up).await?;
+        let action = sdk.oaction_create(context, node_up).await?;
+        slog::debug!(
+            context.logger, "Scale up action created";
+            "ns_id" => &data.ns.id,
+            "cluster_id" => &data.cluster_current.spec.cluster_id,
+            "action_id" => %action.action_id,
+        );
 
         // Update convergence state to make information available to the next loop.
         state.graces.insert(SCALE_UP_GRACE_ID.to_string(), time::OffsetDateTime::now_utc());
