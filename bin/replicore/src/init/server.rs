@@ -10,6 +10,7 @@ use replicore_context::ContextBuilder;
 use replicore_events::emit::EventsFactory;
 use replicore_events::emit::EventsFactoryArgs;
 use replicore_injector::Injector;
+use replicore_oaction::OActionRegistry;
 use replicore_store::StoreFactory;
 use replicore_store::StoreFactoryArgs;
 use replicore_tasks::execute::TasksExecutorBuilder;
@@ -199,6 +200,8 @@ pub async fn injector(context: &Context, conf: &Conf, backends: &Backends) -> Re
         conf,
         context: context.clone(),
         events,
+        // TODO: register oactions.
+        oactions: OActionRegistry::build().finish(),
         store,
         tasks,
     };

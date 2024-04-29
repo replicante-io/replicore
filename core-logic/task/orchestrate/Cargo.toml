@@ -27,7 +27,9 @@ replicore-cluster-models = { path = "../../../core/cluster/models" }
 replicore-cluster-view = { path = "../../../core/cluster/view" }
 replicore-context = { path = "../../../core/context"}
 replicore-errors = { path = "../../../core/errors"}
+replicore-events = { path = "../../../core/events"}
 replicore-injector = { path = "../../../core/injector" }
+replicore-oaction = { path = "../../../core/oaction" }
 replicore-sdk = { path = "../../../core/sdk" }
 replicore-store = { path = "../../../core/store" }
 replicore-tasks = { path = "../../../core/tasks" }

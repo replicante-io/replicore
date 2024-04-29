@@ -1,0 +1,20 @@
+[package]
+name = "replicore-oaction"
+version = "0.1.0"
+
+edition = "2021"
+rust-version = "1.75"
+
+description = "RepliCore Orchestrator Action interface"
+homepage = "https://www.replicante.io/"
+license = "MIT"
+
+[dependencies]
+anyhow = "^1.0"
+async-trait = "^0.1"
+serde_json = "^1.0"
+thiserror = "^1.0"
+
+replisdk = { version = "^0.1", features = ["replicore-models"] }
+
+replicore-context = { path = "../../core/context"}

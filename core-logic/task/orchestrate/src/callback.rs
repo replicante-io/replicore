@@ -1,7 +1,6 @@
 //! Callback invoked when cluster orchestration task need to be executed.
 use anyhow::Result;
 
-use replicore_cluster_view::ClusterView;
 use replicore_context::Context;
 use replicore_injector::Injector;
 use replicore_tasks::execute::ReceivedTask;

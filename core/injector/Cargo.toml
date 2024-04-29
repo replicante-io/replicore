@@ -28,6 +28,7 @@ replicore-clients-platform = { path = "../clients/platform" }
 replicore-conf = { path = "../conf" }
 replicore-context = { path = "../context" }
 replicore-events = { path = "../events" }
+replicore-oaction = { path = "../oaction" }
 replicore-store = { path = "../store" }
 replicore-tasks = { path = "../tasks" }
 

@@ -8,6 +8,7 @@ use replicore_auth::identity::Authenticator;
 use replicore_conf::Conf;
 use replicore_context::Context;
 use replicore_events::emit::Events;
+use replicore_oaction::OActionRegistry;
 use replicore_store::Store;
 use replicore_tasks::submit::Tasks;
 
@@ -38,6 +39,9 @@ pub struct Injector {
 
     /// Interface to emit system events.
     pub events: Events,
+
+    /// Registry of all orchestrator actions known to the process.
+    pub oactions: OActionRegistry,
 
     /// Interface to persist state.
     pub store: Store,
@@ -129,6 +133,7 @@ impl Injector {
             conf,
             context: Context::fixture(),
             events: events.backend().into(),
+            oactions: OActionRegistry::build().finish(),
             store: Store::fixture(),
             tasks: Tasks::fixture().backend().into(),
         };
