@@ -35,9 +35,9 @@ pub struct OActionGetOpts {
 /// List orchestrator actions for the cluster.
 #[derive(Debug, Parser)]
 pub struct OActionListOpts {
-    /// Include finished actions in the actions list.
-    #[arg(long, default_value_t = false)]
-    pub all: bool,
+    /// Exclude finished actions in the actions list.
+    #[arg(long, alias = "no-all", default_value_t = false)]
+    pub no_all: bool,
 }
 
 /// Execute the selected `replictl o-action` command.
@@ -70,7 +70,7 @@ async fn list(globals: &Globals, opts: &OActionListOpts) -> Result<i32> {
     let cluster_id = context.cluster(&globals.cli.context)?;
     let actions = client
         .list()
-        .oactions(&ns_id, &cluster_id, opts.all)
+        .oactions(&ns_id, &cluster_id, !opts.no_all)
         .await?;
     let mut formatter = globals.formatter.format(globals, OActionListOp);
 

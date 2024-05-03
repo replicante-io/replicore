@@ -15,58 +15,51 @@ pub struct ClusterSpecCli {
     pub command: ClusterSpecCmd,
 }
 
-/// Lookup details for a cluster specification.
-#[derive(Debug, Parser)]
-pub struct ClusterSpecOpts {
-    /// Name of the cluster specification to lookup.
-    pub name: String,
-}
-
 /// Possible platform commands to run.
 #[derive(Debug, Subcommand)]
 pub enum ClusterSpecCmd {
     /// Delete a cluster specification from the control plane.
-    Delete(ClusterSpecOpts),
+    Delete,
 
     /// Lookup details for a cluster specification.
-    Get(ClusterSpecOpts),
+    Get,
 
     /// List cluster specifications on the control plane.
     List,
 
     /// Schedule a cluster orchestration task to execute in the background.
-    Orchestrate(ClusterSpecOpts),
+    Orchestrate,
 }
 
 /// Execute the selected `replictl platform` command.
 pub async fn run(globals: &Globals, cmd: &ClusterSpecCli) -> Result<i32> {
     match &cmd.command {
-        ClusterSpecCmd::Delete(cmd) => delete(globals, cmd).await,
-        ClusterSpecCmd::Get(cmd) => get(globals, cmd).await,
+        ClusterSpecCmd::Delete => delete(globals).await,
+        ClusterSpecCmd::Get => get(globals).await,
         ClusterSpecCmd::List => list(globals).await,
-        ClusterSpecCmd::Orchestrate(cmd) => orchestrate(globals, cmd).await,
+        ClusterSpecCmd::Orchestrate => orchestrate(globals).await,
     }
 }
 
-async fn delete(globals: &Globals, cmd: &ClusterSpecOpts) -> Result<i32> {
+async fn delete(globals: &Globals) -> Result<i32> {
     let context = ContextStore::active(globals).await?;
     let client = crate::client(&context)?;
 
     let ns_id = context.namespace(&globals.cli.context)?;
-    let name = &cmd.name;
-    client.clusterspec(&ns_id, name).delete().await?;
+    let name = context.cluster(&globals.cli.context)?;
+    client.clusterspec(&ns_id, &name).delete().await?;
     println!("ClusterSpec '{name}' in namespace '{ns_id}' was deleted.");
 
     Ok(0)
 }
 
-async fn get(globals: &Globals, cmd: &ClusterSpecOpts) -> Result<i32> {
+async fn get(globals: &Globals) -> Result<i32> {
     let context = ContextStore::active(globals).await?;
     let client = crate::client(&context)?;
 
     let ns_id = context.namespace(&globals.cli.context)?;
-    let name = &cmd.name;
-    let cluster_spec = client.clusterspec(&ns_id, name).get().await?;
+    let name = context.cluster(&globals.cli.context)?;
+    let cluster_spec = client.clusterspec(&ns_id, &name).get().await?;
     globals.formatter.format(globals, cluster_spec);
 
     Ok(0)
@@ -88,13 +81,13 @@ async fn list(globals: &Globals) -> Result<i32> {
     Ok(0)
 }
 
-async fn orchestrate(globals: &Globals, cmd: &ClusterSpecOpts) -> Result<i32> {
+async fn orchestrate(globals: &Globals) -> Result<i32> {
     let context = ContextStore::active(globals).await?;
     let client = crate::client(&context)?;
 
     let ns_id = context.namespace(&globals.cli.context)?;
-    let name = &cmd.name;
-    client.clusterspec(&ns_id, name).orchestrate().await?;
+    let name = context.cluster(&globals.cli.context)?;
+    client.clusterspec(&ns_id, &name).orchestrate().await?;
 
     println!("Orchestration of cluster '{name}' in namespace '{ns_id}' scheduled");
     Ok(0)

@@ -58,7 +58,7 @@ pub enum Command {
     Namespace(namespace::NamespaceCli),
 
     /// Inspect or manipulate orchestrator actions for a cluster.
-    #[command(alias = "oa")]
+    #[command(alias = "oa", alias = "oaction")]
     OAction(oaction::OActionCli),
 
     /// Inspect, delete or manipulate platforms.
