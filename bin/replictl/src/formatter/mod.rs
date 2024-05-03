@@ -14,7 +14,7 @@ use replisdk::core::models::api::NamespaceEntry;
 use replisdk::core::models::api::OActionEntry;
 use replisdk::core::models::api::PlatformEntry;
 
-//mod json;
+mod json;
 mod human;
 
 pub mod ops;
@@ -118,9 +118,9 @@ pub trait PlatformList {
 
 /// Instantiate a formatter based on CLI configuration.
 pub fn select(format: &FormatOpts) -> Formatter {
-    let strategy = match format.format {
+    let strategy: Box<dyn FormatterStrategy> = match format.format {
         FormatId::Human => Box::new(self::human::HumanFormatter),
-        FormatId::Json => todo!("JSON format not yet supported"),
+        FormatId::Json => Box::new(self::json::JsonFormatter),
     };
     Formatter { strategy }
 }
