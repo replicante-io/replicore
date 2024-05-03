@@ -16,9 +16,9 @@ pub struct HumanFormatter;
 impl FormatterStrategy for HumanFormatter {
     fn format(&self, _: &Globals, op: Ops) -> Responses {
         match op {
-            Ops::ClusterSpec(cluster_spec) => {
-                self::cluster_spec::show(&cluster_spec);
-                Responses::Success
+            Ops::ClusterSpec(cluster_spec) => match self::cluster_spec::show(&cluster_spec) {
+                Err(error) => Responses::Err(error),
+                Ok(()) => Responses::Success,
             }
             Ops::ClusterSpecList => {
                 Responses::cluster_specs(self::cluster_spec::ClusterSpecList::new())

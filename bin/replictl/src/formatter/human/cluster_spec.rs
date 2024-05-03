@@ -33,10 +33,49 @@ impl crate::formatter::ClusterSpecList for ClusterSpecList {
 }
 
 /// Format a [`ClusterSpec`] for users to inspect.
-pub fn show(cluster_spec: &ClusterSpec) {
+pub fn show(cluster_spec: &ClusterSpec) -> Result<()> {
     let active = crate::utils::yes_or_no(cluster_spec.active);
     println!("Cluster ID: {}", cluster_spec.cluster_id);
     println!("As part of Namespace: {}", cluster_spec.ns_id);
     println!("Active: {}", active);
     println!("Orchestration interval: {} seconds", cluster_spec.interval);
+    println!();
+
+    println!("Cluster declaration details:");
+    let declaration = &cluster_spec.declaration;
+    let converge = match (declaration.active, declaration.definition.is_some()) {
+        (_, false) => "no declaration set",
+        (true, _) => "yes",
+        (false, _) => "no",
+    };
+    println!("  Converge to declared cluster: {}", converge);
+    println!("  Converge action approval: {}", declaration.approval);
+    println!("  Node scale up grace period: {} minutes", declaration.grace_up);
+
+    if let Some(definition) = &declaration.definition {
+        println!();
+        println!("  Desired cluster definition:");
+        println!("    Cluster store: {}", definition.store);
+        println!("    Cluster store version: {}", definition.store_version);
+
+        let attributes = serde_json::to_string_pretty(&definition.attributes)?;
+        println!("    Cluster-wide attributes: {}", attributes);
+
+        for (group_id, node_spec) in &definition.nodes {
+            println!();
+            println!("    Node group {}:", group_id);
+            println!("      Node class: {}", node_spec.node_class);
+            let store_version = match &node_spec.store_version {
+                None => "<Not Set>",
+                Some(version) => &version,
+            };
+            println!("      Store version override: {}", store_version);
+            println!("      Desired count: {}", node_spec.desired_count);
+
+            let attributes = serde_json::to_string_pretty(&node_spec.attributes)?;
+            println!("    Node-specific attributes: {}", attributes);
+        }
+    }
+
+    Ok(())
 }
