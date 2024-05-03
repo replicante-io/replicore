@@ -3,7 +3,7 @@ kind: OAction
 approved: true
 spec:
   ns_id: default
-  cluster_id: manual-mongo-rs
+  cluster_id: mongo-rs
   kind: platform.replicante.io/node.provision
   args:
     platform_ref:
@@ -11,7 +11,7 @@ spec:
       name: playground
 
     cluster:
-      cluster_id: manual-mongo-rs
+      cluster_id: mongo-rs
       store: mongo/rs
       store_version: '4.2.0'
       nodes:

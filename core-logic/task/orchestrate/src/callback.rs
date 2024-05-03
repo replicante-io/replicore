@@ -2,6 +2,7 @@
 use anyhow::Result;
 
 use replicore_context::Context;
+use replicore_events::Event;
 use replicore_injector::Injector;
 use replicore_tasks::execute::ReceivedTask;
 use replicore_tasks::execute::TaskCallback;
@@ -37,15 +38,27 @@ impl TaskCallback for Callback {
         // TODO: Sync cluster nodes and build current cluster view.
 
         // Process orchestrator actions.
-        crate::oaction::progress(context, &data, &mut cluster_new).await?;
-        // TODO: schedule new
+        let oactions = data
+            .cluster_current
+            .oactions_unfinished
+            .iter()
+            .map(|action| (**action).clone())
+            .collect::<Vec<_>>();
+        let oactions = crate::oaction::progress(context, &data, &mut cluster_new, oactions).await?;
+        let oactions = crate::oaction::schedule(context, &data, oactions).await?;
+        for action in oactions {
+            cluster_new.oaction(action)?;
+        }
 
         // Process convergence steps.
         let data = crate::converge::ConvergeData::convert(context, data).await?;
         crate::converge::run(context, &data).await?;
 
-        // TODO: Emit the report event.
+        // Emit the report as an event and save it to store.
+        let event = Event::new_with_payload(crate::constants::ORCHESTRATE_REPORT, &data.report)?;
+        data.injector.events.change(context, event).await?;
         // TODO: Persist report to store.
+
         Ok(())
     }
 }

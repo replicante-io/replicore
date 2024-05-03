@@ -11,3 +11,6 @@ pub const OACTION_SUCCESS: &str = "OACTION_SUCCESS";
 
 /// Event code emitted when an orchestrator action is updated.
 pub const OACTION_UPDATE: &str = "OACTION_UPDATE";
+
+/// Event code emitted when the orchestration cycle is complete and a report emitted.
+pub const ORCHESTRATE_REPORT: &str = "ORCHESTRATE_REPORT";
