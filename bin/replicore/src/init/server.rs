@@ -10,7 +10,9 @@ use replicore_context::ContextBuilder;
 use replicore_events::emit::EventsFactory;
 use replicore_events::emit::EventsFactoryArgs;
 use replicore_injector::Injector;
+use replicore_oaction::OActionMetadata;
 use replicore_oaction::OActionRegistry;
+use replicore_oaction::OActionRegistryBuilder;
 use replicore_store::StoreFactory;
 use replicore_store::StoreFactoryArgs;
 use replicore_tasks::execute::TasksExecutorBuilder;
@@ -29,6 +31,9 @@ pub struct Server {
     /// Process initialisation logic common to all RepliCore commands.
     generic: GenericInit,
 
+    /// Builder for the registry of orchestrator actions available to the process.
+    oactions: OActionRegistryBuilder,
+
     /// Partial configuration of the background tasks executor component.
     tasks: TasksExecutorBuilder,
 }
@@ -42,6 +47,7 @@ impl Server {
         let server = Self {
             context,
             generic,
+            oactions: OActionRegistry::build(),
             tasks,
         };
         Ok(server)
@@ -68,6 +74,13 @@ impl Server {
         self
     }
 
+    /// Register all supported orchestrator action.
+    pub fn register_default_oactions(mut self) -> Self {
+        #[cfg(feature = "replicore-oaction-test")]
+        { self = self.register_oactions(replicore_oaction_test::all()) };
+        self
+    }
+
     /// Register a new factory for an Events Platform implementation.
     ///
     /// # Panics
@@ -79,6 +92,19 @@ impl Server {
         S: Into<String>,
     {
         self.generic.backends.register_events(id, backend);
+        self
+    }
+
+    /// Register metadata for handling of [`OAction`] records.
+    ///
+    /// [`OAction`]: replisdk::core::models::oaction::OAction
+    pub fn register_oactions<I>(mut self, actions: I) -> Self
+    where
+        I: IntoIterator<Item = OActionMetadata>,
+    {
+        for action in actions {
+            self.oactions.register(action);
+        }
         self
     }
 
@@ -119,7 +145,12 @@ impl Server {
             .register_metrics()?;
 
         // Initialise dependencies and global injector.
-        let injector = injector(&context, &self.generic.conf, &self.generic.backends).await?;
+        let injector = injector(
+            &context,
+            &self.generic.conf,
+            &self.generic.backends,
+            self.oactions.finish(),
+        ).await?;
         Injector::set_global(injector);
         // Fetch the injector back out to ensure it is set correctly for the process.
         let injector = Injector::global();
@@ -158,7 +189,12 @@ impl Server {
 }
 
 /// Initialise all backends and collected them into an [`Injector`] object.
-pub async fn injector(context: &Context, conf: &Conf, backends: &Backends) -> Result<Injector> {
+pub async fn injector(
+    context: &Context,
+    conf: &Conf,
+    backends: &Backends,
+    oactions: OActionRegistry,
+) -> Result<Injector> {
     // Grab all dependencies factories.
     let conf = conf.clone();
     let events = backends.events(&conf.events.backend)?;
@@ -200,8 +236,7 @@ pub async fn injector(context: &Context, conf: &Conf, backends: &Backends) -> Re
         conf,
         context: context.clone(),
         events,
-        // TODO: register oactions.
-        oactions: OActionRegistry::build().finish(),
+        oactions,
         store,
         tasks,
     };

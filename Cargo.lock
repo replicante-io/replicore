@@ -2147,6 +2147,7 @@ dependencies = [
  "replicore-events-sqlite",
  "replicore-injector",
  "replicore-oaction",
+ "replicore-oaction-test",
  "replicore-sdk",
  "replicore-store",
  "replicore-store-sqlite",
@@ -2339,6 +2340,18 @@ dependencies = [
  "replisdk",
  "serde_json",
  "thiserror",
+]
+
+[[package]]
+name = "replicore-oaction-test"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "async-trait",
+ "replicore-context",
+ "replicore-oaction",
+ "replisdk",
+ "serde_json",
 ]
 
 [[package]]

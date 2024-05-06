@@ -38,6 +38,15 @@ impl OActionMetadata {
     }
 }
 
+impl IntoIterator for OActionMetadata {
+    type Item = OActionMetadata;
+    type IntoIter = std::array::IntoIter<Self::Item, 1>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        [self].into_iter()
+    }
+}
+
 /// Incrementally build an [`OActionMetadata`].
 pub struct OActionMetadataBuilder {
     kind: String,

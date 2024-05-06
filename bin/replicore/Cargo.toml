@@ -24,6 +24,10 @@ path = "src/lib.rs"
 
 [features]
 default = [
+  # Default orchestration action implementations.
+  "replicore-oaction-all",
+
+  # Default backends implementations.
   "sqlite-impls",
 ]
 
@@ -32,6 +36,11 @@ sqlite-impls = [
   "replicore-events-sqlite",
   "replicore-store-sqlite",
   "replicore-tasks-sqlite",
+]
+
+# Bundle all supported orchestrator actions.
+replicore-oaction-all = [
+  "replicore-oaction-test",
 ]
 
 [dependencies]
@@ -78,6 +87,9 @@ replicore-auth-insecure = { path = "../../core/auth/insecure" }
 replicore-events-sqlite = { path = "../../core/events/sqlite", optional = true }
 replicore-store-sqlite = { path = "../../core/store/sqlite", optional = true }
 replicore-tasks-sqlite = { path = "../../core/tasks/sqlite", optional = true }
+
+# Supported orchestrator action implementations for compile time customisation.
+replicore-oaction-test = { path = "../../core-logic/oaction/test", optional = true }
 
 [dev-dependencies]
 replicore-auth-insecure = { path = "../../core/auth/insecure" }
