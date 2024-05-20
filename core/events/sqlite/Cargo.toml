@@ -19,12 +19,11 @@ serde = { version = "^1.0", features = ["derive"] }
 serde_json = "^1.0"
 slog = "^2.0"
 refinery = { version = "^0.8", features = ["rusqlite"] }
-rusqlite = { version = "^0.29", features = ["bundled"] }
+rusqlite = { version = "^0.31", features = ["bundled"] }
 thiserror = "^1.0"
 
 # Changes needed to support custom errors have not been published yet so point directly to repo.
-#tokio-rusqlite = { version = "^0.4", optional = true }
-tokio-rusqlite = { git = "https://github.com/programatik29/tokio-rusqlite.git", rev = "ee94a85" }
+tokio-rusqlite = "^0.5"
 
 replicore-context = { path = "../../context" }
 replicore-events = { path = "../" }
