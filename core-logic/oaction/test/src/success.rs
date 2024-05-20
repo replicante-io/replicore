@@ -1,12 +1,12 @@
 //! Complete action execution as soon as invoked.
 use anyhow::Result;
 
-use replisdk::core::models::oaction::OAction;
 use replisdk::core::models::oaction::OActionState;
 
 use replicore_context::Context;
 use replicore_oaction::OActionChanges;
 use replicore_oaction::OActionHandler;
+use replicore_oaction::OActionInvokeArgs;
 use replicore_oaction::OActionMetadata;
 
 /// Complete action execution as soon as invoked.
@@ -25,7 +25,7 @@ impl Success {
 
 #[async_trait::async_trait]
 impl OActionHandler for Success {
-    async fn invoke(&self, _: &Context, _: &OAction) -> Result<OActionChanges> {
+    async fn invoke(&self, _: &Context, _: &OActionInvokeArgs) -> Result<OActionChanges> {
         Ok(OActionChanges::to(OActionState::Done))
     }
 }

@@ -40,6 +40,7 @@ sqlite-impls = [
 
 # Bundle all supported orchestrator actions.
 replicore-oaction-all = [
+  "replicore-oaction-platform",
   "replicore-oaction-test",
 ]
 
@@ -89,6 +90,7 @@ replicore-store-sqlite = { path = "../../core/store/sqlite", optional = true }
 replicore-tasks-sqlite = { path = "../../core/tasks/sqlite", optional = true }
 
 # Supported orchestrator action implementations for compile time customisation.
+replicore-oaction-platform = { path = "../../core-logic/oaction/platform", optional = true }
 replicore-oaction-test = { path = "../../core-logic/oaction/test", optional = true }
 
 [dev-dependencies]

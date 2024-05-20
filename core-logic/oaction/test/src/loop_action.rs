@@ -1,12 +1,12 @@
 //! Increment a counter each invocation loop until a total is reached.
 use anyhow::Result;
 
-use replisdk::core::models::oaction::OAction;
 use replisdk::core::models::oaction::OActionState;
 
 use replicore_context::Context;
 use replicore_oaction::OActionChanges;
 use replicore_oaction::OActionHandler;
+use replicore_oaction::OActionInvokeArgs;
 use replicore_oaction::OActionMetadata;
 
 /// Increment a counter each invocation loop until a total is reached.
@@ -29,18 +29,20 @@ impl Loop {
 
 #[async_trait::async_trait]
 impl OActionHandler for Loop {
-    async fn invoke(&self, _: &Context, action: &OAction) -> Result<OActionChanges> {
+    async fn invoke(&self, _: &Context, args: &OActionInvokeArgs) -> Result<OActionChanges> {
         // Get target from the payload, or fallback to args, or fallback to default.
-        let target = action
+        let target = args
+            .action
             .state_payload
             .as_ref()
             .and_then(|payload| payload.as_object())
-            .or_else(|| action.args.as_object())
+            .or_else(|| args.action.args.as_object())
             .and_then(|object| object.get("target"))
             .and_then(|target| target.as_u64())
             .unwrap_or(10);
         // Get current count for payload, or fallback to start.
-        let count = action
+        let count = args
+            .action
             .state_payload
             .as_ref()
             .and_then(|payload| payload.as_object())

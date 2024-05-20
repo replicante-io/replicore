@@ -9,6 +9,7 @@ use replicore_context::Context;
 use replicore_events::Event;
 use replicore_oaction::OActionChangeValue;
 use replicore_oaction::OActionChanges;
+use replicore_oaction::OActionInvokeArgs;
 
 use crate::init::InitData;
 
@@ -166,7 +167,12 @@ async fn execute(context: &Context, data: &InitData, action: OAction) -> Result<
 /// for easier handling of state transition and status update.
 async fn invoke(context: &Context, data: &InitData, action: &OAction) -> Result<OActionChanges> {
     let metadata = data.injector.oactions.lookup(&action.kind)?;
-    metadata.handler.invoke(context, &action).await
+    let args = OActionInvokeArgs {
+        action,
+        discovery: &data.cluster_current.discovery,
+        spec: &data.cluster_current.spec,
+    };
+    metadata.handler.invoke(context, &args).await
 }
 
 /// Update the [`OAction`] record with the result from invoking the handler.

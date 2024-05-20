@@ -26,7 +26,7 @@ members = [
   "core/injector",
   "core/sdk",
   "core-logic/oaction/test",
-  #"core-logic/oaction/platform",
+  "core-logic/oaction/platform",
   "core-logic/task/discovery",
   "core-logic/task/orchestrate",
 

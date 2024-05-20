@@ -9,6 +9,7 @@ use replisdk::platform::models::NodeProvisionRequestDetails;
 
 use replicore_cluster_models::ConvergeState;
 use replicore_context::Context;
+use replicore_oaction_platform::ProvisionNodesArgs;
 
 use super::constants::ACTION_KIND_PROVISION;
 use super::step::ConvergeStep;
@@ -112,11 +113,12 @@ impl ConvergeStep for NodeScaleUp {
 
         // Schedule action to create a new nodes.
         let (node_group_id, _) = partial_groups[0];
+        // Initially fix provisioning options, we'll figure out bulk create and more in the future.
         let args = NodeProvisionRequestDetails {
-            // Initially only provision one node at a time, we'll figure out bulk in the future.
             count: 1u16,
             node_group_id: node_group_id.to_string(),
         };
+        let args = ProvisionNodesArgs::from(args);
         let node_up = OActionSpec {
             ns_id: data.cluster_current.spec.ns_id.clone(),
             cluster_id: data.cluster_current.spec.cluster_id.clone(),
@@ -138,7 +140,6 @@ impl ConvergeStep for NodeScaleUp {
 
         // Update convergence state to make information available to the next loop.
         state.graces.insert(SCALE_UP_GRACE_ID.to_string(), time::OffsetDateTime::now_utc());
-        // TODO? track the action to wait it out.
         Ok(())
     }
 }

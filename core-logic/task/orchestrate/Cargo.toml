@@ -33,3 +33,5 @@ replicore-oaction = { path = "../../../core/oaction" }
 replicore-sdk = { path = "../../../core/sdk" }
 replicore-store = { path = "../../../core/store" }
 replicore-tasks = { path = "../../../core/tasks" }
+
+replicore-oaction-platform = { path = "../../oaction/platform" }

@@ -76,6 +76,8 @@ impl Server {
 
     /// Register all supported orchestrator action.
     pub fn register_default_oactions(mut self) -> Self {
+        #[cfg(feature = "replicore-oaction-platform")]
+        { self = self.register_oactions(replicore_oaction_platform::all()) };
         #[cfg(feature = "replicore-oaction-test")]
         { self = self.register_oactions(replicore_oaction_test::all()) };
         self

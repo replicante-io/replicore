@@ -1,6 +1,8 @@
 //! Interface for implementation of orchestrator action execution handling.
 use anyhow::Result;
 
+use replisdk::core::models::cluster::ClusterDiscovery;
+use replisdk::core::models::cluster::ClusterSpec;
 use replisdk::core::models::oaction::OAction;
 use replisdk::core::models::oaction::OActionState;
 
@@ -87,9 +89,24 @@ pub trait OActionHandler: std::fmt::Debug + Send + Sync {
     ///
     /// Retry of failed actions is NOT automatically handled so transient failures need
     /// to be handled by the implementation if needed.
-    async fn invoke(
-        &self,
-        context: &Context,
-        action: &OAction,
-    ) -> Result<OActionChanges>;
+    async fn invoke(&self, context: &Context, args: &OActionInvokeArgs) -> Result<OActionChanges>;
+}
+
+/// Collection of arguments provided to [`OActionHandler::invoke`].
+///
+/// As different actions will need different level of information about the cluster to operate
+/// this container is a superset of all available properties.
+///
+/// Using a container object also enables the set of available properties to grow without
+/// introducing changes to all action implementations that do not care for the new information.
+#[derive(Debug)]
+pub struct OActionInvokeArgs<'a> {
+    /// The orchestrator action record itself.
+    pub action: &'a OAction,
+
+    /// List of cluster nodes known at the start of the orchestration cycle.
+    pub discovery: &'a ClusterDiscovery,
+
+    /// Specification of the cluster being Orchestrated.
+    pub spec: &'a ClusterSpec,
 }

@@ -7,6 +7,7 @@ pub mod errors;
 pub use self::handler::OActionChangeValue;
 pub use self::handler::OActionChanges;
 pub use self::handler::OActionHandler;
+pub use self::handler::OActionInvokeArgs;
 pub use self::registry::DEFAULT_TIMEOUT;
 pub use self::registry::OActionMetadata;
 pub use self::registry::OActionMetadataBuilder;
