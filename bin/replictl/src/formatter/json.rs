@@ -18,6 +18,7 @@ pub struct JsonFormatter;
 impl FormatterStrategy for JsonFormatter {
     fn format(&self, _: &Globals, op: Ops) -> Responses {
         match op {
+            Ops::ClusterDiscovery(cluster_disc) => print_json(cluster_disc),
             Ops::ClusterSpec(cluster_spec) => print_json(cluster_spec),
             Ops::ClusterSpecList => Responses::cluster_specs(ClusterSpecList::default()),
             Ops::Context(context) => print_json(context),

@@ -2,6 +2,7 @@
 use anyhow::Result;
 
 use replisdk::core::models::api::ClusterSpecEntry;
+use replisdk::core::models::cluster::ClusterDiscovery;
 use replisdk::core::models::cluster::ClusterSpec;
 
 /// Format a list of [`ClusterSpecEntry`] objects into a table.
@@ -31,6 +32,22 @@ impl crate::formatter::ClusterSpecList for ClusterSpecList {
         Ok(())
     }
 }
+
+/// Format a [`ClusterDiscovery`] for users to inspect.
+pub fn discovery(cluster_disc: &ClusterDiscovery) {
+    println!("Cluster ID: {}", cluster_disc.cluster_id);
+    println!("As part of Namespace: {}", cluster_disc.ns_id);
+    println!();
+
+    println!("Discovered cluster nodes:");
+    for node in &cluster_disc.nodes {
+        println!("  - Node ID: {}", node.node_id);
+        println!("    Node group: {}", node.node_group.clone().unwrap_or_default());
+        println!("    Agent address: {}", node.agent_address);
+        println!("    Node class: {}", node.node_class);
+    }
+}
+
 
 /// Format a [`ClusterSpec`] for users to inspect.
 pub fn show(cluster_spec: &ClusterSpec) -> Result<()> {

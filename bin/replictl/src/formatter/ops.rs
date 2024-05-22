@@ -2,6 +2,7 @@
 use anyhow::Error;
 use anyhow::Result;
 
+use replisdk::core::models::cluster::ClusterDiscovery;
 use replisdk::core::models::cluster::ClusterSpec;
 use replisdk::core::models::namespace::Namespace;
 use replisdk::core::models::oaction::OAction;
@@ -18,6 +19,9 @@ pub trait FormatOp: Into<Ops> + SealFormatOp {
 
 /// All known operations that must be implemented by formatters.
 pub enum Ops {
+    /// Format information about a [`ClusterDiscovery`].
+    ClusterDiscovery(ClusterDiscovery),
+
     /// Format information about a [`ClusterSpec`].
     ClusterSpec(ClusterSpec),
 
@@ -143,6 +147,16 @@ mod sealed {
 }
 
 // --- Implement FormatOp and other traits on types for transparent operations --- //
+impl SealFormatOp for ClusterDiscovery {}
+impl From<ClusterDiscovery> for Ops {
+    fn from(value: ClusterDiscovery) -> Self {
+        Self::ClusterDiscovery(value)
+    }
+}
+impl FormatOp for ClusterDiscovery {
+    type Response = ();
+}
+
 impl SealFormatOp for ClusterSpec {}
 impl From<ClusterSpec> for Ops {
     fn from(value: ClusterSpec) -> Self {

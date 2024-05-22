@@ -2,6 +2,7 @@
 use anyhow::Context;
 use anyhow::Result;
 
+use replisdk::core::models::cluster::ClusterDiscovery;
 use replisdk::core::models::cluster::ClusterSpec;
 
 use super::Client;
@@ -41,6 +42,22 @@ impl<'a> ClusterSpecClient<'a> {
                 ResourceIdentifier::reference("clusterspec", id)
             })?;
         Ok(())
+    }
+
+    /// Fetch a [`ClusterDiscovery`] record from the server.
+    pub async fn discovery(&'a self) -> Result<Option<ClusterDiscovery>> {
+        let url = format!(
+            "{}api/v0/object/replicante.io/v0/clusterspec/{}/{}/discovery",
+            self.inner.base, self.ns_id, self.name,
+        );
+        let response = self.inner.client.get(url).send().await?;
+        let response = crate::error::inspect::<ClusterDiscovery>(response)
+            .await
+            .with_context(|| {
+                let id = format!("{}.{}", self.ns_id, self.name);
+                ResourceIdentifier::reference("clusterdiscovery", id)
+            })?;
+        Ok(response)
     }
 
     /// Fetch a [`ClusterSpec`] record from the server.

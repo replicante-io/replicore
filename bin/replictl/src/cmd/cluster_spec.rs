@@ -21,6 +21,9 @@ pub enum ClusterSpecCmd {
     /// Delete a cluster specification from the control plane.
     Delete,
 
+    /// Lookup a cluster discovery record from the control plane.
+    Discovery,
+
     /// Lookup details for a cluster specification.
     Get,
 
@@ -35,6 +38,7 @@ pub enum ClusterSpecCmd {
 pub async fn run(globals: &Globals, cmd: &ClusterSpecCli) -> Result<i32> {
     match &cmd.command {
         ClusterSpecCmd::Delete => delete(globals).await,
+        ClusterSpecCmd::Discovery => discovery(globals).await,
         ClusterSpecCmd::Get => get(globals).await,
         ClusterSpecCmd::List => list(globals).await,
         ClusterSpecCmd::Orchestrate => orchestrate(globals).await,
@@ -49,6 +53,21 @@ async fn delete(globals: &Globals) -> Result<i32> {
     let name = context.cluster(&globals.cli.context)?;
     client.clusterspec(&ns_id, &name).delete().await?;
     println!("ClusterSpec '{name}' in namespace '{ns_id}' was deleted.");
+
+    Ok(0)
+}
+
+async fn discovery(globals: &Globals) -> Result<i32> {
+    let context = ContextStore::active(globals).await?;
+    let client = crate::client(&context)?;
+
+    let ns_id = context.namespace(&globals.cli.context)?;
+    let name = context.cluster(&globals.cli.context)?;
+    let cluster_disc = client.clusterspec(&ns_id, &name).discovery().await?;
+    match cluster_disc {
+        None => println!("Cluster has no discovery records available"),
+        Some(cluster_disc) => globals.formatter.format(globals, cluster_disc),
+    };
 
     Ok(0)
 }

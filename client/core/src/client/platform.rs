@@ -43,6 +43,22 @@ impl<'a> PlatformClient<'a> {
         Ok(())
     }
 
+    /// Schedule a background discovery task for a [`Platform`].
+    pub async fn discover(&'a self) -> Result<()> {
+        let url = format!(
+            "{}api/v0/object/replicante.io/v0/platform/{}/{}/discover",
+            self.inner.base, self.ns_id, self.name,
+        );
+        let response = self.inner.client.get(url).send().await?;
+        crate::error::inspect::<serde_json::Value>(response)
+            .await
+            .with_context(|| {
+                let id = format!("{}.{}", self.ns_id, self.name);
+                ResourceIdentifier::reference("platform", id)
+            })?;
+        Ok(())
+    }
+
     /// Fetch a [`Platform`] record from the server.
     pub async fn get(&'a self) -> Result<Platform> {
         let url = format!(

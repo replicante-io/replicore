@@ -28,6 +28,9 @@ pub enum PlatformCmd {
     /// Delete a platform configuration from the control plane.
     Delete(PlatformOpts),
 
+    /// Schedule a platform discovery task to execute in the background.
+    Discover(PlatformOpts),
+
     /// Lookup details for a platform.
     Get(PlatformOpts),
 
@@ -39,6 +42,7 @@ pub enum PlatformCmd {
 pub async fn run(globals: &Globals, cmd: &PlatformCli) -> Result<i32> {
     match &cmd.command {
         PlatformCmd::Delete(cmd) => delete(globals, cmd).await,
+        PlatformCmd::Discover(cmd) => discover(globals, cmd).await,
         PlatformCmd::Get(cmd) => get(globals, cmd).await,
         PlatformCmd::List => list(globals).await,
     }
@@ -53,6 +57,18 @@ async fn delete(globals: &Globals, cmd: &PlatformOpts) -> Result<i32> {
     client.platform(&ns_id, name).delete().await?;
     println!("Platform '{name}' in namespace '{ns_id}' was deleted.");
 
+    Ok(0)
+}
+
+async fn discover(globals: &Globals, cmd: &PlatformOpts) -> Result<i32> {
+    let context = ContextStore::active(globals).await?;
+    let client = crate::client(&context)?;
+
+    let ns_id = context.namespace(&globals.cli.context)?;
+    let name = &cmd.name;
+    client.platform(&ns_id, name).discover().await?;
+
+    println!("Discovery of platform '{name}' in namespace '{ns_id}' scheduled");
     Ok(0)
 }
 
