@@ -11,7 +11,7 @@ pub struct OActionNotFound {
 impl From<&str> for OActionNotFound {
     fn from(value: &str) -> Self {
         OActionNotFound {
-            kind: value.to_string()
+            kind: value.to_string(),
         }
     }
 }

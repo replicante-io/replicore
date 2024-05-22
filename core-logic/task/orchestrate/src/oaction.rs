@@ -87,7 +87,7 @@ pub async fn schedule(
     let mut still_unfinished = Vec::new();
     let mut oactions_unfinished = oactions_unfinished.into_iter();
 
-    while let Some(action) = oactions_unfinished.next() {
+    for action in oactions_unfinished.by_ref() {
         if !matches!(action.state, OActionState::PendingSchedule) {
             still_unfinished.push(action);
             continue;
@@ -137,7 +137,11 @@ async fn execute(context: &Context, data: &InitData, action: OAction) -> Result<
 
     // Invoke the action and update based on results.
     let mut action = action;
-    action.scheduled_ts = Some(action.scheduled_ts.unwrap_or_else(time::OffsetDateTime::now_utc));
+    action.scheduled_ts = Some(
+        action
+            .scheduled_ts
+            .unwrap_or_else(time::OffsetDateTime::now_utc),
+    );
     let changes = invoke(context, data, &action).await;
     match changes {
         Err(error) => {
@@ -210,18 +214,16 @@ async fn update(
     let error_change = match &changes.error {
         OActionChangeValue::Remove if action.state_payload_error.is_none() => false,
         OActionChangeValue::Unchanged => false,
-        OActionChangeValue::Update(error) => match &action.state_payload_error {
-            Some(current) if error == current => false,
-            _ => true,
+        OActionChangeValue::Update(error) => {
+            matches!(&action.state_payload_error, Some(current) if error == current)
         }
         _ => true,
     };
     let payload_change = match &changes.payload {
         OActionChangeValue::Remove if action.state_payload.is_none() => false,
         OActionChangeValue::Unchanged => false,
-        OActionChangeValue::Update(payload) => match &action.state_payload {
-            Some(current) if payload == current => false,
-            _ => true,
+        OActionChangeValue::Update(payload) => {
+            matches!(&action.state_payload, Some(current) if payload == current)
         }
         _ => true,
     };
@@ -241,7 +243,6 @@ async fn update(
         OActionChangeValue::Update(payload) => action.state_payload = Some(payload),
         OActionChangeValue::Unchanged => (),
     };
-    let action = action;
 
     // Emit an update event.
     let event = match action.state {

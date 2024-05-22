@@ -37,7 +37,6 @@ use replicore_store::query::LookupPlatform;
 #[derive(Debug)]
 pub struct ProvisionNodes;
 
-
 impl ProvisionNodes {
     /// Registration metadata for the `core.replicante.io/platform.provision` action.
     pub fn metadata() -> OActionMetadata {
@@ -135,12 +134,11 @@ impl ProvisionNodes {
 
     /// Grab the set of discovered node IDs for the given group.
     fn nodes_ids(&self, args: &OActionInvokeArgs, node_group_id: &str) -> HashSet<String> {
-        args
-            .discovery
+        args.discovery
             .nodes
             .iter()
             .filter(|node| match &node.node_group {
-                Some(group) => group == &node_group_id,
+                Some(group) => group == node_group_id,
                 None => false,
             })
             .map(|node| node.node_id.clone())
@@ -150,7 +148,11 @@ impl ProvisionNodes {
 
 #[async_trait::async_trait]
 impl OActionHandler for ProvisionNodes {
-    async fn invoke(&self, context: &Context, invoke: &OActionInvokeArgs) -> Result<OActionChanges> {
+    async fn invoke(
+        &self,
+        context: &Context,
+        invoke: &OActionInvokeArgs,
+    ) -> Result<OActionChanges> {
         let args: ProvisionNodesArgs = serde_json::from_value(invoke.action.args.clone())?;
         let state = match &invoke.action.state_payload {
             None => ProvisionNodesState::default(),
@@ -204,7 +206,7 @@ impl From<NodeProvisionRequestDetails> for ProvisionNodesArgs {
 }
 
 /// Current state of a [`ProvisionNodes`] action.
-#[derive(Serialize, Deserialize)]
+#[derive(Default, Serialize, Deserialize)]
 struct ProvisionNodesState {
     /// Node IDs for nodes that appeared in the node group since the provisioning request was made.
     candidate_nodes: HashSet<String>,
@@ -221,16 +223,4 @@ struct ProvisionNodesState {
 
     /// Set of nodes in the group at first invocation time.
     starting_nodes: HashSet<String>,
-}
-
-impl Default for ProvisionNodesState {
-    fn default() -> Self {
-        Self {
-            candidate_nodes: Default::default(),
-            expected: 0,
-            requested: false,
-            stable: None,
-            starting_nodes: Default::default(),
-        }
-    }
 }

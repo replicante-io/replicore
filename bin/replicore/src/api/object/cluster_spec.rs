@@ -110,6 +110,8 @@ pub async fn view(
         None => return Ok(crate::api::not_found()),
         Some(spec) => spec,
     };
-    let view = ClusterView::load(&context, &injector.store, spec).await?.finish();
+    let view = ClusterView::load(&context, &injector.store, spec)
+        .await?
+        .finish();
     Ok(HttpResponse::Ok().json(view))
 }

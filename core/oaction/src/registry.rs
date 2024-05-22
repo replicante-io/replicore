@@ -108,9 +108,9 @@ impl OActionRegistryBuilder {
     }
 
     /// Register the metadata for a new orchestrator action.
-    /// 
+    ///
     /// # Panics
-    /// 
+    ///
     /// This method panics if the `kind` identifier is already registered.
     pub fn register(&mut self, metadata: OActionMetadata) -> &mut Self {
         if self.entries.contains_key(&metadata.kind) {

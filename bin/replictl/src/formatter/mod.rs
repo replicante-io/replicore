@@ -14,8 +14,8 @@ use replisdk::core::models::api::NamespaceEntry;
 use replisdk::core::models::api::OActionEntry;
 use replisdk::core::models::api::PlatformEntry;
 
-mod json;
 mod human;
+mod json;
 
 pub mod ops;
 

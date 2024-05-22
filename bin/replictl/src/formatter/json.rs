@@ -67,8 +67,16 @@ macro_rules! list_serialiser {
     };
 }
 
-list_serialiser!(ClusterSpecList, crate::formatter::ClusterSpecList, ClusterSpecEntry);
-list_serialiser!(NamespaceList, crate::formatter::NamespaceList, NamespaceEntry);
+list_serialiser!(
+    ClusterSpecList,
+    crate::formatter::ClusterSpecList,
+    ClusterSpecEntry
+);
+list_serialiser!(
+    NamespaceList,
+    crate::formatter::NamespaceList,
+    NamespaceEntry
+);
 list_serialiser!(OActionList, crate::formatter::OActionList, OActionEntry);
 list_serialiser!(PlatformList, crate::formatter::PlatformList, PlatformEntry);
 

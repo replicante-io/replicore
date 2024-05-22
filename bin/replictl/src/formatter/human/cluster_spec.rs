@@ -42,12 +42,14 @@ pub fn discovery(cluster_disc: &ClusterDiscovery) {
     println!("Discovered cluster nodes:");
     for node in &cluster_disc.nodes {
         println!("  - Node ID: {}", node.node_id);
-        println!("    Node group: {}", node.node_group.clone().unwrap_or_default());
+        println!(
+            "    Node group: {}",
+            node.node_group.clone().unwrap_or_default()
+        );
         println!("    Agent address: {}", node.agent_address);
         println!("    Node class: {}", node.node_class);
     }
 }
-
 
 /// Format a [`ClusterSpec`] for users to inspect.
 pub fn show(cluster_spec: &ClusterSpec) -> Result<()> {
@@ -67,7 +69,10 @@ pub fn show(cluster_spec: &ClusterSpec) -> Result<()> {
     };
     println!("  Converge to declared cluster: {}", converge);
     println!("  Converge action approval: {}", declaration.approval);
-    println!("  Node scale up grace period: {} minutes", declaration.grace_up);
+    println!(
+        "  Node scale up grace period: {} minutes",
+        declaration.grace_up
+    );
 
     if let Some(definition) = &declaration.definition {
         println!();
@@ -84,7 +89,7 @@ pub fn show(cluster_spec: &ClusterSpec) -> Result<()> {
             println!("      Node class: {}", node_spec.node_class);
             let store_version = match &node_spec.store_version {
                 None => "<Not Set>",
-                Some(version) => &version,
+                Some(version) => version,
             };
             println!("      Store version override: {}", store_version);
             println!("      Desired count: {}", node_spec.desired_count);

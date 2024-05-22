@@ -139,7 +139,10 @@ impl ConvergeStep for NodeScaleUp {
         );
 
         // Update convergence state to make information available to the next loop.
-        state.graces.insert(SCALE_UP_GRACE_ID.to_string(), time::OffsetDateTime::now_utc());
+        state.graces.insert(
+            SCALE_UP_GRACE_ID.to_string(),
+            time::OffsetDateTime::now_utc(),
+        );
         Ok(())
     }
 }

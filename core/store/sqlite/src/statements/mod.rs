@@ -99,8 +99,7 @@ impl StoreBackend for SQLiteStore {
                 Ok(QueryResponses::Platform(pl))
             }
             QueryOps::UnfinishedOAction(cluster) => {
-                let list =
-                    self::oaction::unfinished(context, &self.connection, cluster).await?;
+                let list = self::oaction::unfinished(context, &self.connection, cluster).await?;
                 Ok(QueryResponses::OActions(list))
             }
         }

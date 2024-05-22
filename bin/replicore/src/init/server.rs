@@ -77,9 +77,13 @@ impl Server {
     /// Register all supported orchestrator action.
     pub fn register_default_oactions(mut self) -> Self {
         #[cfg(feature = "replicore-oaction-platform")]
-        { self = self.register_oactions(replicore_oaction_platform::all()) };
+        {
+            self = self.register_oactions(replicore_oaction_platform::all());
+        }
         #[cfg(feature = "replicore-oaction-test")]
-        { self = self.register_oactions(replicore_oaction_test::all()) };
+        {
+            self = self.register_oactions(replicore_oaction_test::all());
+        }
         self
     }
 
@@ -152,7 +156,8 @@ impl Server {
             &self.generic.conf,
             &self.generic.backends,
             self.oactions.finish(),
-        ).await?;
+        )
+        .await?;
         Injector::set_global(injector);
         // Fetch the injector back out to ensure it is set correctly for the process.
         let injector = Injector::global();

@@ -28,7 +28,9 @@ pub async fn run(conf: Conf) -> Result<i32> {
     let drain = if std::env::var("RUST_LOG").is_ok() {
         slog_envlogger::new(drain)
     } else {
-        slog_envlogger::LogBuilder::new(drain).filter(None, slog::FilterLevel::Info).build()
+        slog_envlogger::LogBuilder::new(drain)
+            .filter(None, slog::FilterLevel::Info)
+            .build()
     };
     let logger = slog::Logger::root(drain, slog::o!());
     let _guard = slog_scope::set_global_logger(logger.clone());

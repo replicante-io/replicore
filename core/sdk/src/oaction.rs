@@ -17,7 +17,7 @@ impl CoreSDK {
         // If an Action ID is given ensure it does not exist.
         if let Some(action_id) = spec.action_id {
             let query = LookupOAction::by(&spec.ns_id, &spec.cluster_id, action_id);
-            let oaction = self.injector.store.query(&context, query).await?;
+            let oaction = self.injector.store.query(context, query).await?;
             if oaction.is_some() {
                 let error = crate::errors::ActionExists {
                     ns_id: spec.ns_id.clone(),

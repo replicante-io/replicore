@@ -23,7 +23,7 @@ impl FormatterStrategy for HumanFormatter {
             Ops::ClusterSpec(cluster_spec) => match self::cluster_spec::show(&cluster_spec) {
                 Err(error) => Responses::Err(error),
                 Ok(()) => Responses::Success,
-            }
+            },
             Ops::ClusterSpecList => {
                 Responses::cluster_specs(self::cluster_spec::ClusterSpecList::new())
             }

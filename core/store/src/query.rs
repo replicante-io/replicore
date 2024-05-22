@@ -269,7 +269,7 @@ impl LookupPlatform {
 }
 
 /// Iterate over all unfinished orchestrator actions for a cluster.
-/// 
+///
 /// Actions are returned ordered by creation date (oldest first).
 #[derive(Clone, Debug)]
 pub struct UnfinishedOAction(pub NamespacedResourceID);

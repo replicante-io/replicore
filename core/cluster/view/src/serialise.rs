@@ -1,20 +1,24 @@
 //! Serialisation for [`ClusterView`] objects
 use serde::ser::Serialize;
-use serde::ser::Serializer;
 use serde::ser::SerializeStruct;
+use serde::ser::Serializer;
 
 use super::ClusterView;
 
 impl Serialize for ClusterView {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
-        S: Serializer
+        S: Serializer,
     {
         let mut state = serializer.serialize_struct("ClusterView", 3)?;
         state.serialize_field("discovery", &self.discovery)?;
         state.serialize_field(
             "oactions_unfinished",
-            &self.oactions_unfinished.iter().map(|act| act.as_ref()).collect::<Vec<&_>>(),
+            &self
+                .oactions_unfinished
+                .iter()
+                .map(|act| act.as_ref())
+                .collect::<Vec<&_>>(),
         )?;
         state.serialize_field("spec", &self.spec)?;
         state.end()
