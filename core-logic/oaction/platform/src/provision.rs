@@ -216,6 +216,7 @@ struct ProvisionNodesState {
     requested: bool,
 
     /// The set of expected nodes is full and has been stable for this many cycles.
+    #[serde(default, with = "time::serde::rfc3339::option")]
     stable: Option<OffsetDateTime>,
 
     /// Set of nodes in the group at first invocation time.

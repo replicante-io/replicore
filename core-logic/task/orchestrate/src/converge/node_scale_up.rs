@@ -86,7 +86,7 @@ impl ConvergeStep for NodeScaleUp {
             return Ok(());
         }
 
-        // Skip if cluster discovery matches.
+        // Skip if cluster has enough nodes.
         let mut counts: HashMap<&String, u32> = HashMap::new();
         for node in &data.cluster_current.discovery.nodes {
             if let Some(group) = &node.node_group {
@@ -99,12 +99,12 @@ impl ConvergeStep for NodeScaleUp {
             .iter()
             .filter(|(group_id, group)| {
                 let actual = counts.get(group_id).copied().unwrap_or(0);
-                actual != group.desired_count
+                actual < group.desired_count
             })
             .collect();
         if partial_groups.is_empty() {
             slog::debug!(
-                context.logger, "Skip node scale up since all groups are at desired count";
+                context.logger, "Skip node scale up since all groups meet the desired count";
                 "ns_id" => &data.ns.id,
                 "cluster_id" => &data.cluster_current.spec.cluster_id,
             );
