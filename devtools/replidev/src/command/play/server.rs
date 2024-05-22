@@ -25,7 +25,14 @@ pub async fn run(conf: Conf) -> Result<i32> {
     let decorator = slog_term::TermDecorator::new().build();
     let drain = slog_term::FullFormat::new(decorator).build().fuse();
     let drain = std::sync::Mutex::new(drain).fuse();
+    let drain = if std::env::var("RUST_LOG").is_ok() {
+        slog_envlogger::new(drain)
+    } else {
+        slog_envlogger::LogBuilder::new(drain).filter(None, slog::FilterLevel::Info).build()
+    };
     let logger = slog::Logger::root(drain, slog::o!());
+    let _guard = slog_scope::set_global_logger(logger.clone());
+    slog_stdlog::init().expect("capture of log crate initialisation failed");
 
     // Load the templates manifest.
     let factory = crate::platform::TemplateLoader::default();
@@ -41,6 +48,7 @@ pub async fn run(conf: Conf) -> Result<i32> {
             .app_data(templates.clone())
             .service(index)
             .service(platform)
+            .wrap(actix_web::middleware::Logger::default())
     })
     .bind(&bind)
     .context(ServerError::Bind)?
