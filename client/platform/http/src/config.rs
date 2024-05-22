@@ -23,7 +23,7 @@ impl ClientOptions {
     {
         ClientOptionsBuilder {
             address: address.into(),
-            timeout: Duration::from_secs(5),
+            timeout: Duration::from_secs(30),
             timeout_connect: Duration::from_secs(1),
         }
     }

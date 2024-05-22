@@ -41,8 +41,10 @@ pub struct ProvisionNodes;
 impl ProvisionNodes {
     /// Registration metadata for the `core.replicante.io/platform.provision` action.
     pub fn metadata() -> OActionMetadata {
-        OActionMetadata::build(format!("{}.provision", crate::KIND_PREFIX), ProvisionNodes)
-            .finish()
+        let mut builder =
+            OActionMetadata::build(format!("{}.provision", crate::KIND_PREFIX), ProvisionNodes);
+        builder.timeout(crate::PROVISION_TIMEOUT);
+        builder.finish()
     }
 
     /// First invocation logic that collects needed state and perform the provisioning request.
@@ -89,8 +91,9 @@ impl ProvisionNodes {
                 provision: args.request.clone(),
             })
             .await?;
-        state.expected = response.count;
 
+        state.expected = response.count;
+        state.requested = true;
         state.stable = None;
         Ok(state)
     }
@@ -155,16 +158,17 @@ impl OActionHandler for ProvisionNodes {
         };
 
         // Attempt provisioning once, then watch discovery to know when we are done.
-        let state = if state.requested {
+        let state = if !state.requested {
             self.invoke_provision(context, state, invoke, &args).await?
         } else {
             self.invoke_wait(state, invoke, &args).await?
         };
 
         // Determine if the action is done by looking at how long nodes have been stable.
-        let stable_time = OffsetDateTime::now_utc() - Duration::from_secs(args.stable_after);
+        let stable_after = Duration::from_secs(args.stable_after);
+        let now = OffsetDateTime::now_utc();
         let next = match state.stable {
-            Some(time) if time >= stable_time => OActionState::Done,
+            Some(time) if time + stable_after >= now => OActionState::Done,
             _ => OActionState::Running,
         };
         let state = serde_json::to_value(state)?;
