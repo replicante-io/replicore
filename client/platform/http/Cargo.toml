@@ -12,7 +12,7 @@ license = "MIT"
 [dependencies]
 anyhow = "^1.0"
 async-trait = "^0.1"
-reqwest = { version = "^0.12", features = ["deflate", "gzip", "json"] }
+reqwest = { version = "^0.12", features = ["deflate", "gzip", "json", "zstd"] }
 serde = "^1.0"
 serde_json = "^1.0"
 thiserror = "^1.0"
