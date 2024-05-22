@@ -137,6 +137,7 @@ async fn execute(context: &Context, data: &InitData, action: OAction) -> Result<
 
     // Invoke the action and update based on results.
     let mut action = action;
+    action.scheduled_ts = Some(action.scheduled_ts.unwrap_or_else(time::OffsetDateTime::now_utc));
     let changes = invoke(context, data, &action).await;
     match changes {
         Err(error) => {
@@ -172,7 +173,29 @@ async fn invoke(context: &Context, data: &InitData, action: &OAction) -> Result<
         discovery: &data.cluster_current.discovery,
         spec: &data.cluster_current.spec,
     };
-    metadata.handler.invoke(context, &args).await
+    let mut changes = metadata.handler.invoke(context, &args).await?;
+
+    // If the action is running check to see if it timed out.
+    if changes.state.is_running() {
+        let now = time::OffsetDateTime::now_utc();
+        let scheduled = action.scheduled_ts.unwrap_or(now);
+        let timeout = scheduled + metadata.timeout;
+        if now > timeout {
+            slog::info!(
+                context.logger, "Orchestrator action timed out";
+                "ns_id" => &action.ns_id,
+                "cluster_id" => &action.cluster_id,
+                "action_id" => %action.action_id,
+            );
+
+            let error = anyhow::anyhow!("orchestrator action timed out");
+            let error = replisdk::utils::error::into_json(error);
+            changes.state = OActionState::Failed;
+            changes = changes.error(error);
+        }
+    }
+
+    Ok(changes)
 }
 
 /// Update the [`OAction`] record with the result from invoking the handler.
