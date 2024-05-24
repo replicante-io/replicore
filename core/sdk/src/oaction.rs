@@ -4,6 +4,7 @@ use anyhow::Result;
 use replisdk::core::models::api::OActionSpec;
 use replisdk::core::models::oaction::OAction;
 use replisdk::core::models::oaction::OActionRef;
+use replisdk::core::models::oaction::OActionState;
 
 use replicore_context::Context;
 use replicore_events::Event;
@@ -12,6 +13,24 @@ use replicore_store::query::LookupOAction;
 use super::CoreSDK;
 
 impl CoreSDK {
+    /// Approve an [`OAction`] record for scheduling ensuring appropriate events are emitted.
+    pub async fn oaction_approve(&self, context: &Context, mut action: OAction) -> Result<()> {
+        action.state = OActionState::PendingSchedule;
+        let event = Event::new_with_payload(crate::constants::OACTION_APPROVE, &action)?;
+        self.injector.events.change(context, event).await?;
+        self.injector.store.persist(context, action).await?;
+        Ok(())
+    }
+
+    /// Cancel an [`OAction`] and prevent any further execution.
+    pub async fn oaction_cancel(&self, context: &Context, mut action: OAction) -> Result<()> {
+        action.finish(OActionState::Cancelled);
+        let event = Event::new_with_payload(crate::constants::OACTION_CANCEL, &action)?;
+        self.injector.events.change(context, event).await?;
+        self.injector.store.persist(context, action).await?;
+        Ok(())
+    }
+
     /// Create a new [`OAction`] record ensuring all needed attributes are set.
     pub async fn oaction_create(&self, context: &Context, spec: OActionSpec) -> Result<OActionRef> {
         // If an Action ID is given ensure it does not exist.
@@ -56,5 +75,14 @@ impl CoreSDK {
         self.injector.events.change(context, event).await?;
         self.injector.store.persist(context, oaction).await?;
         Ok(action_ref)
+    }
+
+    /// Reject an [`OAction`] record to prevent scheduling.
+    pub async fn oaction_reject(&self, context: &Context, mut action: OAction) -> Result<()> {
+        action.finish(OActionState::Cancelled);
+        let event = Event::new_with_payload(crate::constants::OACTION_REJECT, &action)?;
+        self.injector.events.change(context, event).await?;
+        self.injector.store.persist(context, action).await?;
+        Ok(())
     }
 }

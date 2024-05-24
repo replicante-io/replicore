@@ -22,7 +22,7 @@ pub async fn oaction(args: ApplyArgs<'_>) -> Result<HttpResponse, crate::api::Er
     super::cluster::check(&args, &spec.ns_id, &spec.cluster_id).await?;
 
     // Process the action spec and store it in the DB.
-    let sdk = replicore_sdk::CoreSDK::from_injector((**args.injector).clone());
+    let sdk = replicore_sdk::CoreSDK::from(args.injector.as_ref());
     let action = sdk.oaction_create(&args.context, spec).await;
     let action = match action {
         Err(error) if error.is::<replicore_sdk::errors::ActionExists>() => {

@@ -1,7 +1,7 @@
 apiVersion: replicante.io/v0
 kind: OAction
-approved: true
 spec:
   ns_id: default
   cluster_id: mongo-rs
   kind: core.replicante.io/debug.fail
+  approval: required

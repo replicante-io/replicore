@@ -14,6 +14,7 @@ pub struct CoreSDK {
 
 impl CoreSDK {
     /// Initialise a new [`CoreSDK`] from the provided injector.
+    #[deprecated(note = "use From<Injector>")]
     pub fn from_injector(injector: Injector) -> Self {
         Self { injector }
     }
@@ -21,6 +22,19 @@ impl CoreSDK {
     /// Initialise a new [`CoreSDK`] from the globally initialised injector.
     pub fn from_globals() -> Self {
         let injector = Injector::global();
-        Self::from_injector(injector)
+        Self::from(injector)
+    }
+}
+
+impl From<&Injector> for CoreSDK {
+    fn from(injector: &Injector) -> Self {
+        let injector = injector.clone();
+        Self { injector }
+    }
+}
+
+impl From<Injector> for CoreSDK {
+    fn from(injector: Injector) -> Self {
+        Self { injector }
     }
 }

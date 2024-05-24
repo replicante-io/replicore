@@ -35,7 +35,39 @@ impl Client {
 }
 
 impl<'a> OActionClient<'a> {
-    /// Fetch a [`OAction`] record from the server.
+    /// Approve an [`OAction`] for scheduling.
+    pub async fn approve(&'a self) -> Result<()> {
+        let url = format!(
+            "{}api/v0/object/replicante.io/v0/oaction/{}/{}/{}/approve",
+            self.inner.base, self.ns_id, self.cluster_id, self.action_id,
+        );
+        let response = self.inner.client.post(url).send().await?;
+        crate::error::inspect::<serde_json::Value>(response)
+            .await
+            .with_context(|| {
+                let id = format!("{}.{}/{}", self.ns_id, self.cluster_id, self.action_id);
+                ResourceIdentifier::reference("oaction", id)
+            })?;
+        Ok(())
+    }
+
+    /// Cancel an [`OAction`] and prevent any further execution.
+    pub async fn cancel(&'a self) -> Result<()> {
+        let url = format!(
+            "{}api/v0/object/replicante.io/v0/oaction/{}/{}/{}/cancel",
+            self.inner.base, self.ns_id, self.cluster_id, self.action_id,
+        );
+        let response = self.inner.client.post(url).send().await?;
+        crate::error::inspect::<serde_json::Value>(response)
+            .await
+            .with_context(|| {
+                let id = format!("{}.{}/{}", self.ns_id, self.cluster_id, self.action_id);
+                ResourceIdentifier::reference("oaction", id)
+            })?;
+        Ok(())
+    }
+
+    /// Fetch an [`OAction`] record from the server.
     pub async fn get(&'a self) -> Result<OAction> {
         let url = format!(
             "{}api/v0/object/replicante.io/v0/oaction/{}/{}/{}",
@@ -50,5 +82,21 @@ impl<'a> OActionClient<'a> {
             })?;
         let response = response.ok_or(EmptyResponse)?;
         Ok(response)
+    }
+
+    /// Reject an [`OAction`] to prevent scheduling.
+    pub async fn reject(&'a self) -> Result<()> {
+        let url = format!(
+            "{}api/v0/object/replicante.io/v0/oaction/{}/{}/{}/reject",
+            self.inner.base, self.ns_id, self.cluster_id, self.action_id,
+        );
+        let response = self.inner.client.post(url).send().await?;
+        crate::error::inspect::<serde_json::Value>(response)
+            .await
+            .with_context(|| {
+                let id = format!("{}.{}/{}", self.ns_id, self.cluster_id, self.action_id);
+                ResourceIdentifier::reference("oaction", id)
+            })?;
+        Ok(())
     }
 }

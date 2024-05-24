@@ -129,7 +129,7 @@ impl ConvergeStep for NodeScaleUp {
             metadata: Default::default(),
             timeout: None,
         };
-        let sdk = replicore_sdk::CoreSDK::from_injector(data.injector.clone());
+        let sdk = replicore_sdk::CoreSDK::from(&data.injector);
         let action = sdk.oaction_create(context, node_up).await?;
         slog::debug!(
             context.logger, "Scale up action created";
