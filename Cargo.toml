@@ -31,9 +31,13 @@ members = [
   "core-logic/task/orchestrate",
 
   # Client implementations crates.
+  "client/agent",
+  "client/agent/http",
   "client/core",
   "client/platform",
   "client/platform/http",
+  "client/utils",
+  "core/clients/agent",
   "core/clients/platform",
 ]
 resolver = "2"

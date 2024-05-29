@@ -12,6 +12,7 @@ pub async fn run(_cli: Cli, conf: Conf) -> Result<()> {
         .await?
         .register_core_tasks()
         .register_default_backends()
+        .register_default_clients()
         .register_default_oactions()
         .with_http_config(crate::api::configure)
         .run()

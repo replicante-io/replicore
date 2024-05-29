@@ -5,9 +5,10 @@ use anyhow::Result;
 use replisdk::core::models::cluster::ClusterDiscovery;
 use replisdk::core::models::cluster::ClusterSpec;
 
+use repliclient_utils::EmptyResponse;
+use repliclient_utils::ResourceIdentifier;
+
 use super::Client;
-use crate::error::EmptyResponse;
-use crate::error::ResourceIdentifier;
 
 /// Access ClusterSpec operations.
 pub struct ClusterSpecClient<'a> {
@@ -35,7 +36,7 @@ impl<'a> ClusterSpecClient<'a> {
             self.inner.base, self.ns_id, self.name,
         );
         let response = self.inner.client.delete(url).send().await?;
-        crate::error::inspect::<serde_json::Value>(response)
+        repliclient_utils::inspect::<serde_json::Value>(response)
             .await
             .with_context(|| {
                 let id = format!("{}.{}", self.ns_id, self.name);
@@ -51,7 +52,7 @@ impl<'a> ClusterSpecClient<'a> {
             self.inner.base, self.ns_id, self.name,
         );
         let response = self.inner.client.get(url).send().await?;
-        let response = crate::error::inspect::<ClusterDiscovery>(response)
+        let response = repliclient_utils::inspect::<ClusterDiscovery>(response)
             .await
             .with_context(|| {
                 let id = format!("{}.{}", self.ns_id, self.name);
@@ -67,7 +68,7 @@ impl<'a> ClusterSpecClient<'a> {
             self.inner.base, self.ns_id, self.name,
         );
         let response = self.inner.client.get(url).send().await?;
-        let response = crate::error::inspect::<ClusterSpec>(response)
+        let response = repliclient_utils::inspect::<ClusterSpec>(response)
             .await
             .with_context(|| {
                 let id = format!("{}.{}", self.ns_id, self.name);
@@ -84,7 +85,7 @@ impl<'a> ClusterSpecClient<'a> {
             self.inner.base, self.ns_id, self.name,
         );
         let response = self.inner.client.get(url).send().await?;
-        crate::error::inspect::<serde_json::Value>(response)
+        repliclient_utils::inspect::<serde_json::Value>(response)
             .await
             .with_context(|| {
                 let id = format!("{}.{}", self.ns_id, self.name);

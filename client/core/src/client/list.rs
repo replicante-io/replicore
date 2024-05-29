@@ -10,8 +10,9 @@ use replisdk::core::models::api::OActionList;
 use replisdk::core::models::api::PlatformEntry;
 use replisdk::core::models::api::PlatformList;
 
+use repliclient_utils::EmptyResponse;
+
 use super::Client;
-use crate::error::EmptyResponse;
 
 /// Access resource listing operations.
 pub struct ListClient<'a> {
@@ -37,7 +38,7 @@ impl<'a> ListClient<'a> {
             ))
             .send()
             .await?;
-        let response = crate::error::inspect::<ClusterSpecList>(response).await?;
+        let response = repliclient_utils::inspect::<ClusterSpecList>(response).await?;
         let response = response.ok_or(EmptyResponse)?;
         Ok(response.items)
     }
@@ -53,7 +54,7 @@ impl<'a> ListClient<'a> {
             ))
             .send()
             .await?;
-        let response = crate::error::inspect::<NamespaceList>(response).await?;
+        let response = repliclient_utils::inspect::<NamespaceList>(response).await?;
         let response = response.ok_or(EmptyResponse)?;
         Ok(response.items)
     }
@@ -75,7 +76,7 @@ impl<'a> ListClient<'a> {
             .query(&[("all", all)])
             .send()
             .await?;
-        let response = crate::error::inspect::<OActionList>(response).await?;
+        let response = repliclient_utils::inspect::<OActionList>(response).await?;
         let response = response.ok_or(EmptyResponse)?;
         Ok(response.items)
     }
@@ -91,7 +92,7 @@ impl<'a> ListClient<'a> {
             ))
             .send()
             .await?;
-        let response = crate::error::inspect::<PlatformList>(response).await?;
+        let response = repliclient_utils::inspect::<PlatformList>(response).await?;
         let response = response.ok_or(EmptyResponse)?;
         Ok(response.items)
     }

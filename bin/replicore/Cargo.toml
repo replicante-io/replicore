@@ -83,11 +83,15 @@ replicore-tasks = { path = "../../core/tasks" }
 replicore-task-discovery = { path = "../../core-logic/task/discovery" }
 replicore-task-orchestrate = { path = "../../core-logic/task/orchestrate" }
 
-# Supported interface backend implementations for compile time customisation.
+# Supported backend implementations for compile time customisation.
 replicore-auth-insecure = { path = "../../core/auth/insecure" }
 replicore-events-sqlite = { path = "../../core/events/sqlite", optional = true }
 replicore-store-sqlite = { path = "../../core/store/sqlite", optional = true }
 replicore-tasks-sqlite = { path = "../../core/tasks/sqlite", optional = true }
+
+# Supported client implementations (for nodes, platform, etc ...).
+replicore-clients-agent = { path = "../../core/clients/agent" }
+replicore-clients-platform = { path = "../../core/clients/platform" }
 
 # Supported orchestrator action implementations for compile time customisation.
 replicore-oaction-platform = { path = "../../core-logic/oaction/platform", optional = true }

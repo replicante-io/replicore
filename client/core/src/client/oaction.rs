@@ -5,9 +5,10 @@ use uuid::Uuid;
 
 use replisdk::core::models::oaction::OAction;
 
+use repliclient_utils::EmptyResponse;
+use repliclient_utils::ResourceIdentifier;
+
 use super::Client;
-use crate::error::EmptyResponse;
-use crate::error::ResourceIdentifier;
 
 /// Access OAction operations.
 pub struct OActionClient<'a> {
@@ -42,7 +43,7 @@ impl<'a> OActionClient<'a> {
             self.inner.base, self.ns_id, self.cluster_id, self.action_id,
         );
         let response = self.inner.client.post(url).send().await?;
-        crate::error::inspect::<serde_json::Value>(response)
+        repliclient_utils::inspect::<serde_json::Value>(response)
             .await
             .with_context(|| {
                 let id = format!("{}.{}/{}", self.ns_id, self.cluster_id, self.action_id);
@@ -58,7 +59,7 @@ impl<'a> OActionClient<'a> {
             self.inner.base, self.ns_id, self.cluster_id, self.action_id,
         );
         let response = self.inner.client.post(url).send().await?;
-        crate::error::inspect::<serde_json::Value>(response)
+        repliclient_utils::inspect::<serde_json::Value>(response)
             .await
             .with_context(|| {
                 let id = format!("{}.{}/{}", self.ns_id, self.cluster_id, self.action_id);
@@ -74,7 +75,7 @@ impl<'a> OActionClient<'a> {
             self.inner.base, self.ns_id, self.cluster_id, self.action_id,
         );
         let response = self.inner.client.get(url).send().await?;
-        let response = crate::error::inspect::<OAction>(response)
+        let response = repliclient_utils::inspect::<OAction>(response)
             .await
             .with_context(|| {
                 let id = format!("{}.{}/{}", self.ns_id, self.cluster_id, self.action_id);
@@ -91,7 +92,7 @@ impl<'a> OActionClient<'a> {
             self.inner.base, self.ns_id, self.cluster_id, self.action_id,
         );
         let response = self.inner.client.post(url).send().await?;
-        crate::error::inspect::<serde_json::Value>(response)
+        repliclient_utils::inspect::<serde_json::Value>(response)
             .await
             .with_context(|| {
                 let id = format!("{}.{}/{}", self.ns_id, self.cluster_id, self.action_id);

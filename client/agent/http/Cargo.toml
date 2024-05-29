@@ -1,11 +1,11 @@
 [package]
-name = "repliplatform-client-http"
+name = "repliagent-client-http"
 version = "0.1.0"
 
 edition = "2021"
 rust-version = "1.75"
 
-description = "HTTP implementation of the Replicante Platform API client"
+description = "HTTP implementation of the Replicante Agent API client"
 homepage = "https://www.replicante.io/"
 license = "MIT"
 
@@ -16,11 +16,12 @@ reqwest = { version = "^0.12", features = ["deflate", "gzip", "json", "zstd"] }
 serde = "^1.0"
 serde_json = "^1.0"
 thiserror = "^1.0"
+uuid = { version = "^1.4", features = ["v4"] }
 
 replisdk = { version = "^0.1", features = [
-  "platform-models",
+  "agent-models",
   "utils-error_json",
 ] }
 
-repliplatform-client = { path = "../" }
+repliagent-client = { path = "../" }
 repliclient-utils = { path = "../../utils" }

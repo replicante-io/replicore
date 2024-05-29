@@ -13,7 +13,7 @@ impl Client {
             .json(&manifest)
             .send()
             .await?;
-        let response = crate::error::inspect(response).await?;
+        let response = repliclient_utils::inspect(response).await?;
         Ok(response.unwrap_or_default())
     }
 }

@@ -90,10 +90,6 @@ impl PlatformClients {
 
 impl Default for PlatformClients {
     fn default() -> Self {
-        let mut registry = PlatformClients::empty();
-        registry
-            .with_url_factory("http", self::url::HttpClientFactory)
-            .with_url_factory("https", self::url::HttpClientFactory);
-        registry
+        PlatformClients::empty()
     }
 }

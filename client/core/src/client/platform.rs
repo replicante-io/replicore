@@ -4,9 +4,10 @@ use anyhow::Result;
 
 use replisdk::core::models::platform::Platform;
 
+use repliclient_utils::EmptyResponse;
+use repliclient_utils::ResourceIdentifier;
+
 use super::Client;
-use crate::error::EmptyResponse;
-use crate::error::ResourceIdentifier;
 
 /// Access platform operations.
 pub struct PlatformClient<'a> {
@@ -34,7 +35,7 @@ impl<'a> PlatformClient<'a> {
             self.inner.base, self.ns_id, self.name,
         );
         let response = self.inner.client.delete(url).send().await?;
-        crate::error::inspect::<serde_json::Value>(response)
+        repliclient_utils::inspect::<serde_json::Value>(response)
             .await
             .with_context(|| {
                 let id = format!("{}.{}", self.ns_id, self.name);
@@ -50,7 +51,7 @@ impl<'a> PlatformClient<'a> {
             self.inner.base, self.ns_id, self.name,
         );
         let response = self.inner.client.get(url).send().await?;
-        crate::error::inspect::<serde_json::Value>(response)
+        repliclient_utils::inspect::<serde_json::Value>(response)
             .await
             .with_context(|| {
                 let id = format!("{}.{}", self.ns_id, self.name);
@@ -66,7 +67,7 @@ impl<'a> PlatformClient<'a> {
             self.inner.base, self.ns_id, self.name,
         );
         let response = self.inner.client.get(url).send().await?;
-        let response = crate::error::inspect::<Platform>(response)
+        let response = repliclient_utils::inspect::<Platform>(response)
             .await
             .with_context(|| {
                 let id = format!("{}.{}", self.ns_id, self.name);

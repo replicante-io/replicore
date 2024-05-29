@@ -24,6 +24,7 @@ once_cell = "^1.0"
 slog = "^2.7"
 
 replicore-auth = { path = "../auth" }
+replicore-clients-agent = { path = "../clients/agent" }
 replicore-clients-platform = { path = "../clients/platform" }
 replicore-conf = { path = "../conf" }
 replicore-context = { path = "../context" }

@@ -7,14 +7,8 @@ use replisdk::platform::models::NodeDeprovisionRequest;
 use replisdk::platform::models::NodeProvisionRequest;
 use replisdk::platform::models::NodeProvisionResponse;
 
+use repliclient_utils::ClientOptions;
 use repliplatform_client::IPlatform;
-
-mod config;
-
-pub mod error;
-
-pub use self::config::ClientOptions;
-pub use self::config::ClientOptionsBuilder;
 
 /// String to set as the user agent in HTTP request.
 static CLIENT_USER_AGENT: &str = concat!(env!("CARGO_PKG_NAME"), "/", env!("CARGO_PKG_VERSION"));
@@ -36,10 +30,7 @@ impl HttpClient {
         O: Into<ClientOptions>,
     {
         let options = options.into();
-        let client = ReqwestClient::builder()
-            .connect_timeout(options.timeout_connect)
-            .timeout(options.timeout)
-            .user_agent(CLIENT_USER_AGENT);
+        let client = options.client(CLIENT_USER_AGENT);
         // TODO: TLS options
         let client = HttpClient {
             base: options.address,
@@ -58,7 +49,7 @@ impl IPlatform for HttpClient {
             .json(&request)
             .send()
             .await?;
-        crate::error::inspect::<()>(response).await?;
+        repliclient_utils::inspect::<()>(response).await?;
         Ok(())
     }
 
@@ -68,8 +59,8 @@ impl IPlatform for HttpClient {
             .get(format!("{}discover", self.base))
             .send()
             .await?;
-        match crate::error::inspect(response).await? {
-            None => anyhow::bail!(crate::error::EmptyResponse),
+        match repliclient_utils::inspect(response).await? {
+            None => anyhow::bail!(repliclient_utils::EmptyResponse),
             Some(response) => Ok(response),
         }
     }
@@ -81,8 +72,8 @@ impl IPlatform for HttpClient {
             .json(&request)
             .send()
             .await?;
-        match crate::error::inspect(response).await? {
-            None => anyhow::bail!(crate::error::EmptyResponse),
+        match repliclient_utils::inspect(response).await? {
+            None => anyhow::bail!(repliclient_utils::EmptyResponse),
             Some(response) => Ok(response),
         }
     }

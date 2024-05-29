@@ -2,14 +2,14 @@
 use anyhow::Result;
 use reqwest::Client as ReqwestClient;
 
+use repliclient_utils::ClientOptions;
+
 mod apply;
 mod cluster_spec;
 mod list;
 mod namespace;
 mod oaction;
 mod platform;
-
-use crate::ClientOptions;
 
 /// String to set as the user agent in HTTP request.
 static CLIENT_USER_AGENT: &str = concat!(env!("CARGO_PKG_NAME"), "/", env!("CARGO_PKG_VERSION"));
@@ -30,10 +30,7 @@ impl Client {
         O: Into<ClientOptions>,
     {
         let options = options.into();
-        let client = ReqwestClient::builder()
-            .connect_timeout(options.timeout_connect)
-            .timeout(options.timeout)
-            .user_agent(CLIENT_USER_AGENT);
+        let client = options.client(CLIENT_USER_AGENT);
         // TODO: TLS options
         let client = Client {
             base: options.address,

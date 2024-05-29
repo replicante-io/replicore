@@ -1,21 +1,32 @@
-//! Configuration options for RepliCore Clients.
+//! Configuration options for Platform HTTP(S) clients.
 use std::time::Duration;
+
+use reqwest::Client;
+use reqwest::ClientBuilder;
 
 /// Options to initialise clients with.
 pub struct ClientOptions {
     /// Address of the API server to connect to, with trailing slash.
-    pub(crate) address: String,
+    pub address: String,
 
     /// Timeout for requests made by the client.
-    pub(crate) timeout: Duration,
+    pub timeout: Duration,
 
     /// Timeout for new connections initialised by the client.
-    pub(crate) timeout_connect: Duration,
+    pub timeout_connect: Duration,
     // TODO: tls_ca_bundle
     // TODO: tls_client_key
 }
 
 impl ClientOptions {
+    /// TODO
+    pub fn client(&self, user_agent: &str) -> ClientBuilder {
+        Client::builder()
+            .connect_timeout(self.timeout_connect)
+            .timeout(self.timeout)
+            .user_agent(user_agent)
+    }
+
     /// Define options for API clients.
     pub fn url<S>(address: S) -> ClientOptionsBuilder
     where
@@ -23,7 +34,7 @@ impl ClientOptions {
     {
         ClientOptionsBuilder {
             address: address.into(),
-            timeout: Duration::from_secs(5),
+            timeout: Duration::from_secs(30),
             timeout_connect: Duration::from_secs(1),
         }
     }

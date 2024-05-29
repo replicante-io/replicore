@@ -25,6 +25,9 @@ use super::generic::GenericInit;
 
 /// Process builder to initialise and run a RepliCore Control Plane instance.
 pub struct Server {
+    /// Builder for the registries of clients needed to interact with remote components.
+    clients: replicore_injector::Clients,
+
     /// Root context for the process.
     context: ContextBuilder,
 
@@ -45,6 +48,7 @@ impl Server {
         let context = Context::root(generic.telemetry.logger.clone());
         let tasks = TasksExecutorBuilder::new(generic.conf.tasks.executor.clone());
         let server = Self {
+            clients: Default::default(),
             context,
             generic,
             oactions: OActionRegistry::build(),
@@ -71,6 +75,21 @@ impl Server {
     /// Supported dependencies can be tuned at compile time using crate features.
     pub fn register_default_backends(mut self) -> Self {
         self.generic.register_default_backends();
+        self
+    }
+
+    /// Register all supported clients for node agents, platforms, etc ...
+    pub fn register_default_clients(mut self) -> Self {
+        self
+            .clients
+            .agent
+            .with_factory("http", replicore_clients_agent::http::HttpClientFactory)
+            .with_factory("https", replicore_clients_agent::http::HttpClientFactory);
+        self
+            .clients
+            .platform
+            .with_url_factory("http", replicore_clients_platform::HttpClientFactory)
+            .with_url_factory("https", replicore_clients_platform::HttpClientFactory);
         self
     }
 
@@ -155,6 +174,7 @@ impl Server {
             &context,
             &self.generic.conf,
             &self.generic.backends,
+            self.clients,
             self.oactions.finish(),
         )
         .await?;
@@ -200,6 +220,7 @@ pub async fn injector(
     context: &Context,
     conf: &Conf,
     backends: &Backends,
+    clients: replicore_injector::Clients,
     oactions: OActionRegistry,
 ) -> Result<Injector> {
     // Grab all dependencies factories.
@@ -239,7 +260,7 @@ pub async fn injector(
     let injector = Injector {
         authenticator,
         authoriser,
-        clients: replicore_injector::Clients::default(),
+        clients,
         conf,
         context: context.clone(),
         events,

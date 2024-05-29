@@ -8,10 +8,10 @@ use anyhow::Result;
 
 use replisdk::core::models::platform::PlatformTransportUrl;
 
+use repliclient_utils::ClientOptions;
 use replicore_context::Context;
-use repliplatform_client::Client;
-use repliplatform_client_http::ClientOptions;
 use repliplatform_client_http::HttpClient;
+use repliplatform_client::Client;
 
 /// Convenience type for heap allocated [`UrlFactory`]s.
 pub type ArcedUrlFactory = Arc<dyn UrlFactory>;

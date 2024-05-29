@@ -27,7 +27,32 @@ pub struct InvalidResponse {
 #[error("the resource is not available, or access to it is restricted")]
 pub struct ResourceNotFound;
 
-/// The server failed to process the API request
+/// Error refers to resource with ID.
+#[derive(Debug, thiserror::Error)]
+#[error("error refers to {resource} '{id}'")]
+pub struct ResourceIdentifier {
+    /// Identifier of a resource the error refers to.
+    pub id: String,
+
+    /// Type of resource the error refers to.
+    pub resource: String,
+}
+
+impl ResourceIdentifier {
+    /// Resource identifier context for the given resource type and id.
+    pub fn reference<S1, S2>(resource: S1, id: S2) -> Self
+    where
+        S1: Into<String>,
+        S2: Into<String>,
+    {
+        ResourceIdentifier {
+            id: id.into(),
+            resource: resource.into(),
+        }
+    }
+}
+
+/// The server failed to process the API request.
 #[derive(Debug, thiserror::Error)]
 #[error("the server failed to process the API request")]
 pub struct ServerError;

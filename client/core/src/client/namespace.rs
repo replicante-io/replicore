@@ -4,9 +4,10 @@ use anyhow::Result;
 
 use replisdk::core::models::namespace::Namespace;
 
+use repliclient_utils::EmptyResponse;
+use repliclient_utils::ResourceIdentifier;
+
 use super::Client;
-use crate::error::EmptyResponse;
-use crate::error::ResourceIdentifier;
 
 /// Access namespace operations.
 pub struct NamespaceClient<'a> {
@@ -29,7 +30,7 @@ impl<'a> NamespaceClient<'a> {
             self.inner.base, self.id,
         );
         let response = self.inner.client.delete(url).send().await?;
-        crate::error::inspect::<serde_json::Value>(response)
+        repliclient_utils::inspect::<serde_json::Value>(response)
             .await
             .with_context(|| ResourceIdentifier::reference("namespace", self.id))?;
         Ok(())
@@ -42,7 +43,7 @@ impl<'a> NamespaceClient<'a> {
             self.inner.base, self.id,
         );
         let response = self.inner.client.get(url).send().await?;
-        let response = crate::error::inspect::<Namespace>(response)
+        let response = repliclient_utils::inspect::<Namespace>(response)
             .await
             .with_context(|| ResourceIdentifier::reference("namespace", self.id))?;
         let response = response.ok_or(EmptyResponse)?;

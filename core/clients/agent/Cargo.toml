@@ -1,11 +1,11 @@
 [package]
-name = "replicore-clients-platform"
+name = "replicore-clients-agent"
 version = "0.1.0"
 
 edition = "2021"
 rust-version = "1.75"
 
-description = "Registry of Platform API clients factories"
+description = "Registry of Agent API clients factories"
 homepage = "https://www.replicante.io/"
 license = "MIT"
 
@@ -16,8 +16,6 @@ thiserror = "^1.0"
 
 replisdk = { version = "^0.1", features = ["replicore-models"] }
 
-repliclient-utils = { path = "../../../client/utils" }
+repliagent-client = { path = "../../../client/agent" }
+repliagent-client-http = { path = "../../../client/agent/http" }
 replicore-context = { path = "../../../core/context" }
-repliplatform-client = { path = "../../../client/platform" }
-
-repliplatform-client-http = { path = "../../../client/platform/http" }

@@ -1,0 +1,22 @@
+[package]
+name = "repliagent-client"
+version = "0.1.0"
+
+edition = "2021"
+rust-version = "1.75"
+
+description = "Client Library to interact with Replicante Agent Servers"
+homepage = "https://www.replicante.io/"
+license = "MIT"
+
+[features]
+test-fixture = []
+
+[dependencies]
+anyhow = "^1.0"
+async-trait = "^0.1"
+rand = "^0.8"
+thiserror = "^1.0"
+uuid = { version = "^1.4", features = ["v4"] }
+
+replisdk = { version = "^0.1", features = ["agent-models"] }

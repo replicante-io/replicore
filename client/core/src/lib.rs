@@ -1,9 +1,6 @@
 //! Async client library to interact with the Replicante Control Plane API.
-mod client;
-mod config;
+pub use repliclient_utils::ClientOptions;
 
-pub mod error;
+mod client;
 
 pub use self::client::Client;
-pub use self::config::ClientOptions;
-pub use self::config::ClientOptionsBuilder;
