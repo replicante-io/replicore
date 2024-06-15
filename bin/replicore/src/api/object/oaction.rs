@@ -53,7 +53,7 @@ pub async fn approve(
     sdk.oaction_approve(&context, oaction).await?;
 
     // Update the record in the store.
-    Ok(HttpResponse::Ok().json({}))
+    Ok(crate::api::done())
 }
 
 /// Cancel an orchestrator action and prevent any further execution (including running actions).
@@ -88,7 +88,7 @@ pub async fn cancel(
     sdk.oaction_cancel(&context, oaction).await?;
 
     // Update the record in the store.
-    Ok(HttpResponse::Ok().json({}))
+    Ok(crate::api::done())
 }
 
 /// Get a OAction object by namespace and name.
@@ -166,5 +166,5 @@ pub async fn reject(
     sdk.oaction_reject(&context, oaction).await?;
 
     // Update the record in the store.
-    Ok(HttpResponse::Ok().json({}))
+    Ok(crate::api::done())
 }

@@ -71,7 +71,7 @@ impl super::IAgent for Client {
         };
         match state.finished.iter().find(|a| a.id == action) {
             None => anyhow::bail!(crate::ActionNotFound { action_id: action }),
-            Some(action) => Ok(action.clone())
+            Some(action) => Ok(action.clone()),
         }
     }
 
@@ -91,17 +91,13 @@ impl super::IAgent for Client {
         let actions = state
             .finished
             .iter()
-            .map(|action| {
-                ActionExecutionListItem {
-                    id: action.id,
-                    kind: action.kind.clone(),
-                    phase: action.state.phase,
-                }
+            .map(|action| ActionExecutionListItem {
+                id: action.id,
+                kind: action.kind.clone(),
+                phase: action.state.phase,
             })
             .collect();
-        Ok(ActionExecutionList {
-            actions,
-        })
+        Ok(ActionExecutionList { actions })
     }
 
     async fn actions_queue(&self) -> Result<ActionExecutionList> {
@@ -109,17 +105,13 @@ impl super::IAgent for Client {
         let actions = state
             .queue
             .iter()
-            .map(|action| {
-                ActionExecutionListItem {
-                    id: action.id,
-                    kind: action.kind.clone(),
-                    phase: action.state.phase,
-                }
+            .map(|action| ActionExecutionListItem {
+                id: action.id,
+                kind: action.kind.clone(),
+                phase: action.state.phase,
             })
             .collect();
-        Ok(ActionExecutionList {
-            actions,
-        })
+        Ok(ActionExecutionList { actions })
     }
 
     async fn info_node(&self) -> Result<Node> {

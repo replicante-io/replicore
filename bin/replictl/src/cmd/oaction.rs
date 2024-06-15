@@ -68,7 +68,10 @@ async fn approve(globals: &Globals, opts: &OActionGetOpts) -> Result<i32> {
     let cluster_id = context.cluster(&globals.cli.context)?;
     let action_id = opts.action_id;
 
-    client.oaction(&ns_id, &cluster_id, action_id).approve().await?;
+    client
+        .oaction(&ns_id, &cluster_id, action_id)
+        .approve()
+        .await?;
     println!("Orchestrator action approved for scheduling");
     Ok(0)
 }
@@ -81,7 +84,10 @@ async fn cancel(globals: &Globals, opts: &OActionGetOpts) -> Result<i32> {
     let cluster_id = context.cluster(&globals.cli.context)?;
     let action_id = opts.action_id;
 
-    client.oaction(&ns_id, &cluster_id, action_id).cancel().await?;
+    client
+        .oaction(&ns_id, &cluster_id, action_id)
+        .cancel()
+        .await?;
     println!("Orchestrator action cancelled and will not run any further");
     Ok(0)
 }
@@ -128,7 +134,10 @@ async fn reject(globals: &Globals, opts: &OActionGetOpts) -> Result<i32> {
     let cluster_id = context.cluster(&globals.cli.context)?;
     let action_id = opts.action_id;
 
-    client.oaction(&ns_id, &cluster_id, action_id).reject().await?;
+    client
+        .oaction(&ns_id, &cluster_id, action_id)
+        .reject()
+        .await?;
     println!("Orchestrator action rejected to prevent scheduling");
     Ok(0)
 }

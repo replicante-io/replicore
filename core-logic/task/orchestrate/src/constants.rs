@@ -1,5 +1,11 @@
 //! Constants used during Orchestrate operations.
 
+/// Event code emitted when a new node was first seen during sync.
+pub const NODE_SYNC_NEW: &str = "NODE_SYNC_NEW";
+
+/// Event code emitted when a node was updated during sync.
+pub const NODE_SYNC_UPDATE: &str = "NODE_SYNC_UPDATE";
+
 /// Event code emitted when an orchestrator action has been cancelled.
 pub const OACTION_CANCEL: &str = "OACTION_CANCEL";
 

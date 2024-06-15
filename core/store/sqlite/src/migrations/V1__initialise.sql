@@ -38,6 +38,19 @@ CREATE TABLE IF NOT EXISTS store_cluster_spec(
   PRIMARY KEY(ns_id, cluster_id)
 );
 
+CREATE TABLE IF NOT EXISTS store_cluster_node(
+  -- Node object as a JSON blob.
+  node TEXT NOT NULL,
+
+  -- Manually managed normalised columns for indexes (where virtual columns can't be used).
+  ns_id TEXT NOT NULL,
+  cluster_id TEXT NOT NULL,
+  node_id TEXT NOT NULL,
+
+  -- Table constraints
+  PRIMARY KEY(ns_id, cluster_id, node_id)
+);
+
 CREATE TABLE IF NOT EXISTS store_namespace(
   -- namespace object as a JSON blob.
   namespace TEXT NOT NULL,

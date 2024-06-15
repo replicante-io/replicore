@@ -80,13 +80,11 @@ impl Server {
 
     /// Register all supported clients for node agents, platforms, etc ...
     pub fn register_default_clients(mut self) -> Self {
-        self
-            .clients
+        self.clients
             .agent
             .with_factory("http", replicore_clients_agent::http::HttpClientFactory)
             .with_factory("https", replicore_clients_agent::http::HttpClientFactory);
-        self
-            .clients
+        self.clients
             .platform
             .with_url_factory("http", replicore_clients_platform::HttpClientFactory)
             .with_url_factory("https", replicore_clients_platform::HttpClientFactory);

@@ -10,6 +10,7 @@ use replisdk::core::models::api::PlatformEntry;
 use replisdk::core::models::cluster::ClusterDiscovery;
 use replisdk::core::models::cluster::ClusterSpec;
 use replisdk::core::models::namespace::Namespace;
+use replisdk::core::models::node::Node;
 use replisdk::core::models::oaction::OAction;
 use replisdk::core::models::platform::Platform;
 
@@ -42,6 +43,9 @@ pub enum QueryOps {
 
     /// List summary information of all known namespaces, sorted alphabetically.
     ListNamespaces,
+
+    /// List nodes for a cluster.
+    ListNodes(NamespacedResourceID),
 
     /// List all orchestrator actions for a specific cluster.
     ListOActions(ListOActions),
@@ -82,6 +86,9 @@ pub enum QueryResponses {
     /// Return a [`Stream`] of [`NamespaceEntry`] objects.
     NamespaceEntries(NamespaceEntryStream),
 
+    /// Return a [`Stream`] of [`Node`] objects.
+    NodesList(NodesStream),
+
     /// Return an [`OAction`], if one was found matching the query.
     OAction(Option<OAction>),
 
@@ -111,6 +118,9 @@ pub type NamespaceEntryStream = std::pin::Pin<Box<dyn Stream<Item = Result<Names
 /// Alias for a heap-allocated [`Stream`] of orchestrator actions.
 pub type OActionStream = std::pin::Pin<Box<dyn Stream<Item = Result<OAction>> + Send>>;
 
+/// Alias for a heap-allocated [`Stream`] of cluster nodes.
+pub type NodesStream = std::pin::Pin<Box<dyn Stream<Item = Result<Node>> + Send>>;
+
 /// Alias for a heap-allocated [`Stream`] of orchestrator action summaries.
 pub type OActionEntryStream = std::pin::Pin<Box<dyn Stream<Item = Result<OActionEntry>>>>;
 
@@ -126,6 +136,24 @@ pub struct ListClusterSpecs(pub NamespaceID);
 
 /// List summary information of all known namespaces, sorted alphabetically.
 pub struct ListNamespaces;
+
+/// List all nodes in a cluster, sorted by node ID.
+pub struct ListNodes(pub NamespacedResourceID);
+
+impl ListNodes {
+    /// List cluster nodes by namespace and cluster ID.
+    pub fn by<S1, S2>(ns_id: S1, cluster_id: S2) -> ListNodes
+    where
+        S1: Into<String>,
+        S2: Into<String>,
+    {
+        let id = NamespacedResourceID {
+            name: cluster_id.into(),
+            ns_id: ns_id.into(),
+        };
+        ListNodes(id)
+    }
+}
 
 /// List summary information about known platforms in the namespace, sorted alphabetically.
 pub struct ListPlatforms(pub NamespaceID);
@@ -317,6 +345,16 @@ impl From<ListNamespaces> for QueryOps {
     }
 }
 
+impl SealQueryOp for ListNodes {}
+impl QueryOp for ListNodes {
+    type Response = NodesStream;
+}
+impl From<ListNodes> for QueryOps {
+    fn from(value: ListNodes) -> Self {
+        QueryOps::ListNodes(value.0)
+    }
+}
+
 impl SealQueryOp for ListPlatforms {}
 impl QueryOp for ListPlatforms {
     type Response = PlatformEntryStream;
@@ -504,6 +542,14 @@ impl From<QueryResponses> for NamespaceEntryStream {
     fn from(value: QueryResponses) -> Self {
         match value {
             QueryResponses::NamespaceEntries(stream) => stream,
+            _ => panic!("unexpected result type for the given query operation"),
+        }
+    }
+}
+impl From<QueryResponses> for NodesStream {
+    fn from(value: QueryResponses) -> Self {
+        match value {
+            QueryResponses::NodesList(stream) => stream,
             _ => panic!("unexpected result type for the given query operation"),
         }
     }

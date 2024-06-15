@@ -4,11 +4,11 @@ use std::sync::Arc;
 
 use anyhow::Result;
 
-use replisdk::core::models::cluster::ClusterSpec;
 use replisdk::core::models::cluster::ClusterDiscoveryNode;
+use replisdk::core::models::cluster::ClusterSpec;
 
-use replicore_context::Context;
 use repliagent_client::Client;
+use replicore_context::Context;
 
 mod factory;
 

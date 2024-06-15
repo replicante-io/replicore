@@ -1,4 +1,6 @@
 //! Serialisation for [`ClusterView`] objects
+use std::collections::HashMap;
+
 use serde::ser::Serialize;
 use serde::ser::SerializeStruct;
 use serde::ser::Serializer;
@@ -11,15 +13,20 @@ impl Serialize for ClusterView {
         S: Serializer,
     {
         let mut state = serializer.serialize_struct("ClusterView", 3)?;
+        let nodes: HashMap<&_, &_> = self
+            .nodes
+            .iter()
+            .map(|(id, node)| (id, node.as_ref()))
+            .collect();
+        let oactions_unfinished: Vec<&_> = self
+            .oactions_unfinished
+            .iter()
+            .map(|act| act.as_ref())
+            .collect();
+
         state.serialize_field("discovery", &self.discovery)?;
-        state.serialize_field(
-            "oactions_unfinished",
-            &self
-                .oactions_unfinished
-                .iter()
-                .map(|act| act.as_ref())
-                .collect::<Vec<&_>>(),
-        )?;
+        state.serialize_field("nodes", &nodes)?;
+        state.serialize_field("oactions_unfinished", &oactions_unfinished)?;
         state.serialize_field("spec", &self.spec)?;
         state.end()
     }
@@ -44,6 +51,7 @@ mod tests {
                 "nodes": [],
                 "ns_id": "test",
             },
+            "nodes": {},
             "oactions_unfinished": [],
             "spec": {
                 "active": true,

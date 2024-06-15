@@ -4,6 +4,7 @@ use anyhow::Result;
 use replisdk::core::models::oaction::OAction;
 use replisdk::core::models::oaction::OActionState;
 
+use replicore_cluster_models::OrchestrateMode;
 use replicore_cluster_view::ClusterViewBuilder;
 use replicore_context::Context;
 use replicore_events::Event;
@@ -61,9 +62,18 @@ pub async fn progress(
 pub async fn schedule(
     context: &Context,
     data: &InitData,
-    //cluster_new: &mut ClusterViewBuilder,
     oactions_unfinished: Vec<OAction>,
 ) -> Result<Vec<OAction>> {
+    // Skip scheduling if the cluster mode is not sync.
+    if matches!(data.mode, OrchestrateMode::Observe) {
+        slog::debug!(
+            context.logger, "Skip scheduling when sync is in observe mode";
+            "ns_id" => &data.cluster_current.spec.ns_id,
+            "cluster_id" => &data.cluster_current.spec.cluster_id,
+        );
+        return Ok(oactions_unfinished);
+    }
+
     // Skip scheduling checks if no action needs scheduling.
     let any_pending = oactions_unfinished
         .iter()

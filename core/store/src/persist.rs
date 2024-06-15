@@ -2,6 +2,7 @@
 use replisdk::core::models::cluster::ClusterDiscovery;
 use replisdk::core::models::cluster::ClusterSpec;
 use replisdk::core::models::namespace::Namespace;
+use replisdk::core::models::node::Node;
 use replisdk::core::models::oaction::OAction;
 use replisdk::core::models::platform::Platform;
 
@@ -28,6 +29,9 @@ pub enum PersistOps {
 
     /// Persist a namespace record.
     Namespace(Namespace),
+
+    /// Persist a cluster node record.
+    Node(Node),
 
     /// Persist an orchestrator action record.
     OAction(OAction),
@@ -90,6 +94,16 @@ impl SealPersistOp for Namespace {}
 impl From<Namespace> for PersistOps {
     fn from(value: Namespace) -> Self {
         PersistOps::Namespace(value)
+    }
+}
+
+impl PersistOp for Node {
+    type Response = ();
+}
+impl SealPersistOp for Node {}
+impl From<Node> for PersistOps {
+    fn from(value: Node) -> Self {
+        PersistOps::Node(value)
     }
 }
 

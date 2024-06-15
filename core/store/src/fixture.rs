@@ -15,6 +15,7 @@ use replisdk::core::models::api::PlatformEntry;
 use replisdk::core::models::cluster::ClusterDiscovery;
 use replisdk::core::models::cluster::ClusterSpec;
 use replisdk::core::models::namespace::Namespace;
+use replisdk::core::models::node::Node;
 use replisdk::core::models::oaction::OAction;
 use replisdk::core::models::platform::Platform;
 
@@ -125,6 +126,20 @@ impl StoreBackend for StoreFixture {
                 let items = futures::stream::iter(items).map(Ok).boxed();
                 Ok(QueryResponses::NamespaceEntries(items))
             }
+            QueryOps::ListNodes(query) => {
+                let mut items = Vec::new();
+                for (_, node) in store.nodes.iter() {
+                    if query.ns_id != node.ns_id {
+                        continue;
+                    }
+                    if query.name != node.cluster_id {
+                        continue;
+                    }
+                    items.push(node.clone());
+                }
+                let items = futures::stream::iter(items).map(Ok).boxed();
+                Ok(QueryResponses::NodesList(items))
+            }
             QueryOps::ListOActions(query) => {
                 let mut items = Vec::new();
                 for (_, action) in store.oactions.iter() {
@@ -215,6 +230,14 @@ impl StoreBackend for StoreFixture {
             PersistOps::Namespace(ns) => {
                 store.namespaces.insert(ns.id.clone(), ns);
             }
+            PersistOps::Node(node) => {
+                let key = (
+                    node.ns_id.clone(),
+                    node.cluster_id.clone(),
+                    node.node_id.clone(),
+                );
+                store.nodes.insert(key, node);
+            }
             PersistOps::OAction(oaction) => {
                 let key = (
                     oaction.ns_id.clone(),
@@ -239,6 +262,7 @@ struct StoreFixtureState {
     cluster_discoveries: HashMap<(String, String), ClusterDiscovery>,
     cluster_specs: HashMap<(String, String), ClusterSpec>,
     namespaces: HashMap<String, Namespace>,
+    nodes: HashMap<(String, String, String), Node>,
     oactions: HashMap<(String, String, Uuid), OAction>,
     platforms: HashMap<(String, String), Platform>,
 }

@@ -11,6 +11,7 @@ mod constants;
 mod converge;
 mod init;
 mod oaction;
+mod sync;
 
 pub use self::callback::Callback;
 

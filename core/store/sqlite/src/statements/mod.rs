@@ -13,6 +13,7 @@ use replicore_store::StoreBackend;
 
 mod cluster_converge_state;
 mod cluster_discovery;
+mod cluster_node;
 mod cluster_spec;
 mod namespace;
 mod oaction;
@@ -78,6 +79,10 @@ impl StoreBackend for SQLiteStore {
                 let list = self::namespace::list(context, &self.connection).await?;
                 Ok(QueryResponses::NamespaceEntries(list))
             }
+            QueryOps::ListNodes(query) => {
+                let list = self::cluster_node::list(context, &self.connection, query).await?;
+                Ok(QueryResponses::NodesList(list))
+            }
             QueryOps::ListOActions(query) => {
                 let list = self::oaction::list(context, &self.connection, query).await?;
                 Ok(QueryResponses::OActionEntries(list))
@@ -123,6 +128,9 @@ impl StoreBackend for SQLiteStore {
                     .map(|_| PersistResponses::Success)
             }
             PersistOps::Namespace(ns) => self::namespace::persist(context, &self.connection, ns)
+                .await
+                .map(|_| PersistResponses::Success),
+            PersistOps::Node(node) => self::cluster_node::persist(context, &self.connection, node)
                 .await
                 .map(|_| PersistResponses::Success),
             PersistOps::OAction(oaction) => {

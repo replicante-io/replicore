@@ -35,7 +35,9 @@ impl TaskCallback for Callback {
         let data = crate::init::InitData::load(context, self.injector.clone(), request).await?;
         let mut cluster_new = data.cluster_current.new_build()?;
 
-        // TODO: Sync cluster nodes and build current cluster view.
+        // Sync cluster nodes and build current cluster view.
+        crate::sync::nodes(context, &data, &mut cluster_new).await?;
+        // TODO: schedule pending node actions.
 
         // Process orchestrator actions.
         let oactions = data
@@ -50,9 +52,14 @@ impl TaskCallback for Callback {
             cluster_new.oaction(action)?;
         }
 
-        // Process convergence steps.
+        // Process convergence steps unless we are observing only.
         let data = crate::converge::ConvergeData::convert(context, data).await?;
-        crate::converge::run(context, &data).await?;
+        if !matches!(
+            data.mode,
+            replicore_cluster_models::OrchestrateMode::Observe
+        ) {
+            crate::converge::run(context, &data).await?;
+        }
 
         // Emit the report as an event and save it to store.
         let event = Event::new_with_payload(crate::constants::ORCHESTRATE_REPORT, &data.report)?;

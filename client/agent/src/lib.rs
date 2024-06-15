@@ -28,7 +28,7 @@ impl Client {
         self.backend.action_lookup(action).await
     }
 
-    /// Send a request for the agent to schedule a node action. 
+    /// Send a request for the agent to schedule a node action.
     pub async fn action_schedule(
         &self,
         action: ActionExecutionRequest,
@@ -80,7 +80,7 @@ pub trait IAgent: Send + Sync {
     /// Lookup a node action from the agent using an action ID.
     async fn action_lookup(&self, action: Uuid) -> Result<ActionExecution>;
 
-    /// Send a request for the agent to schedule a node action. 
+    /// Send a request for the agent to schedule a node action.
     async fn action_schedule(
         &self,
         action: ActionExecutionRequest,

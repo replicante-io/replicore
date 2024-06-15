@@ -1,8 +1,8 @@
 //! HTTP(S) clients factory.
 use anyhow::Result;
 
-use replisdk::core::models::cluster::ClusterSpec;
 use replisdk::core::models::cluster::ClusterDiscoveryNode;
+use replisdk::core::models::cluster::ClusterSpec;
 
 use repliagent_client::Client;
 use repliagent_client_http::ClientOptions;
@@ -16,7 +16,8 @@ pub struct HttpClientFactory;
 
 #[async_trait::async_trait]
 impl Factory for HttpClientFactory {
-    async fn init(&self,
+    async fn init(
+        &self,
         _: &Context,
         _: &ClusterSpec,
         node: &ClusterDiscoveryNode,

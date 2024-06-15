@@ -60,7 +60,7 @@ impl IAgent for HttpClient {
         }
     }
 
-    /// Send a request for the agent to schedule a node action. 
+    /// Send a request for the agent to schedule a node action.
     async fn action_schedule(
         &self,
         action: ActionExecutionRequest,

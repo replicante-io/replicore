@@ -5,6 +5,7 @@ use anyhow::Result;
 
 use replisdk::core::models::cluster::ClusterDiscovery;
 use replisdk::core::models::cluster::ClusterSpec;
+use replisdk::core::models::node::Node;
 use replisdk::core::models::oaction::OAction;
 
 use crate::ClusterView;
@@ -24,57 +25,60 @@ macro_rules! check_cluster {
 
 /// Incrementally build [`ClusterView`] instances.
 pub struct ClusterViewBuilder {
-    discovery: Option<ClusterDiscovery>,
-    oactions_unfinished: Vec<Arc<OAction>>,
-    spec: ClusterSpec,
+    cluster: ClusterView,
 }
 
 impl ClusterViewBuilder {
     /// Return the cluster ID the view is about.
     pub fn cluster_id(&self) -> &str {
-        &self.spec.cluster_id
+        &self.cluster.spec.cluster_id
     }
 
     /// Update the view with the given discovery record.
     ///
     /// The discovery is checked to make sure it references the same cluster (namespace and ID).
     pub fn discovery(&mut self, discovery: ClusterDiscovery) -> Result<&mut Self> {
-        check_cluster!(self, discovery);
-        self.discovery = Some(discovery);
+        check_cluster!(self.cluster, discovery);
+        self.cluster.discovery = discovery;
         Ok(self)
     }
 
     /// Complete the building process and return a [`ClusterView`].
     pub fn finish(self) -> ClusterView {
-        let discovery = self.discovery.unwrap_or_else(|| ClusterDiscovery {
-            ns_id: self.spec.ns_id.clone(),
-            cluster_id: self.spec.cluster_id.clone(),
-            nodes: Default::default(),
-        });
-        ClusterView {
-            discovery,
-            oactions_unfinished: self.oactions_unfinished,
-            spec: self.spec,
-        }
+        self.cluster
     }
 
     /// Initialise a builder for an empty cluster.
     pub(crate) fn new(spec: ClusterSpec) -> ClusterViewBuilder {
-        ClusterViewBuilder {
-            discovery: None,
-            oactions_unfinished: Vec::new(),
+        let cluster = ClusterView {
+            discovery: ClusterDiscovery {
+                ns_id: spec.ns_id.clone(),
+                cluster_id: spec.cluster_id.clone(),
+                nodes: Default::default(),
+            },
+            nodes: Default::default(),
+            oactions_unfinished: Default::default(),
             spec,
-        }
+        };
+        ClusterViewBuilder { cluster }
+    }
+
+    /// Update the view with the given node record.
+    pub fn node_info(&mut self, node: Node) -> Result<&mut Self> {
+        check_cluster!(self.cluster, node);
+        let node_id = node.node_id.clone();
+        self.cluster.nodes.insert(node_id, Arc::new(node));
+        Ok(self)
     }
 
     /// Return the namespace ID the cluster belongs to.
     pub fn ns_id(&self) -> &str {
-        &self.spec.ns_id
+        &self.cluster.spec.ns_id
     }
 
     /// Include an unfinished orchestrator action into the view.
     pub fn oaction(&mut self, oaction: OAction) -> Result<&mut Self> {
-        check_cluster!(self, oaction);
+        check_cluster!(self.cluster, oaction);
         if oaction.state.is_final() {
             anyhow::bail!(crate::errors::FinishedOAction {
                 ns_id: oaction.ns_id,
@@ -84,7 +88,7 @@ impl ClusterViewBuilder {
         }
 
         let oaction = Arc::new(oaction);
-        self.oactions_unfinished.push(oaction);
+        self.cluster.oactions_unfinished.push(oaction);
         Ok(self)
     }
 }
