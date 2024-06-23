@@ -1,4 +1,4 @@
-//! Process node information from agents.
+//! Process and persist node information from agents.
 use anyhow::Result;
 
 use replisdk::agent::models::Node as AgentNode;
@@ -15,7 +15,7 @@ use replicore_events::Event;
 
 use crate::init::InitData;
 
-/// Cluster node logic around persistence.
+/// Logic for persisting Node information about cluster nodes.
 ///
 /// - Adds the node to the cluster view builder.
 /// - Emits associated events.

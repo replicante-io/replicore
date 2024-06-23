@@ -8,6 +8,7 @@
 use anyhow::Context as AnyContext;
 use anyhow::Result;
 
+use replisdk::core::models::node::StoreExtras;
 use replisdk::platform::models::ClusterDiscoveryNode;
 
 use replicore_cluster_view::ClusterViewBuilder;
@@ -15,6 +16,7 @@ use replicore_context::Context;
 
 mod error;
 mod node;
+mod store;
 
 use self::error::NodeSpecificCheck;
 use self::error::NodeSpecificError;
@@ -80,11 +82,26 @@ async fn sync_node(
     let node_info = self::node::process(incomplete, ag_node, node_info);
     self::node::persist(context, data, cluster_new, node_info).await?;
 
-    // TODO: persist store extras.
+    match store_info {
+        Ok(store_info) => {
+            let store_info = StoreExtras {
+                ns_id: cluster_new.ns_id().to_string(),
+                cluster_id: cluster_new.cluster_id().to_string(),
+                node_id: node.node_id.clone(),
+                attributes: store_info.attributes,
+                fresh: true,
+            };
+            self::store::persist_extras(context, data, cluster_new, node, store_info).await?;
+        }
+        Err(_error) => {
+            // TODO: add to report as event.
+            self::store::stale_extras(context, data, cluster_new, node).await?;
+        }
+    };
+
     // TODO: persist shards info.
     // TODO: sync finished actions (filter out old actions we would have deleted).
     // TODO: sync actions queue.
-    println!("~~~ {:?}", store_info);
     println!("~~~ {:?}", shards);
     println!("~~~ {:?}", actions_finished);
     println!("~~~ {:?}", actions_queue);

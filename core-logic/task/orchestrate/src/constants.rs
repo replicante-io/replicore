@@ -20,3 +20,9 @@ pub const OACTION_UPDATE: &str = "OACTION_UPDATE";
 
 /// Event code emitted when the orchestration cycle is complete and a report emitted.
 pub const ORCHESTRATE_REPORT: &str = "ORCHESTRATE_REPORT";
+
+/// Event code emitted when store extras for a node were first seen during sync.
+pub const STORE_EXTRAS_SYNC_NEW: &str = "STORE_EXTRAS_SYNC_NEW";
+
+/// Event code emitted when store extras for a node were updated during sync.
+pub const STORE_EXTRAS_SYNC_UPDATE: &str = "STORE_EXTRAS_SYNC_UPDATE";

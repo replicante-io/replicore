@@ -3,6 +3,7 @@ use replisdk::core::models::cluster::ClusterDiscovery;
 use replisdk::core::models::cluster::ClusterSpec;
 use replisdk::core::models::namespace::Namespace;
 use replisdk::core::models::node::Node;
+use replisdk::core::models::node::StoreExtras;
 use replisdk::core::models::oaction::OAction;
 use replisdk::core::models::platform::Platform;
 
@@ -38,6 +39,9 @@ pub enum PersistOps {
 
     /// Persist a platform record.
     Platform(Platform),
+
+    /// Persist a cluster node's StoreExtras record.
+    StoreExtras(StoreExtras),
 }
 
 /// List of all responses from persist operations.
@@ -124,6 +128,16 @@ impl SealPersistOp for Platform {}
 impl From<Platform> for PersistOps {
     fn from(value: Platform) -> Self {
         PersistOps::Platform(value)
+    }
+}
+
+impl PersistOp for StoreExtras {
+    type Response = ();
+}
+impl SealPersistOp for StoreExtras {}
+impl From<StoreExtras> for PersistOps {
+    fn from(value: StoreExtras) -> Self {
+        PersistOps::StoreExtras(value)
     }
 }
 

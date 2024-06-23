@@ -6,6 +6,7 @@ use anyhow::Result;
 use replisdk::core::models::cluster::ClusterDiscovery;
 use replisdk::core::models::cluster::ClusterSpec;
 use replisdk::core::models::node::Node;
+use replisdk::core::models::node::StoreExtras;
 use replisdk::core::models::oaction::OAction;
 
 use crate::ClusterView;
@@ -59,6 +60,7 @@ impl ClusterViewBuilder {
             nodes: Default::default(),
             oactions_unfinished: Default::default(),
             spec,
+            store_extras: Default::default(),
         };
         ClusterViewBuilder { cluster }
     }
@@ -89,6 +91,14 @@ impl ClusterViewBuilder {
 
         let oaction = Arc::new(oaction);
         self.cluster.oactions_unfinished.push(oaction);
+        Ok(self)
+    }
+
+    /// Update the view with the given [`StoreExtra`] record.
+    pub fn store_extras(&mut self, extras: StoreExtras) -> Result<&mut Self> {
+        check_cluster!(self.cluster, extras);
+        let node_id = extras.node_id.clone();
+        self.cluster.store_extras.insert(node_id, Arc::new(extras));
         Ok(self)
     }
 }

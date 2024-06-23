@@ -11,6 +11,7 @@ use replisdk::core::models::cluster::ClusterDiscovery;
 use replisdk::core::models::cluster::ClusterSpec;
 use replisdk::core::models::namespace::Namespace;
 use replisdk::core::models::node::Node;
+use replisdk::core::models::node::StoreExtras;
 use replisdk::core::models::oaction::OAction;
 use replisdk::core::models::platform::Platform;
 
@@ -52,6 +53,9 @@ pub enum QueryOps {
 
     /// List summary information about known platforms in the namespace, sorted alphabetically.
     ListPlatforms(NamespaceID),
+
+    /// List store extras for all nodes in a cluster.
+    ListStoreExtras(NamespacedResourceID),
 
     /// Query a namespace by Namespace ID.
     Namespace(LookupNamespace),
@@ -104,6 +108,9 @@ pub enum QueryResponses {
     /// Return a [`Stream`] of [`PlatformEntry`] objects.
     PlatformEntries(PlatformEntryStream),
 
+    /// Return a [`Stream`] of [`StoreExtras`] objects.
+    StoreExtrasList(StoreExtrasStream),
+
     /// Return a [`Stream`] (async iterator) of strings (useful for IDs).
     StringStream(StringStream),
 }
@@ -126,6 +133,9 @@ pub type OActionEntryStream = std::pin::Pin<Box<dyn Stream<Item = Result<OAction
 
 /// Alias for a heap-allocated [`Stream`] of platform summaries.
 pub type PlatformEntryStream = std::pin::Pin<Box<dyn Stream<Item = Result<PlatformEntry>>>>;
+
+/// Alias for a heap-allocated [`Stream`] of cluster nodes extras.
+pub type StoreExtrasStream = std::pin::Pin<Box<dyn Stream<Item = Result<StoreExtras>> + Send>>;
 
 /// Alias for a heap-allocated [`Stream`] of strings (useful for IDs).
 pub type StringStream = std::pin::Pin<Box<dyn Stream<Item = Result<String>>>>;
@@ -157,6 +167,24 @@ impl ListNodes {
 
 /// List summary information about known platforms in the namespace, sorted alphabetically.
 pub struct ListPlatforms(pub NamespaceID);
+
+/// List store extras for all nodes in a cluster, sorted by node ID.
+pub struct ListStoreExtras(pub NamespacedResourceID);
+
+impl ListStoreExtras {
+    /// List cluster nodes store extras by namespace and cluster ID.
+    pub fn by<S1, S2>(ns_id: S1, cluster_id: S2) -> ListStoreExtras
+    where
+        S1: Into<String>,
+        S2: Into<String>,
+    {
+        let id = NamespacedResourceID {
+            name: cluster_id.into(),
+            ns_id: ns_id.into(),
+        };
+        ListStoreExtras(id)
+    }
+}
 
 /// Lookup a [`ConvergeState`] by namespace and cluster by ID.
 #[derive(Clone, Debug)]
@@ -362,6 +390,16 @@ impl QueryOp for ListPlatforms {
 impl From<ListPlatforms> for QueryOps {
     fn from(value: ListPlatforms) -> Self {
         QueryOps::ListPlatforms(value.0)
+    }
+}
+
+impl SealQueryOp for ListStoreExtras {}
+impl QueryOp for ListStoreExtras {
+    type Response = StoreExtrasStream;
+}
+impl From<ListStoreExtras> for QueryOps {
+    fn from(value: ListStoreExtras) -> Self {
+        QueryOps::ListStoreExtras(value.0)
     }
 }
 
@@ -590,6 +628,14 @@ impl From<QueryResponses> for PlatformEntryStream {
     fn from(value: QueryResponses) -> Self {
         match value {
             QueryResponses::PlatformEntries(stream) => stream,
+            _ => panic!("unexpected result type for the given query operation"),
+        }
+    }
+}
+impl From<QueryResponses> for StoreExtrasStream {
+    fn from(value: QueryResponses) -> Self {
+        match value {
+            QueryResponses::StoreExtrasList(stream) => stream,
             _ => panic!("unexpected result type for the given query operation"),
         }
     }

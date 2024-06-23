@@ -23,11 +23,17 @@ impl Serialize for ClusterView {
             .iter()
             .map(|act| act.as_ref())
             .collect();
+        let store_extras: HashMap<&_, &_> = self
+            .store_extras
+            .iter()
+            .map(|(id, extras)| (id, extras.as_ref()))
+            .collect();
 
         state.serialize_field("discovery", &self.discovery)?;
         state.serialize_field("nodes", &nodes)?;
         state.serialize_field("oactions_unfinished", &oactions_unfinished)?;
         state.serialize_field("spec", &self.spec)?;
+        state.serialize_field("store_extras", &store_extras)?;
         state.end()
     }
 }
@@ -65,7 +71,8 @@ mod tests {
                 "interval": 60,
                 "ns_id": "test",
                 "platform": null,
-            }
+            },
+            "store_extras": {},
         });
         assert_eq!(actual, expected);
     }

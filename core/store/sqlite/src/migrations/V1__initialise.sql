@@ -93,3 +93,16 @@ CREATE TABLE IF NOT EXISTS store_platform(
   -- Table constraints
   PRIMARY KEY(ns_id, name)
 );
+
+CREATE TABLE IF NOT EXISTS store_cluster_store_extras(
+  -- StoreExtras object as a JSON blob.
+  store_extras TEXT NOT NULL,
+
+  -- Manually managed normalised columns for indexes (where virtual columns can't be used).
+  ns_id TEXT NOT NULL,
+  cluster_id TEXT NOT NULL,
+  node_id TEXT NOT NULL,
+
+  -- Table constraints
+  PRIMARY KEY(ns_id, cluster_id, node_id)
+);

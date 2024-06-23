@@ -16,6 +16,7 @@ use replisdk::core::models::cluster::ClusterDiscovery;
 use replisdk::core::models::cluster::ClusterSpec;
 use replisdk::core::models::namespace::Namespace;
 use replisdk::core::models::node::Node;
+use replisdk::core::models::node::StoreExtras;
 use replisdk::core::models::oaction::OAction;
 use replisdk::core::models::platform::Platform;
 
@@ -181,6 +182,20 @@ impl StoreBackend for StoreFixture {
                 let items = futures::stream::iter(items).map(Ok).boxed();
                 Ok(QueryResponses::PlatformEntries(items))
             }
+            QueryOps::ListStoreExtras(query) => {
+                let mut items = Vec::new();
+                for ((ns, cluster, _), extras) in store.store_extras.iter() {
+                    if ns != query.ns_id.as_str() {
+                        continue;
+                    }
+                    if cluster != query.name.as_str() {
+                        continue;
+                    }
+                    items.push(extras.clone());
+                }
+                let items = futures::stream::iter(items).map(Ok).boxed();
+                Ok(QueryResponses::StoreExtrasList(items))
+            }
             QueryOps::Namespace(ns) => {
                 let ns = store.namespaces.get(&ns.0.id).cloned();
                 Ok(QueryResponses::Namespace(ns))
@@ -250,6 +265,14 @@ impl StoreBackend for StoreFixture {
                 let key = (platform.ns_id.clone(), platform.name.clone());
                 store.platforms.insert(key, platform);
             }
+            PersistOps::StoreExtras(extras) => {
+                let key = (
+                    extras.ns_id.clone(),
+                    extras.cluster_id.clone(),
+                    extras.node_id.clone(),
+                );
+                store.store_extras.insert(key, extras);
+            }
         };
         Ok(PersistResponses::Success)
     }
@@ -265,4 +288,5 @@ struct StoreFixtureState {
     nodes: HashMap<(String, String, String), Node>,
     oactions: HashMap<(String, String, Uuid), OAction>,
     platforms: HashMap<(String, String), Platform>,
+    store_extras: HashMap<(String, String, String), StoreExtras>,
 }
