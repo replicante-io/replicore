@@ -78,6 +78,7 @@ impl IPlatform for Platform {
 
 pub struct PlatformContext {
     /// Contextual logger to be used by the operation.
+    #[allow(dead_code)]
     pub logger: Logger,
 
     /// Template lookup rules.
