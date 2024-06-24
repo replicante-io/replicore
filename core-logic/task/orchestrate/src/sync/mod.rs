@@ -8,6 +8,7 @@
 use anyhow::Context as AnyContext;
 use anyhow::Result;
 
+use replisdk::core::models::node::Shard;
 use replisdk::core::models::node::StoreExtras;
 use replisdk::platform::models::ClusterDiscoveryNode;
 
@@ -91,7 +92,7 @@ async fn sync_node(
                 attributes: store_info.attributes,
                 fresh: true,
             };
-            self::store::persist_extras(context, data, cluster_new, node, store_info).await?;
+            self::store::persist_extras(context, data, cluster_new, store_info).await?;
         }
         Err(_error) => {
             // TODO: add to report as event.
@@ -99,10 +100,34 @@ async fn sync_node(
         }
     };
 
-    // TODO: persist shards info.
+    match shards {
+        Ok(shards) => {
+            let shards = shards
+                .shards
+                .into_iter()
+                .map(|shard| {
+                    Shard {
+                        ns_id: cluster_new.ns_id().to_string(),
+                        cluster_id: cluster_new.cluster_id().to_string(),
+                        node_id: node.node_id.clone(),
+                        shard_id: shard.shard_id,
+                        commit_offset: shard.commit_offset,
+                        fresh: true,
+                        lag: shard.lag,
+                        role: shard.role,
+                    }
+                })
+                .collect();
+            self::store::persist_shards(context, data, cluster_new, shards).await?;
+        }
+        Err(_error) => {
+            // TODO: add to report as event.
+            self::store::stale_shards(context, data, cluster_new, node).await?;
+        }
+    };
+
     // TODO: sync finished actions (filter out old actions we would have deleted).
     // TODO: sync actions queue.
-    println!("~~~ {:?}", shards);
     println!("~~~ {:?}", actions_finished);
     println!("~~~ {:?}", actions_queue);
     Ok(())

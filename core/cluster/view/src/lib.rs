@@ -7,6 +7,7 @@ use anyhow::Result;
 use replisdk::core::models::cluster::ClusterDiscovery;
 use replisdk::core::models::cluster::ClusterSpec;
 use replisdk::core::models::node::Node;
+use replisdk::core::models::node::Shard;
 use replisdk::core::models::node::StoreExtras;
 use replisdk::core::models::oaction::OAction;
 
@@ -19,6 +20,9 @@ mod serialise;
 
 pub mod errors;
 pub use self::builder::ClusterViewBuilder;
+
+/// Key for the shards collection, composed of `(node_id, shard_id)`.
+pub type NodeShards = HashMap<String, Arc<Shard>>;
 
 /// In memory approximate view of a cluster for logic across an entire distributed cluster.
 #[derive(Debug)]
@@ -34,6 +38,9 @@ pub struct ClusterView {
 
     /// Cluster Specification record for the cluster.
     pub spec: ClusterSpec,
+
+    /// Information about shards found on cluster nodes.
+    pub shards: HashMap<String, NodeShards>,
 
     /// Store-requiring extra information about nodes.
     pub store_extras: HashMap<String, Arc<StoreExtras>>,

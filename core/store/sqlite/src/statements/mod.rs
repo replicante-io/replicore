@@ -18,6 +18,7 @@ mod cluster_spec;
 mod namespace;
 mod oaction;
 mod platform;
+mod shards;
 mod store_extras;
 
 /// Implementation of the [`StoreBackend`] interface using SQLite.
@@ -92,6 +93,10 @@ impl StoreBackend for SQLiteStore {
                 let list = self::platform::list(context, &self.connection, ns).await?;
                 Ok(QueryResponses::PlatformEntries(list))
             }
+            QueryOps::ListShards(query) => {
+                let list = self::shards::list(context, &self.connection, query).await?;
+                Ok(QueryResponses::ShardsList(list))
+            }
             QueryOps::ListStoreExtras(query) => {
                 let list = self::store_extras::list(context, &self.connection, query).await?;
                 Ok(QueryResponses::StoreExtrasList(list))
@@ -146,6 +151,11 @@ impl StoreBackend for SQLiteStore {
             PersistOps::Platform(pl) => self::platform::persist(context, &self.connection, pl)
                 .await
                 .map(|_| PersistResponses::Success),
+            PersistOps::Shard(shard) => {
+                self::shards::persist(context, &self.connection, shard)
+                    .await
+                    .map(|_| PersistResponses::Success)
+            }
             PersistOps::StoreExtras(extras) => {
                 self::store_extras::persist(context, &self.connection, extras)
                     .await

@@ -21,6 +21,12 @@ pub const OACTION_UPDATE: &str = "OACTION_UPDATE";
 /// Event code emitted when the orchestration cycle is complete and a report emitted.
 pub const ORCHESTRATE_REPORT: &str = "ORCHESTRATE_REPORT";
 
+/// Event code emitted when a new shard was first seen on a node during sync.
+pub const SHARD_SYNC_NEW: &str = "SHARD_SYNC_NEW";
+
+/// Event code emitted when a shard was updated on a node during sync.
+pub const SHARD_SYNC_UPDATE: &str = "SHARD_SYNC_UPDATE";
+
 /// Event code emitted when store extras for a node were first seen during sync.
 pub const STORE_EXTRAS_SYNC_NEW: &str = "STORE_EXTRAS_SYNC_NEW";
 

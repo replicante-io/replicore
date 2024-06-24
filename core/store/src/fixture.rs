@@ -16,6 +16,7 @@ use replisdk::core::models::cluster::ClusterDiscovery;
 use replisdk::core::models::cluster::ClusterSpec;
 use replisdk::core::models::namespace::Namespace;
 use replisdk::core::models::node::Node;
+use replisdk::core::models::node::Shard;
 use replisdk::core::models::node::StoreExtras;
 use replisdk::core::models::oaction::OAction;
 use replisdk::core::models::platform::Platform;
@@ -182,6 +183,24 @@ impl StoreBackend for StoreFixture {
                 let items = futures::stream::iter(items).map(Ok).boxed();
                 Ok(QueryResponses::PlatformEntries(items))
             }
+            QueryOps::ListShards(query) => {
+                let mut items = Vec::new();
+                for ((ns_id, cluster_id, node_id, _), shard) in store.shards.iter() {
+                    if ns_id != query.ns_id.as_str() {
+                        continue;
+                    }
+                    if cluster_id != query.cluster_id.as_str() {
+                        continue;
+                    }
+                    match query.node_id.as_ref() {
+                        Some(query_node) if query_node != node_id => continue,
+                        _ => (),
+                    };
+                    items.push(shard.clone());
+                }
+                let items = futures::stream::iter(items).map(Ok).boxed();
+                Ok(QueryResponses::ShardsList(items))
+            }
             QueryOps::ListStoreExtras(query) => {
                 let mut items = Vec::new();
                 for ((ns, cluster, _), extras) in store.store_extras.iter() {
@@ -265,6 +284,15 @@ impl StoreBackend for StoreFixture {
                 let key = (platform.ns_id.clone(), platform.name.clone());
                 store.platforms.insert(key, platform);
             }
+            PersistOps::Shard(shard) => {
+                let key = (
+                    shard.ns_id.clone(),
+                    shard.cluster_id.clone(),
+                    shard.node_id.clone(),
+                    shard.shard_id.clone(),
+                );
+                store.shards.insert(key, shard);
+            }
             PersistOps::StoreExtras(extras) => {
                 let key = (
                     extras.ns_id.clone(),
@@ -281,12 +309,19 @@ impl StoreBackend for StoreFixture {
 /// Container for the shared state.
 #[derive(Default)]
 struct StoreFixtureState {
+    // (ns, cluster)
     cluster_converge_states: HashMap<(String, String), ConvergeState>,
     cluster_discoveries: HashMap<(String, String), ClusterDiscovery>,
     cluster_specs: HashMap<(String, String), ClusterSpec>,
     namespaces: HashMap<String, Namespace>,
+    // (ns, cluster, node)
     nodes: HashMap<(String, String, String), Node>,
+    // (ns, cluster, action)
     oactions: HashMap<(String, String, Uuid), OAction>,
+    // (ns, platform)
     platforms: HashMap<(String, String), Platform>,
+    // (ns, cluster, node, shard)
+    shards: HashMap<(String, String, String, String), Shard>,
+    // (ns, cluster, node)
     store_extras: HashMap<(String, String, String), StoreExtras>,
 }

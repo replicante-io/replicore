@@ -4,6 +4,7 @@ use futures_util::stream::TryStreamExt;
 
 use replicore_context::Context;
 use replicore_store::query::ListNodes;
+use replicore_store::query::ListShards;
 use replicore_store::query::ListStoreExtras;
 use replicore_store::query::LookupClusterDiscovery;
 use replicore_store::query::UnfinishedOAction;
@@ -56,6 +57,13 @@ pub async fn nodes(
     let mut nodes = store.query(context, op).await?;
     while let Some(node) = nodes.try_next().await? {
         builder.store_extras(node)?;
+    }
+
+    // Load Shard records.
+    let op = ListShards::by(builder.ns_id(), builder.cluster_id());
+    let mut shards = store.query(context, op).await?;
+    while let Some(shard) = shards.try_next().await? {
+        builder.shard(shard)?;
     }
 
     Ok(())

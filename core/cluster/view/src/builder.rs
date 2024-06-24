@@ -6,6 +6,7 @@ use anyhow::Result;
 use replisdk::core::models::cluster::ClusterDiscovery;
 use replisdk::core::models::cluster::ClusterSpec;
 use replisdk::core::models::node::Node;
+use replisdk::core::models::node::Shard;
 use replisdk::core::models::node::StoreExtras;
 use replisdk::core::models::oaction::OAction;
 
@@ -60,6 +61,7 @@ impl ClusterViewBuilder {
             nodes: Default::default(),
             oactions_unfinished: Default::default(),
             spec,
+            shards: Default::default(),
             store_extras: Default::default(),
         };
         ClusterViewBuilder { cluster }
@@ -91,6 +93,20 @@ impl ClusterViewBuilder {
 
         let oaction = Arc::new(oaction);
         self.cluster.oactions_unfinished.push(oaction);
+        Ok(self)
+    }
+
+    /// Update the view with the given [`Shard`] record.
+    pub fn shard(&mut self, shard: Shard) -> Result<&mut Self> {
+        check_cluster!(self.cluster, shard);
+        let node_id = shard.node_id.clone();
+        let shard_id = shard.shard_id.clone();
+        self
+            .cluster
+            .shards
+            .entry(node_id)
+            .or_default()
+            .insert(shard_id, Arc::new(shard));
         Ok(self)
     }
 

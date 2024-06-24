@@ -11,6 +11,7 @@ use replisdk::core::models::cluster::ClusterDiscovery;
 use replisdk::core::models::cluster::ClusterSpec;
 use replisdk::core::models::namespace::Namespace;
 use replisdk::core::models::node::Node;
+use replisdk::core::models::node::Shard;
 use replisdk::core::models::node::StoreExtras;
 use replisdk::core::models::oaction::OAction;
 use replisdk::core::models::platform::Platform;
@@ -53,6 +54,9 @@ pub enum QueryOps {
 
     /// List summary information about known platforms in the namespace, sorted alphabetically.
     ListPlatforms(NamespaceID),
+
+    /// List shards in a cluster.
+    ListShards(ListShards),
 
     /// List store extras for all nodes in a cluster.
     ListStoreExtras(NamespacedResourceID),
@@ -108,6 +112,9 @@ pub enum QueryResponses {
     /// Return a [`Stream`] of [`PlatformEntry`] objects.
     PlatformEntries(PlatformEntryStream),
 
+    /// Return a [`Stream`] of [`Shard`] objects.
+    ShardsList(ShardsStream),
+
     /// Return a [`Stream`] of [`StoreExtras`] objects.
     StoreExtrasList(StoreExtrasStream),
 
@@ -133,6 +140,9 @@ pub type OActionEntryStream = std::pin::Pin<Box<dyn Stream<Item = Result<OAction
 
 /// Alias for a heap-allocated [`Stream`] of platform summaries.
 pub type PlatformEntryStream = std::pin::Pin<Box<dyn Stream<Item = Result<PlatformEntry>>>>;
+
+/// Alias for a heap-allocated [`Stream`] of cluster [`Shard`]s.
+pub type ShardsStream = std::pin::Pin<Box<dyn Stream<Item = Result<Shard>> + Send>>;
 
 /// Alias for a heap-allocated [`Stream`] of cluster nodes extras.
 pub type StoreExtrasStream = std::pin::Pin<Box<dyn Stream<Item = Result<StoreExtras>> + Send>>;
@@ -383,6 +393,55 @@ impl From<ListNodes> for QueryOps {
     }
 }
 
+/// List [`OAction`]s for a cluster.
+pub struct ListOActions {
+    /// The namespace ID the cluster is in.
+    pub ns_id: String,
+
+    /// The ID of the cluster the actions are for.
+    pub cluster_id: String,
+
+    /// Include finished actions in the results.
+    pub include_finished: bool,
+}
+
+impl SealQueryOp for ListOActions {}
+impl QueryOp for ListOActions {
+    type Response = OActionEntryStream;
+}
+impl From<ListOActions> for QueryOps {
+    fn from(value: ListOActions) -> Self {
+        QueryOps::ListOActions(value)
+    }
+}
+
+impl ListOActions {
+    /// List [`OAction`] for a cluster by namespace and cluster IDs.
+    pub fn by<S1, S2>(ns_id: S1, cluster_id: S2) -> Self
+    where
+        S1: Into<String>,
+        S2: Into<String>,
+    {
+        ListOActions {
+            ns_id: ns_id.into(),
+            cluster_id: cluster_id.into(),
+            include_finished: false,
+        }
+    }
+
+    /// Include finished [`OAction`]s in the list.
+    pub fn with_finished(mut self) -> Self {
+        self.include_finished = true;
+        self
+    }
+
+    /// Exclude finished [`OAction`]s from the list.
+    pub fn without_finished(mut self) -> Self {
+        self.include_finished = false;
+        self
+    }
+}
+
 impl SealQueryOp for ListPlatforms {}
 impl QueryOp for ListPlatforms {
     type Response = PlatformEntryStream;
@@ -390,6 +449,52 @@ impl QueryOp for ListPlatforms {
 impl From<ListPlatforms> for QueryOps {
     fn from(value: ListPlatforms) -> Self {
         QueryOps::ListPlatforms(value.0)
+    }
+}
+
+/// List [`Shard`]s for a cluster, optionally filtering by node.
+pub struct ListShards {
+    /// The namespace ID the cluster is in.
+    pub ns_id: String,
+
+    /// The ID of the cluster the shards are on.
+    pub cluster_id: String,
+
+    /// The ID of the node the shards are on, if set.
+    pub node_id: Option<String>,
+}
+
+impl SealQueryOp for ListShards {}
+impl QueryOp for ListShards {
+    type Response = ShardsStream;
+}
+impl From<ListShards> for QueryOps {
+    fn from(value: ListShards) -> Self {
+        QueryOps::ListShards(value)
+    }
+}
+
+impl ListShards {
+    /// List [`Shards`] for a cluster by namespace and cluster IDs.
+    pub fn by<S1, S2>(ns_id: S1, cluster_id: S2) -> Self
+    where
+        S1: Into<String>,
+        S2: Into<String>,
+    {
+        ListShards {
+            ns_id: ns_id.into(),
+            cluster_id: cluster_id.into(),
+            node_id: None,
+        }
+    }
+
+    /// Filter [`Shard`]s that are on a specific node.
+    pub fn with_node_id<S>(mut self, node_id: S) -> Self
+    where
+        S: Into<String>,
+    {
+        self.node_id = Some(node_id.into());
+        self
     }
 }
 
@@ -473,55 +578,6 @@ impl QueryOp for LookupPlatform {
 impl From<LookupPlatform> for QueryOps {
     fn from(value: LookupPlatform) -> Self {
         QueryOps::Platform(value.0)
-    }
-}
-
-/// List [`OAction`]s for a cluster.
-pub struct ListOActions {
-    /// The namespace ID the cluster is in.
-    pub ns_id: String,
-
-    /// The ID of the cluster the actions are for.
-    pub cluster_id: String,
-
-    /// Include finished actions in the results.
-    pub include_finished: bool,
-}
-
-impl SealQueryOp for ListOActions {}
-impl QueryOp for ListOActions {
-    type Response = OActionEntryStream;
-}
-impl From<ListOActions> for QueryOps {
-    fn from(value: ListOActions) -> Self {
-        QueryOps::ListOActions(value)
-    }
-}
-
-impl ListOActions {
-    /// List [`OAction`] for a cluster by namespace and cluster IDs.
-    pub fn by<S1, S2>(ns_id: S1, cluster_id: S2) -> Self
-    where
-        S1: Into<String>,
-        S2: Into<String>,
-    {
-        ListOActions {
-            ns_id: ns_id.into(),
-            cluster_id: cluster_id.into(),
-            include_finished: false,
-        }
-    }
-
-    /// Include finished [`OAction`]s in the list.
-    pub fn with_finished(mut self) -> Self {
-        self.include_finished = true;
-        self
-    }
-
-    /// Exclude finished [`OAction`]s from the list.
-    pub fn without_finished(mut self) -> Self {
-        self.include_finished = false;
-        self
     }
 }
 
@@ -628,6 +684,14 @@ impl From<QueryResponses> for PlatformEntryStream {
     fn from(value: QueryResponses) -> Self {
         match value {
             QueryResponses::PlatformEntries(stream) => stream,
+            _ => panic!("unexpected result type for the given query operation"),
+        }
+    }
+}
+impl From<QueryResponses> for ShardsStream {
+    fn from(value: QueryResponses) -> Self {
+        match value {
+            QueryResponses::ShardsList(stream) => stream,
             _ => panic!("unexpected result type for the given query operation"),
         }
     }
