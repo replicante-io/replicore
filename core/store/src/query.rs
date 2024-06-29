@@ -4,11 +4,13 @@ use futures::Stream;
 use uuid::Uuid;
 
 use replisdk::core::models::api::ClusterSpecEntry;
+use replisdk::core::models::api::NActionEntry;
 use replisdk::core::models::api::NamespaceEntry;
 use replisdk::core::models::api::OActionEntry;
 use replisdk::core::models::api::PlatformEntry;
 use replisdk::core::models::cluster::ClusterDiscovery;
 use replisdk::core::models::cluster::ClusterSpec;
+use replisdk::core::models::naction::NAction;
 use replisdk::core::models::namespace::Namespace;
 use replisdk::core::models::node::Node;
 use replisdk::core::models::node::Shard;
@@ -43,6 +45,9 @@ pub enum QueryOps {
     /// List the summary information of all cluster specs in a namespace, sorted alphabetically.
     ListClusterSpecs(NamespaceID),
 
+    /// List all node actions for a specific cluster.
+    ListNActions(ListNActions),
+
     /// List summary information of all known namespaces, sorted alphabetically.
     ListNamespaces,
 
@@ -70,6 +75,9 @@ pub enum QueryOps {
     /// Query a platform by Namespace ID and Resource Name.
     Platform(NamespacedResourceID),
 
+    /// Iterate over all unfinished node actions for a cluster.
+    UnfinishedNAction(NamespacedResourceID),
+
     /// Iterate over all unfinished orchestrator actions for a cluster.
     UnfinishedOAction(NamespacedResourceID),
 }
@@ -87,6 +95,12 @@ pub enum QueryResponses {
 
     /// Return a [`Stream`] of [`ClusterSpecEntry`] objects.
     ClusterSpecEntries(ClusterSpecEntryStream),
+
+    /// Return a [`Stream`] of [`NAction`] objects.
+    NActions(NActionStream),
+
+    /// Return a [`Stream`] of [`NActionEntry`] objects.
+    NActionEntries(NActionEntryStream),
 
     /// Return a [`Namespace`], if one was found matching the query.
     Namespace(Option<Namespace>),
@@ -126,14 +140,20 @@ pub enum QueryResponses {
 /// Alias for a heap-allocated [`Stream`] of cluster spec summaries.
 pub type ClusterSpecEntryStream = std::pin::Pin<Box<dyn Stream<Item = Result<ClusterSpecEntry>>>>;
 
+/// Alias for a heap-allocated [`Stream`] of node actions.
+pub type NActionStream = std::pin::Pin<Box<dyn Stream<Item = Result<NAction>> + Send>>;
+
+/// Alias for a heap-allocated [`Stream`] of node action summaries.
+pub type NActionEntryStream = std::pin::Pin<Box<dyn Stream<Item = Result<NActionEntry>>>>;
+
 /// Alias for a heap-allocated [`Stream`] of namespace summaries.
 pub type NamespaceEntryStream = std::pin::Pin<Box<dyn Stream<Item = Result<NamespaceEntry>>>>;
 
-/// Alias for a heap-allocated [`Stream`] of orchestrator actions.
-pub type OActionStream = std::pin::Pin<Box<dyn Stream<Item = Result<OAction>> + Send>>;
-
 /// Alias for a heap-allocated [`Stream`] of cluster nodes.
 pub type NodesStream = std::pin::Pin<Box<dyn Stream<Item = Result<Node>> + Send>>;
+
+/// Alias for a heap-allocated [`Stream`] of orchestrator actions.
+pub type OActionStream = std::pin::Pin<Box<dyn Stream<Item = Result<OAction>> + Send>>;
 
 /// Alias for a heap-allocated [`Stream`] of orchestrator action summaries.
 pub type OActionEntryStream = std::pin::Pin<Box<dyn Stream<Item = Result<OActionEntry>>>>;
@@ -334,6 +354,27 @@ impl LookupPlatform {
     }
 }
 
+/// Iterate over all unfinished node actions for a cluster.
+///
+/// Actions are returned ordered by creation date (oldest first).
+#[derive(Clone, Debug)]
+pub struct UnfinishedNAction(pub NamespacedResourceID);
+
+impl UnfinishedNAction {
+    /// Lookup a platform by namespace ID and platform name.
+    pub fn for_cluster<S1, S2>(ns_id: S1, cluster_id: S2) -> UnfinishedNAction
+    where
+        S1: Into<String>,
+        S2: Into<String>,
+    {
+        let id = NamespacedResourceID {
+            name: cluster_id.into(),
+            ns_id: ns_id.into(),
+        };
+        UnfinishedNAction(id)
+    }
+}
+
 /// Iterate over all unfinished orchestrator actions for a cluster.
 ///
 /// Actions are returned ordered by creation date (oldest first).
@@ -370,6 +411,55 @@ impl QueryOp for ListClusterSpecs {
 impl From<ListClusterSpecs> for QueryOps {
     fn from(value: ListClusterSpecs) -> Self {
         QueryOps::ListClusterSpecs(value.0)
+    }
+}
+
+/// List [`NAction`]s for a cluster.
+pub struct ListNActions {
+    /// The namespace ID the cluster is in.
+    pub ns_id: String,
+
+    /// The ID of the cluster the actions are for.
+    pub cluster_id: String,
+
+    /// Include finished actions in the results.
+    pub include_finished: bool,
+}
+
+impl SealQueryOp for ListNActions {}
+impl QueryOp for ListNActions {
+    type Response = NActionEntryStream;
+}
+impl From<ListNActions> for QueryOps {
+    fn from(value: ListNActions) -> Self {
+        QueryOps::ListNActions(value)
+    }
+}
+
+impl ListNActions {
+    /// List [`NAction`] for a cluster by namespace and cluster IDs.
+    pub fn by<S1, S2>(ns_id: S1, cluster_id: S2) -> Self
+    where
+        S1: Into<String>,
+        S2: Into<String>,
+    {
+        ListNActions {
+            ns_id: ns_id.into(),
+            cluster_id: cluster_id.into(),
+            include_finished: false,
+        }
+    }
+
+    /// Include finished [`NAction`]s in the list.
+    pub fn with_finished(mut self) -> Self {
+        self.include_finished = true;
+        self
+    }
+
+    /// Exclude finished [`NAction`]s from the list.
+    pub fn without_finished(mut self) -> Self {
+        self.include_finished = false;
+        self
     }
 }
 
@@ -581,6 +671,16 @@ impl From<LookupPlatform> for QueryOps {
     }
 }
 
+impl SealQueryOp for UnfinishedNAction {}
+impl QueryOp for UnfinishedNAction {
+    type Response = NActionStream;
+}
+impl From<UnfinishedNAction> for QueryOps {
+    fn from(value: UnfinishedNAction) -> Self {
+        QueryOps::UnfinishedNAction(value.0)
+    }
+}
+
 impl SealQueryOp for UnfinishedOAction {}
 impl QueryOp for UnfinishedOAction {
     type Response = OActionStream;
@@ -620,6 +720,22 @@ impl From<QueryResponses> for ClusterSpecEntryStream {
     fn from(value: QueryResponses) -> Self {
         match value {
             QueryResponses::ClusterSpecEntries(stream) => stream,
+            _ => panic!("unexpected result type for the given query operation"),
+        }
+    }
+}
+impl From<QueryResponses> for NActionStream {
+    fn from(value: QueryResponses) -> Self {
+        match value {
+            QueryResponses::NActions(stream) => stream,
+            _ => panic!("unexpected result type for the given query operation"),
+        }
+    }
+}
+impl From<QueryResponses> for NActionEntryStream {
+    fn from(value: QueryResponses) -> Self {
+        match value {
+            QueryResponses::NActionEntries(stream) => stream,
             _ => panic!("unexpected result type for the given query operation"),
         }
     }

@@ -13,6 +13,17 @@ impl Serialize for ClusterView {
         S: Serializer,
     {
         let mut state = serializer.serialize_struct("ClusterView", 3)?;
+        let nactions_by_node: HashMap<&_, _> = self
+            .nactions_by_node
+            .iter()
+            .map(|(id, actions)| {
+                let actions: HashMap<&_, &_> = actions
+                    .iter()
+                    .map(|(id, action)| (id, action.as_ref()))
+                    .collect();
+                (id, actions)
+            })
+            .collect();
         let nodes: HashMap<&_, &_> = self
             .nodes
             .iter()
@@ -23,6 +34,17 @@ impl Serialize for ClusterView {
             .iter()
             .map(|act| act.as_ref())
             .collect();
+        let shards: HashMap<&_, _> = self
+            .shards
+            .iter()
+            .map(|(id, shards)| {
+                let shards: HashMap<&_, &_> = shards
+                    .iter()
+                    .map(|(id, shard)| (id, shard.as_ref()))
+                    .collect();
+                (id, shards)
+            })
+            .collect();
         let store_extras: HashMap<&_, &_> = self
             .store_extras
             .iter()
@@ -30,9 +52,11 @@ impl Serialize for ClusterView {
             .collect();
 
         state.serialize_field("discovery", &self.discovery)?;
+        state.serialize_field("nactions_by_node", &nactions_by_node)?;
         state.serialize_field("nodes", &nodes)?;
         state.serialize_field("oactions_unfinished", &oactions_unfinished)?;
         state.serialize_field("spec", &self.spec)?;
+        state.serialize_field("shards", &shards)?;
         state.serialize_field("store_extras", &store_extras)?;
         state.end()
     }
@@ -57,6 +81,7 @@ mod tests {
                 "nodes": [],
                 "ns_id": "test",
             },
+            "nactions_by_node": {},
             "nodes": {},
             "oactions_unfinished": [],
             "spec": {
@@ -72,6 +97,7 @@ mod tests {
                 "ns_id": "test",
                 "platform": null,
             },
+            "shards": {},
             "store_extras": {},
         });
         assert_eq!(actual, expected);

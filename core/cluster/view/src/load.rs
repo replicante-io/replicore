@@ -7,34 +7,22 @@ use replicore_store::query::ListNodes;
 use replicore_store::query::ListShards;
 use replicore_store::query::ListStoreExtras;
 use replicore_store::query::LookupClusterDiscovery;
+use replicore_store::query::UnfinishedNAction;
 use replicore_store::query::UnfinishedOAction;
 use replicore_store::Store;
 
 use crate::ClusterViewBuilder;
 
-/// Load unfinished OAction records for the cluster.
-pub async fn oactions(
+/// Load unfinished NAction records for the cluster.
+pub async fn nactions(
     builder: &mut ClusterViewBuilder,
     context: &Context,
     store: &Store,
 ) -> Result<()> {
-    let actions = UnfinishedOAction::for_cluster(builder.ns_id(), builder.cluster_id());
+    let actions = UnfinishedNAction::for_cluster(builder.ns_id(), builder.cluster_id());
     let mut actions = store.query(context, actions).await?;
     while let Some(action) = actions.try_next().await? {
-        builder.oaction(action)?;
-    }
-    Ok(())
-}
-
-/// Load overall cluster information.
-pub async fn overall(
-    builder: &mut ClusterViewBuilder,
-    context: &Context,
-    store: &Store,
-) -> Result<()> {
-    let op = LookupClusterDiscovery::by(builder.ns_id(), builder.cluster_id());
-    if let Some(discovery) = store.query(context, op).await? {
-        builder.discovery(discovery)?;
+        builder.node_action(action)?;
     }
     Ok(())
 }
@@ -66,5 +54,32 @@ pub async fn nodes(
         builder.shard(shard)?;
     }
 
+    Ok(())
+}
+
+/// Load unfinished OAction records for the cluster.
+pub async fn oactions(
+    builder: &mut ClusterViewBuilder,
+    context: &Context,
+    store: &Store,
+) -> Result<()> {
+    let actions = UnfinishedOAction::for_cluster(builder.ns_id(), builder.cluster_id());
+    let mut actions = store.query(context, actions).await?;
+    while let Some(action) = actions.try_next().await? {
+        builder.oaction(action)?;
+    }
+    Ok(())
+}
+
+/// Load overall cluster information.
+pub async fn overall(
+    builder: &mut ClusterViewBuilder,
+    context: &Context,
+    store: &Store,
+) -> Result<()> {
+    let op = LookupClusterDiscovery::by(builder.ns_id(), builder.cluster_id());
+    if let Some(discovery) = store.query(context, op).await? {
+        builder.discovery(discovery)?;
+    }
     Ok(())
 }

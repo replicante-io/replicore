@@ -40,11 +40,7 @@ DO UPDATE SET
 ;"#;
 
 /// Return a list of known [`Shard`]s in the given cluster.
-pub async fn list(
-    _: &Context,
-    connection: &Connection,
-    query: ListShards,
-) -> Result<ShardsStream> {
+pub async fn list(_: &Context, connection: &Connection, query: ListShards) -> Result<ShardsStream> {
     let (err_count, _timer) = crate::telemetry::observe_op("shard.list");
     let trace = crate::telemetry::trace_op("shard.list");
     let shards = connection

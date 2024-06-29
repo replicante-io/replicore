@@ -15,6 +15,7 @@ mod cluster_converge_state;
 mod cluster_discovery;
 mod cluster_node;
 mod cluster_spec;
+mod naction;
 mod namespace;
 mod oaction;
 mod platform;
@@ -77,6 +78,10 @@ impl StoreBackend for SQLiteStore {
                 let list = self::cluster_spec::list(context, &self.connection, ns).await?;
                 Ok(QueryResponses::ClusterSpecEntries(list))
             }
+            QueryOps::ListNActions(query) => {
+                let list = self::naction::list(context, &self.connection, query).await?;
+                Ok(QueryResponses::NActionEntries(list))
+            }
             QueryOps::ListNamespaces => {
                 let list = self::namespace::list(context, &self.connection).await?;
                 Ok(QueryResponses::NamespaceEntries(list))
@@ -113,6 +118,10 @@ impl StoreBackend for SQLiteStore {
                 let pl = self::platform::lookup(context, &self.connection, pl).await?;
                 Ok(QueryResponses::Platform(pl))
             }
+            QueryOps::UnfinishedNAction(cluster) => {
+                let list = self::naction::unfinished(context, &self.connection, cluster).await?;
+                Ok(QueryResponses::NActions(list))
+            }
             QueryOps::UnfinishedOAction(cluster) => {
                 let list = self::oaction::unfinished(context, &self.connection, cluster).await?;
                 Ok(QueryResponses::OActions(list))
@@ -137,6 +146,11 @@ impl StoreBackend for SQLiteStore {
                     .await
                     .map(|_| PersistResponses::Success)
             }
+            PersistOps::NAction(action) => {
+                self::naction::persist(context, &self.connection, action)
+                    .await
+                    .map(|_| PersistResponses::Success)
+            }
             PersistOps::Namespace(ns) => self::namespace::persist(context, &self.connection, ns)
                 .await
                 .map(|_| PersistResponses::Success),
@@ -151,11 +165,9 @@ impl StoreBackend for SQLiteStore {
             PersistOps::Platform(pl) => self::platform::persist(context, &self.connection, pl)
                 .await
                 .map(|_| PersistResponses::Success),
-            PersistOps::Shard(shard) => {
-                self::shards::persist(context, &self.connection, shard)
-                    .await
-                    .map(|_| PersistResponses::Success)
-            }
+            PersistOps::Shard(shard) => self::shards::persist(context, &self.connection, shard)
+                .await
+                .map(|_| PersistResponses::Success),
             PersistOps::StoreExtras(extras) => {
                 self::store_extras::persist(context, &self.connection, extras)
                     .await

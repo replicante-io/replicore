@@ -1,6 +1,7 @@
 //! RepliCore Control Plane persistent store operations to persist records.
 use replisdk::core::models::cluster::ClusterDiscovery;
 use replisdk::core::models::cluster::ClusterSpec;
+use replisdk::core::models::naction::NAction;
 use replisdk::core::models::namespace::Namespace;
 use replisdk::core::models::node::Node;
 use replisdk::core::models::node::Shard;
@@ -28,6 +29,9 @@ pub enum PersistOps {
 
     /// Persist a cluster specification record.
     ClusterSpec(ClusterSpec),
+
+    /// Persist a node action record.
+    NAction(NAction),
 
     /// Persist a namespace record.
     Namespace(Namespace),
@@ -92,6 +96,16 @@ impl SealPersistOp for ClusterSpec {}
 impl From<ClusterSpec> for PersistOps {
     fn from(value: ClusterSpec) -> Self {
         PersistOps::ClusterSpec(value)
+    }
+}
+
+impl PersistOp for NAction {
+    type Response = ();
+}
+impl SealPersistOp for NAction {}
+impl From<NAction> for PersistOps {
+    fn from(value: NAction) -> Self {
+        PersistOps::NAction(value)
     }
 }
 

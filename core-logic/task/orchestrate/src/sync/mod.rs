@@ -16,6 +16,7 @@ use replicore_cluster_view::ClusterViewBuilder;
 use replicore_context::Context;
 
 mod error;
+mod nactions;
 mod node;
 mod store;
 
@@ -33,7 +34,8 @@ pub async fn nodes(
     for node in &data.cluster_current.discovery.nodes {
         let result = sync_node(context, data, new_view, node).await;
         let result = result.with_node_specific()?;
-        // TODO: add node/error to orchestrate report.
+        // TODO: if error, add error to the report as event.
+        // TODO: add node synced to orchestrate report.
         println!("~~~ {:?}", result);
     }
 
@@ -72,14 +74,9 @@ async fn sync_node(
     // Fetch all other node information and process them as best as possible.
     let store_info = client.info_store().await.context(NodeSpecificError);
     let shards = client.info_shards().await.context(NodeSpecificError);
-    let actions_finished = client.actions_finished().await.context(NodeSpecificError);
-    let actions_queue = client.actions_queue().await.context(NodeSpecificError);
 
     // Process fetched information for node sync.
-    let incomplete = store_info.is_err()
-        || shards.is_err()
-        || actions_finished.is_err()
-        || actions_queue.is_err();
+    let incomplete = store_info.is_err() || shards.is_err();
     let node_info = self::node::process(incomplete, ag_node, node_info);
     self::node::persist(context, data, cluster_new, node_info).await?;
 
@@ -98,24 +95,22 @@ async fn sync_node(
             // TODO: add to report as event.
             self::store::stale_extras(context, data, cluster_new, node).await?;
         }
-    };
+    }
 
     match shards {
         Ok(shards) => {
             let shards = shards
                 .shards
                 .into_iter()
-                .map(|shard| {
-                    Shard {
-                        ns_id: cluster_new.ns_id().to_string(),
-                        cluster_id: cluster_new.cluster_id().to_string(),
-                        node_id: node.node_id.clone(),
-                        shard_id: shard.shard_id,
-                        commit_offset: shard.commit_offset,
-                        fresh: true,
-                        lag: shard.lag,
-                        role: shard.role,
-                    }
+                .map(|shard| Shard {
+                    ns_id: cluster_new.ns_id().to_string(),
+                    cluster_id: cluster_new.cluster_id().to_string(),
+                    node_id: node.node_id.clone(),
+                    shard_id: shard.shard_id,
+                    commit_offset: shard.commit_offset,
+                    fresh: true,
+                    lag: shard.lag,
+                    role: shard.role,
                 })
                 .collect();
             self::store::persist_shards(context, data, cluster_new, shards).await?;
@@ -124,11 +119,7 @@ async fn sync_node(
             // TODO: add to report as event.
             self::store::stale_shards(context, data, cluster_new, node).await?;
         }
-    };
+    }
 
-    // TODO: sync finished actions (filter out old actions we would have deleted).
-    // TODO: sync actions queue.
-    println!("~~~ {:?}", actions_finished);
-    println!("~~~ {:?}", actions_queue);
-    Ok(())
+    self::nactions::sync(context, data, cluster_new, node, &client).await
 }

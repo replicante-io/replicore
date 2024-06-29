@@ -2649,6 +2649,7 @@ dependencies = [
  "anyhow",
  "async-trait",
  "once_cell",
+ "repliagent-client",
  "replicore-cluster-models",
  "replicore-cluster-view",
  "replicore-context",
@@ -2666,6 +2667,7 @@ dependencies = [
  "slog",
  "thiserror",
  "time",
+ "uuid",
 ]
 
 [[package]]

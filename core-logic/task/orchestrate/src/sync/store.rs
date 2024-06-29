@@ -125,14 +125,13 @@ async fn persist_shard(
     let shard_id = &shard.shard_id;
     let current = data
         .cluster_current
-        .shards.get(node_id)
+        .shards
+        .get(node_id)
         .and_then(|shards| shards.get(shard_id));
 
     // Emit sync event as appropriate.
     let code = match current {
-        Some(current) if !current.same(&shard) => {
-            Some(crate::constants::SHARD_SYNC_UPDATE)
-        }
+        Some(current) if !current.same(&shard) => Some(crate::constants::SHARD_SYNC_UPDATE),
         None => Some(crate::constants::SHARD_SYNC_NEW),
         _ => None,
     };

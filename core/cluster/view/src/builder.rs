@@ -5,6 +5,7 @@ use anyhow::Result;
 
 use replisdk::core::models::cluster::ClusterDiscovery;
 use replisdk::core::models::cluster::ClusterSpec;
+use replisdk::core::models::naction::NAction;
 use replisdk::core::models::node::Node;
 use replisdk::core::models::node::Shard;
 use replisdk::core::models::node::StoreExtras;
@@ -58,13 +59,30 @@ impl ClusterViewBuilder {
                 cluster_id: spec.cluster_id.clone(),
                 nodes: Default::default(),
             },
+            nactions_by_node: Default::default(),
             nodes: Default::default(),
             oactions_unfinished: Default::default(),
             spec,
             shards: Default::default(),
             store_extras: Default::default(),
+            index_nactions_by_id: Default::default(),
         };
         ClusterViewBuilder { cluster }
+    }
+
+    /// Update the view with the given [`NAction`] record.
+    pub fn node_action(&mut self, action: NAction) -> Result<&mut Self> {
+        check_cluster!(self.cluster, action);
+        let action = Arc::new(action);
+        let action_id = action.action_id;
+        let node_id = action.node_id.clone();
+        self.cluster
+            .nactions_by_node
+            .entry(node_id)
+            .or_default()
+            .insert(action_id, action.clone());
+        self.cluster.index_nactions_by_id.insert(action_id, action);
+        Ok(self)
     }
 
     /// Update the view with the given node record.
@@ -101,8 +119,7 @@ impl ClusterViewBuilder {
         check_cluster!(self.cluster, shard);
         let node_id = shard.node_id.clone();
         let shard_id = shard.shard_id.clone();
-        self
-            .cluster
+        self.cluster
             .shards
             .entry(node_id)
             .or_default()

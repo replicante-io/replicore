@@ -9,11 +9,13 @@ use futures::StreamExt;
 use uuid::Uuid;
 
 use replisdk::core::models::api::ClusterSpecEntry;
+use replisdk::core::models::api::NActionEntry;
 use replisdk::core::models::api::NamespaceEntry;
 use replisdk::core::models::api::OActionEntry;
 use replisdk::core::models::api::PlatformEntry;
 use replisdk::core::models::cluster::ClusterDiscovery;
 use replisdk::core::models::cluster::ClusterSpec;
+use replisdk::core::models::naction::NAction;
 use replisdk::core::models::namespace::Namespace;
 use replisdk::core::models::node::Node;
 use replisdk::core::models::node::Shard;
@@ -114,6 +116,33 @@ impl StoreBackend for StoreFixture {
                 }
                 let items = futures::stream::iter(items).map(Ok).boxed();
                 Ok(QueryResponses::ClusterSpecEntries(items))
+            }
+            QueryOps::ListNActions(query) => {
+                let mut items = Vec::new();
+                for (_, action) in store.nactions.iter() {
+                    if query.ns_id != action.ns_id {
+                        continue;
+                    }
+                    if query.cluster_id != action.cluster_id {
+                        continue;
+                    }
+                    if action.state.phase.is_final() && !query.include_finished {
+                        continue;
+                    }
+                    let item = NActionEntry {
+                        ns_id: action.ns_id.clone(),
+                        cluster_id: action.cluster_id.clone(),
+                        node_id: action.node_id.clone(),
+                        action_id: action.action_id,
+                        created_time: action.created_time,
+                        finished_time: action.finished_time,
+                        kind: action.kind.clone(),
+                        state: action.state.phase,
+                    };
+                    items.push(item);
+                }
+                let items = futures::stream::iter(items).map(Ok).boxed();
+                Ok(QueryResponses::NActionEntries(items))
             }
             QueryOps::ListNamespaces => {
                 let items: Vec<_> = store
@@ -229,6 +258,20 @@ impl StoreBackend for StoreFixture {
                 let platform = store.platforms.get(&key).cloned();
                 Ok(QueryResponses::Platform(platform))
             }
+            QueryOps::UnfinishedNAction(cluster) => {
+                let actions: Vec<_> = store
+                    .nactions
+                    .iter()
+                    .filter(|(_, action)| {
+                        action.ns_id == cluster.ns_id
+                            && action.cluster_id == cluster.name
+                            && !action.state.phase.is_final()
+                    })
+                    .map(|(_, action)| action.clone())
+                    .collect();
+                let actions = futures::stream::iter(actions).map(Ok).boxed();
+                Ok(QueryResponses::NActions(actions))
+            }
             QueryOps::UnfinishedOAction(cluster) => {
                 let actions: Vec<_> = store
                     .oactions
@@ -260,6 +303,15 @@ impl StoreBackend for StoreFixture {
             PersistOps::ClusterSpec(spec) => {
                 let key = (spec.ns_id.clone(), spec.cluster_id.clone());
                 store.cluster_specs.insert(key, spec);
+            }
+            PersistOps::NAction(action) => {
+                let key = (
+                    action.ns_id.clone(),
+                    action.cluster_id.clone(),
+                    action.node_id.clone(),
+                    action.action_id,
+                );
+                store.nactions.insert(key, action);
             }
             PersistOps::Namespace(ns) => {
                 store.namespaces.insert(ns.id.clone(), ns);
@@ -314,6 +366,8 @@ struct StoreFixtureState {
     cluster_discoveries: HashMap<(String, String), ClusterDiscovery>,
     cluster_specs: HashMap<(String, String), ClusterSpec>,
     namespaces: HashMap<String, Namespace>,
+    // (ns, cluster, node, action)
+    nactions: HashMap<(String, String, String, Uuid), NAction>,
     // (ns, cluster, node)
     nodes: HashMap<(String, String, String), Node>,
     // (ns, cluster, action)

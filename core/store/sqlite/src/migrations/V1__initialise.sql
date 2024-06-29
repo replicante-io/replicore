@@ -51,6 +51,24 @@ CREATE TABLE IF NOT EXISTS store_cluster_node(
   PRIMARY KEY(ns_id, cluster_id, node_id)
 );
 
+CREATE TABLE IF NOT EXISTS store_naction(
+  -- Node action object as a JSON blob.
+  naction TEXT NOT NULL,
+
+  -- Manually managed normalised columns for indexes (where virtual columns can't be used).
+  ns_id TEXT NOT NULL,
+  cluster_id TEXT NOT NULL,
+  node_id TEXT NOT NULL,
+  action_id TEXT NOT NULL,
+
+  -- Times sorted and queried on use REAL for SQLite to operate on it correctly.
+  created_time REAL NOT NULL,
+  finished_time REAL DEFAULT NULL,
+
+  -- Table constraints
+  PRIMARY KEY(ns_id, cluster_id, node_id, action_id)
+);
+
 CREATE TABLE IF NOT EXISTS store_namespace(
   -- namespace object as a JSON blob.
   namespace TEXT NOT NULL,
