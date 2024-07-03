@@ -16,7 +16,7 @@ use replicore_store::query::NActionEntryStream;
 use replicore_store::query::NActionStream;
 
 const LIST_ALL_SQL: &str = r#"
-SELECT oaction
+SELECT naction
 FROM store_naction
 WHERE
     ns_id = ?1
@@ -25,7 +25,7 @@ ORDER BY created_time ASC;
 "#;
 
 const LIST_UNFINISHED_SQL: &str = r#"
-SELECT oaction
+SELECT naction
 FROM store_naction
 WHERE
     ns_id = ?1

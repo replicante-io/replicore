@@ -5,22 +5,20 @@ use replisdk::core::models::oaction::OAction;
 use replisdk::core::models::oaction::OActionState;
 
 use replicore_cluster_models::OrchestrateMode;
-use replicore_cluster_view::ClusterViewBuilder;
 use replicore_context::Context;
 use replicore_events::Event;
 use replicore_oaction::OActionChangeValue;
 use replicore_oaction::OActionChanges;
 use replicore_oaction::OActionInvokeArgs;
 
-use crate::init::InitData;
+use crate::sync::SyncData;
 
 /// Progress all already running orchestrator actions.
 ///
 /// This method returns a list of still unfinished actions after all running actions executed.
 pub async fn progress(
     context: &Context,
-    data: &InitData,
-    cluster_new: &mut ClusterViewBuilder,
+    data: &SyncData,
     oactions_unfinished: Vec<OAction>,
 ) -> Result<Vec<OAction>> {
     let mut still_unfinished = Vec::new();
@@ -35,7 +33,7 @@ pub async fn progress(
         // Carry over view of unfinished (updated) actions.
         if !action.state.is_final() {
             still_unfinished.push(action.clone());
-            cluster_new.oaction(action)?;
+            data.cluster_new_mut().oaction(action)?;
         }
     }
     Ok(still_unfinished)
@@ -61,7 +59,7 @@ pub async fn progress(
 /// NOTE: node-exclusive actions are likely future features.
 pub async fn schedule(
     context: &Context,
-    data: &InitData,
+    data: &SyncData,
     oactions_unfinished: Vec<OAction>,
 ) -> Result<Vec<OAction>> {
     // Skip scheduling if the cluster mode is not sync.
@@ -136,7 +134,7 @@ pub async fn schedule(
 ///
 /// - The action is `PendingApprove`.
 /// - The action is finished.
-async fn execute(context: &Context, data: &InitData, action: OAction) -> Result<OAction> {
+async fn execute(context: &Context, data: &SyncData, action: OAction) -> Result<OAction> {
     // Sanity check the action state before it is processed.
     if matches!(action.state, OActionState::PendingApprove) {
         panic!("cannot execute orchestration action pending approval");
@@ -180,7 +178,7 @@ async fn execute(context: &Context, data: &InitData, action: OAction) -> Result<
 ///
 /// The main purpose of this method is to consolidate invocation errors into one call
 /// for easier handling of state transition and status update.
-async fn invoke(context: &Context, data: &InitData, action: &OAction) -> Result<OActionChanges> {
+async fn invoke(context: &Context, data: &SyncData, action: &OAction) -> Result<OActionChanges> {
     let metadata = data.injector.oactions.lookup(&action.kind)?;
     let args = OActionInvokeArgs {
         action,
@@ -215,7 +213,7 @@ async fn invoke(context: &Context, data: &InitData, action: &OAction) -> Result<
 /// Update the [`OAction`] record with the result from invoking the handler.
 async fn update(
     context: &Context,
-    data: &InitData,
+    data: &SyncData,
     action: &mut OAction,
     changes: OActionChanges,
 ) -> Result<()> {

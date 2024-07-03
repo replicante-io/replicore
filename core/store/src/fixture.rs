@@ -24,6 +24,7 @@ use replisdk::core::models::oaction::OAction;
 use replisdk::core::models::platform::Platform;
 
 use replicore_cluster_models::ConvergeState;
+use replicore_cluster_models::OrchestrateReport;
 use replicore_context::Context;
 
 use super::DeleteOps;
@@ -253,6 +254,11 @@ impl StoreBackend for StoreFixture {
                 let oaction = store.oactions.get(&key).cloned();
                 Ok(QueryResponses::OAction(oaction))
             }
+            QueryOps::OrchestrateReport(query) => {
+                let key = (query.ns_id, query.name);
+                let report = store.orchestrate_reports.get(&key).cloned();
+                Ok(QueryResponses::OrchestrateReport(report))
+            }
             QueryOps::Platform(query) => {
                 let key = (query.ns_id, query.name);
                 let platform = store.platforms.get(&key).cloned();
@@ -332,6 +338,10 @@ impl StoreBackend for StoreFixture {
                 );
                 store.oactions.insert(key, oaction);
             }
+            PersistOps::OrchestrateReport(report) => {
+                let key = (report.ns_id.clone(), report.cluster_id.clone());
+                store.orchestrate_reports.insert(key, report);
+            }
             PersistOps::Platform(platform) => {
                 let key = (platform.ns_id.clone(), platform.name.clone());
                 store.platforms.insert(key, platform);
@@ -372,6 +382,8 @@ struct StoreFixtureState {
     nodes: HashMap<(String, String, String), Node>,
     // (ns, cluster, action)
     oactions: HashMap<(String, String, Uuid), OAction>,
+    // (ns, cluster)
+    orchestrate_reports: HashMap<(String, String), OrchestrateReport>,
     // (ns, platform)
     platforms: HashMap<(String, String), Platform>,
     // (ns, cluster, node, shard)

@@ -10,18 +10,17 @@ use replisdk::core::models::naction::NActionPhase;
 use replisdk::platform::models::ClusterDiscoveryNode;
 
 use repliagent_client::Client;
-use replicore_cluster_view::ClusterViewBuilder;
+use replicore_cluster_models::OrchestrateReportNote;
 use replicore_context::Context;
 use replicore_events::Event;
 
 use super::error::NodeSpecificError;
-use crate::init::InitData;
+use crate::sync::SyncData;
 
 /// Sync finished and queued node actions for a node.
 pub async fn sync(
     context: &Context,
-    data: &InitData,
-    cluster_new: &mut ClusterViewBuilder,
+    data: &SyncData,
     node: &ClusterDiscoveryNode,
     client: &Client,
 ) -> Result<()> {
@@ -51,13 +50,13 @@ pub async fn sync(
     for action_id in action_ids {
         let action_id = *action_id;
         let node_id = node.node_id.clone();
-        sync_action(context, data, cluster_new, node_id, client, action_id).await?;
+        sync_action(context, data, node_id, client, action_id).await?;
     }
 
     for action_id in &queue_id {
         let action_id = *action_id;
         let node_id = node.node_id.clone();
-        sync_action(context, data, cluster_new, node_id, client, action_id).await?;
+        sync_action(context, data, node_id, client, action_id).await?;
     }
 
     // Handle lost actions (unfinished in core but not reported by the agent).
@@ -74,7 +73,7 @@ pub async fn sync(
             _ => NActionPhase::Cancelled,
         };
         action.phase_to(phase);
-        persist(context, data, cluster_new, action).await?;
+        persist(context, data, action).await?;
     }
 
     Ok(())
@@ -82,9 +81,9 @@ pub async fn sync(
 
 // Fetch full action details from the node.
 async fn fetch(
-    cluster_new: &mut ClusterViewBuilder,
+    data: &SyncData,
     client: &Client,
-    node_id: String,
+    node_id: &str,
     action_id: Uuid,
 ) -> Result<NAction> {
     let action = client
@@ -92,9 +91,9 @@ async fn fetch(
         .await
         .context(NodeSpecificError)?;
     let action = NAction {
-        ns_id: cluster_new.ns_id().to_string(),
-        cluster_id: cluster_new.cluster_id().to_string(),
-        node_id,
+        ns_id: data.ns_id().to_string(),
+        cluster_id: data.cluster_id().to_string(),
+        node_id: node_id.to_string(),
         action_id,
         args: action.args,
         created_time: action.created_time,
@@ -112,12 +111,7 @@ async fn fetch(
 /// - Adds the node action to the cluster view builder if unfinished.
 /// - Emits associated events.
 /// - Persist node action record to the store.
-async fn persist(
-    context: &Context,
-    data: &InitData,
-    cluster_new: &mut ClusterViewBuilder,
-    action: NAction,
-) -> Result<()> {
+async fn persist(context: &Context, data: &SyncData, action: NAction) -> Result<()> {
     let action_id = &action.action_id;
     let node_id = &action.node_id;
     let current = data
@@ -139,7 +133,7 @@ async fn persist(
 
     // Update view and store.
     if !action.state.phase.is_final() {
-        cluster_new.node_action(action.clone())?;
+        data.cluster_new_mut().node_action(action.clone())?;
     }
     data.injector.store.persist(context, action).await?;
     Ok(())
@@ -147,19 +141,20 @@ async fn persist(
 
 async fn sync_action(
     context: &Context,
-    data: &InitData,
-    cluster_new: &mut ClusterViewBuilder,
+    data: &SyncData,
     node_id: String,
     client: &Client,
     action_id: Uuid,
 ) -> Result<()> {
-    let action = match fetch(cluster_new, client, node_id, action_id).await {
+    let action = match fetch(data, client, &node_id, action_id).await {
         Ok(action) => action,
-        Err(_error) => {
-            // TODO: add to report as event.
+        Err(error) => {
+            let message = "Skipped node action sync due to error fetching details from the node";
+            let mut note = OrchestrateReportNote::error(message, error);
+            note.for_node(node_id).for_node_action(action_id);
+            data.report_mut().notes.push(note);
             return Ok(());
         }
     };
-    // TODO: handle failed action sync ... how?
-    persist(context, data, cluster_new, action).await
+    persist(context, data, action).await
 }

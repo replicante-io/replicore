@@ -10,5 +10,15 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Added
 
-- Delete, list, lookup and persist namespaces.
+- List and persist node actions.
+- List and persist node's sotre extras.
+- List and persist nodes.
+- List and persist shards.
+- List, lookup and persist cluster specs.
+- List, lookup and persist namespaces.
+- List, lookup and persist orchestrator actions.
+- List, lookup and persist platforms.
+- Lookup and persist cluster discovery.
+- Lookup and persist orchestration reports.
+- Lookup and persist cluster convergence state.
 - Persistent Store interface and operations structure.

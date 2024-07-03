@@ -1,4 +1,6 @@
 //! Format output for easy consumption by people interacting with `replictl`.
+use time::format_description::BorrowedFormatItem;
+
 use super::ops::Ops;
 use super::ops::Responses;
 use super::FormatterStrategy;
@@ -9,6 +11,10 @@ mod context;
 mod namespace;
 mod oaction;
 mod platform;
+
+const TIME_FORMAT: &[BorrowedFormatItem<'static>] = time::macros::format_description!(
+    "[year]-[month]-[day] [hour]:[minute]:[second][offset_hour sign:mandatory]:[offset_minute]"
+);
 
 /// Format output for easy consumption by people interacting with `replictl`.
 pub struct HumanFormatter;
@@ -42,6 +48,12 @@ impl FormatterStrategy for HumanFormatter {
                 Ok(()) => Responses::Success,
             },
             Ops::OActionList => Responses::oactions(self::oaction::OActionList::new()),
+            Ops::OrchestrateReport(report) => {
+                match self::cluster_spec::orchestrate_report(&report) {
+                    Err(error) => Responses::Err(error),
+                    Ok(()) => Responses::Success,
+                }
+            }
             Ops::Platform(platform) => {
                 self::platform::show(&platform);
                 Responses::Success

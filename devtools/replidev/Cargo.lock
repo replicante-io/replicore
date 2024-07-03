@@ -1669,8 +1669,12 @@ checksum = "adad44e29e4c806119491a7f06f03de4d1af22c3a680dd47f1e6e179439d1f56"
 name = "replicore-cluster-models"
 version = "0.1.0"
 dependencies = [
+ "anyhow",
+ "replisdk",
  "serde",
+ "serde_json",
  "time",
+ "uuid",
 ]
 
 [[package]]
@@ -2358,6 +2362,12 @@ name = "utf8parse"
 version = "0.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "711b9620af191e0cdc7468a8d14e709c3dcdb115b36f838e601583af800a370a"
+
+[[package]]
+name = "uuid"
+version = "1.9.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5de17fd2f7da591098415cff336e12965a28061ddace43b59cb3c430179c9439"
 
 [[package]]
 name = "vcpkg"

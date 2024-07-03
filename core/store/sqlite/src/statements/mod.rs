@@ -18,6 +18,7 @@ mod cluster_spec;
 mod naction;
 mod namespace;
 mod oaction;
+mod orchestrate_report;
 mod platform;
 mod shards;
 mod store_extras;
@@ -114,6 +115,11 @@ impl StoreBackend for SQLiteStore {
                 let oa = self::oaction::lookup(context, &self.connection, query).await?;
                 Ok(QueryResponses::OAction(oa))
             }
+            QueryOps::OrchestrateReport(query) => {
+                let report =
+                    self::orchestrate_report::lookup(context, &self.connection, query).await?;
+                Ok(QueryResponses::OrchestrateReport(report))
+            }
             QueryOps::Platform(pl) => {
                 let pl = self::platform::lookup(context, &self.connection, pl).await?;
                 Ok(QueryResponses::Platform(pl))
@@ -159,6 +165,11 @@ impl StoreBackend for SQLiteStore {
                 .map(|_| PersistResponses::Success),
             PersistOps::OAction(oaction) => {
                 self::oaction::persist(context, &self.connection, oaction)
+                    .await
+                    .map(|_| PersistResponses::Success)
+            }
+            PersistOps::OrchestrateReport(report) => {
+                self::orchestrate_report::persist(context, &self.connection, report)
                     .await
                     .map(|_| PersistResponses::Success)
             }

@@ -19,3 +19,4 @@ uuid = { version = "^1.4", features = ["serde", "v4"] }
 
 replisdk = { version = "^0.1", features = ["utils-error_json"] }
 repliclient-utils = { path = "../utils" }
+replicore-cluster-models = { path = "../../core/cluster/models" }

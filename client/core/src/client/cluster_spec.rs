@@ -7,6 +7,7 @@ use replisdk::core::models::cluster::ClusterSpec;
 
 use repliclient_utils::EmptyResponse;
 use repliclient_utils::ResourceIdentifier;
+use replicore_cluster_models::OrchestrateReport;
 
 use super::Client;
 
@@ -84,7 +85,7 @@ impl<'a> ClusterSpecClient<'a> {
             "{}api/v0/object/replicante.io/v0/clusterspec/{}/{}/orchestrate",
             self.inner.base, self.ns_id, self.name,
         );
-        let response = self.inner.client.get(url).send().await?;
+        let response = self.inner.client.post(url).send().await?;
         repliclient_utils::inspect::<serde_json::Value>(response)
             .await
             .with_context(|| {
@@ -92,5 +93,21 @@ impl<'a> ClusterSpecClient<'a> {
                 ResourceIdentifier::reference("clusterspec", id)
             })?;
         Ok(())
+    }
+
+    /// Fetch an [`OrchestrateReport`] record from the server.
+    pub async fn orchestrate_report(&'a self) -> Result<Option<OrchestrateReport>> {
+        let url = format!(
+            "{}api/v0/object/replicante.io/v0/clusterspec/{}/{}/orchestrate/report",
+            self.inner.base, self.ns_id, self.name,
+        );
+        let response = self.inner.client.get(url).send().await?;
+        let response = repliclient_utils::inspect::<OrchestrateReport>(response)
+            .await
+            .with_context(|| {
+                let id = format!("{}.{}", self.ns_id, self.name);
+                ResourceIdentifier::reference("orchestratereport", id)
+            })?;
+        Ok(response)
     }
 }

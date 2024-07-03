@@ -14,6 +14,7 @@ pub fn configure(config: &mut ServiceConfig) {
         .service(self::cluster_spec::get)
         .service(self::cluster_spec::list)
         .service(self::cluster_spec::orchestrate)
+        .service(self::cluster_spec::orchestrate_report)
         .service(self::cluster_spec::view)
         .service(self::namespace::delete)
         .service(self::namespace::get)

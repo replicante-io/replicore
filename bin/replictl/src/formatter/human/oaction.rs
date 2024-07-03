@@ -1,13 +1,8 @@
 //! Format `OAction` relate objects.
 use anyhow::Result;
-use time::format_description::BorrowedFormatItem;
 
 use replisdk::core::models::api::OActionEntry;
 use replisdk::core::models::oaction::OAction;
-
-const TIME_FORMAT: &[BorrowedFormatItem<'static>] = time::macros::format_description!(
-    "[year]-[month]-[day] [hour]:[minute]:[second][offset_hour sign:mandatory]:[offset_minute]"
-);
 
 /// Format a list of [`OActionEntry`] objects into a table.
 #[derive(Default)]
@@ -27,13 +22,13 @@ impl crate::formatter::OActionList for OActionList {
     fn append(&mut self, entry: &OActionEntry) -> Result<()> {
         let finished = match entry.finished_ts {
             None => String::default(),
-            Some(ts) => ts.format(TIME_FORMAT)?,
+            Some(ts) => ts.format(super::TIME_FORMAT)?,
         };
         self.table.add_row(vec![
             entry.action_id.to_string(),
             entry.kind.clone(),
             entry.state.to_string(),
-            entry.created_ts.format(TIME_FORMAT)?,
+            entry.created_ts.format(super::TIME_FORMAT)?,
             finished,
         ]);
         Ok(())
@@ -53,15 +48,18 @@ pub fn show(action: &OAction) -> Result<()> {
 
     println!("Kind: {}", action.kind);
     println!("Status: {}", action.state);
-    println!("Created at: {}", action.created_ts.format(TIME_FORMAT)?);
+    println!(
+        "Created at: {}",
+        action.created_ts.format(super::TIME_FORMAT)?
+    );
     let scheduled = match action.scheduled_ts {
         None => String::from("<Not Scheduled>"),
-        Some(ts) => ts.format(TIME_FORMAT)?,
+        Some(ts) => ts.format(super::TIME_FORMAT)?,
     };
     println!("Scheduled at: {}", scheduled);
     let finished = match action.finished_ts {
         None => String::from("<Not Finished>"),
-        Some(ts) => ts.format(TIME_FORMAT)?,
+        Some(ts) => ts.format(super::TIME_FORMAT)?,
     };
     println!("Finished at: {}", finished);
 

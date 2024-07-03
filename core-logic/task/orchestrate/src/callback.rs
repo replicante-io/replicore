@@ -33,10 +33,10 @@ impl TaskCallback for Callback {
 
         // Initialise orchestration task.
         let data = crate::init::InitData::load(context, self.injector.clone(), request).await?;
-        let mut cluster_new = data.cluster_current.new_build()?;
+        let data = crate::sync::SyncData::convert(data)?;
 
         // Sync cluster nodes and build current cluster view.
-        crate::sync::nodes(context, &data, &mut cluster_new).await?;
+        crate::sync::nodes(context, &data).await?;
         // TODO: schedule pending node actions.
 
         // Process orchestrator actions.
@@ -46,10 +46,10 @@ impl TaskCallback for Callback {
             .iter()
             .map(|action| (**action).clone())
             .collect::<Vec<_>>();
-        let oactions = crate::oaction::progress(context, &data, &mut cluster_new, oactions).await?;
+        let oactions = crate::oaction::progress(context, &data, oactions).await?;
         let oactions = crate::oaction::schedule(context, &data, oactions).await?;
         for action in oactions {
-            cluster_new.oaction(action)?;
+            data.cluster_new_mut().oaction(action)?;
         }
 
         // Process convergence steps unless we are observing only.
@@ -64,7 +64,7 @@ impl TaskCallback for Callback {
         // Emit the report as an event and save it to store.
         let event = Event::new_with_payload(crate::constants::ORCHESTRATE_REPORT, &data.report)?;
         data.injector.events.change(context, event).await?;
-        // TODO: Persist report to store.
+        data.injector.store.persist(context, data.report).await?;
 
         Ok(())
     }

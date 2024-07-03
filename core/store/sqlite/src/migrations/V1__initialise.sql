@@ -97,6 +97,18 @@ CREATE TABLE IF NOT EXISTS store_oaction(
   PRIMARY KEY(ns_id, cluster_id, action_id)
 );
 
+CREATE TABLE IF NOT EXISTS store_orchestrate_report(
+  -- Orchestrate report object as a JSON blob.
+  report TEXT NOT NULL,
+
+  -- Manually managed normalised columns for indexes (where virtual columns can't be used).
+  ns_id TEXT NOT NULL,
+  cluster_id TEXT NOT NULL,
+
+  -- Table constraints
+  PRIMARY KEY(ns_id, cluster_id)
+);
+
 CREATE TABLE IF NOT EXISTS store_platform(
   -- Platform object as a JSON blob.
   platform TEXT NOT NULL,

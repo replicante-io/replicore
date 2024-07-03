@@ -32,6 +32,10 @@ pub enum ClusterSpecCmd {
 
     /// Schedule a cluster orchestration task to execute in the background.
     Orchestrate,
+
+    /// Lookup the report for the most recent completed orchestate task.
+    #[command(alias = "report")]
+    OrchestrateReport,
 }
 
 /// Execute the selected `replictl platform` command.
@@ -42,6 +46,7 @@ pub async fn run(globals: &Globals, cmd: &ClusterSpecCli) -> Result<i32> {
         ClusterSpecCmd::Get => get(globals).await,
         ClusterSpecCmd::List => list(globals).await,
         ClusterSpecCmd::Orchestrate => orchestrate(globals).await,
+        ClusterSpecCmd::OrchestrateReport => orchestrate_report(globals).await,
     }
 }
 
@@ -109,5 +114,23 @@ async fn orchestrate(globals: &Globals) -> Result<i32> {
     client.clusterspec(&ns_id, &name).orchestrate().await?;
 
     println!("Orchestration of cluster '{name}' in namespace '{ns_id}' scheduled");
+    Ok(0)
+}
+
+async fn orchestrate_report(globals: &Globals) -> Result<i32> {
+    let context = ContextStore::active(globals).await?;
+    let client = crate::client(&context)?;
+
+    let ns_id = context.namespace(&globals.cli.context)?;
+    let name = context.cluster(&globals.cli.context)?;
+    let report = client
+        .clusterspec(&ns_id, &name)
+        .orchestrate_report()
+        .await?;
+    match report {
+        None => println!("Cluster has no orchestrate report available"),
+        Some(report) => globals.formatter.format(globals, report)?,
+    };
+
     Ok(0)
 }

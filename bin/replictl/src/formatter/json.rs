@@ -27,6 +27,7 @@ impl FormatterStrategy for JsonFormatter {
             Ops::NamespaceList => Responses::namespaces(NamespaceList::default()),
             Ops::OAction(action) => print_json(action),
             Ops::OActionList => Responses::oactions(OActionList::default()),
+            Ops::OrchestrateReport(report) => print_json(report),
             Ops::Platform(platform) => print_json(platform),
             Ops::PlatformList => Responses::platforms(PlatformList::default()),
         }

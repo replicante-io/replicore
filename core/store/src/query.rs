@@ -19,6 +19,7 @@ use replisdk::core::models::oaction::OAction;
 use replisdk::core::models::platform::Platform;
 
 use replicore_cluster_models::ConvergeState;
+use replicore_cluster_models::OrchestrateReport;
 
 use self::seal::SealQueryOp;
 use crate::ids::NamespaceID;
@@ -72,6 +73,9 @@ pub enum QueryOps {
     /// Query an orchestrator action by namespace, cluster and action ID.
     OAction(LookupOAction),
 
+    /// Query a cluster latest orchestate report by Namespace and Cluster ID.
+    OrchestrateReport(NamespacedResourceID),
+
     /// Query a platform by Namespace ID and Resource Name.
     Platform(NamespacedResourceID),
 
@@ -119,6 +123,9 @@ pub enum QueryResponses {
 
     /// Return a [`Stream`] of [`OActionEntry`] objects.
     OActionEntries(OActionEntryStream),
+
+    /// Return an [`OrchestrateReport`], if one was found for the cluster.
+    OrchestrateReport(Option<OrchestrateReport>),
 
     /// Return a [`Platform`], if one was found matching the query.
     Platform(Option<Platform>),
@@ -324,6 +331,25 @@ impl LookupOAction {
 impl From<&OAction> for LookupOAction {
     fn from(value: &OAction) -> Self {
         Self::by(&value.ns_id, &value.cluster_id, value.action_id)
+    }
+}
+
+/// Lookup an [`OrchestrateReport`] record by ID.
+#[derive(Clone, Debug)]
+pub struct LookupOrchestrateReport(pub NamespacedResourceID);
+
+impl LookupOrchestrateReport {
+    /// Lookup an orchestrate report by namespace ID and cluster ID.
+    pub fn by<S1, S2>(ns_id: S1, name: S2) -> LookupOrchestrateReport
+    where
+        S1: Into<String>,
+        S2: Into<String>,
+    {
+        let id = NamespacedResourceID {
+            name: name.into(),
+            ns_id: ns_id.into(),
+        };
+        LookupOrchestrateReport(id)
     }
 }
 
@@ -661,6 +687,16 @@ impl From<LookupOAction> for QueryOps {
     }
 }
 
+impl SealQueryOp for LookupOrchestrateReport {}
+impl QueryOp for LookupOrchestrateReport {
+    type Response = Option<OrchestrateReport>;
+}
+impl From<LookupOrchestrateReport> for QueryOps {
+    fn from(value: LookupOrchestrateReport) -> Self {
+        QueryOps::OrchestrateReport(value.0)
+    }
+}
+
 impl SealQueryOp for LookupPlatform {}
 impl QueryOp for LookupPlatform {
     type Response = Option<Platform>;
@@ -784,6 +820,14 @@ impl From<QueryResponses> for OActionEntryStream {
     fn from(value: QueryResponses) -> Self {
         match value {
             QueryResponses::OActionEntries(stream) => stream,
+            _ => panic!("unexpected result type for the given query operation"),
+        }
+    }
+}
+impl From<QueryResponses> for Option<OrchestrateReport> {
+    fn from(value: QueryResponses) -> Self {
+        match value {
+            QueryResponses::OrchestrateReport(report) => report,
             _ => panic!("unexpected result type for the given query operation"),
         }
     }

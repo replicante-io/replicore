@@ -84,7 +84,7 @@ pub async fn list(
 }
 
 /// Submit a cluster orchestration task for background execution.
-#[actix_web::get("/object/replicante.io/v0/clusterspec/{namespace}/{name}/orchestrate")]
+#[actix_web::post("/object/replicante.io/v0/clusterspec/{namespace}/{name}/orchestrate")]
 pub async fn orchestrate(
     context: Context,
     injector: Data<Injector>,
@@ -94,6 +94,23 @@ pub async fn orchestrate(
     let task = replicore_task_orchestrate::OrchestrateCluster::new(ns_id, cluster_id);
     injector.tasks.submit(&context, task).await?;
     Ok(crate::api::done())
+}
+
+/// Get an [`OrchestrateReport`] by cluster namespace and name.
+#[actix_web::get("/object/replicante.io/v0/clusterspec/{namespace}/{name}/orchestrate/report")]
+pub async fn orchestrate_report(
+    context: Context,
+    injector: Data<Injector>,
+    path: Path<(String, String)>,
+) -> Result<HttpResponse, Error> {
+    let (ns_id, name) = path.into_inner();
+    let id = replicore_store::ids::NamespacedResourceID { ns_id, name };
+    let query = replicore_store::query::LookupOrchestrateReport(id);
+    let report = injector.store.query(&context, query).await?;
+    match report {
+        None => Ok(crate::api::not_found()),
+        Some(report) => Ok(HttpResponse::Ok().json(report)),
+    }
 }
 
 /// Get a [`ClusterView`] by cluster namespace and name.

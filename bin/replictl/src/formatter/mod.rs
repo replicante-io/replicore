@@ -56,6 +56,7 @@ pub enum FormatId {
 pub struct FormatOpts {
     /// Select the format to use for output.
     #[arg(
+        short = 'f',
         long = "format",
         global = true,
         env = "RCTL_FORMAT",

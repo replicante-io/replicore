@@ -10,6 +10,7 @@ use replisdk::core::models::oaction::OAction;
 use replisdk::core::models::platform::Platform;
 
 use replicore_cluster_models::ConvergeState;
+use replicore_cluster_models::OrchestrateReport;
 
 use self::seal::SealPersistOp;
 
@@ -41,6 +42,9 @@ pub enum PersistOps {
 
     /// Persist an orchestrator action record.
     OAction(OAction),
+
+    /// Persist an orchestration report record.
+    OrchestrateReport(OrchestrateReport),
 
     /// Persist a platform record.
     Platform(Platform),
@@ -136,6 +140,16 @@ impl SealPersistOp for OAction {}
 impl From<OAction> for PersistOps {
     fn from(value: OAction) -> Self {
         PersistOps::OAction(value)
+    }
+}
+
+impl PersistOp for OrchestrateReport {
+    type Response = ();
+}
+impl SealPersistOp for OrchestrateReport {}
+impl From<OrchestrateReport> for PersistOps {
+    fn from(value: OrchestrateReport) -> Self {
+        PersistOps::OrchestrateReport(value)
     }
 }
 

@@ -45,18 +45,10 @@ tokio = { version = "^1.0", features = [
 ] }
 uuid = { version = "^1.4", features = ["serde", "v4"] }
 
-replicore-client = { path = "../../client/core" }
-
 replisdk = { version = "^0.1", features = ["replicore-models"] }
 
-#slog-json = "^2.3"
-
-#replicante_models_core = { path = "../../models/core" }
-#replicante_util_failure = { path = "../../common/util/failure" }
-
-#[dependencies.uuid]
-#features = ["serde", "v4"]
-#version = "^1.0"
+replicore-client = { path = "../../client/core" }
+replicore-cluster-models = { path = "../../core/cluster/models" }
 
 [build-dependencies]
 git2 = "^0.18.0"

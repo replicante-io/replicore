@@ -8,6 +8,8 @@ use replisdk::core::models::namespace::Namespace;
 use replisdk::core::models::oaction::OAction;
 use replisdk::core::models::platform::Platform;
 
+use replicore_cluster_models::OrchestrateReport;
+
 use self::sealed::SealFormatOp;
 use crate::context::Context;
 
@@ -45,6 +47,9 @@ pub enum Ops {
 
     /// Request a strategy to format `OActionEntry` lists.
     OActionList,
+
+    /// Format information about an [`OrchestrateReport`].
+    OrchestrateReport(OrchestrateReport),
 
     /// Request a strategy to format `PlatformEntry` lists.
     PlatformList,
@@ -235,6 +240,16 @@ impl From<OActionListOp> for Ops {
 }
 impl FormatOp for OActionListOp {
     type Response = Box<dyn super::OActionList>;
+}
+
+impl SealFormatOp for OrchestrateReport {}
+impl From<OrchestrateReport> for Ops {
+    fn from(value: OrchestrateReport) -> Self {
+        Self::OrchestrateReport(value)
+    }
+}
+impl FormatOp for OrchestrateReport {
+    type Response = Result<()>;
 }
 
 impl SealFormatOp for Platform {}

@@ -24,7 +24,6 @@ pub struct InitData {
     pub injector: Injector,
     pub mode: OrchestrateMode,
     pub ns: Namespace,
-    pub report: OrchestrateReport,
 }
 
 impl std::fmt::Debug for InitData {
@@ -34,7 +33,6 @@ impl std::fmt::Debug for InitData {
             .field("injector", &"Injector { ... }")
             .field("mode", &self.mode)
             .field("ns", &self.ns)
-            .field("report", &self.report)
             .finish()
     }
 }
@@ -77,7 +75,6 @@ impl InitData {
             NamespaceStatus::Inactive => panic!("inactive namespaces were rejected earlier"),
             NamespaceStatus::Active => OrchestrateMode::Sync,
         };
-        let report = OrchestrateReport::start(&ns.id, &cluster_current.spec.cluster_id, mode);
 
         // Collect all initial data and return it.
         let data = InitData {
@@ -85,8 +82,16 @@ impl InitData {
             injector,
             mode,
             ns,
-            report,
         };
         Ok(data)
+    }
+
+    /// Start a report for the current orchestrate operation.
+    pub fn report(&self) -> OrchestrateReport {
+        OrchestrateReport::start(
+            &self.ns.id,
+            &self.cluster_current.spec.cluster_id,
+            self.mode,
+        )
     }
 }

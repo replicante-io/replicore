@@ -16,7 +16,7 @@ mod node_scale_up;
 mod step;
 
 use self::step::ConvergeStep;
-use crate::init::InitData;
+use crate::sync::SyncData;
 
 /// Ordered list of cluster convergence steps to perform.
 static STEPS: Lazy<Vec<(&'static str, Box<dyn ConvergeStep>)>> = Lazy::new(|| {
@@ -32,6 +32,7 @@ static STEPS: Lazy<Vec<(&'static str, Box<dyn ConvergeStep>)>> = Lazy::new(|| {
 /// Data for the convergence step of cluster orchestration.
 pub struct ConvergeData {
     pub cluster_current: ClusterView,
+    //pub cluster_new: ClusterView,
     pub injector: Injector,
     pub mode: OrchestrateMode,
     pub ns: Namespace,
@@ -41,7 +42,16 @@ pub struct ConvergeData {
 
 impl ConvergeData {
     /// Convert a [`InitData`] container into a [`ConvergeData`] container.
-    pub async fn convert(context: &Context, value: InitData) -> Result<Self> {
+    pub async fn convert(context: &Context, value: SyncData) -> Result<Self> {
+        //let cluster_new = value
+        //    .cluster_new
+        //    .into_inner()
+        //    .expect("orchestate task cluster_new lock poisoned")
+        //    .finish();
+        let report = value
+            .report
+            .into_inner()
+            .expect("orchestate task report lock poisoned");
         let op = replicore_store::query::LookupConvergeState::from(&value.cluster_current.spec);
         let state = value
             .injector
@@ -51,10 +61,11 @@ impl ConvergeData {
             .unwrap_or_default();
         let data = ConvergeData {
             cluster_current: value.cluster_current,
+            //cluster_new,
             injector: value.injector,
             mode: value.mode,
             ns: value.ns,
-            report: value.report,
+            report,
             state,
         };
         Ok(data)

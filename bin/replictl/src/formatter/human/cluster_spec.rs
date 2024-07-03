@@ -5,6 +5,8 @@ use replisdk::core::models::api::ClusterSpecEntry;
 use replisdk::core::models::cluster::ClusterDiscovery;
 use replisdk::core::models::cluster::ClusterSpec;
 
+use replicore_cluster_models::OrchestrateReport;
+
 /// Format a list of [`ClusterSpecEntry`] objects into a table.
 #[derive(Default)]
 pub struct ClusterSpecList {
@@ -49,6 +51,31 @@ pub fn discovery(cluster_disc: &ClusterDiscovery) {
         println!("    Agent address: {}", node.agent_address);
         println!("    Node class: {}", node.node_class);
     }
+}
+
+/// Format an [`OrchestrateReport`] for users to inspect.
+pub fn orchestrate_report(report: &OrchestrateReport) -> Result<()> {
+    println!("Cluster ID: {}", report.cluster_id);
+    println!("As part of Namespace: {}", report.ns_id);
+    println!();
+
+    println!("Orchestration mode: {}", report.mode);
+    println!(
+        "Start time: {}",
+        report.start_time.format(super::TIME_FORMAT)?
+    );
+    println!();
+
+    let mut notes = comfy_table::Table::new();
+    notes.set_header(vec!["CATEGORY", "MESSAGE", "DATA"]);
+    for note in &report.notes {
+        let data = serde_json::to_string(&note.data)?;
+        notes.add_row(vec![note.category.to_string(), note.message.clone(), data]);
+    }
+    println!("The following notes were attached to the report");
+    println!("{}", notes);
+
+    Ok(())
 }
 
 /// Format a [`ClusterSpec`] for users to inspect.

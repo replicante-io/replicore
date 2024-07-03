@@ -5,15 +5,24 @@
 //! individual nodes from blocking all cluster management.
 //!
 //! The sync process does NOT schedule new node actions, this is expected separately.
+use std::sync::Mutex;
+use std::sync::MutexGuard;
+
 use anyhow::Context as AnyContext;
 use anyhow::Result;
 
+use replisdk::core::models::namespace::Namespace;
 use replisdk::core::models::node::Shard;
 use replisdk::core::models::node::StoreExtras;
 use replisdk::platform::models::ClusterDiscoveryNode;
 
+use replicore_cluster_models::OrchestrateMode;
+use replicore_cluster_models::OrchestrateReport;
+use replicore_cluster_models::OrchestrateReportNote;
+use replicore_cluster_view::ClusterView;
 use replicore_cluster_view::ClusterViewBuilder;
 use replicore_context::Context;
+use replicore_injector::Injector;
 
 mod error;
 mod nactions;
@@ -24,19 +33,81 @@ use self::error::NodeSpecificCheck;
 use self::error::NodeSpecificError;
 use crate::init::InitData;
 
+/// Data used in the sync phase of cluster orchestration.
+pub struct SyncData {
+    pub cluster_current: ClusterView,
+    pub cluster_new: Mutex<ClusterViewBuilder>,
+    pub injector: Injector,
+    pub mode: OrchestrateMode,
+    pub ns: Namespace,
+    pub report: Mutex<OrchestrateReport>,
+}
+
+impl std::fmt::Debug for SyncData {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("SyncData")
+            .field("cluster_current", &self.cluster_current)
+            .field("cluster_new", &"ClusterViewBuilder { ... }")
+            .field("injector", &"Injector { ... }")
+            .field("mode", &self.mode)
+            .field("ns", &self.ns)
+            .field("report", &self.report)
+            .finish()
+    }
+}
+
+impl SyncData {
+    /// Quck access to the Cluster ID being orchestated.
+    pub fn cluster_id(&self) -> &str {
+        &self.cluster_current.spec.cluster_id
+    }
+
+    /// Mutable access to the new `ClusterView` builder.
+    pub fn cluster_new_mut(&self) -> MutexGuard<ClusterViewBuilder> {
+        self.cluster_new
+            .lock()
+            .expect("orchestate task cluster_new lock poisoned")
+    }
+
+    /// Initialise the [`SyncData`] from [`InitData`].
+    pub fn convert(data: InitData) -> Result<Self> {
+        let cluster_new = data.cluster_current.new_build()?;
+        let report = data.report();
+        let data = Self {
+            cluster_current: data.cluster_current,
+            cluster_new: Mutex::new(cluster_new),
+            injector: data.injector,
+            mode: data.mode,
+            ns: data.ns,
+            report: Mutex::new(report),
+        };
+        Ok(data)
+    }
+
+    /// Mutable access to the [`OrchestrateReport`].
+    pub fn report_mut(&self) -> MutexGuard<OrchestrateReport> {
+        self.report
+            .lock()
+            .expect("orchestate task report lock poisoned")
+    }
+
+    /// Quck access to the Namespace ID being orchestated.
+    pub fn ns_id(&self) -> &str {
+        &self.cluster_current.spec.ns_id
+    }
+}
+
 /// Synchronise information about nodes with the control plane.
-pub async fn nodes(
-    context: &Context,
-    data: &InitData,
-    new_view: &mut ClusterViewBuilder,
-) -> Result<()> {
+pub async fn nodes(context: &Context, data: &SyncData) -> Result<()> {
     // Refresh the state of nodes in the discovery record.
     for node in &data.cluster_current.discovery.nodes {
-        let result = sync_node(context, data, new_view, node).await;
+        let result = sync_node(context, data, node).await;
         let result = result.with_node_specific()?;
-        // TODO: if error, add error to the report as event.
-        // TODO: add node synced to orchestrate report.
-        println!("~~~ {:?}", result);
+        if let Err(error) = result {
+            let message = "Node processing interrupted early";
+            let note = OrchestrateReportNote::error(message, error);
+            data.report_mut().notes.push(note);
+        }
     }
 
     // Delete records about nodes no longer reported.
@@ -47,12 +118,7 @@ pub async fn nodes(
 }
 
 /// Sync the specified node in isolation.
-async fn sync_node(
-    context: &Context,
-    data: &InitData,
-    cluster_new: &mut ClusterViewBuilder,
-    node: &ClusterDiscoveryNode,
-) -> Result<()> {
+async fn sync_node(context: &Context, data: &SyncData, node: &ClusterDiscoveryNode) -> Result<()> {
     // Create a client to interact with the node.
     let client = data
         .injector
@@ -66,7 +132,7 @@ async fn sync_node(
     let ag_node = match client.info_node().await.context(NodeSpecificError) {
         Ok(node) => node,
         Err(error) => {
-            self::node::persist(context, data, cluster_new, node_info).await?;
+            self::node::persist(context, data, node_info).await?;
             return Err(error);
         }
     };
@@ -78,22 +144,25 @@ async fn sync_node(
     // Process fetched information for node sync.
     let incomplete = store_info.is_err() || shards.is_err();
     let node_info = self::node::process(incomplete, ag_node, node_info);
-    self::node::persist(context, data, cluster_new, node_info).await?;
+    self::node::persist(context, data, node_info).await?;
 
     match store_info {
         Ok(store_info) => {
             let store_info = StoreExtras {
-                ns_id: cluster_new.ns_id().to_string(),
-                cluster_id: cluster_new.cluster_id().to_string(),
+                ns_id: data.ns_id().to_string(),
+                cluster_id: data.cluster_id().to_string(),
                 node_id: node.node_id.clone(),
                 attributes: store_info.attributes,
                 fresh: true,
             };
-            self::store::persist_extras(context, data, cluster_new, store_info).await?;
+            self::store::persist_extras(context, data, store_info).await?;
         }
-        Err(_error) => {
-            // TODO: add to report as event.
-            self::store::stale_extras(context, data, cluster_new, node).await?;
+        Err(error) => {
+            let message = "Skipped sync of Store Info due to agent error";
+            let mut note = OrchestrateReportNote::error(message, error);
+            note.for_node(&node.node_id);
+            data.report_mut().notes.push(note);
+            self::store::stale_extras(context, data, node).await?;
         }
     }
 
@@ -103,8 +172,8 @@ async fn sync_node(
                 .shards
                 .into_iter()
                 .map(|shard| Shard {
-                    ns_id: cluster_new.ns_id().to_string(),
-                    cluster_id: cluster_new.cluster_id().to_string(),
+                    ns_id: data.ns_id().to_string(),
+                    cluster_id: data.cluster_id().to_string(),
                     node_id: node.node_id.clone(),
                     shard_id: shard.shard_id,
                     commit_offset: shard.commit_offset,
@@ -113,13 +182,15 @@ async fn sync_node(
                     role: shard.role,
                 })
                 .collect();
-            self::store::persist_shards(context, data, cluster_new, shards).await?;
+            self::store::persist_shards(context, data, shards).await?;
         }
-        Err(_error) => {
-            // TODO: add to report as event.
-            self::store::stale_shards(context, data, cluster_new, node).await?;
+        Err(error) => {
+            let message = "Skipped sync of Shards Info due to agent error";
+            let mut note = OrchestrateReportNote::error(message, error);
+            note.for_node(&node.node_id);
+            self::store::stale_shards(context, data, node).await?;
         }
     }
 
-    self::nactions::sync(context, data, cluster_new, node, &client).await
+    self::nactions::sync(context, data, node, &client).await
 }

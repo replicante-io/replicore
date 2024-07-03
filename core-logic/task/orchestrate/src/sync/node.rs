@@ -9,23 +9,17 @@ use replisdk::core::models::node::NodeDetails;
 use replisdk::core::models::node::NodeStatus;
 use replisdk::platform::models::ClusterDiscoveryNode;
 
-use replicore_cluster_view::ClusterViewBuilder;
 use replicore_context::Context;
 use replicore_events::Event;
 
-use crate::init::InitData;
+use crate::sync::SyncData;
 
 /// Logic for persisting Node information about cluster nodes.
 ///
 /// - Adds the node to the cluster view builder.
 /// - Emits associated events.
 /// - Persist node record to the store.
-pub async fn persist(
-    context: &Context,
-    data: &InitData,
-    cluster_new: &mut ClusterViewBuilder,
-    node: Node,
-) -> Result<()> {
+pub async fn persist(context: &Context, data: &SyncData, node: Node) -> Result<()> {
     // Emit node sync event as appropriate.
     let code = match data.cluster_current.nodes.get(&node.node_id) {
         Some(current) if current.as_ref() != &node => Some(crate::constants::NODE_SYNC_UPDATE),
@@ -38,7 +32,7 @@ pub async fn persist(
     }
 
     // Update view and store.
-    cluster_new.node_info(node.clone())?;
+    data.cluster_new_mut().node_info(node.clone())?;
     data.injector.store.persist(context, node).await?;
     Ok(())
 }
