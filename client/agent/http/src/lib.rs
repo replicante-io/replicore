@@ -12,6 +12,7 @@ use replisdk::agent::models::ShardsInfo;
 use replisdk::agent::models::StoreExtras;
 
 use repliagent_client::IAgent;
+use repliagent_client::ScheduleActionDuplicateId;
 
 pub use repliclient_utils::ClientOptions;
 
@@ -71,6 +72,16 @@ impl IAgent for HttpClient {
             .json(&action)
             .send()
             .await?;
+
+        // Check for duplicate action ID response.
+        // This can only happen if the action ID is set or the agent creates a new unique ID.
+        if let Some(action_id) = action.id {
+            if matches!(response.status(), reqwest::StatusCode::CONFLICT) {
+                anyhow::bail!(ScheduleActionDuplicateId { action_id });
+            }
+        }
+
+        // Process the action using standard logic.
         match repliclient_utils::inspect(response).await? {
             None => anyhow::bail!(repliclient_utils::EmptyResponse),
             Some(response) => Ok(response),

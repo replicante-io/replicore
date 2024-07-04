@@ -25,7 +25,12 @@ pub async fn sync(
     client: &Client,
 ) -> Result<()> {
     // Get the list of pending node actions from the cluster view.
-    let pending_action_ids = data.cluster_current.unfinished_node_actions();
+    let pending_action_ids: HashSet<Uuid> = data
+        .cluster_current
+        .unfinished_node_actions(&node.node_id)
+        .iter()
+        .map(|action| action.action_id)
+        .collect();
 
     // List finished and queued action IDs from the node.
     let finished_ids: HashSet<Uuid> = client
@@ -113,12 +118,7 @@ async fn fetch(
 /// - Persist node action record to the store.
 async fn persist(context: &Context, data: &SyncData, action: NAction) -> Result<()> {
     let action_id = &action.action_id;
-    let node_id = &action.node_id;
-    let current = data
-        .cluster_current
-        .nactions_by_node
-        .get(node_id)
-        .and_then(|actions| actions.get(action_id));
+    let current = data.cluster_current.index_nactions_by_id.get(action_id);
 
     // Emit node sync event as appropriate.
     let code = match current {
@@ -133,7 +133,7 @@ async fn persist(context: &Context, data: &SyncData, action: NAction) -> Result<
 
     // Update view and store.
     if !action.state.phase.is_final() {
-        data.cluster_new_mut().node_action(action.clone())?;
+        data.cluster_new_mut().naction(action.clone())?;
     }
     data.injector.store.persist(context, action).await?;
     Ok(())

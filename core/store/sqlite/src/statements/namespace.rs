@@ -157,6 +157,7 @@ mod tests {
         Namespace {
             id: id.into(),
             tls: Default::default(),
+            settings: Default::default(),
             status: NamespaceStatus::Active,
         }
     }

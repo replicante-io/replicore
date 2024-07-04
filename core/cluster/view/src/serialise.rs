@@ -17,10 +17,7 @@ impl Serialize for ClusterView {
             .nactions_by_node
             .iter()
             .map(|(id, actions)| {
-                let actions: HashMap<&_, &_> = actions
-                    .iter()
-                    .map(|(id, action)| (id, action.as_ref()))
-                    .collect();
+                let actions: Vec<&_> = actions.iter().map(|action| action.as_ref()).collect();
                 (id, actions)
             })
             .collect();

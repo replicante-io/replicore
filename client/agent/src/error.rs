@@ -7,3 +7,10 @@ use uuid::Uuid;
 pub struct ActionNotFound {
     pub action_id: Uuid,
 }
+
+/// Cannot schedule node action because another action has the same ID
+#[derive(Debug, thiserror::Error)]
+#[error("cannot schedule node action '{action_id}' because another action has the same ID")]
+pub struct ScheduleActionDuplicateId {
+    pub action_id: Uuid,
+}

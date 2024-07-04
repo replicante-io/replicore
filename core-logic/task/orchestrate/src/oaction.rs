@@ -42,7 +42,7 @@ pub async fn progress(
 /// Schedule (start) pending actions once scheduling constraints are met.
 ///
 /// To ensure more complex logic can be built on top of actions scheduling has some constraints
-/// that ensure a more predictable outcome. For this actions are viewed as either:
+/// that ensure a more predictable outcome. For this, actions are viewed as either:
 ///
 /// - Root actions: actions created by the user of by system components aside from other actions.
 /// - Leaf actions: actions created by other actions.
@@ -65,9 +65,9 @@ pub async fn schedule(
     // Skip scheduling if the cluster mode is not sync.
     if matches!(data.mode, OrchestrateMode::Observe) {
         slog::debug!(
-            context.logger, "Skip scheduling when sync is in observe mode";
-            "ns_id" => &data.cluster_current.spec.ns_id,
-            "cluster_id" => &data.cluster_current.spec.cluster_id,
+            context.logger, "Skip orchestrator action scheduling when sync is in observe mode";
+            "ns_id" => data.ns_id(),
+            "cluster_id" => data.cluster_id(),
         );
         return Ok(oactions_unfinished);
     }
@@ -78,7 +78,7 @@ pub async fn schedule(
         .any(|action| matches!(action.state, OActionState::PendingSchedule));
     if !any_pending {
         slog::debug!(
-            context.logger, "Skip scheduling with no pending actions";
+            context.logger, "Skip orchestrator action scheduling with no pending actions";
             "ns_id" => &data.cluster_current.spec.ns_id,
             "cluster_id" => &data.cluster_current.spec.cluster_id,
         );
@@ -104,7 +104,8 @@ pub async fn schedule(
         // Skip scheduling if the action violates any constants.
         if any_running {
             slog::debug!(
-                context.logger, "Skip scheduling due to other running action(s)";
+                context.logger,
+                "Skip orchestrator action scheduling due to other running action(s)";
                 "ns_id" => &data.cluster_current.spec.ns_id,
                 "cluster_id" => &data.cluster_current.spec.cluster_id,
             );

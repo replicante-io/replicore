@@ -57,7 +57,7 @@ impl std::fmt::Debug for SyncData {
 }
 
 impl SyncData {
-    /// Quck access to the Cluster ID being orchestated.
+    /// Quick access to the Cluster ID being orchestrated.
     pub fn cluster_id(&self) -> &str {
         &self.cluster_current.spec.cluster_id
     }

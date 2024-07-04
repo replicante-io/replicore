@@ -12,6 +12,7 @@ fn mock_namespace() -> Namespace {
     Namespace {
         id: "test".into(),
         tls: Default::default(),
+        settings: Default::default(),
         status: NamespaceStatus::Active,
     }
 }

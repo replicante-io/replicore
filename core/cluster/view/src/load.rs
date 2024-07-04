@@ -22,7 +22,7 @@ pub async fn nactions(
     let actions = UnfinishedNAction::for_cluster(builder.ns_id(), builder.cluster_id());
     let mut actions = store.query(context, actions).await?;
     while let Some(action) = actions.try_next().await? {
-        builder.node_action(action)?;
+        builder.naction(action)?;
     }
     Ok(())
 }

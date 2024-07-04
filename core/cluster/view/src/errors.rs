@@ -18,7 +18,24 @@ pub struct ClusterNotMatch {
     pub expect_ns: String,
 }
 
-/// Can't add finished action to view for cluster.
+/// Can't add finished node action to view for cluster.
+#[derive(Debug, thiserror::Error)]
+#[error("can't add finished node action '{action_id}' for node '{node_id}' to view for cluster '{ns_id}.{cluster_id}'")]
+pub struct FinishedNAction {
+    // Namespace ID the cluster is in.
+    pub ns_id: String,
+
+    // ID of the cluster the view is for.
+    pub cluster_id: String,
+
+    // ID of the node the action is for.
+    pub node_id: String,
+
+    // ID of the finished node action being added.
+    pub action_id: Uuid,
+}
+
+/// Can't add finished orchestrator action to view for cluster.
 #[derive(Debug, thiserror::Error)]
 #[error("can't add finished orchestrator action '{action_id}' to view for cluster '{ns_id}.{cluster_id}'")]
 pub struct FinishedOAction {
@@ -29,5 +46,22 @@ pub struct FinishedOAction {
     pub cluster_id: String,
 
     // ID of the finished orchestrator action being added.
+    pub action_id: Uuid,
+}
+
+/// Can't remove unfinished node action to view for cluster.
+#[derive(Debug, thiserror::Error)]
+#[error("can't remove unfinished node action '{action_id}' for node '{node_id}' to view for cluster '{ns_id}.{cluster_id}'")]
+pub struct UnfinishedNAction {
+    // Namespace ID the cluster is in.
+    pub ns_id: String,
+
+    // ID of the cluster the view is for.
+    pub cluster_id: String,
+
+    // ID of the node the action is for.
+    pub node_id: String,
+
+    // ID of the finished node action being added.
     pub action_id: Uuid,
 }

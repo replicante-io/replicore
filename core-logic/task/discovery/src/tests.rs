@@ -59,12 +59,14 @@ async fn fixed_db(injector: &Injector) {
     let ns = Namespace {
         id: "test".into(),
         tls: Default::default(),
+        settings: Default::default(),
         status: NamespaceStatus::Inactive,
     };
     injector.store.persist(&injector.context, ns).await.unwrap();
     let ns = Namespace {
         id: "default".into(),
         tls: Default::default(),
+        settings: Default::default(),
         status: NamespaceStatus::Active,
     };
     injector.store.persist(&injector.context, ns).await.unwrap();

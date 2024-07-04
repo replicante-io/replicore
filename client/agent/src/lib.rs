@@ -16,6 +16,7 @@ mod error;
 pub mod fixture;
 
 pub use self::error::ActionNotFound;
+pub use self::error::ScheduleActionDuplicateId;
 
 /// Async API client to Replicante Agents.
 pub struct Client {

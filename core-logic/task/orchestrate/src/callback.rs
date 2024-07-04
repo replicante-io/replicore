@@ -37,7 +37,7 @@ impl TaskCallback for Callback {
 
         // Sync cluster nodes and build current cluster view.
         crate::sync::nodes(context, &data).await?;
-        // TODO: schedule pending node actions.
+        crate::naction::schedule(context, &data).await?;
 
         // Process orchestrator actions.
         let oactions = data

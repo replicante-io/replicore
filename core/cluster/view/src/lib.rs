@@ -1,6 +1,5 @@
 //! In memory approximate view of a cluster for logic across an entire distributed cluster.
 use std::collections::HashMap;
-use std::collections::HashSet;
 use std::sync::Arc;
 
 use anyhow::Result;
@@ -25,7 +24,7 @@ pub mod errors;
 pub use self::builder::ClusterViewBuilder;
 
 /// Nested index for the nactions collection, indexed by action ID.
-pub type NodeActions = HashMap<Uuid, Arc<NAction>>;
+pub type NodeActions = Vec<Arc<NAction>>;
 
 /// Nested index for the shards collection, indexed by shard ID.
 pub type NodeShards = HashMap<String, Arc<Shard>>;
@@ -91,8 +90,14 @@ impl ClusterView {
         Ok(cluster_new)
     }
 
-    /// Set of all unfinished node action IDs across all nodes.
-    pub fn unfinished_node_actions(&self) -> HashSet<Uuid> {
-        self.index_nactions_by_id.keys().copied().collect()
+    /// List unfinished node actions for a node.
+    ///
+    /// Actions are listed based on schedule time (and therefore the schedluing order).
+    pub fn unfinished_node_actions(&self, node_id: &str) -> Vec<Arc<NAction>> {
+        let actions = match self.nactions_by_node.get(node_id) {
+            None => return Vec::new(),
+            Some(actions) => actions,
+        };
+        actions.clone()
     }
 }

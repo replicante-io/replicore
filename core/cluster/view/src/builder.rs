@@ -71,8 +71,17 @@ impl ClusterViewBuilder {
     }
 
     /// Update the view with the given [`NAction`] record.
-    pub fn node_action(&mut self, action: NAction) -> Result<&mut Self> {
+    pub fn naction(&mut self, action: NAction) -> Result<&mut Self> {
         check_cluster!(self.cluster, action);
+        if action.state.phase.is_final() {
+            anyhow::bail!(crate::errors::FinishedNAction {
+                ns_id: action.ns_id,
+                cluster_id: action.cluster_id,
+                node_id: action.node_id,
+                action_id: action.action_id,
+            })
+        }
+
         let action = Arc::new(action);
         let action_id = action.action_id;
         let node_id = action.node_id.clone();
@@ -80,7 +89,7 @@ impl ClusterViewBuilder {
             .nactions_by_node
             .entry(node_id)
             .or_default()
-            .insert(action_id, action.clone());
+            .push(action.clone());
         self.cluster.index_nactions_by_id.insert(action_id, action);
         Ok(self)
     }
@@ -114,6 +123,33 @@ impl ClusterViewBuilder {
         Ok(self)
     }
 
+    /// Remvoe a [`NAction`] record from the cluster view following it reaching a final state.
+    pub fn remove_naction(&mut self, action: &NAction) -> Result<&mut Self> {
+        if !action.state.phase.is_final() {
+            anyhow::bail!(crate::errors::UnfinishedNAction {
+                ns_id: action.ns_id.clone(),
+                cluster_id: action.cluster_id.clone(),
+                node_id: action.node_id.clone(),
+                action_id: action.action_id,
+            })
+        }
+
+        // Remove the action from all views.
+        self.cluster.index_nactions_by_id.remove(&action.action_id);
+
+        // Remove the action from the scheduling list.
+        let actions = self.cluster.nactions_by_node.get_mut(&action.node_id);
+        if let Some(actions) = actions {
+            let index = actions
+                .iter()
+                .position(|entry| entry.action_id == action.action_id);
+            if let Some(index) = index {
+                actions.remove(index);
+            }
+        }
+        Ok(self)
+    }
+
     /// Update the view with the given [`Shard`] record.
     pub fn shard(&mut self, shard: Shard) -> Result<&mut Self> {
         check_cluster!(self.cluster, shard);
@@ -134,4 +170,44 @@ impl ClusterViewBuilder {
         self.cluster.store_extras.insert(node_id, Arc::new(extras));
         Ok(self)
     }
+
+    /// Update a [`NAction`] record in the cluster view.
+    pub fn update_naction(&mut self, action: NAction) -> Result<&mut Self> {
+        check_cluster!(self.cluster, action);
+        if action.state.phase.is_final() {
+            anyhow::bail!(crate::errors::FinishedNAction {
+                ns_id: action.ns_id,
+                cluster_id: action.cluster_id,
+                node_id: action.node_id,
+                action_id: action.action_id,
+            })
+        }
+        let action = Arc::new(action);
+        let node_id = action.node_id.clone();
+
+        // Replace the action in all views.
+        self.cluster
+            .index_nactions_by_id
+            .insert(action.action_id, action.clone());
+
+        // Replace action while presrving the correct place in the scheduling order.
+        let actions = self.cluster.nactions_by_node.entry(node_id).or_default();
+        let entry = actions
+            .iter_mut()
+            .find(|entry| entry.action_id == action.action_id);
+        if let Some(entry) = entry {
+            *entry = action;
+        }
+        Ok(self)
+    }
 }
+
+impl std::ops::Deref for ClusterViewBuilder {
+    type Target = ClusterView;
+    fn deref(&self) -> &Self::Target {
+        &self.cluster
+    }
+}
+
+// TODO: unit test remove_naction
+// TODO: unit test update_naction
