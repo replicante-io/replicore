@@ -5,6 +5,7 @@
 //! individual nodes from blocking all cluster management.
 //!
 //! The sync process does NOT schedule new node actions, this is expected separately.
+use std::collections::HashSet;
 use std::sync::Mutex;
 use std::sync::MutexGuard;
 
@@ -22,6 +23,7 @@ use replicore_cluster_models::OrchestrateReportNote;
 use replicore_cluster_view::ClusterView;
 use replicore_cluster_view::ClusterViewBuilder;
 use replicore_context::Context;
+use replicore_events::Event;
 use replicore_injector::Injector;
 
 mod error;
@@ -100,7 +102,9 @@ impl SyncData {
 /// Synchronise information about nodes with the control plane.
 pub async fn nodes(context: &Context, data: &SyncData) -> Result<()> {
     // Refresh the state of nodes in the discovery record.
+    let mut current_nodes: HashSet<&String> = HashSet::new();
     for node in &data.cluster_current.discovery.nodes {
+        current_nodes.insert(&node.node_id);
         let result = sync_node(context, data, node).await;
         let result = result.with_node_specific()?;
         if let Err(error) = result {
@@ -111,9 +115,21 @@ pub async fn nodes(context: &Context, data: &SyncData) -> Result<()> {
     }
 
     // Delete records about nodes no longer reported.
-    // TODO: cancel all actions for deleted nodes.
-    // TODO: emit node deleted event.
-    // TODO: delete node records (store is responsible for cleaning up across tables/collections).
+    let nodes = data
+        .cluster_current
+        .nodes
+        .values()
+        .filter(|node| !current_nodes.contains(&node.node_id));
+    for node in nodes {
+        let event = Event::new_with_payload(crate::constants::NODE_DELETE, node.as_ref().clone())?;
+        data.injector.events.change(context, event).await?;
+
+        let node_id =
+            replicore_store::ids::NodeID::by(&node.ns_id, &node.cluster_id, &node.node_id);
+        let op = replicore_store::persist::NodeCancelAllActions::from(node_id.clone());
+        data.injector.store.persist(context, op).await?;
+        data.injector.store.delete(context, node_id).await?;
+    }
     Ok(())
 }
 

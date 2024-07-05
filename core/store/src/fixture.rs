@@ -16,6 +16,7 @@ use replisdk::core::models::api::PlatformEntry;
 use replisdk::core::models::cluster::ClusterDiscovery;
 use replisdk::core::models::cluster::ClusterSpec;
 use replisdk::core::models::naction::NAction;
+use replisdk::core::models::naction::NActionPhase;
 use replisdk::core::models::namespace::Namespace;
 use replisdk::core::models::node::Node;
 use replisdk::core::models::node::Shard;
@@ -75,6 +76,14 @@ impl StoreBackend for StoreFixture {
             }
             DeleteOps::Namespace(ns) => {
                 store.namespaces.remove(&ns.0.id);
+            }
+            DeleteOps::Node(node) => {
+                let key = (node.ns_id, node.cluster_id, node.node_id);
+                store.nodes.remove(&key);
+                store.store_extras.remove(&key);
+                store
+                    .shards
+                    .retain(|id, _| id.0 != key.0 || id.1 != key.1 || id.2 != key.2);
             }
             DeleteOps::Platform(pl) => {
                 let key = (pl.0.ns_id, pl.0.name);
@@ -329,6 +338,20 @@ impl StoreBackend for StoreFixture {
                     node.node_id.clone(),
                 );
                 store.nodes.insert(key, node);
+            }
+            PersistOps::NodeCancelAllActions(node_id) => {
+                for (_, action) in store.nactions.iter_mut() {
+                    if action.ns_id != node_id.ns_id {
+                        continue;
+                    }
+                    if action.cluster_id != node_id.cluster_id {
+                        continue;
+                    }
+                    if action.node_id != node_id.node_id {
+                        continue;
+                    }
+                    action.phase_to(NActionPhase::Cancelled);
+                }
             }
             PersistOps::OAction(oaction) => {
                 let key = (

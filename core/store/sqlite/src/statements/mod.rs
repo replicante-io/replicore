@@ -53,6 +53,12 @@ impl StoreBackend for SQLiteStore {
             DeleteOps::Namespace(ns) => self::namespace::delete(context, &self.connection, ns)
                 .await
                 .map(|_| DeleteResponses::Success),
+            DeleteOps::Node(node) => {
+                self::shards::delete_on_node(context, &self.connection, node.clone()).await?;
+                self::store_extras::delete(context, &self.connection, node.clone()).await?;
+                self::cluster_node::delete(context, &self.connection, node).await?;
+                Ok(DeleteResponses::Success)
+            }
             DeleteOps::Platform(pl) => self::platform::delete(context, &self.connection, pl)
                 .await
                 .map(|_| DeleteResponses::Success),
@@ -163,6 +169,10 @@ impl StoreBackend for SQLiteStore {
             PersistOps::Node(node) => self::cluster_node::persist(context, &self.connection, node)
                 .await
                 .map(|_| PersistResponses::Success),
+            PersistOps::NodeCancelAllActions(node_id) => {
+                self::naction::cancel_for_node(context, &self.connection, node_id).await?;
+                Ok(PersistResponses::Success)
+            }
             PersistOps::OAction(oaction) => {
                 self::oaction::persist(context, &self.connection, oaction)
                     .await

@@ -6,6 +6,9 @@ pub const NACTION_SYNC_NEW: &str = "NACTION_SYNC_NEW";
 /// Event code emitted when a node action was updated during sync.
 pub const NACTION_SYNC_UPDATE: &str = "NACTION_SYNC_UPDATE";
 
+/// Event code emitted when a terminated node is deleted.
+pub const NODE_DELETE: &str = "NODE_DELETE";
+
 /// Event code emitted when a new node was first seen during sync.
 pub const NODE_SYNC_NEW: &str = "NODE_SYNC_NEW";
 

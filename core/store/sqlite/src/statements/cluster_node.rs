@@ -10,7 +10,16 @@ use replisdk::utils::trace::TraceFutureStdErrExt;
 
 use replicore_context::Context;
 use replicore_store::ids::NamespacedResourceID;
+use replicore_store::ids::NodeID;
 use replicore_store::query::NodesStream;
+
+const DELETE_SQL: &str = r#"
+DELETE FROM store_cluster_node
+WHERE
+    ns_id = ?1
+    AND cluster_id = ?2
+    AND node_id = ?3
+;"#;
 
 const LIST_SQL: &str = r#"
 SELECT node
@@ -28,6 +37,25 @@ ON CONFLICT(ns_id, cluster_id, node_id)
 DO UPDATE SET
     node=?4
 ;"#;
+
+/// Delete a [`Node`] record.
+pub async fn delete(_: &Context, connection: &Connection, node: NodeID) -> Result<()> {
+    let (err_count, _timer) = crate::telemetry::observe_op("node.delete");
+    let trace = crate::telemetry::trace_op("node.delete");
+    connection
+        .call(move |connection| {
+            connection.execute(
+                DELETE_SQL,
+                rusqlite::params![node.ns_id, node.cluster_id, node.node_id],
+            )?;
+            Ok(())
+        })
+        .count_on_err(err_count)
+        .trace_on_err_with_status()
+        .with_context(trace)
+        .await?;
+    Ok(())
+}
 
 /// Return a list of known [`Node`]s in the given cluster.
 pub async fn list(

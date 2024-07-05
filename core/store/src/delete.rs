@@ -8,6 +8,7 @@ use replicore_cluster_models::ConvergeState;
 use self::seal::SealDeleteOp;
 use crate::ids::NamespaceID;
 use crate::ids::NamespacedResourceID;
+use crate::ids::NodeID;
 
 /// Internal trait to enable delete operations on the persistent store.
 pub trait DeleteOp: Into<DeleteOps> + SealDeleteOp {
@@ -25,6 +26,9 @@ pub enum DeleteOps {
 
     /// Delete a namespace by Namespace ID.
     Namespace(DeleteNamespace),
+
+    /// Delete a node by its ID.
+    Node(NodeID),
 
     /// Delete a platform by Namespace and Name.
     Platform(DeletePlatform),
@@ -171,6 +175,16 @@ impl From<&Platform> for DeleteOps {
     fn from(value: &Platform) -> Self {
         let value = DeletePlatform::from(value);
         DeleteOps::Platform(value)
+    }
+}
+
+impl DeleteOp for NodeID {
+    type Response = ();
+}
+impl SealDeleteOp for NodeID {}
+impl From<NodeID> for DeleteOps {
+    fn from(value: NodeID) -> Self {
+        DeleteOps::Node(value)
     }
 }
 

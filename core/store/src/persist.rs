@@ -13,6 +13,7 @@ use replicore_cluster_models::ConvergeState;
 use replicore_cluster_models::OrchestrateReport;
 
 use self::seal::SealPersistOp;
+use super::ids::NodeID;
 
 /// Internal trait to enable persist operations on the persistent store.
 pub trait PersistOp: Into<PersistOps> + SealPersistOp {
@@ -40,6 +41,9 @@ pub enum PersistOps {
     /// Persist a cluster node record.
     Node(Node),
 
+    /// Cancel all actions for a node.
+    NodeCancelAllActions(NodeID),
+
     /// Persist an orchestrator action record.
     OAction(OAction),
 
@@ -63,7 +67,14 @@ pub enum PersistResponses {
 }
 
 // --- High level query operations --- //
-// TODO: define as needed or remove if none after feature parity.
+/// Cancel all node actions for a specific node, generally issued before a node is deleted.
+pub struct NodeCancelAllActions(pub NodeID);
+
+impl From<NodeID> for NodeCancelAllActions {
+    fn from(value: NodeID) -> Self {
+        NodeCancelAllActions(value)
+    }
+}
 
 // --- Create internal implementation details follow --- //
 /// Private module to seal implementation details.
@@ -130,6 +141,16 @@ impl SealPersistOp for Node {}
 impl From<Node> for PersistOps {
     fn from(value: Node) -> Self {
         PersistOps::Node(value)
+    }
+}
+
+impl PersistOp for NodeCancelAllActions {
+    type Response = ();
+}
+impl SealPersistOp for NodeCancelAllActions {}
+impl From<NodeCancelAllActions> for PersistOps {
+    fn from(value: NodeCancelAllActions) -> Self {
+        PersistOps::NodeCancelAllActions(value.0)
     }
 }
 

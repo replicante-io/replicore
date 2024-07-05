@@ -9,8 +9,17 @@ use replisdk::utils::metrics::CountFutureErrExt;
 use replisdk::utils::trace::TraceFutureStdErrExt;
 
 use replicore_context::Context;
+use replicore_store::ids::NodeID;
 use replicore_store::query::ListShards;
 use replicore_store::query::ShardsStream;
+
+const DELETE_SQL: &str = r#"
+DELETE FROM store_cluster_shard
+WHERE
+    ns_id = ?1
+    AND cluster_id = ?2
+    AND node_id = ?3
+;"#;
 
 const LIST_SQL: &str = r#"
 SELECT shard
@@ -38,6 +47,25 @@ ON CONFLICT(ns_id, cluster_id, node_id, shard_id)
 DO UPDATE SET
     shard=?4
 ;"#;
+
+/// Delete all shards located on a node.
+pub async fn delete_on_node(_: &Context, connection: &Connection, node: NodeID) -> Result<()> {
+    let (err_count, _timer) = crate::telemetry::observe_op("shard.delete");
+    let trace = crate::telemetry::trace_op("shard.delete");
+    connection
+        .call(move |connection| {
+            connection.execute(
+                DELETE_SQL,
+                rusqlite::params![node.ns_id, node.cluster_id, node.node_id],
+            )?;
+            Ok(())
+        })
+        .count_on_err(err_count)
+        .trace_on_err_with_status()
+        .with_context(trace)
+        .await?;
+    Ok(())
+}
 
 /// Return a list of known [`Shard`]s in the given cluster.
 pub async fn list(_: &Context, connection: &Connection, query: ListShards) -> Result<ShardsStream> {

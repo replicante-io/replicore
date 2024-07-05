@@ -36,6 +36,15 @@ pub fn show(namespace: &Namespace) {
     let ca_bundle = crate::utils::set_or_not(&namespace.tls.ca_bundle);
     println!("Namespace ID: {}", namespace.id);
     println!("Status: {}", namespace.status);
+    println!();
+
     println!("Default TLS options:");
     println!("  Certificate Authorities Bundle: {}", ca_bundle);
+    println!();
+
+    println!("Default settings for cluster orchestration:");
+    println!(
+        "  Maximum number of node action scheduling attempts: {}",
+        namespace.settings.orchestrate.max_naction_schedule_attempts
+    );
 }
