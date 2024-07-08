@@ -31,8 +31,7 @@ static STEPS: Lazy<Vec<(&'static str, Box<dyn ConvergeStep>)>> = Lazy::new(|| {
 
 /// Data for the convergence step of cluster orchestration.
 pub struct ConvergeData {
-    pub cluster_current: ClusterView,
-    //pub cluster_new: ClusterView,
+    pub cluster_new: ClusterView,
     pub injector: Injector,
     pub mode: OrchestrateMode,
     pub ns: Namespace,
@@ -41,13 +40,18 @@ pub struct ConvergeData {
 }
 
 impl ConvergeData {
+    /// Quick access to the Cluster ID being orchestrated.
+    pub fn cluster_id(&self) -> &str {
+        &self.cluster_new.spec.cluster_id
+    }
+
     /// Convert a [`InitData`] container into a [`ConvergeData`] container.
     pub async fn convert(context: &Context, value: SyncData) -> Result<Self> {
-        //let cluster_new = value
-        //    .cluster_new
-        //    .into_inner()
-        //    .expect("orchestate task cluster_new lock poisoned")
-        //    .finish();
+        let cluster_new = value
+            .cluster_new
+            .into_inner()
+            .expect("orchestate task cluster_new lock poisoned")
+            .finish();
         let report = value
             .report
             .into_inner()
@@ -60,8 +64,7 @@ impl ConvergeData {
             .await?
             .unwrap_or_default();
         let data = ConvergeData {
-            cluster_current: value.cluster_current,
-            //cluster_new,
+            cluster_new,
             injector: value.injector,
             mode: value.mode,
             ns: value.ns,
@@ -69,6 +72,11 @@ impl ConvergeData {
             state,
         };
         Ok(data)
+    }
+
+    /// Quck access to the Namespace ID being orchestated.
+    pub fn ns_id(&self) -> &str {
+        &self.ns.id
     }
 }
 

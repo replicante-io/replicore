@@ -30,17 +30,17 @@ impl ConvergeStep for NodeScaleUp {
     ) -> Result<()> {
         slog::trace!(
             context.logger, "Checking node scale up for cluster";
-            "ns_id" => &data.ns.id,
-            "cluster_id" => &data.cluster_current.spec.cluster_id,
+            "ns_id" => data.ns_id(),
+            "cluster_id" => data.cluster_id(),
         );
 
         // Skip step if cluster has no convergence configured.
-        let declaration = &data.cluster_current.spec.declaration;
+        let declaration = &data.cluster_new.spec.declaration;
         if !declaration.active {
             slog::debug!(
                 context.logger, "Skip node scale up for inactive cluster";
-                "ns_id" => &data.ns.id,
-                "cluster_id" => &data.cluster_current.spec.cluster_id,
+                "ns_id" => data.ns_id(),
+                "cluster_id" => data.cluster_id(),
             );
             return Ok(());
         }
@@ -49,8 +49,8 @@ impl ConvergeStep for NodeScaleUp {
             None => {
                 slog::debug!(
                     context.logger, "Skip node scale up for undeclared cluster";
-                    "ns_id" => &data.ns.id,
-                    "cluster_id" => &data.cluster_current.spec.cluster_id,
+                    "ns_id" => data.ns_id(),
+                    "cluster_id" => data.cluster_id(),
                 );
                 return Ok(());
             }
@@ -63,8 +63,8 @@ impl ConvergeStep for NodeScaleUp {
             if *grace + grace_time > time::OffsetDateTime::now_utc() {
                 slog::debug!(
                     context.logger, "Skip node scale up while in grace period";
-                    "ns_id" => &data.ns.id,
-                    "cluster_id" => &data.cluster_current.spec.cluster_id,
+                    "ns_id" => data.ns_id(),
+                    "cluster_id" => data.cluster_id(),
                 );
                 return Ok(());
             }
@@ -73,22 +73,22 @@ impl ConvergeStep for NodeScaleUp {
 
         // Skip step in case of unfinished provisioning actions.
         let scaling = data
-            .cluster_current
+            .cluster_new
             .oactions_unfinished
             .iter()
             .any(|oaction| oaction.kind == ACTION_KIND_PROVISION);
         if scaling {
             slog::debug!(
                 context.logger, "Skip node scale up due to scaling activity";
-                "ns_id" => &data.ns.id,
-                "cluster_id" => &data.cluster_current.spec.cluster_id,
+                "ns_id" => data.ns_id(),
+                "cluster_id" => data.cluster_id(),
             );
             return Ok(());
         }
 
         // Skip if cluster has enough nodes.
         let mut counts: HashMap<&String, u32> = HashMap::new();
-        for node in &data.cluster_current.discovery.nodes {
+        for node in &data.cluster_new.discovery.nodes {
             if let Some(group) = &node.node_group {
                 let count = counts.entry(group).or_insert(0);
                 *count += 1;
@@ -105,8 +105,8 @@ impl ConvergeStep for NodeScaleUp {
         if partial_groups.is_empty() {
             slog::debug!(
                 context.logger, "Skip node scale up since all groups meet the desired count";
-                "ns_id" => &data.ns.id,
-                "cluster_id" => &data.cluster_current.spec.cluster_id,
+                "ns_id" => data.ns_id(),
+                "cluster_id" => data.cluster_id(),
             );
             return Ok(());
         }
@@ -120,8 +120,8 @@ impl ConvergeStep for NodeScaleUp {
         };
         let args = ProvisionNodesArgs::from(args);
         let node_up = OActionSpec {
-            ns_id: data.cluster_current.spec.ns_id.clone(),
-            cluster_id: data.cluster_current.spec.cluster_id.clone(),
+            ns_id: data.ns_id().to_string(),
+            cluster_id: data.cluster_id().to_string(),
             action_id: None,
             args: serde_json::to_value(args)?,
             approval: declaration.approval,
@@ -133,8 +133,8 @@ impl ConvergeStep for NodeScaleUp {
         let action = sdk.oaction_create(context, node_up).await?;
         slog::debug!(
             context.logger, "Scale up action created";
-            "ns_id" => &data.ns.id,
-            "cluster_id" => &data.cluster_current.spec.cluster_id,
+            "ns_id" => data.ns_id(),
+            "cluster_id" => data.cluster_id(),
             "action_id" => %action.action_id,
         );
 
