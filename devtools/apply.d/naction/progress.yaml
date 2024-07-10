@@ -1,0 +1,15 @@
+apiVersion: replicante.io/v0
+kind: NAction
+
+spec:
+  ns_id: default
+  cluster_id: mongo-rs
+  node_id: node1
+
+  #approval: granted
+  approval: required
+
+  kind: agent.replicante.io/debug.progress
+  args:
+    test: true
+    parameter: 12

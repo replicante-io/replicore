@@ -1,0 +1,35 @@
+{
+  "title": "OAction Apply Object",
+  "description": "RepliCore's NAction Apply API payload",
+  "type": "object",
+  "properties": {
+    "spec": {
+      "type": "object",
+      "properties": {
+        "ns_id": { "type": "string" },
+        "cluster_id": { "type": "string" },
+        "node_id": { "type": "string" },
+        "action_id": { "type": "string" },
+        "args": { "type": "object" },
+        "approval": {
+          "type": "string",
+          "enum": [
+            "granted",
+            "required"
+          ]
+        },
+        "kind": { "type": "string" },
+        "metadata": {
+          "type": "object",
+          "patternProperties": {
+            ".*": { "type": "string" }
+          }
+        }
+      },
+      "required": ["ns_id", "cluster_id", "node_id", "kind"]
+    }
+  },
+  "required": [
+    "spec"
+  ]
+}

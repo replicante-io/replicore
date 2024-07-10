@@ -139,6 +139,10 @@ impl StoreBackend for StoreFixture {
                     if action.state.phase.is_final() && !query.include_finished {
                         continue;
                     }
+                    match &query.node_id {
+                        Some(node_id) if node_id != &action.node_id => continue,
+                        _ => (),
+                    }
                     let item = NActionEntry {
                         ns_id: action.ns_id.clone(),
                         cluster_id: action.cluster_id.clone(),
@@ -253,6 +257,16 @@ impl StoreBackend for StoreFixture {
                 }
                 let items = futures::stream::iter(items).map(Ok).boxed();
                 Ok(QueryResponses::StoreExtrasList(items))
+            }
+            QueryOps::NAction(query) => {
+                let key = (
+                    query.0.ns_id,
+                    query.0.cluster_id,
+                    query.0.node_id,
+                    query.0.action_id,
+                );
+                let action = store.nactions.get(&key).cloned();
+                Ok(QueryResponses::NAction(action))
             }
             QueryOps::Namespace(ns) => {
                 let ns = store.namespaces.get(&ns.0.id).cloned();

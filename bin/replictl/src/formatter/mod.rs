@@ -10,6 +10,7 @@ use clap::Args;
 use clap::ValueEnum;
 
 use replisdk::core::models::api::ClusterSpecEntry;
+use replisdk::core::models::api::NActionEntry;
 use replisdk::core::models::api::NamespaceEntry;
 use replisdk::core::models::api::OActionEntry;
 use replisdk::core::models::api::PlatformEntry;
@@ -88,6 +89,15 @@ impl Formatter {
 pub trait FormatterStrategy {
     /// Execute the requested formatting operation.
     fn format(&self, globals: &Globals, op: self::ops::Ops) -> self::ops::Responses;
+}
+
+/// Present a list of [`NActionEntry`]s to the user.
+pub trait NActionList {
+    /// Append a new node action entry into the list being formatted.
+    fn append(&mut self, entry: &NActionEntry) -> Result<()>;
+
+    /// Handle the now complete list of node action entries and emit it to standard output.
+    fn finish(&mut self) -> Result<()>;
 }
 
 /// Present a list of [`NamespaceEntry`]s to the user.

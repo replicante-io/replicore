@@ -4,6 +4,7 @@ use anyhow::Result;
 
 use replisdk::core::models::cluster::ClusterDiscovery;
 use replisdk::core::models::cluster::ClusterSpec;
+use replisdk::core::models::naction::NAction;
 use replisdk::core::models::namespace::Namespace;
 use replisdk::core::models::oaction::OAction;
 use replisdk::core::models::platform::Platform;
@@ -35,6 +36,12 @@ pub enum Ops {
 
     /// Request a formatter to emit [`Context`] lists.
     ContextList,
+
+    /// Format information about a [`NAction`].
+    NAction(NAction),
+
+    /// Request a strategy to format `NActionEntry` lists.
+    NActionList,
 
     /// Request a strategy to format `NamespaceEntry` lists.
     NamespaceList,
@@ -69,6 +76,9 @@ pub enum Responses {
     /// Return an error back to the caller.
     Err(Error),
 
+    /// Return a object to format a list of `NActionEntry`s.
+    NActionList(Box<dyn super::NActionList>),
+
     /// Return a object to format a list of `NamespaceEntry`s.
     NamespaceList(Box<dyn super::NamespaceList>),
 
@@ -99,6 +109,15 @@ impl Responses {
     {
         let value = Box::new(value);
         Self::ContextList(value)
+    }
+
+    /// Wrap an [`NActionList`](super::NActionList) returned by the formatter.
+    pub fn nactions<L>(value: L) -> Self
+    where
+        L: super::NActionList + 'static,
+    {
+        let value = Box::new(value);
+        Self::NActionList(value)
     }
 
     /// Wrap a [`NamespaceList`](super::NamespaceList) returned by the formatter.
@@ -135,6 +154,9 @@ pub struct ClusterSpecListOp;
 
 /// Request a formatter to emit [`Context`] lists.
 pub struct ContextListOp;
+
+/// Request a formatter to emit `NActionEntry` lists.
+pub struct NActionListOp;
 
 /// Request a formatter to emit `NamespaceEntry` lists.
 pub struct NamespaceListOp;
@@ -200,6 +222,26 @@ impl From<ContextListOp> for Ops {
 }
 impl FormatOp for ContextListOp {
     type Response = Box<dyn super::ContextList>;
+}
+
+impl SealFormatOp for NAction {}
+impl From<NAction> for Ops {
+    fn from(value: NAction) -> Self {
+        Self::NAction(value)
+    }
+}
+impl FormatOp for NAction {
+    type Response = Result<()>;
+}
+
+impl SealFormatOp for NActionListOp {}
+impl From<NActionListOp> for Ops {
+    fn from(_: NActionListOp) -> Self {
+        Self::NActionList
+    }
+}
+impl FormatOp for NActionListOp {
+    type Response = Box<dyn super::NActionList>;
 }
 
 impl SealFormatOp for Namespace {}
@@ -285,6 +327,14 @@ impl From<Responses> for Box<dyn super::ContextList> {
     fn from(value: Responses) -> Self {
         match value {
             Responses::ContextList(value) => value,
+            _ => panic!("unexpected response type for formatter operation"),
+        }
+    }
+}
+impl From<Responses> for Box<dyn super::NActionList> {
+    fn from(value: Responses) -> Self {
+        match value {
+            Responses::NActionList(value) => value,
             _ => panic!("unexpected response type for formatter operation"),
         }
     }

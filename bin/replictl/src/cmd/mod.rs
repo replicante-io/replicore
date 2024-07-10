@@ -5,6 +5,7 @@ use clap::Subcommand;
 pub mod apply;
 pub mod cluster_spec;
 pub mod context;
+pub mod naction;
 pub mod namespace;
 pub mod oaction;
 pub mod platform;
@@ -52,6 +53,10 @@ pub enum Command {
 
     /// Manage configuration of RepliCore servers to access.
     Context(context::ContextCli),
+
+    /// Inspect or manipulate node actions for a cluster.
+    #[command(alias = "na", alias = "naction")]
+    NAction(naction::NActionCli),
 
     /// Inspect, delete or manipulate namespaces.
     #[command(alias = "ns")]

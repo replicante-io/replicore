@@ -5,6 +5,9 @@ pub const API_VERSION: &str = "replicante.io/v0";
 /// ClusterSpec kind identifier in apply requests.
 pub const KIND_CLUSTER_SPEC: &str = "clusterspec";
 
+/// Node Action kind identifier in apply requests.
+pub const KIND_NACTION: &str = "naction";
+
 /// Namespace kind identifier in apply requests.
 pub const KIND_NAMESPACE: &str = "namespace";
 

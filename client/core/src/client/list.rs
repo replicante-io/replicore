@@ -3,6 +3,8 @@ use anyhow::Result;
 
 use replisdk::core::models::api::ClusterSpecEntry;
 use replisdk::core::models::api::ClusterSpecList;
+use replisdk::core::models::api::NActionEntry;
+use replisdk::core::models::api::NActionList;
 use replisdk::core::models::api::NamespaceEntry;
 use replisdk::core::models::api::NamespaceList;
 use replisdk::core::models::api::OActionEntry;
@@ -39,6 +41,32 @@ impl<'a> ListClient<'a> {
             .send()
             .await?;
         let response = repliclient_utils::inspect::<ClusterSpecList>(response).await?;
+        let response = response.ok_or(EmptyResponse)?;
+        Ok(response.items)
+    }
+
+    /// List node actions for a cluster.
+    pub async fn nactions(
+        &'a self,
+        namespace: &str,
+        cluster: &str,
+        node: &Option<String>,
+        all: bool,
+    ) -> Result<Vec<NActionEntry>> {
+        let request = self
+            .inner
+            .client
+            .get(format!(
+                "{}api/v0/list/replicante.io/v0/naction/{}/{}",
+                self.inner.base, namespace, cluster,
+            ))
+            .query(&[("all", all)]);
+        let request = match node {
+            None => request,
+            Some(node) => request.query(&[("node_id", node)]),
+        };
+        let response = request.send().await?;
+        let response = repliclient_utils::inspect::<NActionList>(response).await?;
         let response = response.ok_or(EmptyResponse)?;
         Ok(response.items)
     }

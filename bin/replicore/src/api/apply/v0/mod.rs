@@ -25,6 +25,7 @@ macro_rules! schema {
 }
 
 schema!(CLUSTER_SPEC_SCHEMA, "cluster-spec.schema.json");
+schema!(NACTION_SCHEMA, "naction.schema.json");
 schema!(NAMESPACE_SCHEMA, "namespace.schema.json");
 schema!(OACTION_SCHEMA, "oaction.schema.json");
 schema!(PLATFORM_SCHEMA, "platform.schema.json");
@@ -35,6 +36,7 @@ pub async fn apply(args: ApplyArgs<'_>) -> Result<HttpResponse, crate::api::Erro
     let kind = kind.to_lowercase();
     match kind.as_str() {
         constants::KIND_CLUSTER_SPEC => self::cluster::cluster_spec(args).await,
+        constants::KIND_NACTION => self::action::naction(args).await,
         constants::KIND_NAMESPACE => self::namespace::namespace(args).await,
         constants::KIND_OACTION => self::action::oaction(args).await,
         constants::KIND_PLATFORM => self::platform::platform(args).await,
@@ -45,6 +47,7 @@ pub async fn apply(args: ApplyArgs<'_>) -> Result<HttpResponse, crate::api::Erro
 /// Ensure the object's kind is known (and supported).
 pub fn knows(kind: &str) -> bool {
     kind == constants::KIND_CLUSTER_SPEC
+        || kind == constants::KIND_NACTION
         || kind == constants::KIND_NAMESPACE
         || kind == constants::KIND_OACTION
         || kind == constants::KIND_PLATFORM

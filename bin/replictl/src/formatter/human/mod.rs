@@ -8,6 +8,7 @@ use crate::globals::Globals;
 
 mod cluster_spec;
 mod context;
+mod naction;
 mod namespace;
 mod oaction;
 mod platform;
@@ -38,6 +39,11 @@ impl FormatterStrategy for HumanFormatter {
                 Responses::Success
             }
             Ops::ContextList => Responses::contexts(self::context::ContextList::new()),
+            Ops::NAction(action) => match self::naction::show(&action) {
+                Err(error) => Responses::Err(error),
+                Ok(()) => Responses::Success,
+            },
+            Ops::NActionList => Responses::nactions(self::naction::NActionList::new()),
             Ops::Namespace(namespace) => {
                 self::namespace::show(&namespace);
                 Responses::Success

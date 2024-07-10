@@ -11,18 +11,29 @@ use crate::Globals;
 static CLUSTER_IDS: Lazy<HashMap<(&str, &str), &str>> = Lazy::new(|| {
     let mut map = HashMap::new();
     map.insert(("replicante.io/v0", "clusterspec"), "cluster_id");
+    map.insert(("replicante.io/v0", "naction"), "cluster_id");
+    map.insert(("replicante.io/v0", "oaction"), "cluster_id");
     map
 });
 
 /// Determine the manifest's Namespace ID attribute based on API version and kind.
 static NS_IDS: Lazy<HashMap<(&str, &str), &str>> = Lazy::new(|| {
     let mut map = HashMap::new();
-    map.insert(("replicante.io/v0", "namespace"), "id");
     map.insert(("replicante.io/v0", "clusterspec"), "ns_id");
+    map.insert(("replicante.io/v0", "naction"), "ns_id");
+    map.insert(("replicante.io/v0", "namespace"), "id");
+    map.insert(("replicante.io/v0", "oaction"), "ns_id");
+    map.insert(("replicante.io/v0", "platform"), "ns_id");
     map
 });
 
-// TODO: NODE_IDS
+/// Determine the manifest's Node ID attribute based on API version and kind.
+static NODE_IDS: Lazy<HashMap<(&str, &str), &str>> = Lazy::new(|| {
+    let mut map = HashMap::new();
+    map.insert(("replicante.io/v0", "naction"), "node_id");
+    map.insert(("replicante.io/v0", "oaction"), "node_id");
+    map
+});
 
 /// Manifest spec attributes to set/override scope information into.
 struct ScopeIDs {
@@ -47,7 +58,7 @@ impl ScopeIDs {
         let ids = ScopeIDs {
             cluster: CLUSTER_IDS.get(&key).map(|cluster| cluster.to_string()),
             namespace: NS_IDS.get(&key).map(|ns| ns.to_string()),
-            node: None,
+            node: NODE_IDS.get(&key).map(|node| node.to_string()),
         };
         Some(ids)
     }

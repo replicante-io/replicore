@@ -7,6 +7,7 @@ use repliclient_utils::ClientOptions;
 mod apply;
 mod cluster_spec;
 mod list;
+mod naction;
 mod namespace;
 mod oaction;
 mod platform;

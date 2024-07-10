@@ -12,6 +12,7 @@ use replisdk::utils::trace::TraceFutureStdErrExt;
 use replicore_context::Context;
 use replicore_store::ids::NamespacedResourceID;
 use replicore_store::query::ListNActions;
+use replicore_store::query::LookupNAction;
 use replicore_store::query::NActionEntryStream;
 use replicore_store::query::NActionStream;
 
@@ -29,23 +30,30 @@ WHERE
   AND node_id = ?5
 ;"#;
 
-const LIST_ALL_SQL: &str = r#"
+const LIST_SQL_START: &str = r#"
 SELECT naction
 FROM store_naction
 WHERE
     ns_id = ?1
     AND cluster_id = ?2
-ORDER BY created_time ASC;
 "#;
 
-const LIST_UNFINISHED_SQL: &str = r#"
+const LIST_SQL_NODE: &str = r#"    AND node_id = ?3
+"#;
+
+const LIST_SQL_UNFINISHED: &str = r#"    AND finished_time IS NULL
+"#;
+
+const LIST_SQL_END: &str = r#"ORDER BY created_time ASC;"#;
+
+const LOOKUP_SQL: &str = r#"
 SELECT naction
 FROM store_naction
 WHERE
     ns_id = ?1
     AND cluster_id = ?2
-    AND finished_time IS NULL
-ORDER BY created_time ASC;
+    AND node_id = ?3
+    AND action_id = ?4;
 "#;
 
 const PERSIST_SQL: &str = r#"
@@ -105,16 +113,25 @@ pub async fn list(
     connection: &Connection,
     query: ListNActions,
 ) -> Result<NActionEntryStream> {
+    // Build the full SQL statement including the correct filters.
+    let sql = match (query.include_finished, query.node_id.is_some()) {
+        (true, true) => format!("{}{}", LIST_SQL_NODE, LIST_SQL_UNFINISHED),
+        (false, true) => LIST_SQL_NODE.to_string(),
+        (false, false) => LIST_SQL_UNFINISHED.to_string(),
+        _ => String::from(""),
+    };
+    let sql = format!("{}{}{}", LIST_SQL_START, sql, LIST_SQL_END);
+
+    // Execute the select statement.
     let (err_count, _timer) = crate::telemetry::observe_op("naction.list");
     let trace = crate::telemetry::trace_op("naction.list");
     let items = connection
         .call(move |connection| {
-            let sql = match query.include_finished {
-                true => LIST_ALL_SQL,
-                false => LIST_UNFINISHED_SQL,
+            let mut statement = connection.prepare_cached(&sql)?;
+            let mut rows = match query.node_id {
+                None => statement.query([query.ns_id, query.cluster_id])?,
+                Some(node_id) => statement.query([query.ns_id, query.cluster_id, node_id])?,
             };
-            let mut statement = connection.prepare_cached(sql)?;
-            let mut rows = statement.query([query.ns_id, query.cluster_id])?;
 
             let mut items = Vec::new();
             while let Some(row) = rows.next()? {
@@ -135,6 +152,48 @@ pub async fn list(
         })
         .boxed();
     Ok(items)
+}
+
+/// Lookup a node action from the store, if one is available.
+pub async fn lookup(
+    _: &Context,
+    connection: &Connection,
+    query: LookupNAction,
+) -> Result<Option<NAction>> {
+    let (err_count, timer) = crate::telemetry::observe_op("naction.lookup");
+    let trace = crate::telemetry::trace_op("naction.lookup");
+    let action_id = query.0.action_id.to_string();
+    let action = connection
+        .call(move |connection| {
+            let mut statement = connection.prepare_cached(LOOKUP_SQL)?;
+            let mut rows = statement.query([
+                query.0.ns_id,
+                query.0.cluster_id,
+                query.0.node_id,
+                action_id,
+            ])?;
+            let row = match rows.next()? {
+                None => None,
+                Some(row) => {
+                    let action: String = row.get("naction")?;
+                    Some(action)
+                }
+            };
+            Ok(row)
+        })
+        .count_on_err(err_count)
+        .trace_on_err_with_status()
+        .with_context(trace)
+        .await?;
+
+    drop(timer);
+    match action {
+        None => Ok(None),
+        Some(action) => {
+            let action = replisdk::utils::encoding::decode_serde(&action)?;
+            Ok(Some(action))
+        }
+    }
 }
 
 /// Persist a new or updated record into the store.
@@ -180,7 +239,8 @@ pub async fn unfinished(
     let trace = crate::telemetry::trace_op("naction.unfinished");
     let items = connection
         .call(move |connection| {
-            let mut statement = connection.prepare_cached(LIST_UNFINISHED_SQL)?;
+            let sql = format!("{}{}{}", LIST_SQL_START, LIST_SQL_UNFINISHED, LIST_SQL_END);
+            let mut statement = connection.prepare_cached(&sql)?;
             let mut rows = statement.query([query.ns_id, query.name])?;
 
             let mut items = Vec::new();

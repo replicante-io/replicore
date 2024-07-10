@@ -113,6 +113,10 @@ impl StoreBackend for SQLiteStore {
                 let list = self::store_extras::list(context, &self.connection, query).await?;
                 Ok(QueryResponses::StoreExtrasList(list))
             }
+            QueryOps::NAction(query) => {
+                let action = self::naction::lookup(context, &self.connection, query).await?;
+                Ok(QueryResponses::NAction(action))
+            }
             QueryOps::Namespace(ns) => {
                 let ns = self::namespace::lookup(context, &self.connection, ns).await?;
                 Ok(QueryResponses::Namespace(ns))

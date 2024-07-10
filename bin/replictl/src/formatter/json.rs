@@ -2,6 +2,7 @@
 use anyhow::Result;
 
 use replisdk::core::models::api::ClusterSpecEntry;
+use replisdk::core::models::api::NActionEntry;
 use replisdk::core::models::api::NamespaceEntry;
 use replisdk::core::models::api::OActionEntry;
 use replisdk::core::models::api::PlatformEntry;
@@ -23,6 +24,8 @@ impl FormatterStrategy for JsonFormatter {
             Ops::ClusterSpecList => Responses::cluster_specs(ClusterSpecList::default()),
             Ops::Context(context) => print_json(context),
             Ops::ContextList => Responses::contexts(ContextList::default()),
+            Ops::NAction(action) => print_json(action),
+            Ops::NActionList => Responses::nactions(NActionList::default()),
             Ops::Namespace(namespace) => print_json(namespace),
             Ops::NamespaceList => Responses::namespaces(NamespaceList::default()),
             Ops::OAction(action) => print_json(action),
@@ -73,6 +76,7 @@ list_serialiser!(
     crate::formatter::ClusterSpecList,
     ClusterSpecEntry
 );
+list_serialiser!(NActionList, crate::formatter::NActionList, NActionEntry);
 list_serialiser!(
     NamespaceList,
     crate::formatter::NamespaceList,

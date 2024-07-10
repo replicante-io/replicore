@@ -22,6 +22,7 @@ use replicore_cluster_models::ConvergeState;
 use replicore_cluster_models::OrchestrateReport;
 
 use self::seal::SealQueryOp;
+use crate::ids::NActionID;
 use crate::ids::NamespaceID;
 use crate::ids::NamespacedResourceID;
 use crate::ids::OActionID;
@@ -67,6 +68,9 @@ pub enum QueryOps {
     /// List store extras for all nodes in a cluster.
     ListStoreExtras(NamespacedResourceID),
 
+    /// Query a node action by namespace, cluster, node and action ID.
+    NAction(LookupNAction),
+
     /// Query a namespace by Namespace ID.
     Namespace(LookupNamespace),
 
@@ -99,6 +103,9 @@ pub enum QueryResponses {
 
     /// Return a [`Stream`] of [`ClusterSpecEntry`] objects.
     ClusterSpecEntries(ClusterSpecEntryStream),
+
+    /// Return a [`NAction`], if one was found matching the query.
+    NAction(Option<NAction>),
 
     /// Return a [`Stream`] of [`NAction`] objects.
     NActions(NActionStream),
@@ -286,6 +293,37 @@ impl LookupClusterSpec {
     }
 }
 
+/// Lookup a [`NAction`] record by ID.
+#[derive(Clone, Debug)]
+pub struct LookupNAction(pub NActionID);
+impl LookupNAction {
+    /// Lookup an orchestrator action by ID.
+    pub fn by<S1, S2, S3>(ns_id: S1, cluster_id: S2, node_id: S3, action_id: Uuid) -> Self
+    where
+        S1: Into<String>,
+        S2: Into<String>,
+        S3: Into<String>,
+    {
+        let id = NActionID {
+            ns_id: ns_id.into(),
+            cluster_id: cluster_id.into(),
+            node_id: node_id.into(),
+            action_id,
+        };
+        LookupNAction(id)
+    }
+}
+impl From<&NAction> for LookupNAction {
+    fn from(value: &NAction) -> Self {
+        Self::by(
+            &value.ns_id,
+            &value.cluster_id,
+            &value.node_id,
+            value.action_id,
+        )
+    }
+}
+
 /// Lookup a [`Namespace`] record by ID.
 #[derive(Clone, Debug)]
 pub struct LookupNamespace(pub NamespaceID);
@@ -310,7 +348,7 @@ impl From<&str> for LookupNamespace {
     }
 }
 
-/// Lookup a [`OAction`] record by ID.
+/// Lookup an [`OAction`] record by ID.
 #[derive(Clone, Debug)]
 pub struct LookupOAction(pub OActionID);
 impl LookupOAction {
@@ -450,6 +488,9 @@ pub struct ListNActions {
 
     /// Include finished actions in the results.
     pub include_finished: bool,
+
+    /// Only list actions for the given node.
+    pub node_id: Option<String>,
 }
 
 impl SealQueryOp for ListNActions {}
@@ -473,12 +514,19 @@ impl ListNActions {
             ns_id: ns_id.into(),
             cluster_id: cluster_id.into(),
             include_finished: false,
+            node_id: None,
         }
     }
 
     /// Include finished [`NAction`]s in the list.
     pub fn with_finished(mut self) -> Self {
         self.include_finished = true;
+        self
+    }
+
+    /// Only list actions for the given node.
+    pub fn with_node(mut self, node_id: String) -> Self {
+        self.node_id = Some(node_id);
         self
     }
 
@@ -677,6 +725,16 @@ impl From<LookupNamespace> for QueryOps {
     }
 }
 
+impl SealQueryOp for LookupNAction {}
+impl QueryOp for LookupNAction {
+    type Response = Option<NAction>;
+}
+impl From<LookupNAction> for QueryOps {
+    fn from(value: LookupNAction) -> Self {
+        QueryOps::NAction(value)
+    }
+}
+
 impl SealQueryOp for LookupOAction {}
 impl QueryOp for LookupOAction {
     type Response = Option<OAction>;
@@ -756,6 +814,14 @@ impl From<QueryResponses> for ClusterSpecEntryStream {
     fn from(value: QueryResponses) -> Self {
         match value {
             QueryResponses::ClusterSpecEntries(stream) => stream,
+            _ => panic!("unexpected result type for the given query operation"),
+        }
+    }
+}
+impl From<QueryResponses> for Option<NAction> {
+    fn from(value: QueryResponses) -> Self {
+        match value {
+            QueryResponses::NAction(action) => action,
             _ => panic!("unexpected result type for the given query operation"),
         }
     }

@@ -105,7 +105,7 @@ async fn fetch(
         finished_time: action.finished_time,
         kind: action.kind,
         metadata: action.metadata,
-        scheduled_time: action.scheduled_time,
+        scheduled_time: Some(action.scheduled_time),
         state: action.state.into(),
     };
     Ok(action)

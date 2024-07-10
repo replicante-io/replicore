@@ -38,7 +38,7 @@ impl CoreSDK {
             let query = LookupOAction::by(&spec.ns_id, &spec.cluster_id, action_id);
             let oaction = self.injector.store.query(context, query).await?;
             if oaction.is_some() {
-                let error = crate::errors::ActionExists {
+                let error = crate::errors::OActionExists {
                     ns_id: spec.ns_id.clone(),
                     cluster_id: spec.cluster_id.clone(),
                     action_id,

@@ -3,6 +3,22 @@ use serde::Deserialize;
 use serde::Serialize;
 use uuid::Uuid;
 
+/// Information needed to identify node actions.
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct NActionID {
+    /// The ID of the action.
+    pub action_id: Uuid,
+
+    /// The ID of the cluster the action is for.
+    pub cluster_id: String,
+
+    /// The ID of the node the action is targeting.
+    pub node_id: String,
+
+    /// The namespace ID of the resource.
+    pub ns_id: String,
+}
+
 /// Information needed to query namespace scoped resources.
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct NamespaceID {
@@ -49,13 +65,13 @@ impl NodeID {
     }
 }
 
-/// Information needed to identifier orchestrator actions.
+/// Information needed to identify orchestrator actions.
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct OActionID {
     /// The ID of the action.
     pub action_id: Uuid,
 
-    /// The ID of the cluster the action is fore.
+    /// The ID of the cluster the action is for.
     pub cluster_id: String,
 
     /// The namespace ID of the resource.

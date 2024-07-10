@@ -1,6 +1,7 @@
 //! Reusable Control Plane business logic in the form of an SDK.
 use replicore_injector::Injector;
 
+mod naction;
 mod oaction;
 
 pub mod constants;
