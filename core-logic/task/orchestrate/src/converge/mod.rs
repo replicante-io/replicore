@@ -1,4 +1,7 @@
 //! Handle converging the known state of the cluster towards the declared version.
+use std::sync::Mutex;
+use std::sync::MutexGuard;
+
 use anyhow::Result;
 use once_cell::sync::Lazy;
 
@@ -7,6 +10,7 @@ use replisdk::core::models::namespace::Namespace;
 use replicore_cluster_models::ConvergeState;
 use replicore_cluster_models::OrchestrateMode;
 use replicore_cluster_models::OrchestrateReport;
+use replicore_cluster_models::OrchestrateReportNote;
 use replicore_cluster_view::ClusterView;
 use replicore_context::Context;
 use replicore_injector::Injector;
@@ -35,7 +39,7 @@ pub struct ConvergeData {
     pub injector: Injector,
     pub mode: OrchestrateMode,
     pub ns: Namespace,
-    pub report: OrchestrateReport,
+    pub report: Mutex<OrchestrateReport>,
     pub state: ConvergeState,
 }
 
@@ -50,12 +54,8 @@ impl ConvergeData {
         let cluster_new = value
             .cluster_new
             .into_inner()
-            .expect("orchestate task cluster_new lock poisoned")
+            .expect("orchestrate task cluster_new lock poisoned")
             .finish();
-        let report = value
-            .report
-            .into_inner()
-            .expect("orchestate task report lock poisoned");
         let op = replicore_store::query::LookupConvergeState::from(&value.cluster_current.spec);
         let state = value
             .injector
@@ -68,13 +68,20 @@ impl ConvergeData {
             injector: value.injector,
             mode: value.mode,
             ns: value.ns,
-            report,
+            report: value.report,
             state,
         };
         Ok(data)
     }
 
-    /// Quck access to the Namespace ID being orchestated.
+    /// Mutable access to the [`OrchestrateReport`].
+    pub fn report_mut(&self) -> MutexGuard<OrchestrateReport> {
+        self.report
+            .lock()
+            .expect("orchestrate task report lock poisoned")
+    }
+
+    /// Quick access to the Namespace ID being orchestrated.
     pub fn ns_id(&self) -> &str {
         &self.ns.id
     }
@@ -83,9 +90,14 @@ impl ConvergeData {
 /// Process cluster convergence steps in priority order.
 pub async fn run(context: &Context, data: &ConvergeData) -> Result<()> {
     let mut new_state = data.state.clone();
-    for (_step_id, step) in STEPS.iter() {
-        // TODO: add error to the orchestration report but continue.
-        step.converge(context, data, &mut new_state).await?;
+    for (step_id, step) in STEPS.iter() {
+        let result = step.converge(context, data, &mut new_state).await;
+        if let Err(error) = result {
+            let message = "Cluster convergence step failed";
+            let mut note = OrchestrateReportNote::error(message, error);
+            note.data.insert("step-id".into(), (*step_id).into());
+            data.report_mut().notes.push(note);
+        }
     }
 
     // Persist latest converge state updates.

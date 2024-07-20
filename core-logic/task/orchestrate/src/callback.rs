@@ -62,9 +62,13 @@ impl TaskCallback for Callback {
         }
 
         // Emit the report as an event and save it to store.
-        let event = Event::new_with_payload(crate::constants::ORCHESTRATE_REPORT, &data.report)?;
+        let report = data
+            .report
+            .into_inner()
+            .expect("orchestrate task report lock poisoned");
+        let event = Event::new_with_payload(crate::constants::ORCHESTRATE_REPORT, &report)?;
         data.injector.events.change(context, event).await?;
-        data.injector.store.persist(context, data.report).await?;
+        data.injector.store.persist(context, report).await?;
 
         Ok(())
     }
