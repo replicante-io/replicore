@@ -10,6 +10,7 @@ tasks:
   service:
     backend: sqlite
     path: replicore.sqlite
+    poll_delay_s: 10
 
 telemetry:
   logs:

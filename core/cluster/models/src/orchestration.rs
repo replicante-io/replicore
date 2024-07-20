@@ -70,7 +70,7 @@ pub struct OrchestrateReport {
     /// Mode used to orchestrate the cluster, determined by cluster and namespace status.
     pub mode: OrchestrateMode,
 
-    /// Notes attachjed during cluster orchestration.
+    /// Notes attached during cluster orchestration.
     pub notes: Vec<OrchestrateReportNote>,
 
     /// UTC time the orchestration task started.
@@ -95,13 +95,13 @@ impl OrchestrateReport {
     }
 }
 
-/// Loosely structued object to report orchestration events.
+/// Loosely structured object to report orchestration events.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct OrchestrateReportNote {
     /// Category for a note attached to orchestration reports.
     pub category: OrchestrateReportNoteCategory,
 
-    /// Arbtrary data attached to the the note.
+    /// Arbitrary data attached to the the note.
     pub data: HashMap<String, Json>,
 
     /// The note itself.
@@ -147,7 +147,7 @@ impl OrchestrateReportNote {
 /// Category for a note attached to orchestration reports.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum OrchestrateReportNoteCategory {
-    /// Explaination of a decision made by the orchestrator.
+    /// Explanation of a decision made by the orchestrator.
     Decision,
 
     /// A non-interrupting error encountered during orchestration.

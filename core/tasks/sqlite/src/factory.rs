@@ -36,8 +36,8 @@ impl TasksFactory for SQLiteFactory {
 
     async fn consume<'a>(&self, args: TasksFactoryArgs<'a>) -> Result<(TaskSource, TaskAck)> {
         let conf: Conf = serde_json::from_value(args.conf.clone()).unwrap();
-        let client = create_client(args.context, &conf.path).await?;
-        let ack = crate::statements::SQLiteTasks::new(client);
+        let client = create_client(args.context, &conf).await?;
+        let ack = crate::statements::SQLiteTasks::new(client, &conf);
         let source = ack.clone();
         Ok((TaskSource::from(source), TaskAck::from(ack)))
     }
@@ -49,15 +49,15 @@ impl TasksFactory for SQLiteFactory {
 
     async fn submit<'a>(&self, args: TasksFactoryArgs<'a>) -> Result<Tasks> {
         let conf: Conf = serde_json::from_value(args.conf.clone()).unwrap();
-        let client = create_client(args.context, &conf.path).await?;
-        let tasks = crate::statements::SQLiteTasks::new(client);
+        let client = create_client(args.context, &conf).await?;
+        let tasks = crate::statements::SQLiteTasks::new(client, &conf);
         Ok(Tasks::from(tasks))
     }
 
     async fn sync<'a>(&self, args: TasksFactorySyncArgs<'a>) -> Result<()> {
         // Create the SQLite client.
         let conf: Conf = serde_json::from_value(args.conf.clone()).unwrap();
-        let client = create_client(args.context, &conf.path).await?;
+        let client = create_client(args.context, &conf).await?;
 
         // Run migrations to ensure the DB is ready for use.
         let init_error: Arc<Mutex<Option<refinery::Error>>> = Default::default();
@@ -96,8 +96,9 @@ impl TasksFactory for SQLiteFactory {
 /// NOTE:
 ///   The use of an in-memory store is only intended for tests and experimentation
 ///   as all data will be lost as soon as the process terminates.
-pub(crate) async fn create_client(context: &Context, path: &str) -> Result<Connection> {
+pub(crate) async fn create_client(context: &Context, conf: &Conf) -> Result<Connection> {
     // Open or create the SQLite DB.
+    let path = &conf.path;
     let connection = if path == MEMORY_PATH {
         slog::warn!(
             context.logger,

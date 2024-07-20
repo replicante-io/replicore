@@ -68,7 +68,7 @@ impl SyncData {
     pub fn cluster_new_mut(&self) -> MutexGuard<ClusterViewBuilder> {
         self.cluster_new
             .lock()
-            .expect("orchestate task cluster_new lock poisoned")
+            .expect("orchestrate task cluster_new lock poisoned")
     }
 
     /// Initialise the [`SyncData`] from [`InitData`].
@@ -90,10 +90,10 @@ impl SyncData {
     pub fn report_mut(&self) -> MutexGuard<OrchestrateReport> {
         self.report
             .lock()
-            .expect("orchestate task report lock poisoned")
+            .expect("orchestrate task report lock poisoned")
     }
 
-    /// Quck access to the Namespace ID being orchestated.
+    /// Quick access to the Namespace ID being orchestrate.
     pub fn ns_id(&self) -> &str {
         &self.cluster_current.spec.ns_id
     }

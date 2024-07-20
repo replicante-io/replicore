@@ -1,5 +1,6 @@
 //! SQL statements to implement the [`TasksBackend`] with SQLite.
 use std::collections::HashMap;
+use std::time::Duration;
 
 use anyhow::Result;
 use tokio_rusqlite::Connection;
@@ -15,8 +16,6 @@ use replicore_tasks::submit::TasksBackend;
 mod execute;
 mod submit;
 
-/// Delay between DB queries for pending/retry tasks to become available for execution.
-const NEXT_EMPTY_DELAY: std::time::Duration = std::time::Duration::from_secs(30);
 
 /// Implementation of the [`TasksBackend`] interface using SQLite.
 #[derive(Clone)]
@@ -24,15 +23,19 @@ pub struct SQLiteTasks {
     /// Connection to the SQLite DB persisting data.
     connection: Connection,
 
+    /// Delay between DB queries for pending/retry tasks to become available for execution.
+    pub poll_delay: Duration,
+
     /// List of queue IDs a client is subscribed to (for TaskSourceBackend).
     subscriptions: HashMap<&'static String, &'static Queue>,
 }
 
 impl SQLiteTasks {
     /// Initialise a new SQLite backed [`TasksBackend`].
-    pub fn new(connection: Connection) -> Self {
+    pub fn new(connection: Connection, conf: &crate::Conf) -> Self {
         SQLiteTasks {
             connection,
+            poll_delay: Duration::from_secs(conf.poll_delay_s),
             subscriptions: Default::default(),
         }
     }
@@ -52,7 +55,7 @@ impl TaskSourceBackend for SQLiteTasks {
             let next = self::execute::next(context, &self.connection, &self.subscriptions).await?;
             match next {
                 Some(task) => return Ok(task),
-                None => tokio::time::sleep(NEXT_EMPTY_DELAY).await,
+                None => tokio::time::sleep(self.poll_delay).await,
             }
         }
     }
@@ -78,7 +81,8 @@ mod tests {
     /// Initialise an [`SQLiteTasks`] instance for unit tests.
     pub async fn sqlite_tasks() -> SQLiteTasks {
         let context = replicore_context::Context::fixture();
-        let connection = create_client(&context, crate::factory::MEMORY_PATH)
+        let conf = crate::Conf::new(crate::factory::MEMORY_PATH);
+        let connection = create_client(&context, &conf)
             .await
             .unwrap();
         connection
@@ -91,6 +95,6 @@ mod tests {
             })
             .await
             .unwrap();
-        SQLiteTasks::new(connection)
+        SQLiteTasks::new(connection, &conf)
     }
 }

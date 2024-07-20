@@ -1,8 +1,11 @@
-.vscode/
 target/
 *.log
 *.swp
 **/*.rs.bk
+
+# IDE
+.vscode/**
+!.vscode/settings.json
 
 # Ingore nested cargo locks but keep the root & replidev ones.
 **/Cargo.lock
