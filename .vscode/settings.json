@@ -7,7 +7,9 @@
     "replicante",
     "replicore",
     "replisdk",
+    "rstest",
     "rusqlite",
+    "serde",
     "thiserror"
   ]
 }

@@ -254,6 +254,7 @@ async fn update(
     };
 
     // Emit an update event.
+    let action: &OAction = action;
     let event = match action.state {
         OActionState::Cancelled => crate::constants::OACTION_CANCEL,
         OActionState::Done => crate::constants::OACTION_SUCCESS,
@@ -261,7 +262,7 @@ async fn update(
         OActionState::Running => crate::constants::OACTION_UPDATE,
         _ => panic!("unexpected oaction state for update"),
     };
-    let event = Event::new_with_payload(event, &action)?;
+    let event = Event::new_with_payload(event, action)?;
     data.injector.events.change(context, event).await?;
 
     // Persist updated action.

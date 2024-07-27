@@ -9,6 +9,7 @@ use replisdk::core::models::cluster::ClusterDiscovery;
 use replisdk::core::models::cluster::ClusterSpec;
 use replisdk::core::models::naction::NAction;
 use replisdk::core::models::node::Node;
+use replisdk::core::models::node::NodeSearch;
 use replisdk::core::models::node::Shard;
 use replisdk::core::models::node::StoreExtras;
 use replisdk::core::models::oaction::OAction;
@@ -18,10 +19,12 @@ use replicore_store::Store;
 
 mod builder;
 mod load;
+mod search;
 mod serialise;
 
 pub mod errors;
 pub use self::builder::ClusterViewBuilder;
+pub use self::search::Iter;
 
 /// Nested index for the nactions collection, indexed by action ID.
 pub type NodeActions = Vec<Arc<NAction>>;
@@ -53,7 +56,7 @@ pub struct ClusterView {
     /// Store-requiring extra information about nodes.
     pub store_extras: HashMap<String, Arc<StoreExtras>>,
 
-    // --- Indexes to efficiently access cluster entries with secondaty patterns ---
+    // --- Indexes to efficiently access cluster entries with secondary patterns ---
     /// Access node actions by action ID.
     pub index_nactions_by_id: HashMap<Uuid, Arc<NAction>>,
 }
@@ -90,9 +93,29 @@ impl ClusterView {
         Ok(cluster_new)
     }
 
+    /// Filter cluster nodes based on search criteria.
+    pub fn search_nodes(&self, search: &NodeSearch) -> Result<Iter> {
+        let filter = self::search::select(&search.matches);
+        let compare = self::search::compare(&search.sort_by);
+
+        // Find nodes that match search criteria.
+        let mut nodes: Vec<_> = self.nodes.values().filter(filter).cloned().collect();
+
+        // Sort the relevant nodes using defined criteria.
+        nodes.sort_by(compare);
+
+        // Cap the number of returned nodes and convert to an iterator.
+        let nodes = nodes.into_iter();
+        let nodes = match search.max_results {
+            None => self::search::Iter::from(nodes),
+            Some(max_results) => self::search::Iter::from(nodes.take(max_results)),
+        };
+        Ok(nodes)
+    }
+
     /// List unfinished node actions for a node.
     ///
-    /// Actions are listed based on schedule time (and therefore the schedluing order).
+    /// Actions are listed based on schedule time (and therefore the scheduling order).
     pub fn unfinished_node_actions(&self, node_id: &str) -> Vec<Arc<NAction>> {
         let actions = match self.nactions_by_node.get(node_id) {
             None => return Vec::new(),

@@ -16,7 +16,6 @@ use replicore_tasks::submit::TasksBackend;
 mod execute;
 mod submit;
 
-
 /// Implementation of the [`TasksBackend`] interface using SQLite.
 #[derive(Clone)]
 pub struct SQLiteTasks {
@@ -82,9 +81,7 @@ mod tests {
     pub async fn sqlite_tasks() -> SQLiteTasks {
         let context = replicore_context::Context::fixture();
         let conf = crate::Conf::new(crate::factory::MEMORY_PATH);
-        let connection = create_client(&context, &conf)
-            .await
-            .unwrap();
+        let connection = create_client(&context, &conf).await.unwrap();
         connection
             .call(move |connection| {
                 crate::schema::migrations::runner()
