@@ -15,7 +15,9 @@ use replicore_cluster_view::ClusterView;
 use replicore_context::Context;
 use replicore_injector::Injector;
 
+mod cluster_init;
 mod constants;
+mod errors;
 mod node_scale_up;
 mod step;
 
@@ -25,8 +27,8 @@ use crate::sync::SyncData;
 /// Ordered list of cluster convergence steps to perform.
 static STEPS: Lazy<Vec<(&'static str, Box<dyn ConvergeStep>)>> = Lazy::new(|| {
     vec![
-        ("node-scale-up", Box::new(self::node_scale_up::NodeScaleUp)),
-        // TODO: Cluster init check.
+        (self::constants::STEP_ID_SCALE_UP, Box::new(self::node_scale_up::NodeScaleUp)),
+        (self::constants::STEP_ID_CLUSTER_INIT, Box::new(self::cluster_init::ClusterInit)),
         // TODO: Node joining check (how to choose add or join?).
         // TODO: Node scale down check.
         // TODO: Node replacement check.

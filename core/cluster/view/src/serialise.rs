@@ -89,6 +89,12 @@ mod tests {
                     "approval": "granted",
                     "definition": null,
                     "grace_up": 5,
+                    "initialise": {
+                        "action_args": null,
+                        "grace": 5,
+                        "mode": "NotManaged",
+                        "search": null,
+                    },
                 },
                 "interval": 60,
                 "ns_id": "test",

@@ -12,10 +12,9 @@ use replicore_context::Context;
 use replicore_oaction_platform::ProvisionNodesArgs;
 
 use super::constants::ACTION_KIND_PROVISION;
+use super::constants::STEP_ID_SCALE_UP;
 use super::step::ConvergeStep;
 use super::ConvergeData;
-
-static SCALE_UP_GRACE_ID: &str = "node-scale-up";
 
 /// Provision new cluster nodes if the declared shape does not match the discovered one.
 pub struct NodeScaleUp;
@@ -57,7 +56,7 @@ impl ConvergeStep for NodeScaleUp {
         };
 
         // Skip step if last scale up triggered too recently.
-        if let Some(grace) = state.graces.get(SCALE_UP_GRACE_ID) {
+        if let Some(grace) = state.graces.get(STEP_ID_SCALE_UP) {
             let grace_time = declaration.grace_up;
             let grace_time = Duration::from_secs(grace_time * 60);
             if *grace + grace_time > time::OffsetDateTime::now_utc() {
@@ -69,7 +68,7 @@ impl ConvergeStep for NodeScaleUp {
                 return Ok(());
             }
         }
-        state.graces.remove(SCALE_UP_GRACE_ID);
+        state.graces.remove(STEP_ID_SCALE_UP);
 
         // Skip step in case of unfinished provisioning actions.
         let scaling = data
@@ -140,7 +139,7 @@ impl ConvergeStep for NodeScaleUp {
 
         // Update convergence state to make information available to the next loop.
         state.graces.insert(
-            SCALE_UP_GRACE_ID.to_string(),
+            STEP_ID_SCALE_UP.to_string(),
             time::OffsetDateTime::now_utc(),
         );
         Ok(())

@@ -109,6 +109,18 @@ pub struct OrchestrateReportNote {
 }
 
 impl OrchestrateReportNote {
+    /// Start noting an orchestration decision.
+    pub fn decision<S>(message: S) -> Self
+    where
+        S: Into<String>,
+    {
+        Self {
+            category: OrchestrateReportNoteCategory::Decision,
+            data: HashMap::default(),
+            message: message.into(),
+        }
+    }
+
     /// Start noting an orchestration error.
     pub fn error<S>(message: S, error: anyhow::Error) -> Self
     where
