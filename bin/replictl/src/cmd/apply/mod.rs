@@ -80,11 +80,17 @@ pub async fn run(globals: &Globals, cmd: &ApplyCli) -> Result<i32> {
     let context = ContextStore::active(globals).await?;
     let client = crate::client(&context)?;
 
-    // If no files are given read from standard input.
+    // Search for files to apply.
     let files = cmd.file.clone();
     let mut files = process_directories(files, cmd.recursive).await?;
-    if files.is_empty() {
+
+    // If no files are given read from standard input.
+    if cmd.file.is_empty() {
         files.push("-".into());
+    }
+    // If there are no files to apply return an error.
+    if files.is_empty() {
+        anyhow::bail!("found no files to apply");
     }
 
     // Load manifests and apply them one at a time.

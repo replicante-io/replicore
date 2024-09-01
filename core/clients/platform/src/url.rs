@@ -30,6 +30,7 @@ pub struct HttpClientFactory;
 impl UrlFactory for HttpClientFactory {
     async fn init(&self, _: &Context, platform: &PlatformTransportUrl) -> Result<Client> {
         let options = ClientOptions::url(&platform.base_url);
+        // TODO: TLS CA Bundle support.
         let client = HttpClient::with(options)?;
         Ok(Client::from(client))
     }

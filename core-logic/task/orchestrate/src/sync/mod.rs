@@ -9,7 +9,6 @@ use std::collections::HashSet;
 use std::sync::Mutex;
 use std::sync::MutexGuard;
 
-use anyhow::Context as AnyContext;
 use anyhow::Result;
 
 use replisdk::core::models::namespace::Namespace;
@@ -109,7 +108,8 @@ pub async fn nodes(context: &Context, data: &SyncData) -> Result<()> {
         let result = result.with_node_specific()?;
         if let Err(error) = result {
             let message = "Node processing interrupted early";
-            let note = OrchestrateReportNote::error(message, error);
+            let mut note = OrchestrateReportNote::error(message, error);
+            note.for_node(&node.node_id);
             data.report_mut().notes.push(note);
         }
     }
@@ -140,12 +140,12 @@ async fn sync_node(context: &Context, data: &SyncData, node: &ClusterDiscoveryNo
         .injector
         .clients
         .agent
-        .factory(context, &data.cluster_current.spec, node)
+        .factory(context, &data.ns, &data.cluster_current.spec, node)
         .await?;
 
     // Fetch essential node information we can't continue without.
     let node_info = self::node::unreachable(&data.cluster_current.spec, node);
-    let ag_node = match client.info_node().await.context(NodeSpecificError) {
+    let ag_node = match client.info_node().await.map_err(NodeSpecificError::wrap) {
         Ok(node) => node,
         Err(error) => {
             self::node::persist(context, data, node_info).await?;
@@ -154,8 +154,8 @@ async fn sync_node(context: &Context, data: &SyncData, node: &ClusterDiscoveryNo
     };
 
     // Fetch all other node information and process them as best as possible.
-    let store_info = client.info_store().await.context(NodeSpecificError);
-    let shards = client.info_shards().await.context(NodeSpecificError);
+    let store_info = client.info_store().await.map_err(NodeSpecificError::wrap);
+    let shards = client.info_shards().await.map_err(NodeSpecificError::wrap);
 
     // Process fetched information for node sync.
     let incomplete = store_info.is_err() || shards.is_err();

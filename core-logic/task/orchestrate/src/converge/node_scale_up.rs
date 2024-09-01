@@ -8,6 +8,7 @@ use replisdk::core::models::api::OActionSpec;
 use replisdk::platform::models::NodeProvisionRequestDetails;
 
 use replicore_cluster_models::ConvergeState;
+use replicore_cluster_models::OrchestrateReportNote;
 use replicore_context::Context;
 use replicore_oaction_platform::ProvisionNodesArgs;
 
@@ -130,8 +131,10 @@ impl ConvergeStep for NodeScaleUp {
         };
         let sdk = replicore_sdk::CoreSDK::from(&data.injector);
         let action = sdk.oaction_create(context, node_up).await?;
+        let note = OrchestrateReportNote::decision("Cluster scale-up action scheduled");
+        data.report_mut().notes.push(note);
         slog::debug!(
-            context.logger, "Scale up action created";
+            context.logger, "Cluster scale-up action scheduled";
             "ns_id" => data.ns_id(),
             "cluster_id" => data.cluster_id(),
             "action_id" => %action.action_id,

@@ -2,10 +2,25 @@
 use anyhow::Error;
 use anyhow::Result;
 
-/// Sync error is related to the node and should not prevent processing of other nodes.
+/// Marker to indicate node sync error that should not prevent processing of other nodes.
 #[derive(Debug, thiserror::Error)]
-#[error("sync error is related to the node and should not prevent processing of other nodes")]
-pub struct NodeSpecificError;
+#[error(transparent)]
+pub struct NodeSpecificError {
+    #[from]
+    inner: Error,
+}
+
+impl NodeSpecificError {
+    pub fn wrap<E>(error: E) -> Error
+    where
+        E: Into<Error>,
+    {
+        let error = NodeSpecificError {
+            inner: error.into(),
+        };
+        Error::from(error)
+    }
+}
 
 /// Helper trait to verify if errors are node specific or sync wide.
 ///
@@ -54,7 +69,6 @@ where
 
 #[cfg(test)]
 mod tests {
-    use anyhow::Context;
     use anyhow::Result;
 
     use super::NodeSpecificCheck;
@@ -87,7 +101,8 @@ mod tests {
     #[test]
     fn wrap_chained_node_errors() {
         // Layered node error.
-        let value = super::NodeSpecificError;
+        let value = anyhow::anyhow!("starting error");
+        let value = super::NodeSpecificError::wrap(value);
         let value = LayeredError(anyhow::anyhow!(value));
         let value: Result<bool> = Err(anyhow::anyhow!(value));
         let result = value
@@ -120,7 +135,7 @@ mod tests {
     fn wrap_contexted_node_errors() {
         // Layered non none error.
         let value: Result<bool> = Err(anyhow::anyhow!("not a sync error"));
-        let value = value.context(super::NodeSpecificError);
+        let value = value.map_err(super::NodeSpecificError::wrap);
         let result = value
             .with_node_specific()
             .expect("the error to be double wrapped in a result");
@@ -128,15 +143,13 @@ mod tests {
             Err(error) => error,
             Ok(_) => panic!("expected the inner error to propagate"),
         };
-        assert_eq!(
-            error.to_string(),
-            "sync error is related to the node and should not prevent processing of other nodes"
-        );
+        assert_eq!(error.to_string(), "not a sync error");
     }
 
     #[test]
     fn wrap_node_errors() {
-        let value = super::NodeSpecificError;
+        let value = anyhow::anyhow!("starting error");
+        let value = super::NodeSpecificError::wrap(value);
         let value: Result<bool> = Err(anyhow::anyhow!(value));
         let result = value
             .with_node_specific()
@@ -145,9 +158,6 @@ mod tests {
             Err(error) => error,
             Ok(_) => panic!("expected the inner error to propagate"),
         };
-        assert_eq!(
-            error.to_string(),
-            "sync error is related to the node and should not prevent processing of other nodes"
-        );
+        assert_eq!(error.to_string(), "starting error");
     }
 }

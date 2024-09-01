@@ -6,6 +6,7 @@ use anyhow::Result;
 
 use replisdk::core::models::cluster::ClusterDiscoveryNode;
 use replisdk::core::models::cluster::ClusterSpec;
+use replisdk::core::models::namespace::Namespace;
 
 use repliagent_client::Client;
 use replicore_context::Context;
@@ -37,6 +38,7 @@ impl AgentClients {
     pub async fn factory(
         &self,
         context: &Context,
+        namespace: &Namespace,
         cluster: &ClusterSpec,
         node: &ClusterDiscoveryNode,
     ) -> Result<Client> {
@@ -63,7 +65,7 @@ impl AgentClients {
                 anyhow::bail!(error);
             }
         };
-        factory.init(context, cluster, node).await
+        factory.init(context, namespace, cluster, node).await
     }
 
     /// Register a client factory for a schema.

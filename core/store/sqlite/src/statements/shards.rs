@@ -45,7 +45,7 @@ INSERT INTO store_cluster_shard (ns_id, cluster_id, node_id, shard_id, shard)
 VALUES (?1, ?2, ?3, ?4, ?5)
 ON CONFLICT(ns_id, cluster_id, node_id, shard_id)
 DO UPDATE SET
-    shard=?4
+    shard=?5
 ;"#;
 
 /// Delete all shards located on a node.

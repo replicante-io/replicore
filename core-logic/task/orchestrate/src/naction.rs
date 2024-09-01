@@ -108,7 +108,7 @@ async fn schedule_node(
         .injector
         .clients
         .agent
-        .factory(context, &data.cluster_current.spec, node)
+        .factory(context, &data.ns, &data.cluster_current.spec, node)
         .await?;
     let request = ActionExecutionRequest {
         args: action.args.clone(),

@@ -26,8 +26,9 @@ SET
   finished_time = ?2
 WHERE
   ns_id = ?3
-  AND cluster_id = ?4,
+  AND cluster_id = ?4
   AND node_id = ?5
+  AND finished_time IS NULL
 ;"#;
 
 const LIST_SQL_START: &str = r#"

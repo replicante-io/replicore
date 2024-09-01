@@ -36,10 +36,15 @@ impl HttpClient {
         O: Into<ClientOptions>,
     {
         let options = options.into();
-        let client = options.client(CLIENT_USER_AGENT);
-        // TODO: TLS options
+        let client = options.client(CLIENT_USER_AGENT)?;
+        let address = if options.address.ends_with('/') {
+            options.address
+        } else {
+            format!("{}/", options.address)
+        };
+
         let client = HttpClient {
-            base: options.address,
+            base: address,
             client: client.build()?,
         };
         Ok(client)
@@ -52,7 +57,7 @@ impl IAgent for HttpClient {
     async fn action_lookup(&self, action: Uuid) -> Result<ActionExecution> {
         let response = self
             .client
-            .get(format!("{}unstable/action/{}", self.base, action))
+            .get(format!("{}api/unstable/action/{}", self.base, action))
             .send()
             .await?;
         match repliclient_utils::inspect(response).await? {
@@ -68,7 +73,7 @@ impl IAgent for HttpClient {
     ) -> Result<ActionExecutionResponse> {
         let response = self
             .client
-            .post(format!("{}unstable/action", self.base))
+            .post(format!("{}api/unstable/action", self.base))
             .json(&action)
             .send()
             .await?;
@@ -92,7 +97,7 @@ impl IAgent for HttpClient {
     async fn actions_finished(&self) -> Result<ActionExecutionList> {
         let response = self
             .client
-            .get(format!("{}unstable/actions/finished", self.base))
+            .get(format!("{}api/unstable/actions/finished", self.base))
             .send()
             .await?;
         match repliclient_utils::inspect(response).await? {
@@ -105,7 +110,7 @@ impl IAgent for HttpClient {
     async fn actions_queue(&self) -> Result<ActionExecutionList> {
         let response = self
             .client
-            .get(format!("{}unstable/actions/queue", self.base))
+            .get(format!("{}api/unstable/actions/queue", self.base))
             .send()
             .await?;
         match repliclient_utils::inspect(response).await? {
@@ -118,7 +123,7 @@ impl IAgent for HttpClient {
     async fn info_node(&self) -> Result<Node> {
         let response = self
             .client
-            .get(format!("{}unstable/info/node", self.base))
+            .get(format!("{}api/unstable/info/node", self.base))
             .send()
             .await?;
         match repliclient_utils::inspect(response).await? {
@@ -131,7 +136,7 @@ impl IAgent for HttpClient {
     async fn info_shards(&self) -> Result<ShardsInfo> {
         let response = self
             .client
-            .get(format!("{}unstable/info/shards", self.base))
+            .get(format!("{}api/unstable/info/shards", self.base))
             .send()
             .await?;
         match repliclient_utils::inspect(response).await? {
@@ -144,7 +149,7 @@ impl IAgent for HttpClient {
     async fn info_store(&self) -> Result<StoreExtras> {
         let response = self
             .client
-            .get(format!("{}unstable/info/store", self.base))
+            .get(format!("{}api/unstable/info/store", self.base))
             .send()
             .await?;
         match repliclient_utils::inspect(response).await? {

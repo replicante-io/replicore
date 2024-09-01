@@ -27,8 +27,14 @@ use crate::sync::SyncData;
 /// Ordered list of cluster convergence steps to perform.
 static STEPS: Lazy<Vec<(&'static str, Box<dyn ConvergeStep>)>> = Lazy::new(|| {
     vec![
-        (self::constants::STEP_ID_SCALE_UP, Box::new(self::node_scale_up::NodeScaleUp)),
-        (self::constants::STEP_ID_CLUSTER_INIT, Box::new(self::cluster_init::ClusterInit)),
+        (
+            self::constants::STEP_ID_SCALE_UP,
+            Box::new(self::node_scale_up::NodeScaleUp),
+        ),
+        (
+            self::constants::STEP_ID_CLUSTER_INIT,
+            Box::new(self::cluster_init::ClusterInit),
+        ),
         // TODO: Node joining check (how to choose add or join?).
         // TODO: Node scale down check.
         // TODO: Node replacement check.
@@ -59,12 +65,14 @@ impl ConvergeData {
             .expect("orchestrate task cluster_new lock poisoned")
             .finish();
         let op = replicore_store::query::LookupConvergeState::from(&value.cluster_current.spec);
-        let state = value
-            .injector
-            .store
-            .query(context, op)
-            .await?
-            .unwrap_or_default();
+        let state = value.injector.store.query(context, op).await?;
+        let state = match state {
+            Some(state) => state,
+            None => ConvergeState::clean_state_for(
+                &value.cluster_current.spec.ns_id,
+                &value.cluster_current.spec.cluster_id,
+            ),
+        };
         let data = ConvergeData {
             cluster_new,
             injector: value.injector,

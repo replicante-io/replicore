@@ -23,7 +23,7 @@ pub async fn discover(platform: &Platform) -> Result<ClusterDiscoveryResponse> {
         let cluster_id = node_pod.cluster;
         let node_id = node_pod.node;
         let agent_address = match node_pod.port_agent {
-            Some(port) => format!("https://{}:{}", platform.agents_address, port),
+            Some(port) => format!("http://{}:{}", platform.agents_address, port),
             None => continue,
         };
         let node = ClusterDiscoveryNode {

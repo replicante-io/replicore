@@ -49,7 +49,8 @@ impl ConvergeStep for ClusterInit {
         if let Some(grace) = state.graces.get(STEP_ID_CLUSTER_INIT) {
             let grace_time = initialise.grace;
             let grace_time = Duration::from_secs(grace_time * 60);
-            if *grace + grace_time > time::OffsetDateTime::now_utc() {
+            let grace_expire = *grace + grace_time;
+            if grace_expire > time::OffsetDateTime::now_utc() {
                 slog::debug!(
                     context.logger, "Skip cluster initialisation request while in grace period";
                     "ns_id" => data.ns_id(),
@@ -70,17 +71,16 @@ impl ConvergeStep for ClusterInit {
             return Ok(());
         }
 
-        // Skip initialisation if cluster has initialised nodes.
-        let any_init_node = data
+        // Only initialise if all cluster nodes are out of cluster.
+        let nodes_all_out_of_cluster = data
             .cluster_new
             .nodes
             .values()
-            .filter(|node| !matches!(node.node_status, NodeStatus::NotInCluster))
-            .any(|_| true);
-        if any_init_node {
+            .all(|node| matches!(node.node_status, NodeStatus::NotInCluster));
+        if !nodes_all_out_of_cluster {
             slog::debug!(
                 context.logger,
-                "Skip cluster initialisation for cluster with already initialised nodes";
+                "Skip cluster initialisation for clusters with nodes not out of cluster";
                 "ns_id" => data.ns_id(),
                 "cluster_id" => data.cluster_id(),
             );
@@ -106,7 +106,7 @@ impl ConvergeStep for ClusterInit {
         // Pick a node to target.
         let target = match &initialise.search {
             None => data.cluster_new.search_nodes(&Default::default())?,
-            Some(search) => data.cluster_new.search_nodes(&search)?,
+            Some(search) => data.cluster_new.search_nodes(search)?,
         };
         let target = target.one().ok_or(super::errors::ClusterInitNoTarget)?;
 
@@ -124,10 +124,16 @@ impl ConvergeStep for ClusterInit {
         let sdk = replicore_sdk::CoreSDK::from(&data.injector);
         let action = sdk.naction_create(context, spec).await?;
         let mut note = OrchestrateReportNote::decision("Scheduled cluster initialisation on node");
-        note
-            .for_node(&action.node_id)
+        note.for_node(&action.node_id)
             .for_node_action(action.action_id);
         data.report_mut().notes.push(note);
+        slog::debug!(
+            context.logger, "Scheduled cluster initialisation on node";
+            "ns_id" => data.ns_id(),
+            "cluster_id" => data.cluster_id(),
+            "node_id" => &action.node_id,
+            "action_id" => %action.action_id,
+        );
 
         // Update convergence state to make information available to the next loop.
         state.graces.insert(

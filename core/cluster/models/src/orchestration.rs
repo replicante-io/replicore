@@ -10,7 +10,7 @@ use uuid::Uuid;
 /// Track state of cluster convergence cycles.
 ///
 /// These records provide memory for the otherwise stateless convergence tasks.
-#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ConvergeState {
     /// Namespace ID for the cluster this record describes.
     pub ns_id: String,
@@ -26,6 +26,21 @@ pub struct ConvergeState {
     /// This object records the time the grace period for an operation starts.
     /// Recording the start allows configuration changes to apply as soon as they are made.
     pub graces: HashMap<String, OffsetDateTime>,
+}
+
+impl ConvergeState {
+    /// Initialise a new clean [`ConvergeState`] for a cluster.
+    pub fn clean_state_for<N, C>(ns_id: N, cluster_id: C) -> Self
+    where
+        C: Into<String>,
+        N: Into<String>,
+    {
+        ConvergeState {
+            ns_id: ns_id.into(),
+            cluster_id: cluster_id.into(),
+            graces: Default::default(),
+        }
+    }
 }
 
 /// Cluster orchestration mode to use for the task.

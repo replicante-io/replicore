@@ -30,8 +30,7 @@ impl HttpClient {
         O: Into<ClientOptions>,
     {
         let options = options.into();
-        let client = options.client(CLIENT_USER_AGENT);
-        // TODO: TLS options
+        let client = options.client(CLIENT_USER_AGENT)?;
         let client = HttpClient {
             base: options.address,
             client: client.build()?,

@@ -1,7 +1,6 @@
 //! Synchronise node action information from nodes with the control plane.
 use std::collections::HashSet;
 
-use anyhow::Context as AnyContext;
 use anyhow::Result;
 use uuid::Uuid;
 
@@ -24,8 +23,8 @@ pub async fn sync(
     node: &ClusterDiscoveryNode,
     client: &Client,
 ) -> Result<()> {
-    // Get the list of pending node actions from the cluster view.
-    let pending_action_ids: HashSet<Uuid> = data
+    // Get the list of unfinished (running or pending) node actions from the cluster view.
+    let unfinished_ids: HashSet<Uuid> = data
         .cluster_current
         .unfinished_node_actions(&node.node_id)
         .iter()
@@ -36,7 +35,7 @@ pub async fn sync(
     let finished_ids: HashSet<Uuid> = client
         .actions_finished()
         .await
-        .context(NodeSpecificError)?
+        .map_err(NodeSpecificError::from)?
         .actions
         .into_iter()
         .map(|entry| entry.id)
@@ -44,39 +43,45 @@ pub async fn sync(
     let queue_id: HashSet<Uuid> = client
         .actions_queue()
         .await
-        .context(NodeSpecificError)?
+        .map_err(NodeSpecificError::from)?
         .actions
         .into_iter()
         .map(|entry| entry.id)
         .collect();
 
     // Process actions from the node.
-    let action_ids = finished_ids.intersection(&pending_action_ids);
+    let action_ids = finished_ids.intersection(&unfinished_ids);
     for action_id in action_ids {
         let action_id = *action_id;
         let node_id = node.node_id.clone();
         sync_action(context, data, node_id, client, action_id).await?;
     }
-
     for action_id in &queue_id {
         let action_id = *action_id;
         let node_id = node.node_id.clone();
         sync_action(context, data, node_id, client, action_id).await?;
     }
 
-    // Handle lost actions (unfinished in core but not reported by the agent).
+    // Handle lost actions (running in core but not reported by the agent).
     let all_node_ids: HashSet<Uuid> = finished_ids.union(&queue_id).copied().collect();
-    let lost = pending_action_ids.difference(&all_node_ids);
-    for action_id in lost {
-        let mut action = match data.cluster_current.lookup_node_action(action_id) {
-            Some(action) => action.clone(),
+    let maybe_lost = unfinished_ids.difference(&all_node_ids);
+    for action_id in maybe_lost {
+        let action = match data.cluster_current.lookup_node_action(action_id) {
+            Some(action) => action,
             None => continue,
         };
         let phase = match action.state.phase {
-            phase if phase.is_final() => continue,
+            // We think running but the agent didn't return => lost.
             phase if phase.is_running() => NActionPhase::Lost,
-            _ => NActionPhase::Cancelled,
+            // No finished action should be in the cluster view but just in case, ignore them.
+            phase if phase.is_final() => continue,
+            // Finally, pending actions are carried over to the new cluster view.
+            _ => {
+                data.cluster_new_mut().naction(action.clone())?;
+                continue;
+            }
         };
+        let mut action = action.clone();
         action.phase_to(phase);
         persist(context, data, action).await?;
     }
@@ -94,7 +99,7 @@ async fn fetch(
     let action = client
         .action_lookup(action_id)
         .await
-        .context(NodeSpecificError)?;
+        .map_err(NodeSpecificError::from)?;
     let action = NAction {
         ns_id: data.ns_id().to_string(),
         cluster_id: data.cluster_id().to_string(),

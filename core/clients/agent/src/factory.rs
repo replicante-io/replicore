@@ -8,6 +8,7 @@ use anyhow::Result;
 
 use replisdk::core::models::cluster::ClusterDiscoveryNode;
 use replisdk::core::models::cluster::ClusterSpec;
+use replisdk::core::models::namespace::Namespace;
 
 use repliagent_client::Client;
 use replicore_context::Context;
@@ -22,6 +23,7 @@ pub trait Factory: Send + Sync {
     async fn init(
         &self,
         context: &Context,
+        namespace: &Namespace,
         cluster: &ClusterSpec,
         node: &ClusterDiscoveryNode,
     ) -> Result<Client>;

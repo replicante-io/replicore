@@ -14,7 +14,7 @@ use replicore_store::ids::NodeID;
 use replicore_store::query::StoreExtrasStream;
 
 const DELETE_SQL: &str = r#"
-DELETE FROM store_extras
+DELETE FROM store_cluster_store_extras
 WHERE
     ns_id = ?1
     AND cluster_id = ?2
