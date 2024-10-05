@@ -36,19 +36,11 @@ impl ConvergeStep for NodeScaleUp {
 
         // Skip step if cluster has no convergence configured.
         let declaration = &data.cluster_new.spec.declaration;
-        if !declaration.active {
-            slog::debug!(
-                context.logger, "Skip node scale up for inactive cluster";
-                "ns_id" => data.ns_id(),
-                "cluster_id" => data.cluster_id(),
-            );
-            return Ok(());
-        }
         let definition = match &declaration.definition {
             Some(definition) => definition,
             None => {
                 slog::debug!(
-                    context.logger, "Skip node scale up for undeclared cluster";
+                    context.logger, "Skip node scale up without cluster definition";
                     "ns_id" => data.ns_id(),
                     "cluster_id" => data.cluster_id(),
                 );
@@ -58,7 +50,7 @@ impl ConvergeStep for NodeScaleUp {
 
         // Skip step if last scale up triggered too recently.
         if let Some(grace) = state.graces.get(STEP_ID_SCALE_UP) {
-            let grace_time = declaration.grace_up;
+            let grace_time = declaration.graces.scale_up;
             let grace_time = Duration::from_secs(grace_time * 60);
             if *grace + grace_time > time::OffsetDateTime::now_utc() {
                 slog::debug!(

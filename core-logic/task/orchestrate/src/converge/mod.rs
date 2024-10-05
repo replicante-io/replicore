@@ -15,6 +15,7 @@ use replicore_cluster_view::ClusterView;
 use replicore_context::Context;
 use replicore_injector::Injector;
 
+mod cluster_expand;
 mod cluster_init;
 mod constants;
 mod errors;
@@ -35,7 +36,10 @@ static STEPS: Lazy<Vec<(&'static str, Box<dyn ConvergeStep>)>> = Lazy::new(|| {
             self::constants::STEP_ID_CLUSTER_INIT,
             Box::new(self::cluster_init::ClusterInit),
         ),
-        // TODO: Node joining check (how to choose add or join?).
+        (
+            self::constants::STEP_ID_CLUSTER_EXPAND,
+            Box::new(self::cluster_expand::ClusterExpand),
+        ),
         // TODO: Node scale down check.
         // TODO: Node replacement check.
     ]
@@ -99,6 +103,17 @@ impl ConvergeData {
 
 /// Process cluster convergence steps in priority order.
 pub async fn run(context: &Context, data: &ConvergeData) -> Result<()> {
+    // Only converge clusters when enabled.
+    if !data.cluster_new.spec.declaration.active {
+        slog::debug!(
+            context.logger, "Skip cluster convergence for inactive cluster";
+            "ns_id" => data.ns_id(),
+            "cluster_id" => data.cluster_id(),
+        );
+        return Ok(());
+    }
+
+    // Execute convergence steps.
     let mut new_state = data.state.clone();
     for (step_id, step) in STEPS.iter() {
         let result = step.converge(context, data, &mut new_state).await;

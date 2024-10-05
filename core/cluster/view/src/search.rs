@@ -6,6 +6,9 @@ use std::vec::IntoIter;
 
 use serde_json::Number;
 
+use replisdk::core::models::node::AttributeMatcher;
+use replisdk::core::models::node::AttributeMatcherComplex;
+use replisdk::core::models::node::AttributeMatcherOp;
 use replisdk::core::models::node::AttributeValueRef;
 use replisdk::core::models::node::Node;
 use replisdk::core::models::node::NodeSearchMatches;
@@ -137,6 +140,59 @@ fn compare_num(left: &Number, right: &Number) -> Ordering {
     }
 }
 
+/// Apply potentially complex matching logic to an attribute value.
+fn apply_matcher(matcher: &AttributeMatcher, value: AttributeValueRef) -> bool {
+    match matcher {
+        AttributeMatcher::Complex(complex) => apply_matcher_complex(complex, value),
+        AttributeMatcher::Eq(expected) => value == AttributeValueRef::from(expected),
+        AttributeMatcher::In(expected) => expected
+            .iter()
+            .any(|expected| value == AttributeValueRef::from(expected)),
+    }
+}
+
+/// Apply potentially complex matching logic to an attribute value.
+///
+/// If the operand for the matching operator is missing the attribute silently does not match.
+fn apply_matcher_complex(complex: &AttributeMatcherComplex, value: AttributeValueRef) -> bool {
+    match complex.op {
+        AttributeMatcherOp::Eq => {
+            let expected = match complex.value.as_ref() {
+                Some(expected) => expected,
+                None => return false,
+            };
+            value == AttributeValueRef::from(expected)
+        }
+        AttributeMatcherOp::In => {
+            let expected = match complex.values.as_ref() {
+                Some(expected) => expected,
+                None => return false,
+            };
+            expected
+                .iter()
+                .any(|expected| value == AttributeValueRef::from(expected))
+        }
+        AttributeMatcherOp::Ne => {
+            let expected = match complex.value.as_ref() {
+                Some(expected) => expected,
+                None => return false,
+            };
+            value != AttributeValueRef::from(expected)
+        }
+        AttributeMatcherOp::NotIn => {
+            let expected = match complex.values.as_ref() {
+                Some(expected) => expected,
+                None => return false,
+            };
+            expected
+                .iter()
+                .all(|expected| value != AttributeValueRef::from(expected))
+        }
+        AttributeMatcherOp::Set => true,
+        AttributeMatcherOp::Unset => false,
+    }
+}
+
 /// Returns a closure checking if a [`Node`] is selected by the [`NodeSearchMatches`].
 ///
 /// ## Usage
@@ -152,11 +208,16 @@ pub fn select(matches: &NodeSearchMatches) -> impl Fn(&&Arc<Node>) -> bool + '_ 
     |node| {
         for (attribute, expected) in matches.iter() {
             let actual = match node.attribute(attribute) {
-                None => return false,
                 Some(actual) => actual,
+                None => {
+                    // Check if the matching operation is `Unset`.
+                    if let AttributeMatcher::Complex(complex) = expected {
+                        return matches!(complex.op, AttributeMatcherOp::Unset);
+                    }
+                    return false;
+                }
             };
-            let expected = AttributeValueRef::from(expected);
-            if actual != expected {
+            if !apply_matcher(expected, actual) {
                 return false;
             }
         }
@@ -210,6 +271,10 @@ mod tests {
     use replisdk::agent::models::AgentVersion;
     use replisdk::agent::models::AttributeValue;
     use replisdk::agent::models::StoreVersion;
+    use replisdk::core::models::node::AttributeMatcher;
+    use replisdk::core::models::node::AttributeMatcherComplex;
+    use replisdk::core::models::node::AttributeMatcherOp;
+    use replisdk::core::models::node::AttributeValueRef;
     use replisdk::core::models::node::Node;
     use replisdk::core::models::node::NodeDetails;
     use replisdk::core::models::node::NodeStatus;
@@ -218,6 +283,7 @@ mod tests {
 
     fn mock_node_1() -> Node {
         let details = NodeDetails {
+            address: Default::default(),
             agent_version: AgentVersion {
                 checkout: "agent-sha".into(),
                 number: "1.2.3".into(),
@@ -249,6 +315,7 @@ mod tests {
 
     fn mock_node_2() -> Node {
         let details = NodeDetails {
+            address: Default::default(),
             agent_version: AgentVersion {
                 checkout: "agent-sha".into(),
                 number: "1.2.3".into(),
@@ -314,19 +381,39 @@ mod tests {
     #[case(NodeSearchMatches::new(), true)]
     #[case({
         let mut matches = NodeSearchMatches::new();
-        matches.insert("store_id".into(), "test-store".into());
+        matches.insert("store_id".into(), AttributeMatcher::Eq("test-store".into()));
         matches
     }, true)]
     #[case({
         let mut matches = NodeSearchMatches::new();
-        matches.insert("store_id".into(), "test-store".into());
-        matches.insert("test.attribute".into(), "value".into());
+        matches.insert("store_id".into(), AttributeMatcher::Eq("test-store".into()));
+        matches.insert("test.attribute".into(), AttributeMatcher::Eq("value".into()));
         matches
     }, true)]
     #[case({
         let mut matches = NodeSearchMatches::new();
-        matches.insert("store_id".into(), "test-store".into());
-        matches.insert("missing.attribute".into(), true.into());
+        matches.insert("store_id".into(), AttributeMatcher::Eq("test-store".into()));
+        matches.insert("missing.attribute".into(), AttributeMatcher::Eq(true.into()));
+        matches
+    }, false)]
+    #[case({
+        let mut matches = NodeSearchMatches::new();
+        let complex = AttributeMatcherComplex {
+            op: AttributeMatcherOp::Set,
+            value: None,
+            values: None,
+        };
+        matches.insert("store_id".into(), AttributeMatcher::Complex(complex));
+        matches
+    }, true)]
+    #[case({
+        let mut matches = NodeSearchMatches::new();
+        let complex = AttributeMatcherComplex {
+            op: AttributeMatcherOp::Unset,
+            value: None,
+            values: None,
+        };
+        matches.insert("store_id".into(), AttributeMatcher::Complex(complex));
         matches
     }, false)]
     fn select_nodes(#[case] matches: NodeSearchMatches, #[case] expected: bool) {
@@ -334,5 +421,68 @@ mod tests {
         let select = super::select(&matches);
         let actual = select(&&Arc::new(node));
         assert_eq!(actual, expected);
+    }
+
+    #[rstest::rstest]
+    #[case("ABC".into(), AttributeMatcher::Eq("ABC".into()))]
+    #[case(
+        "DEF".into(),
+        AttributeMatcher::In(
+            vec![
+                "ABC".into(),
+                "DEF".into(),
+            ]
+        )
+    )]
+    #[case(
+        serde_json::Number::from(123).into(),
+        AttributeMatcher::Complex(
+            AttributeMatcherComplex {
+                op: AttributeMatcherOp::Eq,
+                value: Some(serde_json::Number::from(123).into()),
+                values: None,
+            }
+        )
+    )]
+    #[case(
+        "DEF".into(),
+        AttributeMatcher::Complex(
+            AttributeMatcherComplex {
+                op: AttributeMatcherOp::In,
+                value: None,
+                values: Some(vec![
+                    serde_json::Number::from(123).into(),
+                    "DEF".into(),
+                ]),
+            }
+        )
+    )]
+    #[case(
+        serde_json::Number::from(123).into(),
+        AttributeMatcher::Complex(
+            AttributeMatcherComplex {
+                op: AttributeMatcherOp::Ne,
+                value: Some(serde_json::Number::from(321).into()),
+                values: None,
+            }
+        )
+    )]
+    #[case(
+        "ABC".into(),
+        AttributeMatcher::Complex(
+            AttributeMatcherComplex {
+                op: AttributeMatcherOp::NotIn,
+                value: None,
+                values: Some(vec![
+                    serde_json::Number::from(123).into(),
+                    "DEF".into(),
+                ]),
+            }
+        )
+    )]
+    fn apply_matcher(#[case] actual: AttributeValue, #[case] matcher: AttributeMatcher) {
+        let actual = AttributeValueRef::from(&actual);
+        let matched = super::apply_matcher(&matcher, actual);
+        assert!(matched);
     }
 }

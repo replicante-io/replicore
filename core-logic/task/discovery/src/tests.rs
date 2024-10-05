@@ -259,11 +259,18 @@ fn assert_event(code: &str, payload: Value) {
                         "active": true,
                         "approval": "granted",
                         "definition": null,
-                        "grace_up": 5,
+                        "expand": {
+                            "mode": "Auto",
+                            "target_member": null,
+                        },
+                        "graces": {
+                            "expand": 5,
+                            "init": 5,
+                            "scale_up": 5,
+                        },
                         "initialise": {
                             "action_args": null,
-                            "grace": 5,
-                            "mode": "NotManaged",
+                            "mode": "Auto",
                             "search": null,
                         },
                     },

@@ -96,10 +96,16 @@ pub fn show(cluster_spec: &ClusterSpec) -> Result<()> {
     };
     println!("  Converge to declared cluster: {}", converge);
     println!("  Converge action approval: {}", declaration.approval);
+    println!("  Converge operations grace periods:");
     println!(
-        "  Node scale up grace period: {} minutes",
-        declaration.grace_up
+        "    Cluster initialisation: {} minutes",
+        declaration.graces.init
     );
+    println!(
+        "    Cluster expansion: {} minutes",
+        declaration.graces.expand
+    );
+    println!("    Node scale up: {} minutes", declaration.graces.scale_up);
 
     if let Some(definition) = &declaration.definition {
         println!();
@@ -126,5 +132,18 @@ pub fn show(cluster_spec: &ClusterSpec) -> Result<()> {
         }
     }
 
+    println!();
+    println!("  Cluster initialisation:");
+    let init_args = serde_json::to_string_pretty(&declaration.initialise.action_args)?;
+    let node_search = serde_json::to_string_pretty(&declaration.initialise.search)?;
+    println!("    Mode: {}", declaration.initialise.mode);
+    println!("    Node search: {}", node_search);
+    println!("    Init arguments: {}", init_args);
+
+    println!();
+    println!("  Cluster expansion:");
+    let node_search = serde_json::to_string_pretty(&declaration.expand.target_member)?;
+    println!("    Mode: {}", declaration.expand.mode);
+    println!("    Target node search: {}", node_search);
     Ok(())
 }

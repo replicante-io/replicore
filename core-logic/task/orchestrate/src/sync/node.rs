@@ -46,6 +46,7 @@ pub fn process(incomplete: bool, ag_node: AgentNode, mut node: Node) -> Node {
         ag_node.node_status.into()
     };
     node.details = Some(NodeDetails {
+        address: ag_node.address,
         agent_version: ag_node.agent_version,
         attributes: ag_node.attributes,
         store_id: ag_node.store_id,

@@ -1,10 +1,10 @@
 //! Initialise a cluster with no initialised nodes, if needed.
-use std::time::Duration;
-
 use anyhow::Result;
 
 use replisdk::core::models::api::NActionSpec;
-use replisdk::core::models::cluster::ClusterSpecInitMode;
+use replisdk::core::models::cluster::ClusterDeclarationInitMode;
+use replisdk::core::models::node::AttributeMatcher;
+use replisdk::core::models::node::NodeSearch;
 use replisdk::core::models::node::NodeStatus;
 
 use replicore_cluster_models::ConvergeState;
@@ -33,12 +33,12 @@ impl ConvergeStep for ClusterInit {
             "cluster_id" => data.cluster_id(),
         );
 
-        // Skip initialisation if the cluster init mode is NotManaged.
+        // Skip initialisation if the cluster init mode is Auto.
         let declaration = &data.cluster_new.spec.declaration;
         let initialise = &declaration.initialise;
-        if matches!(initialise.mode, ClusterSpecInitMode::NotManaged) {
+        if matches!(initialise.mode, ClusterDeclarationInitMode::Auto) {
             slog::debug!(
-                context.logger, "Skip cluster initialisation due to not-managed mode";
+                context.logger, "Skip cluster initialisation due to auto mode";
                 "ns_id" => data.ns_id(),
                 "cluster_id" => data.cluster_id(),
             );
@@ -46,18 +46,13 @@ impl ConvergeStep for ClusterInit {
         }
 
         // Skip initialisation it the last attempt was too recent.
-        if let Some(grace) = state.graces.get(STEP_ID_CLUSTER_INIT) {
-            let grace_time = initialise.grace;
-            let grace_time = Duration::from_secs(grace_time * 60);
-            let grace_expire = *grace + grace_time;
-            if grace_expire > time::OffsetDateTime::now_utc() {
-                slog::debug!(
-                    context.logger, "Skip cluster initialisation request while in grace period";
-                    "ns_id" => data.ns_id(),
-                    "cluster_id" => data.cluster_id(),
-                );
-                return Ok(());
-            }
+        if super::step::grace_check(STEP_ID_CLUSTER_INIT, &state.graces, declaration.graces.init) {
+            slog::debug!(
+                context.logger, "Skip cluster initialisation request while in grace period";
+                "ns_id" => data.ns_id(),
+                "cluster_id" => data.cluster_id(),
+            );
+            return Ok(());
         }
         state.graces.remove(STEP_ID_CLUSTER_INIT);
 
@@ -105,8 +100,18 @@ impl ConvergeStep for ClusterInit {
 
         // Pick a node to target.
         let target = match &initialise.search {
-            None => data.cluster_new.search_nodes(&Default::default())?,
             Some(search) => data.cluster_new.search_nodes(search)?,
+            None => {
+                let mut search = NodeSearch {
+                    matches: Default::default(),
+                    ..Default::default()
+                };
+                search.matches.insert(
+                    "node_status".into(),
+                    AttributeMatcher::Eq("NOT_IN_CLUSTER".into()),
+                );
+                data.cluster_new.search_nodes(&search)?
+            }
         };
         let target = target.one().ok_or(super::errors::ClusterInitNoTarget)?;
 
@@ -136,10 +141,7 @@ impl ConvergeStep for ClusterInit {
         );
 
         // Update convergence state to make information available to the next loop.
-        state.graces.insert(
-            STEP_ID_CLUSTER_INIT.to_string(),
-            time::OffsetDateTime::now_utc(),
-        );
+        super::step::grace_start(STEP_ID_CLUSTER_INIT, &mut state.graces);
         Ok(())
     }
 }
