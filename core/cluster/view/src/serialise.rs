@@ -55,6 +55,7 @@ impl Serialize for ClusterView {
         state.serialize_field("spec", &self.spec)?;
         state.serialize_field("shards", &shards)?;
         state.serialize_field("store_extras", &store_extras)?;
+        state.serialize_field("stats_shards_by_node", &self.stats_shards_by_node)?;
         state.end()
     }
 }
@@ -109,6 +110,7 @@ mod tests {
             },
             "shards": {},
             "store_extras": {},
+            "stats_shards_by_node": {},
         });
         assert_eq!(actual, expected);
     }

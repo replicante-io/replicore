@@ -80,14 +80,29 @@ impl ConvergeStep for ClusterExpand {
             }
         };
 
+        // Skip if cluster is being expanded already.
+        let any_expand_action = data
+            .cluster_new
+            .index_nactions_by_id
+            .values()
+            .any(|action| {
+                action.kind == ACTION_KIND_CLUSTER_ADD || action.kind == ACTION_KIND_CLUSTER_JOIN
+            });
+        if any_expand_action {
+            slog::debug!(
+                context.logger,
+                "Skip cluster expand for cluster with an expand action is still unfinished";
+                "ns_id" => data.ns_id(),
+                "cluster_id" => data.cluster_id(),
+            );
+            return Ok(());
+        }
+
         // Skip if a target member to expand from can't be found.
         let target = match &expand.target_member {
             Some(search) => data.cluster_new.search_nodes(search)?,
             None => {
-                let mut search = NodeSearch {
-                    matches: Default::default(),
-                    ..Default::default()
-                };
+                let mut search = NodeSearch::default();
                 search
                     .matches
                     .insert("node_status".into(), AttributeMatcher::Eq("HEALTHY".into()));
@@ -99,6 +114,20 @@ impl ConvergeStep for ClusterExpand {
                         values: None,
                     }),
                 );
+                search.matches.insert(
+                    "shard.count.primary".into(),
+                    AttributeMatcher::Complex(AttributeMatcherComplex {
+                        op: replisdk::core::models::node::AttributeMatcherOp::Ne,
+                        value: Some(replisdk::agent::models::AttributeValue::Number(
+                            serde_json::Number::from(0),
+                        )),
+                        values: None,
+                    }),
+                );
+                search.sort_by = vec![
+                    String::from("-shard.count.primary"),
+                    String::from("node_id"),
+                ];
                 data.cluster_new.search_nodes(&search)?
             }
         };
@@ -118,24 +147,6 @@ impl ConvergeStep for ClusterExpand {
             }
         };
 
-        // Skip if cluster is being expanded already.
-        let any_expand_action = data
-            .cluster_new
-            .index_nactions_by_id
-            .values()
-            .any(|action| {
-                action.kind == ACTION_KIND_CLUSTER_ADD || action.kind == ACTION_KIND_CLUSTER_JOIN
-            });
-        if any_expand_action {
-            slog::debug!(
-                context.logger,
-                "Skip cluster expand for cluster with an expand action is still unfinished";
-                "ns_id" => data.ns_id(),
-                "cluster_id" => data.cluster_id(),
-            );
-            return Ok(());
-        }
-
         // Schedule cluster expand action based on mode.
         let spec = expand_naction(declaration, new_node, &target)?;
         let sdk = replicore_sdk::CoreSDK::from(&data.injector);
@@ -145,7 +156,7 @@ impl ConvergeStep for ClusterExpand {
             .for_node_action(action.action_id);
         data.report_mut().notes.push(note);
         slog::debug!(
-            context.logger, "Scheduled cluster initialisation on node";
+            context.logger, "Scheduled cluster expand on node";
             "ns_id" => data.ns_id(),
             "cluster_id" => data.cluster_id(),
             "node_id" => &action.node_id,

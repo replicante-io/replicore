@@ -3,6 +3,7 @@ use std::sync::Arc;
 
 use anyhow::Result;
 
+use replisdk::agent::models::ShardRole;
 use replisdk::core::models::cluster::ClusterDiscovery;
 use replisdk::core::models::cluster::ClusterSpec;
 use replisdk::core::models::naction::NAction;
@@ -66,6 +67,7 @@ impl ClusterViewBuilder {
             shards: Default::default(),
             store_extras: Default::default(),
             index_nactions_by_id: Default::default(),
+            stats_shards_by_node: Default::default(),
         };
         ClusterViewBuilder { cluster }
     }
@@ -123,7 +125,7 @@ impl ClusterViewBuilder {
         Ok(self)
     }
 
-    /// Remvoe a [`NAction`] record from the cluster view following it reaching a final state.
+    /// Remove a [`NAction`] record from the cluster view following it reaching a final state.
     pub fn remove_naction(&mut self, action: &NAction) -> Result<&mut Self> {
         if !action.state.phase.is_final() {
             anyhow::bail!(crate::errors::UnfinishedNAction {
@@ -155,11 +157,48 @@ impl ClusterViewBuilder {
         check_cluster!(self.cluster, shard);
         let node_id = shard.node_id.clone();
         let shard_id = shard.shard_id.clone();
+        let shard = Arc::new(shard);
+
+        // If updating the shard we need to subtract from stats and add back.
+        let current = self
+            .cluster
+            .shards
+            .get(&node_id)
+            .and_then(|shards| shards.get(&shard_id).cloned());
         self.cluster
             .shards
-            .entry(node_id)
+            .entry(node_id.clone())
             .or_default()
-            .insert(shard_id, Arc::new(shard));
+            .insert(shard_id, Arc::clone(&shard));
+
+        // Incrementally compute shard statistics.
+        let stats = self
+            .cluster
+            .stats_shards_by_node
+            .entry(node_id)
+            .or_default();
+        match current {
+            Some(current) if current.role == shard.role => return Ok(self),
+            Some(current) => match &current.role {
+                ShardRole::Primary => stats.count_primary -= 1,
+                ShardRole::Secondary => stats.count_secondary -= 1,
+                ShardRole::Recovering => stats.count_recovering -= 1,
+                ShardRole::Other(role) => {
+                    let counter = stats.count_others.entry(role.clone()).or_default();
+                    *counter -= 1;
+                }
+            },
+            None => (),
+        };
+        match &shard.role {
+            ShardRole::Primary => stats.count_primary += 1,
+            ShardRole::Secondary => stats.count_secondary += 1,
+            ShardRole::Recovering => stats.count_recovering += 1,
+            ShardRole::Other(role) => {
+                let counter = stats.count_others.entry(role.clone()).or_default();
+                *counter += 1;
+            }
+        };
         Ok(self)
     }
 
@@ -190,7 +229,7 @@ impl ClusterViewBuilder {
             .index_nactions_by_id
             .insert(action.action_id, action.clone());
 
-        // Replace action while presrving the correct place in the scheduling order.
+        // Replace action while preserving the correct place in the scheduling order.
         let actions = self.cluster.nactions_by_node.entry(node_id).or_default();
         let entry = actions
             .iter_mut()
@@ -209,5 +248,61 @@ impl std::ops::Deref for ClusterViewBuilder {
     }
 }
 
-// TODO: unit test remove_naction
-// TODO: unit test update_naction
+#[cfg(test)]
+mod tests {
+    use replisdk::agent::models::ShardCommitOffset;
+    use replisdk::agent::models::ShardRole;
+    use replisdk::core::models::cluster::ClusterSpec;
+    use replisdk::core::models::node::Shard;
+
+    use crate::stats::StatsShardByNode;
+    use crate::ClusterView;
+    use crate::ClusterViewBuilder;
+
+    // TODO: unit test remove_naction
+    // TODO: unit test update_naction
+
+    fn extract_stats(view: &ClusterViewBuilder) -> StatsShardByNode {
+        view.cluster
+            .stats_shards_by_node
+            .get("node")
+            .cloned()
+            .unwrap()
+    }
+
+    fn mock_shard(shard_id: &str, role: ShardRole) -> Shard {
+        Shard {
+            ns_id: String::from("ns"),
+            cluster_id: String::from("cluster"),
+            node_id: String::from("node"),
+            shard_id: String::from(shard_id),
+            commit_offset: ShardCommitOffset::seconds(123),
+            fresh: true,
+            lag: None,
+            role,
+        }
+    }
+
+    #[test]
+    fn shard_stats_are_updated() {
+        let mut view = ClusterView::builder(ClusterSpec::synthetic("ns", "cluster"));
+        view.shard(mock_shard("shard-1", ShardRole::Primary))
+            .unwrap();
+        view.shard(mock_shard("shard-1", ShardRole::Primary))
+            .unwrap();
+        view.shard(mock_shard("shard-2", ShardRole::Secondary))
+            .unwrap();
+        view.shard(mock_shard("shard-3", ShardRole::Recovering))
+            .unwrap();
+        view.shard(mock_shard("shard-4", ShardRole::Other("test".into())))
+            .unwrap();
+        view.shard(mock_shard("shard-5", ShardRole::Secondary))
+            .unwrap();
+
+        let stats = extract_stats(&view);
+        assert_eq!(stats.count_primary, 1);
+        assert_eq!(stats.count_secondary, 2);
+        assert_eq!(stats.count_recovering, 1);
+        assert_eq!(*stats.count_others.get("test").unwrap(), 1);
+    }
+}

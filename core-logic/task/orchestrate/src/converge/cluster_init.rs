@@ -75,7 +75,7 @@ impl ConvergeStep for ClusterInit {
         if !nodes_all_out_of_cluster {
             slog::debug!(
                 context.logger,
-                "Skip cluster initialisation for clusters with nodes not out of cluster";
+                "Skip cluster initialisation for already initialised cluster";
                 "ns_id" => data.ns_id(),
                 "cluster_id" => data.cluster_id(),
             );

@@ -21,5 +21,8 @@ spec:
           desired_count: 3
           node_class: play.mode
 
+    expand:
+      mode: add
+
     initialise:
       mode: 'single-node'

@@ -21,10 +21,13 @@ mod builder;
 mod load;
 mod search;
 mod serialise;
+mod stats;
 
 pub mod errors;
 pub use self::builder::ClusterViewBuilder;
 pub use self::search::Iter;
+
+use self::stats::StatsShardByNode;
 
 /// Nested index for the nactions collection, indexed by action ID.
 pub type NodeActions = Vec<Arc<NAction>>;
@@ -59,6 +62,10 @@ pub struct ClusterView {
     // --- Indexes to efficiently access cluster entries with secondary patterns ---
     /// Access node actions by action ID.
     pub index_nactions_by_id: HashMap<Uuid, Arc<NAction>>,
+
+    // --- Precomputed stats into different aspects of the cluster ---
+    /// Pre-computed statistics about shards, grouped by node.
+    pub stats_shards_by_node: HashMap<String, StatsShardByNode>,
 }
 
 impl ClusterView {
@@ -95,8 +102,8 @@ impl ClusterView {
 
     /// Filter cluster nodes based on search criteria.
     pub fn search_nodes(&self, search: &NodeSearch) -> Result<Iter> {
-        let filter = self::search::select(&search.matches);
-        let compare = self::search::compare(&search.sort_by);
+        let filter = self::search::select(self, &search.matches);
+        let compare = self::search::compare(self, &search.sort_by);
 
         // Find nodes that match search criteria.
         let mut nodes: Vec<_> = self.nodes.values().filter(filter).cloned().collect();
