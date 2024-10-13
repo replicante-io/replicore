@@ -23,4 +23,4 @@ replicore-context = { path = "../../context" }
 replicore-store = { path = "../../store" }
 
 [dev-dependencies]
-rstest = "^0.21"
+rstest = "^0.23"

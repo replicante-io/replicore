@@ -1,6 +1,6 @@
 //! Apply handlers for the replicate.io/v0 API version.
 use actix_web::HttpResponse;
-use jsonschema::JSONSchema;
+use jsonschema::Validator;
 use once_cell::sync::Lazy;
 
 pub mod constants;
@@ -15,11 +15,11 @@ use super::ApplyArgs;
 /// Meta-programming to inline JSON Schemas for input validation.
 macro_rules! schema {
     ($schema:ident, $source:expr) => {
-        static $schema: Lazy<JSONSchema> = Lazy::new(|| {
+        static $schema: Lazy<Validator> = Lazy::new(|| {
             let schema = include_str!($source);
             let error = format!("invalid JSON schema for {}", stringify!($schema));
             let schema = serde_json::from_str(schema).expect(&error);
-            JSONSchema::compile(&schema).expect(&error)
+            Validator::new(&schema).expect(&error)
         });
     };
 }

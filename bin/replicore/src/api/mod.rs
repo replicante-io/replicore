@@ -35,9 +35,9 @@ pub fn configure(config: &mut ServiceConfig) {
     config.service(scope);
 }
 
-/// Format [`JSONSchema`] validation errors into an [actix_web] compatible response.
+/// Format `jsonschema` validation errors into an [`actix_web`] compatible response.
 ///
-/// [`JSONSchema`]: jsonschema::JSONSchema
+/// [`jsonschema`]: jsonschema::Validator
 fn format_json_schema_errors(errors: ErrorIterator) -> Error {
     let mut violations = Vec::new();
     for error in errors {

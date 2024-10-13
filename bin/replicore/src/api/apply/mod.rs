@@ -2,7 +2,7 @@
 use actix_web::web::Data;
 use actix_web::web::Json;
 use actix_web::HttpResponse;
-use jsonschema::JSONSchema;
+use jsonschema::Validator;
 use once_cell::sync::Lazy;
 
 use replicore_context::Context;
@@ -25,10 +25,10 @@ pub struct ApplyArgs<'a> {
 }
 
 /// Compiled JSON schema for genetic apply objects.
-static APPLY_TOP_SCHEMA: Lazy<JSONSchema> = Lazy::new(|| {
+static APPLY_TOP_SCHEMA: Lazy<Validator> = Lazy::new(|| {
     let schema = include_str!("apply.schema.json");
     let schema = serde_json::from_str(schema).expect("invalid JSON schema for APPLY_TOP_SCHEMA");
-    JSONSchema::compile(&schema).expect("invalid JSON schema for APPLY_TOP_SCHEMA")
+    Validator::new(&schema).expect("invalid JSON schema for APPLY_TOP_SCHEMA")
 });
 
 /// Handle requests to validate API objects.
