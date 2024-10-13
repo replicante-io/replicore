@@ -9,12 +9,12 @@ pub async fn cargo(path: &str) -> Result<Version> {
     let mut file = File::open(path)
         .await
         .with_context(|| format!("Unable to read version from {}", path))?;
-    let mut buffer = Vec::new();
-    file.read_to_end(&mut buffer)
+    let mut buffer = String::new();
+    file.read_to_string(&mut buffer)
         .await
         .with_context(|| format!("Unable to read content of {}", path))?;
     let cargo: toml::value::Table =
-        toml::from_slice(&buffer).with_context(|| format!("Unable to TOML decode {}", path))?;
+        toml::from_str(&buffer).with_context(|| format!("Unable to TOML decode {}", path))?;
     let package = cargo
         .get("package")
         .ok_or_else(|| anyhow::anyhow!("Package metadata missing from {}", path))?
