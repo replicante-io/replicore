@@ -11,7 +11,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Added
 
 - List and persist node actions.
-- List and persist node's sotre extras.
+- List and persist node's store extras.
 - List and persist nodes.
 - List and persist shards.
 - List, lookup and persist cluster specs.

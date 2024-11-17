@@ -6,6 +6,7 @@ members = [
 
   # Interface crates defining services.
   "core/auth",
+  "core/coordinator",
   "core/events",
   "core/oaction",
   "core/store",

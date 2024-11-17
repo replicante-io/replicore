@@ -1,0 +1,23 @@
+[package]
+name = "replicore-coordinator"
+version = "0.1.0"
+
+edition = "2021"
+rust-version = "1.75"
+
+description = "RepliCore distributed coordination interface"
+homepage = "https://www.replicante.io/"
+license = "MIT"
+
+[features]
+# Enable utilities for unit testing.
+test-fixture = []
+
+[dependencies]
+anyhow = "^1.0"
+async-trait = "^0.1"
+serde = { version = "^1.0", features = ["derive"] }
+tokio = { version = "^1.4", features = ["macros", "rt", "sync", "time"] }
+
+[dev-dependencies]
+futures = "^0.3"
