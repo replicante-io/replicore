@@ -32,9 +32,7 @@ pub async fn check(
 /// Apply a cluster spec object.
 pub async fn cluster_spec(args: ApplyArgs<'_>) -> Result<HttpResponse, crate::api::Error> {
     // Verify & decode the cluster spec.
-    CLUSTER_SPEC_SCHEMA
-        .validate(args.object)
-        .map_err(crate::api::format_json_schema_errors)?;
+    crate::api::validate_schema(&CLUSTER_SPEC_SCHEMA, args.object)?;
     let spec = args.object.get("spec").unwrap().clone();
     let cluster: ClusterSpec = decode(spec)?;
 

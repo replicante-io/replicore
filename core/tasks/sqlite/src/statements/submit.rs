@@ -1,6 +1,6 @@
 //! Background Tasks operations to submit tasks to the queue.
 use anyhow::Result;
-use opentelemetry_api::trace::FutureExt;
+use opentelemetry::trace::FutureExt;
 use tokio_rusqlite::Connection;
 
 use replisdk::utils::metrics::CountFutureErrExt;
@@ -20,7 +20,7 @@ pub async fn submit(_: &Context, connection: &Connection, task: TaskSubmission) 
     let trace_context = task
         .trace
         .map(|trace| {
-            opentelemetry_api::global::get_text_map_propagator(|propagator| {
+            opentelemetry::global::get_text_map_propagator(|propagator| {
                 let mut buffer = std::collections::HashMap::new();
                 propagator.inject_context(&trace, &mut buffer);
                 serde_json::to_string(&buffer)

@@ -2,7 +2,8 @@
 use actix_web::web::Data;
 use actix_web::web::ServiceConfig;
 use actix_web::HttpResponse;
-use jsonschema::ErrorIterator;
+use jsonschema::Validator;
+use serde_json::Value;
 
 use replisdk::utils::actix::error::Error;
 
@@ -38,16 +39,22 @@ pub fn configure(config: &mut ServiceConfig) {
 /// Format `jsonschema` validation errors into an [`actix_web`] compatible response.
 ///
 /// [`jsonschema`]: jsonschema::Validator
-fn format_json_schema_errors(errors: ErrorIterator) -> Error {
+fn validate_schema(validator: &Validator, object: &Value) -> Result<(), Error> {
+    let errors = validator.iter_errors(object);
     let mut violations = Vec::new();
     for error in errors {
         violations.push(error.to_string());
     }
+
+    if violations.is_empty() {
+        return Ok(());
+    }
+
     let json = serde_json::json!({
         "error": true,
         "error_msg": "Payload validation failed",
         "violations": violations,
     });
     let source = anyhow::anyhow!("JSON Schema validation of request payload failed");
-    Error::bad_request(source).use_strategy(json)
+    Err(Error::bad_request(source).use_strategy(json))
 }

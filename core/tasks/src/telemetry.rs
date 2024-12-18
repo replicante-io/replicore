@@ -4,8 +4,7 @@ use std::sync::atomic::Ordering;
 
 use anyhow::Result;
 use once_cell::sync::Lazy;
-use opentelemetry_api::global::BoxedTracer;
-use opentelemetry_api::trace::TracerProvider;
+use opentelemetry::global::BoxedTracer;
 use prometheus::Counter;
 use prometheus::CounterVec;
 use prometheus::Opts;
@@ -54,12 +53,10 @@ pub static SUBMIT_ERR: Lazy<CounterVec> = Lazy::new(|| {
 
 /// Open Telemetry tracer task operations.
 pub static TRACER: Lazy<BoxedTracer> = Lazy::new(|| {
-    opentelemetry_api::global::tracer_provider().versioned_tracer(
-        env!("CARGO_PKG_NAME"),
-        Some(env!("CARGO_PKG_VERSION")),
-        Option::<&str>::None,
-        None,
-    )
+    let scope = opentelemetry::InstrumentationScope::builder(env!("CARGO_PKG_NAME"))
+        .with_version(env!("CARGO_PKG_VERSION"))
+        .build();
+    opentelemetry::global::tracer_with_scope(scope)
 });
 
 /// Ensure metrics are registered only once.

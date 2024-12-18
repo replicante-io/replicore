@@ -16,12 +16,12 @@ default = ["actix-web"]
 actix-web = { version = "^4.0", optional = true }
 anyhow = "^1.0"
 async-trait = "^0.1"
-opentelemetry_api = "^0.20"
+opentelemetry = "^0.27"
 prometheus = "^0.13"
 serde = { version = "^1.0", features = ["derive"] }
 serde_json = "^1.0"
 slog = "^2.7"
-thiserror = "^1.0"
+thiserror = "^2.0"
 
 replisdk = { version = "^0.1", features = ["replicore-models", "utils-error_slog"] }
 

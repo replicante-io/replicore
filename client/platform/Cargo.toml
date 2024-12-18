@@ -16,6 +16,6 @@ test-fixture = []
 anyhow = "^1.0"
 async-trait = "^0.1"
 rand = "^0.8"
-thiserror = "^1.0"
+thiserror = "^2.0"
 
 replisdk = { version = "^0.1", features = ["platform-models"] }

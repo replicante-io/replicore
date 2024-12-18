@@ -2,8 +2,8 @@
 use std::collections::HashMap;
 
 use anyhow::Result;
-use opentelemetry_api::trace::FutureExt;
-use opentelemetry_api::Context as OTelContext;
+use opentelemetry::trace::FutureExt;
+use opentelemetry::Context as OTelContext;
 use tokio_rusqlite::Connection;
 
 use replisdk::utils::metrics::CountFutureErrExt;
@@ -129,7 +129,7 @@ pub async fn next(
 fn decode_trace(trace: String) -> Result<OTelContext> {
     let trace: HashMap<String, String> = replisdk::utils::encoding::decode_serde(&trace)?;
     let context =
-        opentelemetry_api::global::get_text_map_propagator(|propagator| propagator.extract(&trace));
+        opentelemetry::global::get_text_map_propagator(|propagator| propagator.extract(&trace));
     Ok(context)
 }
 

@@ -1,6 +1,6 @@
 //! Persistent store operations on Cluster Discoveries.
 use anyhow::Result;
-use opentelemetry_api::trace::FutureExt;
+use opentelemetry::trace::FutureExt;
 use tokio_rusqlite::Connection;
 
 use replisdk::core::models::cluster::ClusterDiscovery;

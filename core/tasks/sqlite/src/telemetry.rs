@@ -4,12 +4,11 @@ use std::sync::atomic::Ordering;
 
 use anyhow::Result;
 use once_cell::sync::Lazy;
-use opentelemetry_api::global::BoxedTracer;
-use opentelemetry_api::trace::SpanKind;
-use opentelemetry_api::trace::TraceContextExt;
-use opentelemetry_api::trace::Tracer;
-use opentelemetry_api::trace::TracerProvider;
-use opentelemetry_api::Context;
+use opentelemetry::global::BoxedTracer;
+use opentelemetry::trace::SpanKind;
+use opentelemetry::trace::TraceContextExt;
+use opentelemetry::trace::Tracer;
+use opentelemetry::Context;
 use prometheus::Counter;
 use prometheus::CounterVec;
 use prometheus::HistogramOpts;
@@ -44,12 +43,10 @@ pub static OPS_ERR: Lazy<CounterVec> = Lazy::new(|| {
 
 /// Open Telemetry tracer for the SQLite tasks backend.
 pub static TRACER: Lazy<BoxedTracer> = Lazy::new(|| {
-    opentelemetry_api::global::tracer_provider().versioned_tracer(
-        env!("CARGO_PKG_NAME"),
-        Some(env!("CARGO_PKG_VERSION")),
-        Option::<&str>::None,
-        None,
-    )
+    let scope = opentelemetry::InstrumentationScope::builder(env!("CARGO_PKG_NAME"))
+        .with_version(env!("CARGO_PKG_VERSION"))
+        .build();
+    opentelemetry::global::tracer_with_scope(scope)
 });
 
 /// Ensure metrics are registered only once.

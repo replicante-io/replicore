@@ -17,7 +17,7 @@ anyhow = "^1.0"
 chrono = "^0.4.0"
 replisdk = { version = "^0.1", features = ["platform-models"] }
 serde = { version = "^1.0", features = ["derive"] }
-thiserror = "^1.0"
+thiserror = "^2.0"
 uuid = { version = "^1.0", features = ["serde"] }
 
 replicante_models_agent = { path = "../../../common/models/agent" }

@@ -1,6 +1,6 @@
 //! Persistent store operations on Cluster Converge State.
 use anyhow::Result;
-use opentelemetry_api::trace::FutureExt;
+use opentelemetry::trace::FutureExt;
 use tokio_rusqlite::Connection;
 
 use replisdk::utils::metrics::CountFutureErrExt;

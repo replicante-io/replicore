@@ -15,9 +15,7 @@ use crate::api::apply::ApplyArgs;
 /// Apply a namespace object.
 pub async fn namespace(args: ApplyArgs<'_>) -> Result<HttpResponse, crate::api::Error> {
     // Verify & decode Namespace.
-    NAMESPACE_SCHEMA
-        .validate(args.object)
-        .map_err(crate::api::format_json_schema_errors)?;
+    crate::api::validate_schema(&NAMESPACE_SCHEMA, args.object)?;
     let spec = args.object.get("spec").unwrap().clone();
     let namespace: Namespace = decode(spec)?;
 

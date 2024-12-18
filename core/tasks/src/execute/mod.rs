@@ -2,7 +2,7 @@
 use std::sync::Arc;
 
 use anyhow::Result;
-use opentelemetry_api::Context as OTelContext;
+use opentelemetry::Context as OTelContext;
 use serde::de::DeserializeOwned;
 use serde_json::Value;
 

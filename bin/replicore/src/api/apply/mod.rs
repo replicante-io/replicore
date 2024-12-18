@@ -39,9 +39,7 @@ async fn apply(
     object: Json<serde_json::Value>,
 ) -> Result<HttpResponse, super::Error> {
     // Validate the payload to ensure it follows the required apply format.
-    APPLY_TOP_SCHEMA
-        .validate(&object)
-        .map_err(crate::api::format_json_schema_errors)?;
+    crate::api::validate_schema(&APPLY_TOP_SCHEMA, &object)?;
     let args = ApplyArgs {
         context,
         injector,

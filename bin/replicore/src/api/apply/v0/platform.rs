@@ -13,9 +13,7 @@ use crate::api::apply::ApplyArgs;
 /// Apply a platform object.
 pub async fn platform(args: ApplyArgs<'_>) -> Result<HttpResponse, crate::api::Error> {
     // Verify & decode the platform.
-    PLATFORM_SCHEMA
-        .validate(args.object)
-        .map_err(crate::api::format_json_schema_errors)?;
+    crate::api::validate_schema(&PLATFORM_SCHEMA, args.object)?;
     let spec = args.object.get("spec").unwrap().clone();
     let platform: Platform = decode(spec)?;
 

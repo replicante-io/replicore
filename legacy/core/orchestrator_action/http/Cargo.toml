@@ -16,7 +16,7 @@ anyhow = "^1.0"
 reqwest = { version = "^0.11", features = ["blocking", "gzip", "json"]}
 serde = "^1.0"
 serde_json = "^1.0"
-thiserror = "^1.0"
+thiserror = "^2.0"
 
 replicante_models_core = { path = "../../../models/core" }
 replicore_iface_orchestrator_action = { path = "../../interface/orchestrator_action" }

@@ -7,10 +7,10 @@ use std::sync::Arc;
 use anyhow::Result;
 use futures::stream::FuturesUnordered;
 use futures::stream::StreamExt;
-use opentelemetry_api::trace::FutureExt;
-use opentelemetry_api::trace::TraceContextExt;
-use opentelemetry_api::trace::Tracer;
-use opentelemetry_api::Context as OTelContext;
+use opentelemetry::trace::FutureExt;
+use opentelemetry::trace::TraceContextExt;
+use opentelemetry::trace::Tracer;
+use opentelemetry::Context as OTelContext;
 
 use replisdk::core::models::auth::Action;
 use replisdk::core::models::auth::AuthContext;
@@ -243,7 +243,7 @@ impl TasksExecutor {
         // Extract available tracing context and create a new span for the task to execute as.
         let otel_parent = task.trace.take().unwrap_or_else(OTelContext::current);
         let mut span = crate::telemetry::TRACER.span_builder("task.execute");
-        span.span_kind = Some(opentelemetry_api::trace::SpanKind::Consumer);
+        span.span_kind = Some(opentelemetry::trace::SpanKind::Consumer);
         let span = crate::telemetry::TRACER.build_with_context(span, &otel_parent);
         let otel_context = otel_parent.with_span(span);
 

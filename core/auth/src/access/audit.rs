@@ -1,8 +1,8 @@
 //! Information attached to authorisation audit events.
 use anyhow::Result;
-use opentelemetry_api::trace::TraceContextExt;
-use opentelemetry_api::trace::TraceId;
-use opentelemetry_api::Context as OTelContext;
+use opentelemetry::trace::TraceContextExt;
+use opentelemetry::trace::TraceId;
+use opentelemetry::Context as OTelContext;
 use serde::Deserialize;
 use serde::Serialize;
 

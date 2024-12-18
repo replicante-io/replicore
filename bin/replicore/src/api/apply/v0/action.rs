@@ -13,9 +13,7 @@ use crate::api::Error;
 /// Apply a node action object.
 pub async fn naction(args: ApplyArgs<'_>) -> Result<HttpResponse, crate::api::Error> {
     // Verify & decode the cluster spec.
-    NACTION_SCHEMA
-        .validate(args.object)
-        .map_err(crate::api::format_json_schema_errors)?;
+    crate::api::validate_schema(&NACTION_SCHEMA, args.object)?;
     let spec = args.object.get("spec").unwrap().clone();
     let spec: NActionSpec = decode(spec)?;
 
@@ -43,9 +41,7 @@ pub async fn naction(args: ApplyArgs<'_>) -> Result<HttpResponse, crate::api::Er
 /// Apply an orchestrator action object.
 pub async fn oaction(args: ApplyArgs<'_>) -> Result<HttpResponse, crate::api::Error> {
     // Verify & decode the cluster spec.
-    OACTION_SCHEMA
-        .validate(args.object)
-        .map_err(crate::api::format_json_schema_errors)?;
+    crate::api::validate_schema(&OACTION_SCHEMA, args.object)?;
     let spec = args.object.get("spec").unwrap().clone();
     let spec: OActionSpec = decode(spec)?;
 

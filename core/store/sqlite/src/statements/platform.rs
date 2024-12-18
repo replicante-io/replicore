@@ -1,7 +1,7 @@
 //! Persistent store operations on Platforms.
 use anyhow::Result;
 use futures::StreamExt;
-use opentelemetry_api::trace::FutureExt;
+use opentelemetry::trace::FutureExt;
 use tokio_rusqlite::Connection;
 
 use replisdk::core::models::api::PlatformEntry;

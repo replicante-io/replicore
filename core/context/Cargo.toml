@@ -15,7 +15,7 @@ test-fixture = []
 
 [dependencies]
 actix-web = "^4.0"
-opentelemetry_api = "^0.20"
+opentelemetry = "^0.27"
 slog = "^2.7"
 
 replisdk = { version = "^0.1", features = ["replicore-models"] }
