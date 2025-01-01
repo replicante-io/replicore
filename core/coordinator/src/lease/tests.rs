@@ -1,13 +1,16 @@
-use super::fixture::LeaseFixture;
-use super::fixture::LeaseFixtureNotification;
-use super::Lease;
-use super::State;
+use replicore_context::Context;
+
+use crate::Lease;
+use crate::LeaseFixture;
+use crate::LeaseFixtureNotification;
+use crate::State;
 
 #[tokio::test]
 async fn cancel_task_on_drop() {
+    let context = Context::fixture();
     let lease = LeaseFixture::fixed(State::Secondary);
     let notifs = lease.notifications();
-    let lease = Lease::new("test", lease);
+    let lease = Lease::new(context, "test", lease);
     drop(lease);
 
     let messages = notifs.snapshot();
@@ -16,9 +19,10 @@ async fn cancel_task_on_drop() {
 
 #[tokio::test]
 async fn step_down_happens() {
+    let context = Context::fixture();
     let lease = LeaseFixture::fixed(State::Primary);
     let notifs = lease.notifications();
-    let mut lease = Lease::new("test", lease);
+    let mut lease = Lease::new(context, "test", lease);
 
     // Check watched state.
     let state = lease.watch().await.unwrap();
@@ -45,10 +49,11 @@ async fn step_down_happens() {
 
 #[tokio::test]
 async fn step_down_is_temporary() {
+    let context = Context::fixture();
     let lease =
         LeaseFixture::fixed(State::Primary).set_watch_delay(std::time::Duration::from_millis(9));
     let notifs = lease.notifications();
-    let mut lease = Lease::new("test", lease);
+    let mut lease = Lease::new(context, "test", lease);
 
     // Check watched state.
     let state = lease.watch().await.unwrap();
@@ -80,9 +85,10 @@ async fn step_down_is_temporary() {
 
 #[tokio::test]
 async fn watch_returns_state_changes() {
+    let context = Context::fixture();
     let lease = LeaseFixture::fixed(State::Primary);
     let notifs = lease.notifications();
-    let mut lease = Lease::new("test", lease);
+    let mut lease = Lease::new(context, "test", lease);
 
     // Check watched state.
     let state = lease.watch().await.unwrap();
@@ -99,9 +105,10 @@ async fn watch_returns_state_changes() {
 
 #[tokio::test]
 async fn watch_filters_same_state_notifications() {
+    let context = Context::fixture();
     let lease = LeaseFixture::simple_transition(State::Primary, State::Secondary, 3);
     let notifs = lease.notifications();
-    let mut lease = Lease::new("test", lease);
+    let mut lease = Lease::new(context, "test", lease);
 
     // Check watched state.
     let state = lease.watch().await.unwrap();

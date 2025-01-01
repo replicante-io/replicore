@@ -8,6 +8,8 @@ use tokio::sync::mpsc::Sender;
 use tokio::sync::oneshot::Sender as SendOnce;
 use tokio::time::Sleep;
 
+use replicore_context::Context;
+
 use super::ILease;
 use super::State;
 
@@ -72,7 +74,7 @@ impl ControlState {
 }
 
 /// Background task that manages a lease, watching for commands or changes.
-pub async fn task(control: ControlState) {
+pub async fn task(context: Context, control: ControlState) {
     let mut control = control;
 
     loop {
@@ -88,7 +90,7 @@ pub async fn task(control: ControlState) {
                 match command {
                     ControlCommands::StepDown(delay, response) => {
                         // Handle step down request with the backend.
-                        if let Err(error) = control.lease.step_down().await {
+                        if let Err(error) = control.lease.step_down(&context).await {
                             if response.send(Err(error)).is_err() {
                                 // Exit the control loop when response can't be sent.
                                 // This happens when the Lease holder is cleanly dropped.
@@ -112,7 +114,7 @@ pub async fn task(control: ControlState) {
             }
 
             // Wait for lease change notifications.
-            state = control.lease.watch(control.candidate) => {
+            state = control.lease.watch(&context, control.candidate) => {
                 // Send the new state to the lease holder.
                 if control.states.send(state).await.is_err() {
                     // Exit the control loop and stop the task when state changes can't be sent.

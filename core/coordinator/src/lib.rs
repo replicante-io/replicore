@@ -3,14 +3,29 @@
 //! This service provides a framework for Replicante Core logic to ensure logic execution
 //! happens only once at the same time in the cluster, regardless of how many nodes are involved.
 
+mod coordinator;
+mod factory;
 mod lease;
+mod time;
 
+pub use self::coordinator::Coordinator;
+pub use self::coordinator::ICoordinated;
+pub use self::factory::ILeaseFactory;
+pub use self::factory::LeaseConf;
+pub use self::factory::LeaseFactory;
+pub use self::factory::LeaseFactoryArgs;
 pub use self::lease::ILease;
 pub use self::lease::Lease;
 pub use self::lease::State;
+pub use self::time::ICoordinatedTimer;
+pub use self::time::Timer;
 
 #[cfg(any(test, feature = "test-fixture"))]
-pub use self::lease::fixture::{
-    ICallback as ILeaseFixtureCallback, LeaseFixture, LeaseFixtureNotification,
+mod fixture;
+
+#[cfg(any(test, feature = "test-fixture"))]
+pub use self::fixture::{
+    CoordinatedFixture, CoordinatedFixtureNotification, CoordinatedFixtureNotifications,
+    FixedLeaseCallback, ICallback as ILeaseFixtureCallback, LeaseFixture, LeaseFixtureNotification,
     LeaseFixtureNotifications,
 };

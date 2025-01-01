@@ -10,10 +10,9 @@ use serde::Deserialize;
 use serde::Serialize;
 use tokio::task::JoinHandle;
 
-mod control;
+use replicore_context::Context;
 
-#[cfg(any(test, feature = "test-fixture"))]
-pub mod fixture;
+mod control;
 
 #[cfg(test)]
 mod tests;
@@ -22,7 +21,7 @@ mod tests;
 #[async_trait::async_trait]
 pub trait ILease: Send {
     /// Relinquish Primary control of the lease, if it was held by this instance.
-    async fn step_down(&mut self) -> Result<()>;
+    async fn step_down(&mut self, context: &Context) -> Result<()>;
 
     /// Watch for changes to the lease reported by the coordination service.
     ///
@@ -31,7 +30,7 @@ pub trait ILease: Send {
     ///
     /// If the `candidate` flag is set, the watching logic is responsible for setting up the
     /// lease and run for election if it is not yet attempting to acquiring exclusive access.
-    async fn watch(&mut self, candidate: bool) -> Result<State>;
+    async fn watch(&mut self, context: &Context, candidate: bool) -> Result<State>;
 }
 
 /// Acquire, release and watch a coordination lease.
@@ -64,7 +63,7 @@ impl Drop for Lease {
 }
 
 impl Lease {
-    pub fn new<L, S>(id: S, lease: L) -> Self
+    pub fn new<L, S>(context: Context, id: S, lease: L) -> Self
     where
         L: ILease + 'static,
         S: Into<String>,
@@ -73,7 +72,7 @@ impl Lease {
         let lease = Box::new(lease);
 
         let (channels, state) = self::control::ControlState::new(lease);
-        let task = tokio::spawn(self::control::task(state));
+        let task = tokio::spawn(self::control::task(context, state));
 
         Lease {
             channels,
@@ -116,6 +115,9 @@ impl Lease {
                 continue;
             }
 
+            // TODO: Remove this and make it a backend responsibly to manage it.
+            //       With the current implementation a backend that goes Primary -> Secondary
+            //       would go Primary -> Lost and never move to Secondary (because watch waits).
             // If we go from primary to another state we lost the lease so update to `Lost`.
             let mut state = state;
             if matches!(self.last_state, State::Primary) && !matches!(state, State::Primary) {
@@ -145,6 +147,18 @@ pub enum State {
 
     /// The lease paused and not trying to obtain exclusive access.
     Idle,
+}
+
+impl std::fmt::Display for State {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Candidate => write!(f, "CANDIDATE"),
+            Self::Primary => write!(f, "PRIMARY"),
+            Self::Secondary => write!(f, "SECONDARY"),
+            Self::Lost => write!(f, "LOST"),
+            Self::Idle => write!(f, "IDLE"),
+        }
+    }
 }
 
 impl State {

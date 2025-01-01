@@ -11,3 +11,5 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Added
 
 - Lease backend interface and framework API.
+- Process-wide coordinator for cluster exclusive logic.
+- Run exclusive logic on a timer.
