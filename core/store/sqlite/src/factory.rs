@@ -1,7 +1,4 @@
 //! Initialise SQLite Persistent Store.
-use std::sync::Arc;
-use std::sync::Mutex;
-
 use anyhow::Context as AnyContext;
 use anyhow::Result;
 use serde_json::Value as Json;
@@ -49,31 +46,17 @@ impl StoreFactory for SQLiteFactory {
         let client = create_client(args.context, &conf.path).await?;
 
         // Run migrations to ensure the DB is ready for use.
-        let init_error: Arc<Mutex<Option<refinery::Error>>> = Default::default();
-        let init_error_inner = Arc::clone(&init_error);
         client
             .call(move |connection| {
-                let result = crate::schema::migrations::runner()
+                crate::schema::migrations::runner()
                     .set_migration_table_name(REFINERY_SCHEMA_TABLE_NAME)
-                    .run(connection);
-                if let Err(error) = result {
-                    init_error_inner
-                        .lock()
-                        .expect("SQLiteStore sync error lock poisoned")
-                        .replace(error);
-                }
-                Ok(())
+                    .run(connection)
+                    .map_err(|error| {
+                        let error = Box::new(error);
+                        tokio_rusqlite::Error::Other(error)
+                    })
             })
             .await?;
-
-        // Extract the initialisation error, if any.
-        let error = init_error
-            .lock()
-            .expect("SQLiteStore sync error lock poisoned")
-            .take();
-        if let Some(error) = error {
-            return Err(error.into());
-        }
         Ok(())
     }
 }

@@ -1,5 +1,7 @@
 //! Set of [`ICoordinated`] exclusive tasks to execute in primary/secondary mode
 //! depending on a coordination lease shared by the whole process.
+use std::time::Duration;
+
 use anyhow::Result;
 use futures::stream::FuturesUnordered;
 use futures::stream::TryStreamExt;
@@ -9,17 +11,16 @@ use tokio::sync::watch::Sender;
 use replicore_context::Context;
 
 use crate::ICoordinated;
-use crate::LeaseConf;
-use crate::LeaseFactory;
+use crate::LeaseRegistry;
 use crate::State;
 
 /// Manages a set of [`ICoordinated`] instances to coordinate exclusive logic.
 pub struct Coordinator {
     /// Configuration to create the coordination [`Lease`] with.
-    lease_conf: LeaseConf,
+    lease_id: String,
 
     /// Factory to create the coordination [`Lease`] with.
-    lease_factory: LeaseFactory,
+    lease_registry: LeaseRegistry,
 
     /// Sender side for checking or watching coordination lease state.
     state_sender: Sender<State>,
@@ -33,16 +34,11 @@ pub struct Coordinator {
 
 impl Coordinator {
     /// Build a [`Coordinator`] instance.
-    pub fn builder<F>(factory: F) -> CoordinatorBuilder
+    pub fn builder<R>(registry: R) -> CoordinatorBuilder
     where
-        F: Into<LeaseFactory>,
+        R: Into<LeaseRegistry>,
     {
-        CoordinatorBuilder::new(factory.into())
-    }
-
-    /// Inspect the coordination lease configuration.
-    pub fn conf(&self) -> &LeaseConf {
-        &self.lease_conf
+        CoordinatorBuilder::new(registry.into())
     }
 
     /// Subscribe to coordinated lease state inspection and change notification.
@@ -52,7 +48,7 @@ impl Coordinator {
 
     /// Run the coordination component, including election and failover handling.
     pub async fn run(&self, context: &Context) -> Result<()> {
-        let mut lease = self.lease_factory.get(context, &self.lease_conf).await?;
+        let mut lease = self.lease_registry.lease(context, &self.lease_id).await?;
         let mut state_last = *self.state_watcher.borrow();
 
         loop {
@@ -119,11 +115,11 @@ impl Coordinator {
 
 /// Builder pattern for [`Coordinator`] objects.
 pub struct CoordinatorBuilder {
-    /// Configuration to create the coordination [`Lease`] with.
-    lease_conf: LeaseConf,
-
     /// Factory to create the coordination [`Lease`] with.
-    lease_factory: LeaseFactory,
+    lease_registry: LeaseRegistry,
+
+    /// Time to leave before the coordinator lease expires, if not renewed.
+    lease_ttl: Duration,
 
     /// Set of [`ICoordinated`] tasks to coordinate.
     tasks: Vec<Box<dyn ICoordinated>>,
@@ -134,28 +130,25 @@ impl CoordinatorBuilder {
     pub fn build(self) -> Coordinator {
         let (state_sender, state_watcher) = tokio::sync::watch::channel(State::Idle);
         Coordinator {
-            lease_conf: self.lease_conf,
-            lease_factory: self.lease_factory,
+            lease_id: "core.coordinator".into(),
+            lease_registry: self.lease_registry,
             state_sender,
             state_watcher,
             tasks: self.tasks,
         }
     }
 
-    /// Set the lease configuration to use.
-    pub fn lease_configuration(mut self, conf: LeaseConf) -> Self {
-        self.lease_conf = conf;
+    /// Set the time to live for the coordination lease.
+    pub fn lease_ttl(mut self, ttl: Duration) -> Self {
+        self.lease_ttl = ttl;
         self
     }
 
     /// Start a [`Coordinator`] build with the given lease factory.
-    pub fn new(factory: LeaseFactory) -> Self {
-        let lease_conf = LeaseConf {
-            id: "core.coordinator".into(),
-        };
+    pub fn new(registry: LeaseRegistry) -> Self {
         CoordinatorBuilder {
-            lease_conf,
-            lease_factory: factory,
+            lease_registry: registry,
+            lease_ttl: Duration::from_secs(60),
             tasks: Vec::new(),
         }
     }
@@ -177,30 +170,18 @@ mod tests {
     use crate::CoordinatedFixtureNotification;
     use crate::Coordinator;
     use crate::FixedLeaseCallback;
-    use crate::LeaseConf;
     use crate::LeaseFixture;
     use crate::State;
-
-    /// Configuration for unit-test leases.
-    fn lease_conf() -> LeaseConf {
-        LeaseConf {
-            id: "unit-test".into(),
-        }
-    }
 
     #[tokio::test]
     async fn init_to_primary() {
         let context = replicore_context::Context::fixture();
-        let conf = lease_conf();
         let coordinated = CoordinatedFixture::default();
         let factory =
             LeaseFixture::factory((), || Box::new(FixedLeaseCallback::new(State::Primary)));
 
         let notifs = coordinated.notifications();
-        let coordinator = Coordinator::builder(factory)
-            .lease_configuration(conf)
-            .task(coordinated)
-            .build();
+        let coordinator = Coordinator::builder(factory).task(coordinated).build();
         coordinator.run(&context).await.unwrap();
 
         let notifs = notifs.snapshot();
@@ -216,16 +197,12 @@ mod tests {
     #[tokio::test]
     async fn init_to_secondary() {
         let context = replicore_context::Context::fixture();
-        let conf = lease_conf();
         let coordinated = CoordinatedFixture::default();
         let factory =
             LeaseFixture::factory((), || Box::new(FixedLeaseCallback::new(State::Secondary)));
 
         let notifs = coordinated.notifications();
-        let coordinator = Coordinator::builder(factory)
-            .lease_configuration(conf)
-            .task(coordinated)
-            .build();
+        let coordinator = Coordinator::builder(factory).task(coordinated).build();
         coordinator.run(&context).await.unwrap();
 
         let notifs = notifs.snapshot();

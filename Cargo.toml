@@ -14,6 +14,7 @@ members = [
 
   # Interface implementation crates.
   "core/auth/insecure",
+  "core/coordinator/sqlite",
   "core/events/sqlite",
   "core/store/sqlite",
   "core/tasks/sqlite",

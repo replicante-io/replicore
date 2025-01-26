@@ -11,8 +11,11 @@ use replicore_context::Context;
 use crate::ICoordinated;
 use crate::ILease;
 use crate::ILeaseFactory;
+use crate::ILeaseRegistry;
 use crate::Lease;
-use crate::LeaseFactoryArgs;
+use crate::LeaseFactorySyncArgs;
+use crate::LeaseRegistry;
+use crate::LeaseRegistryArgs;
 use crate::State;
 
 /// Unit test fixture to test the implementation of the [`Coordinator`](crate::Coordinator).
@@ -248,7 +251,7 @@ impl<S: Clone + Send + Sync> LeaseFixture<S> {
 /// Factory for [`LeaseFixture`] backed leases.
 pub struct LeaseFixtureFactory<S: Clone + Send + Sync> {
     /// Function to create callbacks for the generated fixtures.
-    callback: Box<dyn Fn() -> Box<dyn ICallback<S>> + Send + Sync>,
+    callback: Arc<dyn Fn() -> Box<dyn ICallback<S>> + Send + Sync>,
 
     /// Initial state for generated fixtures.
     init_state: S,
@@ -260,7 +263,7 @@ impl<S: Clone + Send + Sync> LeaseFixtureFactory<S> {
     where
         C: Fn() -> Box<dyn ICallback<S>> + Send + Sync + 'static,
     {
-        let callback = Box::new(callback);
+        let callback = Arc::new(callback);
         LeaseFixtureFactory {
             callback,
             init_state: state,
@@ -274,16 +277,31 @@ impl<S: Clone + Send + Sync + 'static> ILeaseFactory for LeaseFixtureFactory<S> 
         Ok(())
     }
 
+    async fn registry(&self, _: &Context, _: &Json) -> Result<LeaseRegistry> {
+        let reg = LeaseFixtureFactory {
+            callback: self.callback.clone(),
+            init_state: self.init_state.clone(),
+        };
+        Ok(LeaseRegistry::from(reg))
+    }
+
     fn register_metrics(&self, _: &prometheus::Registry) -> Result<()> {
         Ok(())
     }
 
+    async fn sync<'a>(&self, _: LeaseFactorySyncArgs<'a>) -> Result<()> {
+        Ok(())
+    }
+}
+
+#[async_trait::async_trait]
+impl<S: Clone + Send + Sync + 'static> ILeaseRegistry for LeaseFixtureFactory<S> {
     /// Create a [`Lease`] object with the correct backend.
-    async fn lease<'a>(&self, args: LeaseFactoryArgs<'a>) -> Result<Lease> {
+    async fn lease<'a>(&self, args: LeaseRegistryArgs<'a>) -> Result<Lease> {
         let callback = (self.callback)();
         let state = self.init_state.clone();
         let lease = LeaseFixture::boxed(state, callback);
-        let lease = Lease::new(args.context.clone(), &args.conf.id, lease);
+        let lease = Lease::new(args.context.clone(), args.lease_id, lease);
         Ok(lease)
     }
 }

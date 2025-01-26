@@ -130,12 +130,9 @@ where
     match attribute {
         attribute if attribute.starts_with("shard.count.") => {
             let stats = view.stats_shards_by_node.get(&node.node_id);
-            let stats = match stats {
-                // This should not be possible because the node comes from the cluster view.
-                // But there is no reason to panic or error so instead handle it as missing.
-                None => return None,
-                Some(stats) => stats,
-            };
+            // This should not be possible because the node comes from the cluster view.
+            // But there is no reason to panic or error so instead handle it as missing.
+            let stats = stats?;
             match attribute {
                 "shard.count.primary" => Some(AttributeValueRef::from(stats.count_primary)),
                 "shard.count.secondary" => Some(AttributeValueRef::from(stats.count_secondary)),
