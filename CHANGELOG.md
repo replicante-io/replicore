@@ -27,7 +27,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - **INTERNAL**: Reimplement persistent store interface.
 - Capture only server-side errors in Sentry for API endpoints.
 - Update cargo dependencies.
-- Update minimum rust version to 1.75.0.
+- Update minimum rust version to 1.78.0.
 
 ## [0.7.2] - 2022-09-25
 ### Changed

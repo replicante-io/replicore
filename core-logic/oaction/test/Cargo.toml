@@ -2,7 +2,7 @@
 name = "replicore-oaction-test"
 version = "0.1.0"
 edition = "2021"
-rust-version = "1.75"
+rust-version = "1.78"
 
 description = "RepliCore orchestration actions to aid testing and system exploration"
 homepage = "https://www.replicante.io/"

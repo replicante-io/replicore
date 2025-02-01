@@ -21,7 +21,7 @@ for_version() {
 # Default to CI of stable, minimum, nightly versions.
 if [[ "$#" -eq 0 ]]; then
   for_version "stable"
-  for_version "1.75.0"
+  for_version "1.78.0"
   for_version "nightly"
   exit 0
 fi

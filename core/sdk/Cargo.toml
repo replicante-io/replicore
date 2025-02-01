@@ -3,7 +3,7 @@ name = "replicore-sdk"
 version = "0.1.0"
 
 edition = "2021"
-rust-version = "1.75"
+rust-version = "1.78"
 
 description = "Control Plane reusable business logic in an SDK style crate"
 homepage = "https://www.replicante.io/"
