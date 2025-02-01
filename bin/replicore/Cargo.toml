@@ -33,6 +33,7 @@ default = [
 
 # Include SQLite implementations for the Control Plane dependencies.
 sqlite-impls = [
+  "replicore-coordinator-sqlite",
   "replicore-events-sqlite",
   "replicore-store-sqlite",
   "replicore-tasks-sqlite",
@@ -72,6 +73,7 @@ replicore-auth = { path = "../../core/auth" }
 replicore-cluster-view = { path = "../../core/cluster/view" }
 replicore-conf = { path = "../../core/conf" }
 replicore-context = { path = "../../core/context" }
+replicore-coordinator = { path = "../../core/coordinator" }
 replicore-events = { path = "../../core/events" }
 replicore-injector = { path = "../../core/injector" }
 replicore-oaction = { path = "../../core/oaction" }
@@ -85,6 +87,7 @@ replicore-task-orchestrate = { path = "../../core-logic/task/orchestrate" }
 
 # Supported backend implementations for compile time customisation.
 replicore-auth-insecure = { path = "../../core/auth/insecure" }
+replicore-coordinator-sqlite = { path = "../../core/coordinator/sqlite", optional = true }
 replicore-events-sqlite = { path = "../../core/events/sqlite", optional = true }
 replicore-store-sqlite = { path = "../../core/store/sqlite", optional = true }
 replicore-tasks-sqlite = { path = "../../core/tasks/sqlite", optional = true }

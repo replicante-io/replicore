@@ -4,6 +4,8 @@ use anyhow::Result;
 use replicore_conf::Conf;
 use replicore_context::Context;
 use replicore_context::ContextBuilder;
+use replicore_coordinator::LeaseFactory;
+use replicore_coordinator::LeaseFactorySyncArgs;
 use replicore_events::emit::EventsFactory;
 use replicore_events::emit::EventsFactorySyncArgs;
 use replicore_store::StoreFactory;
@@ -39,6 +41,20 @@ impl Sync {
             task_queues: Default::default(),
         };
         Ok(sync)
+    }
+
+    /// Register a new factory for a Coordinator Platform implementation.
+    ///
+    /// # Panics
+    ///
+    /// Panic if the identifier of the new Coordinator Platform backend is already in use.
+    pub fn register_coordinator<B, S>(mut self, id: S, backend: B) -> Self
+    where
+        B: LeaseFactory + 'static,
+        S: Into<String>,
+    {
+        self.generic.backends.register_coordinator(id, backend);
+        self
     }
 
     /// Register all task queues required by the control plane to operate.
@@ -143,11 +159,23 @@ struct SyncArgs {
 /// Entrypoint to dependences synchronisation.
 async fn synchronise_dependencies(context: &Context, args: SyncArgs) -> Result<()> {
     slog::info!(context.logger, "Synchronising dependences");
-    // TODO: Synchronise election service.
+    sync_coordinator(context, &args).await?;
     sync_events(context, &args).await?;
     sync_store(context, &args).await?;
     sync_tasks(context, &args).await?;
     Ok(())
+}
+
+async fn sync_coordinator(context: &Context, args: &SyncArgs) -> Result<()> {
+    slog::debug!(context.logger, "Synchronising coordinator backend");
+    let sync_args = LeaseFactorySyncArgs {
+        conf: &args.conf.coordinator.options,
+        context,
+    };
+    args.backends
+        .coordinator(&args.conf.coordinator.backend)?
+        .sync(sync_args)
+        .await
 }
 
 async fn sync_events(context: &Context, args: &SyncArgs) -> Result<()> {

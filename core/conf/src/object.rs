@@ -12,6 +12,9 @@ use super::RuntimeConf;
 /// Global configuration for the Replicante Core process.
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Conf {
+    /// Distributed Coordinator service configuration.
+    pub coordinator: BackendConf,
+
     /// Events Streaming Platform service configuration.
     pub events: BackendConf,
 

@@ -10,11 +10,11 @@ use crate::Lease;
 
 /// Interface to create a lease registry.
 #[async_trait::async_trait]
-pub trait ILeaseFactory: Send + Sync {
+pub trait LeaseFactory: Send + Sync {
     /// Validate the user provided configuration for the backend.
     fn conf_check(&self, context: &Context, conf: &Json) -> Result<()>;
 
-    /// Create an [`ILeaseFactory`] configured appropriately.
+    /// Create an [`LeaseFactory`] configured appropriately.
     async fn registry(&self, context: &Context, conf: &Json) -> Result<LeaseRegistry>;
 
     /// Register backend specific metrics.
@@ -26,49 +26,9 @@ pub trait ILeaseFactory: Send + Sync {
 
 /// Interface to create new leases.
 #[async_trait::async_trait]
-pub trait ILeaseRegistry {
+pub trait ILeaseRegistry: Send + Sync {
     /// Create a [`Lease`] object with the correct backend.
     async fn lease<'a>(&self, args: LeaseRegistryArgs<'a>) -> Result<Lease>;
-}
-
-/// Initialisation logic to obtain [`LeaseRegistry`]s.
-#[derive(Clone)]
-pub struct LeaseFactory {
-    /// Inner factory implementation.
-    inner: Arc<dyn ILeaseFactory>,
-}
-
-impl<F> From<F> for LeaseFactory
-where
-    F: ILeaseFactory + 'static,
-{
-    fn from(value: F) -> Self {
-        let inner = Arc::new(value);
-        LeaseFactory { inner }
-    }
-}
-
-impl LeaseFactory {
-    /// Validate the user provided configuration for the backend.
-    pub fn conf_check(&self, context: &Context, conf: &Json) -> Result<()> {
-        self.inner.conf_check(context, conf)
-    }
-
-    /// Create an [`ILeaseFactory`] configured appropriately.
-    pub async fn registry(&self, context: &Context, conf: &Json) -> Result<LeaseRegistry> {
-        self.inner.registry(context, conf).await
-    }
-
-    /// Register backend specific metrics.
-    pub fn register_metrics(&self, registry: &prometheus::Registry) -> Result<()> {
-        self.inner.register_metrics(registry)
-    }
-
-    /// Synchronise (initialise or migrate) the coordinator backed.
-    pub async fn sync(&self, context: &Context, conf: &Json) -> Result<()> {
-        let args = LeaseFactorySyncArgs { conf, context };
-        self.inner.sync(args).await
-    }
 }
 
 /// Arguments passed to the [`LeaseFactory`] client synchronisation method.
@@ -114,7 +74,7 @@ impl LeaseRegistry {
     }
 }
 
-/// Arguments passed to to the [`ILeaseFactory::lease`] method.
+/// Arguments passed to to the [`LeaseFactory::lease`] method.
 pub struct LeaseRegistryArgs<'a> {
     /// Container for operation scoped values.
     pub context: &'a Context,

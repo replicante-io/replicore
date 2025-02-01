@@ -48,6 +48,7 @@ impl GenericInit {
     pub fn register_default_backends(&mut self) -> &mut Self {
         #[cfg(feature = "replicore-events-sqlite")]
         self.backends
+            .register_coordinator("sqlite", replicore_coordinator_sqlite::Factory)
             .register_events("sqlite", replicore_events_sqlite::emit::SQLiteFactory)
             .register_store("sqlite", replicore_store_sqlite::SQLiteFactory)
             .register_tasks("sqlite", replicore_tasks_sqlite::SQLiteFactory);
@@ -60,6 +61,9 @@ impl GenericInit {
         replicore_tasks::register_metrics(&self.telemetry.metrics)?;
 
         // Selected backends.
+        self.backends
+            .coordinator(&self.conf.coordinator.backend)?
+            .register_metrics(&self.telemetry.metrics)?;
         self.backends
             .events(&self.conf.events.backend)?
             .register_metrics(&self.telemetry.metrics)?;
@@ -90,6 +94,9 @@ impl GenericInit {
 
     /// Validate the loaded configuration objects for the selected backends.
     pub fn validate_backends_conf(&self, context: &Context) -> Result<&Self> {
+        self.backends
+            .coordinator(&self.conf.coordinator.backend)?
+            .conf_check(context, &self.conf.coordinator.options)?;
         self.backends
             .events(&self.conf.events.backend)?
             .conf_check(context, &self.conf.events.options)?;

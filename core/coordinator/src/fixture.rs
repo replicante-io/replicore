@@ -10,9 +10,9 @@ use replicore_context::Context;
 
 use crate::ICoordinated;
 use crate::ILease;
-use crate::ILeaseFactory;
 use crate::ILeaseRegistry;
 use crate::Lease;
+use crate::LeaseFactory;
 use crate::LeaseFactorySyncArgs;
 use crate::LeaseRegistry;
 use crate::LeaseRegistryArgs;
@@ -272,7 +272,7 @@ impl<S: Clone + Send + Sync> LeaseFixtureFactory<S> {
 }
 
 #[async_trait::async_trait]
-impl<S: Clone + Send + Sync + 'static> ILeaseFactory for LeaseFixtureFactory<S> {
+impl<S: Clone + Send + Sync + 'static> LeaseFactory for LeaseFixtureFactory<S> {
     fn conf_check(&self, _: &Context, _: &Json) -> Result<()> {
         Ok(())
     }

@@ -4,6 +4,7 @@ use std::collections::HashMap;
 use std::sync::Arc;
 
 use anyhow::Result;
+use replicore_coordinator::LeaseFactory;
 use replicore_events::emit::EventsFactory;
 use replicore_store::StoreFactory;
 use replicore_tasks::factory::TasksFactory;
@@ -11,6 +12,11 @@ use replicore_tasks::factory::TasksFactory;
 /// Error looking for a specific backend implementation.
 #[derive(Debug, thiserror::Error)]
 pub enum BackendNotFound {
+    /// Coordinator backend not recognised.
+    #[error("coordinator backend '{0}' not recognised")]
+    // (id,)
+    Coordinator(String),
+
     /// Events backend not recognised.
     #[error("events backend '{0}' not recognised")]
     // (id,)
@@ -28,6 +34,11 @@ pub enum BackendNotFound {
 }
 
 impl BackendNotFound {
+    /// Coordinator backend not recognised.
+    pub fn coordinator(id: &str) -> Self {
+        Self::Coordinator(id.to_string())
+    }
+
     /// Events backend not recognised.
     pub fn events(id: &str) -> Self {
         Self::Events(id.to_string())
@@ -47,7 +58,10 @@ impl BackendNotFound {
 /// Registers of backend factories for implementations supported by the process/build.
 #[derive(Clone, Default)]
 pub struct Backends {
-    // Supported Events Platform backends.
+    /// Supported Coordinator Platform backends.
+    coordinators: HashMap<String, Arc<dyn LeaseFactory>>,
+
+    /// Supported Events Platform backends.
     events: HashMap<String, Arc<dyn EventsFactory>>,
 
     /// Supported Persistent Store backends.
@@ -58,6 +72,15 @@ pub struct Backends {
 }
 
 impl Backends {
+    /// Lookup a [`LeaseFactory`] by ID.
+    pub fn coordinator(&self, id: &str) -> Result<&dyn LeaseFactory> {
+        let factory = self
+            .coordinators
+            .get(id)
+            .ok_or_else(|| BackendNotFound::coordinator(id))?;
+        Ok(factory.as_ref())
+    }
+
     /// Lookup an [`EventsFactory`] by ID.
     pub fn events(&self, id: &str) -> Result<&dyn EventsFactory> {
         let factory = self
@@ -65,6 +88,28 @@ impl Backends {
             .get(id)
             .ok_or_else(|| BackendNotFound::events(id))?;
         Ok(factory.as_ref())
+    }
+
+    /// Register a new factory for a Coordinator Platform implementation.
+    ///
+    /// # Panics
+    ///
+    /// Panic if the identifier of the new Coordinator Platform backend is already in use.
+    pub fn register_coordinator<B, S>(&mut self, id: S, backend: B) -> &mut Self
+    where
+        B: LeaseFactory + 'static,
+        S: Into<String>,
+    {
+        match self.coordinators.entry(id.into()) {
+            Entry::Occupied(entry) => {
+                panic!(
+                    "a LeaseFactory with id '{}' is already registered",
+                    entry.key()
+                )
+            }
+            Entry::Vacant(entry) => entry.insert(Arc::new(backend)),
+        };
+        self
     }
 
     /// Register a new factory for an Events Platform implementation.

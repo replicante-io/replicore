@@ -7,6 +7,7 @@ use replicore_auth::access::Authoriser;
 use replicore_auth::identity::Authenticator;
 use replicore_conf::Conf;
 use replicore_context::Context;
+use replicore_coordinator::LeaseRegistry;
 use replicore_events::emit::Events;
 use replicore_oaction::OActionRegistry;
 use replicore_store::Store;
@@ -39,6 +40,9 @@ pub struct Injector {
 
     /// Interface to emit system events.
     pub events: Events,
+
+    /// Interface to obtain coordination leases.
+    pub leases: LeaseRegistry,
 
     /// Registry of all orchestrator actions known to the process.
     pub oactions: OActionRegistry,
@@ -107,6 +111,10 @@ impl Injector {
             events.backend().into(),
         );
         let conf = Conf {
+            coordinator: replicore_conf::BackendConf {
+                backend: "unittest".into(),
+                options: Default::default(),
+            },
             events: replicore_conf::BackendConf {
                 backend: "unittest".into(),
                 options: Default::default(),
@@ -126,6 +134,13 @@ impl Injector {
             },
             telemetry: Default::default(),
         };
+        let leases = replicore_coordinator::LeaseFixture::factory((), || {
+            let callback = replicore_coordinator::FixedLeaseCallback::new(
+                replicore_coordinator::State::Primary,
+            );
+            Box::new(callback)
+        });
+
         let injector = Injector {
             authenticator: replicore_auth_insecure::Anonymous.into(),
             authoriser,
@@ -133,6 +148,7 @@ impl Injector {
             conf,
             context: Context::fixture(),
             events: events.backend().into(),
+            leases: LeaseRegistry::from(leases),
             oactions: OActionRegistry::build().finish(),
             store: Store::fixture(),
             tasks: Tasks::fixture().backend().into(),

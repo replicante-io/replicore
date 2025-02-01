@@ -10,7 +10,6 @@ mod time;
 
 pub use self::coordinator::Coordinator;
 pub use self::coordinator::ICoordinated;
-pub use self::factory::ILeaseFactory;
 pub use self::factory::ILeaseRegistry;
 pub use self::factory::LeaseFactory;
 pub use self::factory::LeaseFactorySyncArgs;

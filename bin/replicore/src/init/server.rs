@@ -7,6 +7,7 @@ use replicore_conf::Conf;
 use replicore_conf::TasksConf;
 use replicore_context::Context;
 use replicore_context::ContextBuilder;
+use replicore_coordinator::LeaseFactory;
 use replicore_events::emit::EventsFactory;
 use replicore_events::emit::EventsFactoryArgs;
 use replicore_injector::Injector;
@@ -55,6 +56,20 @@ impl Server {
             tasks,
         };
         Ok(server)
+    }
+
+    /// Register a new factory for a Coordinator Platform implementation.
+    ///
+    /// # Panics
+    ///
+    /// Panic if the identifier of the new Coordinator Platform backend is already in use.
+    pub fn register_coordinator<B, S>(mut self, id: S, backend: B) -> Self
+    where
+        B: LeaseFactory + 'static,
+        S: Into<String>,
+    {
+        self.generic.backends.register_coordinator(id, backend);
+        self
     }
 
     /// Register all task queues required by the control plane to operate.
@@ -223,11 +238,13 @@ pub async fn injector(
 ) -> Result<Injector> {
     // Grab all dependencies factories.
     let conf = conf.clone();
+    let coordinator = backends.coordinator(&conf.coordinator.backend)?;
     let events = backends.events(&conf.events.backend)?;
     let store = backends.store(&conf.store.backend)?;
     let tasks = backends.tasks(&conf.tasks.service.backend)?;
 
     // Initialise all dependencies.
+    let coordinator = coordinator.registry(context, &conf.coordinator.options).await?;
     let events = events
         .events(EventsFactoryArgs {
             conf: &conf.events.options,
@@ -262,6 +279,7 @@ pub async fn injector(
         conf,
         context: context.clone(),
         events,
+        leases: coordinator,
         oactions,
         store,
         tasks,

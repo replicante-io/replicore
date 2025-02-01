@@ -1,3 +1,32 @@
+# Distributed Coordinator service configuration.
+coordinator:
+  # Distributed Coordinator implementation for the RepliCore control plane to use.
+  #
+  # Available implementations can be enabled and disabled at compile time so the exact
+  # list of options may vary but the following implementations are included by default:
+  #
+  # - sqlite: coordinate leases using a locally persisted SQLite database.
+  #   NO SUPPORT FOR HIGH AVAILABLE CLUSTERS.
+  #   ONLY SUITABLE FOR SMALL CLUSTERS.
+  backend: REQUIRED
+
+  # Implementation specific options are provided as additional attributes here.
+  # === For SQLite backend ===
+  # Path to the SQLite DB file.
+  #path: store.sqlite
+  #
+  # Time to live, in seconds, before leases are either renewed or lost.
+  #
+  # To reduce the likelihood of multiple [`Lease`] objects thinking they hold the lease,
+  # renewals MUST be performed before the TTL expires.
+  # Details vary based on the exact implementation, check each backend documentation if needed.
+  #ttl: 60
+  #
+  # Interval, in seconds, between DB checks and renewal attempts.
+  #
+  # Must be less or equal to half the TTL value.
+  #watch_interval: 30
+
 # Events Streaming Platform service configuration.
 events:
   # Events Streaming Platform implementation for the RepliCore control plane to use.

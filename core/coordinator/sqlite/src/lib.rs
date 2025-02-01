@@ -7,9 +7,9 @@ use serde_json::Value as Json;
 use tokio_rusqlite::Connection;
 
 use replicore_context::Context;
-use replicore_coordinator::ILeaseFactory;
 use replicore_coordinator::ILeaseRegistry;
 use replicore_coordinator::Lease;
+use replicore_coordinator::LeaseFactory;
 use replicore_coordinator::LeaseFactorySyncArgs;
 use replicore_coordinator::LeaseRegistry;
 use replicore_coordinator::LeaseRegistryArgs;
@@ -28,7 +28,7 @@ use self::conf::ConfError;
 pub struct Factory;
 
 #[async_trait::async_trait]
-impl ILeaseFactory for Factory {
+impl LeaseFactory for Factory {
     fn conf_check(&self, _: &Context, conf: &Json) -> Result<()> {
         serde_json::from_value::<Conf>(conf.clone()).context(ConfError)?;
         Ok(())
