@@ -296,13 +296,16 @@ impl<S: Clone + Send + Sync + 'static> LeaseFactory for LeaseFixtureFactory<S> {
 
 #[async_trait::async_trait]
 impl<S: Clone + Send + Sync + 'static> ILeaseRegistry for LeaseFixtureFactory<S> {
-    /// Create a [`Lease`] object with the correct backend.
     async fn lease<'a>(&self, args: LeaseRegistryArgs<'a>) -> Result<Lease> {
         let callback = (self.callback)();
         let state = self.init_state.clone();
         let lease = LeaseFixture::boxed(state, callback);
         let lease = Lease::new(args.context.clone(), args.lease_id, lease);
         Ok(lease)
+    }
+
+    async fn maintenance(&self, _: &Context) -> Result<()> {
+        Ok(())
     }
 }
 

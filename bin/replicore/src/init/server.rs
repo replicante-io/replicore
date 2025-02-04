@@ -199,11 +199,13 @@ impl Server {
         self.generic.run_server(
             &context,
             ActixServerRunArgs {
-                authenticator: injector.authenticator,
-                authoriser: injector.authoriser,
-                context: injector.context,
+                authenticator: injector.authenticator.clone(),
+                authoriser: injector.authoriser.clone(),
+                context: injector.context.clone(),
             },
         )?;
+        crate::exclusive::component(context.derive(), &injector, &mut self.generic.shutdown)
+            .await?;
         tasks_executor(
             context.derive(),
             &self.generic.conf.tasks,
@@ -212,7 +214,6 @@ impl Server {
             self.tasks,
         )
         .await?;
-        // TODO: Add other components
 
         // Run until user-requested exit or process error.
         self.generic.wait().await
@@ -244,7 +245,9 @@ pub async fn injector(
     let tasks = backends.tasks(&conf.tasks.service.backend)?;
 
     // Initialise all dependencies.
-    let coordinator = coordinator.registry(context, &conf.coordinator.options).await?;
+    let coordinator = coordinator
+        .registry(context, &conf.coordinator.options)
+        .await?;
     let events = events
         .events(EventsFactoryArgs {
             conf: &conf.events.options,

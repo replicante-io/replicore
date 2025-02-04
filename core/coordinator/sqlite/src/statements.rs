@@ -31,6 +31,17 @@ WHERE
     AND unixepoch() < coordinator_lease.expired_after
 ;"#;
 
+/// Maintenance SQL to delete records for expired leases.
+///
+/// For safety:
+///
+/// - Delete leases only if they expired at least 30 seconds ago.
+/// - Limit the amount of rows deleted at once to mitigate performance problems.
+const MAINTENANCE_SQL: &str = r#"
+DELETE FROM coordinator_lease
+WHERE (coordinator_lease.expired_after + 30) < unixepoch()
+;"#;
+
 const RENEW_SQL: &str = r#"
 UPDATE coordinator_lease
 SET
@@ -115,6 +126,36 @@ pub async fn expired_or_lost(
         .map_err(anyhow::Error::from)
 }
 
+/// Perform maintenance tasks on the SQLite database.
+///
+/// The maintenance procedure cleans up lease records for expired leases.
+/// This helps the DB remain clean and forget leases lost long ago.
+pub async fn maintenance(context: &Context, connection: &Connection) -> Result<()> {
+    // Execute maintenance SQL statement.
+    let (err_count, timer) = crate::telemetry::observe_op("lease.maintenance");
+    let trace = crate::telemetry::trace_op("lease.maintenance");
+    let count = connection
+        .call(move |connection| {
+            let count = connection.execute(MAINTENANCE_SQL, rusqlite::params![])?;
+            Ok(count)
+        })
+        .count_on_err(err_count)
+        .trace_on_err_with_status()
+        .with_context(trace)
+        .await
+        .map_err(anyhow::Error::from)?;
+    drop(timer);
+
+    if count > 0 {
+        slog::info!(
+            context.logger,
+            "SQLite coordinator maintenance deleted {} expired leases",
+            count
+        );
+    }
+    Ok(())
+}
+
 /// Renew a lease that is currently held.
 ///
 /// If the lease has been lost (renew after TTL or record missing) the function returns `false`.
@@ -153,12 +194,14 @@ pub async fn renew_primary(
 ///
 /// If the lease does not exist or the owner value does not match returns `false`.
 pub async fn step_down(
-    _: &Context,
+    context: &Context,
     connection: &Connection,
     lease_id: String,
     owner_value: String,
 ) -> Result<bool> {
-    // Attempt to renew the lease in the DB.
+    slog::debug!(context.logger, "SQLite lease step down"; "lease-id" => &lease_id);
+
+    // Attempt to remove the lease record from the DB.
     let (err_count, _timer) = crate::telemetry::observe_op("lease.stepDown");
     let trace = crate::telemetry::trace_op("lease.stepDown");
     connection

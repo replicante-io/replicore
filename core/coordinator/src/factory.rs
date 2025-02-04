@@ -29,6 +29,9 @@ pub trait LeaseFactory: Send + Sync {
 pub trait ILeaseRegistry: Send + Sync {
     /// Create a [`Lease`] object with the correct backend.
     async fn lease<'a>(&self, args: LeaseRegistryArgs<'a>) -> Result<Lease>;
+
+    /// Execute backend-specific maintenance of the coordinator service.
+    async fn maintenance(&self, context: &Context) -> Result<()>;
 }
 
 /// Arguments passed to the [`LeaseFactory`] client synchronisation method.
@@ -71,6 +74,11 @@ impl LeaseRegistry {
             lease_id: lease_id.into(),
         };
         self.inner.lease(args).await
+    }
+
+    /// Execute backend-specific maintenance of the coordinator service.
+    pub async fn maintenance(&self, context: &Context) -> Result<()> {
+        self.inner.maintenance(context).await
     }
 }
 

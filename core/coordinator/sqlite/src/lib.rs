@@ -86,7 +86,6 @@ pub struct Registry {
 
 #[async_trait::async_trait]
 impl ILeaseRegistry for Registry {
-    #[allow(unused_variables, unreachable_code)]
     async fn lease<'a>(&self, args: LeaseRegistryArgs<'a>) -> Result<Lease> {
         let connection = self.connection.clone();
         let backend = self::lease::LeaseBackend::new(
@@ -97,5 +96,9 @@ impl ILeaseRegistry for Registry {
         );
         let lease = Lease::new(args.context.clone(), args.lease_id, backend);
         Ok(lease)
+    }
+
+    async fn maintenance(&self, context: &Context) -> Result<()> {
+        crate::statements::maintenance(context, &self.connection).await
     }
 }

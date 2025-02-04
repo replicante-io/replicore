@@ -20,7 +20,7 @@ pub use self::set::Coordinator;
 /// For any [`State`] transition of the coordination lease the [`ICoordinated::transition`]
 /// async function is executed with the relevant states.
 #[async_trait::async_trait]
-pub trait ICoordinated: Sync {
+pub trait ICoordinated: Send + Sync {
     /// Execute the cluster exclusive logic in this method.
     ///
     /// The method is expected to continue running forever.

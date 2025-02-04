@@ -119,6 +119,7 @@ impl Injector {
                 backend: "unittest".into(),
                 options: Default::default(),
             },
+            exclusives: Default::default(),
             http: Default::default(),
             runtime: Default::default(),
             store: replicore_conf::BackendConf {

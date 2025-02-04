@@ -1,12 +1,12 @@
 //! Set of [`ICoordinated`] exclusive tasks to execute in primary/secondary mode
 //! depending on a coordination lease shared by the whole process.
-use std::time::Duration;
-
 use anyhow::Result;
 use futures::stream::FuturesUnordered;
 use futures::stream::TryStreamExt;
 use tokio::sync::watch::Receiver;
 use tokio::sync::watch::Sender;
+
+use replisdk::runtime::shutdown::ShutdownHandle;
 
 use replicore_context::Context;
 
@@ -41,15 +41,19 @@ impl Coordinator {
         CoordinatorBuilder::new(registry.into())
     }
 
-    /// Subscribe to coordinated lease state inspection and change notification.
+    /// Subscribe to coordinated lease state inspection and change notifications.
     pub fn inspector(&self) -> Receiver<State> {
         self.state_watcher.clone()
     }
 
     /// Run the coordination component, including election and failover handling.
-    pub async fn run(&self, context: &Context) -> Result<()> {
+    pub async fn run(&self, context: &Context, exit: ShutdownHandle) -> Result<()> {
         let mut lease = self.lease_registry.lease(context, &self.lease_id).await?;
         let mut state_last = *self.state_watcher.borrow();
+
+        // Aside from lease work, wait for an exit signal to step down cleanly.
+        let exit = exit.wait();
+        tokio::pin!(exit);
 
         loop {
             tokio::select! {
@@ -65,8 +69,16 @@ impl Coordinator {
                     // The running logic returns when the process should shut down.
                     return exec;
                 }
+
+                _ = &mut exit => break,
             }
         }
+
+        // Step down and exit, the delay is irrelevant as we are exiting but required by the API.
+        let delay = std::time::Duration::from_secs(30);
+        slog::info!(context.logger, "Coordinator set stepping down");
+        lease.step_down(delay).await?;
+        Ok(())
     }
 
     /// Drive execution of coordinated work based on the state of the lease.
@@ -118,9 +130,6 @@ pub struct CoordinatorBuilder {
     /// Factory to create the coordination [`Lease`] with.
     lease_registry: LeaseRegistry,
 
-    /// Time to leave before the coordinator lease expires, if not renewed.
-    lease_ttl: Duration,
-
     /// Set of [`ICoordinated`] tasks to coordinate.
     tasks: Vec<Box<dyn ICoordinated>>,
 }
@@ -138,17 +147,15 @@ impl CoordinatorBuilder {
         }
     }
 
-    /// Set the time to live for the coordination lease.
-    pub fn lease_ttl(mut self, ttl: Duration) -> Self {
-        self.lease_ttl = ttl;
-        self
+    /// Returns `true` if no task is registered with the coordinator.
+    pub fn is_empty(&self) -> bool {
+        self.tasks.is_empty()
     }
 
     /// Start a [`Coordinator`] build with the given lease factory.
     pub fn new(registry: LeaseRegistry) -> Self {
         CoordinatorBuilder {
             lease_registry: registry,
-            lease_ttl: Duration::from_secs(60),
             tasks: Vec::new(),
         }
     }
@@ -166,6 +173,8 @@ impl CoordinatorBuilder {
 
 #[cfg(test)]
 mod tests {
+    use replisdk::runtime::shutdown::ShutdownHandle;
+
     use crate::CoordinatedFixture;
     use crate::CoordinatedFixtureNotification;
     use crate::Coordinator;
@@ -177,12 +186,13 @@ mod tests {
     async fn init_to_primary() {
         let context = replicore_context::Context::fixture();
         let coordinated = CoordinatedFixture::default();
+        let (exit, _signal) = ShutdownHandle::fixture();
         let factory =
             LeaseFixture::factory((), || Box::new(FixedLeaseCallback::new(State::Primary)));
 
         let notifs = coordinated.notifications();
         let coordinator = Coordinator::builder(factory).task(coordinated).build();
-        coordinator.run(&context).await.unwrap();
+        coordinator.run(&context, exit).await.unwrap();
 
         let notifs = notifs.snapshot();
         assert_eq!(
@@ -198,12 +208,13 @@ mod tests {
     async fn init_to_secondary() {
         let context = replicore_context::Context::fixture();
         let coordinated = CoordinatedFixture::default();
+        let (exit, _signal) = ShutdownHandle::fixture();
         let factory =
             LeaseFixture::factory((), || Box::new(FixedLeaseCallback::new(State::Secondary)));
 
         let notifs = coordinated.notifications();
         let coordinator = Coordinator::builder(factory).task(coordinated).build();
-        coordinator.run(&context).await.unwrap();
+        coordinator.run(&context, exit).await.unwrap();
 
         let notifs = notifs.snapshot();
         assert_eq!(

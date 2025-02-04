@@ -10,7 +10,7 @@ use crate::ICoordinated;
 
 /// Interface for coordinated logic to execute repeatedly on a timer.
 #[async_trait::async_trait]
-pub trait ICoordinatedTimer: Sync {
+pub trait ICoordinatedTimer: Send + Sync {
     /// Execute an occurrence of the recursive logic.
     async fn tick(&self, context: &Context);
 }

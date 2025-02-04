@@ -11,6 +11,7 @@ pub mod init;
 // Modules available internally to the core platform.
 mod api;
 mod backends;
+mod exclusive;
 
 pub use self::cmd::Cli;
 

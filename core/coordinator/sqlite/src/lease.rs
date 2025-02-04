@@ -72,11 +72,11 @@ impl LeaseBackend {
 
         // Check the record persisted in the DB.
         if owner_value == self.value {
-            slog::info!(context.logger, "SQL lease is now PRIMARY"; "lease-id" => &self.id);
+            slog::debug!(context.logger, "SQL lease is now PRIMARY"; "lease-id" => &self.id);
             self.last_state = State::Primary;
             Ok(State::Primary)
         } else {
-            slog::info!(context.logger, "SQL lease is now SECONDARY"; "lease-id" => &self.id);
+            slog::debug!(context.logger, "SQL lease is now SECONDARY"; "lease-id" => &self.id);
             self.last_state = State::Secondary;
             Ok(State::Secondary)
         }

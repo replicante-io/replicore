@@ -55,6 +55,20 @@ events:
   #  # Minutes to wait between each run of the history clean loop.
   #  clean_delay: 1
 
+# Control Plane exclusive tasks.
+#
+# Exclusive tasks are executed only by one of the nodes configured to execute them.
+# They are primarily lightweight scheduling and maintenance tasks, and selecting a single node
+# to run them makes the overall system simpler to reason about.
+exclusives:
+  # The process is a candidate to run exclusive tasks.
+  candidate: true
+
+  # Intervals, in second, at which to run maintenance tasks.
+  maintenance:
+    # Interval, in second, at which to run distributed coordinator backend maintenance.
+    coordinator: 300
+
 # HTTP Server configuration.
 http:
   # Sets the maximum number of pending connections.

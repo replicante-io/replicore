@@ -7,6 +7,7 @@ use replisdk::runtime::telemetry::TelemetryConfig;
 
 use replicore_tasks::conf::TasksExecutorConf;
 
+use super::ExclusivesConf;
 use super::RuntimeConf;
 
 /// Global configuration for the Replicante Core process.
@@ -17,6 +18,10 @@ pub struct Conf {
 
     /// Events Streaming Platform service configuration.
     pub events: BackendConf,
+
+    /// Control Plane exclusive tasks.
+    #[serde(default)]
+    pub exclusives: ExclusivesConf,
 
     /// HTTP Server configuration.
     #[serde(default)]
