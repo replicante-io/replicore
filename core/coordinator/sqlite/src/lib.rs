@@ -9,6 +9,7 @@ use tokio_rusqlite::Connection;
 use replicore_context::Context;
 use replicore_coordinator::ILeaseRegistry;
 use replicore_coordinator::Lease;
+use replicore_coordinator::LeaseBuilder;
 use replicore_coordinator::LeaseFactory;
 use replicore_coordinator::LeaseFactorySyncArgs;
 use replicore_coordinator::LeaseRegistry;
@@ -86,7 +87,7 @@ pub struct Registry {
 
 #[async_trait::async_trait]
 impl ILeaseRegistry for Registry {
-    async fn lease<'a>(&self, args: LeaseRegistryArgs<'a>) -> Result<Lease> {
+    async fn lease_builder<'a>(&self, args: LeaseRegistryArgs<'a>) -> Result<LeaseBuilder> {
         let connection = self.connection.clone();
         let backend = self::lease::LeaseBackend::new(
             &args.lease_id,
@@ -94,7 +95,7 @@ impl ILeaseRegistry for Registry {
             self.watch_interval,
             connection,
         );
-        let lease = Lease::new(args.context.clone(), args.lease_id, backend);
+        let lease = Lease::builder(args.context.clone(), args.lease_id, backend);
         Ok(lease)
     }
 

@@ -30,7 +30,7 @@ impl GenericInit {
     /// Build a server from the loaded configuration.
     pub async fn configure(conf: Conf) -> Result<Self> {
         let telemetry = telemetry(conf.telemetry.clone()).await?;
-        let api = ActixServer::new(conf.http.clone(), telemetry.metrics.clone());
+        let api = ActixServer::new(conf.http.server.clone(), telemetry.metrics.clone());
         let shutdown = shutdown_manager(telemetry.logger.clone(), &conf);
         let server = Self {
             api,
@@ -87,7 +87,7 @@ impl GenericInit {
         self.shutdown.watch_actix(server, ());
         slog::info!(
             context.logger, "API server listening for connection";
-            "address" => &self.conf.http.bind,
+            "address" => &self.conf.http.server.bind,
         );
         Ok(self)
     }

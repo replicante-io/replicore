@@ -5,6 +5,7 @@ use replisdk::runtime::shutdown::ShutdownManagerBuilder;
 
 use replicore_context::ContextBuilder;
 use replicore_coordinator::Coordinator;
+use replicore_coordinator::LeaseHandle;
 use replicore_injector::Injector;
 
 mod maintenance;
@@ -19,7 +20,7 @@ pub async fn component(
     context: ContextBuilder,
     injector: &Injector,
     shutdown: &mut ShutdownManagerBuilder<()>,
-) -> Result<()> {
+) -> Result<Option<LeaseHandle>> {
     // Customise the root context for the tasks executor.
     let context = context.log_values(slog::o!("component" => "tasks")).build();
 
@@ -30,12 +31,13 @@ pub async fn component(
             context.logger,
             "Process is not a candidate for exclusive tasks, skipping coordinator"
         );
-        return Ok(());
+        return Ok(None);
     }
 
     // Build the coordinator set.
-    let coordinator =
-        Coordinator::builder(injector.leases.clone()).task(self::maintenance::Coordinator::task(
+    let coordinator = Coordinator::builder(&context, &injector.leases)
+        .await?
+        .task(self::maintenance::Coordinator::task(
             conf.maintenance.coordinator,
             injector.leases.clone(),
             shutdown.shutdown_handle(),
@@ -47,15 +49,16 @@ pub async fn component(
             context.logger,
             "Exclusive tasks coordinator has no registered work, skipping"
         );
-        return Ok(());
+        return Ok(None);
     }
 
     // Execute the coordinator in the background until shutdown.
+    let handle = coordinator.handle();
     let coordinator = coordinator.build();
     let exit = shutdown.shutdown_handle();
     shutdown.watch_tokio(tokio::spawn(async move {
         slog::info!(context.logger, "Started exclusive tasks coordinator");
         coordinator.run(&context, exit).await
     }));
-    Ok(())
+    Ok(Some(handle))
 }

@@ -17,6 +17,8 @@ pub use self::factory::LeaseRegistry;
 pub use self::factory::LeaseRegistryArgs;
 pub use self::lease::ILease;
 pub use self::lease::Lease;
+pub use self::lease::LeaseBuilder;
+pub use self::lease::LeaseHandle;
 pub use self::lease::State;
 pub use self::time::ICoordinatedTimer;
 pub use self::time::Timer;

@@ -32,7 +32,7 @@ async fn step_down_happens() {
     let delay = std::time::Duration::from_secs(1);
     lease.step_down(delay).await.unwrap();
     let state = lease.watch().await.unwrap();
-    assert_eq!(state, State::Lost);
+    assert_eq!(state, State::Idle);
 
     // Confirm the stab was watched and stepped down.
     drop(lease);
@@ -63,7 +63,7 @@ async fn step_down_is_temporary() {
     let delay = std::time::Duration::from_millis(10);
     lease.step_down(delay).await.unwrap();
     let state = lease.watch().await.unwrap();
-    assert_eq!(state, State::Lost);
+    assert_eq!(state, State::Idle);
 
     tokio::time::sleep(delay * 2).await;
     let state = lease.watch().await.unwrap();
@@ -114,12 +114,10 @@ async fn watch_filters_same_state_notifications() {
     let state = lease.watch().await.unwrap();
     assert_eq!(state, State::Primary);
     let state = lease.watch().await.unwrap();
-    assert_eq!(state, State::Lost);
-    let state = lease.watch().await.unwrap();
     assert_eq!(state, State::Secondary);
     drop(lease);
 
-    // Confirm the stab was watched 5 times (2 Primary + 2 Secondary).
+    // Confirm the stab was watched 4 times (3 Primary + 1 Secondary).
     let messages = notifs.snapshot();
     assert_eq!(
         messages,
@@ -128,7 +126,63 @@ async fn watch_filters_same_state_notifications() {
             LeaseFixtureNotification::Watched(State::Primary),
             LeaseFixtureNotification::Watched(State::Primary),
             LeaseFixtureNotification::Watched(State::Secondary),
-            LeaseFixtureNotification::Watched(State::Secondary),
         ]
     );
+}
+
+#[tokio::test]
+async fn lease_handle_updates() {
+    let context = Context::fixture();
+    let lease = LeaseFixture::fixed(State::Primary);
+
+    let mut lease = Lease::new(context, "test", lease);
+    let handle = lease.handle();
+    assert_eq!(handle.state(), State::Idle);
+
+    let state = tokio::time::timeout(std::time::Duration::from_millis(100), lease.watch())
+        .await
+        .unwrap()
+        .unwrap();
+    assert_eq!(state, State::Primary);
+    assert_eq!(handle.state(), State::Primary);
+
+    lease
+        .step_down(std::time::Duration::from_secs(2))
+        .await
+        .unwrap();
+    assert_eq!(handle.state(), State::Primary);
+
+    let state = tokio::time::timeout(std::time::Duration::from_millis(100), lease.watch())
+        .await
+        .unwrap()
+        .unwrap();
+    assert_eq!(state, State::Idle);
+    assert_eq!(handle.state(), State::Idle);
+}
+
+#[tokio::test]
+async fn lease_handle_step_down() {
+    let context = Context::fixture();
+    let lease = LeaseFixture::fixed(State::Primary);
+
+    let mut lease = Lease::new(context, "test", lease);
+    let handle = lease.handle();
+    assert_eq!(handle.state(), State::Idle);
+
+    let state = tokio::time::timeout(std::time::Duration::from_millis(100), lease.watch())
+        .await
+        .unwrap()
+        .unwrap();
+    assert_eq!(state, State::Primary);
+
+    handle
+        .step_down(std::time::Duration::from_secs(2))
+        .await
+        .unwrap();
+    let state = tokio::time::timeout(std::time::Duration::from_millis(100), lease.watch())
+        .await
+        .unwrap()
+        .unwrap();
+    assert_eq!(state, State::Idle);
+    assert_eq!(handle.state(), State::Idle);
 }

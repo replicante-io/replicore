@@ -196,6 +196,19 @@ impl Server {
         let injector = Injector::global();
 
         // Start execution of all process components.
+        let lease =
+            crate::exclusive::component(context.derive(), &injector, &mut self.generic.shutdown)
+                .await?;
+        if let Some(lease) = lease {
+            if self.generic.conf.http.control_exclusives_lease {
+                self.generic.api.with_config(move |config| {
+                    let service =
+                        crate::api::lease::service("/proc/lease/exclusive", lease.clone());
+                    config.service(service);
+                });
+            }
+        }
+
         self.generic.run_server(
             &context,
             ActixServerRunArgs {
@@ -204,8 +217,6 @@ impl Server {
                 context: injector.context.clone(),
             },
         )?;
-        crate::exclusive::component(context.derive(), &injector, &mut self.generic.shutdown)
-            .await?;
         tasks_executor(
             context.derive(),
             &self.generic.conf.tasks,

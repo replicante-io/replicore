@@ -8,6 +8,8 @@ use std::time::Duration;
 use anyhow::Result;
 use serde::Deserialize;
 use serde::Serialize;
+use tokio::sync::watch::Receiver;
+use tokio::sync::watch::Sender;
 use tokio::task::JoinHandle;
 
 use replicore_context::Context;
@@ -46,6 +48,12 @@ pub struct Lease {
     /// Communication channels with the Lease control task.
     channels: self::control::ControlChannels,
 
+    /// Handle to step down the lease or create new handles.
+    handle: LeaseHandle,
+
+    /// Watch channel sender to update the state seen by [`LeaseHandle`]s.
+    handle_updater: Sender<State>,
+
     /// Unique identified for the lease.
     id: String,
 
@@ -63,38 +71,34 @@ impl Drop for Lease {
 }
 
 impl Lease {
+    /// Create a builder to enable advanced lease features.
+    pub fn builder<L, S>(context: Context, id: S, lease: L) -> LeaseBuilder
+    where
+        L: ILease + 'static,
+        S: Into<String>,
+    {
+        LeaseBuilder::new(context, id, lease)
+    }
+
+    /// Return a handle to inspect and control the [`Lease`].
+    pub fn handle(&self) -> LeaseHandle {
+        self.handle.clone()
+    }
+
+    /// Create a lease and begin attempts to acquire it immediately.
     pub fn new<L, S>(context: Context, id: S, lease: L) -> Self
     where
         L: ILease + 'static,
         S: Into<String>,
     {
-        let id = id.into();
-        let lease = Box::new(lease);
-
-        let (channels, state) = self::control::ControlState::new(lease);
-        let task = tokio::spawn(self::control::task(context, state));
-
-        Lease {
-            channels,
-            id,
-            last_state: State::Idle,
-            task,
-        }
+        Self::builder(context, id, lease).build()
     }
 
     /// Request the lease to be released and not re-acquired for at least `delay`.
     ///
     /// This is a no-op if the lease does not hold the primary role.
     pub async fn step_down(&self, delay: Duration) -> Result<()> {
-        let (response_send, response) = tokio::sync::oneshot::channel();
-        let command = self::control::ControlCommands::StepDown(delay, response_send);
-        if self.channels.commands.send(command).await.is_err() {
-            panic!("lease '{}' control task lost!", self.id);
-        }
-        match response.await {
-            Err(_) => panic!("lease '{}' control task lost!", self.id),
-            Ok(response) => response,
-        }
+        self.handle.step_down(delay).await
     }
 
     /// Watch the lease for state changes.
@@ -115,17 +119,119 @@ impl Lease {
                 continue;
             }
 
-            // TODO: Remove this and make it a backend responsibly to manage it.
-            //       With the current implementation a backend that goes Primary -> Secondary
-            //       would go Primary -> Lost and never move to Secondary (because watch waits).
-            // If we go from primary to another state we lost the lease so update to `Lost`.
-            let mut state = state;
-            if matches!(self.last_state, State::Primary) && !matches!(state, State::Primary) {
-                state = State::Lost;
-            }
-
+            let _ = self.handle_updater.send(state);
             self.last_state = state;
             return Ok(state);
+        }
+    }
+}
+
+/// Incrementally build a [`Lease`] without starting the control task until the end.
+pub struct LeaseBuilder {
+    /// Communication channels with the Lease control task.
+    channels: self::control::ControlChannels,
+
+    /// Operation context sent to the control task when it is started.
+    context: Context,
+
+    /// Handle to create new lease handles from.
+    handle: LeaseHandle,
+
+    /// Watch channel sender to update the state seen by [`LeaseHandle`]s.
+    handle_updater: Sender<State>,
+
+    /// Unique identified for the lease.
+    id: String,
+
+    /// Lease control state sent to the control task when it is started.
+    state: self::control::ControlState,
+}
+
+impl LeaseBuilder {
+    fn new<L, S>(context: Context, id: S, lease: L) -> LeaseBuilder
+    where
+        L: ILease + 'static,
+        S: Into<String>,
+    {
+        // Prepare lease control elements.
+        let id = id.into();
+        let lease = Box::new(lease);
+        let (channels, state) = self::control::ControlState::new(lease);
+
+        // Prepare lease handling elements.
+        let (handle_updater, handle_watcher) = tokio::sync::watch::channel(State::Idle);
+        let handle = LeaseHandle {
+            commands: channels.commands.clone(),
+            id: id.clone(),
+            state: handle_watcher,
+        };
+
+        // Collect everything needed to build a lease.
+        LeaseBuilder {
+            channels,
+            context,
+            handle,
+            handle_updater,
+            id,
+            state,
+        }
+    }
+
+    /// Build a [`Lease`] and begin attempts to acquire it immediately.
+    pub fn build(self) -> Lease {
+        let task = tokio::spawn(self::control::task(self.context, self.state));
+        Lease {
+            channels: self.channels,
+            handle: self.handle,
+            handle_updater: self.handle_updater,
+            id: self.id,
+            last_state: State::Idle,
+            task,
+        }
+    }
+
+    /// Return a handle to inspect and control the [`Lease`] once it is built.
+    pub fn handle(&self) -> LeaseHandle {
+        self.handle.clone()
+    }
+}
+
+/// Handle to inspect and step down a [`Lease`] without requiring ownership of it.
+#[derive(Clone)]
+pub struct LeaseHandle {
+    /// Channel to send control commands to the lease managing task.
+    commands: tokio::sync::mpsc::Sender<self::control::ControlCommands>,
+
+    /// Unique identified for the lease.
+    id: String,
+
+    /// Receive state updates and store the most recent state.
+    state: Receiver<State>,
+}
+
+impl LeaseHandle {
+    /// Get the identifier of the corresponding [`Lease`].
+    pub fn id(&self) -> &str {
+        &self.id
+    }
+
+    /// Get the currently known state of the corresponding [`Lease`].
+    pub fn state(&self) -> State {
+        *self.state.borrow()
+    }
+
+    /// Request the lease to be released and not re-acquired for at least `delay`.
+    ///
+    /// This is a no-op if the lease does not hold the primary role.
+    pub async fn step_down(&self, delay: Duration) -> Result<()> {
+        let (response_send, response) = tokio::sync::oneshot::channel();
+        let command = self::control::ControlCommands::StepDown(delay, response_send);
+        if self.commands.send(command).await.is_err() {
+            panic!("lease '{}' control task lost", self.id);
+        }
+        match response.await {
+            Err(_) => panic!("lease '{}' control task lost", self.id),
+            Ok(response) => response,
         }
     }
 }

@@ -84,6 +84,18 @@ http:
   # A value of zero disables the timeout.
   client_request_timeout: ~
 
+  # Enable API endpoints to inspect and manage the exclusive tasks lease.
+  #
+  # When the endpoints are enabled:
+  #
+  # - The exclusive tasks lease state is available via GET to `/proc/lease/exclusive`.
+  # - A step down operation can be triggered via POST to `/proc/lease/exclusive/step-down`.
+  #   The re-election delay, in seconds, must be provided as a query parameter.
+  #
+  # By default lease control is not enabled as attackers can use it to cause a denial of service.
+  # This default is expected to change as the authentication and authorization logic improves.
+  control_exclusives_lease: false
+
   # Server preference for how long to keep connections alive when idle.
   #
   # A value of zero disables keep alive and connections will be

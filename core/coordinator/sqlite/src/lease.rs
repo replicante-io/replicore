@@ -157,7 +157,9 @@ impl ILease for LeaseBackend {
             self.value.clone(),
         )
         .await?;
-        self.last_state = State::Idle;
+        // Move the lease to candidate state so the next call to `watch` can set the
+        // proper state based on our desire to be a candidate or not.
+        self.last_state = State::Candidate;
         Ok(())
     }
 
@@ -634,7 +636,12 @@ VALUES (?1, ?2, ?3, ?4)
             .expect("SQLease to return a state");
         assert_eq!(state, State::Primary);
 
-        // Stop being candidate and move to idle.
+        // Stop being primary and move to idle (passing though candidate as a result of step down).
+        let state = lease
+            .watch(&context, false)
+            .await
+            .expect("SQLease to return a state");
+        assert_eq!(state, State::Candidate);
         let state = lease
             .watch(&context, false)
             .await
@@ -665,7 +672,7 @@ VALUES (?1, ?2, ?3, ?4)
             .watch(&context, false)
             .await
             .expect("SQLease to return a state");
-        assert_eq!(state, State::Idle);
+        assert_eq!(state, State::Candidate);
 
         // Check lease record from the DB.
         connection

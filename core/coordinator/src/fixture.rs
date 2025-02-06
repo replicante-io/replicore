@@ -12,6 +12,7 @@ use crate::ICoordinated;
 use crate::ILease;
 use crate::ILeaseRegistry;
 use crate::Lease;
+use crate::LeaseBuilder;
 use crate::LeaseFactory;
 use crate::LeaseFactorySyncArgs;
 use crate::LeaseRegistry;
@@ -296,11 +297,11 @@ impl<S: Clone + Send + Sync + 'static> LeaseFactory for LeaseFixtureFactory<S> {
 
 #[async_trait::async_trait]
 impl<S: Clone + Send + Sync + 'static> ILeaseRegistry for LeaseFixtureFactory<S> {
-    async fn lease<'a>(&self, args: LeaseRegistryArgs<'a>) -> Result<Lease> {
+    async fn lease_builder<'a>(&self, args: LeaseRegistryArgs<'a>) -> Result<LeaseBuilder> {
         let callback = (self.callback)();
         let state = self.init_state.clone();
         let lease = LeaseFixture::boxed(state, callback);
-        let lease = Lease::new(args.context.clone(), args.lease_id, lease);
+        let lease = Lease::builder(args.context.clone(), args.lease_id, lease);
         Ok(lease)
     }
 

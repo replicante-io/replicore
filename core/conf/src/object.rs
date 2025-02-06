@@ -25,7 +25,7 @@ pub struct Conf {
 
     /// HTTP Server configuration.
     #[serde(default)]
-    pub http: ServerConfig,
+    pub http: HttpConf,
 
     /// Process runtime configuration.
     #[serde(default)]
@@ -51,6 +51,33 @@ pub struct BackendConf {
     /// Backend specific configuration options.
     #[serde(default, flatten)]
     pub options: serde_json::Value,
+}
+
+/// HTTP Server configuration.
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct HttpConf {
+    /// Enable API endpoints to inspect and manage the exclusive tasks lease.
+    #[serde(default = "HttpConf::default_control_exclusives_lease")]
+    pub control_exclusives_lease: bool,
+
+    /// HTTP Server configuration.
+    #[serde(flatten, default)]
+    pub server: ServerConfig,
+}
+
+impl HttpConf {
+    fn default_control_exclusives_lease() -> bool {
+        false
+    }
+}
+
+impl Default for HttpConf {
+    fn default() -> Self {
+        HttpConf {
+            control_exclusives_lease: HttpConf::default_control_exclusives_lease(),
+            server: ServerConfig::default(),
+        }
+    }
 }
 
 /// Configuration for background tasks execution and backend service.

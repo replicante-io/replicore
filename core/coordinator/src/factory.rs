@@ -7,6 +7,7 @@ use serde_json::Value as Json;
 use replicore_context::Context;
 
 use crate::Lease;
+use crate::LeaseBuilder;
 
 /// Interface to create a lease registry.
 #[async_trait::async_trait]
@@ -27,8 +28,8 @@ pub trait LeaseFactory: Send + Sync {
 /// Interface to create new leases.
 #[async_trait::async_trait]
 pub trait ILeaseRegistry: Send + Sync {
-    /// Create a [`Lease`] object with the correct backend.
-    async fn lease<'a>(&self, args: LeaseRegistryArgs<'a>) -> Result<Lease>;
+    /// Create a [`LeaseBuilder`] object with the correct backend.
+    async fn lease_builder<'a>(&self, args: LeaseRegistryArgs<'a>) -> Result<LeaseBuilder>;
 
     /// Execute backend-specific maintenance of the coordinator service.
     async fn maintenance(&self, context: &Context) -> Result<()>;
@@ -69,11 +70,22 @@ impl LeaseRegistry {
     where
         S: Into<String>,
     {
+        let lease = self.lease_builder(context, lease_id).await?;
+        Ok(lease.build())
+    }
+
+    /// Create a [`LeaseBuilder`] object with the correct backend.
+    ///
+    /// The lease will not begin operating until it is fully built with [`LeaseBuilder::build`].
+    pub async fn lease_builder<S>(&self, context: &Context, lease_id: S) -> Result<LeaseBuilder>
+    where
+        S: Into<String>,
+    {
         let args = LeaseRegistryArgs {
             context,
             lease_id: lease_id.into(),
         };
-        self.inner.lease(args).await
+        self.inner.lease_builder(args).await
     }
 
     /// Execute backend-specific maintenance of the coordinator service.

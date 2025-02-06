@@ -12,6 +12,7 @@ use replicore_injector::Injector;
 pub mod apply;
 pub mod constants;
 pub mod context;
+pub mod lease;
 pub mod object;
 
 /// Successful (200) API response with no data returned to the client.
