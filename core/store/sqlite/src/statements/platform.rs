@@ -23,7 +23,7 @@ WHERE
 ;"#;
 
 const LIST_SQL: &str = r#"
-SELECT name, active
+SELECT ns_id, name, active
 FROM store_platform
 WHERE ns_id = ?1
 ORDER BY name ASC;
@@ -37,12 +37,32 @@ WHERE
     AND name = ?2
 ;"#;
 
+const PENDING_DISCOVERY_SQL: &str = r#"
+SELECT ns_id, name, active
+FROM store_platform
+WHERE
+    active = TRUE
+    AND (
+        next_discovery IS NULL
+        OR next_discovery < unixepoch()
+    )
+;"#;
+
 const PERSIST_SQL: &str = r#"
 INSERT INTO store_platform (ns_id, name, platform)
 VALUES (?1, ?2, ?3)
 ON CONFLICT(ns_id, name)
 DO UPDATE SET
-    platform=?3
+    platform = ?3,
+    next_discovery = NULL
+;"#;
+
+const UPDATE_DISCOVERY_SQL: &str = r#"
+UPDATE store_platform
+SET next_discovery = unixepoch() + discovery_interval
+WHERE
+    ns_id = ?1
+    AND name = ?2
 ;"#;
 
 /// Delete a platform from the store, ignoring missing platforms.
@@ -81,7 +101,8 @@ pub async fn list(
             while let Some(row) = rows.next()? {
                 let active: bool = row.get("active")?;
                 let name: String = row.get("name")?;
-                let item = PlatformEntry { active, name };
+                let ns_id: String = row.get("ns_id")?;
+                let item = PlatformEntry { active, name, ns_id };
                 items.push(item);
             }
             Ok(items)
@@ -131,6 +152,37 @@ pub async fn lookup(
     }
 }
 
+/// Iterate over active platforms where a next discovery time is in the past or unset.
+pub async fn pending_discovery(
+    _: &Context,
+    connection: &Connection,
+) -> Result<PlatformEntryStream> {
+    let (err_count, _timer) = crate::telemetry::observe_op("platform.pendingDiscovery");
+    let trace = crate::telemetry::trace_op("platform.pendingDiscovery");
+    let items = connection
+        .call(move |connection| {
+            let mut statement = connection.prepare_cached(PENDING_DISCOVERY_SQL)?;
+            let mut rows = statement.query([])?;
+
+            let mut items = Vec::new();
+            while let Some(row) = rows.next()? {
+                let active: bool = row.get("active")?;
+                let name: String = row.get("name")?;
+                let ns_id: String = row.get("ns_id")?;
+                let item = PlatformEntry { active, name, ns_id };
+                items.push(item);
+            }
+            Ok(items)
+        })
+        .count_on_err(err_count)
+        .trace_on_err_with_status()
+        .with_context(trace)
+        .await?;
+
+    let items = futures::stream::iter(items).map(Ok).boxed();
+    Ok(items)
+}
+
 /// Persist a new or updated record into the store.
 pub async fn persist(_: &Context, connection: &Connection, platform: Platform) -> Result<()> {
     let record = replisdk::utils::encoding::encode_serde(&platform)?;
@@ -148,6 +200,30 @@ pub async fn persist(_: &Context, connection: &Connection, platform: Platform) -
         .trace_on_err_with_status()
         .with_context(trace)
         .await?;
+    Ok(())
+}
+
+/// TODO
+pub async fn update_discovery(
+    _: &Context,
+    connection: &Connection,
+    platform_id: NamespacedResourceID,
+) -> Result<()> {
+    let (err_count, _timer) = crate::telemetry::observe_op("platform.updateDiscovery");
+    let trace = crate::telemetry::trace_op("platform.updateDiscovery");
+    connection
+        .call(move |connection| {
+            connection.execute(
+                UPDATE_DISCOVERY_SQL,
+                rusqlite::params![platform_id.ns_id, platform_id.name]
+            )?;
+            Ok(())
+        })
+        .count_on_err(err_count)
+        .trace_on_err_with_status()
+        .with_context(trace)
+        .await?;
+
     Ok(())
 }
 

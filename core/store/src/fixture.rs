@@ -220,6 +220,7 @@ impl StoreBackend for StoreFixture {
                     let item = PlatformEntry {
                         active: platform.active,
                         name: platform.name.clone(),
+                        ns_id: platform.ns_id.clone(),
                     };
                     items.push(item);
                 }
@@ -286,6 +287,12 @@ impl StoreBackend for StoreFixture {
                 let key = (query.ns_id, query.name);
                 let platform = store.platforms.get(&key).cloned();
                 Ok(QueryResponses::Platform(platform))
+            }
+            QueryOps::PlatformsPendingDiscovery => {
+                // TODO: implement platform discovery tracking
+                let items = vec![];
+                let items = futures::stream::iter(items).map(Ok).boxed();
+                Ok(QueryResponses::PlatformEntries(items))
             }
             QueryOps::UnfinishedNAction(cluster) => {
                 let actions: Vec<_> = store
@@ -382,6 +389,9 @@ impl StoreBackend for StoreFixture {
             PersistOps::Platform(platform) => {
                 let key = (platform.ns_id.clone(), platform.name.clone());
                 store.platforms.insert(key, platform);
+            }
+            PersistOps::PlatformDiscovered(_) => {
+                // TODO: implement platform discovery tracking
             }
             PersistOps::Shard(shard) => {
                 let key = (

@@ -16,6 +16,10 @@ pub struct ExclusivesConf {
     /// Intervals, in second, at which to run maintenance tasks.
     #[serde(default)]
     pub maintenance: MaintenanceIntervals,
+
+    /// Intervals, in second, at which to run scheduling tasks.
+    #[serde(default)]
+    pub schedulers: SchedulerIntervals,
 }
 
 impl Default for ExclusivesConf {
@@ -23,6 +27,7 @@ impl Default for ExclusivesConf {
         Self {
             candidate: Self::default_candidate(),
             maintenance: Default::default(),
+            schedulers: Default::default(),
         }
     }
 }
@@ -52,5 +57,27 @@ impl Default for MaintenanceIntervals {
 impl MaintenanceIntervals {
     fn default_coordinator() -> u64 {
         300
+    }
+}
+
+/// Intervals, in second, at which to run scheduling tasks.
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SchedulerIntervals {
+    /// Interval, in second, at which to check for platform discoveries to schedule.
+    #[serde(default = "SchedulerIntervals::default_platform_discovery")]
+    pub platform_discovery: u64,
+}
+
+impl Default for SchedulerIntervals {
+    fn default() -> Self {
+        Self {
+            platform_discovery: Self::default_platform_discovery(),
+        }
+    }
+}
+
+impl SchedulerIntervals {
+    fn default_platform_discovery() -> u64 {
+        15
     }
 }

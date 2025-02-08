@@ -9,6 +9,7 @@ use replicore_coordinator::LeaseHandle;
 use replicore_injector::Injector;
 
 mod maintenance;
+mod schedulers;
 
 /// Start a tokio task executing a [`Coordinator`] for the process.
 ///
@@ -40,6 +41,12 @@ pub async fn component(
         .task(self::maintenance::Coordinator::task(
             conf.maintenance.coordinator,
             injector.leases.clone(),
+            shutdown.shutdown_handle(),
+        ))
+        .task(self::schedulers::Discovery::task(
+            conf.schedulers.platform_discovery,
+            injector.store.clone(),
+            injector.tasks.clone(),
             shutdown.shutdown_handle(),
         ));
 

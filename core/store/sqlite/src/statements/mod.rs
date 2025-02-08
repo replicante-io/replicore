@@ -134,6 +134,10 @@ impl StoreBackend for SQLiteStore {
                 let pl = self::platform::lookup(context, &self.connection, pl).await?;
                 Ok(QueryResponses::Platform(pl))
             }
+            QueryOps::PlatformsPendingDiscovery => {
+                let items = self::platform::pending_discovery(context, &self.connection).await?;
+                Ok(QueryResponses::PlatformEntries(items))
+            }
             QueryOps::UnfinishedNAction(cluster) => {
                 let list = self::naction::unfinished(context, &self.connection, cluster).await?;
                 Ok(QueryResponses::NActions(list))
@@ -190,6 +194,11 @@ impl StoreBackend for SQLiteStore {
             PersistOps::Platform(pl) => self::platform::persist(context, &self.connection, pl)
                 .await
                 .map(|_| PersistResponses::Success),
+            PersistOps::PlatformDiscovered(platform_id) => {
+                self::platform::update_discovery(context, &self.connection, platform_id)
+                    .await
+                    .map(|_| PersistResponses::Success)
+            }
             PersistOps::Shard(shard) => self::shards::persist(context, &self.connection, shard)
                 .await
                 .map(|_| PersistResponses::Success),

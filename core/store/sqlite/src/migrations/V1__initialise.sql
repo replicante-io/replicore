@@ -119,6 +119,11 @@ CREATE TABLE IF NOT EXISTS store_platform(
 
   -- Virtual columns form index and optimised queries.
   active BOOLEAN NOT NULL AS (json_extract(platform, '$.active')),
+  discovery_interval BOOLEAN NOT NULL AS (json_extract(platform, '$.discovery.interval')),
+
+  -- Sore only columns for optimised indexes and queries.
+  -- These are not part of the application data model and exist only in the DB implementation.
+  next_discovery REAL DEFAULT NULL,
 
   -- Table constraints
   PRIMARY KEY(ns_id, name)

@@ -69,6 +69,11 @@ exclusives:
     # Interval, in second, at which to run distributed coordinator backend maintenance.
     coordinator: 300
 
+  # Intervals, in second, at which to run scheduling tasks.
+  schedulers:
+    # Interval, in second, at which to check for platform discoveries to schedule.
+    platform_discovery: 15
+
 # HTTP Server configuration.
 http:
   # Sets the maximum number of pending connections.

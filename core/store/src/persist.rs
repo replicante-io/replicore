@@ -13,6 +13,7 @@ use replicore_cluster_models::ConvergeState;
 use replicore_cluster_models::OrchestrateReport;
 
 use self::seal::SealPersistOp;
+use super::ids::NamespacedResourceID;
 use super::ids::NodeID;
 
 /// Internal trait to enable persist operations on the persistent store.
@@ -53,6 +54,9 @@ pub enum PersistOps {
     /// Persist a platform record.
     Platform(Platform),
 
+    /// Update the next discovery time for a platform record.
+    PlatformDiscovered(NamespacedResourceID),
+
     /// Persist a cluster node's Shard record.
     Shard(Shard),
 
@@ -69,10 +73,26 @@ pub enum PersistResponses {
 // --- High level query operations --- //
 /// Cancel all node actions for a specific node, generally issued before a node is deleted.
 pub struct NodeCancelAllActions(pub NodeID);
-
 impl From<NodeID> for NodeCancelAllActions {
     fn from(value: NodeID) -> Self {
         NodeCancelAllActions(value)
+    }
+}
+
+/// Update the next discovery time for a platform record.
+pub struct PlatformDiscovered(pub NamespacedResourceID);
+impl From<NamespacedResourceID> for PlatformDiscovered {
+    fn from(value: NamespacedResourceID) -> Self {
+        PlatformDiscovered(value)
+    }
+}
+impl From<replisdk::core::models::api::PlatformEntry> for PlatformDiscovered {
+    fn from(value: replisdk::core::models::api::PlatformEntry) -> Self {
+        let id = NamespacedResourceID {
+            name: value.name,
+            ns_id: value.ns_id,
+        };
+        PlatformDiscovered(id)
     }
 }
 
@@ -181,6 +201,16 @@ impl SealPersistOp for Platform {}
 impl From<Platform> for PersistOps {
     fn from(value: Platform) -> Self {
         PersistOps::Platform(value)
+    }
+}
+
+impl PersistOp for PlatformDiscovered {
+    type Response = ();
+}
+impl SealPersistOp for PlatformDiscovered {}
+impl From<PlatformDiscovered> for PersistOps {
+    fn from(value: PlatformDiscovered) -> Self {
+        PersistOps::PlatformDiscovered(value.0)
     }
 }
 

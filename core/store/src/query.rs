@@ -1,4 +1,6 @@
 //! RepliCore Control Plane persistent store operations to query records.
+use std::pin::Pin;
+
 use anyhow::Result;
 use futures::Stream;
 use uuid::Uuid;
@@ -77,11 +79,16 @@ pub enum QueryOps {
     /// Query an orchestrator action by namespace, cluster and action ID.
     OAction(LookupOAction),
 
-    /// Query a cluster latest orchestate report by Namespace and Cluster ID.
+    /// Query a cluster latest orchestrate report by Namespace and Cluster ID.
     OrchestrateReport(NamespacedResourceID),
 
     /// Query a platform by Namespace ID and Resource Name.
     Platform(NamespacedResourceID),
+
+    /// Iterate over active platforms for which a discovery task should be scheduled.
+    ///
+    /// See [`PlatformsPendingDiscovery`] for more details.
+    PlatformsPendingDiscovery,
 
     /// Iterate over all unfinished node actions for a cluster.
     UnfinishedNAction(NamespacedResourceID),
@@ -152,37 +159,37 @@ pub enum QueryResponses {
 
 // --- Operations return types --- //
 /// Alias for a heap-allocated [`Stream`] of cluster spec summaries.
-pub type ClusterSpecEntryStream = std::pin::Pin<Box<dyn Stream<Item = Result<ClusterSpecEntry>>>>;
+pub type ClusterSpecEntryStream = Pin<Box<dyn Stream<Item = Result<ClusterSpecEntry>> + Send>>;
 
 /// Alias for a heap-allocated [`Stream`] of node actions.
-pub type NActionStream = std::pin::Pin<Box<dyn Stream<Item = Result<NAction>> + Send>>;
+pub type NActionStream = Pin<Box<dyn Stream<Item = Result<NAction>> + Send>>;
 
 /// Alias for a heap-allocated [`Stream`] of node action summaries.
-pub type NActionEntryStream = std::pin::Pin<Box<dyn Stream<Item = Result<NActionEntry>>>>;
+pub type NActionEntryStream = Pin<Box<dyn Stream<Item = Result<NActionEntry>> + Send>>;
 
 /// Alias for a heap-allocated [`Stream`] of namespace summaries.
-pub type NamespaceEntryStream = std::pin::Pin<Box<dyn Stream<Item = Result<NamespaceEntry>>>>;
+pub type NamespaceEntryStream = Pin<Box<dyn Stream<Item = Result<NamespaceEntry>> + Send>>;
 
 /// Alias for a heap-allocated [`Stream`] of cluster nodes.
-pub type NodesStream = std::pin::Pin<Box<dyn Stream<Item = Result<Node>> + Send>>;
+pub type NodesStream = Pin<Box<dyn Stream<Item = Result<Node>> + Send>>;
 
 /// Alias for a heap-allocated [`Stream`] of orchestrator actions.
-pub type OActionStream = std::pin::Pin<Box<dyn Stream<Item = Result<OAction>> + Send>>;
+pub type OActionStream = Pin<Box<dyn Stream<Item = Result<OAction>> + Send>>;
 
 /// Alias for a heap-allocated [`Stream`] of orchestrator action summaries.
-pub type OActionEntryStream = std::pin::Pin<Box<dyn Stream<Item = Result<OActionEntry>>>>;
+pub type OActionEntryStream = Pin<Box<dyn Stream<Item = Result<OActionEntry>> + Send>>;
 
 /// Alias for a heap-allocated [`Stream`] of platform summaries.
-pub type PlatformEntryStream = std::pin::Pin<Box<dyn Stream<Item = Result<PlatformEntry>>>>;
+pub type PlatformEntryStream = Pin<Box<dyn Stream<Item = Result<PlatformEntry>> + Send>>;
 
 /// Alias for a heap-allocated [`Stream`] of cluster [`Shard`]s.
-pub type ShardsStream = std::pin::Pin<Box<dyn Stream<Item = Result<Shard>> + Send>>;
+pub type ShardsStream = Pin<Box<dyn Stream<Item = Result<Shard>> + Send>>;
 
 /// Alias for a heap-allocated [`Stream`] of cluster nodes extras.
-pub type StoreExtrasStream = std::pin::Pin<Box<dyn Stream<Item = Result<StoreExtras>> + Send>>;
+pub type StoreExtrasStream = Pin<Box<dyn Stream<Item = Result<StoreExtras>> + Send>>;
 
 /// Alias for a heap-allocated [`Stream`] of strings (useful for IDs).
-pub type StringStream = std::pin::Pin<Box<dyn Stream<Item = Result<String>>>>;
+pub type StringStream = Pin<Box<dyn Stream<Item = Result<String>> + Send>>;
 
 // --- High level query operations --- //
 /// List the summary information of all cluster specs in a namespace, sorted alphabetically.
@@ -662,6 +669,13 @@ impl ListShards {
     }
 }
 
+/// Iterate over active platforms for which a discovery task should be scheduled.
+///
+/// This query may also return platforms that belong to inactive namespaces.
+/// It is expected the platform discovery task will perform necessary checks.
+pub struct PlatformsPendingDiscovery;
+
+// --- Implement QueryOp conversions on request types for transparent operations --- //
 impl SealQueryOp for ListStoreExtras {}
 impl QueryOp for ListStoreExtras {
     type Response = StoreExtrasStream;
@@ -782,6 +796,16 @@ impl QueryOp for UnfinishedOAction {
 impl From<UnfinishedOAction> for QueryOps {
     fn from(value: UnfinishedOAction) -> Self {
         QueryOps::UnfinishedOAction(value.0)
+    }
+}
+
+impl SealQueryOp for PlatformsPendingDiscovery {}
+impl QueryOp for PlatformsPendingDiscovery {
+    type Response = PlatformEntryStream;
+}
+impl From<PlatformsPendingDiscovery> for QueryOps {
+    fn from(_: PlatformsPendingDiscovery) -> Self {
+        QueryOps::PlatformsPendingDiscovery
     }
 }
 

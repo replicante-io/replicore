@@ -1,4 +1,4 @@
-//! Exclusive backend services maintenance tasks.
+//! Exclusive Control Plane tasks to handle backends maintenance.
 
 mod coordinator;
 
