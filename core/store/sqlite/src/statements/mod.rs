@@ -81,6 +81,11 @@ impl StoreBackend for SQLiteStore {
                 let spec = self::cluster_spec::lookup(context, &self.connection, spec).await?;
                 Ok(QueryResponses::ClusterSpec(spec))
             }
+            QueryOps::ClustersPendingOrchestration => {
+                let items =
+                    self::cluster_spec::pending_orchestrate(context, &self.connection).await?;
+                Ok(QueryResponses::ClusterSpecEntries(items))
+            }
             QueryOps::ListClusterSpecs(ns) => {
                 let list = self::cluster_spec::list(context, &self.connection, ns).await?;
                 Ok(QueryResponses::ClusterSpecEntries(list))
@@ -158,6 +163,11 @@ impl StoreBackend for SQLiteStore {
             }
             PersistOps::ClusterDiscovery(disc) => {
                 self::cluster_discovery::persist(context, &self.connection, disc)
+                    .await
+                    .map(|_| PersistResponses::Success)
+            }
+            PersistOps::ClusterOrchestrated(cluster_id) => {
+                self::cluster_spec::update_orchestrate(context, &self.connection, cluster_id)
                     .await
                     .map(|_| PersistResponses::Success)
             }

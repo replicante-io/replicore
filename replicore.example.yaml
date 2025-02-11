@@ -71,6 +71,9 @@ exclusives:
 
   # Intervals, in second, at which to run scheduling tasks.
   schedulers:
+    # Interval, in second, at which to check for cluster orchestrations to schedule.
+    cluster_orchestrator: 15
+
     # Interval, in second, at which to check for platform discoveries to schedule.
     platform_discovery: 15
 

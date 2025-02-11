@@ -46,6 +46,11 @@ pub enum QueryOps {
     /// Query a cluster specification by Namespace ID and Resource Name.
     ClusterSpec(NamespacedResourceID),
 
+    /// Iterate over active clusters for which an orchestration task should be scheduled.
+    ///
+    /// See [`ClustersPendingOrchestration`] for more details.
+    ClustersPendingOrchestration,
+
     /// List the summary information of all cluster specs in a namespace, sorted alphabetically.
     ListClusterSpecs(NamespaceID),
 
@@ -192,6 +197,12 @@ pub type StoreExtrasStream = Pin<Box<dyn Stream<Item = Result<StoreExtras>> + Se
 pub type StringStream = Pin<Box<dyn Stream<Item = Result<String>> + Send>>;
 
 // --- High level query operations --- //
+/// Iterate over active clusters for which an orchestration task should be scheduled.
+///
+/// This query may also return clusters that belong to inactive namespaces.
+/// It is expected the cluster orchestration task will perform necessary checks.
+pub struct ClustersPendingOrchestration;
+
 /// List the summary information of all cluster specs in a namespace, sorted alphabetically.
 pub struct ListClusterSpecs(pub NamespaceID);
 
@@ -475,6 +486,16 @@ mod seal {
 }
 
 // --- Implement QueryOp and super traits on types for transparent operations --- //
+impl SealQueryOp for ClustersPendingOrchestration {}
+impl QueryOp for ClustersPendingOrchestration {
+    type Response = ClusterSpecEntryStream;
+}
+impl From<ClustersPendingOrchestration> for QueryOps {
+    fn from(_: ClustersPendingOrchestration) -> Self {
+        QueryOps::ClustersPendingOrchestration
+    }
+}
+
 impl SealQueryOp for ListClusterSpecs {}
 impl QueryOp for ListClusterSpecs {
     type Response = ClusterSpecEntryStream;

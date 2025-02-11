@@ -30,6 +30,9 @@ pub enum PersistOps {
     /// Persist a cluster discovery record.
     ClusterDiscovery(ClusterDiscovery),
 
+    /// Update the next orchestrate time for a cluster spec record.
+    ClusterOrchestrated(NamespacedResourceID),
+
     /// Persist a cluster specification record.
     ClusterSpec(ClusterSpec),
 
@@ -79,6 +82,23 @@ impl From<NodeID> for NodeCancelAllActions {
     }
 }
 
+/// Update the next orchestrate time for a cluster spec record.
+pub struct ClusterOrchestrated(pub NamespacedResourceID);
+impl From<NamespacedResourceID> for ClusterOrchestrated {
+    fn from(value: NamespacedResourceID) -> Self {
+        ClusterOrchestrated(value)
+    }
+}
+impl From<replisdk::core::models::api::ClusterSpecEntry> for ClusterOrchestrated {
+    fn from(value: replisdk::core::models::api::ClusterSpecEntry) -> Self {
+        let id = NamespacedResourceID {
+            name: value.cluster_id,
+            ns_id: value.ns_id,
+        };
+        ClusterOrchestrated(id)
+    }
+}
+
 /// Update the next discovery time for a platform record.
 pub struct PlatformDiscovered(pub NamespacedResourceID);
 impl From<NamespacedResourceID> for PlatformDiscovered {
@@ -121,6 +141,16 @@ impl SealPersistOp for ClusterDiscovery {}
 impl From<ClusterDiscovery> for PersistOps {
     fn from(value: ClusterDiscovery) -> Self {
         PersistOps::ClusterDiscovery(value)
+    }
+}
+
+impl PersistOp for ClusterOrchestrated {
+    type Response = ();
+}
+impl SealPersistOp for ClusterOrchestrated {}
+impl From<ClusterOrchestrated> for PersistOps {
+    fn from(value: ClusterOrchestrated) -> Self {
+        PersistOps::ClusterOrchestrated(value.0)
     }
 }
 

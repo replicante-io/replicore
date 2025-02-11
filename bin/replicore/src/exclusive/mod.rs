@@ -48,6 +48,12 @@ pub async fn component(
             injector.store.clone(),
             injector.tasks.clone(),
             shutdown.shutdown_handle(),
+        ))
+        .task(self::schedulers::Orchestrate::task(
+            conf.schedulers.cluster_orchestrator,
+            injector.store.clone(),
+            injector.tasks.clone(),
+            shutdown.shutdown_handle(),
         ));
 
     // Spawn the task if at least one task was registered.

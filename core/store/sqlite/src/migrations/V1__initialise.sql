@@ -33,6 +33,11 @@ CREATE TABLE IF NOT EXISTS store_cluster_spec(
 
   -- Virtual columns form index and optimised queries.
   active BOOLEAN NOT NULL AS (json_extract(cluster_spec, '$.active')),
+  orchestrate_interval REAL NOT NULL AS (json_extract(cluster_spec, '$.interval')),
+
+  -- Sore only columns for optimised indexes and queries.
+  -- These are not part of the application data model and exist only in the DB implementation.
+  next_orchestrate REAL DEFAULT NULL,
 
   -- Table constraints
   PRIMARY KEY(ns_id, cluster_id)
@@ -119,7 +124,7 @@ CREATE TABLE IF NOT EXISTS store_platform(
 
   -- Virtual columns form index and optimised queries.
   active BOOLEAN NOT NULL AS (json_extract(platform, '$.active')),
-  discovery_interval BOOLEAN NOT NULL AS (json_extract(platform, '$.discovery.interval')),
+  discovery_interval REAL NOT NULL AS (json_extract(platform, '$.discovery.interval')),
 
   -- Sore only columns for optimised indexes and queries.
   -- These are not part of the application data model and exist only in the DB implementation.

@@ -63,6 +63,10 @@ impl MaintenanceIntervals {
 /// Intervals, in second, at which to run scheduling tasks.
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SchedulerIntervals {
+    /// Interval, in second, at which to check for cluster orchestrations to schedule.
+    #[serde(default = "SchedulerIntervals::default_cluster_orchestrator")]
+    pub cluster_orchestrator: u64,
+
     /// Interval, in second, at which to check for platform discoveries to schedule.
     #[serde(default = "SchedulerIntervals::default_platform_discovery")]
     pub platform_discovery: u64,
@@ -71,12 +75,17 @@ pub struct SchedulerIntervals {
 impl Default for SchedulerIntervals {
     fn default() -> Self {
         Self {
+            cluster_orchestrator: Self::default_cluster_orchestrator(),
             platform_discovery: Self::default_platform_discovery(),
         }
     }
 }
 
 impl SchedulerIntervals {
+    fn default_cluster_orchestrator() -> u64 {
+        15
+    }
+
     fn default_platform_discovery() -> u64 {
         15
     }

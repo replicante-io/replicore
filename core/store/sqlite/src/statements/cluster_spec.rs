@@ -36,12 +36,32 @@ WHERE
     AND cluster_id = ?2
 ;"#;
 
+const PENDING_ORCHESTRATE_SQL: &str = r#"
+SELECT cluster_spec
+FROM store_cluster_spec
+WHERE
+    active = TRUE
+    AND (
+        next_orchestrate IS NULL
+        OR next_orchestrate < unixepoch()
+    )
+;"#;
+
 const PERSIST_SQL: &str = r#"
 INSERT INTO store_cluster_spec (ns_id, cluster_id, cluster_spec)
 VALUES (?1, ?2, ?3)
 ON CONFLICT(ns_id, cluster_id)
 DO UPDATE SET
-    cluster_spec=?3
+    cluster_spec=?3,
+    next_orchestrate = NULL
+;"#;
+
+const UPDATE_ORCHESTRATE_SQL: &str = r#"
+UPDATE store_cluster_spec
+SET next_orchestrate = unixepoch() + orchestrate_interval
+WHERE
+    ns_id = ?1
+    AND cluster_id = ?2
 ;"#;
 
 /// Delete a cluster specification from the store, ignoring missing clusters.
@@ -137,6 +157,39 @@ pub async fn lookup(
     }
 }
 
+/// Iterate over active clusters where a next orchestration time is in the past or unset.
+pub async fn pending_orchestrate(
+    _: &Context,
+    connection: &Connection,
+) -> Result<ClusterSpecEntryStream> {
+    let (err_count, _timer) = crate::telemetry::observe_op("clusterSpec.pendingOrchestrate");
+    let trace = crate::telemetry::trace_op("clusterSpec.pendingOrchestrate");
+    let items = connection
+        .call(move |connection| {
+            let mut statement = connection.prepare_cached(PENDING_ORCHESTRATE_SQL)?;
+            let mut rows = statement.query([])?;
+
+            let mut items = Vec::new();
+            while let Some(row) = rows.next()? {
+                let item: String = row.get("cluster_spec")?;
+                items.push(item);
+            }
+            Ok(items)
+        })
+        .count_on_err(err_count)
+        .trace_on_err_with_status()
+        .with_context(trace)
+        .await?;
+
+    let items = futures::stream::iter(items)
+        .map(|cluster_spec| {
+            let cluster_spec = replisdk::utils::encoding::decode_serde(&cluster_spec)?;
+            Ok(cluster_spec)
+        })
+        .boxed();
+    Ok(items)
+}
+
 /// Persist a new or updated record into the store.
 pub async fn persist(_: &Context, connection: &Connection, cluster: ClusterSpec) -> Result<()> {
     let record = replisdk::utils::encoding::encode_serde(&cluster)?;
@@ -154,6 +207,30 @@ pub async fn persist(_: &Context, connection: &Connection, cluster: ClusterSpec)
         .trace_on_err_with_status()
         .with_context(trace)
         .await?;
+    Ok(())
+}
+
+/// Update the next orchestrate timestamp for a cluster.
+pub async fn update_orchestrate(
+    _: &Context,
+    connection: &Connection,
+    cluster_id: NamespacedResourceID,
+) -> Result<()> {
+    let (err_count, _timer) = crate::telemetry::observe_op("clusterSpec.updateOrchestrate");
+    let trace = crate::telemetry::trace_op("clusterSpec.updateOrchestrate");
+    connection
+        .call(move |connection| {
+            connection.execute(
+                UPDATE_ORCHESTRATE_SQL,
+                rusqlite::params![cluster_id.ns_id, cluster_id.name],
+            )?;
+            Ok(())
+        })
+        .count_on_err(err_count)
+        .trace_on_err_with_status()
+        .with_context(trace)
+        .await?;
+
     Ok(())
 }
 

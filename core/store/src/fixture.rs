@@ -111,6 +111,12 @@ impl StoreBackend for StoreFixture {
                 let spec = store.cluster_specs.get(&key).cloned();
                 Ok(QueryResponses::ClusterSpec(spec))
             }
+            QueryOps::ClustersPendingOrchestration => {
+                // TODO: implement cluster orchestration tracking
+                let items = vec![];
+                let items = futures::stream::iter(items).map(Ok).boxed();
+                Ok(QueryResponses::ClusterSpecEntries(items))
+            }
             QueryOps::ListClusterSpecs(query) => {
                 let mut items = Vec::new();
                 for ((ns, _), spec) in store.cluster_specs.iter() {
@@ -335,6 +341,9 @@ impl StoreBackend for StoreFixture {
             PersistOps::ClusterDiscovery(disc) => {
                 let key = (disc.ns_id.clone(), disc.cluster_id.clone());
                 store.cluster_discoveries.insert(key, disc);
+            }
+            PersistOps::ClusterOrchestrated(_) => {
+                // TODO: implement cluster orchestration tracking
             }
             PersistOps::ClusterSpec(spec) => {
                 let key = (spec.ns_id.clone(), spec.cluster_id.clone());

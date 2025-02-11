@@ -102,7 +102,11 @@ pub async fn list(
                 let active: bool = row.get("active")?;
                 let name: String = row.get("name")?;
                 let ns_id: String = row.get("ns_id")?;
-                let item = PlatformEntry { active, name, ns_id };
+                let item = PlatformEntry {
+                    active,
+                    name,
+                    ns_id,
+                };
                 items.push(item);
             }
             Ok(items)
@@ -169,7 +173,11 @@ pub async fn pending_discovery(
                 let active: bool = row.get("active")?;
                 let name: String = row.get("name")?;
                 let ns_id: String = row.get("ns_id")?;
-                let item = PlatformEntry { active, name, ns_id };
+                let item = PlatformEntry {
+                    active,
+                    name,
+                    ns_id,
+                };
                 items.push(item);
             }
             Ok(items)
@@ -203,7 +211,7 @@ pub async fn persist(_: &Context, connection: &Connection, platform: Platform) -
     Ok(())
 }
 
-/// TODO
+/// Update the next discovery timestamp for a platform.
 pub async fn update_discovery(
     _: &Context,
     connection: &Connection,
@@ -215,7 +223,7 @@ pub async fn update_discovery(
         .call(move |connection| {
             connection.execute(
                 UPDATE_DISCOVERY_SQL,
-                rusqlite::params![platform_id.ns_id, platform_id.name]
+                rusqlite::params![platform_id.ns_id, platform_id.name],
             )?;
             Ok(())
         })
