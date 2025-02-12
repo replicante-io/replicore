@@ -30,6 +30,7 @@ repliagent-client = { path = "../../../client/agent" }
 replicore-cluster-models = { path = "../../../core/cluster/models" }
 replicore-cluster-view = { path = "../../../core/cluster/view" }
 replicore-context = { path = "../../../core/context"}
+replicore-coordinator = { path = "../../../core/coordinator" }
 replicore-errors = { path = "../../../core/errors"}
 replicore-events = { path = "../../../core/events"}
 replicore-injector = { path = "../../../core/injector" }

@@ -20,6 +20,7 @@ thiserror = "^2.0"
 replisdk = { version = "^0.1", features = ["replicore-models"] }
 
 replicore-context = { path = "../../../core/context" }
+replicore-coordinator = { path = "../../../core/coordinator" }
 replicore-errors = { path = "../../../core/errors"}
 replicore-events = { path = "../../../core/events" }
 replicore-injector = { path = "../../../core/injector" }

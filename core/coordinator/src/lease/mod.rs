@@ -80,6 +80,11 @@ impl Lease {
         LeaseBuilder::new(context, id, lease)
     }
 
+    /// Return the ID of the lease.
+    pub fn id(&self) -> &str {
+        &self.id
+    }
+
     /// Return a handle to inspect and control the [`Lease`].
     pub fn handle(&self) -> LeaseHandle {
         self.handle.clone()

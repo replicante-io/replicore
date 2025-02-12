@@ -2665,6 +2665,7 @@ dependencies = [
  "serde",
  "serde_json",
  "slog",
+ "thiserror 2.0.11",
  "tokio",
 ]
 
@@ -2861,6 +2862,7 @@ dependencies = [
  "once_cell",
  "replicore-clients-platform",
  "replicore-context",
+ "replicore-coordinator",
  "replicore-errors",
  "replicore-events",
  "replicore-injector",
@@ -2886,6 +2888,7 @@ dependencies = [
  "replicore-cluster-models",
  "replicore-cluster-view",
  "replicore-context",
+ "replicore-coordinator",
  "replicore-errors",
  "replicore-events",
  "replicore-injector",

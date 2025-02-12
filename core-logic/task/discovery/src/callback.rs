@@ -24,12 +24,31 @@ impl Default for Callback {
 impl TaskCallback for Callback {
     async fn execute(&self, context: &Context, task: &ReceivedTask) -> Result<()> {
         let request: DiscoverPlatform = task.decode()?;
+        let ns_id = request.ns_id.clone();
+        let name = request.name.clone();
         slog::debug!(
             context.logger, "Reached platform discovery task callback";
-            "request" => ?request,
+            "ns_id" => &ns_id,
+            "name" => &name,
+            "task_id" => &task.id,
         );
-        // TODO(locking): exit early if platform already under discovery.
 
-        crate::discover::discover(context, self, request).await
+        let lock_id = format!("lock.platform.discovery.{}.{}", ns_id, name);
+        let lock = self.injector.leases.lease(context, lock_id).await?;
+        let work = crate::discover::discover(context, self, request);
+        let result = replicore_coordinator::locked(lock, work).await;
+
+        match result {
+            Ok(result) => result,
+            Err(error) if error.is::<replicore_coordinator::LockAbandoned>() => {
+                slog::info!(
+                    context.logger, "Platform discovery lock lost or not available";
+                    "ns_id" => ns_id,
+                    "name" => name,
+                );
+                Ok(())
+            }
+            Err(error) => Err(error),
+        }
     }
 }

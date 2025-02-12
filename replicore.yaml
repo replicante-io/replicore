@@ -2,6 +2,9 @@ coordinator:
   backend: sqlite
   path: replicore.sqlite
 
+exclusives:
+  candidate: true
+
 events:
   backend: sqlite
   path: replicore.sqlite

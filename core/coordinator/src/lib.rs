@@ -6,6 +6,7 @@
 mod coordinator;
 mod factory;
 mod lease;
+mod lock;
 mod time;
 
 pub use self::coordinator::Coordinator;
@@ -20,6 +21,8 @@ pub use self::lease::Lease;
 pub use self::lease::LeaseBuilder;
 pub use self::lease::LeaseHandle;
 pub use self::lease::State;
+pub use self::lock::locked;
+pub use self::lock::LockAbandoned;
 pub use self::time::ICoordinatedTimer;
 pub use self::time::Timer;
 

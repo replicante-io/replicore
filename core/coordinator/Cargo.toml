@@ -21,6 +21,7 @@ prometheus = "^0.13"
 serde = { version = "^1.0", features = ["derive"] }
 serde_json = "^1.0"
 slog = "^2.7"
+thiserror = "^2.0"
 tokio = { version = "^1.4", features = ["macros", "rt", "sync", "time"] }
 
 replicore-context = { path = "../context" }
