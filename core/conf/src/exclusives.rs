@@ -44,19 +44,28 @@ pub struct MaintenanceIntervals {
     /// Interval, in second, at which to run distributed coordinator backend maintenance.
     #[serde(default = "MaintenanceIntervals::default_coordinator")]
     pub coordinator: u64,
+
+    /// Interval, in second, at which to run events backend maintenance.
+    #[serde(default = "MaintenanceIntervals::default_events")]
+    pub events: u64,
 }
 
 impl Default for MaintenanceIntervals {
     fn default() -> Self {
         Self {
             coordinator: Self::default_coordinator(),
+            events: Self::default_events(),
         }
     }
 }
 
 impl MaintenanceIntervals {
     fn default_coordinator() -> u64 {
-        300
+        5 * 60 // 5m
+    }
+
+    fn default_events() -> u64 {
+        60 * 60 // 1h
     }
 }
 

@@ -20,4 +20,8 @@ impl EventsBackend for EventsNull {
     async fn change(&self, _: &Context, _: Event) -> Result<()> {
         Ok(())
     }
+
+    async fn maintenance(&self, _: &Context) -> Result<()> {
+        Ok(())
+    }
 }

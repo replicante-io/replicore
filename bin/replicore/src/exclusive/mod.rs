@@ -36,25 +36,9 @@ pub async fn component(
     }
 
     // Build the coordinator set.
-    let coordinator = Coordinator::builder(&context, &injector.leases)
-        .await?
-        .task(self::maintenance::Coordinator::task(
-            conf.maintenance.coordinator,
-            injector.leases.clone(),
-            shutdown.shutdown_handle(),
-        ))
-        .task(self::schedulers::Discovery::task(
-            conf.schedulers.platform_discovery,
-            injector.store.clone(),
-            injector.tasks.clone(),
-            shutdown.shutdown_handle(),
-        ))
-        .task(self::schedulers::Orchestrate::task(
-            conf.schedulers.cluster_orchestrator,
-            injector.store.clone(),
-            injector.tasks.clone(),
-            shutdown.shutdown_handle(),
-        ));
+    let coordinator = Coordinator::builder(&context, &injector.leases).await?;
+    let coordinator = self::maintenance::register_tasks(coordinator, conf, injector, shutdown);
+    let coordinator = self::schedulers::register_tasks(coordinator, conf, injector, shutdown);
 
     // Spawn the task if at least one task was registered.
     if coordinator.is_empty() {

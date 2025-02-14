@@ -8,6 +8,8 @@ exclusives:
 events:
   backend: sqlite
   path: replicore.sqlite
+  retention:
+    age: 1
 
 store:
   backend: sqlite

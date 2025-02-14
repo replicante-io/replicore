@@ -8,6 +8,7 @@ use crate::State;
 mod set;
 
 pub use self::set::Coordinator;
+pub use self::set::CoordinatorBuilder;
 
 /// Interface for coordinated logic implementations.
 ///

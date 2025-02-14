@@ -48,12 +48,6 @@ events:
   #retention:
   #  # Number of days to keep events in the DB for.
   #  age: 30
-  #
-  #  # Maximum number of expired events to delete in a single history clean loop.
-  #  clean_batch: 500
-  #
-  #  # Minutes to wait between each run of the history clean loop.
-  #  clean_delay: 1
 
 # Control Plane exclusive tasks.
 #
@@ -68,6 +62,9 @@ exclusives:
   maintenance:
     # Interval, in second, at which to run distributed coordinator backend maintenance.
     coordinator: 300
+
+    # Interval, in second, at which to run events backend maintenance.
+    events: 3600
 
   # Intervals, in second, at which to run scheduling tasks.
   schedulers:

@@ -22,6 +22,11 @@ impl Events {
     pub async fn change(&self, context: &Context, event: Event) -> Result<()> {
         self.0.change(context, event).await
     }
+
+    /// Execute backend-specific maintenance of the events service.
+    pub async fn maintenance(&self, context: &Context) -> Result<()> {
+        self.0.maintenance(context).await
+    }
 }
 
 impl<T> From<T> for Events
@@ -41,6 +46,9 @@ pub trait EventsBackend: Send + Sync {
 
     /// Emit an event about a change to an element in the system.
     async fn change(&self, context: &Context, event: Event) -> Result<()>;
+
+    /// Execute backend-specific maintenance of the events service.
+    async fn maintenance(&self, context: &Context) -> Result<()>;
 }
 
 /// Initialisation logic for the event streaming platform and the client to access it.
@@ -175,6 +183,10 @@ mod fixture {
 
         async fn change(&self, _: &Context, event: Event) -> Result<()> {
             self.changes.send(event)?;
+            Ok(())
+        }
+
+        async fn maintenance(&self, _: &Context) -> Result<()> {
             Ok(())
         }
     }
