@@ -87,7 +87,7 @@ pub async fn schedule(
 
     // Check unfinished actions for the next pending one.
     // -> Root actions are blocked by any other running action.
-    let any_running = oactions_unfinished
+    let mut any_running = oactions_unfinished
         .iter()
         .any(|action| action.state.is_running());
 
@@ -109,14 +109,14 @@ pub async fn schedule(
                 "ns_id" => &data.cluster_current.spec.ns_id,
                 "cluster_id" => &data.cluster_current.spec.cluster_id,
             );
-            break;
+            continue;
         }
 
         // Execute the action and stop if it does not complete at once.
         let action = execute(context, data, action).await?;
         if !action.state.is_final() {
             still_unfinished.push(action);
-            break;
+            any_running = true;
         }
     }
 

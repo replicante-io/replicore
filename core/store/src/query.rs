@@ -27,6 +27,7 @@ use self::seal::SealQueryOp;
 use crate::ids::NActionID;
 use crate::ids::NamespaceID;
 use crate::ids::NamespacedResourceID;
+use crate::ids::NodeID;
 use crate::ids::OActionID;
 
 /// Internal trait to enable query operations on the persistent store.
@@ -42,6 +43,9 @@ pub enum QueryOps {
 
     /// Query a cluster discovery record by Namespace and Cluster ID.
     ClusterDiscovery(NamespacedResourceID),
+
+    /// Query a cluster node by Namespace ID, Cluster ID and Node ID.
+    ClusterNode(NodeID),
 
     /// Query a cluster specification by Namespace ID and Resource Name.
     ClusterSpec(NamespacedResourceID),
@@ -109,6 +113,9 @@ pub enum QueryResponses {
 
     /// Return a [`ClusterDiscovery`], if one was found matching the query.
     ClusterDiscovery(Option<ClusterDiscovery>),
+
+    /// Return a [`Node`], if one was found matching the query.
+    ClusterNode(Option<Node>),
 
     /// Return a [`ClusterSpec`], if one was found matching the query.
     ClusterSpec(Option<ClusterSpec>),
@@ -291,6 +298,10 @@ impl LookupClusterDiscovery {
         LookupClusterDiscovery(id)
     }
 }
+
+/// Query a cluster node by Namespace ID, Cluster ID and Node ID.
+#[derive(Clone, Debug)]
+pub struct LookupClusterNode(pub NodeID);
 
 /// Lookup a [`ClusterSpec`] namespace and cluster by ID.
 #[derive(Clone, Debug)]
@@ -740,6 +751,16 @@ impl From<&ClusterDiscovery> for QueryOps {
     }
 }
 
+impl SealQueryOp for LookupClusterNode {}
+impl QueryOp for LookupClusterNode {
+    type Response = Option<Node>;
+}
+impl From<LookupClusterNode> for QueryOps {
+    fn from(value: LookupClusterNode) -> Self {
+        QueryOps::ClusterNode(value.0)
+    }
+}
+
 impl SealQueryOp for LookupClusterSpec {}
 impl QueryOp for LookupClusterSpec {
     type Response = Option<ClusterSpec>;
@@ -899,6 +920,14 @@ impl From<QueryResponses> for NamespaceEntryStream {
     fn from(value: QueryResponses) -> Self {
         match value {
             QueryResponses::NamespaceEntries(stream) => stream,
+            _ => panic!("unexpected result type for the given query operation"),
+        }
+    }
+}
+impl From<QueryResponses> for Option<Node> {
+    fn from(value: QueryResponses) -> Self {
+        match value {
+            QueryResponses::ClusterNode(node) => node,
             _ => panic!("unexpected result type for the given query operation"),
         }
     }

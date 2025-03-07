@@ -87,6 +87,7 @@ async fn orchestrate(
         data.mode,
         replicore_cluster_models::OrchestrateMode::Observe
     ) {
+        // TODO: Process deleting nodes.
         crate::converge::run(context, &data).await?;
     }
 

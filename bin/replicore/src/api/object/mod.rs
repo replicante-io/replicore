@@ -4,6 +4,7 @@ use actix_web::web::ServiceConfig;
 pub mod cluster_spec;
 pub mod naction;
 pub mod namespace;
+pub mod node;
 pub mod oaction;
 pub mod platform;
 
@@ -25,6 +26,7 @@ pub fn configure(config: &mut ServiceConfig) {
         .service(self::namespace::delete)
         .service(self::namespace::get)
         .service(self::namespace::list)
+        .service(self::node::delete)
         .service(self::oaction::approve)
         .service(self::oaction::cancel)
         .service(self::oaction::get)

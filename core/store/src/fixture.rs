@@ -106,6 +106,11 @@ impl StoreBackend for StoreFixture {
                 let discovery = store.cluster_discoveries.get(&key).cloned();
                 Ok(QueryResponses::ClusterDiscovery(discovery))
             }
+            QueryOps::ClusterNode(node) => {
+                let key = (node.ns_id, node.cluster_id, node.node_id);
+                let node = store.nodes.get(&key).cloned();
+                Ok(QueryResponses::ClusterNode(node))
+            }
             QueryOps::ClusterSpec(cluster) => {
                 let key = (cluster.ns_id, cluster.name);
                 let spec = store.cluster_specs.get(&key).cloned();

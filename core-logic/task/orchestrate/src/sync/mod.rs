@@ -12,6 +12,7 @@ use std::sync::MutexGuard;
 use anyhow::Result;
 
 use replisdk::core::models::namespace::Namespace;
+use replisdk::core::models::node::NodeStatus;
 use replisdk::core::models::node::Shard;
 use replisdk::core::models::node::StoreExtras;
 use replisdk::platform::models::ClusterDiscoveryNode;
@@ -22,7 +23,6 @@ use replicore_cluster_models::OrchestrateReportNote;
 use replicore_cluster_view::ClusterView;
 use replicore_cluster_view::ClusterViewBuilder;
 use replicore_context::Context;
-use replicore_events::Event;
 use replicore_injector::Injector;
 
 mod error;
@@ -121,14 +121,12 @@ pub async fn nodes(context: &Context, data: &SyncData) -> Result<()> {
         .values()
         .filter(|node| !current_nodes.contains(&node.node_id));
     for node in nodes {
-        let event = Event::new_with_payload(crate::constants::NODE_DELETE, node.as_ref().clone())?;
-        data.injector.events.change(context, event).await?;
-
-        let node_id =
-            replicore_store::ids::NodeID::by(&node.ns_id, &node.cluster_id, &node.node_id);
-        let op = replicore_store::persist::NodeCancelAllActions::from(node_id.clone());
-        data.injector.store.persist(context, op).await?;
-        data.injector.store.delete(context, node_id).await?;
+        let mut node = node.as_ref().clone();
+        if node.node_status.is_deleting() {
+            continue;
+        }
+        node.node_status = NodeStatus::Missing;
+        self::node::persist(context, data, node).await?;
     }
     Ok(())
 }
@@ -159,7 +157,7 @@ async fn sync_node(context: &Context, data: &SyncData, node: &ClusterDiscoveryNo
 
     // Process fetched information for node sync.
     let incomplete = store_info.is_err() || shards.is_err();
-    let node_info = self::node::process(incomplete, ag_node, node_info);
+    let node_info = self::node::process(data, incomplete, ag_node, node_info);
     self::node::persist(context, data, node_info).await?;
 
     match store_info {

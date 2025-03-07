@@ -77,6 +77,10 @@ impl StoreBackend for SQLiteStore {
                 let disc = self::cluster_discovery::lookup(context, &self.connection, disc).await?;
                 Ok(QueryResponses::ClusterDiscovery(disc))
             }
+            QueryOps::ClusterNode(node) => {
+                let node = self::cluster_node::lookup(context, &self.connection, node).await?;
+                Ok(QueryResponses::ClusterNode(node))
+            }
             QueryOps::ClusterSpec(spec) => {
                 let spec = self::cluster_spec::lookup(context, &self.connection, spec).await?;
                 Ok(QueryResponses::ClusterSpec(spec))

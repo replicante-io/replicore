@@ -38,12 +38,17 @@ pub async fn persist(context: &Context, data: &SyncData, node: Node) -> Result<(
 }
 
 /// Process agent information to populate a core [`Node`] object.
-pub fn process(incomplete: bool, ag_node: AgentNode, mut node: Node) -> Node {
+pub fn process(data: &SyncData, incomplete: bool, ag_node: AgentNode, mut node: Node) -> Node {
     let incomplete = matches!(ag_node.node_status, AgentNodeStatus::Healthy) && incomplete;
-    node.node_status = if incomplete {
-        NodeStatus::Incomplete
-    } else {
-        ag_node.node_status.into()
+    let known_status = data
+        .cluster_current
+        .nodes
+        .get(&node.node_id)
+        .map(|node| node.node_status.clone());
+    node.node_status = match (known_status, incomplete) {
+        (Some(status), _) if status.is_deleting() => status,
+        (_, true) => NodeStatus::Incomplete,
+        _ => ag_node.node_status.into(),
     };
     node.details = Some(NodeDetails {
         address: ag_node.address,

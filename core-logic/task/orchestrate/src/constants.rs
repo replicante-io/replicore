@@ -7,6 +7,8 @@ pub const NACTION_SYNC_NEW: &str = "NACTION_SYNC_NEW";
 pub const NACTION_SYNC_UPDATE: &str = "NACTION_SYNC_UPDATE";
 
 /// Event code emitted when a terminated node is deleted.
+// TODO: re-enable lint after node delete step is added in the right place.
+#[allow(dead_code)]
 pub const NODE_DELETE: &str = "NODE_DELETE";
 
 /// Event code emitted when a new node was first seen during sync.

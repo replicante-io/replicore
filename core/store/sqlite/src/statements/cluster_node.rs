@@ -30,6 +30,15 @@ WHERE
 ORDER BY node_id ASC;
 "#;
 
+const LOOKUP_SQL: &str = r#"
+SELECT node
+FROM store_cluster_node
+WHERE
+    ns_id = ?1
+    AND cluster_id = ?2
+    AND node_id = ?3
+;"#;
+
 const PERSIST_SQL: &str = r#"
 INSERT INTO store_cluster_node (ns_id, cluster_id, node_id, node)
 VALUES (?1, ?2, ?3, ?4)
@@ -89,6 +98,38 @@ pub async fn list(
         })
         .boxed();
     Ok(nodes)
+}
+
+/// Lookup a cluster node from the store, if one is available.
+pub async fn lookup(_: &Context, connection: &Connection, query: NodeID) -> Result<Option<Node>> {
+    let (err_count, timer) = crate::telemetry::observe_op("node.lookup");
+    let trace = crate::telemetry::trace_op("node.lookup");
+    let node = connection
+        .call(move |connection| {
+            let mut statement = connection.prepare_cached(LOOKUP_SQL)?;
+            let mut rows = statement.query([query.ns_id, query.cluster_id, query.node_id])?;
+            let row = match rows.next()? {
+                None => None,
+                Some(row) => {
+                    let node: String = row.get("node")?;
+                    Some(node)
+                }
+            };
+            Ok(row)
+        })
+        .count_on_err(err_count)
+        .trace_on_err_with_status()
+        .with_context(trace)
+        .await?;
+
+    drop(timer);
+    match node {
+        None => Ok(None),
+        Some(node) => {
+            let node = replisdk::utils::encoding::decode_serde(&node)?;
+            Ok(Some(node))
+        }
+    }
 }
 
 /// Persist a new or updated record into the store.
